@@ -28,6 +28,6 @@ public class MarshalCommon {
     static final char TYPE_LINK	= '@';
 
     public static final String SYMBOL_ENCODING_SPECIAL = "E";
+    public static final String SYMBOL_RUBY2_KEYWORDS_HASH_SPECIAL = "K";
     public static final String SYMBOL_ENCODING = "encoding";
-    static final String RUBY2_KEYWORDS_FLAG = "K";
 }

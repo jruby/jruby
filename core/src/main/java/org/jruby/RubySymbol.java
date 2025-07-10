@@ -1029,6 +1029,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         private final float loadFactor;
         private final Ruby runtime;
         private final RubySymbol encodingSymbolE;
+        private final RubySymbol encodingSymbolK;
         private final RubySymbol encodingSymbol;
 
         public SymbolTable(Ruby runtime) {
@@ -1037,6 +1038,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
             this.threshold = (int)(DEFAULT_INITIAL_CAPACITY * DEFAULT_LOAD_FACTOR);
             this.symbolTable = new SymbolEntry[DEFAULT_INITIAL_CAPACITY];
             this.encodingSymbolE = createSymbol(MarshalCommon.SYMBOL_ENCODING_SPECIAL, false);
+            this.encodingSymbolK = createSymbol(MarshalCommon.SYMBOL_RUBY2_KEYWORDS_HASH_SPECIAL, false);
             this.encodingSymbol = createSymbol(MarshalCommon.SYMBOL_ENCODING, false);
             reset();
         }
@@ -1221,6 +1223,10 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         public RubySymbol getEncodingSymbolE() {
             return encodingSymbolE;
+        }
+
+        public RubySymbol getRuby2KeywordsHashSymbolK() {
+            return encodingSymbolK;
         }
 
         public RubySymbol getEncodingSymbol() {

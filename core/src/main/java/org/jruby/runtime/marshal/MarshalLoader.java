@@ -181,7 +181,7 @@ public class MarshalLoader {
                     throw argumentError(context, str(context.runtime, object, "is not enc_capable"));
                 }
                 if (hasEncoding != null) hasEncoding[0] = true;
-            } else if (id.equals(RUBY2_KEYWORDS_FLAG)) {
+            } else if (id.equals(SYMBOL_RUBY2_KEYWORDS_HASH_SPECIAL)) {
                 if (object instanceof RubyHash) {
                     ((RubyHash) object).setRuby2KeywordHash(true);
                 } else {
