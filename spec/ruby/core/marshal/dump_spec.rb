@@ -654,6 +654,12 @@ describe "Marshal.dump" do
       # to the instance variable value (@\a, that means Integer 2)
       Marshal.dump([obj, obj, value]).should == "\x04\b[\bI{\x00\x06:\t@foo\"\n<foo>@\x06@\a"
     end
+
+    it "dumps a ruby2_keywords_hash Hash instance" do
+      kw_hash = Hash.ruby2_keywords_hash({})
+
+      Marshal.dump(kw_hash).should == "\x04\bI{\x00\x06:\x06KT"
+    end
   end
 
   describe "with a Struct" do
