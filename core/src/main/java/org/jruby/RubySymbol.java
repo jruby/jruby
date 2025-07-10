@@ -1023,10 +1023,9 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         private final ReentrantLock tableLock = new ReentrantLock();
         private volatile SymbolEntry[] symbolTable;
-        private Map<String, CompoundSymbol> compoundSymbolTable = new ConcurrentHashMap<>();
+        private final Map<String, CompoundSymbol> compoundSymbolTable = new ConcurrentHashMap<>();
         private int size;
         private int threshold;
-        private final float loadFactor;
         private final Ruby runtime;
         private final RubySymbol encodingSymbolE;
         private final RubySymbol encodingSymbolK;
@@ -1034,13 +1033,10 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         public SymbolTable(Ruby runtime) {
             this.runtime = runtime;
-            this.loadFactor = DEFAULT_LOAD_FACTOR;
-            this.threshold = (int)(DEFAULT_INITIAL_CAPACITY * DEFAULT_LOAD_FACTOR);
-            this.symbolTable = new SymbolEntry[DEFAULT_INITIAL_CAPACITY];
-            this.encodingSymbolE = createSymbol(MarshalCommon.SYMBOL_ENCODING_SPECIAL, false);
-            this.encodingSymbolK = createSymbol(MarshalCommon.SYMBOL_RUBY2_KEYWORDS_HASH_SPECIAL, false);
-            this.encodingSymbol = createSymbol(MarshalCommon.SYMBOL_ENCODING, false);
             reset();
+            this.encodingSymbolE = createSymbol(MarshalCommon.SYMBOL_ENCODING_SPECIAL, true);
+            this.encodingSymbolK = createSymbol(MarshalCommon.SYMBOL_RUBY2_KEYWORDS_HASH_SPECIAL, true);
+            this.encodingSymbol = createSymbol(MarshalCommon.SYMBOL_ENCODING, true);
         }
 
         // note all fields are final -- rehash creates new entries when necessary.
@@ -1452,7 +1448,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
             int newCapacity = oldCapacity << 1;
             SymbolEntry[] newTable = new SymbolEntry[newCapacity];
-            threshold = (int)(newCapacity * loadFactor);
+            threshold = (int)(newCapacity * DEFAULT_LOAD_FACTOR);
             int sizeMask = newCapacity - 1;
             SymbolEntry e;
             for (int i = oldCapacity; --i >= 0; ) {
