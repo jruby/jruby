@@ -148,6 +148,7 @@ public class MarshalDumper {
     public void writeDirectly(ThreadContext context, RubyOutputStream out, IRubyObject value) {
         ClassIndex nativeClassIndex;
         boolean shouldMarshalEncoding;
+        boolean shouldMarshalRuby2Keywords;
 
         if (!(value instanceof CoreObjectType coreObjectType)
                 || (nativeClassIndex = coreObjectType.getNativeClassIndex()) == ClassIndex.OBJECT
@@ -155,41 +156,53 @@ public class MarshalDumper {
 
             writeObjectData(context, out, value);
 
-        } else if (!(shouldMarshalEncoding = (value instanceof MarshalEncoding marshalEncoding && marshalEncoding.shouldMarshalEncoding()))
-                && (value.isImmediate()
-                        || !value.hasVariables()
-                        || nativeClassIndex == ClassIndex.CLASS
-                        || nativeClassIndex == ClassIndex.MODULE)) {
-
-            dumpBaseObject(context, out, value, nativeClassIndex);
-
         } else {
+            shouldMarshalEncoding = (value instanceof MarshalEncoding marshalEncoding && marshalEncoding.shouldMarshalEncoding());
+            RubyHash keywordsHash = (value instanceof RubyHash hash && hash.isRuby2KeywordHash()) ? hash : null;
+            shouldMarshalRuby2Keywords = keywordsHash != null;
+            if (!shouldMarshalEncoding
+                    && !shouldMarshalRuby2Keywords
+                    && (value.isImmediate()
+                    || !value.hasVariables()
+                    || nativeClassIndex == ClassIndex.CLASS
+                    || nativeClassIndex == ClassIndex.MODULE)) {
 
-            var ivarAccessors = checkVariables(value, shouldMarshalEncoding);
-            int size = variableCount;
-            clearVariableState();
-
-            if (doVariables) {
-                // object has instance vars and isn't a class, get a snapshot to be marshalled
-                // and output the ivar header here
-
-                // write `I' instance var signet if class is NOT a direct subclass of Object
-                out.write(TYPE_IVAR);
                 dumpBaseObject(context, out, value, nativeClassIndex);
 
-                if (shouldMarshalEncoding) {
-                    writeInt(out, size + 1); // vars preceded by encoding
-                    writeEncoding(context, out, ((MarshalEncoding) value).getMarshalEncoding());
+            } else {
+
+                var ivarAccessors = checkVariables(value, shouldMarshalEncoding, shouldMarshalRuby2Keywords);
+                int size = variableCount;
+                clearVariableState();
+
+                if (doVariables) {
+                    // object has instance vars and isn't a class, get a snapshot to be marshalled
+                    // and output the ivar header here
+
+                    // write `I' instance var signet if class is NOT a direct subclass of Object
+                    out.write(TYPE_IVAR);
+                    dumpBaseObject(context, out, value, nativeClassIndex);
+
+                    if (shouldMarshalEncoding) {
+                        writeInt(out, size + 1); // vars preceded by encoding
+                        writeEncoding(context, out, ((MarshalEncoding) value).getMarshalEncoding());
+                    } else if (shouldMarshalRuby2Keywords) {
+                        writeInt(out, size + 1); // vars preceded by ruby2_keywords_hash
+
+                        var symbolTable = context.runtime.getSymbolTable();
+                        writeAndRegisterSymbol(out, symbolTable.getRuby2KeywordsHashSymbolK());
+                        writeObjectData(context, out, asBoolean(context, keywordsHash.isRuby2KeywordHash()));
+                    } else {
+                        writeInt(out, size);
+                    }
+
+                    ivarAccessors.forEach(new VariableDumper(context, out, value));
                 } else {
-                    writeInt(out, size);
+                    // no variables, no encoding
+                    dumpBaseObject(context, out, value, nativeClassIndex);
                 }
 
-                ivarAccessors.forEach(new VariableDumper(context, out, value));
-            } else {
-                // no variables, no encoding
-                dumpBaseObject(context, out, value, nativeClassIndex);
             }
-
         }
     }
 
@@ -197,9 +210,9 @@ public class MarshalDumper {
         currentValue = null;
     }
 
-    private Map<String, VariableAccessor> checkVariables(IRubyObject value, boolean shouldMarshalEncoding) {
+    private Map<String, VariableAccessor> checkVariables(IRubyObject value, boolean shouldMarshalEncoding, boolean shouldMarshalRuby2Keywords) {
         currentValue = value;
-        doVariables = shouldMarshalEncoding;
+        doVariables = shouldMarshalEncoding | shouldMarshalRuby2Keywords;
         variableCount = 0;
 
         // check if any variables are set and collect size
