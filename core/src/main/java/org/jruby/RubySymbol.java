@@ -485,14 +485,9 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect(ThreadContext context) {
-        // TODO: 1.9 rb_enc_symname_p
-        Encoding resenc = context.runtime.getDefaultInternalEncoding();
-        if (resenc == null) resenc = context.runtime.getDefaultExternalEncoding();
-
         RubyString str = newString(context, getBytes());
 
-        if (!(isPrintable(context) && (resenc.equals(getBytes().getEncoding()) || str.isAsciiOnly()) &&
-                isSymbolName(symbol))) {
+        if (!isSimpleName(context)) {
             str = (RubyString) str.inspect(context);
         }
 
@@ -502,6 +497,24 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         result.append(str.getByteList());
 
         return newString(context, result);
+    }
+
+    // MRI: rb_str_symname_p
+    public boolean isSimpleName(ThreadContext context) {
+        int len;
+        Ruby runtime = context.runtime;
+        Encoding resenc = runtime.getDefaultInternalEncoding();
+        if (resenc == null) resenc = runtime.getDefaultExternalEncoding();
+
+        RubyString str = fstring;
+        ByteList bytes = fstring.getByteList();
+        Encoding enc = bytes.getEncoding();
+
+        if ((resenc != enc && !str.isAsciiOnly()) /*|| len != (long)strlen(ptr)*/ ||
+                !isSymbolName(symbol) || !isPrintable(context)) {
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -874,6 +887,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return true;
     }
 
+    // MRI: rb_enc_symname_p, roughly
     private static boolean isSymbolName(final String str) {
         if (str == null || str.isEmpty()) return false;
 
