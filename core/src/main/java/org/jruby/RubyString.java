@@ -4178,7 +4178,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     // MRI: at_char_boundary
-    private static boolean atCharBoundary(byte[] bytes, int s, int p, int e, Encoding enc) {
+    public static boolean atCharBoundary(byte[] bytes, int s, int p, int e, Encoding enc) {
         // our version checks if p == bytes.length, where CRuby would have a \0 character and not reposition
         return p == bytes.length || enc.leftAdjustCharHead(bytes, s, p, e) == p;
     }

@@ -950,20 +950,66 @@ public class RubyHash extends RubyObject implements Map {
 
     private static final VisitorWithState<RubyString> InspectVisitor = new VisitorWithState<RubyString>() {
         @Override
+        // MRI: inspect_i for inspect_hash in hash.c
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, RubyString str) {
-            RubyString keyStr = inspect(context, key);
+            RubyString keyStr;
+
+            boolean isSymbol = key instanceof RubySymbol;
+            boolean quote = false;
+            if (key instanceof RubySymbol symbol) {
+                keyStr = symbol.fstring();
+                quote = symbolKeyNeedsQuote(context, symbol);
+            } else {
+                keyStr = inspect(context, key);
+            }
+
+            if (str.size() > 1) {
+                str.catString(", ");
+            } else {
+                str.setEncoding(keyStr.getEncoding());
+            }
+
+            if (quote) {
+                str.append(keyStr.inspect(context));
+            } else {
+                str.append(keyStr);
+            }
+
+            str.catString(isSymbol ? ": " : " => ");
+
             RubyString valStr = inspect(context, value);
+            str.append(valStr);
+        }
 
-            final ByteList bytes = str.getByteList();
-            bytes.ensure(2 + keyStr.size() + 2 + valStr.size());
-
-            if (index > 0) bytes.append((byte) ',').append((byte) ' ');
-
-            boolean keyIsSymbol = key instanceof RubySymbol;
-
-            str.catWithCodeRange(keyIsSymbol ? (RubyString) keyStr.substr(context, 1, keyStr.length() - 1) : keyStr);
-            self.appendAssociation(keyIsSymbol, bytes);
-            str.catWithCodeRange(valStr);
+        // MRI: symbol_key_needs_quote
+        boolean symbolKeyNeedsQuote(ThreadContext context, RubySymbol sym) {
+            RubyString str = sym.fstring();
+            int len = str.size();
+            if (len == 0 || !sym.isSimpleName(context)) return true;
+            ByteList bytes = str.getByteList();
+            int first = bytes.get(0);
+            if (first == '@' || first == '$' || first == '!') return true;
+            if (!RubyString.atCharBoundary(bytes.unsafeBytes(), bytes.begin(), bytes.begin() + bytes.getRealSize() - 1, bytes.begin() + bytes.realSize(), bytes.getEncoding())) return false;
+            switch (bytes.get(len - 1)) {
+                case '+':
+                case '-':
+                case '*':
+                case '/':
+                case '`':
+                case '%':
+                case '^':
+                case '&':
+                case '|':
+                case ']':
+                case '<':
+                case '=':
+                case '>':
+                case '~':
+                case '@':
+                    return true;
+                default:
+                    return false;
+            }
         }
     };
 
