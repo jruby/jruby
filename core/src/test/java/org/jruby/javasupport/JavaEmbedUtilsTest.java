@@ -21,6 +21,7 @@ import org.jruby.Profile;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
 import org.jruby.exceptions.NameError;
+import org.jruby.exceptions.SyntaxError;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.ThreadContext;
@@ -72,7 +73,7 @@ public class JavaEmbedUtilsTest {
     class CustomProfile implements Profile {
         private List classAllow = List.of("String", "Fixnum", "Integer", "Numeric", "Hash", "Array",
                 "Thread", "ThreadGroup", "RubyError", "StopIteration", "LoadError", "ArgumentError", "Encoding",
-                "EncodingError", "StandardError", "Exception", "NameError");
+                "EncodingError", "StandardError", "Exception", "NameError", "SyntaxError", "ScriptError");
         private List loadAllow = List.of("jruby/java.rb", "jruby/java/core_ext.rb", "jruby/java/java_ext.rb",
                 "jruby/java/core_ext/object.rb");
 
@@ -114,6 +115,7 @@ public class JavaEmbedUtilsTest {
         assertThrows(NameError.class, () -> runtime.evalScriptlet("UDPSocket.new"));
         assertEquals("cute_cats",((RubyString)runtime.evalScriptlet("\"cute_cats\"")).getValue());
         assertEquals("cute_cat",((RubyString)runtime.evalScriptlet("\"cute_cats\".delete('s')")).getValue());
+        assertThrows(SyntaxError.class, () -> runtime.evalScriptlet("puts 'you shouldn't see this'"));
         //assertThrows(NameError.class, () -> runtime.evalScriptlet("IO.sysopen('test.tmp')"));
     }
 
