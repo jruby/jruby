@@ -4157,6 +4157,7 @@ public class RubyModule extends RubyObject {
         int patternIndex;
         int index = 0;
         RubyModule mod = this;
+        boolean includeObject = true;
 
         if (value.startsWith(pattern)) {
             mod = runtime.getObject();
@@ -4196,6 +4197,7 @@ public class RubyModule extends RubyObject {
 
             mod = (RubyModule) obj;
             currentOffset = patternIndex + pattern.getRealSize();
+            includeObject = false;
         }
 
         if (mod == null) mod = this; // Bare 'Foo'
@@ -4204,7 +4206,7 @@ public class RubyModule extends RubyObject {
 
         String id = RubySymbol.newConstantSymbol(runtime, fullName, lastSegment).idString();
 
-        return mod.getConstantSkipAutoload(id, inherit, inherit) != null;
+        return mod.getConstantSkipAutoload(id, inherit, inherit && includeObject, false) != null;
     }
 
     // MRI: rb_mod_const_get
@@ -4811,30 +4813,30 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject getConstantNoConstMissing(String name, boolean inherit, boolean includeObject) {
-        IRubyObject constant = iterateConstantNoConstMissing(name, this, inherit, true);
+        IRubyObject constant = iterateConstantNoConstMissing(name, this, inherit, true, true);
 
         if (constant == null && !isClass() && includeObject) {
-            constant = iterateConstantNoConstMissing(name, getRuntime().getObject(), inherit, true);
+            constant = iterateConstantNoConstMissing(name, getRuntime().getObject(), inherit, true, true);
         }
 
         return constant;
     }
 
     public final IRubyObject getConstantNoConstMissingSkipAutoload(String name) {
-        return getConstantSkipAutoload(name, true, true);
+        return getConstantSkipAutoload(name, true, true, true);
     }
 
     @Deprecated
     public IRubyObject getConstantNoConstMissingSKipAutoload(String name) {
-        return getConstantSkipAutoload(name, true, true);
+        return getConstantSkipAutoload(name, true, true, true);
     }
 
     // returns null for autoloads that have failed
-    private IRubyObject getConstantSkipAutoload(String name, boolean inherit, boolean includeObject) {
-        IRubyObject constant = iterateConstantNoConstMissing(name, this, inherit, false);
+    private IRubyObject getConstantSkipAutoload(String name, boolean inherit, boolean searchObject, boolean inheritObject) {
+        IRubyObject constant = iterateConstantNoConstMissing(name, this, inherit, false, inheritObject);
 
-        if (constant == null && !isClass() && includeObject) {
-            constant = iterateConstantNoConstMissing(name, getRuntime().getObject(), inherit, false);
+        if (constant == null && !isClass() && searchObject) {
+            constant = iterateConstantNoConstMissing(name, getRuntime().getObject(), inherit, false, true);
         }
 
         return constant;
@@ -4858,7 +4860,8 @@ public class RubyModule extends RubyObject {
     }
 
     private static IRubyObject iterateConstantNoConstMissing(String name,
-        RubyModule init, boolean inherit, boolean loadConstant) {
+        RubyModule init, boolean inherit, boolean loadConstant, boolean includeObject) {
+        RubyClass objectClass = init.getRuntime().getObject();
         for (RubyModule mod = init; mod != null; mod = mod.getSuperClass()) {
             IRubyObject value =
                     loadConstant ?
@@ -4871,6 +4874,8 @@ public class RubyModule extends RubyObject {
             if ( value != null ) return value;
 
             if ( ! inherit ) break;
+
+            if (!includeObject && mod.getSuperClass() == objectClass) break;
         }
         return null;
     }
