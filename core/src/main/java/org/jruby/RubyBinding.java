@@ -45,6 +45,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.marshal.DataType;
 import org.jruby.util.TypeConverter;
 
 import static org.jruby.util.RubyStringBuilder.str;
@@ -53,7 +54,7 @@ import static org.jruby.util.RubyStringBuilder.str;
  * @author  jpetersen
  */
 @JRubyClass(name="Binding")
-public class RubyBinding extends RubyObject {
+public class RubyBinding extends RubyObject implements DataType {
     private Binding binding;
 
     public RubyBinding(Ruby runtime, RubyClass rubyClass, Binding binding) {
