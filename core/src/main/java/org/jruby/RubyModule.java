@@ -4625,6 +4625,7 @@ public class RubyModule extends RubyObject {
         int patternIndex;
         int index = 0;
         RubyModule mod = this;
+        boolean includeObject = true;
 
         if (value.startsWith(pattern)) {
             mod = objectClass(context);
@@ -4658,6 +4659,7 @@ public class RubyModule extends RubyObject {
 
             mod = (RubyModule) obj;
             currentOffset = patternIndex + pattern.getRealSize();
+            includeObject = false;
         }
 
         if (mod == null) mod = this; // Bare 'Foo'
@@ -4666,7 +4668,7 @@ public class RubyModule extends RubyObject {
 
         String id = RubySymbol.newConstantSymbol(context, fullName, lastSegment).idString();
 
-        return mod.getConstantSkipAutoload(context, id, inherit, inherit) != null;
+        return mod.getConstantSkipAutoload(context, id, inherit, inherit && includeObject, false) != null;
     }
 
     // MRI: rb_mod_const_get
@@ -5370,10 +5372,10 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject getConstantNoConstMissing(ThreadContext context, String name, boolean inherit, boolean includeObject) {
-        IRubyObject constant = iterateConstantNoConstMissing(context, name, this, inherit, true);
+        IRubyObject constant = iterateConstantNoConstMissing(context, name, this, inherit, true, true);
 
         if (constant == null && !isClass() && includeObject) {
-            constant = iterateConstantNoConstMissing(context, name, objectClass(context), inherit, true);
+            constant = iterateConstantNoConstMissing(context, name, objectClass(context), inherit, true, true);
         }
 
         return constant;
@@ -5385,20 +5387,20 @@ public class RubyModule extends RubyObject {
     }
 
     public final IRubyObject getConstantNoConstMissingSkipAutoload(ThreadContext context, String name) {
-        return getConstantSkipAutoload(context, name, true, true);
+        return getConstantSkipAutoload(context, name, true, true, true);
     }
 
     @Deprecated
     public IRubyObject getConstantNoConstMissingSKipAutoload(String name) {
-        return getConstantSkipAutoload(getCurrentContext(), name, true, true);
+        return getConstantSkipAutoload(getCurrentContext(), name, true, true, true);
     }
 
     // returns null for autoloads that have failed
-    private IRubyObject getConstantSkipAutoload(ThreadContext context, String name, boolean inherit, boolean includeObject) {
-        IRubyObject constant = iterateConstantNoConstMissing(context, name, this, inherit, false);
+    private IRubyObject getConstantSkipAutoload(ThreadContext context, String name, boolean inherit, boolean searchObject, boolean inheritObject) {
+        IRubyObject constant = iterateConstantNoConstMissing(context, name, this, inherit, false, inheritObject);
 
-        if (constant == null && !isClass() && includeObject) {
-            constant = iterateConstantNoConstMissing(context, name, objectClass(context), inherit, false);
+        if (constant == null && !isClass() && searchObject) {
+            constant = iterateConstantNoConstMissing(context, name, getRuntime().getObject(), inherit, false, true);
         }
 
         return constant;
@@ -5423,7 +5425,8 @@ public class RubyModule extends RubyObject {
     }
 
     private static IRubyObject iterateConstantNoConstMissing(ThreadContext context, String name,
-                                                             RubyModule init, boolean inherit, boolean loadConstant) {
+        RubyModule init, boolean inherit, boolean loadConstant, boolean includeObject) {
+        RubyClass objectClass = init.getRuntime().getObject();
         for (RubyModule mod = init; mod != null; mod = mod.getSuperClass()) {
             IRubyObject value = loadConstant ?
                     mod.getConstantWithAutoload(context, name, null, true) :
@@ -5434,6 +5437,8 @@ public class RubyModule extends RubyObject {
             if (value != null) return value;
 
             if (!inherit) break;
+
+            if (!includeObject && mod.getSuperClass() == objectClass) break;
         }
         return null;
     }
