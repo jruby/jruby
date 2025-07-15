@@ -16,6 +16,7 @@ import org.jruby.RubyNil;
 import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.AttrReaderMethod;
 import org.jruby.internal.runtime.methods.AttrWriterMethod;
@@ -829,7 +830,26 @@ public abstract class InvokeSite extends MutableCallSite {
 
         SmartHandle callInfoWrapper;
         SmartBinder baseBinder = SmartBinder.from(signature.changeReturn(void.class)).permute("context");
-        if (flags == 0) {
+
+        // if target method takes keywords and we are passing them, set callInfo
+        boolean acceptsKeywords = true;
+        DynamicMethod method = entry.method;
+
+        if (method instanceof AbstractIRMethod irMethod && irMethod.getRuby2Keywords()) {
+            // Ruby methods with ruby2_keywords don't use formal keywords
+            acceptsKeywords = false;
+        } else if (method instanceof NativeCallMethod nativeMethod && nativeMethod.getNativeCall() != null) {
+            // native methods accept keywords only if specified
+            DynamicMethod.NativeCall nativeCall = nativeMethod.getNativeCall();
+            JRubyMethod jrubyMethod = nativeCall.getMethod().getAnnotation(JRubyMethod.class);
+            if (jrubyMethod != null) {
+                acceptsKeywords = jrubyMethod.keywords();
+            } else {
+                acceptsKeywords = false;
+            }
+        }
+
+        if (flags == 0 || !acceptsKeywords) {
             callInfoWrapper = baseBinder.invokeStaticQuiet(LOOKUP, ThreadContext.class, "clearCallInfo");
         } else {
             callInfoWrapper = baseBinder.append("flags", flags).invokeStaticQuiet(LOOKUP, IRRuntimeHelpers.class, "setCallInfo");

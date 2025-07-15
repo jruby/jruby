@@ -1073,4 +1073,8 @@ describe "Marshal.dump" do
     m = Mutex.new
     -> { Marshal.dump(m) }.should raise_error(TypeError)
   end
+
+  it "raises a TypeError if dumping a Binding instance" do
+    -> { Marshal.dump(binding) }.should raise_error(TypeError)
+  end
 end
