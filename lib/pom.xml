@@ -1375,8 +1375,6 @@ DO NOT MODIFY - GENERATED CODE
           <include>lib/ruby/stdlib/**</include>
         </includes>
         <excludes>
-          <exclude>bin/ruby</exclude>
-          <exclude>bin/jruby</exclude>
           <exclude>bin/jruby*_*</exclude>
           <exclude>bin/jruby*-*</exclude>
           <exclude>**/.*</exclude>
