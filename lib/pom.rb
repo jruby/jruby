@@ -440,7 +440,7 @@ project 'JRuby Lib Setup' do
     resource do
       directory '${basedir}/..'
       includes 'bin/*', 'lib/ruby/include/**', 'lib/ruby/stdlib/**'
-      excludes 'bin/ruby', 'bin/jruby', 'bin/jruby*_*', 'bin/jruby*-*', '**/.*',
+      excludes 'bin/jruby*_*', 'bin/jruby*-*', '**/.*',
                'lib/ruby/stdlib/rubygems/defaults/jruby_native.rb',
                'lib/ruby/stdlib/gauntlet*.rb' # gauntlet_rdoc.rb, gauntlet_rubygems.rb
       target_path '${jruby.complete.home}'
