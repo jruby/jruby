@@ -77,7 +77,7 @@ public class ArrayDerefInvokeSite extends NormalInvokeSite {
             // strdup for this call
             args[0] = dupString(context, (RubyString) args[0]);
 
-            if (methodMissing(entry, caller)) {
+            if (methodMissing(method, methodName, callType, caller)) {
                 return callMethodMissing(entry, callType, context, self, selfClass, methodName, args, block);
             }
 
@@ -130,7 +130,7 @@ public class ArrayDerefInvokeSite extends NormalInvokeSite {
 
         entry = selfClass.searchWithCache(name);
 
-        if (methodMissing(entry, caller)) {
+        if (methodMissing(entry.method, methodName, callType, caller)) {
             return callMethodMissing(entry, callType, context, self, selfClass, name, arg0, block);
         }
 
