@@ -11,7 +11,7 @@ DO NOT MODIFY - GENERATED CODE
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.jruby</groupId>
   <artifactId>jruby-parent</artifactId>
-  <version>10.0.1.0-SNAPSHOT</version>
+  <version>10.0.1.0</version>
   <packaging>pom</packaging>
   <name>JRuby</name>
   <description>JRuby is the effort to recreate the Ruby (https://www.ruby-lang.org) interpreter in Java.</description>
@@ -268,6 +268,9 @@ DO NOT MODIFY - GENERATED CODE
                   <requireMavenVersion>
                     <version>[3.3.0,)</version>
                   </requireMavenVersion>
+                  <requireReleaseDeps>
+                    <message>No Snapshots Allowed!</message>
+                  </requireReleaseDeps>
                 </rules>
               </configuration>
             </execution>
