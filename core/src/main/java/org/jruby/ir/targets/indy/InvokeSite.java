@@ -832,12 +832,12 @@ public abstract class InvokeSite extends MutableCallSite {
         SmartBinder baseBinder = SmartBinder.from(signature.changeReturn(void.class)).permute("context");
 
         // if target method takes keywords and we are passing them, set callInfo
-        boolean acceptsKeywords = true;
+        boolean acceptsKeywords;
         DynamicMethod method = entry.method;
 
-        if (method instanceof AbstractIRMethod irMethod && irMethod.getRuby2Keywords()) {
-            // Ruby methods with ruby2_keywords don't use formal keywords
-            acceptsKeywords = false;
+        if (method instanceof AbstractIRMethod irMethod) {
+            // Ruby methods handle clearing kwargs flags on their own
+            acceptsKeywords = true;
         } else if (method instanceof NativeCallMethod nativeMethod && nativeMethod.getNativeCall() != null) {
             // native methods accept keywords only if specified
             DynamicMethod.NativeCall nativeCall = nativeMethod.getNativeCall();
@@ -847,6 +847,8 @@ public abstract class InvokeSite extends MutableCallSite {
             } else {
                 acceptsKeywords = false;
             }
+        } else {
+            acceptsKeywords = true;
         }
 
         if (flags == 0 || !acceptsKeywords) {
