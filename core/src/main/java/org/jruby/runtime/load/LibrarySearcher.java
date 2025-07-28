@@ -965,7 +965,7 @@ public class LibrarySearcher {
                 script.setFileName(scriptName);
                 runtime.loadScope(script, wrap);
             } catch(IOException e) {
-                throw runtime.newLoadError("no such file to load -- " + searchName, searchName);
+                throw runtime.newLoadError("cannot load such file -- " + searchName, searchName);
             }
         }
     }

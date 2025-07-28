@@ -358,7 +358,7 @@ public class LoadService {
         int currentLine = runtime.getCurrentLine();
         try {
             if(!runtime.getProfile().allowLoad(file)) {
-                throw runtime.newLoadError("no such file to load -- " + file, file);
+                throw runtime.newLoadError("cannot load such file -- " + file, file);
             }
 
             LibrarySearcher.FoundLibrary library = librarySearcher.findLibraryForLoad(file);
@@ -367,7 +367,7 @@ public class LoadService {
             if (library == null) {
                 FileResource fileResource = JRubyFile.createResourceAsFile(runtime, file);
 
-                if (!fileResource.exists()) throw runtime.newLoadError("no such file to load -- " + file, file);
+                if (!fileResource.exists()) throw runtime.newLoadError("cannot load such file -- " + file, file);
 
                 library = new LibrarySearcher.FoundLibrary(file, file, LibrarySearcher.ResourceLibrary.create(file, file, fileResource));
             }
@@ -393,7 +393,7 @@ public class LoadService {
 
             LoadServiceResource resource = getClassPathResource(classLoader, file);
 
-            if (resource == null) throw runtime.newLoadError("no such file to load -- " + file);
+            if (resource == null) throw runtime.newLoadError("cannot load such file -- " + file);
 
             String loadName = resolveLoadName(resource, file);
             LibrarySearcher.FoundLibrary library =
@@ -544,14 +544,14 @@ public class LoadService {
         checkEmptyLoad(file);
 
         if (!runtime.getProfile().allowRequire(file)) {
-            throw runtime.newLoadError("no such file to load -- " + file, file);
+            throw runtime.newLoadError("cannot load such file -- " + file, file);
         }
 
         LibrarySearcher.FoundLibrary[] libraryHolder = {null};
         char found = searchForRequire(file, libraryHolder);
 
         if (found == 0) {
-            throw runtime.newLoadError("no such file to load -- " + file, file);
+            throw runtime.newLoadError("cannot load such file -- " + file, file);
         }
 
         LibrarySearcher.FoundLibrary library = libraryHolder[0];
@@ -695,7 +695,7 @@ public class LoadService {
 
     protected void checkEmptyLoad(String file) throws RaiseException {
         if (file.isEmpty()) {
-            throw runtime.newLoadError("no such file to load -- " + file, file);
+            throw runtime.newLoadError("cannot load such file -- " + file, file);
         }
     }
 
