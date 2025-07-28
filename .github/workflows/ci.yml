@@ -39,6 +39,34 @@ jobs:
       - name: rake ${{ matrix.target }}
         run: bin/jruby -S rake ${{ matrix.target }}
 
+  repeat-specs:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+
+    name: run specs repeatedly to test optimizations
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: remove default java except 21
+        run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
+      - name: set up java 21
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: 21
+          cache: 'maven'
+      - name: bootstrap
+        run: mvn -ntp -Pbootstrap clean package
+      - name: bundle install
+        run: bin/jruby --dev -S bundle install
+      - name: run specs
+        env:
+          JAVA_OPTS: '-XX:TieredStopAtLevel=1'
+        run: bin/jruby spec/mspec/bin/mspec ci -R 4 -T-Xjit.threshold=0 :language
+
   jruby-tests-dev:
     runs-on: ubuntu-latest
 
