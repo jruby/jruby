@@ -3,6 +3,7 @@ package org.jruby.ir.targets.simple;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.instructions.AsStringInstr;
@@ -503,5 +504,15 @@ public class NormalInvocationCompiler implements InvocationCompiler {
     public void invokeFrameName(String methodName, String file) {
         // direct __method__ and __callee__ calls always use indy
         IndyInvocationCompiler.invokeFrameName(compiler, methodName, file);
+    }
+
+    @Override
+    public void respondTo(CallBase callBase, RubySymbol id, String scopeFieldName, String file) {
+        compiler.getValueCompiler().pushSymbol(id.getBytes());
+        if (callBase.getCallType().isSelfCall()) {
+            invokeSelf(file, scopeFieldName, callBase, 1);
+        } else {
+            invokeOther(file, scopeFieldName, callBase, 1);
+        }
     }
 }
