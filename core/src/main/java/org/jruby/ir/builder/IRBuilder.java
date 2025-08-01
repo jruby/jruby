@@ -1807,7 +1807,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
     protected Operand buildNthRef(int matchNumber) {
-        return copy(new NthRef(scope, matchNumber));
+        return addResultInstr(new BuildNthRefInstr(temp(), matchNumber));
     }
 
     // FIXME: The logic for lazy and non-lazy building is pretty icky...clean up
