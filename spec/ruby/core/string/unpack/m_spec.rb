@@ -180,6 +180,14 @@ describe "String#unpack with format 'm'" do
     "dGV%zdA==".unpack("m").should == ["test"]
   end
 
+  it "correctly decodes inputs longer than 2^31 / 3 characters" do
+    ("X" * (2 ** 31 / 3 + 98)).unpack("m").first.length.should == 536870985
+  end
+
+  it "correctly decodes inputs longer than 2^32 / 3 characters" do
+    ("X" * (2 ** 32 / 3 + 99)).unpack("m").first.length.should == 1073741898
+  end
+
   describe "when given count 0" do
     it "decodes base64" do
       "dGVzdA==".unpack("m0").should == ["test"]
@@ -187,6 +195,14 @@ describe "String#unpack with format 'm'" do
 
     it "raises an ArgumentError for an invalid base64 character" do
       -> { "dGV%zdA==".unpack("m0") }.should raise_error(ArgumentError)
+    end
+
+    it "correctly decodes inputs longer than 2^31 / 3 characters" do
+      ("X" * (2 ** 31 / 3 + 98)).unpack("m0").first.length.should == 536870985
+    end
+
+    it "correctly decodes inputs longer than 2^32 / 3 characters" do
+      ("X" * (2 ** 32 / 3 + 99)).unpack("m0").first.length.should == 1073741898
     end
   end
 end

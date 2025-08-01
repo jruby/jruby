@@ -66,7 +66,7 @@ public class Pack {
      **/
     private static final String NATIVE_CODES = "sSiIlLjJ";
     private static final String MAPPED_CODES = "sSiIqQjJ";
-    
+
     private static final char BE = '>' + 127; // 189, bumped up to avoid collisions with LE
     private static final char LE = '<'; // 60
     private static final String ENDIANESS_CODES = new String(new char[] {
@@ -169,7 +169,7 @@ public class Pack {
             @Override
             public void encode(Ruby runtime, IRubyObject o, ByteList result){
                 encodeDoubleLittleEndian(result, obj2dbl(runtime, o));
-            }               
+            }
         };
         // double precision, big-endian
         converters['G'] = new Converter(8) {
@@ -209,7 +209,7 @@ public class Pack {
             @Override
             public void encode(Ruby runtime, IRubyObject o, ByteList result){
                 encodeShortLittleEndian(result, overflowQuad(num2quad(o)));
-            }            
+            }
         };
         converters['v'] = tmp;
         converters['S' + LE] = tmp;
@@ -302,7 +302,7 @@ public class Pack {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
                 return runtime.newFixnum(decodeIntUnsignedLittleEndian(enc));
             }
-            
+
             public void encode(Ruby runtime, IRubyObject o, ByteList result){
                 encodeIntLittleEndian(result, (int) RubyNumeric.num2long(o));
             }
@@ -317,7 +317,7 @@ public class Pack {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
                 return runtime.newFixnum(decodeIntUnsignedBigEndian(enc));
             }
-            
+
             public void encode(Ruby runtime, IRubyObject o, ByteList result){
                 encodeIntBigEndian(result, (int) RubyNumeric.num2long(o));
             }
@@ -638,7 +638,7 @@ public class Pack {
      *       Note that if passed a block, this method will return null and instead yield results to the block.
      *       The directives <code>sSiIlL</code> may each be followed by an underscore (``<code>_</code>'') to use the underlying platform's native size for the specified type; otherwise, it uses a platform-independent consistent size.  <br>
      *       Spaces are ignored in the format string.
-     * 
+     *
      *       <table border="1"><caption style="display:none">layout table</caption>
      *           <tr>
      *             <td>
@@ -889,7 +889,7 @@ public class Pack {
         if (length % 4 != 0) throw runtime.newArgumentError("invalid base64");
 
         int p = begin;
-        byte[] out = new byte[3 * ((length + 3) / 4)];
+        byte[] out = new byte[unpackUMMaxOutputBytes(length)];
 
         while (p < end && s != '=') {
             // obtain a
@@ -1001,10 +1001,10 @@ public class Pack {
                     throw runtime.newArgumentError("'" + next + "' allowed only after types " + NATIVE_CODES);
                 }
                 type = MAPPED_CODES.charAt(index);
-                
+
                 next = safeGet(format);
             }
-            
+
             if (next == '>' || next == '<') {
                 next = next == '>' ? BE : LE;
                 int index = ENDIANESS_CODES.indexOf(type + next);
@@ -1388,7 +1388,7 @@ public class Pack {
     }
 
     private static IRubyObject unpack_u(ThreadContext context, Block block, RubyArray result, ByteBuffer encode, int mode) {
-        int length = encode.remaining() * 3 / 4;
+        int length = unpackUMMaxOutputBytes(encode.remaining());
         byte[] lElem = new byte[length];
         int index = 0;
         int s = 0;
@@ -1451,6 +1451,10 @@ public class Pack {
             }
         }
         return appendOrYield(context, block, result, new ByteList(lElem, 0, index, ASCII, false), mode);
+    }
+
+    private static int unpackUMMaxOutputBytes(int length) {
+        return (int)((long)length * 3 / 4);  // If we don't cast to long here, the multiplication can overflow!
     }
 
     private static IRubyObject unpack_H(ThreadContext context, Block block, RubyArray result, ByteBuffer encode, int occurrences, int mode) {
@@ -1679,7 +1683,7 @@ public class Pack {
         if ((c & 0x40) == 0) {
             throw new IllegalArgumentException("malformed UTF-8 character");
         }
-        
+
       if      ((uv & 0x20) == 0) { n = 2; uv &= 0x1f; }
       else if ((uv & 0x10) == 0) { n = 3; uv &= 0x0f; }
       else if ((uv & 0x08) == 0) { n = 4; uv &= 0x07; }
@@ -1731,10 +1735,10 @@ public class Pack {
     public static int safeGet(ByteBuffer encode) {
         while (encode.hasRemaining()) {
             int got = encode.get() & 0xff;
-            
+
             if (got != 0) return got;
         }
-        
+
         return 0;
     }
 
@@ -1814,12 +1818,12 @@ public class Pack {
         public Converter(int size) {
             this(size, null);
         }
-        
+
         public Converter(int size, String type) {
             this.size = size;
             this.type = type;
         }
-        
+
         public String getType() {
             return type;
         }
@@ -1832,7 +1836,7 @@ public class Pack {
         public QuadConverter(int size, String type) {
             super(size, type);
         }
-        
+
         public QuadConverter(int size) {
             super(size);
         }
@@ -1950,7 +1954,7 @@ public class Pack {
 
                 next = safeGet(format);
             }
-            
+
             if (next == '>' || next == '<') {
                 next = next == '>' ? BE : LE;
                 int index = ENDIANESS_CODES.indexOf(type + next);
