@@ -935,7 +935,7 @@ public class Pack {
                 out[index++] = (byte)((b << 4 | c >> 2) & 255);
             }
         }
-        return runtime.newString(new ByteList(out, 0, index));
+        return runtime.newString(new ByteList(out, 0, index, false));
     }
 
     public static IRubyObject unpack1WithBlock(ThreadContext context, RubyString encoded, ByteList formatString, Block block) {
@@ -1254,7 +1254,7 @@ public class Pack {
     }
 
     private static IRubyObject unpack_m(ThreadContext context, Block block, Ruby runtime, RubyArray result, ByteBuffer encode, int occurrences, int mode) {
-        int length = encode.remaining()*3/4;
+        int length = unpackUMMaxOutputBytes(encode.remaining());
         byte[] lElem = new byte[length];
         int a = -1, b = -1, c = 0, d;
         int index = 0;
