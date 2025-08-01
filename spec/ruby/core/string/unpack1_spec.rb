@@ -31,4 +31,25 @@ describe "String#unpack1" do
   it "raises an ArgumentError when the offset is larger than the string bytesize" do
     -> { "a".unpack1("C", offset: 2) }.should raise_error(ArgumentError, "offset outside of string")
   end
+
+  context "with format 'm0'" do
+    # unpack1("m0") takes a special code path that calls Pack.unpackBase46Strict instead of Pack.unpack_m,
+    # which is why we repeat the tests for unpack("m0") here.
+
+    it "decodes base64" do
+      "dGVzdA==".unpack1("m0").should == "test"
+    end
+
+    it "raises an ArgumentError for an invalid base64 character" do
+      -> { "dGV%zdA==".unpack1("m0") }.should raise_error(ArgumentError)
+    end
+
+    it "correctly decodes inputs longer than 2^31 / 3 characters" do
+      ("X" * (2 ** 31 / 3 + 98)).unpack1("m0").length.should == 536870985
+    end
+
+    it "correctly decodes inputs longer than 2^32 / 3 characters" do
+      ("X" * (2 ** 32 / 3 + 99)).unpack1("m0").length.should == 1073741898
+    end
+  end
 end
