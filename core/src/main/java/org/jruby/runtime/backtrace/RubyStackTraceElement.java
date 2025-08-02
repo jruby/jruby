@@ -60,6 +60,10 @@ public class RubyStackTraceElement implements java.io.Serializable {
         return lineNumber;
     }
 
+    public String getFileAndLine() {
+        return "" + fileName + ":" + lineNumber;
+    }
+
     public final String getMethodName() {
         return methodName;
     }

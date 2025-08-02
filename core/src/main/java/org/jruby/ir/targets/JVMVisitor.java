@@ -1163,7 +1163,7 @@ public class JVMVisitor extends IRVisitor {
                 jvmAdapter().invokevirtual(p(ThreadContext.class), "match_last", sig(IRubyObject.class));
                 break;
             default:
-                assert false: "backref with invalid type";
+                throw new NotCompilableException("backref with invalid type");
         }
         jvmStoreLocal(instr.getResult());
     }
@@ -1230,6 +1230,14 @@ public class JVMVisitor extends IRVisitor {
 
         m.getDynamicValueCompiler().pushDRegexp(r, options, operands.length);
 
+        jvmStoreLocal(instr.getResult());
+    }
+
+    @Override
+    public void BuildNthRefInstr(BuildNthRefInstr instr) {
+        jvmMethod().loadContext();
+        jvmAdapter().pushInt(instr.group);
+        jvmMethod().invokeIRHelper("nthMatch", sig(IRubyObject.class, ThreadContext.class, int.class));
         jvmStoreLocal(instr.getResult());
     }
 
@@ -2868,12 +2876,6 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().getValueCompiler().pushNil();
     }
 
-    @Override
-    public void NthRef(NthRef nthref) {
-        jvmMethod().loadContext();
-        jvmAdapter().pushInt(nthref.matchNumber);
-        jvmMethod().invokeIRHelper("nthMatch", sig(IRubyObject.class, ThreadContext.class, int.class));
-    }
 
     @Override
     public void NullBlock(NullBlock nullblock) {

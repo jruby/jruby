@@ -25,6 +25,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.EnumSet;
 
+import static org.jruby.ir.IRFlags.REQUIRES_BACKREF;
 import static org.jruby.ir.IRFlags.REQUIRES_CLASS;
 
 public class RuntimeHelperCall extends NOperandResultBaseInstr {
@@ -71,6 +72,9 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
         if (helperMethod == Methods.IS_DEFINED_SUPER) {
             modifiedScope = true;
             flags.add(REQUIRES_CLASS);
+        } else if (helperMethod == Methods.IS_DEFINED_BACKREF || helperMethod == Methods.IS_DEFINED_NTH_REF) {
+            modifiedScope = true;
+            flags.add(REQUIRES_BACKREF);
         }
 
         return modifiedScope;

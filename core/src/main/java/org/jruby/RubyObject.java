@@ -374,7 +374,7 @@ public class RubyObject extends RubyBasicObject {
             file = args[1].convertToString().asJavaString();
             line = args.length > 2 ? toInt(context, args[2]) - 1 : 0;
         } else {
-            file = "(eval at " + context.getFileAndLine() + ")";
+            file = "(eval at " + context.getSingleBacktrace().getFileAndLine() + ")";
             line = 0;
         }
 

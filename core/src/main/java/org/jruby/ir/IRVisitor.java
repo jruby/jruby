@@ -49,6 +49,7 @@ public abstract class IRVisitor {
     public void BuildCompoundArrayInstr(BuildCompoundArrayInstr instr) { error(instr); }
     public void BuildCompoundStringInstr(BuildCompoundStringInstr instr) { error(instr); }
     public void BuildDynRegExpInstr(BuildDynRegExpInstr instr) { error(instr); }
+    public void BuildNthRefInstr(BuildNthRefInstr instr) { error(instr); }
     public void BuildRangeInstr(BuildRangeInstr instr) { error(instr); }
     public void BuildSplatInstr(BuildSplatInstr instr) { error(instr); }
     public void CallInstr(CallInstr callinstr) { error(callinstr); }
@@ -189,7 +190,6 @@ public abstract class IRVisitor {
     public void Label(Label label) { error(label); }
     public void LocalVariable(LocalVariable localvariable) { error(localvariable); }
     public void Nil(Nil nil) { error(nil); }
-    public void NthRef(NthRef nthref) { error(nthref); }
     public void NullBlock(NullBlock nullblock) { error(nullblock); }
     public void Range(Range range) { error(range); }
     public void Rational(Rational rational) { error(rational); }
