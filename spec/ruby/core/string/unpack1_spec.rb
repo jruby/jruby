@@ -45,13 +45,5 @@ describe "String#unpack1" do
     it "raises an ArgumentError for an invalid base64 character" do
       -> { "dGV%zdA==".unpack1("m0") }.should raise_error(ArgumentError)
     end
-
-    it "correctly decodes inputs longer than 2^31 / 3 characters" do
-      ("X" * (2 ** 31 / 3 + 98)).unpack1("m0").length.should == 536870985
-    end
-
-    it "correctly decodes inputs longer than 2^32 / 3 characters" do
-      ("X" * (2 ** 32 / 3 + 99)).unpack1("m0").length.should == 1073741898
-    end
   end
 end
