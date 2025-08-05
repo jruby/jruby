@@ -28,6 +28,7 @@ import org.jruby.RubyRational;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.api.Convert;
 import org.jruby.api.Create;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
@@ -2446,7 +2447,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static RubyString asString(ThreadContext context, IRubyObject caller, IRubyObject target, CallSite site) {
         IRubyObject str = site.call(context, caller, target);
-        return str instanceof RubyString string ? string : (RubyString) target.anyToString();
+        return str instanceof RubyString string ? string : (RubyString) Convert.anyToString(context, target);
     }
 
     @JIT
