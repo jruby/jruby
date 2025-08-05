@@ -1244,9 +1244,7 @@ public abstract class InvokeSite extends MutableCallSite {
         MethodHandle mh = null;
         DynamicMethod method = entry.method;
 
-        if (method == self.getRuntime().getBaseNewMethod()) {
-            RubyClass recvClass = (RubyClass) self;
-
+        if (method == self.getRuntime().getBaseNewMethod() && self instanceof RubyClass recvClass && recvClass.getAllocator() != null) {
             // Bind a second site as a dynamic invoker to guard against changes in new object's type
             MethodType type = type();
             if (!functional) type = type.dropParameterTypes(1, 2);
