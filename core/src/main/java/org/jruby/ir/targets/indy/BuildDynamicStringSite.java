@@ -71,20 +71,20 @@ public class BuildDynamicStringSite extends MutableCallSite {
         Binder binder = Binder.from(type);
 
         int dynamicArgs = type.parameterCount() - 1;
-        int[] permute = new int[3 * dynamicArgs + 1]; // context followed by context, arg, arg triplets
+        int to_sArgCount = 2;
+        int[] permute = new int[to_sArgCount * dynamicArgs + 1]; // context followed by context, arg, arg triplets
         permute[0] = 0;
         for (int i = 0; i < dynamicArgs; i++) {
-            int base = i * 3 + 1;
+            int base = i * to_sArgCount + 1;
             permute[base] = 0;
             permute[base + 1] = i + 1;
-            permute[base + 2] = i + 1;
         }
         binder = binder.permute(permute);
 
         // now collect them by binding to AsStringSite
         for (int i = 0; i < dynamicArgs; i++) {
             // separate filter for each dynamic argument, so they can type profile independently
-            binder = binder.collect(i + 1, 3, IRubyObject.class, constructGuardedToStringFilter());
+            binder = binder.collect(i + 1, to_sArgCount, IRubyObject.class, constructGuardedToStringFilter());
         }
 
         boolean specialize = elementCount <= MAX_ELEMENTS_FOR_SPECIALIZE1;
@@ -126,17 +126,17 @@ public class BuildDynamicStringSite extends MutableCallSite {
 
     private static MethodHandle constructGuardedToStringFilter() {
         // create an invoke site for the to_s call
-        MethodType toSType = MethodType.methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class);
-        CallSite toS = NormalInvokeSite.bootstrap(MethodHandles.lookup(), "invokeOther:to_s", toSType, 0, 0, "", -1);
+        MethodType toSType = MethodType.methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class);
+        CallSite toS = SelfInvokeSite.bootstrap(MethodHandles.lookup(), "invokeFunctional:to_s", toSType, 0, 0, "", -1);
         MethodHandle toS_handle = toS.dynamicInvoker();
 
         // guarded with "Appendable" interface for trivially-appendable types
         MethodHandle checkcast = Binder.from(toSType.changeReturnType(boolean.class))
-                .permute(2)
+                .permute(1)
                 .cast(boolean.class, Object.class)
                 .prepend(Appendable.class)
                 .invokeVirtualQuiet("isInstance");
-        MethodHandle guardedToS = MethodHandles.guardWithTest(checkcast, Binder.from(toSType).permute(2).identity(), toS_handle);
+        MethodHandle guardedToS = MethodHandles.guardWithTest(checkcast, Binder.from(toSType).permute(1).identity(), toS_handle);
 
         return guardedToS;
     }

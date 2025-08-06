@@ -1278,7 +1278,7 @@ public class RubyKernel {
                 binding.setLine(0);
             }
         } else {  // no explicit file/line argument given
-            binding.setFile("(eval at " + context.getFileAndLine() + ")");
+            binding.setFile("(eval at " + context.getSingleBacktrace().getFileAndLine() + ")");
             binding.setLine(0);
         }
 
