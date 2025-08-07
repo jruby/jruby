@@ -36,7 +36,6 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
-import org.jruby.RubyNumeric;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -52,6 +51,7 @@ import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Convert.toLong;
+import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newEmptyString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.indexError;
@@ -1933,7 +1933,7 @@ abstract public class AbstractMemory extends MemoryObject {
     @JRubyMethod(name = { "get_array_of_string" })
     public IRubyObject get_array_of_string(ThreadContext context, IRubyObject rbOffset) {
         final int POINTER_SIZE = (Platform.getPlatform().addressSize() / 8);
-        final var arr = Create.allocArray(context, (size - POINTER_SIZE) / POINTER_SIZE);
+        final RubyArray arr = newArray(context);
 
         for (long off = getOffset(rbOffset); off <= size - POINTER_SIZE; off += POINTER_SIZE) {
             final MemoryIO mem = getMemoryIO().getMemoryIO(off);
