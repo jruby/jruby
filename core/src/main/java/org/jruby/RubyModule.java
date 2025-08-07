@@ -2965,6 +2965,7 @@ public class RubyModule extends RubyObject {
                 // Ask closure to give us a method equivalent.
                 IRMethod method = closure.convertToMethod(name.getBytes());
                 if (method != null) {
+                    System.out.println("Converted closure to method: " + method.getName());
                     var newMethod = new DefineMethodMethod(method, visibility, this, context.getFrameBlock());
                     Helpers.addInstanceMethod(this, name, newMethod, visibility, context);
                     return name;
