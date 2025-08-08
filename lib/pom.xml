@@ -73,7 +73,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>cgi</artifactId>
-      <version>0.4.1</version>
+      <version>0.4.2</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -1121,7 +1121,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/rubygems-update-3.6.9*</include>
           <include>specifications/benchmark-0.4.0*</include>
           <include>specifications/bundler-2.6.9*</include>
-          <include>specifications/cgi-0.4.1*</include>
+          <include>specifications/cgi-0.4.2*</include>
           <include>specifications/date-3.4.1*</include>
           <include>specifications/delegate-0.4.0*</include>
           <include>specifications/did_you_mean-2.0.0*</include>
@@ -1203,7 +1203,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/rubygems-update-3.6.9*/**/*</include>
           <include>gems/benchmark-0.4.0*/**/*</include>
           <include>gems/bundler-2.6.9*/**/*</include>
-          <include>gems/cgi-0.4.1*/**/*</include>
+          <include>gems/cgi-0.4.2*/**/*</include>
           <include>gems/date-3.4.1*/**/*</include>
           <include>gems/delegate-0.4.0*/**/*</include>
           <include>gems/did_you_mean-2.0.0*/**/*</include>
@@ -1285,7 +1285,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/rubygems-update-3.6.9*</include>
           <include>cache/benchmark-0.4.0*</include>
           <include>cache/bundler-2.6.9*</include>
-          <include>cache/cgi-0.4.1*</include>
+          <include>cache/cgi-0.4.2*</include>
           <include>cache/date-3.4.1*</include>
           <include>cache/delegate-0.4.0*</include>
           <include>cache/did_you_mean-2.0.0*</include>
