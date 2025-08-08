@@ -27,7 +27,7 @@ This will run the default "install" goal (`mvn install`) and will do all of the 
 
 * Compile JRuby
 * Build `lib/jruby.jar`, needed for running at command line
-* It will install the default gems specifications `lib/ruby/gems/shared/specifications/default/` and the ruby files of those gems in `lib/ruby/stdlib/`.
+* It will install the default gems specifications `lib/pom.rb` and the ruby files of those gems in `lib/ruby/stdlib/`.
 
 The environment is now suitable for running Ruby applications.
 
