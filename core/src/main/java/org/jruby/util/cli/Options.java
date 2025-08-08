@@ -29,6 +29,8 @@
 
 package org.jruby.util.cli;
 
+import java.io.Console;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -56,7 +58,28 @@ import static org.jruby.RubyInstanceConfig.CompileMode;
  */
 public class Options {
     private static final List<Option> _loadedOptions = new ArrayList<>(240);
-    private static final boolean COLOR = System.console() != null;
+    private static final boolean COLOR;
+
+    static {
+        boolean isatty;
+        Console console = System.console();
+
+        if (console == null) {
+            isatty = false;
+        } else if (Integer.parseInt(SafePropertyAccessor.getProperty("java.specification.version", "21")) <= 21) {
+            isatty = true;
+        } else {
+            // Java 22 always returns a Console so we have to check for tty with isTerminal()
+            try {
+                isatty = (Boolean) Console.class.getMethod("isTerminal").invoke(console);
+            } catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException |
+                     InvocationTargetException e) {
+                isatty = false;
+            }
+        }
+
+        COLOR = isatty;
+    }
 
     public static final String IR_PRINT_PATTERN_NO_PATTERN_STRING = "<NO_PATTERN>";
 
