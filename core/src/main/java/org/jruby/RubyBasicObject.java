@@ -30,6 +30,7 @@ package org.jruby;
 
 import org.jcodings.Encoding;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Convert;
 import org.jruby.api.Create;
 import org.jruby.api.JRubyAPI;
 import org.jruby.ast.util.ArgsUtil;
@@ -680,7 +681,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      * First converts this object into a String using the "to_s"
      * method and returns it. If
-     * to_s doesn't return a Ruby String, {@link #anyToString} is used
+     * to_s doesn't return a Ruby String, {@link Convert#anyToString} is used
      * instead.
      */
     @Override
@@ -690,7 +691,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         BasicObjectSites sites = sites(context);
         IRubyObject str = sites.to_s.call(context, this, this);
 
-        if (!(str instanceof RubyString)) return (RubyString) anyToString();
+        if (!(str instanceof RubyString)) return Convert.anyToString(context, this);
         return (RubyString) str;
     }
 
@@ -789,20 +790,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     @Override
     public IRubyObject anyToString() {
         Ruby runtime = metaClass.runtime;
-
-        /* 6:tags 16:addr 1:eos */
-        String hex = Integer.toHexString(System.identityHashCode(this));
-        ByteList className = metaClass.getRealClass().toRubyString(runtime.getCurrentContext()).getByteList();
-        ByteList bytes = new ByteList(2 + className.realSize() + 3 + hex.length() + 1);
-        bytes.setEncoding(className.getEncoding());
-        bytes.append('#').append('<');
-        bytes.append(className);
-        bytes.append(':').append('0').append('x');
-        bytes.append(hex.getBytes());
-        bytes.append('>');
-
-        RubyString str = RubyString.newString(runtime, bytes);
-        return str;
+        return Convert.anyToString(runtime.getCurrentContext(), this);
     }
 
     /**
@@ -2646,7 +2634,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *  initial execution context of Ruby programs returns ``main.''
      */
     public IRubyObject to_s(ThreadContext context) {
-    	return anyToString();
+    	return Convert.anyToString(context, this);
     }
 
     /* rb_any_to_a

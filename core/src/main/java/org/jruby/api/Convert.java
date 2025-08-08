@@ -1,5 +1,6 @@
 package org.jruby.api;
 
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
@@ -635,5 +636,27 @@ public class Convert {
      */
     public static RubySymbol toSymbol(ThreadContext context, IRubyObject arg) {
         return RubySymbol.toSymbol(context, arg);
+    }
+
+    /**
+     * Produce a string from a given object using its type identity.
+     *
+     * Equivalent to RubyBasicObject#anyToString but without re-acquiring context.
+     *
+     * @return The object represented as a hashy type string.
+     */
+    public static RubyString anyToString(ThreadContext context, IRubyObject obj) {
+        /* 6:tags 16:addr 1:eos */
+        String hex = Integer.toHexString(System.identityHashCode(obj));
+        ByteList className = obj.getType().toRubyString(context).getByteList();
+        ByteList bytes = new ByteList(2 + className.realSize() + 3 + hex.length() + 1);
+        bytes.setEncoding(className.getEncoding());
+        bytes.append('#').append('<');
+        bytes.append(className);
+        bytes.append(':').append('0').append('x');
+        bytes.append(hex.getBytes());
+        bytes.append('>');
+
+        return Create.newString(context, bytes);
     }
 }

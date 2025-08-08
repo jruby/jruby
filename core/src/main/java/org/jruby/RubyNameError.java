@@ -162,7 +162,7 @@ public class RubyNameError extends RubyStandardError {
                             if (object == runtime.getTopSelf()) {
                                 className = RubyString.newString(runtime, "main");
                             } else {
-                                className = (RubyString) object.anyToString();
+                                className = (RubyString) Convert.anyToString(context, object);
                             }
                             // we have our string, break out to final composition
                             break;
@@ -189,7 +189,7 @@ public class RubyNameError extends RubyStandardError {
             if (tmp == UNDEF || tmp.isNil()) tmp = tryInspect(context, object);
             if (tmp == UNDEF) context.clearErrorInfo();
             tmp = TypeConverter.checkStringType(context.runtime, tmp);
-            if (tmp.isNil()) tmp = object.anyToString();
+            if (tmp.isNil()) tmp = Convert.anyToString(context, object);
             return (RubyString) tmp;
         }
 
