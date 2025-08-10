@@ -22,6 +22,7 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.NotDirectoryException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -37,7 +38,7 @@ import java.util.stream.Collectors;
 import com.headius.invokebinder.Binder;
 import jnr.constants.platform.Errno;
 import org.jruby.*;
-import org.jruby.api.Convert;
+import org.jruby.api.Create;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.MultipleAsgnNode;
@@ -46,7 +47,6 @@ import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.RequiredKeywordArgumentValueNode;
 import org.jruby.ast.util.ArgsUtil;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.NoMethodError;
 import org.jruby.exceptions.RaiseException;
@@ -82,9 +82,24 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.unicode.UnicodeEncoding;
 
 import static org.jruby.RubyBasicObject.getMetaClass;
+import static org.jruby.api.Access.arrayClass;
+import static org.jruby.api.Access.exceptionClass;
+import static org.jruby.api.Access.instanceConfig;
+import static org.jruby.api.Access.kernelModule;
+import static org.jruby.api.Access.moduleClass;
+import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.asBoolean;
-import static org.jruby.api.Create.*;
+import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Convert.toInteger;
+import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newEmptyArray;
+import static org.jruby.api.Create.newSharedString;
+import static org.jruby.api.Define.defineModule;
+import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.nameError;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Warn.warn;
+import static org.jruby.api.Warn.warnPerformance;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD_EMPTY;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
@@ -109,11 +124,13 @@ public class Helpers {
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
+    @Deprecated(since = "10.0")
     public static RubyClass getSingletonClass(Ruby runtime, IRubyObject receiver) {
+        // This is not all cases 
         if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
             throw typeError(runtime.getCurrentContext(), "can't define singleton");
         } else {
-            return receiver.getSingletonClass();
+            return receiver.singletonClass(runtime.getCurrentContext());
         }
     }
 
@@ -428,7 +445,7 @@ public class Helpers {
         int n = rubyArray.getLength();
         return preArgsCount + postArgsCount >= n ?
                 newEmptyArray(context) :
-                (RubyArray<?>) rubyArray.subseq(context.runtime.getArray(), preArgsCount, n - preArgsCount - postArgsCount, true);
+                (RubyArray<?>) rubyArray.subseq(arrayClass(context), preArgsCount, n - preArgsCount - postArgsCount, true);
     }
 
     public static Class[] getStaticMethodParams(Class target, int args) {
@@ -489,7 +506,7 @@ public class Helpers {
      * Same as {@link #calculateBufferLength(int)} but raises a Ruby ArgumentError.
      */
     public static int calculateBufferLength(Ruby runtime, int length) {
-        if (length > MAX_ARRAY_SIZE) throw runtime.newArgumentError("argument too big");
+        if (length > MAX_ARRAY_SIZE) throw argumentError(runtime.getCurrentContext(), "argument too big");
 
         int newLength;
         try {
@@ -501,72 +518,76 @@ public class Helpers {
         return newLength;
     }
 
-    /**
-     * Calculate a buffer length based on a base size and a multiplier. If the resulting size exceeds MAX_ARRAY_SIZE,
-     * an {@link ArgumentError} will be thrown, similar to when asking the JVM to allocate a too-large array.
-     *
-     * @param base the base size
-     * @param multiplier the multiplier
-     * @return the multiplied size, if valid
-     * @throws ArgumentError if the requested length is greated than the max array size
-     */
+    @Deprecated(since = "10.0")
     public static int multiplyBufferLength(Ruby runtime, int base, int multiplier) {
+        return multiplyBufferLength(runtime.getCurrentContext(), base, multiplier);
+    }
+
+        /**
+         * Calculate a buffer length based on a base size and a multiplier. If the resulting size exceeds MAX_ARRAY_SIZE,
+         * an {@link ArgumentError} will be thrown, similar to when asking the JVM to allocate a too-large array.
+         *
+         * @param context the thread context
+         * @param base the base size
+         * @param multiplier the multiplier
+         * @return the multiplied size, if valid
+         * @throws ArgumentError if the requested length is greated than the max array size
+         */
+    public static int multiplyBufferLength(ThreadContext context, int base, int multiplier) {
         try {
             int newSize = Math.multiplyExact(base, multiplier);
-
-            if (newSize <= MAX_ARRAY_SIZE) {
-                return newSize;
-            }
-
+            if (newSize <= MAX_ARRAY_SIZE) return newSize;
             // fall through to error below
         } catch (ArithmeticException e) {
             // fall through to error below
         }
 
-        throw runtime.newArgumentError("argument too big");
+        throw argumentError(context, "argument too big");
+    }
+
+    @Deprecated(since = "10.0")
+    public static int addBufferLength(Ruby runtime, int base, int extra) {
+        return addBufferLength(runtime.getCurrentContext(), base, extra);
     }
 
     /**
      * Calculate a buffer length based on a base size and a extra size. If the resulting size exceeds MAX_ARRAY_SIZE
      * and the extra size is nonzero, use the MAX_ARRAY_SIZE as the buffer length.
      *
-     * @param runtime the runtime
+     * @param context the current thread context
      * @param base the base size
      * @param extra the extra buffer size
      * @return the combined buffer size, or MAX_ARRAY_SIZE
      * @throws ArgumentError if the original or combined size cannot be accommodated by MAX_ARRAY_SIZE
      */
-    public static int addBufferLength(Ruby runtime, int base, int extra) {
+    public static int addBufferLength(ThreadContext context, int base, int extra) {
         try {
             int newSize = Math.addExact(base, extra);
 
-            if (newSize <= MAX_ARRAY_SIZE) {
-                return newSize;
-            }
-
-            // can't accommodate all of extra buffer size, but do as much as we can
-            if (extra > 0) {
-                return MAX_ARRAY_SIZE;
-            }
-
+            if (newSize <= MAX_ARRAY_SIZE) return newSize;
+            if (extra > 0) return MAX_ARRAY_SIZE;  // can't accommodate all of extra buffer size, but do as much as we can
             // fall through to error below
         } catch (ArithmeticException e) {
             // fall through to error below
         }
 
-        throw runtime.newArgumentError("argument too big");
+        throw argumentError(context, "argument too big");
+    }
+
+    // This still exists because we have some array construction methods which still use it.  Should be deprecated later.
+    public static int validateBufferLength(Ruby runtime, long length) {
+        if (length < 0 || length > MAX_ARRAY_SIZE) validateBufferLength(runtime.getCurrentContext(), length);
+        return (int) length;
     }
 
     /**
      * Check that the buffer length requested is within the valid range of 0 to MAX_ARRAY_SIZE, or raise an argument
      * error.
      */
-    public static int validateBufferLength(Ruby runtime, long length) {
-        if (length < 0) {
-            throw runtime.newArgumentError("negative argument");
-        } else if (length > MAX_ARRAY_SIZE) {
-            throw runtime.newArgumentError("argument too big");
-        }
+    public static int validateBufferLength(ThreadContext context, long length) {
+        if (length < 0) throw argumentError(context, "negative argument");
+        if (length > MAX_ARRAY_SIZE) throw argumentError(context, "argument too big");
+
         return (int) length;
     }
 
@@ -727,7 +748,7 @@ public class Helpers {
         private RubySymbol nameToSymbol(ThreadContext context, String name) {
             RubySymbol lastName = this.lastName;
             if (lastName == null || !name.equals(lastName.idString())) {
-                this.lastName = lastName = context.runtime.newSymbol(name);
+                this.lastName = lastName = asSymbol(context, name);
             }
             return lastName;
         }
@@ -953,11 +974,16 @@ public class Helpers {
 
     @Deprecated
     public static RubyArray ensureRubyArray(IRubyObject value) {
-        return ensureRubyArray(value.getRuntime(), value);
+        return ensureRubyArray(((RubyBasicObject) value).getCurrentContext(), value);
     }
 
+    @Deprecated(since = "10.0")
     public static RubyArray ensureRubyArray(Ruby runtime, IRubyObject value) {
-        return value instanceof RubyArray ? (RubyArray)value : RubyArray.newArray(runtime, value);
+        return ensureRubyArray(runtime.getCurrentContext(), value);
+    }
+
+    public static RubyArray ensureRubyArray(ThreadContext context, IRubyObject value) {
+        return value instanceof RubyArray ary ? ary : newArray(context, value);
     }
 
     @Deprecated // not used
@@ -985,35 +1011,27 @@ public class Helpers {
         if (opt == 0) {
             if (rest < 0) {
                 // no opt, no rest, exact match
-                if (given != required) {
-                    throw runtime.newArgumentError(given, required);
-                }
+                if (given != required) throw argumentError(context, given, required);
             } else {
                 // only rest, must be at least required
-                if (given < required) {
-                    throw runtime.newArgumentError(given, required);
-                }
+                if (given < required) throw argumentError(context, given, required);
             }
         } else {
             if (rest < 0) {
                 // opt but no rest, must be at least required and no more than required + opt
-                if (given < required) {
-                    throw runtime.newArgumentError(given, required);
-                } else if (given > (required + opt)) {
-                    throw runtime.newArgumentError(given, required + opt);
-                }
+                if (given < required) throw argumentError(context, given, required);
+                if (given > (required + opt)) throw argumentError(context, given, required + opt);
             } else {
                 // opt and rest, must be at least required
-                if (given < required) {
-                    throw runtime.newArgumentError(given, required);
-                }
+                if (given < required) throw argumentError(context, given, required);
             }
         }
     }
 
+    @Deprecated(since = "10.0")
     public static String getLocalJumpTypeOrRethrow(RaiseException re) {
         RubyException exception = re.getException();
-        Ruby runtime = exception.getRuntime();
+        Ruby runtime = exception.getCurrentContext().runtime;
         if (runtime.getLocalJumpError().isInstance(exception)) {
             RubyLocalJumpError jumpError = (RubyLocalJumpError)re.getException();
 
@@ -1066,36 +1084,29 @@ public class Helpers {
         return block.getFrame().getBlock();
     }
 
+    @Deprecated(since = "10.0")
     public static Block getBlockFromBlockPassBody(IRubyObject proc, Block currentBlock) {
-        return getBlockFromBlockPassBody(proc.getRuntime(), proc, currentBlock);
+        return getBlockFromBlockPassBody(((RubyBasicObject) proc).getCurrentContext().runtime, proc, currentBlock);
     }
 
     @Deprecated
     public static IRubyObject backrefLastMatch(ThreadContext context) {
-        IRubyObject backref = context.getBackRef();
-
-        return RubyRegexp.last_match(backref);
+        return RubyRegexp.last_match(context.getBackRef());
     }
 
     @Deprecated
     public static IRubyObject backrefMatchPre(ThreadContext context) {
-        IRubyObject backref = context.getBackRef();
-
-        return RubyRegexp.match_pre(backref);
+        return RubyRegexp.match_pre(context, context.getBackRef());
     }
 
     @Deprecated
     public static IRubyObject backrefMatchPost(ThreadContext context) {
-        IRubyObject backref = context.getBackRef();
-
-        return RubyRegexp.match_post(backref);
+        return RubyRegexp.match_post(context.getBackRef());
     }
 
     @Deprecated
     public static IRubyObject backrefMatchLast(ThreadContext context) {
-        IRubyObject backref = context.getBackRef();
-
-        return RubyRegexp.match_last(backref);
+        return RubyRegexp.match_last(context, context.getBackRef());
     }
 
     public static IRubyObject[] appendToObjectArray(IRubyObject[] array, IRubyObject add) {
@@ -1156,7 +1167,7 @@ public class Helpers {
     }
 
     public static IRubyObject isExceptionHandled(IRubyObject currentException, IRubyObject exception, ThreadContext context) {
-        if (!context.runtime.getModule().isInstance(exception)) throw typeError(context, "class or module required for rescue clause");
+        if (!moduleClass(context).isInstance(exception)) throw typeError(context, "class or module required for rescue clause");
 
         IRubyObject result = invoke(context, exception, "===", currentException);
         return result.isTrue() ? result : context.fals;
@@ -1175,36 +1186,35 @@ public class Helpers {
     }
 
     public static boolean checkJavaException(final IRubyObject wrappedEx, final Throwable ex, IRubyObject catchable, ThreadContext context) {
-        final Ruby runtime = context.runtime;
         if (
                 // rescue exception needs to catch Java exceptions
-                runtime.getException() == catchable ||
+                exceptionClass(context) == catchable ||
 
                 // rescue Object needs to catch Java exceptions
-                runtime.getObject() == catchable ||
+                objectClass(context) == catchable ||
 
                 // rescue StandardError needs to catch Java exceptions
-                runtime.getStandardError() == catchable) {
+                context.runtime.getStandardError() == catchable) {
 
-            if (ex instanceof RaiseException) {
-                return isExceptionHandled(((RaiseException) ex).getException(), catchable, context).isTrue();
+            if (ex instanceof RaiseException raise) {
+                return isExceptionHandled(raise.getException(), catchable, context).isTrue();
             }
 
             // let Ruby exceptions decide if they handle it
             return isExceptionHandled(wrappedEx, catchable, context).isTrue();
         }
 
-        if (runtime.getNativeException() == catchable) {
+        if (context.runtime.getNativeException() == catchable) {
             // NativeException catches Java exceptions, lazily creating the wrapper
             return true;
         }
 
-        if (catchable instanceof RubyClass && Java.isProxyType((RubyClass) catchable)) {
+        if (catchable instanceof RubyClass cat && Java.isProxyType(cat)) {
             if ( ex instanceof ReifiedJavaProxy ) { // Ruby sub-class of a Java exception type
                 final IRubyObject target = ((ReifiedJavaProxy) ex).___jruby$rubyObject();
-                if ( target != null ) return ((RubyClass) catchable).isInstance(target);
+                if ( target != null ) return cat.isInstance(target);
             }
-            return ((RubyClass) catchable).isInstance(wrappedEx);
+            return cat.isInstance(wrappedEx);
         }
 
         if (catchable instanceof RubyModule) {
@@ -1332,7 +1342,7 @@ public class Helpers {
         if (klass == null) {
             if (name != null) {
                 Ruby runtime = context.runtime;
-                throw runtime.newNameError(str(runtime, "superclass method '", ids(runtime, name), "' disabled"), name);
+                throw nameError(context, str(runtime, "superclass method '", ids(runtime, name), "' disabled"), name);
             }
         }
         if (name == null) {
@@ -1403,7 +1413,7 @@ public class Helpers {
         if (!(module instanceof RubyModule)) {
             throw typeError(context, str(context.runtime, ids(context.runtime, module), " is not a class/module"));
         }
-        ((RubyModule) module).setConstant(name, value);
+        ((RubyModule) module).setConstant(context, name, value);
 
         return value;
     }
@@ -1848,8 +1858,7 @@ public class Helpers {
 
     @Deprecated // no-longer used + confusing argument order
     public static IRubyObject stringOrNil(ByteList value, ThreadContext context) {
-        if (value == null) return context.nil;
-        return RubyString.newStringShared(context.runtime, value);
+        return value == null ? context.nil : newSharedString(context, value);
     }
 
     @SuppressWarnings("deprecation")
@@ -1861,10 +1870,7 @@ public class Helpers {
     }
 
     public static void preLoadCommon(ThreadContext context, StaticScope staticScope, boolean wrap) {
-        RubyModule objectClass = context.runtime.getObject();
-        if (wrap) {
-            objectClass = RubyModule.newModule(context.runtime);
-        }
+        RubyModule objectClass = wrap ? defineModule(context) : objectClass(context);
 
         staticScope.setModule(objectClass);
 
@@ -1912,8 +1918,9 @@ public class Helpers {
         return context.getLastLine();
     }
 
+    @Deprecated(since = "10.0")
     public static RubyArray arrayValue(IRubyObject value) {
-        return arrayValue(value.getRuntime().getCurrentContext(), value);
+        return arrayValue(((RubyBasicObject) value).getCurrentContext(), value);
     }
 
     /**
@@ -1937,7 +1944,7 @@ public class Helpers {
                 if (avalue instanceof RubyArray ary) return ary;
                 if (avalue.isNil()) return newArray(context, value);
 
-                throw typeError(context, "`to_a' did not return Array");
+                throw typeError(context, "'to_a' did not return Array");
             } else {
                 CacheEntry entry = value.getMetaClass().searchWithCache("method_missing");
                 DynamicMethod methodMissing = entry.method;
@@ -1945,12 +1952,12 @@ public class Helpers {
                     return newArray(context, value);
                 } else {
                     IRubyObject avalue = methodMissing.call(context, value, entry.sourceModule, "to_a",
-                            new IRubyObject[] {Convert.asSymbol(context, "to_a")}, Block.NULL_BLOCK);
+                            new IRubyObject[] {asSymbol(context, "to_a")}, Block.NULL_BLOCK);
                     if (!(avalue instanceof RubyArray)) {
                         if (avalue.isNil()) {
                             return newArray(context, value);
                         } else {
-                            throw typeError(context, "`to_a' did not return Array");
+                            throw typeError(context, "'to_a' did not return Array");
                         }
                     }
                     return (RubyArray<?>)avalue;
@@ -1969,14 +1976,14 @@ public class Helpers {
 
     @Deprecated // not used
     public static IRubyObject aryToAry(IRubyObject value) {
-        return aryToAry(value.getRuntime().getCurrentContext(), value);
+        return aryToAry(((RubyBasicObject) value).getCurrentContext(), value);
     }
 
     public static IRubyObject aryToAry(ThreadContext context, IRubyObject value) {
         if (value instanceof RubyArray) return value;
 
         return respondsTo_to_ary(value) ?
-                TypeConverter.convertToTypeUnchecked(context, value, context.runtime.getArray(), "to_ary", false) :
+                TypeConverter.convertToTypeUnchecked(context, value, arrayClass(context), "to_ary", false) :
                 newArray(context, value);
     }
 
@@ -1994,41 +2001,36 @@ public class Helpers {
         if (value instanceof RubyArray) return value;
 
         return respondsTo_to_ary(value) ?
-                TypeConverter.convertToTypeUnchecked(context, value, context.runtime.getArray(), "to_ary", false) :
+                TypeConverter.convertToTypeUnchecked(context, value, arrayClass(context), "to_ary", false) :
                 context.nil;
     }
 
     @Deprecated // not used
     public static IRubyObject aValueSplat(IRubyObject value) {
-        if (!(value instanceof RubyArray) || ((RubyArray) value).length().getLongValue() == 0) {
-            return value.getRuntime().getNil();
-        }
+        var context = ((RubyBasicObject) value).getCurrentContext();
+        if (!(value instanceof RubyArray array) || array.length().getValue() == 0) return context.nil;
 
-        RubyArray array = (RubyArray) value;
-
-        return array.getLength() == 1 ? array.first() : array;
+        return array.getLength() == 1 ? array.first(context) : array;
     }
 
     @Deprecated(since = "9.4-") // not used
     public static RubyArray splatValue(IRubyObject value) {
-        var context = value.getRuntime().getCurrentContext();
+        var context = ((RubyBasicObject) value).getCurrentContext();
         return value.isNil() ? newArray(context, value) : arrayValue(context, value);
     }
 
-    @Deprecated // no longer used
+    @Deprecated(since = "9.4-") // no longer used
     public static IRubyObject[] splatToArguments(IRubyObject value) {
-        if (value.isNil()) {
-            return value.getRuntime().getSingleNilArray();
-        }
+        var context = ((RubyBasicObject) value).getCurrentContext();
+        if (value.isNil()) return context.runtime.getSingleNilArray();
 
         IRubyObject tmp = value.checkArrayType();
 
-        if (tmp.isNil()) {
-            return convertSplatToJavaArray(value.getRuntime().getCurrentContext(), value);
-        }
-        return ((RubyArray)tmp).toJavaArrayMaybeUnsafe();
+        return tmp.isNil() ?
+                convertSplatToJavaArray(context, value) : ((RubyArray)tmp).toJavaArrayMaybeUnsafe();
     }
 
+    @Deprecated(since = "9.4-")
     private static IRubyObject[] convertSplatToJavaArray(ThreadContext context, IRubyObject value) {
         // Object#to_a is obsolete.  We match Ruby's hack until to_a goes away.  Then we can
         // remove this hack too.
@@ -2036,19 +2038,17 @@ public class Helpers {
         RubyClass metaClass = value.getMetaClass();
         CacheEntry entry = metaClass.searchWithCache("to_a");
         DynamicMethod method = entry.method;
-        if (method.isUndefined() || method.isImplementedBy(context.runtime.getKernel())) {
+        if (method.isUndefined() || method.isImplementedBy(kernelModule(context))) {
             return new IRubyObject[] {value};
         }
 
         IRubyObject avalue = method.call(context, value, entry.sourceModule, "to_a");
-        if (!(avalue instanceof RubyArray)) {
-            if (avalue.isNil()) {
-                return new IRubyObject[] {value};
-            } else {
-                throw typeError(context, "`to_a' did not return Array");
-            }
+        if (!(avalue instanceof RubyArray ary)) {
+            if (avalue.isNil()) return new IRubyObject[] {value};
+
+            throw typeError(context, "'to_a' did not return Array");
         }
-        return ((RubyArray)avalue).toJavaArray(context);
+        return ary.toJavaArray(context);
     }
 
     @SuppressWarnings("deprecation") @Deprecated // no longer used
@@ -2068,8 +2068,13 @@ public class Helpers {
         return addInstanceMethod(containingClass, runtime.fastNewSymbol(name), method, visibility, context, runtime);
     }
 
+    @Deprecated
     public static RubySymbol addInstanceMethod(RubyModule containingClass, RubySymbol symbol, DynamicMethod method, Visibility visibility, ThreadContext context, Ruby runtime) {
-        containingClass.addMethod(symbol.idString(), method);
+        return addInstanceMethod(containingClass, symbol, method, visibility, context);
+    }
+
+    public static RubySymbol addInstanceMethod(RubyModule containingClass, RubySymbol symbol, DynamicMethod method, Visibility visibility, ThreadContext context) {
+        containingClass.addMethod(context, symbol.idString(), method);
 
         if (!containingClass.isRefinement()) callNormalMethodHook(containingClass, context, symbol);
         if (visibility == Visibility.MODULE_FUNCTION) addModuleMethod(containingClass, method, context, symbol);
@@ -2079,9 +2084,10 @@ public class Helpers {
 
     private static void addModuleMethod(RubyModule containingClass, DynamicMethod method, ThreadContext context, RubySymbol sym) {
         DynamicMethod singletonMethod = method.dup();
-        singletonMethod.setImplementationClass(containingClass.getSingletonClass());
+        var singletonClass = containingClass.singletonClass(context);
+        singletonMethod.setImplementationClass(singletonClass);
         singletonMethod.setVisibility(Visibility.PUBLIC);
-        containingClass.getSingletonClass().addMethod(sym.idString(), singletonMethod);
+        singletonClass.addMethod(context, sym.idString(), singletonMethod);
         containingClass.callMethod(context, "singleton_method_added", sym);
     }
 
@@ -2162,7 +2168,7 @@ public class Helpers {
                 Integer.toString(scope.getType().ordinal()) + ';'
                 + scope.getFile() + ';'
                 + Arrays.stream(scope.getVariables()).collect(Collectors.joining(",")) + ';'
-                + scope.getFirstKeywordIndex() + ';' +
+                + Arrays.toString(scope.getKeywordIndices().toByteArray()) + ';' +
                 + (signature == null ? Signature.NO_ARGUMENTS.encode() : signature.encode()) + ';'
                 + scope.getIRScope().getScopeType().ordinal() + ';'
                 + (instanceVariableNames.size() > 0
@@ -2179,13 +2185,20 @@ public class Helpers {
         String file = bits[1];
 
         String[] varNames = bits[2].split(",");
-        int kwIndex = Integer.parseInt(bits[3]);
         Signature signature = Signature.decode(Long.parseLong(bits[4]));
         IRScopeType scopeType = IRScopeType.fromOrdinal(Integer.parseInt(bits[5]));
         String encodedIvars = bits[6];
         Collection<String> ivarNames = encodedIvars.equals("NONE") ? Collections.EMPTY_LIST : Arrays.asList(encodedIvars.split(","));
 
-        StaticScope scope = StaticScopeFactory.newStaticScope(enclosingScope, type, file, varNames, kwIndex);
+        StaticScope scope = StaticScopeFactory.newStaticScope(enclosingScope, type, file, varNames, -1);
+
+        if (bits[3].length() > 0) {
+            BitSet keywordIndices = new BitSet();
+            for (int i = 0; i < bits[3].length(); i++) {
+                keywordIndices.set(i);
+            }
+            scope.setKeywordIndices(keywordIndices);
+        }
 
         scope.setSignature(signature);
         scope.setScopeType(scopeType);
@@ -2194,18 +2207,27 @@ public class Helpers {
         return scope;
     }
 
+    @Deprecated(since = "10.0")
     public static Visibility performNormalMethodChecksAndDetermineVisibility(Ruby runtime, RubyModule clazz,
                                                                              RubySymbol symbol, Visibility visibility) throws RaiseException {
-        if (clazz == runtime.getDummy()) throw typeError(runtime.getCurrentContext(), "no class/module to add method");
+        return performNormalMethodChecksAndDetermineVisibility(runtime.getCurrentContext(), clazz, symbol, visibility);
+    }
 
-        switch(symbol.idString()) {
+    public static Visibility performNormalMethodChecksAndDetermineVisibility(ThreadContext context, RubyModule clazz,
+                                                                             RubySymbol symbol, Visibility visibility) throws RaiseException {
+        Ruby runtime = context.runtime;
+
+        if (clazz == runtime.getDummy()) throw typeError(context, "no class/module to add method");
+
+        String name = symbol.idString();
+        switch(name) {
             case "__id__":
             case "__send__":
-                runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, str(runtime, "redefining '", ids(runtime, symbol), "' may cause serious problem"));
+                warn(context, str(runtime, "redefining '", ids(runtime, symbol), "' may cause serious problem"));
                 break;
             case "initialize":
-                if (clazz == runtime.getObject()) {
-                    runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, "redefining Object#initialize may cause infinite loop");
+                if (clazz == objectClass(context)) {
+                    warn(context, "redefining Object#initialize may cause infinite loop");
                 }
             case "initialize_copy":
             case "initialize_dup":
@@ -2213,6 +2235,11 @@ public class Helpers {
             case "respond_to_missing?":
                 visibility = Visibility.PRIVATE;
                 break;
+            default:
+                if ((clazz == runtime.getInteger() && MethodIndex.getFastFixnumOpsMethod(name) != null)
+                        || (clazz == runtime.getFloat() && MethodIndex.getFastFloatOpsMethod(name) != null)) {
+                    warnPerformance(context, "Redefining '" + clazz.getBaseName() + "#" + name + "' disables interpreter and JIT optimizations");
+                }
         }
 
         if (visibility == Visibility.MODULE_FUNCTION) {
@@ -2222,50 +2249,24 @@ public class Helpers {
         return visibility;
     }
 
-    public static RubyClass performSingletonMethodChecks(Ruby runtime, IRubyObject receiver, String name) throws RaiseException {
-        if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
-            throw typeError(runtime.getCurrentContext(), str(runtime, "can't define singleton method \"", ids(runtime, name), "\" for ", types(runtime, receiver.getMetaClass())));
-        }
-
-        if (receiver.isFrozen()) throw runtime.newFrozenError("object", receiver);
-
-        return receiver.getSingletonClass();
-    }
-
     @Deprecated // not used
     public static IRubyObject arrayEntryOrNil(RubyArray array, int index) {
-        if (index < array.getLength()) {
-            return array.eltInternal(index);
-        } else {
-            return array.getRuntime().getNil();
-        }
+        return index < array.getLength() ? array.eltInternal(index) : array.getCurrentContext().nil;
     }
 
     @Deprecated // not used
     public static IRubyObject arrayEntryOrNilZero(RubyArray array) {
-        if (0 < array.getLength()) {
-            return array.eltInternal(0);
-        } else {
-            return array.getRuntime().getNil();
-        }
+        return 0 < array.getLength() ? array.eltInternal(0) : array.getCurrentContext().nil;
     }
 
     @Deprecated // not used
     public static IRubyObject arrayEntryOrNilOne(RubyArray array) {
-        if (1 < array.getLength()) {
-            return array.eltInternal(1);
-        } else {
-            return array.getRuntime().getNil();
-        }
+        return 1 < array.getLength() ? array.eltInternal(1) : array.getCurrentContext().nil;
     }
 
     @Deprecated // not used
     public static IRubyObject arrayEntryOrNilTwo(RubyArray array) {
-        if (2 < array.getLength()) {
-            return array.eltInternal(2);
-        } else {
-            return array.getRuntime().getNil();
-        }
+        return 2 < array.getLength() ? array.eltInternal(2) : array.getCurrentContext().nil;
     }
 
     @Deprecated // not used
@@ -2275,7 +2276,7 @@ public class Helpers {
         } else if (pre + index < array.getLength()) {
             return array.eltInternal(pre + index);
         } else {
-            return array.getRuntime().getNil();
+            return array.getCurrentContext().nil;
         }
     }
 
@@ -2286,7 +2287,7 @@ public class Helpers {
         } else if (pre + 0 < array.getLength()) {
             return array.eltInternal(pre + 0);
         } else {
-            return array.getRuntime().getNil();
+            return array.getCurrentContext().nil;
         }
     }
 
@@ -2297,7 +2298,7 @@ public class Helpers {
         } else if (pre + 1 < array.getLength()) {
             return array.eltInternal(pre + 1);
         } else {
-            return array.getRuntime().getNil();
+            return array.getCurrentContext().nil;
         }
     }
 
@@ -2308,7 +2309,7 @@ public class Helpers {
         } else if (pre + 2 < array.getLength()) {
             return array.eltInternal(pre + 2);
         } else {
-            return array.getRuntime().getNil();
+            return array.getCurrentContext().nil;
         }
     }
 
@@ -2330,10 +2331,11 @@ public class Helpers {
         }
     }
 
+    @Deprecated(since = "10.0")
     public static RubyModule checkIsModule(IRubyObject maybeModule) {
-        if (maybeModule instanceof RubyModule) return (RubyModule) maybeModule;
+        if (maybeModule instanceof RubyModule mod) return mod;
 
-        throw typeError(maybeModule.getRuntime().getCurrentContext(), "", maybeModule, " is not a class/module");
+        throw typeError(((RubyBasicObject) maybeModule).getCurrentContext(), "", maybeModule, " is not a class/module");
     }
 
     public static IRubyObject getGlobalVariable(Ruby runtime, String name) {
@@ -2364,9 +2366,14 @@ public class Helpers {
         return RubyProc.newProc(context.runtime, block, Block.Type.LAMBDA);
     }
 
+    @Deprecated(since = "10.0")
     public static void fillNil(final IRubyObject[] arr, int from, int to, Ruby runtime) {
+        fillNil(runtime.getCurrentContext(), arr, from, to);
+    }
+
+    public static void fillNil(ThreadContext context, final IRubyObject[] arr, int from, int to) {
         if (arr.length == 0) return;
-        IRubyObject nils[] = runtime.getNilPrefilledArray();
+        IRubyObject nils[] = context.runtime.getNilPrefilledArray();
         int i;
 
         // NOTE: seems that Arrays.fill(arr, runtime.getNil()) won't do better ... on Java 8
@@ -2378,8 +2385,42 @@ public class Helpers {
         ArraySupport.copy(nils, arr, i, to - i);
     }
 
+    /**
+     * Return a nil-filled IRubyObject array of the specified length.
+     *
+     * @param length the length of the array requested
+     * @param runtime the current runtime
+     * @return a nil-filled IRubyObject array of the requested length
+     */
+    public static IRubyObject[] nilledArray(int length, Ruby runtime) {
+        if (length == 0) return IRubyObject.NULL_ARRAY;
+        IRubyObject[] nils = runtime.getNilPrefilledArray();
+        int i;
+
+        if (length < nils.length) {
+            return Arrays.copyOfRange(nils, 0, length);
+        }
+
+        IRubyObject[] arr = new IRubyObject[length];
+
+        // NOTE: seems that Arrays.fill(arr, runtime.getNil()) won't do better ... on Java 8
+        // Object[] array doesn't get the same optimizations as e.g. byte[] int[]
+
+        for (i = 0; i + Ruby.NIL_PREFILLED_ARRAY_SIZE < length; i += Ruby.NIL_PREFILLED_ARRAY_SIZE) {
+            System.arraycopy(nils, 0, arr, i, Ruby.NIL_PREFILLED_ARRAY_SIZE);
+        }
+        ArraySupport.copy(nils, arr, i, length - i);
+
+        return arr;
+    }
+
+    @Deprecated(since = "10.0")
     public static void fillNil(IRubyObject[] arr, Ruby runtime) {
-        fillNil(arr, 0, arr.length, runtime);
+        fillNil(runtime.getCurrentContext(), arr);
+    }
+
+    public static void fillNil(ThreadContext context, IRubyObject[] arr) {
+        fillNil(context, arr, 0, arr.length);
     }
 
     public static Block getBlock(ThreadContext context, IRubyObject self, Node node) {
@@ -2461,24 +2502,35 @@ public class Helpers {
         } else {
             return;
         }
-        throw context.runtime.newArgumentError(length, expected);
+        throw argumentError(context, length, expected);
     }
 
+    @Deprecated(since = "10.0")
     public static boolean isModuleAndHasConstant(IRubyObject left, String name) {
-        return left instanceof RubyModule && ((RubyModule) left).publicConstDefinedFrom(name);
+        return isModuleAndHasConstant(((RubyBasicObject) left).getCurrentContext(), left, name);
+    }
+
+    public static boolean isModuleAndHasConstant(ThreadContext context, IRubyObject left, String name) {
+        return left instanceof RubyModule && ((RubyModule) left).publicConstDefinedFrom(context, name);
+    }
+
+    @Deprecated(since = "10.0")
+    public static IRubyObject getDefinedConstantOrBoundMethod(IRubyObject left, String name, IRubyObject definedConstantMessage, IRubyObject definedMethodMessage) {
+        return getDefinedConstantOrBoundMethod(((RubyBasicObject) left).getCurrentContext(), left, name, definedConstantMessage, definedMethodMessage);
     }
 
     @JIT @Interp
-    public static IRubyObject getDefinedConstantOrBoundMethod(IRubyObject left, String name, IRubyObject definedConstantMessage, IRubyObject definedMethodMessage) {
-        if (isModuleAndHasConstant(left, name)) return definedConstantMessage;
+    public static IRubyObject getDefinedConstantOrBoundMethod(ThreadContext context, IRubyObject left, String name, IRubyObject definedConstantMessage, IRubyObject definedMethodMessage) {
+        if (isModuleAndHasConstant(context, left, name)) return definedConstantMessage;
         if (left.getMetaClass().isMethodBound(name, true)) return definedMethodMessage;
         return null;
     }
 
+    @Deprecated(since = "10.0")
     public static RubyModule getSuperClassForDefined(Ruby runtime, RubyModule klazz) {
         RubyModule superklazz = klazz.getSuperClass();
 
-        if (superklazz == null && klazz.isModule()) superklazz = runtime.getObject();
+        if (superklazz == null && klazz.isModule()) superklazz = objectClass(runtime.getCurrentContext());
 
         return superklazz;
     }
@@ -2556,12 +2608,12 @@ public class Helpers {
     public static RubyArray argsCat(ThreadContext context, IRubyObject first, IRubyObject second) {
         IRubyObject secondArgs = IRRuntimeHelpers.irSplat(context, second);
 
-        return ((RubyArray) Helpers.ensureRubyArray(context.runtime, first).dup()).concat(secondArgs);
+        return ((RubyArray) Helpers.ensureRubyArray(context, first).dup()).concat(secondArgs);
     }
 
     @Deprecated
     public static RubyArray argsCat(IRubyObject first, IRubyObject second) {
-        return argsCat(first.getRuntime().getCurrentContext(), first, second);
+        return argsCat(((RubyBasicObject) first).getCurrentContext(), first, second);
     }
 
     /** Use an ArgsNode (used for blocks) to generate ArgumentDescriptors */
@@ -2645,11 +2697,16 @@ public class Helpers {
         return descs.toArray(new ArgumentDescriptor[descs.size()]);
     }
 
+    @Deprecated(since = "10.0")
+    public static ArgumentDescriptor[] parameterListToArgumentDescriptors(Ruby runtime, String[] parameterList, boolean isLambda) {
+        return parameterListToArgumentDescriptors(runtime.getCurrentContext(), parameterList, isLambda);
+    }
+
     /**
      * Convert a parameter list from prefix format to ArgumentDescriptor format.  This source is expected to come
      * from a native path.  Therefore we will be assuming parameterList is UTF-8.
      */
-    public static ArgumentDescriptor[] parameterListToArgumentDescriptors(Ruby runtime, String[] parameterList, boolean isLambda) {
+    public static ArgumentDescriptor[] parameterListToArgumentDescriptors(ThreadContext context, String[] parameterList, boolean isLambda) {
         ArgumentDescriptor[] parms = new ArgumentDescriptor[parameterList.length];
 
         for (int i = 0; i < parameterList.length; i++) {
@@ -2664,7 +2721,7 @@ public class Helpers {
 
             // 'R', 'o', 'n' forms can get here without a name
             if (param.length() > 1) {
-                parms[i] = new ArgumentDescriptor(type, runtime.newSymbol(param.substring(1)));
+                parms[i] = new ArgumentDescriptor(type, asSymbol(context, param.substring(1)));
             } else {
                 parms[i] = new ArgumentDescriptor(type.anonymousForm());
             }
@@ -2673,14 +2730,7 @@ public class Helpers {
         return parms;
     }
 
-    /**
-     * @param runtime
-     * @param argsDesc
-     * @param isLambda
-     * @return ""
-     * @deprecated Use {@link Helpers#argumentDescriptorsToParameters(ThreadContext, ArgumentDescriptor[], boolean)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static RubyArray argumentDescriptorsToParameters(Ruby runtime, ArgumentDescriptor[] argsDesc, boolean isLambda) {
         return argumentDescriptorsToParameters(runtime.getCurrentContext(), argsDesc, isLambda);
     }
@@ -2689,20 +2739,24 @@ public class Helpers {
     public static RubyArray argumentDescriptorsToParameters(ThreadContext context, ArgumentDescriptor[] argsDesc, boolean isLambda) {
         if (argsDesc == null) Thread.dumpStack();
 
-        final var params = newArray(context, argsDesc.length);
-
+        var objArray = new IRubyObject[argsDesc.length];
         for (int i = 0; i < argsDesc.length; i++) {
-            params.store(i, argsDesc[i].toArrayForm(context, isLambda));
+            objArray[i] = argsDesc[i].toArrayForm(context, isLambda);
         }
 
-        return params;
+        return Create.newArrayNoCopy(context, objArray);
     }
 
+    @Deprecated(since = "10.0")
     public static ArgumentDescriptor[] methodToArgumentDescriptors(DynamicMethod method) {
+        return methodToArgumentDescriptors(method.getImplementationClass().getCurrentContext(), method);
+    }
+
+    public static ArgumentDescriptor[] methodToArgumentDescriptors(ThreadContext context, DynamicMethod method) {
         method = method.getRealMethod();
 
         if (method instanceof MethodArgs2) {
-            return parameterListToArgumentDescriptors(method.getImplementationClass().getRuntime(), ((MethodArgs2) method).getParameterList(), true);
+            return parameterListToArgumentDescriptors(context.runtime, ((MethodArgs2) method).getParameterList(), true);
         } else if (method instanceof IRMethodArgs) {
             return ((IRMethodArgs) method).getArgumentDescriptors();
         } else {
@@ -2710,10 +2764,15 @@ public class Helpers {
         }
     }
 
+    @Deprecated(since = "10.0")
     public static IRubyObject methodToParameters(Ruby runtime, AbstractRubyMethod recv) {
+        return methodToParameters(runtime.getCurrentContext(), recv);
+    }
+
+    public static IRubyObject methodToParameters(ThreadContext context, AbstractRubyMethod recv) {
         DynamicMethod method = recv.getMethod().getRealMethod();
 
-        return argumentDescriptorsToParameters(runtime, methodToArgumentDescriptors(method), true);
+        return argumentDescriptorsToParameters(context, methodToArgumentDescriptors(context, method), true);
     }
 
     public static IRubyObject getDefinedCall(ThreadContext context, IRubyObject self, IRubyObject receiver, String name, IRubyObject definedMessage) {
@@ -2726,8 +2785,7 @@ public class Helpers {
             return definedMessage;
         }
 
-        if (receiver.callMethod(context, "respond_to_missing?",
-            new IRubyObject[]{context.runtime.newSymbol(name), context.fals}).isTrue()) {
+        if (receiver.callMethod(context, "respond_to_missing?", new IRubyObject[]{asSymbol(context, name), context.fals}).isTrue()) {
             return definedMessage;
         }
         return null;
@@ -2945,8 +3003,8 @@ public class Helpers {
         Ruby runtime = context.runtime;
 
         StackTraceElement[] javaTrace = t.getStackTrace();
-        BacktraceData backtraceData = runtime.getInstanceConfig().getTraceType().getIntegratedBacktrace(context, javaTrace);
-        t.setStackTrace(RaiseException.javaTraceFromRubyTrace(backtraceData.getBacktrace(runtime)));
+        BacktraceData backtraceData = instanceConfig(context).getTraceType().getIntegratedBacktrace(context, javaTrace);
+        t.setStackTrace(RaiseException.javaTraceFromRubyTrace(backtraceData.getBacktrace(context.runtime)));
         throwException(t);
         return null; // not reached
     }
@@ -2994,11 +3052,41 @@ public class Helpers {
         return ary;
     }
 
-    public static int memchr(boolean[] ary, int start, int len, boolean find) {
+    /**
+     * Equivalent to C memchr with byte*.
+     *
+     * @param ptr the byte[] to search
+     * @param start starting position for search
+     * @param find byte to find
+     * @param len length to search
+     * @return the index of the requested byte or -1 if not found
+     */
+    public static int memchr(byte[] ptr, int start, final int find, int len) {
+        for (int i = start; i < start + len; i++) {
+            if (Byte.toUnsignedInt(ptr[i]) == find) return i;
+        }
+        return -1;
+    }
+
+    /**
+     * Equivalent to C memchr with bool*.
+     *
+     * @param ary the boolean[] to search
+     * @param start starting position for search
+     * @param find boolean to find
+     * @param len length to search
+     * @return the index of the requested boolean or -1 if not found
+     */
+    public static int memchr(boolean[] ary, int start, boolean find, int len) {
         for (int i = 0; i < len; i++) {
             if (ary[i + start] == find) return i + start;
         }
         return -1;
+    }
+
+    @Deprecated(since = "10.0")
+    public static int memchr(boolean[] ary, int start, int len, boolean find) {
+        return memchr(ary, start, find, len);
     }
 
     public static boolean isRequiredKeywordArgumentValueNode(Node asgnNode) {
@@ -3022,18 +3110,15 @@ public class Helpers {
 
     // MRI: rb_hash
     public static RubyFixnum safeHash(final ThreadContext context, IRubyObject obj) {
-        Ruby runtime = context.runtime;
-        IRubyObject hval = context.safeRecurse(sites(context).recursive_hash, runtime, obj, "hash", true);
+        var hval = context.safeRecurse(sites(context).recursive_hash, context.runtime, obj, "hash", true);
 
-        while (!(hval instanceof RubyFixnum)) {
-            if (hval instanceof RubyBignum) {
-                // This is different from MRI because we don't have rb_integer_pack
-                return ((RubyBignum) hval).hash();
-            }
-            hval = hval.convertToInteger();
+        while (!(hval instanceof RubyFixnum fixnum)) {
+            // This is different from MRI because we don't have rb_integer_pack
+            if (hval instanceof RubyBignum bignum) return bignum.hash(context);
+            hval = toInteger(context, hval);
         }
 
-        return (RubyFixnum) hval;
+        return fixnum;
     }
 
     // MRI: mult_and_mix, roughly since we have no uint64 type
@@ -3138,7 +3223,7 @@ public class Helpers {
      *
      * @deprecated Use finvoke if you do not want visibility-checking or invokeFrom if you do.
      */
-    @Deprecated(since = "9.4-", forRemoval = true)
+    @Deprecated(since = "9.4-")
     public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject[] args, CallType callType, Block block) {
         return self.getMetaClass().invoke(context, self, name, args, callType, block);
     }
@@ -3151,7 +3236,7 @@ public class Helpers {
      *
      * @deprecated Use finvoke if you do not want visibility-checking or invokeFrom if you do.
      */
-    @Deprecated(since = "9.4-", forRemoval = true)
+    @Deprecated(since = "9.4-")
     public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, IRubyObject arg, CallType callType, Block block) {
         return self.getMetaClass().invoke(context, self, name, arg, callType, block);
     }
@@ -3164,7 +3249,7 @@ public class Helpers {
      *
      * @deprecated Use finvoke if you do not want visibility-checking or invokeFrom if you do.
      */
-    @Deprecated(since = "9.4-", forRemoval = true)
+    @Deprecated(since = "9.4-")
     public static IRubyObject invoke(ThreadContext context, IRubyObject self, String name, CallType callType) {
         return Helpers.invoke(context, self, name, IRubyObject.NULL_ARRAY, callType, Block.NULL_BLOCK);
     }

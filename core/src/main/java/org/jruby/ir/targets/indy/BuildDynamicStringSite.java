@@ -37,6 +37,8 @@ public class BuildDynamicStringSite extends MutableCallSite {
             false);
     private static final int MAX_ELEMENTS_FOR_SPECIALIZE1 = 4;
     private static final int MAX_DYNAMIC_ARGS_FOR_SPECIALIZE2 = 5;
+    public static final int MAX_ELEMENTS = 50;
+    private static final int METADATA_ARGS_COUNT = 6;
 
     public static CallSite buildDString(MethodHandles.Lookup lookup, String name, MethodType type, Object[] args) {
         return new BuildDynamicStringSite(type, args);
@@ -55,37 +57,39 @@ public class BuildDynamicStringSite extends MutableCallSite {
     public BuildDynamicStringSite(MethodType type, Object[] stringArgs) {
         super(type);
 
-        initialSize = (Integer) stringArgs[stringArgs.length - 6];
-        encoding = StringBootstrap.encodingFromName((String) stringArgs[stringArgs.length - 5]);
-        chilled = ((Integer) stringArgs[stringArgs.length - 4]) != 0;
-        frozen = ((Integer) stringArgs[stringArgs.length - 3]) != 0;
-        descriptor = (Long) stringArgs[stringArgs.length - 2];
-        elementCount = (Integer) stringArgs[stringArgs.length - 1];
+        int metadataIndex = stringArgs.length - METADATA_ARGS_COUNT;
+
+        initialSize = (Integer) stringArgs[metadataIndex];
+        encoding = StringBootstrap.encodingFromName((String) stringArgs[metadataIndex + 1]);
+        frozen = ((Integer) stringArgs[metadataIndex + 2]) != 0;
+        chilled = ((Integer) stringArgs[metadataIndex + 3]) != 0;
+        descriptor = (Long) stringArgs[metadataIndex + 4];
+        elementCount = (Integer) stringArgs[metadataIndex + 5];
 
         ByteListAndCodeRange[] strings = new ByteListAndCodeRange[elementCount];
         int stringArgsIdx = 0;
         Binder binder = Binder.from(type);
 
         int dynamicArgs = type.parameterCount() - 1;
-        int[] permute = new int[3 * dynamicArgs + 1]; // context followed by context, arg, arg triplets
+        int to_sArgCount = 2;
+        int[] permute = new int[to_sArgCount * dynamicArgs + 1]; // context followed by context, arg, arg triplets
         permute[0] = 0;
         for (int i = 0; i < dynamicArgs; i++) {
-            int base = i * 3 + 1;
+            int base = i * to_sArgCount + 1;
             permute[base] = 0;
             permute[base + 1] = i + 1;
-            permute[base + 2] = i + 1;
         }
         binder = binder.permute(permute);
 
         // now collect them by binding to AsStringSite
         for (int i = 0; i < dynamicArgs; i++) {
             // separate filter for each dynamic argument, so they can type profile independently
-            binder = binder.collect(i + 1, 3, IRubyObject.class, constructGuardedToStringFilter());
+            binder = binder.collect(i + 1, to_sArgCount, IRubyObject.class, constructGuardedToStringFilter());
         }
 
         boolean specialize = elementCount <= MAX_ELEMENTS_FOR_SPECIALIZE1;
         for (int i = 0; i < elementCount; i++) {
-            if ((descriptor & (1 << i)) != 0) {
+            if (isStringElement(descriptor, i)) {
                 ByteListAndCodeRange blcr = new ByteListAndCodeRange(StringBootstrap.bytelist((String) stringArgs[stringArgsIdx * 3], (String) stringArgs[stringArgsIdx * 3 + 1]), (Integer) stringArgs[stringArgsIdx * 3 + 2]);
                 strings[i] = blcr;
                 if (specialize) {
@@ -122,17 +126,17 @@ public class BuildDynamicStringSite extends MutableCallSite {
 
     private static MethodHandle constructGuardedToStringFilter() {
         // create an invoke site for the to_s call
-        MethodType toSType = MethodType.methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class);
-        CallSite toS = NormalInvokeSite.bootstrap(MethodHandles.lookup(), "invokeOther:to_s", toSType, 0, 0, "", -1);
+        MethodType toSType = MethodType.methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class);
+        CallSite toS = SelfInvokeSite.bootstrap(MethodHandles.lookup(), "invokeFunctional:to_s", toSType, 0, 0, "", -1);
         MethodHandle toS_handle = toS.dynamicInvoker();
 
         // guarded with "Appendable" interface for trivially-appendable types
         MethodHandle checkcast = Binder.from(toSType.changeReturnType(boolean.class))
-                .permute(2)
+                .permute(1)
                 .cast(boolean.class, Object.class)
                 .prepend(Appendable.class)
                 .invokeVirtualQuiet("isInstance");
-        MethodHandle guardedToS = MethodHandles.guardWithTest(checkcast, Binder.from(toSType).permute(2).identity(), toS_handle);
+        MethodHandle guardedToS = MethodHandles.guardWithTest(checkcast, Binder.from(toSType).permute(1).identity(), toS_handle);
 
         return guardedToS;
     }
@@ -483,7 +487,13 @@ public class BuildDynamicStringSite extends MutableCallSite {
     }
 
     private static boolean isDynamicElement(long descriptor, int i) {
-        return (descriptor & (1 << i)) == 0;
+        if (i > 63) throw new ArrayIndexOutOfBoundsException("bit " + i + " out of long range");
+        return (descriptor & (1L << i)) == 0;
+    }
+
+    private static boolean isStringElement(long descriptor, int i) {
+        if (i > 63) throw new ArrayIndexOutOfBoundsException("bit " + i + " out of long range");
+        return (descriptor & (1L << i)) != 0;
     }
 
     public RubyString buildString(ThreadContext context, IRubyObject... values) {
@@ -491,7 +501,7 @@ public class BuildDynamicStringSite extends MutableCallSite {
 
         int valueIdx = 0;
         for (int i = 0; i < elementCount; i++) {
-            if ((descriptor & (1 << i)) != 0) {
+            if (isStringElement(descriptor, i)) {
                 buffer.catWithCodeRange(strings[i].bl, strings[i].cr);
             } else {
                 buffer.appendAsStringOrAny(values[valueIdx++]);

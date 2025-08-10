@@ -8,29 +8,32 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Create.newString;
+
 public class TestRubyThread extends Base {
 
     public void testExceptionDoesNotPropagate() throws InterruptedException {
-        runtime.evalScriptlet("$run_thread = false");
-        RubyThread thread = (RubyThread) runtime.evalScriptlet(
+        context.runtime.evalScriptlet("$run_thread = false");
+        RubyThread thread = (RubyThread) context.runtime.evalScriptlet(
             "Thread.start { sleep(0.01) until $run_thread; raise java.lang.RuntimeException.new('TEST') }"
         );
         assertNull(thread.getExitingException());
         thread.setReportOnException(false);
         thread.setAbortOnException(false);
-        runtime.evalScriptlet("$run_thread = true");
+        context.runtime.evalScriptlet("$run_thread = true");
 
         Thread.sleep(100);
 
         assertNotNull(thread.getExitingException());
         assertSame(RuntimeException.class, thread.getExitingException().getClass());
 
-        assertSame(runtime.getNil(), thread.status(runtime.getCurrentContext()));
+        assertSame(context.nil, thread.status(context));
     }
 
     public void testJavaErrorDoesPropagate() throws InterruptedException {
-        runtime.evalScriptlet("$run_thread = false");
-        RubyThread thread = (RubyThread) runtime.evalScriptlet(
+        context.runtime.evalScriptlet("$run_thread = false");
+        RubyThread thread = (RubyThread) context.runtime.evalScriptlet(
             "Thread.start { sleep(0.01) until $run_thread; raise java.lang.AssertionError.new(42) }"
         );
         assertNull(thread.getExitingException());
@@ -42,7 +45,7 @@ public class TestRubyThread extends Base {
             exception.set(uncaught);
         });
 
-        runtime.evalScriptlet("$run_thread = true");
+        context.runtime.evalScriptlet("$run_thread = true");
 
         Thread.sleep(100);
 
@@ -51,7 +54,7 @@ public class TestRubyThread extends Base {
         assertNotNull(exception.get());
         assertEquals("java.lang.AssertionError: 42", exception.get().toString());
 
-        assertSame(runtime.getNil(), thread.status(runtime.getCurrentContext()));
+        assertSame(context.nil, thread.status(context));
     }
 
     public void testClearLocals() throws InterruptedException {
@@ -60,14 +63,14 @@ public class TestRubyThread extends Base {
         final CountDownLatch latch2 = new CountDownLatch(1);
 
         Thread thread = new Thread(() -> {
-            runtime.evalScriptlet("Thread.current[:foo] = :bar");
-            runtime.evalScriptlet("Thread.current.thread_variable_set('local', 42)");
-            otherThread.set(RubyThread.current(runtime.getThread()));
+            context.runtime.evalScriptlet("Thread.current[:foo] = :bar");
+            context.runtime.evalScriptlet("Thread.current.thread_variable_set('local', 42)");
+            otherThread.set(RubyThread.current(context.runtime.getThread()));
 
-            runtime.evalScriptlet("sleep(0.1)");
+            context.runtime.evalScriptlet("sleep(0.1)");
             latch1.countDown();
 
-            runtime.evalScriptlet("sleep(0.1)");
+            context.runtime.evalScriptlet("sleep(0.1)");
             try {
                 latch2.await(3, TimeUnit.SECONDS);
             } catch (InterruptedException ex) {
@@ -78,25 +81,24 @@ public class TestRubyThread extends Base {
         thread.start();
         latch1.await(3, TimeUnit.SECONDS);
 
-        final ThreadContext context = runtime.getCurrentContext();
         IRubyObject local;
 
-        local = otherThread.get().op_aref(context, runtime.newSymbol("foo"));
+        local = otherThread.get().op_aref(context, asSymbol(context, "foo"));
         assertEquals("bar", local.toString());
 
         otherThread.get().clearFiberLocals();
 
-        local = otherThread.get().op_aref(context, runtime.newSymbol("foo"));
-        assertSame(runtime.getNil(), local);
+        local = otherThread.get().op_aref(context, asSymbol(context, "foo"));
+        assertSame(context.nil, local);
         assertEquals(0, otherThread.get().keys().size());
 
-        local = otherThread.get().thread_variable_p(context, runtime.newString("local"));
-        assertSame(runtime.getTrue(), local);
+        local = otherThread.get().thread_variable_p(context, newString(context, "local"));
+        assertSame(context.tru, local);
 
         otherThread.get().clearThreadLocals();
 
-        local = otherThread.get().thread_variable_p(context, runtime.newString("local"));
-        assertSame(runtime.getFalse(), local);
+        local = otherThread.get().thread_variable_p(context, newString(context, "local"));
+        assertSame(context.fals, local);
 
         latch2.countDown();
     }

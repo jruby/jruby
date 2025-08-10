@@ -42,6 +42,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.collections.HashMapInt;
 
+@Deprecated(since = "10.0", forRemoval = true)
+@SuppressWarnings("removal")
 public class MarshalCache {
     private final HashMapInt linkCache = new HashMapInt<>(true);
     private final HashMapInt symbolCache = new HashMapInt<ByteList>();

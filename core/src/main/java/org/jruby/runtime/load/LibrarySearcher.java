@@ -33,6 +33,7 @@ import org.jruby.util.cli.Options;
 import org.jruby.util.collections.StringArraySet;
 import org.jruby.util.func.TriFunction;
 
+import static org.jruby.api.Access.fileClass;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
 
@@ -384,7 +385,8 @@ public class LibrarySearcher {
 
         if (feature.charAt(0) == '.' &&
                 (feature.charAt(1) == '/' || feature.regionMatches(1, "./", 0, 2))) {
-            feature = RubyFile.expand_path(runtime.getCurrentContext(), runtime.getFile(), runtime.newString(feature)).asJavaString();
+            var context = runtime.getCurrentContext();
+            feature = RubyFile.expand_path(context, fileClass(context), newString(context, feature)).asJavaString();
         }
         if (ext != -1 && feature.indexOf('/', ext) == -1) {
             if (LibrarySearcher.isSourceExt(feature)) {
@@ -811,6 +813,12 @@ public class LibrarySearcher {
         return false;
     }
 
+    // Clear caches and release resources
+    public void tearDown() {
+        loadedFeaturesIndex.clear();
+        loadedFeaturesSnapshot.clear();
+    }
+
     enum Suffix {
         RUBY(".rb", ResourceLibrary::new),
         CLASS(".class", ClassResourceLibrary::new),
@@ -957,7 +965,8 @@ public class LibrarySearcher {
                 script.setFileName(scriptName);
                 runtime.loadScope(script, wrap);
             } catch(IOException e) {
-                throw runtime.newLoadError("no such file to load -- " + searchName, searchName);
+                String name = searchName;
+                throw LoadService.loadFailed(runtime, name);
             }
         }
     }

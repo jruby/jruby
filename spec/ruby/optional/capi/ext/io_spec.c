@@ -28,13 +28,7 @@ static int set_non_blocking(int fd) {
 }
 
 static int io_spec_get_fd(VALUE io) {
-#ifdef RUBY_VERSION_IS_3_1
   return rb_io_descriptor(io);
-#else
-  rb_io_t* fp;
-  GetOpenFile(io, fp);
-  return fp->fd;
-#endif
 }
 
 VALUE io_spec_GetOpenFile_fd(VALUE self, VALUE io) {
@@ -143,11 +137,7 @@ VALUE io_spec_rb_io_wait_readable(VALUE self, VALUE io, VALUE read_p) {
     errno = saved_errno;
   }
 
-#ifdef RUBY_VERSION_IS_3_1
   ret = rb_io_maybe_wait_readable(errno, io, Qnil);
-#else
-  ret = rb_io_wait_readable(fd);
-#endif
 
   if (RTEST(read_p)) {
     ssize_t r = read(fd, buf, RB_IO_WAIT_READABLE_BUF);
@@ -166,22 +156,15 @@ VALUE io_spec_rb_io_wait_readable(VALUE self, VALUE io, VALUE read_p) {
 }
 
 VALUE io_spec_rb_io_wait_writable(VALUE self, VALUE io) {
-#ifdef RUBY_VERSION_IS_3_1
   int ret = rb_io_maybe_wait_writable(errno, io, Qnil);
-#else
-  int ret = rb_io_wait_writable(io_spec_get_fd(io));
-#endif
   return ret ? Qtrue : Qfalse;
 }
 
-#ifdef RUBY_VERSION_IS_3_1
 VALUE io_spec_rb_io_maybe_wait_writable(VALUE self, VALUE error, VALUE io, VALUE timeout) {
   int ret = rb_io_maybe_wait_writable(NUM2INT(error), io, timeout);
   return INT2NUM(ret);
 }
-#endif
 
-#ifdef RUBY_VERSION_IS_3_1
 #ifdef SET_NON_BLOCKING_FAILS_ALWAYS
 NORETURN(VALUE io_spec_rb_io_maybe_wait_readable(VALUE self, VALUE error, VALUE io, VALUE timeout, VALUE read_p));
 #endif
@@ -224,13 +207,10 @@ VALUE io_spec_rb_io_maybe_wait_readable(VALUE self, VALUE error, VALUE io, VALUE
   UNREACHABLE_RETURN(Qnil);
 #endif
 }
-#endif
 
-#ifdef RUBY_VERSION_IS_3_1
 VALUE io_spec_rb_io_maybe_wait(VALUE self, VALUE error, VALUE io, VALUE events, VALUE timeout) {
   return rb_io_maybe_wait(NUM2INT(error), io, events, timeout);
 }
-#endif
 
 VALUE io_spec_rb_thread_wait_fd(VALUE self, VALUE io) {
   rb_thread_wait_fd(io_spec_get_fd(io));
@@ -238,23 +218,13 @@ VALUE io_spec_rb_thread_wait_fd(VALUE self, VALUE io) {
 }
 
 VALUE io_spec_rb_wait_for_single_fd(VALUE self, VALUE io, VALUE events, VALUE secs, VALUE usecs) {
-#ifdef RUBY_VERSION_IS_3_0
   VALUE timeout = Qnil;
   if (!NIL_P(secs)) {
-      timeout = rb_float_new((double)FIX2INT(secs) + (0.000001f * FIX2INT(usecs)));
+      timeout = rb_float_new((double)FIX2INT(secs) + (0.000001 * FIX2INT(usecs)));
   }
   VALUE result = rb_io_wait(io, events, timeout);
   if (result == Qfalse) return INT2FIX(0);
   else return result;
-#else
-  struct timeval tv;
-  if (!NIL_P(secs)) {
-    tv.tv_sec = FIX2INT(secs);
-    tv.tv_usec = FIX2INT(usecs);
-  }
-  int fd = io_spec_get_fd(io);
-  return INT2FIX(rb_wait_for_single_fd(fd, FIX2INT(events), NIL_P(secs) ? NULL : &tv));
-#endif
 }
 
 VALUE io_spec_rb_thread_fd_writable(VALUE self, VALUE io) {
@@ -371,6 +341,25 @@ static VALUE io_spec_rb_io_mode(VALUE self, VALUE io) {
 static VALUE io_spec_rb_io_path(VALUE self, VALUE io) {
   return rb_io_path(io);
 }
+
+static VALUE io_spec_rb_io_closed_p(VALUE self, VALUE io) {
+  return rb_io_closed_p(io);
+}
+
+static VALUE io_spec_rb_io_open_descriptor(VALUE self, VALUE klass, VALUE descriptor, VALUE mode, VALUE path, VALUE timeout, VALUE internal_encoding, VALUE external_encoding, VALUE ecflags, VALUE ecopts) {
+  struct rb_io_encoding io_encoding;
+
+  io_encoding.enc = rb_to_encoding(internal_encoding);
+  io_encoding.enc2 = rb_to_encoding(external_encoding);
+  io_encoding.ecflags = FIX2INT(ecflags);
+  io_encoding.ecopts = ecopts;
+
+  return rb_io_open_descriptor(klass, FIX2INT(descriptor), FIX2INT(mode), path, timeout, &io_encoding);
+}
+
+static VALUE io_spec_rb_io_open_descriptor_without_encoding(VALUE self, VALUE klass, VALUE descriptor, VALUE mode, VALUE path, VALUE timeout) {
+  return rb_io_open_descriptor(klass, FIX2INT(descriptor), FIX2INT(mode), path, timeout, NULL);
+}
 #endif
 
 void Init_io_spec(void) {
@@ -390,11 +379,9 @@ void Init_io_spec(void) {
   rb_define_method(cls, "rb_io_taint_check", io_spec_rb_io_taint_check, 1);
   rb_define_method(cls, "rb_io_wait_readable", io_spec_rb_io_wait_readable, 2);
   rb_define_method(cls, "rb_io_wait_writable", io_spec_rb_io_wait_writable, 1);
-#ifdef RUBY_VERSION_IS_3_1
   rb_define_method(cls, "rb_io_maybe_wait_writable", io_spec_rb_io_maybe_wait_writable, 3);
   rb_define_method(cls, "rb_io_maybe_wait_readable", io_spec_rb_io_maybe_wait_readable, 4);
   rb_define_method(cls, "rb_io_maybe_wait", io_spec_rb_io_maybe_wait, 4);
-#endif
   rb_define_method(cls, "rb_thread_wait_fd", io_spec_rb_thread_wait_fd, 1);
   rb_define_method(cls, "rb_thread_fd_writable", io_spec_rb_thread_fd_writable, 1);
   rb_define_method(cls, "rb_thread_fd_select_read", io_spec_rb_thread_fd_select_read, 1);
@@ -409,6 +396,14 @@ void Init_io_spec(void) {
 #if defined(RUBY_VERSION_IS_3_3) || defined(TRUFFLERUBY)
   rb_define_method(cls, "rb_io_mode", io_spec_rb_io_mode, 1);
   rb_define_method(cls, "rb_io_path", io_spec_rb_io_path, 1);
+  rb_define_method(cls, "rb_io_closed_p", io_spec_rb_io_closed_p, 1);
+  rb_define_method(cls, "rb_io_open_descriptor", io_spec_rb_io_open_descriptor, 9);
+  rb_define_method(cls, "rb_io_open_descriptor_without_encoding", io_spec_rb_io_open_descriptor_without_encoding, 5);
+  rb_define_const(cls, "FMODE_READABLE", INT2FIX(FMODE_READABLE));
+  rb_define_const(cls, "FMODE_WRITABLE", INT2FIX(FMODE_WRITABLE));
+  rb_define_const(cls, "FMODE_BINMODE", INT2FIX(FMODE_BINMODE));
+  rb_define_const(cls, "FMODE_TEXTMODE", INT2FIX(FMODE_TEXTMODE));
+  rb_define_const(cls, "ECONV_UNIVERSAL_NEWLINE_DECORATOR", INT2FIX(ECONV_UNIVERSAL_NEWLINE_DECORATOR));
 #endif
 }
 

@@ -29,6 +29,9 @@ package org.jruby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.TypeError;
+import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Define.defineClass;
 
 /**
  * The Java representation of a Ruby TypeError.
@@ -41,10 +44,8 @@ public class RubyTypeError extends RubyStandardError {
         super(runtime, exceptionClass);
     }
 
-    static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass typeErrorClass = runtime.defineClass("TypeError", exceptionClass, RubyTypeError::new);
-
-        return typeErrorClass;
+    static RubyClass define(ThreadContext context, RubyClass StandardError) {
+        return defineClass(context, "TypeError", StandardError, RubyTypeError::new);
     }
 
     protected RaiseException constructThrowable(String message) {

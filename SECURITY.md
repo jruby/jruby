@@ -2,9 +2,11 @@
 
 ## Supported Versions
 
-The 9.2.x series is currently being supported, and will continue to receive security updates.
+JRuby 10.0.x is the current version line for JRuby, and it will receive bug fixes and security updates.
 
-JRuby 9.3 is in development on the master branch, for release summer 2020.
+The 9.4.x series is still being supported for security updates.
+
+JRuby 9.3 is no longer supported; we recommend upgrading to JRuby 10. Users requiring JRuby 9.3 support may contact [Headius Enterprises](https://www.headius.com/jruby-support.html) for commercial JRuby support offerings.
 
 ## Reporting a Vulnerability
 

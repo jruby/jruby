@@ -103,7 +103,7 @@ namespace :test do
     mri_suites = [:core, :extra, :stdlib]
     mri_suites = {
       core: "-Xbacktrace.style=mri -Xdebug.fullTrace",
-      extra: "--disable-gems -Xbacktrace.style=mri -Xdebug.fullTrace",
+      extra: "--disable-gems -Xbacktrace.style=mri -Xdebug.fullTrace -X+O",
       stdlib: "-Xbacktrace.style=mri -Xdebug.fullTrace",
     }
 
@@ -116,19 +116,13 @@ namespace :test do
 
           task task do
             ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} #{extra_jruby_opts} #{opts}"
-            ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes:test/mri/excludes_wip -q -- #{files}"
+            ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{files}"
           end
           task "#{task}:prism" do
             ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} #{extra_jruby_opts} -Xparser.prism #{opts}"
-            ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes:test/mri/excludes_wip -q -- #{files}"
+            ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{files}"
           end
         end
-      end
-
-      # WIP tests in separate, interpreter-only runs suffixed with "_wip"
-      task suite.to_s + "_wip" do
-        ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} #{extra_jruby_opts} #{jruby_opts[:int]}"
-        ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{files}"
       end
 
       # add int shortcut names

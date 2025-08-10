@@ -24,15 +24,18 @@ module TestNetHTTPUtils
       @block = block
     end
 
+    # NOTE: patched by JRuby
     def start
       @thread = Thread.new do
         loop do
-          socket = @ssl_server ? @ssl_server.accept : @server.accept
+          socket = (@ssl_server || @server).accept
           run(socket)
         rescue
         ensure
-          socket.close if socket
+          socket&.close
         end
+      ensure
+        (@ssl_server || @server).close
       end
     end
 
@@ -40,9 +43,9 @@ module TestNetHTTPUtils
       handle_request(socket)
     end
 
+    # NOTE: patched by JRuby
     def shutdown
       @thread&.kill
-      @server&.close
       @thread&.join
     end
 

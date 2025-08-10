@@ -59,10 +59,9 @@ public class OutputStrings {
                 {"--profile.json", "run with instrumented (timed) profiling, graph format in JSON"},
                 {"--profile.out", "[file]"},
                 {"--profile.service", "<ProfilingService implementation classname> output profile data to [file]"},
-                {"--client", "use the non-optimizing \"client\" JVM (improves startup; default)"},
-                {"--server", "use the optimizing \"server\" JVM (improves perf)"},
                 {"--headless", "do not launch a GUI window, no matter what"},
                 {"--dev", "prioritize startup time over long term performance"},
+                {"--cache", "EXPERIMENTAL: Regenerate the JRuby AppCDS archive to improve startup"},
                 {"--manage", "enable remote JMX management and monitoring of JVM and JRuby"},
                 {"--bytecode", "show the JVM bytecode produced by compiling specified code"},
                 {"--version", "print the version"},
@@ -131,9 +130,9 @@ public class OutputStrings {
                 .append("# These properties can be used to alter runtime behavior for performance\n")
                 .append("# or compatibility.\n")
                 .append("#\n")
-                .append("# Specify them by passing `-X<property>=<value>` to the jruby command,\n")
-                .append("# or put `<property>=<value>` in .jrubyrc. If passing to the java command,\n")
-                .append("# use the flag `-Djruby.<property>=<value>`\n")
+                .append("# Specify them by passing '-X<property>=<value>' to the jruby command,\n")
+                .append("# or put '<property>=<value>' in .jrubyrc. If passing to the java command,\n")
+                .append("# use the flag '-Djruby.<property>=<value>'\n")
                 .append("#\n")
                 .append("# This output is the current settings as a valid .jrubyrc file.\n");
 

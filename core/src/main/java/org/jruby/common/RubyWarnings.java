@@ -41,19 +41,27 @@ import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.JavaSites;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.func.TriFunction;
 
+import static org.jruby.api.Access.globalVariables;
+import static org.jruby.api.Access.kernelModule;
+import static org.jruby.api.Access.stringClass;
+import static org.jruby.api.Access.symbolClass;
 import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Create.newArrayFrom;
+import static org.jruby.api.Create.newSmallHash;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineModule;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.util.RubyStringBuilder.str;
 
-/**
- *
- */
 public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
     private static final int LINE_NUMBER_NON_WARNING = Integer.MIN_VALUE;
@@ -65,13 +73,12 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         this.runtime = runtime;
     }
 
-    public static RubyModule createWarningModule(Ruby runtime) {
-        RubyModule warning = runtime.defineModule("Warning");
+    public static RubyModule createWarningModule(ThreadContext context) {
+        var Warning = defineModule(context, "Warning").defineMethods(context, RubyWarnings.class);
 
-        warning.defineAnnotatedMethods(RubyWarnings.class);
-        warning.extend_object(warning);
+        Warning.extend_object(context, Warning);
 
-        return warning;
+        return Warning;
     }
 
     @Override
@@ -114,14 +121,14 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
      */
     @Override
     public void warn(ID id, String fileName, int lineNumber, String message) {
-        doWarn(id, fileName, lineNumber, message);
+        doWarn(fileName, lineNumber, message, null);
     }
 
     public void warn(String fileName, int lineNumber, String message) {
-        doWarn(ID.MISCELLANEOUS, fileName, lineNumber, message);
+        doWarn(fileName, lineNumber, message, null);
     }
 
-    private void doWarn(ID id, String fileName, int lineNumber, CharSequence message) {
+    private void doWarn(String fileName, int lineNumber, CharSequence message, Category category) {
         if (!runtime.warningsEnabled()) return;
 
         String fullMessage;
@@ -131,38 +138,46 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
             fullMessage = fileName + ": " + message + '\n'; // warn(fileName, message) behave as in MRI
         }
         ThreadContext context = runtime.getCurrentContext();
-        writeWarningDyncall(context, newString(context, fullMessage));
+        writeWarningDyncall(context, newString(context, fullMessage), category);
     }
 
-    // MRI: rb_write_warning_str
-    private static IRubyObject writeWarningDyncall(ThreadContext context, RubyString errorString) {
+    // MRI: rb_write_warning_str with category logic
+    private static IRubyObject writeWarningDyncall(ThreadContext context, RubyString errorString, Category category) {
         RubyModule warning = context.runtime.getWarning();
 
-        return sites(context).warn.call(context, warning, warning, errorString);
+        CachingCallSite warn = sites(context).warn;
+
+        if (category == null || warn.retrieveCache(warning).method.getSignature() == Signature.ONE_ARGUMENT) {
+            return warn.call(context, warning, warning, errorString);
+        }
+
+        RubyHash opts = newSmallHash(context, asSymbol(context, "category"), asSymbol(context, category.id));
+
+        context.callInfo = ThreadContext.CALL_KEYWORD;
+        return warn.call(context, warning, warning, errorString, opts);
     }
 
     // MR: rb_write_error_str
     private static IRubyObject writeWarningToError(ThreadContext context, RubyString errorString) {
-        Ruby runtime = context.runtime;
+        IRubyObject errorStream = globalVariables(context).get("$stderr");
 
-        IRubyObject errorStream = runtime.getGlobalVariables().get("$stderr");
-        RubyModule warning = runtime.getWarning();
-
-        return sites(context).write.call(context, warning, errorStream, errorString);
+        return sites(context).write.call(context, context.runtime.getWarning(), errorStream, errorString);
     }
 
     public static IRubyObject warnWithCategory(ThreadContext context, IRubyObject errorString, IRubyObject category) {
-        Ruby runtime = context.runtime;
+        RubySymbol cat = (RubySymbol) TypeConverter.convertToType(category, symbolClass(context), "to_sym");
 
-        RubySymbol cat = (RubySymbol) TypeConverter.convertToType(category, runtime.getSymbol(), "to_sym");
-
-        if (runtime.getWarningCategories().contains(Category.fromId(cat.idString()))) warn(context, context.runtime.getKernel(), errorString);
+        if (context.runtime.getWarningCategories().contains(Category.fromId(cat.idString()))) warn(context, kernelModule(context), errorString);
 
         return context.nil;
     }
 
     @Override
     public void warn(ID id, String message) {
+        warn(message, (Category) null);
+    }
+
+    public void warn(String message, Category category) {
         if (!runtime.warningsEnabled()) return;
 
         RubyStackTraceElement stack = runtime.getCurrentContext().getSingleBacktrace();
@@ -177,31 +192,65 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
             line = stack.getLineNumber();
         }
 
-        doWarn(id, file, line, message);
+        doWarn(file, line, message, category);
+    }
+
+    public void warn(String file, int line, String message, Category category) {
+        if (!runtime.warningsEnabled()) return;
+
+        doWarn(file, line, message, category);
     }
 
     public void warn(String filename, String message) {
-        doWarn(ID.MISCELLANEOUS, filename, LINE_NUMBER_NON_WARNING, message);
+        doWarn(filename, LINE_NUMBER_NON_WARNING, message, null);
     }
 
+    @Deprecated
     public void warnExperimental(String filename, int line, String message) {
-        if (runtime.getWarningCategories().contains(Category.EXPERIMENTAL)) warn(ID.MISCELLANEOUS, filename, line, message);
+        warnWithCategory(filename, line, message, Category.EXPERIMENTAL);
     }
 
+    @Deprecated(since = "10.0")
     public void warnDeprecated(ID id, String message) {
-        if (runtime.getWarningCategories().contains(Category.DEPRECATED)) warn(id, message);
+        warnWithCategory(message, Category.DEPRECATED);
     }
 
     public void warnDeprecated(String message) {
-        if (runtime.getWarningCategories().contains(Category.DEPRECATED)) warn(message);
+        warnWithCategory(message, Category.DEPRECATED);
     }
 
+    public void warnExperimental(String message) {
+        warnWithCategory(message, Category.EXPERIMENTAL);
+    }
+
+    public void warnPerformance(String message) {
+        warnWithCategory(message, Category.PERFORMANCE);
+    }
+
+    private void warnWithCategory(String message, Category category) {
+        if (runtime.getWarningCategories().contains(category)) warn(message, category);
+    }
+
+    private void warnWithCategory(String filename, int line, String message, Category category) {
+        if (runtime.getWarningCategories().contains(category)) warn(filename, line, message, category);
+    }
+
+    @Deprecated(since = "10.0")
     public void warnDeprecatedAlternate(String name, String alternate) {
-        if (runtime.getWarningCategories().contains(Category.DEPRECATED)) warn(ID.DEPRECATED_METHOD, name + " is deprecated; use " + alternate + " instead");
+        if (hasDeprecationWarningEnabled()) warn(ID.DEPRECATED_METHOD, name + " is deprecated; use " + alternate + " instead");
     }
 
+    @Deprecated(since = "10.0")
     public void warnDeprecatedForRemoval(String name, String version) {
-        if (runtime.getWarningCategories().contains(Category.DEPRECATED)) warn(ID.MISCELLANEOUS, name + " is deprecated and will be removed in Ruby " + version);
+        if (hasDeprecationWarningEnabled()) warn(ID.MISCELLANEOUS, name + " is deprecated and will be removed in Ruby " + version);
+    }
+
+    public void warnDeprecatedForRemovalAlternate(String name, String version, String alternate) {
+        if (hasDeprecationWarningEnabled()) warn(ID.MISCELLANEOUS, name + " is deprecated and will be removed in Ruby " + version + "; use " + alternate + " instead");
+    }
+
+    public boolean hasDeprecationWarningEnabled() {
+        return runtime.getWarningCategories().contains(Category.DEPRECATED);
     }
 
     public void warnOnce(ID id, String message) {
@@ -231,9 +280,8 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     }
 
     public void warningDeprecated(ID id, String message) {
-        if (!isVerbose()) return;
-
-        warnDeprecated(id, message);
+        if (!isVerbose() && !runtime.getWarningCategories().contains(Category.DEPRECATED)) return;
+        warning(id, message);
     }
 
     /**
@@ -254,58 +302,61 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
     @JRubyMethod(name = "[]")
     public static IRubyObject op_aref(ThreadContext context, IRubyObject self, IRubyObject arg) {
-        Ruby runtime = context.runtime;
-        TypeConverter.checkType(context, arg, runtime.getSymbol());
+        TypeConverter.checkType(context, arg, symbolClass(context));
         String categoryId = ((RubySymbol) arg).idString();
         Category category = Category.fromId(categoryId);
 
-        if (category == null) throw runtime.newArgumentError(str(runtime, "unknown category: ", arg));
+        if (category == null) throw argumentError(context, str(context.runtime, "unknown category: ", arg));
 
-        return asBoolean(context, runtime.getWarningCategories().contains(category));
+        return asBoolean(context, context.runtime.getWarningCategories().contains(category));
     }
 
     @JRubyMethod(name = "[]=")
     public static IRubyObject op_aset(ThreadContext context, IRubyObject self, IRubyObject arg, IRubyObject flag) {
-        Ruby runtime = context.runtime;
-
-        TypeConverter.checkType(context, arg, runtime.getSymbol());
+        TypeConverter.checkType(context, arg, symbolClass(context));
         String categoryId = ((RubySymbol) arg).idString();
         Category category = Category.fromId(categoryId);
 
         if (category != null) {
             if (flag.isTrue()) {
-                runtime.getWarningCategories().add(category);
+                context.runtime.getWarningCategories().add(category);
             } else {
-                runtime.getWarningCategories().remove(category);
+                context.runtime.getWarningCategories().remove(category);
             }
         } else {
-            throw runtime.newArgumentError(str(runtime, "unknown category: ", arg));
+            throw argumentError(context, str(context.runtime, "unknown category: ", arg));
         }
 
         return flag;
     }
 
-    @JRubyMethod
+    @JRubyMethod(keywords = true)
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        TypeConverter.checkType(context, arg, context.runtime.getString());
+        ThreadContext.resetCallInfo(context);
+        TypeConverter.checkType(context, arg, stringClass(context));
         return warn(context, (RubyString) arg);
     }
 
-    @JRubyMethod
+    @JRubyMethod(keywords = true)
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
+        if ((ThreadContext.resetCallInfo(context) & ThreadContext.CALL_KEYWORD) == 0) {
+            throw argumentError(context, 2, 1);
+        }
+
         IRubyObject opts = TypeConverter.checkHashType(context.runtime, arg1);
         IRubyObject ret = ArgsUtil.extractKeywordArg(context, (RubyHash) opts, "category");
-        if (ret.isNil()) {
-            return warn(context, recv, arg0);
-        } else {
-            return warnWithCategory(context, arg0, ret);
-        }
+        return ret.isNil() ? warn(context, recv, arg0) : warnWithCategory(context, arg0, ret);
     }
 
     public static IRubyObject warn(ThreadContext context, RubyString str) {
         str.verifyAsciiCompatible();
         writeWarningToError(context, str);
         return context.nil;
+    }
+
+    @JRubyMethod
+    public static IRubyObject categories(ThreadContext context, IRubyObject recv) {
+        return newArrayFrom(context, Category.values(), (ctx, c) -> asSymbol(ctx, c.id));
     }
 
     private static JavaSites.WarningSites sites(ThreadContext context) {
@@ -322,13 +373,12 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         }
 
         public static Category fromId(String id) {
-            switch (id) {
-                case "experimental": return EXPERIMENTAL;
-                case "deprecated": return DEPRECATED;
-                case "performance": return PERFORMANCE;
-            }
-
-            return null;
+            return switch (id) {
+                case "experimental" -> EXPERIMENTAL;
+                case "deprecated" -> DEPRECATED;
+                case "performance" -> PERFORMANCE;
+                default -> null;
+            };
         }
     }
 
@@ -346,13 +396,10 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
     @Deprecated
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        switch (args.length) {
-            case 1:
-                return warn(context, recv, args[0]);
-            case 2:
-                return warn(context, recv, args[0], args[1]);
-            default:
-                throw context.runtime.newArgumentError(args.length, 1, 2);
-        }
+        return switch (args.length) {
+            case 1 -> warn(context, recv, args[0]);
+            case 2 -> warn(context, recv, args[0], args[1]);
+            default -> throw argumentError(context, args.length, 1, 2);
+        };
     }
 }

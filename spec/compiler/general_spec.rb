@@ -71,6 +71,7 @@ module PersistenceSpecUtils
 
     # interpret with test runtime
     runtime = JRuby.runtime
+    context = runtime.get_current_context
     manager = runtime.getIRManager()
     top_self = runtime.top_self
 
@@ -78,7 +79,7 @@ module PersistenceSpecUtils
     method = org.jruby.ir.persistence.IRReader.load(manager, reader)
 
     interpreter = org.jruby.ir.interpreter.Interpreter.new
-    interpreter.execute(runtime, method, top_self)
+    interpreter.execute(context, method, top_self)
   end
 end
 
@@ -202,6 +203,11 @@ modes.each do |mode|
       run('i = 1; a = "hello#{i + 42}"; a') {|result| expect(result).to eq("hello43") }
       # same cases in presence of refinements
       run('class NoToS; end; module AddToS; refine(NoToS){def to_s; "42"; end}; end; class TryToS; using AddToS; def self.a; "hello#{NoToS.new}"; end; end; TryToS.a') {|result| expect(result).to eq('hello42') }
+
+      # https://github.com/jruby/jruby/issues/8847
+      pid_dstr_32_times = '#{$$}' * 32
+      pid_32_times = ([$$] * 32).join('')
+      run("\"hello#{pid_dstr_32_times}\"") {|result| expect(result).to eq('hello' + pid_32_times) }
     end
 
     it "compiles calls" do
@@ -314,7 +320,7 @@ modes.each do |mode|
         }
         arr << x
         arr
-        EOS
+      EOS
       run(blocks_code) {|result| expect(result).to eq([1,2,3,4,5,6]) }
     end
 
@@ -329,7 +335,7 @@ modes.each do |mode|
           yield
         end
         foo { 1 }
-        EOS
+      EOS
       run(yield_in_block) {|result| expect(result).to eq 1}
 
       yield_in_proc = <<-EOS
@@ -338,7 +344,7 @@ modes.each do |mode|
         end
         p = foo { 1 }
         p.call
-        EOS
+      EOS
       run(yield_in_proc) {|result| expect(result).to eq 1 }
     end
 
@@ -370,7 +376,7 @@ modes.each do |mode|
           end
         end
         CompiledClass1.new.foo
-        EOS
+      EOS
       run(class_string) {|result| expect(result).to eq 'cc1' }
     end
 
@@ -833,7 +839,6 @@ modes.each do |mode|
 
     it "properly resets $! to nil upon normal exit from a rescue" do
       # test that $! is getting reset/cleared appropriately
-      $! = nil
       run("begin; raise; rescue; end; $!") {|result| expect(result).to be_nil }
       run("1.times { begin; raise; rescue; next; end }; $!") {|result| expect(result).to be_nil }
       run("begin; raise; rescue; begin; raise; rescue; end; $!; end") {|result| expect(result).to_not be_nil }
@@ -1560,6 +1565,23 @@ modes.each do |mode|
         end
         BZSuper.new.z_super
       SUPER
+    end
+
+    it "compiles debug chilled strings that can be modified without impacting other strings" do
+      JRuby.runtime.instance_config.debugging_frozen_string_literal = true
+      run(<<~CHILLED) {|val| expect(val).to eq("")}
+        str = ""
+        str << "hello"
+        ""
+      CHILLED
+    ensure
+      JRuby.runtime.instance_config.debugging_frozen_string_literal = false
+    end
+
+    it "compiles very long dynamic strings" do
+      run('"a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}"') do
+        expect(it).to eq("a#{$$}" * 24)
+      end
     end
   end
 end

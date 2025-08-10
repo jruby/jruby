@@ -14,18 +14,22 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectMarshal;
 
+import static org.jruby.api.Access.errnoModule;
+import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.runtime.Visibility.*;
 
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.component.VariableEntry;
-import org.jruby.runtime.marshal.MarshalStream;
-import org.jruby.runtime.marshal.NewMarshal;
-import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.runtime.marshal.MarshalDumper;
 
 import jnr.constants.platform.Errno;
+import org.jruby.runtime.marshal.MarshalLoader;
+import org.jruby.util.io.RubyInputStream;
+import org.jruby.util.io.RubyOutputStream;
 
 /**
  * The Java representation of a Ruby SystemCallError.
@@ -139,22 +143,24 @@ public class RubySystemCallError extends RubyStandardError {
 
     private static final ObjectMarshal SYSTEM_CALL_ERROR_MARSHAL = new ObjectMarshal() {
         @Override
+        @Deprecated(since = "10.0", forRemoval = true)
+        @SuppressWarnings("removal")
         public void marshalTo(Ruby runtime, Object obj, RubyClass type,
-                              MarshalStream marshalStream) throws IOException {
+                              org.jruby.runtime.marshal.MarshalStream marshalStream) throws IOException {
             RubySystemCallError exc = (RubySystemCallError) obj;
-            marshalStream.registerLinkTarget(exc);
+            var context = runtime.getCurrentContext();
+            marshalStream.registerLinkTarget(context, exc);
 
             List<Variable<Object>> attrs = exc.getMarshalVariableList();
-            attrs.add(new VariableEntry<Object>(
-                    "mesg", exc.message == null ? runtime.getNil() : exc.message));
-            attrs.add(new VariableEntry<Object>("errno", exc.errno));
-            attrs.add(new VariableEntry<Object>("bt", exc.getBacktrace()));
+            attrs.add(new VariableEntry<>("mesg", exc.message == null ? context.nil : exc.message));
+            attrs.add(new VariableEntry<>("errno", exc.errno));
+            attrs.add(new VariableEntry<>("bt", exc.getBacktrace()));
             marshalStream.dumpVariables(attrs);
         }
 
         @Override
-        public void marshalTo(Object obj, RubyClass type,
-                              NewMarshal marshalStream, ThreadContext context, NewMarshal.RubyOutputStream out) {
+        public void marshalTo(ThreadContext context, RubyOutputStream out, Object obj, RubyClass type,
+                              MarshalDumper marshalStream) {
             RubySystemCallError exc = (RubySystemCallError) obj;
             marshalStream.registerLinkTarget(exc);
 
@@ -166,27 +172,39 @@ public class RubySystemCallError extends RubyStandardError {
         }
 
         @Override
-        public Object unmarshalFrom(Ruby runtime, RubyClass type, UnmarshalStream input) throws IOException {
-            RubySystemCallError exc = (RubySystemCallError) input.entry(type.allocate());
+        @Deprecated(since = "10.0", forRemoval = true)
+        @SuppressWarnings("removal")
+        public Object unmarshalFrom(Ruby runtime, RubyClass type, org.jruby.runtime.marshal.UnmarshalStream input) throws IOException {
+            var context = runtime.getCurrentContext();
+            RubySystemCallError exc = (RubySystemCallError) input.entry(type.allocate(context));
 
             input.ivar(null, exc, null);
             
-            exc.message = (IRubyObject)exc.removeInternalVariable("mesg");
-            exc.errno = (IRubyObject)exc.removeInternalVariable("errno");
-            exc.set_backtrace((IRubyObject)exc.removeInternalVariable("bt"));
+            exc.message = (IRubyObject) exc.removeInternalVariable("mesg");
+            exc.errno = (IRubyObject) exc.removeInternalVariable("errno");
+            exc.set_backtrace(context, (IRubyObject) exc.removeInternalVariable("bt"));
             
+            return exc;
+        }
+
+        @Override
+        public Object unmarshalFrom(ThreadContext context, RubyInputStream in, RubyClass type, MarshalLoader input) {
+            RubySystemCallError exc = (RubySystemCallError) input.entry(type.allocate(context));
+
+            input.ivar(context, in, null, exc, null);
+
+            exc.message = (IRubyObject) exc.removeInternalVariable("mesg");
+            exc.errno = (IRubyObject) exc.removeInternalVariable("errno");
+            exc.set_backtrace(context, (IRubyObject) exc.removeInternalVariable("bt"));
+
             return exc;
         }
     };
 
-    public static RubyClass define(Ruby runtime, RubyClass standardError) {
-        RubyClass exceptionClass = runtime.defineClass("SystemCallError", standardError, RubySystemCallError::new);
-
-        exceptionClass.setMarshal(SYSTEM_CALL_ERROR_MARSHAL);
-        
-        exceptionClass.defineAnnotatedMethods(RubySystemCallError.class);
-
-        return exceptionClass;
+    public static RubyClass define(ThreadContext context, RubyClass StandardError) {
+        return defineClass(context, "SystemCallError", StandardError, RubySystemCallError::new).
+                marshalWith(SYSTEM_CALL_ERROR_MARSHAL).
+                defineMethods(context, RubySystemCallError.class);
     }
 
     @Deprecated
@@ -223,25 +241,23 @@ public class RubySystemCallError extends RubyStandardError {
         } else {
             // one optional and no required args
             Arity.checkArgumentCount(context, args, 0, 1);
-            if (argc == 1) {
-                msg = args[0];
-            }
+            if (argc == 1) msg = args[0];
+
             // try to get errno value out of the class
-            err = klass.getConstant("Errno");
+            err = klass.getConstant(context, "Errno");
         }
 
         String val = null;
 
         if (!err.isNil()) {
             errno = err.convertToInteger();
-            int errnoVal = RubyNumeric.num2int(errno);
+            int errnoVal = toInt(context, errno);
             if (Errno.valueOf(errnoVal) != Errno.__UNKNOWN_CONSTANT__) {
                 // we got a valid errno value
                 isErrnoClass = true;
 
                 // set the metaclass to an Errno, if something other than SystemCallError or Errno wasn't provided
-                if (metaClass == runtime.getSystemCallError() ||
-                        metaClass == runtime.getErrno()) {
+                if (metaClass == runtime.getSystemCallError() || metaClass == errnoModule(context)) {
                     setMetaClass(runtime.getErrno(errnoVal));
                 }
                 
@@ -256,10 +272,9 @@ public class RubySystemCallError extends RubyStandardError {
         }
 
         if (val == null) {
-            val = defaultMessages.get(klass.getName());
-            if (val == null) {
-                val = "Unknown error (" + klass.getName() + ")";
-            }
+            var className = klass.getName(context);
+            val = defaultMessages.get(className);
+            if (val == null) val = "Unknown error (" + className + ")";
         }
 
         // MRI behavior: we don't print errno for actual Errno errors

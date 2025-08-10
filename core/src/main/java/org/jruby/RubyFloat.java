@@ -46,6 +46,7 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.JRubyAPI;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ClassIndex;
@@ -54,16 +55,20 @@ import org.jruby.runtime.JavaSites.FloatSites;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.marshal.MarshalStream;
-import org.jruby.runtime.marshal.NewMarshal;
-import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.runtime.marshal.MarshalDumper;
+import org.jruby.runtime.marshal.MarshalLoader;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertDouble;
 import org.jruby.util.Numeric;
 import org.jruby.util.Sprintf;
+import org.jruby.util.io.RubyInputStream;
+import org.jruby.util.io.RubyOutputStream;
 
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newSharedString;
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.Numeric.f_abs;
@@ -96,38 +101,30 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     public static final double NAN = Double.NaN;
     public static final int FLOAT_DIG = DIG + 2;
 
-    public static RubyClass createFloatClass(Ruby runtime) {
-        var context = runtime.getCurrentContext();
-        RubyClass floatc = runtime.defineClass("Float", runtime.getNumeric(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+    public static RubyClass createFloatClass(ThreadContext context, RubyClass Numeric) {
+        RubyClass Float = defineClass(context, "Float", Numeric, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR).
+                reifiedClass(RubyFloat.class).
+                kindOf(new RubyModule.JavaClassKindOf(RubyFloat.class)).
+                classIndex(ClassIndex.FLOAT).
+                defineMethods(context, RubyFloat.class).
+                tap(c -> c.singletonClass(context).undefMethods(context, "new")).
+                defineConstant(context, "ROUNDS", asFixnum(context, ROUNDS)).
+                defineConstant(context, "RADIX", asFixnum(context, RADIX)).
+                defineConstant(context, "MANT_DIG", asFixnum(context, MANT_DIG)).
+                defineConstant(context, "DIG", asFixnum(context, DIG)).
+                defineConstant(context, "MIN_EXP", asFixnum(context, MIN_EXP)).
+                defineConstant(context, "MAX_EXP", asFixnum(context, MAX_EXP)).
+                defineConstant(context, "MIN_10_EXP", asFixnum(context, MIN_10_EXP)).
+                defineConstant(context, "MAX_10_EXP", asFixnum(context, MAX_10_EXP));
 
-        floatc.setClassIndex(ClassIndex.FLOAT);
-        floatc.setReifiedClass(RubyFloat.class);
+        Float.defineConstant(context, "MIN", new RubyFloat(Float, Double.MIN_NORMAL)).
+                defineConstant(context, "MAX", new RubyFloat(Float, Double.MAX_VALUE)).
+                defineConstant(context, "EPSILON", new RubyFloat(Float, EPSILON)).
 
-        floatc.kindOf = new RubyModule.JavaClassKindOf(RubyFloat.class);
+                defineConstant(context, "INFINITY", new RubyFloat(Float, INFINITY)).
+                defineConstant(context, "NAN", new RubyFloat(Float, NAN));
 
-        floatc.getSingletonClass().undefineMethod("new");
-
-        // Java Doubles are 64 bit long:
-        floatc.defineConstant("ROUNDS", asFixnum(context, ROUNDS));
-        floatc.defineConstant("RADIX", RubyFixnum.newFixnum(runtime, RADIX));
-        floatc.defineConstant("MANT_DIG", asFixnum(context, MANT_DIG));
-        floatc.defineConstant("DIG", asFixnum(context, DIG));
-        // Double.MAX_EXPONENT since Java 1.6
-        floatc.defineConstant("MIN_EXP", asFixnum(context, MIN_EXP));
-        // Double.MAX_EXPONENT since Java 1.6
-        floatc.defineConstant("MAX_EXP", asFixnum(context, MAX_EXP));
-        floatc.defineConstant("MIN_10_EXP", asFixnum(context, MIN_10_EXP));
-        floatc.defineConstant("MAX_10_EXP", asFixnum(context, MAX_10_EXP));
-        floatc.defineConstant("MIN", new RubyFloat(floatc, Double.MIN_NORMAL));
-        floatc.defineConstant("MAX", new RubyFloat(floatc, Double.MAX_VALUE));
-        floatc.defineConstant("EPSILON", new RubyFloat(floatc, EPSILON));
-
-        floatc.defineConstant("INFINITY", new RubyFloat(floatc, INFINITY));
-        floatc.defineConstant("NAN", new RubyFloat(floatc, NAN));
-
-        floatc.defineAnnotatedMethods(RubyFloat.class);
-
-        return floatc;
+        return Float;
     }
 
     final double value;
@@ -153,9 +150,8 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         this.flags |= FROZEN_F;
     }
 
-    @Override
-    public RubyClass getSingletonClass() {
-        throw typeError(getRuntime().getCurrentContext(), "can't define singleton");
+    public RubyClass singletonClass(ThreadContext context) {
+        throw typeError(context, "can't define singleton");
     }
 
     @Override
@@ -163,31 +159,41 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         return double.class;
     }
 
-    /** Getter for property value.
+    /**
+     * Get the raw float value.  If you want to access this as other Java primitive types then
+     * you should use {@link #asLong(ThreadContext)}, {@link #asBigInteger(ThreadContext)}, or
+     * {@link #asInt(ThreadContext)}.  Those will ensure that the double will fit into the range and
+     * create the type if needed (e.g. make a BigInteger). If you KNOW the double is in the right range
+     * then you can just use this method and manually cast it.
      * @return Value of property value.
      */
+    @JRubyAPI
     public double getValue() {
         return this.value;
     }
 
     @Override
-    public double getDoubleValue() {
+    @JRubyAPI
+    public BigInteger asBigInteger(ThreadContext context) {
+        return RubyBignum.toBigInteger(value);
+    }
+
+    @Override
+    @JRubyAPI
+    public double asDouble(ThreadContext context) {
         return value;
     }
 
     @Override
-    public long getLongValue() {
-        return (long) value;
-    }
-
-    @Override
-    public int getIntValue() {
+    @JRubyAPI
+    public int asInt(ThreadContext context) {
         return (int) value;
     }
 
     @Override
-    public BigInteger getBigIntegerValue() {
-        return RubyBignum.toBigInteger(value);
+    @JRubyAPI
+    public long asLong(ThreadContext context) {
+        return (long) value;
     }
 
     @Override
@@ -197,38 +203,43 @@ public class RubyFloat extends RubyNumeric implements Appendable {
 
     @Override
     public RubyInteger convertToInteger() {
-        return toInteger(metaClass.runtime);
+        return toInteger(metaClass.runtime.getCurrentContext());
     }
 
-    private RubyInteger toInteger(final Ruby runtime) {
-        if (value > 0.0) return dbl2ival(runtime, Math.floor(value));
-        return dbl2ival(runtime, Math.ceil(value));
+    private RubyInteger toInteger(ThreadContext context) {
+        return asInteger(context, value > 0.0 ? Math.floor(value) : Math.ceil(value));
     }
 
+    @Deprecated(since = "10.0")
     public int signum() {
+        return signum(getCurrentContext());
+    }
+
+    @JRubyAPI
+    public int signum(ThreadContext context) {
         return (int) Math.signum(value); // NOTE: (int) NaN ?
     }
 
     @Override
     @JRubyMethod(name = "negative?")
     public IRubyObject isNegative(ThreadContext context) {
-        return asBoolean(context, isNegative());
+        return asBoolean(context, isNegativeNumber(context));
     }
 
     @Override
     @JRubyMethod(name = "positive?")
     public IRubyObject isPositive(ThreadContext context) {
-        return asBoolean(context, isPositive());
+        return asBoolean(context, isPositiveNumber(context));
     }
 
     @Override
-    public boolean isNegative() {
-        return signum() < 0;
+    public boolean isNegativeNumber(ThreadContext context) {
+        return signum(context) < 0;
     }
 
     @Override
-    public boolean isPositive() {
-        return signum() > 0;
+    public boolean isPositiveNumber(ThreadContext context) {
+        return signum(context) > 0;
     }
 
     public static RubyFloat newFloat(Ruby runtime, double value) {
@@ -258,14 +269,11 @@ public class RubyFloat extends RubyNumeric implements Appendable {
      */
     @JRubyMethod(name = {"to_s", "inspect"})
     @Override
-    public IRubyObject to_s() {
-        final Ruby runtime = metaClass.runtime;
+    public IRubyObject to_s(ThreadContext context) {
         if (Double.isInfinite(value)) {
-            return RubyString.newStringShared(runtime, value < 0 ? NEGATIVE_INFINITY_TO_S_BYTELIST : POSITIVE_INFINITY_TO_S_BYTELIST);
+            return newSharedString(context, value < 0 ? NEGATIVE_INFINITY_TO_S_BYTELIST : POSITIVE_INFINITY_TO_S_BYTELIST);
         }
-        if (Double.isNaN(value)) {
-            return RubyString.newStringShared(runtime, NAN_TO_S_BYTELIST);
-        }
+        if (Double.isNaN(value)) return newSharedString(context, NAN_TO_S_BYTELIST);
 
         ByteList buf = new ByteList();
         // Under 1.9, use full-precision float formatting (JRUBY-4846).
@@ -290,20 +298,16 @@ public class RubyFloat extends RubyNumeric implements Appendable {
 
         buf.setEncoding(USASCIIEncoding.INSTANCE);
 
-        return runtime.newString(buf);
+        return newString(context, buf);
     }
 
     public static final ByteList POSITIVE_INFINITY_TO_S_BYTELIST = new ByteList(ByteList.plain("Infinity"), USASCIIEncoding.INSTANCE, false);
     public static final ByteList NEGATIVE_INFINITY_TO_S_BYTELIST = new ByteList(ByteList.plain("-Infinity"), USASCIIEncoding.INSTANCE, false);
     public static final ByteList NAN_TO_S_BYTELIST = new ByteList(ByteList.plain("NaN"), USASCIIEncoding.INSTANCE, false);
 
-    /** flo_coerce
-     *
-     */
+    // MRI: flo_coerce
     @JRubyMethod(name = "coerce")
-    @Override
-    public IRubyObject coerce(IRubyObject other) {
-        var context = metaClass.runtime.getCurrentContext();
+    public IRubyObject coerce(ThreadContext context, IRubyObject other) {
         return newArray(context, RubyKernel.new_float(context, other), this);
     }
 
@@ -328,7 +332,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @Override
     public IRubyObject op_plus(ThreadContext context, IRubyObject other) {
         return switch (other.getMetaClass().getClassIndex()) {
-            case INTEGER, FLOAT -> asFloat(context, value + ((RubyNumeric) other).getDoubleValue());
+            case INTEGER, FLOAT -> asFloat(context, value + ((RubyNumeric) other).asDouble(context));
             default -> coerceBin(context, sites(context).op_plus, other);
         };
     }
@@ -343,7 +347,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @JRubyMethod(name = "-")
     public IRubyObject op_minus(ThreadContext context, IRubyObject other) {
         return switch (other.getMetaClass().getClassIndex()) {
-            case INTEGER, FLOAT -> asFloat(context, value - ((RubyNumeric) other).getDoubleValue());
+            case INTEGER, FLOAT -> asFloat(context, value - ((RubyNumeric) other).asDouble(context));
             default -> coerceBin(context, sites(context).op_minus, other);
         };
     }
@@ -358,7 +362,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @JRubyMethod(name = "*")
     public IRubyObject op_mul(ThreadContext context, IRubyObject other) {
         return switch (other.getMetaClass().getClassIndex()) {
-            case INTEGER, FLOAT -> asFloat(context, value * ((RubyNumeric) other).getDoubleValue());
+            case INTEGER, FLOAT -> asFloat(context, value * ((RubyNumeric) other).asDouble(context));
             default -> coerceBin(context, sites(context).op_times, other);
         };
     }
@@ -373,15 +377,14 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @JRubyMethod(name = "/")
     public IRubyObject op_div(ThreadContext context, IRubyObject other) { // don't override Numeric#div !
         switch (getMetaClass(other).getClassIndex()) {
-        case INTEGER:
-        case FLOAT:
-            try {
-                return asFloat(context, value / ((RubyNumeric) other).getDoubleValue());
-            } catch (NumberFormatException nfe) {
-                throw context.runtime.newFloatDomainError(other.toString());
-            }
-        default:
-            return coerceBin(context, sites(context).op_quo, other);
+            case INTEGER, FLOAT:
+                try {
+                    return asFloat(context, value / ((RubyNumeric) other).asDouble(context));
+                } catch (NumberFormatException nfe) {
+                    throw context.runtime.newFloatDomainError(other.toString());
+                }
+            default:
+                return coerceBin(context, sites(context).op_quo, other);
         }
     }
 
@@ -403,9 +406,8 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @JRubyMethod(name = {"%", "modulo"})
     public IRubyObject op_mod(ThreadContext context, IRubyObject other) {
         switch (getMetaClass(other).getClassIndex()) {
-        case INTEGER:
-        case FLOAT:
-            return op_mod(context, ((RubyNumeric) other).getDoubleValue());
+        case INTEGER, FLOAT:
+            return op_mod(context, ((RubyNumeric) other).asDouble(context));
         default:
             return coerceBin(context, sites(context).op_mod, other);
         }
@@ -429,9 +431,8 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @JRubyMethod(name = "divmod")
     public IRubyObject divmod(ThreadContext context, IRubyObject other) {
         switch (getMetaClass(other).getClassIndex()) {
-        case INTEGER:
-        case FLOAT:
-            double y = ((RubyNumeric) other).getDoubleValue();
+        case INTEGER, FLOAT:
+            double y = ((RubyNumeric) other).asDouble(context);
             if (y == 0) throw context.runtime.newZeroDivisionError();
             double x = value;
 
@@ -443,9 +444,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
 
             if (y * mod < 0) mod += y;
 
-            RubyInteger car = dbl2ival(context.runtime, div);
-            RubyFloat cdr = asFloat(context, mod);
-            return newArray(context, car, cdr);
+            return newArray(context, asInteger(context, div), asFloat(context, mod));
         default:
             return coerceBin(context, sites(context).divmod, other);
         }
@@ -457,9 +456,8 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @JRubyMethod(name = "**")
     public IRubyObject op_pow(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
-            case INTEGER:
-            case FLOAT:
-                double d_other = ((RubyNumeric) other).getDoubleValue();
+            case INTEGER, FLOAT:
+                double d_other = ((RubyNumeric) other).asDouble(context);
                 if (value < 0 && (d_other != Math.round(d_other))) {
                     RubyComplex complex = RubyComplex.newComplexRaw(context.runtime, this);
                     return sites(context).op_exp.call(context, complex, complex, other);
@@ -480,31 +478,20 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @JRubyMethod(name = {"==", "==="})
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
-        if (Double.isNaN(value)) {
-            return context.fals;
-        }
-        switch (other.getMetaClass().getClassIndex()) {
-        case INTEGER:
-        case FLOAT:
-            return asBoolean(context, value == ((RubyNumeric) other).getDoubleValue());
-        default:
-            // Numeric.equal
-            return super.op_num_equal(context, other);
-        }
+        if (Double.isNaN(value)) return context.fals;
+
+        return switch (other.getMetaClass().getClassIndex()) {
+            case INTEGER, FLOAT -> asBoolean(context, value == ((RubyNumeric) other).asDouble(context));
+            default -> super.op_num_equal(context, other); // Numeric.equal
+        };
     }
 
     public IRubyObject op_equal(ThreadContext context, double other) {
-        if (Double.isNaN(value)) {
-            return context.fals;
-        }
-        return asBoolean(context, value == other);
+        return Double.isNaN(value) ? context.fals : asBoolean(context, value == other);
     }
 
     public IRubyObject op_not_equal(ThreadContext context, double other) {
-        if (Double.isNaN(value)) {
-            return context.tru;
-        }
-        return asBoolean(context, value != other);
+        return Double.isNaN(value) ? context.tru : asBoolean(context, value != other);
     }
 
     public boolean fastEqual(RubyFloat other) {
@@ -513,14 +500,11 @@ public class RubyFloat extends RubyNumeric implements Appendable {
 
     @Override
     public final int compareTo(IRubyObject other) {
-        switch (other.getMetaClass().getClassIndex()) {
-        case INTEGER:
-        case FLOAT:
-            return Double.compare(value, ((RubyNumeric) other).getDoubleValue());
-        default:
-            ThreadContext context = metaClass.runtime.getCurrentContext();
-            return (int) coerceCmp(context, sites(context).op_cmp, other).convertToInteger().getLongValue();
-        }
+        ThreadContext context = metaClass.runtime.getCurrentContext();
+        return switch (other.getMetaClass().getClassIndex()) {
+            case INTEGER, FLOAT -> Double.compare(value, ((RubyNumeric) other).asDouble(context));
+            default -> (int) toLong(context, coerceCmp(context, sites(context).op_cmp, other));
+        };
     }
 
     /** flo_cmp
@@ -528,15 +512,12 @@ public class RubyFloat extends RubyNumeric implements Appendable {
      */
     @JRubyMethod(name = "<=>")
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
-        final Ruby runtime = context.runtime;
         switch (other.getMetaClass().getClassIndex()) {
         case INTEGER:
-            if (Double.isInfinite(value)) {
-                return value > 0.0 ? RubyFixnum.one(runtime) : RubyFixnum.minus_one(runtime);
-            }
+            if (Double.isInfinite(value)) return asFixnum(context, value > 0.0 ? 1 : -1);
         case FLOAT:
-            double b = ((RubyNumeric) other).getDoubleValue();
-            return dbl_cmp(runtime, value, b);
+            double b = ((RubyNumeric) other).asDouble(context);
+            return dbl_cmp(context.runtime, value, b);
         default:
             FloatSites sites = sites(context);
             if (Double.isInfinite(value) && sites.respond_to_infinite.respondsTo(context, other, other, true)) {
@@ -544,15 +525,12 @@ public class RubyFloat extends RubyNumeric implements Appendable {
                 if (infinite.isTrue()) {
                     int sign = RubyComparable.cmpint(context, infinite, this, other);
 
-                    if (sign > 0) {
-                        return value > 0.0 ? RubyFixnum.zero(runtime) : RubyFixnum.minus_one(runtime);
-                    } else {
-                        return value < 0.0 ? RubyFixnum.zero(runtime) : RubyFixnum.one(runtime);
-                    }
-
+                    return sign > 0 ?
+                            asFixnum(context, value > 0.0 ? 0 : -1) :
+                            asFixnum(context, value < 0.0 ? 0 : 1);
                 }
 
-                return value > 0.0 ? RubyFixnum.one(runtime) : RubyFixnum.minus_one(runtime);
+                return asFixnum(context, value > 0.0 ? 1 : -1);
             }
             return coerceCmp(context, sites.op_cmp, other);
         }
@@ -568,9 +546,8 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @JRubyMethod(name = ">")
     public IRubyObject op_gt(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
-        case INTEGER:
-        case FLOAT:
-            double b = ((RubyNumeric) other).getDoubleValue();
+        case INTEGER, FLOAT:
+            double b = ((RubyNumeric) other).asDouble(context);
             return asBoolean(context, !Double.isNaN(b) && value > b);
         default:
             return coerceRelOp(context, sites(context).op_gt, other);
@@ -587,9 +564,8 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @JRubyMethod(name = ">=")
     public IRubyObject op_ge(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
-        case INTEGER:
-        case FLOAT:
-            double b = ((RubyNumeric) other).getDoubleValue();
+        case INTEGER, FLOAT:
+            double b = ((RubyNumeric) other).asDouble(context);
             return asBoolean(context, !Double.isNaN(b) && value >= b);
         default:
             return coerceRelOp(context, sites(context).op_ge, other);
@@ -606,9 +582,8 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @JRubyMethod(name = "<")
     public IRubyObject op_lt(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
-        case INTEGER:
-        case FLOAT:
-            double b = ((RubyNumeric) other).getDoubleValue();
+        case INTEGER, FLOAT:
+            double b = ((RubyNumeric) other).asDouble(context);
             return asBoolean(context, !Double.isNaN(b) && value < b);
         default:
             return coerceRelOp(context, sites(context).op_lt, other);
@@ -625,9 +600,8 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @JRubyMethod(name = "<=")
     public IRubyObject op_le(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
-        case INTEGER:
-        case FLOAT:
-            double b = ((RubyNumeric) other).getDoubleValue();
+        case INTEGER, FLOAT:
+            double b = ((RubyNumeric) other).asDouble(context);
             return asBoolean(context, !Double.isNaN(b) && value <= b);
         default:
             return coerceRelOp(context, sites(context).op_le, other);
@@ -638,13 +612,11 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         return asBoolean(context, !Double.isNaN(other) && value <= other);
 	}
 
-    /** flo_eql
-     *
-     */
+    // MRI: flo_eql
     @JRubyMethod(name = "eql?")
     @Override
-    public IRubyObject eql_p(IRubyObject other) {
-        return metaClass.runtime.newBoolean( equals(other) );
+    public IRubyObject eql_p(ThreadContext context, IRubyObject other) {
+        return equals(other) ? context.tru : context.fals;
     }
 
     /**
@@ -667,15 +639,12 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         return Double.doubleToLongBits(val1) == Double.doubleToLongBits(val2);
     }
 
-    /** flo_hash
-     *
-     */
+    // MRI: flo_hash
     @JRubyMethod(name = "hash")
-    @Override
-    public RubyFixnum hash() {
-        Ruby runtime = metaClass.runtime;
-        return RubyFixnum.newFixnum(runtime, floatHash(runtime, value));
+    public RubyFixnum hash(ThreadContext context) {
+        return asFixnum(context, floatHash(context.runtime, value));
     }
+
 
     @Override
     public final int hashCode() {
@@ -688,11 +657,14 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         return Helpers.multAndMix(runtime.getHashSeedK0(), hashLong);
     }
 
-    /** flo_fo
-     *
-     */
-    @JRubyMethod(name = "to_f")
+    @Deprecated(since = "10.0")
     public IRubyObject to_f() {
+        return to_f(getCurrentContext());
+    }
+
+    // MRI: flo_fo
+    @JRubyMethod(name = "to_f")
+    public IRubyObject to_f(ThreadContext context) {
         return this;
     }
 
@@ -724,13 +696,13 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     }
 
     @Override
-    public final boolean isZero() {
+    public final boolean isZero(ThreadContext context) {
         return value == 0.0;
     }
 
     @Override
     public IRubyObject nonzero_p(ThreadContext context) {
-        return isZero() ? context.nil : this;
+        return isZero(context) ? context.nil : this;
     }
 
     /**
@@ -739,7 +711,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @JRubyMethod(name = {"truncate", "to_i", "to_int"})
     @Override
     public IRubyObject truncate(ThreadContext context) {
-        return toInteger(context.runtime);
+        return toInteger(context);
     }
 
     /**
@@ -781,15 +753,10 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @JRubyMethod(name = "to_r")
     public IRubyObject to_r(ThreadContext context) {
         long[] exp = new long[1];
-        double f = frexp(value, exp);
-        f = ldexp(f, DBL_MANT_DIG);
-        long n = exp[0] - DBL_MANT_DIG;
+        RubyInteger rf = asInteger(context, ldexp(frexp(value, exp), DBL_MANT_DIG));
+        RubyFixnum rn = asFixnum(context, exp[0] - DBL_MANT_DIG);
 
-        Ruby runtime = context.runtime;
-
-        RubyInteger rf = RubyNumeric.dbl2ival(runtime, f);
-        RubyFixnum rn = asFixnum(context, n);
-        return f_mul(context, rf, f_expt(context, RubyFixnum.two(runtime), rn));
+        return f_mul(context, rf, f_expt(context, asFixnum(context, 2), rn));
     }
 
     /** float_rationalize
@@ -821,15 +788,15 @@ public class RubyFloat extends RubyNumeric implements Appendable {
             RubyInteger rf = RubyBignum.newBignorm(runtime, f);
             RubyFixnum rn = asFixnum(context, n);
 
-            if (rf.isZero() || fix2int(rn) >= 0) {
+            if (rf.isZero(context) || toInt(context, rn) >= 0) {
                 return RubyRational.newRationalRaw(runtime, rf.op_lshift(context, rn));
             }
 
-            final RubyFixnum one = RubyFixnum.one(runtime);
+            final RubyFixnum one = asFixnum(context, 1);
             RubyInteger den;
 
             RubyInteger two_times_f = (RubyInteger) rf.op_mul(context, 2);
-            den = (RubyInteger) one.op_lshift(context, RubyFixnum.one(runtime).op_minus(context, n));
+            den = (RubyInteger) one.op_lshift(context, one.op_minus(context, n));
             
             a = RubyRational.newRationalRaw(runtime, two_times_f.op_minus(context, 1), den);
             b = RubyRational.newRationalRaw(runtime, two_times_f.op_plus(context, 1), den);
@@ -848,7 +815,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @Override
     @JRubyMethod(name = "floor")
     public IRubyObject floor(ThreadContext context) {
-        return dbl2ival(context.runtime, Math.floor(value));
+        return asInteger(context, Math.floor(value));
     }
 
     /**
@@ -856,7 +823,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
      */
     @JRubyMethod(name = "floor")
     public IRubyObject floor(ThreadContext context, IRubyObject digits) {
-        int ndigits = num2int(digits);
+        int ndigits = toInt(context, digits);
         double number = value;
 
         if (number == 0.0) return ndigits > 0 ? this : asFixnum(context, 0);
@@ -874,7 +841,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
             if (res > number) res = mul / f;
             return asFloat(context, res);
         } else {
-            RubyInteger num = dbl2ival(context.runtime, Math.floor(number));
+            RubyInteger num = asInteger(context, Math.floor(number));
             if (ndigits < 0) num = (RubyInteger) num.floor(context, digits);
             return num;
         }
@@ -915,7 +882,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     @JRubyMethod(name = "ceil")
     @Override
     public IRubyObject ceil(ThreadContext context) {
-        return dbl2ival(context.runtime, Math.ceil(value));
+        return asInteger(context, Math.ceil(value));
     }
 
     /**
@@ -923,7 +890,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
      */
     @JRubyMethod(name = "ceil")
     public IRubyObject ceil(ThreadContext context, IRubyObject digits) {
-        int ndigits = num2int(digits);
+        int ndigits = toInt(context, digits);
         double number = value;
 
         if (number == 0.0) return ndigits > 0 ? this : asFixnum(context, 0);
@@ -938,7 +905,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
             f = Math.ceil(number * f) / f;
             return asFloat(context, f);
         } else {
-            IRubyObject num = dbl2ival(context.runtime, Math.ceil(number));
+            IRubyObject num = asInteger(context, Math.ceil(number));
             if (ndigits < 0) num = ((RubyInteger) num).ceil(context, digits);
             return num;
         }
@@ -958,18 +925,10 @@ public class RubyFloat extends RubyNumeric implements Appendable {
      */
     @JRubyMethod(name = "round")
     public IRubyObject round(ThreadContext context, IRubyObject arg0) {
-        Ruby runtime = context.runtime;
-        int digits = 0;
+        IRubyObject opts = ArgsUtil.getOptionsArg(context, arg0);  // options (only "half" supported right now)
+        int digits = opts.isNil() ? toInt(context, arg0) : 0;
 
-        // options (only "half" right now)
-        IRubyObject opts = ArgsUtil.getOptionsArg(runtime, arg0);
-        if (opts.isNil()) {
-            digits = num2int(arg0);
-        }
-
-        RoundingMode roundingMode = getRoundingMode(context, opts);
-
-        return roundShared(context, digits, roundingMode);
+        return roundShared(context, digits, getRoundingMode(context, opts));
     }
 
     /**
@@ -977,15 +936,10 @@ public class RubyFloat extends RubyNumeric implements Appendable {
      */
     @JRubyMethod(name = "round")
     public IRubyObject round(ThreadContext context, IRubyObject _digits, IRubyObject _opts) {
-        Ruby runtime = context.runtime;
+        IRubyObject opts = ArgsUtil.getOptionsArg(context, _opts);  // options (only "half" supported right now)
+        int digits = toInt(context, _digits);
 
-        // options (only "half" right now)
-        IRubyObject opts = ArgsUtil.getOptionsArg(runtime, _opts);
-        int digits = num2int(_digits);
-
-        RoundingMode roundingMode = getRoundingMode(context, opts);
-
-        return roundShared(context, digits, roundingMode);
+        return roundShared(context, digits, getRoundingMode(context, opts));
     }
 
     /*
@@ -997,7 +951,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
 
         if (number == 0.0) return ndigits > 0 ? this : asFixnum(context, 0);
         if (ndigits < 0) return ((RubyInteger) to_int(context)).roundShared(context, ndigits, mode);
-        if (ndigits == 0) return dbl2ival(context.runtime, doRound(context, mode, number, 1.0));
+        if (ndigits == 0) return asInteger(context, doRound(context, mode, number, 1.0));
         if (Double.isFinite(value)) {
             long[] binexp = {0};
             frexp(number, binexp);
@@ -1137,61 +1091,67 @@ public class RubyFloat extends RubyNumeric implements Appendable {
 
     @Deprecated
     public IRubyObject nan_p() {
-        return nan_p(getRuntime().getCurrentContext());
+        return nan_p(getCurrentContext());
     }
 
     public boolean isNaN() {
         return Double.isNaN(value);
     }
 
-    /** flo_is_infinite_p
-     *
-     */
-    @JRubyMethod(name = "infinite?")
+    @Deprecated(since = "10.0")
     public IRubyObject infinite_p() {
-        if (Double.isInfinite(value)) {
-            return RubyFixnum.newFixnum(metaClass.runtime, value < 0 ? -1 : 1);
-        }
-        return metaClass.runtime.getNil();
+        return infinite_p(getCurrentContext());
+    }
+
+    // MRI: flo_is_infinite_p
+    @JRubyMethod(name = "infinite?")
+    public IRubyObject infinite_p(ThreadContext context) {
+        return Double.isInfinite(value) ?
+                asFixnum(context, value < 0 ? -1 : 1) :
+                context.nil;
     }
 
     public boolean isInfinite() {
         return Double.isInfinite(value);
     }
 
-    /** flo_is_finite_p
-     *
-     */
-    @JRubyMethod(name = "finite?")
+    @Deprecated(since = "10.0")
     public IRubyObject finite_p() {
-        Ruby runtime = metaClass.runtime;
-        if (Double.isInfinite(value) || Double.isNaN(value)) {
-            return runtime.getFalse();
-        }
-        return runtime.getTrue();
+        return finite_p(getCurrentContext());
     }
 
-    private ByteList marshalDump() {
+    // MRI: flo_is_finite_p
+    @JRubyMethod(name = "finite?")
+    public IRubyObject finite_p(ThreadContext context) {
+        return Double.isInfinite(value) || Double.isNaN(value) ? context.fals : context.tru;
+    }
+
+    private ByteList marshalDump(ThreadContext context) {
         if (Double.isInfinite(value)) return value < 0 ? NEGATIVE_INFINITY_BYTELIST : INFINITY_BYTELIST;
         if (Double.isNaN(value)) return NAN_BYTELIST;
 
         ByteList byteList = new ByteList();
         // Always use US locale, to ensure "." separator. JRUBY-5918
-        Sprintf.sprintf(byteList, Locale.US, "%.17g", RubyArray.newArray(getRuntime(), this));
+        Sprintf.sprintf(byteList, Locale.US, "%.17g", newArray(context, this));
         return byteList;
     }
 
-    public static void marshalTo(RubyFloat aFloat, MarshalStream output) throws java.io.IOException {
-        output.registerLinkTarget(aFloat);
-        output.writeString(aFloat.marshalDump());
+    @Deprecated(since = "10.0", forRemoval = true)
+    @SuppressWarnings("removal")
+    public static void marshalTo(RubyFloat aFloat, org.jruby.runtime.marshal.MarshalStream output) throws java.io.IOException {
+        var context = aFloat.getRuntime().getCurrentContext();
+        output.registerLinkTarget(context, aFloat);
+        output.writeString(aFloat.marshalDump(context));
     }
 
-    public static void marshalTo(RubyFloat aFloat, NewMarshal output, NewMarshal.RubyOutputStream out) {
+    public static void marshalTo(ThreadContext context, RubyOutputStream out, RubyFloat aFloat, MarshalDumper output) {
         output.registerLinkTarget(aFloat);
-        output.writeString(out, aFloat.marshalDump());
+        output.writeString(out, aFloat.marshalDump(context));
     }
 
-    public static RubyFloat unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
+    @Deprecated(since = "10.0", forRemoval = true)
+    @SuppressWarnings("removal")
+    public static RubyFloat unmarshalFrom(org.jruby.runtime.marshal.UnmarshalStream input) throws java.io.IOException {
         ByteList value = input.unmarshalString();
 
         if (value.equals(NAN_BYTELIST)) {
@@ -1205,18 +1165,42 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         }
     }
 
+    public static RubyFloat unmarshalFrom(ThreadContext context, RubyInputStream in, MarshalLoader input) {
+        ByteList value = input.unmarshalString(context, in);
+
+        if (value.equals(NAN_BYTELIST)) {
+            return RubyFloat.newFloat(context.runtime, RubyFloat.NAN);
+        } else if (value.equals(NEGATIVE_INFINITY_BYTELIST)) {
+            return RubyFloat.newFloat(context.runtime, Double.NEGATIVE_INFINITY);
+        } else if (value.equals(INFINITY_BYTELIST)) {
+            return RubyFloat.newFloat(context.runtime, Double.POSITIVE_INFINITY);
+        } else {
+            return RubyFloat.newFloat(context.runtime, ConvertDouble.byteListToDouble(value, false));
+        }
+    }
+
     private static final ByteList NAN_BYTELIST = new ByteList("nan".getBytes());
     private static final ByteList NEGATIVE_INFINITY_BYTELIST = new ByteList("-inf".getBytes());
     private static final ByteList INFINITY_BYTELIST = new ByteList("inf".getBytes());
 
-    @JRubyMethod(name = "next_float")
+    @Deprecated(since = "10.0")
     public IRubyObject next_float() {
-        return RubyFloat.newFloat(metaClass.runtime, Math.nextAfter(value, Double.POSITIVE_INFINITY));
+        return next_float(getCurrentContext());
+    }
+
+    @JRubyMethod(name = "next_float")
+    public IRubyObject next_float(ThreadContext context) {
+        return asFloat(context, Math.nextAfter(value, Double.POSITIVE_INFINITY));
+    }
+
+    @Deprecated(since = "10.0")
+    public IRubyObject prev_float() {
+        return prev_float(getCurrentContext());
     }
 
     @JRubyMethod(name = "prev_float")
-    public IRubyObject prev_float() {
-        return RubyFloat.newFloat(metaClass.runtime, Math.nextAfter(value, Double.NEGATIVE_INFINITY));
+    public IRubyObject prev_float(ThreadContext context) {
+        return asFloat(context, Math.nextAfter(value, Double.NEGATIVE_INFINITY));
     }
 
     /**
@@ -1302,38 +1286,31 @@ public class RubyFloat extends RubyNumeric implements Appendable {
 
     @Override
     public void appendIntoString(RubyString target) {
-        target.catWithCodeRange((RubyString) to_s());
+        target.catWithCodeRange((RubyString) to_s(getRuntime().getCurrentContext()));
     }
 
     @Deprecated
     public IRubyObject zero_p() {
-        return zero_p(getRuntime().getCurrentContext());
+        return zero_p(getCurrentContext());
     }
 
     @Deprecated
     public IRubyObject floor(ThreadContext context, IRubyObject[] args) {
-        switch (args.length) {
-            case 0:
-                return floor(context);
-            case 1:
-                return floor(context, args[0]);
-            default:
-                throw context.runtime.newArgumentError("floor", args.length, 1);
-        }
+        return switch (args.length) {
+            case 0 -> floor(context);
+            case 1 -> floor(context, args[0]);
+            default -> throw argumentError(context, args.length, 1);
+        };
     }
 
     @Deprecated
     public IRubyObject round(ThreadContext context, IRubyObject[] args) {
-        switch (args.length) {
-            case 0:
-                return round(context);
-            case 1:
-                return round(context, args[0]);
-            case 2:
-                return round(context, args[0], args[1]);
-            default:
-                throw context.runtime.newArgumentError("round", args.length, 2);
-        }
+        return switch (args.length) {
+            case 0 -> round(context);
+            case 1 -> round(context, args[0]);
+            case 2 -> round(context, args[0], args[1]);
+            default -> throw argumentError(context, args.length, 2);
+        };
     }
 
     private static FloatSites sites(ThreadContext context) {

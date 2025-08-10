@@ -252,16 +252,6 @@ VALUE string_spec_rb_str_new5(VALUE self, VALUE str, VALUE ptr, VALUE len) {
   return rb_str_new5(str, RSTRING_PTR(ptr), FIX2INT(len));
 }
 
-#ifndef RUBY_VERSION_IS_3_2
-VALUE string_spec_rb_tainted_str_new(VALUE self, VALUE str, VALUE len) {
-  return rb_tainted_str_new(RSTRING_PTR(str), FIX2INT(len));
-}
-
-VALUE string_spec_rb_tainted_str_new2(VALUE self, VALUE str) {
-  return rb_tainted_str_new2(RSTRING_PTR(str));
-}
-#endif
-
 VALUE string_spec_rb_str_plus(VALUE self, VALUE str1, VALUE str2) {
   return rb_str_plus(str1, str2);
 }
@@ -450,6 +440,7 @@ static VALUE string_spec_rb_str_free(VALUE self, VALUE str) {
 static VALUE string_spec_rb_sprintf1(VALUE self, VALUE str, VALUE repl) {
   return rb_sprintf(RSTRING_PTR(str), RSTRING_PTR(repl));
 }
+
 static VALUE string_spec_rb_sprintf2(VALUE self, VALUE str, VALUE repl1, VALUE repl2) {
   return rb_sprintf(RSTRING_PTR(str), RSTRING_PTR(repl1), RSTRING_PTR(repl2));
 }
@@ -581,6 +572,11 @@ static VALUE string_spec_rb_enc_interned_str_cstr(VALUE self, VALUE str, VALUE e
   return rb_enc_interned_str_cstr(RSTRING_PTR(str), e);
 }
 
+static VALUE string_spec_rb_enc_interned_str(VALUE self, VALUE str, VALUE len, VALUE enc) {
+  rb_encoding *e = NIL_P(enc) ? 0 : rb_to_encoding(enc);
+  return rb_enc_interned_str(RSTRING_PTR(str), FIX2LONG(len), e);
+}
+
 static VALUE string_spec_rb_str_to_interned_str(VALUE self, VALUE str) {
   return rb_str_to_interned_str(str);
 }
@@ -630,10 +626,6 @@ void Init_string_spec(void) {
   rb_define_method(cls, "rb_str_new3", string_spec_rb_str_new3, 1);
   rb_define_method(cls, "rb_str_new4", string_spec_rb_str_new4, 1);
   rb_define_method(cls, "rb_str_new5", string_spec_rb_str_new5, 3);
-#ifndef RUBY_VERSION_IS_3_2
-  rb_define_method(cls, "rb_tainted_str_new", string_spec_rb_tainted_str_new, 2);
-  rb_define_method(cls, "rb_tainted_str_new2", string_spec_rb_tainted_str_new2, 1);
-#endif
   rb_define_method(cls, "rb_str_plus", string_spec_rb_str_plus, 2);
   rb_define_method(cls, "rb_str_times", string_spec_rb_str_times, 2);
   rb_define_method(cls, "rb_str_modify_expand", string_spec_rb_str_modify_expand, 2);
@@ -687,6 +679,7 @@ void Init_string_spec(void) {
   rb_define_method(cls, "rb_str_locktmp", string_spec_rb_str_locktmp, 1);
   rb_define_method(cls, "rb_str_unlocktmp", string_spec_rb_str_unlocktmp, 1);
   rb_define_method(cls, "rb_enc_interned_str_cstr", string_spec_rb_enc_interned_str_cstr, 2);
+  rb_define_method(cls, "rb_enc_interned_str", string_spec_rb_enc_interned_str, 3);
   rb_define_method(cls, "rb_str_to_interned_str", string_spec_rb_str_to_interned_str, 1);
 }
 

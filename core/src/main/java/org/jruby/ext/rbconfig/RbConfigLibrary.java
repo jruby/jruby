@@ -51,7 +51,11 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.SafePropertyAccessor;
 
+import static org.jruby.api.Access.loadService;
+import static org.jruby.api.Access.objectClass;
+import static org.jruby.api.Create.newEmptyString;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineModule;
 
 @JRubyModule(name="Config")
 public class RbConfigLibrary implements Library {
@@ -183,6 +187,10 @@ public class RbConfigLibrary implements Library {
         return getRubyLibDir(runtime);
     }
 
+    public static String getRubyArchDir(Ruby runtime) {
+        return getRubyLibDir(runtime) + '/' + getArchitecture();
+    }
+
     public static String getVendorDir(Ruby runtime) {
         return newFile(getRubyLibDir(runtime), "vendor_ruby").getPath();
     }
@@ -219,15 +227,12 @@ public class RbConfigLibrary implements Library {
     public void load(Ruby runtime, boolean wrap) {
         ThreadContext context = runtime.getCurrentContext();
 
-        final RubyModule rbConfig = runtime.defineModule("RbConfig");
-
+        RubyString destDir = newEmptyString(context);
         normalizedHome = getNormalizedHome(runtime);
 
-        // Ruby installed directory.
-        rbConfig.setConstant("TOPDIR", newString(context, normalizedHome));
-        RubyString destDir = RubyString.newEmptyString(runtime);
-        // DESTDIR on make install.
-        rbConfig.setConstant("DESTDIR", destDir);
+        final RubyModule rbConfig = defineModule(context, "RbConfig").
+                defineConstant(context, "TOPDIR", newString(context, normalizedHome)).  // Ruby installed directory.
+                defineConstant(context, "DESTDIR", destDir);                            // DESTDIR on make install.
 
         // The hash configurations stored.
         final RubyHash CONFIG = new RubyHash(runtime, 48);
@@ -245,9 +250,13 @@ public class RbConfigLibrary implements Library {
         setConfig(context, CONFIG, "TEENY", teeny);
         setConfig(context, CONFIG, "PATCHLEVEL", "0");
         setConfig(context, CONFIG, "ruby_version", major + '.' + minor + ".0");
+
+        // normalize Java version 1.8 to 8
+        String javaSpecVersion = System.getProperty("java.specification.version");
+        if (javaSpecVersion.equals("1.8")) javaSpecVersion = "8";
+
         // Rubygems is too specific on host cpu so until we have real need lets default to universal
-        //setConfig(CONFIG, "arch", System.getProperty("os.arch") + "-java" + System.getProperty("java.specification.version"));
-        setConfig(context, CONFIG, "arch", "universal-java" + System.getProperty("java.specification.version"));
+        setConfig(context, CONFIG, "arch", "universal-java-" + javaSpecVersion);
 
         // Use property for binDir if available, otherwise fall back to common bin default
         String binDir = SafePropertyAccessor.getProperty("jruby.bindir");
@@ -304,10 +313,10 @@ public class RbConfigLibrary implements Library {
         String includeDir = newFile(normalizedHome, "lib/ruby/include").getPath();
 
         String vendorDirGeneral = getVendorDirGeneral(runtime);
-        String siteDirGeneral = getSiteDirGeneral(runtime);
         String rubySharedLibDir = getRubySharedLibDir(runtime);
         String rubyLibDir = getRubyLibDir(runtime);
         String archDir = getArchDir(runtime);
+        String rubyArchDir = getRubyArchDir(runtime);
         String vendorDir = getVendorDir(runtime);
         String vendorLibDir = getVendorLibDir(runtime);
         String vendorArchDir = getVendorArchDir(runtime);
@@ -330,6 +339,7 @@ public class RbConfigLibrary implements Library {
         setConfig(context, CONFIG, "sitearchdir",    siteArchDir);
         setConfig(context, CONFIG, "sitearch", "java");
         setConfig(context, CONFIG, "archdir",   archDir);
+        setConfig(context, CONFIG, "rubyarchdir",   rubyArchDir);
         setConfig(context, CONFIG, "topdir",   archDir);
         setConfig(context, CONFIG, "includedir",   includeDir);
         setConfig(context, CONFIG, "rubyhdrdir",   includeDir);
@@ -375,7 +385,7 @@ public class RbConfigLibrary implements Library {
         setConfig(context, CONFIG, "UNICODE_VERSION", Config.UNICODE_VERSION_STRING);
         setConfig(context, CONFIG, "UNICODE_EMOJI_VERSION", Config.UNICODE_EMOJI_VERSION_STRING);
 
-        rbConfig.defineConstant("CONFIG", CONFIG);
+        rbConfig.defineConstant(context, "CONFIG", CONFIG);
 
 
         // TODO CONFIG and MAKEFILE_CONFIG seems to be the same Hash in Ruby 2.5
@@ -407,19 +417,19 @@ public class RbConfigLibrary implements Library {
 
         setupMakefileConfig(context, mkmfHash);
 
-        rbConfig.defineConstant("MAKEFILE_CONFIG", mkmfHash);
+        rbConfig.defineConstant(context, "MAKEFILE_CONFIG", mkmfHash);
 
-        runtime.getLoadService().load("org/jruby/kernel/kernel/rbconfig.rb", false);
+        loadService(context).load("org/jruby/kernel/kernel/rbconfig.rb", false);
     }
 
     private static final boolean IS_64_BIT = jnr.posix.util.Platform.IS_64_BIT;
 
     private static void setupMakefileConfig(ThreadContext context, final RubyHash mkmfHash) {
-
-        RubyHash envHash = (RubyHash) context.runtime.getObject().fetchConstant("ENV");
-        String cc = getRubyEnv(envHash, "CC", "cc");
-        String cpp = getRubyEnv(envHash, "CPP", "cc -E");
-        String cxx = getRubyEnv(envHash, "CXX", "c++");
+        var Object = objectClass(context);
+        RubyHash ENV = (RubyHash) Object.fetchConstant(context, "ENV");
+        String cc = getRubyEnv(ENV, "CC", "cc");
+        String cpp = getRubyEnv(ENV, "CPP", "cc -E");
+        String cxx = getRubyEnv(ENV, "CXX", "c++");
 
         String jflags = " -fno-omit-frame-pointer -fno-strict-aliasing ";
         // String oflags = " -O2  -DNDEBUG";
@@ -505,7 +515,7 @@ public class RbConfigLibrary implements Library {
         setConfig(context, mkmfHash, "rubyhdrdir", hdr_dir);
         setConfig(context, mkmfHash, "archdir", hdr_dir);
 
-        context.runtime.getObject().defineConstant("CROSS_COMPILING", context.nil);
+        Object.defineConstant(context, "CROSS_COMPILING", context.nil);
     }
 
     private static void setConfig(ThreadContext context, RubyHash hash, String key, String value) {

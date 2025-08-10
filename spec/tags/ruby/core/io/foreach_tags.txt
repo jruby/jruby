@@ -1,3 +1,13 @@
 fails:IO.foreach when the filename starts with | gets data from a fork when passed -
 windows:IO.foreach when the filename starts with | gets data from the standard out of the subprocess
 critical(hangs):IO.foreach when passed name, object when the object is an Integer when passed limit raises ArgumentError when passed 0 as a limit
+fails:IO.foreach yields a sequence of lines without trailing newline characters when chomp is passed
+fails:IO.foreach when passed name, object when the object is an options Hash raises TypeError exception
+fails:IO.foreach when passed name, object, keyword arguments when the first object is an Integer uses the keyword arguments as options
+fails:IO.foreach when passed name, object, keyword arguments when the first object is a String uses the keyword arguments as options
+fails:IO.foreach when passed name, object, keyword arguments when the first object is not a String or Integer uses the keyword arguments as options
+fails:IO.foreach when passed name, separator, limit, keyword arguments calls #to_path to convert the name object
+fails:IO.foreach when passed name, separator, limit, keyword arguments calls #to_str to convert the separator object
+fails:IO.foreach when passed name, separator, limit, keyword arguments calls #to_int to convert the limit argument
+fails:IO.foreach when passed name, separator, limit, keyword arguments uses the keyword arguments as options
+fails:IO.foreach when passed name, separator, limit, keyword arguments when passed chomp, nil as a separator, and a limit yields each line of limit size without truncating trailing new line character

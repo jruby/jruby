@@ -35,6 +35,7 @@ import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.javasupport.JavaUtil.unwrapIfJavaObject;
 import static org.jruby.runtime.Visibility.PUBLIC;
 
@@ -45,17 +46,17 @@ import static org.jruby.runtime.Visibility.PUBLIC;
  */
 public abstract class JavaIo {
 
-    public static void define(final Ruby runtime) {
-        JavaExtensions.put(runtime, java.io.InputStream.class, (proxyClass) -> {
-            proxyClass.addMethodInternal("to_io", new InputStreamToIO(proxyClass));
+    public static void define(ThreadContext context) {
+        JavaExtensions.put(context.runtime, java.io.InputStream.class, (proxyClass) -> {
+            proxyClass.addMethodInternal(context, "to_io", new InputStreamToIO(proxyClass));
         });
 
-        JavaExtensions.put(runtime, java.io.OutputStream.class, (proxyClass) -> {
-            proxyClass.addMethodInternal("to_io", new OutputStreamToIO(proxyClass));
+        JavaExtensions.put(context.runtime, java.io.OutputStream.class, (proxyClass) -> {
+            proxyClass.addMethodInternal(context, "to_io", new OutputStreamToIO(proxyClass));
         });
 
-        JavaExtensions.put(runtime, java.nio.channels.Channel.class, (proxyClass) -> {
-            proxyClass.addMethodInternal("to_io", new ChannelToIO(proxyClass));
+        JavaExtensions.put(context.runtime, java.nio.channels.Channel.class, (proxyClass) -> {
+            proxyClass.addMethodInternal(context, "to_io", new ChannelToIO(proxyClass));
         });
     }
 
@@ -133,7 +134,7 @@ public abstract class JavaIo {
 
     private static void setAutoclose(final ThreadContext context, final RubyIO io, final IRubyObject opts) {
         if ( opts != null && opts != context.nil ) {
-            IRubyObject autoclose = opts.callMethod(context, "[]", context.runtime.newSymbol("autoclose"));
+            IRubyObject autoclose = opts.callMethod(context, "[]", asSymbol(context, "autoclose"));
             if ( autoclose != context.nil ) io.setAutoclose( autoclose.isTrue() );
         }
     }

@@ -1,0 +1,8 @@
+fails:StringIO#readline when passed [separator] and [limit] raises an IOError if self is at the end
+fails:StringIO#readline when passed [separator] and [limit] when passed [separator] and [limit] returns the data read until the limit is consumed or the separator is met
+fails:StringIO#readline when passed [separator] and [limit] when passed [separator] and [limit] truncates the multi-character separator at the end to meet the limit
+fails:StringIO#readline when passed [separator] and [limit] when passed [separator] and [limit] sets $_ to the read content
+fails:StringIO#readline when passed [separator] and [limit] when passed [separator] and [limit] updates self's lineno by one
+fails:StringIO#readline when passed [separator] and [limit] when passed [separator] and [limit] tries to convert the passed separator to a String using #to_str
+fails:StringIO#readline when passed [separator] and [limit] when passed [separator] and [limit] does not raise TypeError if passed separator is nil
+fails:StringIO#readline when passed [separator] and [limit] when passed [separator] and [limit] tries to convert the passed limit to an Integer using #to_int

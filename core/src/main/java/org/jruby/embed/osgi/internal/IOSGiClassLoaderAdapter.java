@@ -23,9 +23,6 @@ package org.jruby.embed.osgi.internal;
 
 import org.osgi.framework.Bundle;
 
-/**
- * @author ajuckel
- */
 public interface IOSGiClassLoaderAdapter {
     /**
      * Returns a 

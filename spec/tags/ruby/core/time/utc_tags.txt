@@ -1,3 +1,0 @@
-fails:Time#utc? does treat time with 'UTC' offset as UTC
-fails:Time#utc? does treat time with Z offset as UTC
-fails:Time#utc? does treat time with -00:00 offset as UTC

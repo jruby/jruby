@@ -8,16 +8,13 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- * This is the base class for all specialized RubyArray.
- *<p></p>
- * Specialized RubyArray use fields rather than an IRubyObject[] to hold their values. When they need
+ * <p>This is the base class for all specialized RubyArray.</p>
+ * <p>Specialized RubyArray use fields rather than an IRubyObject[] to hold their values. When they need
  * to grow or shrink, they unpack those values to a proper IRubyObject[] and fall back on RubyArray
- * logic.
- *<p></p>
- * Subclasses should override all methods that would access the array directly to use the fields,
+ * logic.</p>
+ * <p>Subclasses should override all methods that would access the array directly to use the fields,
  * with guards for the packed flag and access outside packed range. This includes the following
- * methods (at the time of this writing...this list will evolve):
- *<p></p>
+ * methods (at the time of this writing...this list will evolve):</p>
  * RubyArray{@link #eltInternal(int)}
  * RubyArray{@link #eltInternalSet(int index, IRubyObject value)}
  * RubyArraySpecialized{@link #finishUnpack(IRubyObject nil)}
@@ -60,13 +57,11 @@ public abstract class RubyArraySpecialized extends RubyArray {
     protected final void unpack(ThreadContext context) {
         if (!packed()) return;
 
-        // CON: I believe most of the time we'll unpack because we need to grow, so give a bit of extra room.
-        //      For example, <<, unshift, and push will all just add one to front or back.
+        // We give some room to grow based on notion that if we grow once we will likely grow more.
         IRubyObject[] values = new IRubyObject[realLength + 2];
-        Helpers.fillNil(values, context.runtime);
-        copyInto(context, values, 1);
+        copyInto(context, values, 0);
         this.values = values;
-        this.begin = 1;
+        this.begin = 0;
 
         finishUnpack(context.nil);
     }

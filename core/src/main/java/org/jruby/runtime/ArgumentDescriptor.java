@@ -10,7 +10,6 @@ import org.jruby.api.Convert;
 import java.util.Arrays;
 
 import static org.jruby.api.Create.newString;
-import static org.jruby.api.Convert.asSymbol;
 
 /**
  * A description of a single argument in a Ruby argument list.  Primarily used in Method.to_proc.
@@ -41,13 +40,7 @@ public class ArgumentDescriptor {
         this(type, null);
     }
 
-    /**
-     * @param runtime
-     * @param isLambda
-     * @return ""
-     * @deprecated Use {@link ArgumentDescriptor#toArrayForm(ThreadContext, boolean)} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public final RubyArray toArrayForm(Ruby runtime, boolean isLambda) {
         return toArrayForm(runtime.getCurrentContext(), isLambda);
     }
@@ -73,34 +66,21 @@ public class ArgumentDescriptor {
     }
 
     public RubyString asParameterName(ThreadContext context) {
-        switch (type) {
-            case req:
-                return name.asString();
-            case opt:
-                return ((RubyString) name.asString().dup()).catString("=...");
-            case key:
-                return ((RubyString) name.asString().dup()).catString(": ...");
-            case keyreq:
-                return ((RubyString) name.asString().dup()).catString(":");
-            case keyrest:
-                return newString(context, "**").cat(name.asString());
-            case block:
-                return newString(context, "&").cat(name.asString());
-            case rest:
-                return newString(context, "*").cat(name.asString());
-            case anonrest:
-                return newString(context, "*");
-            case anonkeyrest:
-                return newString(context, "**");
-            case anonreq:
-            case anonopt:
-                return newString(context, "_");
-            case nokey:
-                return newString(context, "**nil");
-        }
+        return switch (type) {
+            case req -> name.asString();
+            case opt -> ((RubyString) name.asString().dup()).catString("=...");
+            case key -> ((RubyString) name.asString().dup()).catString(": ...");
+            case keyreq -> ((RubyString) name.asString().dup()).catString(":");
+            case keyrest -> newString(context, "**").cat(name.asString());
+            case block -> newString(context, "&").cat(name.asString());
+            case rest -> newString(context, "*").cat(name.asString());
+            case anonrest -> newString(context, "*");
+            case anonkeyrest -> newString(context, "**");
+            case anonreq, anonopt -> newString(context, "_");
+            case nokey -> newString(context, "**nil");
+        };
 
         // not reached
-        return null;
     }
     /**
      * Allow JIT/AOT to store argument descriptors as a single String constant.

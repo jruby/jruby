@@ -1,3 +1,9 @@
 fails:ObjectSpace._id2ref raises RangeError when an object could not be found
 objectspace:ObjectSpace._id2ref converts an object id to a reference to the object
 objectspace:ObjectSpace._id2ref retrieves a Symbol by object_id
+fails:ObjectSpace._id2ref converts an object id to a reference to the object
+fails:ObjectSpace._id2ref retrieves a large Integer by object_id
+fails:ObjectSpace._id2ref retrieves a Symbol by object_id
+fails:ObjectSpace._id2ref retrieves a String by object_id
+fails:ObjectSpace._id2ref retrieves a frozen literal String by object_id
+fails:ObjectSpace._id2ref retrieves an Encoding by object_id

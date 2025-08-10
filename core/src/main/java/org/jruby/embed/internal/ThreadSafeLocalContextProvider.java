@@ -35,10 +35,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.jruby.Ruby;
 import org.jruby.embed.LocalVariableBehavior;
 
-/**
- *
- * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
- */
 public class ThreadSafeLocalContextProvider extends AbstractLocalContextProvider {
     private volatile ConcurrentLinkedQueue<AtomicReference<LocalContext>> contextRefs =
         new ConcurrentLinkedQueue<AtomicReference<LocalContext>>();

@@ -37,10 +37,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- * 
- * @author jpetersen
- */
 public class MethodMethod extends DynamicMethod {
     private final RubyUnboundMethod method;
 

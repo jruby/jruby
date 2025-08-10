@@ -1,7 +1,0 @@
-exclude :"test_inflate_buffer", "work in progress"
-exclude :"test_inflate_buffer_chunked", "work in progress"
-exclude :"test_inflate_buffer_partial_input", "work in progress"
-exclude :"test_multithread_deflate", "work in progress"
-exclude :"test_multithread_inflate", "work in progress"
-exclude :"test_recursive_deflate", "work in progress"
-exclude :"test_recursive_inflate", "work in progress"

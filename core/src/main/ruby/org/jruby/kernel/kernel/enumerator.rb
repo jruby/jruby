@@ -1,11 +1,13 @@
 class Enumerator
 
   def next
+    raise FrozenError if frozen?
     vals = next_values
     vals.size <= 1 ? vals[0] : vals
   end
 
   def next_values
+    raise FrozenError if frozen?
     return @__lookahead__.shift unless @__lookahead__.empty?
 
     unless @__generator__
@@ -31,11 +33,13 @@ class Enumerator
   end
 
   def peek
+    raise FrozenError if frozen?
     vals = peek_values
     vals.size <= 1 ? vals[0] : vals
   end
 
   def peek_values
+    raise FrozenError if frozen?
     return @__lookahead__.first unless @__lookahead__.empty?
     vals = self.next_values
     @__lookahead__ << vals
@@ -43,6 +47,7 @@ class Enumerator
   end
 
   def rewind
+    raise FrozenError if frozen?
     @__object__.rewind if @__object__.respond_to? :rewind
     @__generator__.rewind if @__generator__
     @__lookahead__.clear
@@ -51,6 +56,7 @@ class Enumerator
   end
 
   def feed(val)
+    raise FrozenError if frozen?
     raise TypeError, 'Feed value already set' unless @__feedvalue__.value.nil?
     @__feedvalue__.value = val
     nil
@@ -158,7 +164,7 @@ class Enumerator
     alias_method :enum_for, :to_enum
 
     def inspect
-      suff = ''
+      suff = +''
       suff << ":#{@method}" unless @method.nil? || @method == :each
       suff << "(#{@args.inspect[1...-1]})" if @args && !@args.empty?
       "#<#{self.class}: #{@receiver.inspect}#{suff}>"
@@ -481,7 +487,14 @@ def Enumerator.product(*enums, **kwargs, &block)
   if kwargs && !kwargs.empty?
     raise ArgumentError.new("unknown keywords: " + kwargs.keys.map(&:inspect).join(", "))
   end
-  Enumerator::Product.new(*enums).each(&block)
+  product = Enumerator::Product.new(*enums)
+
+  if block_given?
+    product.each(&block)
+    return nil
+  end
+
+  product
 end
 
 class Enumerator::Product < Enumerator
@@ -515,7 +528,7 @@ class Enumerator::Product < Enumerator
     @__enums.each do |enum|
       return nil unless enum.respond_to?(:size)
       size = enum.size
-      return size if size == nil || size == Float::INFINITY || size == -Float::INFINITY
+      return size if size == 0 || size == nil || size == Float::INFINITY || size == -Float::INFINITY
       return nil unless size.kind_of?(Integer)
       total_size *= size
     end
@@ -527,6 +540,20 @@ class Enumerator::Product < Enumerator
       enum.rewind if enum.respond_to?(:rewind)
     end
     self
+  end
+
+  def inspect
+    JRuby::Util.safe_recurse(@__enums, self, "inspect") do |state, obj, recur|
+      if state.nil?
+        return "#<#{obj.class}: uninitialized>"
+      end
+
+      if recur
+        return "#<#{obj.class}: ...>"
+      end
+
+      return "#<#{obj.class}: #{state.inspect}>"
+    end
   end
 
   private def initialize_copy(other)

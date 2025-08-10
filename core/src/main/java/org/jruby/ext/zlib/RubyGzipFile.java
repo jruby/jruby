@@ -31,6 +31,7 @@ import org.jcodings.Encoding;
 import org.jcodings.transcode.EConv;
 import org.joda.time.DateTime;
 import org.jruby.Ruby;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
@@ -38,6 +39,7 @@ import org.jruby.RubyString;
 import org.jruby.RubyTime;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Access;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
@@ -48,10 +50,8 @@ import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.IOEncodable;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newString;
 
-/**
- *
- */
 @JRubyClass(name = "Zlib::GzipFile")
 public class RubyGzipFile extends RubyObject implements IOEncodable {
     @JRubyClass(name = "Zlib::GzipFile::Error", parent = "Zlib::Error")
@@ -79,30 +79,35 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return instance;
     }
 
-    @Deprecated
-    public static IRubyObject wrap19(ThreadContext context, IRubyObject recv, IRubyObject io, Block block) {
+    @Deprecated(since = "10.0")
+    public static IRubyObject wrap(ThreadContext context, IRubyObject recv, IRubyObject io, Block block) {
         return wrap(context, recv, new IRubyObject[]{io}, block);
+    }
+
+    @Deprecated(since = "10.0")
+    public static IRubyObject wrap19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        return wrap(context, recv, args, block);
     }
     
     @JRubyMethod(meta = true, name = "wrap", required = 1, optional = 1, checkArity = false)
     public static IRubyObject wrap(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        Ruby runtime = recv.getRuntime();
-        RubyGzipFile instance;
-
-        if (((RubyModule) recv).isKindOfModule(runtime.getModule("Zlib").getClass("GzipWriter"))) {
-            instance = JZlibRubyGzipWriter.newInstance(recv, args);
-        } else {
-            instance = JZlibRubyGzipReader.newInstance(recv, args);
-        }
+        RubyGzipFile instance = ((RubyModule) recv).isKindOfModule(Access.getClass(context, "Zlib", "GzipWriter")) ?
+                JZlibRubyGzipWriter.newInstance(context, (RubyClass) recv, args) :
+                JZlibRubyGzipReader.newInstance(context, (RubyClass) recv, args);
 
         return wrapBlock(context, instance, block);
     }
 
-    @JRubyMethod(name = "new", meta = true)
+    @Deprecated(since = "10.0")
     public static RubyGzipFile newInstance(IRubyObject recv, Block block) {
+        return newInstance(((RubyBasicObject) recv).getCurrentContext(), recv, block);
+    }
+
+    @JRubyMethod(name = "new", meta = true)
+    public static RubyGzipFile newInstance(ThreadContext context, IRubyObject recv, Block block) {
         RubyClass klass = (RubyClass) recv;
 
-        RubyGzipFile result = (RubyGzipFile) klass.allocate();
+        RubyGzipFile result = (RubyGzipFile) klass.allocate(context);
 
         result.callInit(IRubyObject.NULL_ARRAY, block);
 
@@ -153,9 +158,14 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
             ecopts = opts;
         }
     }
-    
+
+    @Deprecated(since = "10.0")
     public Encoding getReadEncoding() {
-        return enc == null ? getRuntime().getDefaultExternalEncoding() : enc;
+        return getReadEncoding(getCurrentContext());
+    }
+
+    public Encoding getReadEncoding(ThreadContext context) {
+        return enc == null ? context.runtime.getDefaultExternalEncoding() : enc;
     }
     
     public Encoding getEnc() {
@@ -170,18 +180,18 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return enc2;
     }
 
-    // c: gzfile_newstr
+    @Deprecated(since = "10.0")
     protected RubyString newStr(Ruby runtime, ByteList value) {
-        if (enc2 == null) {
-            return RubyString.newString(runtime, value, getReadEncoding());
-        }
+        return newStr(runtime.getCurrentContext(), value);
+    }
 
-        if (ec != null && enc2.isDummy()) {
-            value = EncodingUtils.econvStrConvert(runtime.getCurrentContext(), ec, value, 0);
-            return RubyString.newString(runtime, value, getEnc());
-        }
+    // c: gzfile_newstr
+    protected RubyString newStr(ThreadContext context, ByteList value) {
+        if (enc2 == null) return newString(context, value, getReadEncoding(context));
 
-        return EncodingUtils.strConvEncOpts(runtime.getCurrentContext(), RubyString.newString(runtime, value), enc2, enc, ecflags, ecopts);
+        return ec != null && enc2.isDummy() ?
+                newString(context, EncodingUtils.econvStrConvert(context, ec, value, 0), getEnc()) :
+                EncodingUtils.strConvEncOpts(context, newString(context, value), enc2, enc, ecflags, ecopts);
     }
 
     @Deprecated
@@ -208,25 +218,38 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return closed;
     }
 
-    @JRubyMethod(name = "orig_name")
+    @Deprecated(since = "10.0")
     public IRubyObject orig_name() {
-        if (closed) {
-            throw RubyZlib.newGzipFileError(getRuntime(), "closed gzip stream");
-        }
-        return nullFreeOrigName == null ? getRuntime().getNil() : nullFreeOrigName;
+        return orig_name(getCurrentContext());
+    }
+
+    @JRubyMethod(name = "orig_name")
+    public IRubyObject orig_name(ThreadContext context) {
+        if (closed) throw RubyZlib.newGzipFileError(context, "closed gzip stream");
+
+        return nullFreeOrigName == null ? context.nil : nullFreeOrigName;
+    }
+
+    @Deprecated(since = "10.0")
+    public IRubyObject to_io() {
+        return to_io(getCurrentContext());
     }
 
     @JRubyMethod(name = "to_io")
-    public IRubyObject to_io() {
+    public IRubyObject to_io(ThreadContext context) {
         return realIo;
     }
 
-    @JRubyMethod(name = "comment")
+    @Deprecated(since = "10.0")
     public IRubyObject comment() {
-        if (closed) {
-            throw RubyZlib.newGzipFileError(getRuntime(), "closed gzip stream");
-        }
-        return nullFreeComment == null ? getRuntime().getNil() : nullFreeComment;
+        return comment(getCurrentContext());
+    }
+
+    @JRubyMethod(name = "comment")
+    public IRubyObject comment(ThreadContext context) {
+        if (closed) throw RubyZlib.newGzipFileError(context, "closed gzip stream");
+
+        return nullFreeComment == null ? context.nil : nullFreeComment;
     }
 
     @Deprecated
@@ -254,8 +277,13 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return sync ? context.tru : context.fals;
     }
 
-    @JRubyMethod(name = "finish")
+    @Deprecated(since = "10.0")
     public IRubyObject finish() {
+        return finish(getCurrentContext());
+    }
+
+    @JRubyMethod(name = "finish")
+    public IRubyObject finish(ThreadContext context) {
         if (!finished) {
             //io.finish();
         }
@@ -263,8 +291,13 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return realIo;
     }
 
-    @JRubyMethod(name = "close")
+    @Deprecated(since = "10.0")
     public IRubyObject close() {
+        return close(getCurrentContext());
+    }
+
+    @JRubyMethod(name = "close")
+    public IRubyObject close(ThreadContext context) {
         return realIo;
     }
 
@@ -278,10 +311,15 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return asFixnum(context, level);
     }
 
-    @JRubyMethod(name = "sync=")
+    @Deprecated(since = "10.0")
     public IRubyObject set_sync(IRubyObject arg) {
+        return set_sync(getCurrentContext(), arg);
+    }
+
+    @JRubyMethod(name = "sync=")
+    public IRubyObject set_sync(ThreadContext context, IRubyObject arg) {
         sync = arg.isTrue();
-        return sync ? getRuntime().getTrue() : getRuntime().getFalse();
+        return sync ? context.tru : context.fals;
     }
     
     @Override

@@ -29,6 +29,9 @@ package org.jruby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.NotImplementedError;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Define.defineClass;
 
 /**
  * The Java representation of a Ruby NotImplementedError.
@@ -41,10 +44,8 @@ public class RubyNotImplementedError extends RubyScriptError {
         super(runtime, exceptionClass);
     }
 
-    static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass NotImplementedErrorClass = runtime.defineClass("NotImplementedError", exceptionClass, RubyNotImplementedError::new);
-
-        return NotImplementedErrorClass;
+    static RubyClass define(ThreadContext context, RubyClass ScriptError) {
+        return defineClass(context, "NotImplementedError", ScriptError, RubyNotImplementedError::new);
     }
 
     @Override

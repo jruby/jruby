@@ -36,27 +36,32 @@ package org.jruby.ext.zlib;
 import java.util.zip.CRC32;
 import java.util.zip.Adler32;
 
-import org.jruby.Ruby;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.RubyNumeric;
 import org.jruby.RubyException;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 
+import org.jruby.api.Access;
 import org.jruby.api.Create;
 import org.jruby.exceptions.RaiseException;
 
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 
+import static org.jruby.api.Access.enumerableModule;
+import static org.jruby.api.Access.kernelModule;
+import static org.jruby.api.Access.objectClass;
+import static org.jruby.api.Access.standardErrorClass;
 import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Convert.numericToLong;
-import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Convert.toInt;
+import static org.jruby.api.Convert.toLong;
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineModule;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -75,95 +80,94 @@ public class RubyZlib {
     /** Create the Zlib module and add it to the Ruby runtime.
      *
      */
-    public static RubyModule createZlibModule(Ruby runtime) {
-        ThreadContext context = runtime.getCurrentContext();
-        RubyModule mZlib = runtime.defineModule("Zlib");
-        mZlib.defineAnnotatedMethods(RubyZlib.class);
+    public static RubyModule createZlibModule(ThreadContext context) {
+        var Object = objectClass(context);
+        var StandardError = standardErrorClass(context);
+        var Zlib = defineModule(context, "Zlib").
+                defineMethods(context, RubyZlib.class);
+        var ZlibError = Zlib.defineClassUnder(context, "Error", StandardError, StandardError.getAllocator());
+        var errorAllocator = ZlibError.getAllocator();
+        Zlib.defineClassUnder(context, "StreamEnd", ZlibError, errorAllocator);
+        Zlib.defineClassUnder(context, "StreamError", ZlibError, errorAllocator);
+        Zlib.defineClassUnder(context, "BufError", ZlibError, errorAllocator);
+        Zlib.defineClassUnder(context, "NeedDict", ZlibError, errorAllocator);
+        Zlib.defineClassUnder(context, "MemError", ZlibError, errorAllocator);
+        Zlib.defineClassUnder(context, "VersionError", ZlibError, errorAllocator);
+        Zlib.defineClassUnder(context, "DataError", ZlibError, errorAllocator);
 
-        RubyClass cStandardError = runtime.getStandardError();
-        RubyClass cZlibError = mZlib.defineOrGetClassUnder("Error", cStandardError, cStandardError.getAllocator());
-        mZlib.defineOrGetClassUnder("StreamEnd", cZlibError, cZlibError.getAllocator());
-        mZlib.defineOrGetClassUnder("StreamError", cZlibError, cZlibError.getAllocator());
-        mZlib.defineOrGetClassUnder("BufError", cZlibError, cZlibError.getAllocator());
-        mZlib.defineOrGetClassUnder("NeedDict", cZlibError, cZlibError.getAllocator());
-        mZlib.defineOrGetClassUnder("MemError", cZlibError, cZlibError.getAllocator());
-        mZlib.defineOrGetClassUnder("VersionError", cZlibError, cZlibError.getAllocator());
-        mZlib.defineOrGetClassUnder("DataError", cZlibError, cZlibError.getAllocator());
+        RubyClass GzipFile = Zlib.defineClassUnder(context, "GzipFile", Object, RubyGzipFile::new).
+                defineMethods(context, RubyGzipFile.class);
 
-        RubyClass cGzFile = mZlib.defineOrGetClassUnder("GzipFile", runtime.getObject(), RubyGzipFile::new);
-        cGzFile.defineAnnotatedMethods(RubyGzipFile.class);
+        GzipFile.defineClassUnder(context, "Error", ZlibError, errorAllocator);
+        var GZipFileError = GzipFile.defineClassUnder(context, "Error", ZlibError, errorAllocator);
+        var fileErrorAllocator = ZlibError.getAllocator();
+        GZipFileError.addReadAttribute(context, "input");
+        GzipFile.defineClassUnder(context, "CRCError", GZipFileError, fileErrorAllocator);
+        GzipFile.defineClassUnder(context, "NoFooter", GZipFileError, fileErrorAllocator);
+        GzipFile.defineClassUnder(context, "LengthError", GZipFileError, fileErrorAllocator);
 
-        cGzFile.defineOrGetClassUnder("Error", cZlibError, cZlibError.getAllocator());
-        RubyClass cGzError = cGzFile.defineOrGetClassUnder("Error", cZlibError, cZlibError.getAllocator());
-        cGzError.addReadAttribute(runtime.getCurrentContext(), "input");
-        cGzFile.defineOrGetClassUnder("CRCError", cGzError, cGzError.getAllocator());
-        cGzFile.defineOrGetClassUnder("NoFooter", cGzError, cGzError.getAllocator());
-        cGzFile.defineOrGetClassUnder("LengthError", cGzError, cGzError.getAllocator());
+        Zlib.defineClassUnder(context, "GzipReader", GzipFile, JZlibRubyGzipReader::new).
+                include(context, enumerableModule(context)).
+                defineMethods(context, JZlibRubyGzipReader.class);
 
-        RubyClass cGzReader = mZlib.defineOrGetClassUnder("GzipReader", cGzFile, JZlibRubyGzipReader::new);
-        cGzReader.includeModule(runtime.getEnumerable());
-        cGzReader.defineAnnotatedMethods(JZlibRubyGzipReader.class);
+        Zlib.defineClassUnder(context, "GzipWriter", GzipFile, JZlibRubyGzipWriter::new).
+                defineMethods(context, JZlibRubyGzipWriter.class);
 
-        RubyClass cGzWriter = mZlib.defineOrGetClassUnder("GzipWriter", cGzFile, JZlibRubyGzipWriter::new);
-        cGzWriter.defineAnnotatedMethods(JZlibRubyGzipWriter.class);
+        Zlib.defineConstant(context, "ZLIB_VERSION", newString(context, ZLIB_VERSION)).
+                defineConstant(context, "VERSION", newString(context, VERSION)).
 
-        mZlib.defineConstant("ZLIB_VERSION", runtime.newString(ZLIB_VERSION));
-        mZlib.defineConstant("VERSION", runtime.newString(VERSION));
+                defineConstant(context, "BINARY", asFixnum(context, Z_BINARY)).
+                defineConstant(context, "ASCII", asFixnum(context, Z_ASCII)).
+                defineConstant(context, "UNKNOWN", asFixnum(context, Z_UNKNOWN)).
 
-        mZlib.defineConstant("BINARY", asFixnum(context, Z_BINARY));
-        mZlib.defineConstant("ASCII", asFixnum(context, Z_ASCII));
-        mZlib.defineConstant("UNKNOWN", asFixnum(context, Z_UNKNOWN));
+                defineConstant(context, "DEF_MEM_LEVEL", asFixnum(context, 8)).
+                defineConstant(context, "MAX_MEM_LEVEL", asFixnum(context, 9)).
 
-        mZlib.defineConstant("DEF_MEM_LEVEL", asFixnum(context, 8));
-        mZlib.defineConstant("MAX_MEM_LEVEL", asFixnum(context, 9));
+                defineConstant(context, "OS_UNIX", asFixnum(context, OS_UNIX)).
+                defineConstant(context, "OS_UNKNOWN", asFixnum(context, OS_UNKNOWN)).
+                defineConstant(context, "OS_CODE", asFixnum(context, OS_CODE)).
+                defineConstant(context, "OS_ZSYSTEM", asFixnum(context, OS_ZSYSTEM)).
+                defineConstant(context, "OS_VMCMS", asFixnum(context, OS_VMCMS)).
+                defineConstant(context, "OS_VMS", asFixnum(context, OS_VMS)).
+                defineConstant(context, "OS_RISCOS", asFixnum(context, OS_RISCOS)).
+                defineConstant(context, "OS_MACOS", asFixnum(context, OS_MACOS)).
+                defineConstant(context, "OS_OS2", asFixnum(context, OS_OS2)).
+                defineConstant(context, "OS_AMIGA", asFixnum(context, OS_AMIGA)).
+                defineConstant(context, "OS_QDOS", asFixnum(context, OS_QDOS)).
+                defineConstant(context, "OS_WIN32", asFixnum(context, OS_WIN32)).
+                defineConstant(context, "OS_ATARI", asFixnum(context, OS_ATARI)).
+                defineConstant(context, "OS_MSDOS", asFixnum(context, OS_MSDOS)).
+                defineConstant(context, "OS_CPM", asFixnum(context, OS_CPM)).
+                defineConstant(context, "OS_TOPS20", asFixnum(context, OS_TOPS20)).
 
-        mZlib.defineConstant("OS_UNIX", asFixnum(context, OS_UNIX));
-        mZlib.defineConstant("OS_UNKNOWN", asFixnum(context, OS_UNKNOWN));
-        mZlib.defineConstant("OS_CODE", asFixnum(context, OS_CODE));
-        mZlib.defineConstant("OS_ZSYSTEM", asFixnum(context, OS_ZSYSTEM));
-        mZlib.defineConstant("OS_VMCMS", asFixnum(context, OS_VMCMS));
-        mZlib.defineConstant("OS_VMS", asFixnum(context, OS_VMS));
-        mZlib.defineConstant("OS_RISCOS", asFixnum(context, OS_RISCOS));
-        mZlib.defineConstant("OS_MACOS", asFixnum(context, OS_MACOS));
-        mZlib.defineConstant("OS_OS2", asFixnum(context, OS_OS2));
-        mZlib.defineConstant("OS_AMIGA", asFixnum(context, OS_AMIGA));
-        mZlib.defineConstant("OS_QDOS", asFixnum(context, OS_QDOS));
-        mZlib.defineConstant("OS_WIN32", asFixnum(context, OS_WIN32));
-        mZlib.defineConstant("OS_ATARI", asFixnum(context, OS_ATARI));
-        mZlib.defineConstant("OS_MSDOS", asFixnum(context, OS_MSDOS));
-        mZlib.defineConstant("OS_CPM", asFixnum(context, OS_CPM));
-        mZlib.defineConstant("OS_TOPS20", asFixnum(context, OS_TOPS20));
+                defineConstant(context, "DEFAULT_STRATEGY", asFixnum(context, JZlib.Z_DEFAULT_STRATEGY)).
+                defineConstant(context, "FILTERED", asFixnum(context, JZlib.Z_FILTERED)).
+                defineConstant(context, "HUFFMAN_ONLY", asFixnum(context, JZlib.Z_HUFFMAN_ONLY)).
 
-        mZlib.defineConstant("DEFAULT_STRATEGY", asFixnum(context, JZlib.Z_DEFAULT_STRATEGY));
-        mZlib.defineConstant("FILTERED", asFixnum(context, JZlib.Z_FILTERED));
-        mZlib.defineConstant("HUFFMAN_ONLY", asFixnum(context, JZlib.Z_HUFFMAN_ONLY));
+                defineConstant(context, "NO_FLUSH", asFixnum(context, JZlib.Z_NO_FLUSH)).
+                defineConstant(context, "SYNC_FLUSH", asFixnum(context, JZlib.Z_SYNC_FLUSH)).
+                defineConstant(context, "FULL_FLUSH", asFixnum(context, JZlib.Z_FULL_FLUSH)).
+                defineConstant(context, "FINISH", asFixnum(context, JZlib.Z_FINISH)).
 
-        mZlib.defineConstant("NO_FLUSH", asFixnum(context, JZlib.Z_NO_FLUSH));
-        mZlib.defineConstant("SYNC_FLUSH", asFixnum(context, JZlib.Z_SYNC_FLUSH));
-        mZlib.defineConstant("FULL_FLUSH", asFixnum(context, JZlib.Z_FULL_FLUSH));
-        mZlib.defineConstant("FINISH", asFixnum(context, JZlib.Z_FINISH));
+                defineConstant(context, "NO_COMPRESSION", asFixnum(context, JZlib.Z_NO_COMPRESSION)).
+                defineConstant(context, "BEST_SPEED", asFixnum(context, JZlib.Z_BEST_SPEED)).
+                defineConstant(context, "DEFAULT_COMPRESSION", asFixnum(context, JZlib.Z_DEFAULT_COMPRESSION)).
+                defineConstant(context, "BEST_COMPRESSION", asFixnum(context, JZlib.Z_BEST_COMPRESSION)).
 
-        mZlib.defineConstant("NO_COMPRESSION", asFixnum(context, JZlib.Z_NO_COMPRESSION));
-        mZlib.defineConstant("BEST_SPEED", asFixnum(context, JZlib.Z_BEST_SPEED));
-        mZlib.defineConstant("DEFAULT_COMPRESSION", asFixnum(context, JZlib.Z_DEFAULT_COMPRESSION));
-        mZlib.defineConstant("BEST_COMPRESSION", asFixnum(context, JZlib.Z_BEST_COMPRESSION));
-
-        mZlib.defineConstant("MAX_WBITS", asFixnum(context, JZlib.MAX_WBITS));
+                defineConstant(context, "MAX_WBITS", asFixnum(context, JZlib.MAX_WBITS));
 
         // ZStream actually *isn't* allocatable
-        RubyClass cZStream = mZlib.defineOrGetClassUnder("ZStream", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        cZStream.defineAnnotatedMethods(ZStream.class);
-        cZStream.undefineMethod("new");
+        RubyClass ZStream = Zlib.defineClassUnder(context, "ZStream", Object, NOT_ALLOCATABLE_ALLOCATOR).
+                defineMethods(context, ZStream.class).
+                undefMethods(context, "new");
+        Zlib.defineClassUnder(context, "Inflate", ZStream, JZlibInflate::new).
+                defineMethods(context, JZlibInflate.class);
+        Zlib.defineClassUnder(context, "Deflate", ZStream, JZlibDeflate::new).
+                defineMethods(context, JZlibDeflate.class);
 
-        RubyClass cInflate = mZlib.defineOrGetClassUnder("Inflate", cZStream, JZlibInflate::new);
-        cInflate.defineAnnotatedMethods(JZlibInflate.class);
+        kernelModule(context).callMethod(context, "require", newString(context, "stringio"));
 
-        RubyClass cDeflate = mZlib.defineOrGetClassUnder("Deflate", cZStream, JZlibDeflate::new);
-        cDeflate.defineAnnotatedMethods(JZlibDeflate.class);
-
-        runtime.getKernel().callMethod(runtime.getCurrentContext(), "require", runtime.newString("stringio"));
-
-        return mZlib;
+        return Zlib;
     }
 
     @JRubyClass(name="Zlib::Error", parent="StandardError")
@@ -183,18 +187,21 @@ public class RubyZlib {
     @JRubyClass(name="Zlib::DataError", parent="Zlib::Error")
     public static class DataError extends Error {}
 
-    @JRubyMethod(name = "zlib_version", module = true, visibility = PRIVATE)
+    @Deprecated(since = "10.0")
     public static IRubyObject zlib_version(IRubyObject recv) {
-        return ((RubyModule)recv).getConstant("ZLIB_VERSION");
+        return zlib_version(((RubyBasicObject) recv).getCurrentContext(), recv);
+    }
+
+    @JRubyMethod(name = "zlib_version", module = true, visibility = PRIVATE)
+    public static IRubyObject zlib_version(ThreadContext context, IRubyObject recv) {
+        return ((RubyModule) recv).getConstant(context, "ZLIB_VERSION");
     }
 
     @JRubyMethod(name = "crc32", optional = 2, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject crc32(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         args = Arity.scanArgs(context, args, 0, 2);
-        long start = 0;
-        ByteList bytes = null;
-        if (!args[0].isNil()) bytes = args[0].convertToString().getByteList();
-        if (!args[1].isNil()) start = numericToLong(context, args[1]);
+        ByteList bytes = !args[0].isNil() ? args[0].convertToString().getByteList() : null;
+        long start = !args[1].isNil() ? toLong(context, args[1]) : 0;
         start &= 0xFFFFFFFFL;
 
         final boolean slowPath = start != 0;
@@ -219,19 +226,15 @@ public class RubyZlib {
     @JRubyMethod(name = "adler32", optional = 2, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject adler32(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         args = Arity.scanArgs(context, args, 0, 2);
-        int start = 1;
-        ByteList bytes = null;
-        if (!args[0].isNil()) bytes = args[0].convertToString().getByteList();
-        if (!args[1].isNil()) start = (int) numericToLong(context, args[1]);
+        ByteList bytes = !args[0].isNil() ? args[0].convertToString().getByteList() : null;
+        int start = !args[1].isNil() ? (int) toLong(context, args[1]) : 1;
 
         Adler32 checksum = new Adler32();
-        if (bytes != null) {
-            checksum.update(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
-        }
+        if (bytes != null) checksum.update(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
+
         long result = checksum.getValue();
-        if (start != 1) {
-            result = JZlib.adler32_combine(start, result, bytes.length());
-        }
+        if (start != 1) result = JZlib.adler32_combine(start, result, bytes.length());
+
         return asFixnum(context, result);
     }
 
@@ -245,15 +248,9 @@ public class RubyZlib {
         return JZlibInflate.s_inflate(context, recv, string);
     }
 
-    /**
-     * @param recv
-     * @param args
-     * @return ""
-     * @deprecated Use {@link RubyZlib#deflate(ThreadContext, IRubyObject, IRubyObject[])} instead.
-     */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0")
     public static IRubyObject deflate(IRubyObject recv, IRubyObject[] args) {
-        return deflate(((RubyBasicObject) recv).getRuntime().getCurrentContext(), recv, args);
+        return deflate(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
 
     @JRubyMethod(required = 1, optional = 1, checkArity = false, module = true)
@@ -264,11 +261,9 @@ public class RubyZlib {
     @JRubyMethod(name = "crc_table", module = true, visibility = PRIVATE)
     public static IRubyObject crc_table(ThreadContext context, IRubyObject recv) {
         int[] table = com.jcraft.jzlib.CRC32.getCRC32Table();
-        var array = newArray(context, table.length);
-        for (int j : table) {
-            array.append(context, asFixnum(context, j & 0xffffffffL));
-        }
-        return array;
+        var result = Create.allocArray(context, table.length);
+        for (int j: table) result.append(context, asFixnum(context, j & 0xffffffffL));
+        return result;
     }
 
     @Deprecated
@@ -279,9 +274,9 @@ public class RubyZlib {
     @JRubyMethod(name = "crc32_combine", module = true, visibility = PRIVATE)
     public static IRubyObject crc32_combine(ThreadContext context, IRubyObject recv,
                                             IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        long crc1 = numericToLong(context, arg0);
-        long crc2 = numericToLong(context, arg1);
-        long len2 = numericToLong(context, arg2);
+        long crc1 = toLong(context, arg0);
+        long crc2 = toLong(context, arg1);
+        long len2 = toLong(context, arg2);
 
         return asFixnum(context, com.jcraft.jzlib.JZlib.crc32_combine(crc1, crc2, len2));
     }
@@ -294,9 +289,9 @@ public class RubyZlib {
     @JRubyMethod(name = "adler32_combine", module = true, visibility = PRIVATE)
     public static IRubyObject adler32_combine(ThreadContext context, IRubyObject recv,
                                               IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        long adler1 = numericToLong(context, arg0);
-        long adler2 = numericToLong(context, arg1);
-        long len2 = numericToLong(context, arg2);
+        long adler1 = toLong(context, arg0);
+        long adler2 = toLong(context, arg1);
+        long len2 = toLong(context, arg2);
 
         return asFixnum(context, com.jcraft.jzlib.JZlib.adler32_combine(adler1, adler2, len2));
     }
@@ -306,58 +301,55 @@ public class RubyZlib {
         return adler32_combine(((RubyBasicObject) recv).getCurrentContext(), recv, arg0, arg1, arg2);
     }
 
-    static RaiseException newZlibError(Ruby runtime, String message) {
-        return newZlibError(runtime, "Error", message);
+    static RaiseException newZlibError(ThreadContext context, String message) {
+        return newZlibError(context, "Error", message);
     }
 
-    static RaiseException newBufError(Ruby runtime, String message) {
-        return newZlibError(runtime, "BufError", message);
+    static RaiseException newBufError(ThreadContext context, String message) {
+        return newZlibError(context, "BufError", message);
     }
 
-    static RaiseException newDictError(Ruby runtime, String message) {
-        return newZlibError(runtime, "NeedDict", message);
+    static RaiseException newDictError(ThreadContext context, String message) {
+        return newZlibError(context, "NeedDict", message);
     }
 
-    static RaiseException newStreamError(Ruby runtime, String message) {
-        return newZlibError(runtime, "StreamError", message);
+    static RaiseException newStreamError(ThreadContext context, String message) {
+        return newZlibError(context, "StreamError", message);
     }
 
-    static RaiseException newDataError(Ruby runtime, String message) {
-        return newZlibError(runtime, "DataError", message);
+    static RaiseException newDataError(ThreadContext context, String message) {
+        return newZlibError(context, "DataError", message);
     }
 
-    static RaiseException newZlibError(Ruby runtime, String klass, String message) {
-        RubyClass errorClass = runtime.getModule("Zlib").getClass(klass);
-        return RaiseException.from(runtime, errorClass, message);
+    static RaiseException newZlibError(ThreadContext context, String klass, String message) {
+        return RaiseException.from(context.runtime, Access.getClass(context, "Zlib", klass), message);
     }
 
-    static RaiseException newGzipFileError(Ruby runtime, String message) {
-        return newGzipFileError(runtime, "Error", message);
+    static RaiseException newGzipFileError(ThreadContext context, String message) {
+        return newGzipFileError(context, "Error", message);
     }
 
-    static RaiseException newCRCError(Ruby runtime, String message) {
-        return newGzipFileError(runtime, "CRCError", message);
+    static RaiseException newCRCError(ThreadContext context, String message) {
+        return newGzipFileError(context, "CRCError", message);
     }
 
-    static RaiseException newNoFooter(Ruby runtime, String message) {
-        return newGzipFileError(runtime, "NoFooter", message);
+    static RaiseException newNoFooter(ThreadContext context, String message) {
+        return newGzipFileError(context, "NoFooter", message);
     }
 
-    static RaiseException newLengthError(Ruby runtime, String message) {
-        return newGzipFileError(runtime, "LengthError", message);
+    static RaiseException newLengthError(ThreadContext context, String message) {
+        return newGzipFileError(context, "LengthError", message);
     }
 
-    static RaiseException newGzipFileError(Ruby runtime, String klass, String message) {
-        RubyClass errorClass = runtime.getModule("Zlib").getClass("GzipFile").getClass(klass);
-        RubyException excn = RubyException.newException(runtime, errorClass, message);
+    static RaiseException newGzipFileError(ThreadContext context, String klass, String message) {
+        RubyClass errorClass = Access.getClass(context, "Zlib", "GzipFile", klass);
+        RubyException excn = RubyException.newException(context.runtime, errorClass, message);
         // TODO: not yet supported. rewrite GzipReader/Writer with Inflate/Deflate?
-        excn.setInstanceVariable("@input", runtime.getNil());
+        excn.setInstanceVariable("@input", context.nil);
         return excn.toThrowable();
     }
 
-    static int FIXNUMARG(IRubyObject obj, int ifnil) {
-        if (obj.isNil()) return ifnil;
-
-        return RubyNumeric.fix2int(obj);
+    static int FIXNUMARG(ThreadContext context, IRubyObject obj, int ifnil) {
+        return obj.isNil() ? ifnil : toInt(context, obj);
     }
 }

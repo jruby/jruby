@@ -5,6 +5,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyIO;
 import org.jruby.RubyThread;
+import org.jruby.api.Create;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
@@ -25,6 +26,7 @@ import java.util.concurrent.Future;
 
 import static com.headius.backport9.buffer.Buffers.flipBuffer;
 import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newEmptyArray;
 
 /**
  * Created by headius on 6/3/14.
@@ -100,7 +102,6 @@ public class SelectExecutor {
 
     IRubyObject selectInternal(ThreadContext context) throws IOException {
         Ruby runtime = context.runtime;
-        RubyArray res, list;
         OpenFile fptr;
         long i;
 
@@ -141,89 +142,71 @@ public class SelectExecutor {
             for (i = 0; i < exceptAry.size(); i++) {
                 RubyIO io = TypeConverter.ioGetIO(runtime, exceptAry.eltOk(i));
                 RubyIO write_io = io.GetWriteIO();
-                fptr = io.getOpenFileChecked();
+                io.getOpenFileChecked();
                 if (io != write_io) {
-                    fptr = write_io.getOpenFileChecked();
+                    write_io.getOpenFileChecked();
                 }
             }
         }
 
         int n = threadFdSelect(context);
 
-        if (n == 0 && pendingReadFDs == null && n == 0 && unselectableReadFDs == null && unselectableWriteFDs == null) return context.nil; /* returns nil on timeout */
+        if (n == 0 && pendingReadFDs == null && unselectableReadFDs == null && unselectableWriteFDs == null) return context.nil; /* returns nil on timeout */
 
-        res = newArray(context, 3);
-        res.push(newArray(context, Math.min(n, maxReadReadySize())));
-        res.push(newArray(context, Math.min(n, maxWriteReadySize())));
-        // we never add anything for error since JDK does not provide a way to select for error
-        res.push(newArray(context, 0));
-
-        if (readKeyList != null) {
-            list = (RubyArray) res.eltOk(0);
+        RubyArray<?> readReady;
+        if (readKeyList == null && pendingReadFDs == null && unselectableReadFDs == null) {
+            readReady = newEmptyArray(context);
+        } else {
+            final int len = Math.min(n, maxReadReadySize());
+            readReady = Create.allocArray(context, len);
             for (i = 0; i < readAry.size(); i++) {
                 IRubyObject obj = readAry.eltOk(i);
                 RubyIO io = TypeConverter.ioGetIO(runtime, obj);
                 fptr = io.getOpenFileChecked();
-                if (fdIsSet(readKeyList, fptr.fd(), READ_ACCEPT_OPS) || (pendingReadFDs != null && pendingReadFDs.contains(fptr.fd()))) {
-                    list.push(obj);
-                }
-            }
-        }
-        if (unselectableReadFDs != null) {
-            list = (RubyArray) res.eltOk(0);
-            for (i = 0; i < readAry.size(); i++) {
-                IRubyObject obj = readAry.eltOk(i);
-                RubyIO io = TypeConverter.ioGetIO(runtime, obj);
-                fptr = io.getOpenFileChecked();
-                if (unselectableReadFDs.contains(fptr.fd())) {
-                    list.push(obj);
+                if (readKeyList != null && fdIsSet(readKeyList, fptr.fd(), READ_ACCEPT_OPS) ||
+                        (pendingReadFDs != null && pendingReadFDs.contains(fptr.fd())) ||
+                        (unselectableReadFDs != null && unselectableReadFDs.contains(fptr.fd()))) {
+                    readReady.append(context, obj);
                 }
             }
         }
 
-        if (writeKeyList != null) {
-            list = (RubyArray) res.eltOk(1);
+        RubyArray<?> writeReady;
+        if (writeKeyList == null && unselectableWriteFDs == null) {
+            writeReady = newEmptyArray(context);
+        } else {
+            final int len = Math.min(n, maxWriteReadySize());
+            writeReady = Create.allocArray(context, len);
             for (i = 0; i < writeAry.size(); i++) {
                 IRubyObject obj = writeAry.eltOk(i);
                 RubyIO io = TypeConverter.ioGetIO(runtime, obj);
                 RubyIO write_io = io.GetWriteIO();
                 fptr = write_io.getOpenFileChecked();
-                if (fdIsSet(writeKeyList, fptr.fd(), WRITE_CONNECT_OPS)) {
-                    list.push(obj);
-                }
-            }
-        }
-        if (unselectableWriteFDs != null) {
-            list = (RubyArray) res.eltOk(1);
-            for (i = 0; i < writeAry.size(); i++) {
-                IRubyObject obj = writeAry.eltOk(i);
-                RubyIO io = TypeConverter.ioGetIO(runtime, obj);
-                fptr = io.getOpenFileChecked();
-                if (unselectableWriteFDs.contains(fptr.fd())) {
-                    list.push(obj);
+                if (writeKeyList != null && fdIsSet(writeKeyList, fptr.fd(), WRITE_CONNECT_OPS) ||
+                        (unselectableWriteFDs != null && unselectableWriteFDs.contains(fptr.fd()))) {
+                    writeReady.push(context, obj);
                 }
             }
         }
 
-        if (errorKeyList != null) {
-            list = (RubyArray) res.eltOk(2);
+        RubyArray<?> error;
+        if (errorKeyList == null) {
+            error = newEmptyArray(context);
+        } else {
+            error = Create.allocArray(context, exceptAry.size());
             for (i = 0; i < exceptAry.size(); i++) {
                 IRubyObject obj = exceptAry.eltOk(i);
                 RubyIO io = TypeConverter.ioGetIO(runtime, obj);
                 RubyIO write_io = io.GetWriteIO();
                 fptr = io.getOpenFileChecked();
-                if (fdIsSet(errorKeyList, fptr.fd(), READ_ACCEPT_OPS | WRITE_CONNECT_OPS)) {
-                    list.push(obj);
-                } else if (io != write_io) {
-                    fptr = write_io.getOpenFileChecked();
-                    if (fdIsSet(errorKeyList, fptr.fd(), READ_ACCEPT_OPS | WRITE_CONNECT_OPS)) {
-                        list.push(obj);
-                    }
+                if (fdIsSet(errorKeyList, fptr.fd(), READ_ACCEPT_OPS | WRITE_CONNECT_OPS) ||
+                        (io != write_io && fdIsSet(errorKeyList, write_io.getOpenFileChecked().fd(), READ_ACCEPT_OPS | WRITE_CONNECT_OPS))) {
+                    error.push(context, obj);
                 }
             }
         }
 
-        return res;			/* returns an empty array on interrupt */
+        return newArray(context, readReady, writeReady, error);
     }
 
     private int maxReadReadySize() {

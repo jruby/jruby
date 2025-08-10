@@ -2,9 +2,6 @@ package org.jruby.ast.java_signature;
 
 import java.util.List;
 
-/**
- *
- */
 public class Annotation implements AnnotationExpression {
     private final String name;
     private final List<AnnotationParameter> parameters;

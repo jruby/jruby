@@ -7,6 +7,7 @@ import java.util.List;
 /**
  * A proxy cache that uses Java 7's ClassValue.
  */
+@Deprecated
 final class Java7ClassValue<T> extends ClassValue<T> {
 
     public Java7ClassValue(ClassValueCalculator<T> calculator) {

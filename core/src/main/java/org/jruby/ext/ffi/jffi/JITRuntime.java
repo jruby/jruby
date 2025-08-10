@@ -11,16 +11,13 @@ import org.jruby.runtime.callsite.CachingCallSite;
 import java.math.BigInteger;
 
 import static org.jruby.api.Convert.*;
-import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Error.*;
 
-/**
- *
- */
 public final class JITRuntime {
     private JITRuntime() {}
     
     public static RuntimeException newArityError(ThreadContext context, int got, int expected) {
-        return context.runtime.newArgumentError(got, expected);
+        return argumentError(context, got, expected);
     }
     
     public static long other2long(IRubyObject parameter) {
@@ -29,79 +26,79 @@ public final class JITRuntime {
     
     public static int s8Value32(IRubyObject parameter) {
         return (byte) (parameter instanceof RubyFixnum
-                ? ((RubyFixnum) parameter).getLongValue()
+                ? ((RubyFixnum) parameter).getValue()
                 : other2long(parameter));
     }
 
     public static long s8Value64(IRubyObject parameter) {
         return (byte) (parameter instanceof RubyFixnum
-                ? ((RubyFixnum) parameter).getLongValue()
+                ? ((RubyFixnum) parameter).getValue()
                 : other2long(parameter));
     }
 
     public static int u8Value32(IRubyObject parameter) {
         return (int) ((parameter instanceof RubyFixnum
-                ? ((RubyFixnum) parameter).getLongValue()
+                ? ((RubyFixnum) parameter).getValue()
                 : other2long(parameter)) & 0xffL);
     }
 
     public static long u8Value64(IRubyObject parameter) {
         return (parameter instanceof RubyFixnum
-                ? ((RubyFixnum) parameter).getLongValue()
+                ? ((RubyFixnum) parameter).getValue()
                 : other2long(parameter)) & 0xffL;
     }
 
     public static int s16Value32(IRubyObject parameter) {
         return (short) (parameter instanceof RubyFixnum
-                ? ((RubyFixnum) parameter).getLongValue()
+                ? ((RubyFixnum) parameter).getValue()
                 : other2long(parameter));
     }
 
     public static long s16Value64(IRubyObject parameter) {
         return (short) (parameter instanceof RubyFixnum
-                ? ((RubyFixnum) parameter).getLongValue()
+                ? ((RubyFixnum) parameter).getValue()
                 : other2long(parameter));
     }
 
     public static int u16Value32(IRubyObject parameter) {
         return (int) (((parameter instanceof RubyFixnum)
-                ? ((RubyFixnum) parameter).getLongValue()
+                ? ((RubyFixnum) parameter).getValue()
                 : other2long(parameter))  & 0xffffL);
     }
 
     public static long u16Value64(IRubyObject parameter) {
         return ((parameter instanceof RubyFixnum)
-                ? ((RubyFixnum) parameter).getLongValue()
+                ? ((RubyFixnum) parameter).getValue()
                 : other2long(parameter)) & 0xffffL;
     }
 
     public static int s32Value32(IRubyObject parameter) {
         return (int) (parameter instanceof RubyFixnum
-                ? ((RubyFixnum) parameter).getLongValue()
+                ? ((RubyFixnum) parameter).getValue()
                 : other2long(parameter));
     }
 
     public static long s32Value64(IRubyObject parameter) {
         return (int) (parameter instanceof RubyFixnum
-                ? ((RubyFixnum) parameter).getLongValue()
+                ? ((RubyFixnum) parameter).getValue()
                 : other2long(parameter));
     }
 
     public static int u32Value32(IRubyObject parameter) {
         return (int) ((parameter instanceof RubyFixnum
-                ? ((RubyFixnum) parameter).getLongValue()
+                ? ((RubyFixnum) parameter).getValue()
                 : other2long(parameter)) & 0xffffffffL);
     }
 
     public static long u32Value64(IRubyObject parameter) {
         return (parameter instanceof RubyFixnum
-                ? ((RubyFixnum) parameter).getLongValue()
+                ? ((RubyFixnum) parameter).getValue()
                 : other2long(parameter)) & 0xffffffffL;
     }
 
     public static long s64Value64(IRubyObject parameter) {
         return parameter instanceof RubyFixnum
-                ? ((RubyFixnum) parameter).getLongValue()
+                ? ((RubyFixnum) parameter).getValue()
                 : other2long(parameter);
     }
 
@@ -115,36 +112,27 @@ public final class JITRuntime {
     }
 
     public static long u64Value64(IRubyObject parameter) {
-        return parameter instanceof RubyFixnum
-                ? ((RubyFixnum) parameter).getLongValue()
+        return parameter instanceof RubyFixnum fixnum
+                ? fixnum.getValue()
                 : other2u64(parameter);
     }
 
     public static int f32Value32(IRubyObject parameter) {
-        if (parameter instanceof RubyFloat) {
-            return Float.floatToRawIntBits((float) ((RubyFloat) parameter).getDoubleValue());
-
-        } else {
-            return (int) other2long(parameter);
-        }
+        return parameter instanceof RubyFloat flote ?
+                Float.floatToRawIntBits((float) flote.getValue()) :
+                (int) other2long(parameter);
     }
 
     public static long f32Value64(IRubyObject parameter) {
-        if (parameter instanceof RubyFloat) {
-            return Float.floatToRawIntBits((float) ((RubyFloat) parameter).getDoubleValue());
-
-        } else {
-            return other2long(parameter);
-        }
+        return parameter instanceof RubyFloat flote ?
+                Float.floatToRawIntBits((float) flote.getValue()) :
+                other2long(parameter);
     }
     
     public static long f64Value64(IRubyObject parameter) {
-        if (parameter instanceof RubyFloat) {
-            return Double.doubleToRawLongBits(((RubyFloat) parameter).getDoubleValue());
-        
-        } else {
-            return other2long(parameter);
-        }
+        return parameter instanceof RubyFloat flote ?
+                Double.doubleToRawLongBits(flote.getValue()) :
+                other2long(parameter);
     }
 
     public static int boolValue32(IRubyObject parameter) {
@@ -155,10 +143,10 @@ public final class JITRuntime {
         return boolValue(parameter) ? 1L : 0L;
     }
 
-    private static boolean other2bool(IRubyObject parameter) {
-        if (parameter instanceof RubyNumeric numeric) return numeric.getLongValue() != 0;
+    private static boolean other2bool(ThreadContext context, IRubyObject parameter) {
+        if (parameter instanceof RubyNumeric numeric) return numeric.asLong(context) != 0;
 
-        throw typeError(parameter.getRuntime().getCurrentContext(), "cannot convert ", parameter, " to bool");
+        throw typeError(context, "cannot convert ", parameter, " to bool");
     }
 
     public static boolean boolValue(IRubyObject parameter) {
@@ -166,7 +154,7 @@ public final class JITRuntime {
             return parameter.isTrue();
         }
         
-        return other2bool(parameter);
+        return other2bool(parameter.getRuntime().getCurrentContext(), parameter);
     }
     
     public static IRubyObject other2ptr(ThreadContext context, IRubyObject parameter) {
@@ -482,22 +470,17 @@ public final class JITRuntime {
     }
 
     private static MemoryIO convertToPointerMemoryIO(IRubyObject parameter) {
+        var context = parameter.getRuntime().getCurrentContext();
         IRubyObject obj = parameter;
-        ThreadContext context = parameter.getRuntime().getCurrentContext();
         for (int depth = 0; depth < 4; depth++) {
-            if (obj.respondsTo("to_ptr")) {
-                obj = obj.callMethod(context, "to_ptr");
-                MemoryIO memory = lookupPointerMemoryIO(obj);
-                if (memory != null) {
-                    return memory;
-                }
-            
-            } else {
-                throw parameter.getRuntime().newArgumentError("cannot convert parameter to native pointer");
-            }
+            if (!obj.respondsTo("to_ptr")) throw argumentError(context, "cannot convert parameter to native pointer");
+
+            obj = obj.callMethod(context, "to_ptr");
+            MemoryIO memory = lookupPointerMemoryIO(obj);
+            if (memory != null) return memory;
         }
 
-        throw parameter.getRuntime().newRuntimeError("to_ptr recursion limit reached for " + parameter.getMetaClass());
+        throw runtimeError(context, "to_ptr recursion limit reached for " + parameter.getMetaClass());
     }
     
     private static MemoryIO convertToStringMemoryIO(IRubyObject parameter, ThreadContext context, CachingCallSite callSite,
@@ -534,41 +517,27 @@ public final class JITRuntime {
 
     public static PointerParameterStrategy pointerParameterStrategy(IRubyObject parameter) {
         PointerParameterStrategy strategy = lookupPointerParameterStrategy(parameter);
-        if (strategy != null) {
-            return strategy;
-        
-        } else if (parameter.respondsTo("to_ptr")) {
-            IRubyObject ptr = parameter.callMethod(parameter.getRuntime().getCurrentContext(), "to_ptr");
-
-            return new DelegatingPointerParameterStrategy(ptr, pointerParameterStrategy(ptr));
-
-        } else {
-            throw parameter.getRuntime().newArgumentError("cannot convert parameter to native pointer");
+        if (strategy != null) return strategy;
+        if (!parameter.respondsTo("to_ptr")) {
+            throw argumentError(parameter.getRuntime().getCurrentContext(), "cannot convert parameter to native pointer");
         }
+
+        IRubyObject ptr = parameter.callMethod(parameter.getRuntime().getCurrentContext(), "to_ptr");
+        return new DelegatingPointerParameterStrategy(ptr, pointerParameterStrategy(ptr));
     }
 
     public static PointerParameterStrategy stringParameterStrategy(IRubyObject parameter) {
-        if (parameter instanceof RubyString) {
-            return DIRECT_STRING_PARAMETER_STRATEGY;
+        if (parameter instanceof RubyString) return DIRECT_STRING_PARAMETER_STRATEGY;
+        if (parameter.isNil()) return NIL_POINTER_STRATEGY;
 
-        } else if (parameter.isNil()) {
-            return NIL_POINTER_STRATEGY;
-
-        } else {
-            return stringParameterStrategy(parameter.convertToString());
-        }
+        return stringParameterStrategy(parameter.convertToString());
     }
 
     public static PointerParameterStrategy transientStringParameterStrategy(IRubyObject parameter) {
-        if (parameter instanceof RubyString) {
-            return TRANSIENT_STRING_PARAMETER_STRATEGY;
+        if (parameter instanceof RubyString) return TRANSIENT_STRING_PARAMETER_STRATEGY;
+        if (parameter.isNil()) return NIL_POINTER_STRATEGY;
 
-        } else if (parameter.isNil()) {
-            return NIL_POINTER_STRATEGY;
-
-        } else {
-            return transientStringParameterStrategy(parameter.convertToString());
-        }
+        return transientStringParameterStrategy(parameter.convertToString());
     }
 
     public static MemoryIO convertToPointerMemoryIO(ThreadContext context, IRubyObject parameter, CachingCallSite callSite) {

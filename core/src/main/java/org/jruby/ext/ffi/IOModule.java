@@ -31,7 +31,7 @@ package org.jruby.ext.ffi;
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import org.jruby.Ruby;
+
 import org.jruby.RubyIO;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
@@ -42,6 +42,8 @@ import org.jruby.util.io.OpenFile;
 
 import static com.headius.backport9.buffer.Buffers.limitBuffer;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.toInt;
+import static org.jruby.api.Error.indexError;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -49,9 +51,8 @@ import static org.jruby.api.Error.typeError;
  */
 public class IOModule {
 
-    public static void createIOModule(Ruby runtime, RubyModule ffi) {
-        RubyModule module = ffi.defineModuleUnder("IO");
-        module.defineAnnotatedMethods(IOModule.class);
+    public static void createIOModule(ThreadContext context, RubyModule FFI) {
+        FFI.defineModuleUnder(context, "IO").defineMethods(context, IOModule.class);
     }
 
     @JRubyMethod(name = "native_read", module = true)
@@ -67,11 +68,9 @@ public class IOModule {
 
 
             ByteBuffer buffer = ((AbstractMemory) dst).getMemoryIO().asByteBuffer();
-            int count = RubyNumeric.num2int(rbLength);
+            int count = toInt(context, rbLength);
 
-            if (count > buffer.remaining()) {
-                throw context.runtime.newIndexError("read count too big for output buffer");
-            }
+            if (count > buffer.remaining()) throw indexError(context, "read count too big for output buffer");
 
             if (count < buffer.remaining()) {
                 buffer = buffer.duplicate();

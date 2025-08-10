@@ -34,10 +34,6 @@ import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 
-/**
- *
- * @author enebo
- */
 public class OptArgNode extends Node implements INameNode {
     private final Node value;
 

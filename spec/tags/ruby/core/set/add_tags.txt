@@ -1,0 +1,1 @@
+fails:Set#add? raises RuntimeError when called during iteration

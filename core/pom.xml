@@ -12,7 +12,7 @@ DO NOT MODIFY - GENERATED CODE
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>10.0.0.0-SNAPSHOT</version>
+    <version>10.0.3.0-SNAPSHOT</version>
   </parent>
   <artifactId>jruby-base</artifactId>
   <name>JRuby Base</name>
@@ -55,9 +55,9 @@ DO NOT MODIFY - GENERATED CODE
     <test.results.dir>${build.dir}/test-results</test.results.dir>
     <tzdata.scope>provided</tzdata.scope>
     <tzdata.version>2019c</tzdata.version>
-    <version.ruby>3.4.0</version.ruby>
+    <version.ruby>3.4.2</version.ruby>
     <version.ruby.major>3.4</version.ruby.major>
-    <version.ruby.minor>0</version.ruby.minor>
+    <version.ruby.minor>2</version.ruby.minor>
   </properties>
   <dependencies>
     <dependency>
@@ -149,12 +149,12 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>org.jruby.joni</groupId>
       <artifactId>joni</artifactId>
-      <version>2.2.2-SNAPSHOT</version>
+      <version>2.2.6</version>
     </dependency>
     <dependency>
       <groupId>org.jruby.jcodings</groupId>
       <artifactId>jcodings</artifactId>
-      <version>1.0.58</version>
+      <version>1.0.63</version>
     </dependency>
     <dependency>
       <groupId>org.jruby</groupId>
@@ -537,12 +537,6 @@ DO NOT MODIFY - GENERATED CODE
                 <fileset>
                   <directory>${project.basedir}/..</directory>
                   <includes>
-                    <include>bin/jruby</include>
-                  </includes>
-                </fileset>
-                <fileset>
-                  <directory>${project.basedir}/..</directory>
-                  <includes>
                     <include>lib/jni/**</include>
                   </includes>
                 </fileset>
@@ -550,6 +544,12 @@ DO NOT MODIFY - GENERATED CODE
                   <directory>${project.basedir}/..</directory>
                   <includes>
                     <include>lib/modules/**</include>
+                  </includes>
+                </fileset>
+                <fileset>
+                  <directory>${project.basedir}/..</directory>
+                  <includes>
+                    <include>lib/jni/**</include>
                   </includes>
                 </fileset>
               </filesets>
@@ -650,6 +650,7 @@ DO NOT MODIFY - GENERATED CODE
                     <include>COPYING</include>
                     <include>LEGAL</include>
                     <include>LICENSE.RUBY</include>
+                    <include>VERSION</include>
                   </includes>
                   <targetPath>${project.build.sourceDirectory}/META-INF/</targetPath>
                 </resource>
@@ -687,37 +688,6 @@ DO NOT MODIFY - GENERATED CODE
     </plugins>
   </build>
   <profiles>
-    <profile>
-      <id>clean</id>
-      <activation>
-        <os>
-          <family>unix</family>
-        </os>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
-            <executions>
-              <execution>
-                <phase>clean</phase>
-                <goals>
-                  <goal>exec</goal>
-                </goals>
-                <configuration>
-                  <executable>/bin/sh</executable>
-                  <arguments>
-                    <argument>-c</argument>
-                    <argument>cp ${jruby.basedir}/bin/jruby.sh ${jruby.basedir}/bin/jruby</argument>
-                  </arguments>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
     <profile>
       <id>error-prone</id>
       <activation>
@@ -774,40 +744,9 @@ DO NOT MODIFY - GENERATED CODE
                     <path>
                       <groupId>org.jruby</groupId>
                       <artifactId>jruby-base</artifactId>
-                      <version>10.0.0.0-SNAPSHOT</version>
+                      <version>10.0.3.0-SNAPSHOT</version>
                     </path>
                   </annotationProcessorPaths>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>jruby.sh</id>
-      <activation>
-        <os>
-          <family>unix</family>
-        </os>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
-            <executions>
-              <execution>
-                <phase>initialize</phase>
-                <goals>
-                  <goal>exec</goal>
-                </goals>
-                <configuration>
-                  <executable>/bin/sh</executable>
-                  <arguments>
-                    <argument>-c</argument>
-                    <argument>cp ${jruby.basedir}/bin/jruby.sh ${jruby.basedir}/bin/jruby</argument>
-                  </arguments>
                 </configuration>
               </execution>
             </executions>

@@ -27,6 +27,8 @@
 
 package org.jruby.runtime.opto;
 
+import org.jruby.RubyModule;
+
 import java.lang.invoke.SwitchPoint;
 import java.util.List;
 
@@ -41,10 +43,12 @@ public class SwitchPointInvalidator implements Invalidator {
         if (switchPoint == DUMMY) return;
 
         SwitchPoint.invalidateAll(new SwitchPoint[]{switchPoint});
-        switchPoint = new SwitchPoint();
+        switchPoint = DUMMY;
     }
 
     public void invalidateAll(List<Invalidator> invalidators) {
+        if (invalidators.isEmpty()) return;
+
         SwitchPoint[] switchPoints = new SwitchPoint[invalidators.size()];
         
         for (int i = 0; i < invalidators.size(); i++) {
@@ -66,7 +70,11 @@ public class SwitchPointInvalidator implements Invalidator {
         if (switchPoint == DUMMY) return switchPoint;
 
         SwitchPoint oldSwitchPoint = switchPoint;
-        this.switchPoint = new SwitchPoint();
+        this.switchPoint = DUMMY;
         return oldSwitchPoint;
+    }
+
+    public void addIfUsed(RubyModule.InvalidatorList invalidators) {
+        if (switchPoint != DUMMY) invalidators.add(this);
     }
 }

@@ -40,6 +40,8 @@ import org.jruby.ast.DefHolder;
 import org.jruby.ast.Node;
 import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.yacc.LexContext;
+import org.jruby.parser.NodeExits;
+import org.jruby.parser.ProductionState;
 import org.jruby.parser.RubyParserBase;
 import org.jruby.parser.ScopedParserState;
 import org.jruby.runtime.Helpers;
@@ -50,15 +52,19 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
+import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newEmptyArray;
+import static org.jruby.parser.RubyParserBase.IDType.AttrSet;
+import static org.jruby.parser.RubyParserBase.IDType.Class;
+import static org.jruby.parser.RubyParserBase.IDType.Constant;
+import static org.jruby.parser.RubyParserBase.IDType.Global;
+import static org.jruby.parser.RubyParserBase.IDType.Instance;
+import static org.jruby.parser.RubyParserBase.IDType.Local;
 import static org.jruby.util.CommonByteLists.*;
 import static org.jruby.util.RubyStringBuilder.inspectIdentifierByteList;
 import static org.jruby.util.RubyStringBuilder.str;
 
-/**
- *
- */
 public class RipperParserBase {
     public RipperParserBase(ThreadContext context, IRubyObject ripper, LexerSource source) {
         this.context = context;
@@ -204,11 +210,11 @@ public class RipperParserBase {
     }
     
     public IRubyObject intern(String value) {
-        return context.runtime.newSymbol(value);
+        return asSymbol(context, value);
     }
 
     public IRubyObject intern(ByteList value) {
-        return context.runtime.newSymbol(value);
+        return asSymbol(context, value);
     }
 
     protected IRubyObject new_defined(long _line, IRubyObject value) {
@@ -625,11 +631,15 @@ public class RipperParserBase {
         return holder.value;
     }
 
+    protected Set get_value(Set set) {
+        return set;
+    }
+
     protected IRubyObject get_value(RubyArray holder) {
         return holder.eltOk(0);
     }
 
-    public void endless_method_name(DefHolder holder) {
+    public void endless_method_name(DefHolder holder, ProductionState loc) {
         ByteList name = holder.name.getBytes();
         RubyParserBase.IDType type = RubyParserBase.id_type(name);
 
@@ -904,6 +914,119 @@ public class RipperParserBase {
         }
 
         return getRuntime().newSymbol(lexer.identValue);
+    }
+
+    protected NodeExits allow_block_exit() {
+        // FIXME: Impl
+        return null;
+    }
+
+    protected void clear_block_exit(boolean value) {
+
+    }
+
+    protected void next_rescue_context(LexContext context, LexContext.InRescue value) {
+
+    }
+
+    protected NodeExits init_block_exit() {
+        return new NodeExits();
+    }
+
+    protected void restore_block_exit(NodeExits nodeExits) {
+        // FIXME:Impl
+    }
+
+    protected void begin_definition(String name) {
+        LexContext ctxt = getLexContext();
+        ctxt.in_class = name != null;
+        if (!ctxt.in_class) {
+            ctxt.in_def = false;
+        } else if (ctxt.in_def) {
+            yyerror((name != null ? (name + " ") : "") + "definition in method body");
+        }
+        pushLocalScope();
+    }
+
+    protected void push_end_expect_token_locations(int line) {
+        // FIXME: impl
+    }
+
+    protected void token_info_setup(String value, ProductionState loc) {
+
+    }
+
+    protected void token_info_push(String value, ProductionState loc) {
+
+    }
+
+    protected void token_info_pop(String value, ProductionState loc) {
+        //  FIXME: impl
+    }
+    protected void token_info_drop(String value, ProductionState loc) {
+        //  FIXME: impl
+    }
+
+    protected void token_info_warn(String name, int same, ProductionState loc) {
+
+    }
+
+    protected boolean isEval() {
+        return false;
+    }
+
+    protected void WARN_EOL(String name) {
+        // FIXME: IMpl
+    }
+
+    public enum IDType {
+        Local, Global, Instance, AttrSet, Constant, Class;
+    }
+
+    public static RubyParserBase.IDType id_type(ByteList identifier) {
+        char first = identifier.charAt(0);
+
+        if (Character.isUpperCase(first)) return Constant;
+
+        switch(first) {
+            case '@':
+                return identifier.charAt(1) == '@' ? Class : Instance;
+            case '$':
+                return Global;
+        }
+
+        byte last = (byte) identifier.get(identifier.length() - 1);
+        if (last == '=') {
+            return AttrSet;
+        }
+
+        return Local;
+    }
+
+    protected IRubyObject it_id() {
+        return itId;
+    }
+
+    protected void set_it_id(IRubyObject node) {
+        this.itId = node;
+    }
+
+    private IRubyObject itId;
+
+    protected void forwarding_arg_check(ByteList rest, ByteList all, String var) {
+        // FIXME: Impl
+    }
+
+    protected void setLexContext(LexContext lexContext) {
+        lexer.setLexContext(lexContext);
+    }
+
+    protected IRubyObject NEW_ERROR(ProductionState value) {
+        return context.nil;
+    }
+
+    protected boolean dyna_in_block() {
+        return currentScope.isBlockScope() && !isEval();
     }
 
     protected IRubyObject ripper;

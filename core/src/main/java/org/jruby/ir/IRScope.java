@@ -282,6 +282,15 @@ public abstract class IRScope implements ParseResult {
         return false;
     }
 
+    public boolean isWithinMethod() {
+        for (IRScope current = this; current != null; current = current.getLexicalParent()) {
+            if (current instanceof IRModuleBody) return false;
+            if (current instanceof IRMethod) return true;
+        }
+
+        return false;
+    }
+
     // walks up closures
     public IRScope getNearestNonClosurelikeScope() {
         IRScope current = this;

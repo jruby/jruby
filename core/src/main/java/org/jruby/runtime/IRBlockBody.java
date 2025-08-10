@@ -74,7 +74,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
             return yieldDirect(context, block, null, null);
         } else {
             IRubyObject[] args = IRubyObject.NULL_ARRAY;
-            if (block.type == Block.Type.LAMBDA) signature.checkArity(context.runtime, args);
+            if (block.type == Block.Type.LAMBDA) signature.checkArity(context, args);
             return commonYieldPath(context, block, args, null, Block.NULL_BLOCK);
         }
     }
@@ -94,7 +94,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
                 args = IRRuntimeHelpers.convertValueIntoArgArray(context, ary, signature);
 
                 // FIXME: arity error is against new args but actual error shows arity of original args.
-                if (block.type == Block.Type.LAMBDA) signature.checkArity(context.runtime, args);
+                if (block.type == Block.Type.LAMBDA) signature.checkArity(context, args);
 
                 return commonYieldPath(context, block, args, null, Block.NULL_BLOCK);
             } else {
@@ -113,7 +113,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
         if (signature.arityValue() == 0) {
             args = IRubyObject.NULL_ARRAY; // discard args
         }
-        if (block.type == Block.Type.LAMBDA) signature.checkArity(context.runtime, args);
+        if (block.type == Block.Type.LAMBDA) signature.checkArity(context, args);
 
         return commonYieldPath(context, block, args, null, Block.NULL_BLOCK);
     }
@@ -149,7 +149,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
             args = toAry(context, value);
         }
 
-        signature.checkArity(context.runtime, args);
+        signature.checkArity(context, args);
 
         return commonYieldPath(context, block, args, null, Block.NULL_BLOCK);
     }
@@ -172,7 +172,7 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject doYield(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
-        if (block.type == Block.Type.LAMBDA) signature.checkArity(context.runtime, args);
+        if (block.type == Block.Type.LAMBDA) signature.checkArity(context, args);
 
         return commonYieldPath(context, block, args, self, Block.NULL_BLOCK);
     }

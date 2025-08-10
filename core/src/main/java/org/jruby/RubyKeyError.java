@@ -34,9 +34,9 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- * @author Miguel Landaeta
- */
+import static org.jruby.api.Define.defineClass;
+import static org.jruby.api.Error.argumentError;
+
 @JRubyClass(name="KeyError", parent="IndexError")
 public class RubyKeyError extends RubyIndexError {
     private static final String[] VALID_KEYS = {"receiver", "key"};
@@ -53,11 +53,9 @@ public class RubyKeyError extends RubyIndexError {
         this.key = key;
     }
 
-    static RubyClass define(Ruby runtime, RubyClass superClass) {
-        RubyClass KeyError = runtime.defineClass("KeyError", superClass, RubyKeyError::new);
-        KeyError.defineAnnotatedMethods(RubyKeyError.class);
-        KeyError.setReifiedClass(RubyKeyError.class);
-        return KeyError;
+    static RubyClass define(ThreadContext context, RubyClass IndexError) {
+        return defineClass(context, "KeyError", IndexError, RubyKeyError::new).
+                reifiedClass(RubyKeyError.class).defineMethods(context, RubyKeyError.class);
     }
 
     @Override
@@ -113,19 +111,25 @@ public class RubyKeyError extends RubyIndexError {
         return context.nil;
     }
 
-    @JRubyMethod
+    @Deprecated(since = "10.0")
     public IRubyObject receiver() {
-        if (receiver == null) {
-            throw getRuntime().newArgumentError("no receiver is available");
-        }
-        return receiver;
+        return receiver(getCurrentContext());
     }
 
     @JRubyMethod
+    public IRubyObject receiver(ThreadContext context) {
+        if (receiver == null) throw argumentError(context, "no receiver is available");
+        return receiver;
+    }
+
+    @Deprecated(since = "10.0")
     public IRubyObject key() {
-        if (key == null) {
-            throw getRuntime().newArgumentError("no key is available");
-        }
+        return key(getCurrentContext());
+    }
+
+    @JRubyMethod
+    public IRubyObject key(ThreadContext context) {
+        if (key == null) throw argumentError(context, "no key is available");
         return key;
     }
 }

@@ -29,6 +29,9 @@ package org.jruby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.NoMemoryError;
+import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Define.defineClass;
 
 /**
  * The Java representation of a Ruby NoMemoryError.
@@ -41,10 +44,8 @@ public class RubyNoMemoryError extends RubyException {
         super(runtime, exceptionClass);
     }
 
-    static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass NoMemoryErrorClass = runtime.defineClass("NoMemoryError", exceptionClass, RubyNoMemoryError::new);
-
-        return NoMemoryErrorClass;
+    static RubyClass define(ThreadContext context, RubyClass Exception) {
+        return defineClass(context, "NoMemoryError", Exception, RubyNoMemoryError::new);
     }
 
     @Override

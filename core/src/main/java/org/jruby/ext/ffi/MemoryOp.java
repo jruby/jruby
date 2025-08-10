@@ -270,7 +270,11 @@ abstract class MemoryOp {
     
     static final class Float32 extends PrimitiveOp {
         public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
-            io.putFloat(offset, Util.floatValue(value));
+            put(runtime.getCurrentContext(), io, offset, value);
+        }
+
+        public final void put(ThreadContext context, MemoryIO io, long offset, IRubyObject value) {
+            io.putFloat(offset, Util.floatValue(context, value));
         }
 
         public final IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
@@ -280,8 +284,13 @@ abstract class MemoryOp {
     
     static final class Float64 extends PrimitiveOp {
         public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
-            io.putDouble(offset, Util.doubleValue(value));
+            put(runtime.getCurrentContext(), io, offset, value);
         }
+
+        public final void put(ThreadContext context, MemoryIO io, long offset, IRubyObject value) {
+            io.putDouble(offset, Util.doubleValue(context, value));
+        }
+
 
         public final IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
             return runtime.newFloat(io.getDouble(offset));
@@ -336,7 +345,7 @@ abstract class MemoryOp {
         @Override
         void put(ThreadContext context, AbstractMemory ptr, long offset, IRubyObject value) {
             if (value instanceof Struct s) {
-                byte[] tmp = new byte[Struct.getStructSize(context.runtime, s)];
+                byte[] tmp = new byte[Struct.getStructSize(context, s)];
                 s.getMemoryIO().get(0, tmp, 0, tmp.length);
                 ptr.getMemoryIO().put(offset, tmp, 0, tmp.length);
                 return;

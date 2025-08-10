@@ -6,65 +6,104 @@ module GC
       pool_beans[pool_bean.name] = pool_bean
     end
 
-    all_stats = all_stats_or_key.is_a?(Hash) ? all_stats_or_key : {}
+    case all_stats_or_key
+    when Hash
+      all_stats = all_stats_or_key
+    when Symbol
+      result_key = all_stats_or_key
+    else
+      raise TypeError.new("non-hash or symbol given")
+    end
 
-    all_stats.merge!({
-        :count => 0,
-        :time => 0,
-        :committed => 0.0,
-        :init => 0.0,
-        :max => 0.0,
-        :used => 0.0,
-        :peak_committed => 0.0,
-        :peak_init => 0.0,
-        :peak_max => 0.0,
-        :peak_used => 0.0,
-        :last_committed => 0.0,
-        :last_init => 0.0,
-        :last_max => 0.0,
-        :last_used => 0.0
-    })
+    count = time = 0
+    committed = init = max = used = peak_committed = peak_init = peak_max =
+      peak_used = last_committed = last_init = last_max = last_used = 0.0
 
     gc_beans.each do |gc_bean|
-      gc_stats = all_stats[gc_bean.name] = {}
-      all_stats[:count] += gc_stats[:count] = gc_bean.collection_count
-      all_stats[:time] += gc_stats[:time] = gc_bean.collection_time
+      unless result_key
+        gc_stats = all_stats[gc_bean.name] = {}
+        gc_stats[:count] = gc_bean.collection_count
+        gc_stats[:time] = gc_bean.collection_time
+      end
+
+      count += gc_bean.collection_count
+      time += gc_bean.collection_time
 
       gc_bean.memory_pool_names.each do |pool_name|
         pool_bean = pool_beans[pool_name]
 
-        all_pools = gc_stats[:pools] = {}
-        pool_stats = all_pools[pool_name] = {}
+        unless result_key
+          all_pools = gc_stats[:pools] = {}
+          pool_stats = all_pools[pool_name] = {}
+        end
 
         usage = pool_bean.usage
         peak_usage = pool_bean.peak_usage
         last_usage = pool_bean.collection_usage
 
-        all_stats[:committed] += pool_stats[:committed] = usage.committed
-        all_stats[:init] += pool_stats[:init] = usage.init
-        all_stats[:max] += pool_stats[:max] = usage.max
-        all_stats[:used] += pool_stats[:used] = usage.used
-        all_stats[:peak_committed] += pool_stats[:peak_committed] = peak_usage.committed
-        all_stats[:peak_init] += pool_stats[:peak_init] = peak_usage.init
-        all_stats[:peak_max] += pool_stats[:peak_max] = peak_usage.max
-        all_stats[:peak_used] += pool_stats[:peak_used] = peak_usage.used
-        all_stats[:last_committed] += pool_stats[:last_committed] = last_usage.committed
-        all_stats[:last_init] += pool_stats[:last_init] = last_usage.init
-        all_stats[:last_max] += pool_stats[:last_max] = last_usage.max
-        all_stats[:last_used] += pool_stats[:last_used] = last_usage.used
+        unless result_key
+          pool_stats[:committed] = usage.committed
+          pool_stats[:init] = usage.init
+          pool_stats[:max] = usage.max
+          pool_stats[:used] = usage.used
+          pool_stats[:peak_committed] = peak_usage.committed
+          pool_stats[:peak_init] = peak_usage.init
+          pool_stats[:peak_max] = peak_usage.max
+          pool_stats[:peak_used] = peak_usage.used
+          pool_stats[:last_committed] = last_usage.committed
+          pool_stats[:last_init] = last_usage.init
+          pool_stats[:last_max] = last_usage.max
+          pool_stats[:last_used] = last_usage.used
+        end
+
+        committed += usage.committed
+        init += usage.init
+        max += usage.max
+        used += usage.used
+        peak_committed += peak_usage.committed
+        peak_init += peak_usage.init
+        peak_max += peak_usage.max
+        peak_used += peak_usage.used
+        last_committed += last_usage.committed
+        last_init += last_usage.init
+        last_max += last_usage.max
+        last_used += last_usage.used
       end
     end
 
-    if all_stats_or_key.is_a?(Symbol)
-      if all_stats.key?(all_stats_or_key)
-        all_stats[all_stats_or_key]
-      else
-        raise ArgumentError.new(format("unknown key: %s", all_stats_or_key).force_encoding("UTF-8"))
-      end
-    elsif !all_stats_or_key.nil? && !all_stats_or_key.is_a?(Hash)
-      raise TypeError.new("non-hash or symbol given")
+    case result_key
+    when :count
+      count
+    when :time
+      time
+    when :committed
+      committed
+    when :init
+      init
+    when :max
+      max
+    when :used
+      used
+    when :peak_committed
+      peak_committed
+    when :peak_init
+      peak_init
+    when :peak_max
+      peak_max
+    when :peak_used
+      peak_used
+    when :last_committed
+      last_committed
+    when :last_init
+      last_init
+    when :last_max
+      last_max
+    when :last_used
+      last_used
+    when Symbol
+      raise ArgumentError.new(format("unknown key: %s", result_key).force_encoding("UTF-8"))
     else
-      all_stats
+      all_stats.merge!({count:, time:, committed:, init:, max:, used:, peak_committed:, peak_init:, peak_max:, peak_used:, last_committed:, last_init:, last_max:, last_used:})
     end
   end
 
@@ -97,6 +136,11 @@ module GC
       def self.clear
         __setup__
         @profiler.clear
+      end
+
+      def self.raw_data
+        __setup__
+        @profiler.raw_data
       end
 
       def self.result
@@ -171,6 +215,10 @@ module GC
             @gc_listener.clear if @gc_listener
           end
 
+          def raw_data
+            @gc_listener.lines.dup
+          end
+
           def report
             result($stderr)
           end
@@ -178,7 +226,7 @@ module GC
           def result(out = "")
             return nil unless @gc_listener
             
-            lines = @gc_listener.lines.dup
+            lines = raw_data
 
             counts = Hash.new(0)
             report_lines = []

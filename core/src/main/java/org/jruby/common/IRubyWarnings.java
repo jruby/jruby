@@ -34,8 +34,6 @@ package org.jruby.common;
 import org.jruby.Ruby;
 
 // FIXME: Document difference between warn and warning (or rename one better)
-/**
- */
 public interface IRubyWarnings {
     enum ID {
         /**

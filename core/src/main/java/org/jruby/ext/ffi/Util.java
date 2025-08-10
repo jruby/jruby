@@ -37,11 +37,10 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static com.headius.backport9.buffer.Buffers.positionBuffer;
+import static org.jruby.api.Convert.toDouble;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 
-/**
- *
- */
 public final class Util {
     private Util() {}
     public static final byte int8Value(IRubyObject parameter) {
@@ -79,12 +78,22 @@ public final class Util {
         return value;
     }
 
+    @Deprecated(since = "10.0")
     public static final float floatValue(IRubyObject parameter) {
-        return (float) RubyNumeric.num2dbl(parameter);
+        return floatValue(((RubyBasicObject) parameter).getCurrentContext(), parameter);
     }
 
+    public static final float floatValue(ThreadContext context, IRubyObject parameter) {
+        return (float) toDouble(context, parameter);
+    }
+
+    @Deprecated(since = "10.0")
     public static final double doubleValue(IRubyObject parameter) {
-        return RubyNumeric.num2dbl(parameter);
+        return doubleValue(((RubyBasicObject) parameter).getCurrentContext(), parameter);
+    }
+
+    public static final double doubleValue(ThreadContext context, IRubyObject parameter) {
+        return toDouble(context, parameter);
     }
 
     /**
@@ -97,15 +106,14 @@ public final class Util {
         return RubyNumeric.num2long(parameter);
     }
 
+    @Deprecated(since = "10.0")
     public static int intValue(IRubyObject obj, RubyHash enums) {
-        if (obj instanceof RubyInteger) {
-                return (int) ((RubyInteger) obj).getLongValue();
-
-        } else if (obj instanceof RubySymbol) {
+        var context = ((RubyBasicObject) obj).getCurrentContext();
+        if (obj instanceof RubyInteger obji) return obji.asInt(context);
+        if (obj instanceof RubySymbol) {
             IRubyObject value = enums.fastARef(obj);
-            if (value.isNil()) {
-                throw obj.getRuntime().newArgumentError("invalid enum value, " + obj.inspect());
-            }
+            if (value.isNil()) throw argumentError(context, "invalid enum value, " + obj.inspect(context));
+
             return (int) longValue(value);
         } else {
             return (int) longValue(obj);
@@ -185,7 +193,7 @@ public final class Util {
         switch (byte_order.asJavaString()) {
             case "network": case "big": return ByteOrder.BIG_ENDIAN;
             case "little": return ByteOrder.LITTLE_ENDIAN;
-            default: throw runtime.newArgumentError("unknown byte order");
+            default: throw argumentError(runtime.getCurrentContext(), "unknown byte order");
         }
     }
 

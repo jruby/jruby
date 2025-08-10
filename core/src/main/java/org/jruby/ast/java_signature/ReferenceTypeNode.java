@@ -29,10 +29,6 @@
 
 package org.jruby.ast.java_signature;
 
-/**
- *
- * @author enebo
- */
 public class ReferenceTypeNode extends TypeNode {
     private String genericString = "";
 

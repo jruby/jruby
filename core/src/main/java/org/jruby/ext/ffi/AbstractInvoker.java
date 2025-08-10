@@ -35,9 +35,10 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
 /**
  * A native function invoker
@@ -51,19 +52,18 @@ public abstract class AbstractInvoker extends Pointer {
      */
     protected final Arity arity;
     
-    public static RubyClass createAbstractInvokerClass(Ruby runtime, RubyModule module) {
-        RubyClass result = module.defineClassUnder(CLASS_NAME,
-                module.getClass("Pointer"),
-                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        result.defineAnnotatedMethods(AbstractInvoker.class);
-        result.defineAnnotatedConstants(AbstractInvoker.class);
-
-        return result;
+    public static RubyClass createAbstractInvokerClass(ThreadContext context, RubyModule FFI, RubyClass Pointer) {
+        return FFI.defineClassUnder(context, CLASS_NAME, Pointer, NOT_ALLOCATABLE_ALLOCATOR).
+                defineMethods(context, AbstractInvoker.class).
+                defineConstants(context, AbstractInvoker.class);
     }
     
     /**
      * Creates a new <code>AbstractInvoker</code> instance.
-     * @param arity
+     * @param runtime the runtime
+     * @param klass the class
+     * @param arity the arity
+     * @param io the memory
      */
     protected AbstractInvoker(Ruby runtime, RubyClass klass, int arity, MemoryIO io) {
         super(runtime, klass, io, 0);
@@ -76,19 +76,26 @@ public abstract class AbstractInvoker extends Pointer {
      * @param context The thread context.
      * @param obj The module or class to attach the function to.
      * @param methodName The ruby name to attach the function as.
+     * @return itself
      */
     @JRubyMethod(name="attach")
     public IRubyObject attach(ThreadContext context, IRubyObject obj, IRubyObject methodName) {
+        var singleton = obj.singletonClass(context);
+        DynamicMethod m = createDynamicMethod(singleton);
         
-        DynamicMethod m = createDynamicMethod(obj.getSingletonClass());
-        obj.getSingletonClass().addMethod(methodName.asJavaString(), m);
-        if (obj instanceof RubyModule) {
-            ((RubyModule) obj).addMethod(methodName.asJavaString(), m);
-        }
+        singleton.addMethod(context, methodName.asJavaString(), m);
+        if (obj instanceof RubyModule mod) mod.addMethod(context, methodName.asJavaString(), m);
+
         getRuntime().getFFI().registerAttachedMethod(m, this);
         
         return this;
     }
+
+    /**
+     * Create a method
+     * @param module for which module
+     * @return a method
+     */
     protected abstract DynamicMethod createDynamicMethod(RubyModule module);
 
     /**

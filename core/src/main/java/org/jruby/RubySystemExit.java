@@ -35,6 +35,7 @@ import org.jruby.runtime.Block;
 
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.runtime.Visibility.*;
 
 import org.jruby.runtime.ThreadContext;
@@ -50,12 +51,9 @@ public class RubySystemExit extends RubyException {
 
     IRubyObject status;
 
-    static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass systemExitClass = runtime.defineClass("SystemExit", exceptionClass, RubySystemExit::new);
-
-        systemExitClass.defineAnnotatedMethods(RubySystemExit.class);
-
-        return systemExitClass;
+    static RubyClass define(ThreadContext context, RubyClass Exception) {
+        return defineClass(context, "SystemExit", Exception, RubySystemExit::new).
+                defineMethods(context, RubySystemExit.class);
     }
 
     @Deprecated

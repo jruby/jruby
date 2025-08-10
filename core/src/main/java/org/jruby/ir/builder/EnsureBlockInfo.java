@@ -1,13 +1,12 @@
 package org.jruby.ir.builder;
 
-import org.jruby.ast.RescueNode;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.ExceptionRegionEndMarkerInstr;
 import org.jruby.ir.instructions.ExceptionRegionStartMarkerInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.LabelInstr;
-import org.jruby.ir.instructions.PutGlobalVarInstr;
+import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.NullBlock;
 import org.jruby.ir.operands.Operand;
@@ -17,6 +16,8 @@ import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.RESET_GVAR_UNDERSCORE;
 
 /* -----------------------------------------------------------------------------------
  * Every ensure block has a start label and end label
@@ -98,7 +99,7 @@ class EnsureBlockInfo {
         if (savedGlobalException != null) {
             // We need make sure on all outgoing paths in optimized short-hand rescues we restore the backtrace
             if (!needsBacktrace) builder.addInstr(builder.getManager().needsBacktrace(true));
-            builder.addInstr(new PutGlobalVarInstr(builder.symbol("$!"), savedGlobalException));
+            addInstr(new RuntimeHelperCall(builder.temp(), RESET_GVAR_UNDERSCORE, new Operand[] { savedGlobalException }));
         }
 
         // Sometimes we process a rescue and it hits something like non-local flow like a 'next' and

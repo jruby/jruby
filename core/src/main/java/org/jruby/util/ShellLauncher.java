@@ -31,9 +31,12 @@ package org.jruby.util;
 import static com.headius.backport9.buffer.Buffers.clearBuffer;
 import static com.headius.backport9.buffer.Buffers.flipBuffer;
 import static java.lang.System.out;
+import static org.jruby.api.Access.objectClass;
+import static org.jruby.api.Create.newHash;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Warn.warn;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -71,6 +74,7 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import jnr.posix.util.Platform;
+import org.jruby.api.Access;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.javasupport.Java;
 import org.jruby.runtime.Helpers;
@@ -250,12 +254,7 @@ public class ShellLauncher {
 
         try {
             // dup for JRUBY-6603 (avoid concurrent modification while we walk it)
-            RubyHash hash = null;
-            if (clearEnv) {
-                hash = RubyHash.newHash(context.runtime);
-            } else {
-                hash = (RubyHash) context.runtime.getObject().getConstant("ENV").dup();
-            }
+            RubyHash hash = clearEnv ? newHash(context) : (RubyHash) objectClass(context).getConstant(context, "ENV").dup();
 
             if (mergeEnv != null) {
                 if (mergeEnv instanceof Set) {
@@ -428,18 +427,22 @@ public class ShellLauncher {
 
     public static File findPathExecutable(Ruby runtime, String fname) {
         ThreadContext context = runtime.getCurrentContext();
-        RubyHash env = (RubyHash) runtime.getObject().getConstant("ENV");
+        RubyHash env = (RubyHash) objectClass(context).getConstant(context, "ENV");
         IRubyObject pathObject = env.op_aref(context, newString(context, PATH_ENV));
-        return findPathExecutable(runtime, fname, pathObject);
+        return findPathExecutable(context, fname, pathObject);
+    }
+
+    @Deprecated(since = "10.0")
+    public static File findPathExecutable(Ruby runtime, String fname, IRubyObject pathObject) {
+        return findPathExecutable(runtime.getCurrentContext(), fname, pathObject);
     }
 
     // MRI: Hopefully close to dln_find_exe_r used by popen logic
-    public static File findPathExecutable(Ruby runtime, String fname, IRubyObject pathObject) {
+    public static File findPathExecutable(ThreadContext context, String fname, IRubyObject pathObject) {
         String[] pathNodes;
 
         if (pathObject == null || pathObject.isNil()) {
-            ThreadContext context = runtime.getCurrentContext();
-            RubyHash env = (RubyHash) runtime.getObject().getConstant("ENV");
+            RubyHash env = (RubyHash) objectClass(context).getConstant(context, "ENV");
             pathObject = env.op_aref(context, newString(context, PATH_ENV));
         }
 
@@ -456,7 +459,7 @@ public class ShellLauncher {
             }
             pathNodes = path.split(pathSeparator);
         }
-        return findPathFile(runtime, fname, pathNodes, true);
+        return findPathFile(context.runtime, fname, pathNodes, true);
     }
 
     public static int runAndWait(Ruby runtime, IRubyObject[] rawArgs) {
@@ -486,7 +489,6 @@ public class ShellLauncher {
                     log(runtime, "Launching with shell");
                     // execute command with sh -c ... this does shell expansion of wildcards
                     cfg.verifyExecutableForShell();
-                    process = buildProcess(runtime, cfg.getExecArgs(), getCurrentEnv(runtime, mergeEnv), pwd);
                 } else {
                     log(runtime, "Launching directly (no shell)");
                     cfg.verifyExecutableForDirect();
@@ -869,8 +871,8 @@ public class ShellLauncher {
     }
 
     private static Process popenShared(Ruby runtime, IRubyObject[] strings, Map env, boolean addShell) throws IOException {
+        var context = runtime.getCurrentContext();
         String shell = getShell(runtime);
-        Process childProcess;
         File pwd = new File(runtime.getCurrentDirectory());
 
         try {
@@ -883,13 +885,11 @@ public class ShellLauncher {
 
             // Peel off options hash and warn that we don't support them
             if (strings.length > 1 && !(envHash = TypeConverter.checkHashType(runtime, strings[strings.length - 1])).isNil()) {
-                if (!((RubyHash)envHash).isEmpty()) {
-                    runtime.getWarnings().warn("popen3 does not support spawn options in JRuby 1.7");
-                }
+                if (!((RubyHash)envHash).isEmpty()) warn(context, "popen3 does not support spawn options in JRuby 1.7");
                 strings = Arrays.copyOfRange(strings, 0, strings.length - 1);
             }
 
-            String[] args = parseCommandLine(runtime.getCurrentContext(), runtime, strings);
+            String[] args = parseCommandLine(context, runtime, strings);
             LaunchConfig cfg = new LaunchConfig(runtime, strings, true);
             boolean useShell = Platform.IS_WINDOWS ? cfg.shouldRunInShell() : false;
             if (addShell) for (String arg : args) useShell |= shouldUseShell(arg);
@@ -900,12 +900,10 @@ public class ShellLauncher {
                 cfg.verifyExecutableForDirect();
             }
 
-            childProcess = buildProcess(runtime, cfg.execArgs, getCurrentEnv(runtime, env), pwd);
+            return buildProcess(runtime, cfg.execArgs, getCurrentEnv(runtime, env), pwd);
         } catch (SecurityException se) {
             throw runtime.newSecurityError(se.getLocalizedMessage());
         }
-
-        return childProcess;
     }
 
     public static class POpenProcess extends Process {
@@ -1671,12 +1669,12 @@ public class ShellLauncher {
                 // can't make use of it, discard the argv[0] entry
                 args = new String[] { getPathEntry((RubyArray) rawArgs[0]) };
             } else {
-                synchronized (runtime.getLoadService()) {
-                    runtime.getLoadService().require("org/jruby/kernel/path_helper");
+                var loadService = Access.loadService(context);
+                synchronized (loadService) {
+                    loadService.require("org/jruby/kernel/path_helper");
                 }
                 RubyModule pathHelper = runtime.getClassFromPath("JRuby::PathHelper");
-                RubyArray parts = (RubyArray) Helpers.invoke(
-                        context, pathHelper, "smart_split_command", rawArgs);
+                RubyArray parts = (RubyArray) Helpers.invoke(context, pathHelper, "smart_split_command", rawArgs);
                 args = new String[parts.getLength()];
                 for (int i = 0; i < parts.getLength(); i++) {
                     args[i] = parts.entry(i).toString();

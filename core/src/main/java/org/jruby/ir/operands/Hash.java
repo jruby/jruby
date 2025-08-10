@@ -17,13 +17,17 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static org.jruby.api.Access.hashClass;
+import static org.jruby.api.Create.newHash;
+import static org.jruby.api.Create.newSmallHash;
+
 // Represents a hash { _ =>_, _ => _ .. } in ruby
 //
 // NOTE: This operand is only used in the initial stages of optimization.
 // Further down the line, this hash could get converted to calls
 // that actually build the hash
 public class Hash extends Operand {
-    final public KeyValuePair<Operand, Operand>[] pairs;
+    public final KeyValuePair<Operand, Operand>[] pairs;
 
     public Hash(List<KeyValuePair<Operand, Operand>> pairs) {
         this(pairs.toArray(new KeyValuePair[pairs.size()]));
@@ -117,12 +121,12 @@ public class Hash extends Operand {
         if (isKeywordRest()) {
             // Dup the rest args hash and use that as the basis for inserting the non-rest args
             IRubyObject rest = (IRubyObject) pairs[0].getValue().retrieve(context, self, currScope, currDynScope, temp);
-            TypeConverter.checkType(context, rest, context.runtime.getHash());
+            TypeConverter.checkType(context, rest, hashClass(context));
             hash = ((RubyHash) rest).dupFast(context);
             // Skip the first pair
             index++;
         } else {
-            hash = smallHash ? RubyHash.newSmallHash(runtime) : RubyHash.newHash(runtime);
+            hash = smallHash ? newSmallHash(context) : newHash(context);
         }
 
 
@@ -132,9 +136,9 @@ public class Hash extends Operand {
             IRubyObject value = (IRubyObject) pair.getValue().retrieve(context, self, currScope, currDynScope, temp);
 
             if (smallHash) {
-                hash.fastASetSmallCheckString(runtime, key, value);
+                hash.fastASetSmallCheckString(context.runtime, key, value);
             } else {
-                hash.fastASetCheckString(runtime, key, value);
+                hash.fastASetCheckString(context.runtime, key, value);
             }
         }
 

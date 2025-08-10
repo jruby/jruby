@@ -7,6 +7,9 @@ import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
 import org.jruby.util.ConvertBytes;
 
+import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Create.newString;
+
 public class RubyStackTraceElement implements java.io.Serializable {
     public static final RubyStackTraceElement[] EMPTY_ARRAY = new RubyStackTraceElement[0];
 
@@ -57,6 +60,10 @@ public class RubyStackTraceElement implements java.io.Serializable {
         return lineNumber;
     }
 
+    public String getFileAndLine() {
+        return "" + fileName + ":" + lineNumber;
+    }
+
     public final String getMethodName() {
         return methodName;
     }
@@ -80,8 +87,8 @@ public class RubyStackTraceElement implements java.io.Serializable {
     }
 
     public static RubyString to_s_mri(ThreadContext context, RubyStackTraceElement element) {
-        RubySymbol methodSym = context.runtime.newSymbol(element.getMethodName());
-        RubyString line = context.runtime.newString(new ByteList(methodSym.getBytes().length() + element.getFileName().length() + 18));
+        RubySymbol methodSym = asSymbol(context, element.getMethodName());
+        RubyString line = newString(context, new ByteList(methodSym.getBytes().length() + element.getFileName().length() + 18));
 
         line.setEncoding(methodSym.getEncoding());
 
@@ -101,7 +108,7 @@ public class RubyStackTraceElement implements java.io.Serializable {
         // return fileName + ':' + lineNumber + ":in '" + methodName + '\'';
         return new StringBuilder(fileName.length() + methodName.length() + 12).
                 append(fileName).append(':').append(lineNumber).
-                append(":in `").append(methodName).append('\'');
+                append(":in '").append(methodName).append('\'');
     }
 
 }

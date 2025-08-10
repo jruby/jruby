@@ -20,7 +20,7 @@ public class JavaExtensions {
 
     static void put(final Ruby runtime, Class javaClass, Consumer<RubyModule> proxyClass) {
         if (!LAZY) {
-            proxyClass.accept( org.jruby.javasupport.Java.getProxyClass(runtime, javaClass) );
+            proxyClass.accept( org.jruby.javasupport.Java.getProxyClass(runtime.getCurrentContext(), javaClass) );
             return;
         }
         Object previous = runtime.getJavaExtensionDefinitions().put(javaClass, proxyClass);

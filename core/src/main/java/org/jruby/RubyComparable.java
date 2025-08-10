@@ -42,6 +42,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Convert.*;
+import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.argumentError;
 
 /** Implementation of the Comparable module.
@@ -49,12 +50,8 @@ import static org.jruby.api.Error.argumentError;
  */
 @JRubyModule(name="Comparable")
 public class RubyComparable {
-    public static RubyModule createComparable(Ruby runtime) {
-        RubyModule comparableModule = runtime.defineModule("Comparable");
-
-        comparableModule.defineAnnotatedMethods(RubyComparable.class);
-
-        return comparableModule;
+    public static RubyModule createComparable(ThreadContext context) {
+        return defineModule(context, "Comparable").defineMethods(context, RubyComparable.class);
     }
 
     /*  ================
@@ -66,9 +63,9 @@ public class RubyComparable {
      *
      */
     public static int cmpint(ThreadContext context, CallSite op_gt, CallSite op_lt, IRubyObject val, IRubyObject a, IRubyObject b) {
-        if (val == context.nil) cmperr(a, b);
-        if (val instanceof RubyFixnum fixnum) return Integer.compare(RubyNumeric.fix2int(fixnum), 0);
-        if (val instanceof RubyBignum bignum) return bignum.signum() == -1 ? -1 : 1;
+        if (val == context.nil) cmperr(context, a, b);
+        if (val instanceof RubyFixnum fixnum) return Integer.compare(toInt(context, fixnum), 0);
+        if (val instanceof RubyBignum bignum) return bignum.signum(context) == -1 ? -1 : 1;
 
         var zero = RubyFixnum.zero(context.runtime);
 
@@ -95,7 +92,7 @@ public class RubyComparable {
 
     @Deprecated
     public static IRubyObject cmperr(IRubyObject recv, IRubyObject other) {
-        return cmperr(recv.getRuntime().getCurrentContext(), recv, other);
+        return cmperr(((RubyBasicObject) recv).getCurrentContext(), recv, other);
     }
 
     /** rb_cmperr
@@ -103,7 +100,7 @@ public class RubyComparable {
      */
     public static IRubyObject cmperr(ThreadContext context, IRubyObject recv, IRubyObject other) {
         IRubyObject target = other.isImmediate() || !(other.isNil() || other.isTrue() || other == context.fals) ?
-                other.inspect() : other.getType();
+                other.inspect(context) : other.getType();
 
         throw argumentError(context, "comparison of " + recv.getType() + " with " + target + " failed");
     }
@@ -234,7 +231,7 @@ public class RubyComparable {
         CallSite op_cmp = sites.op_cmp;
 
         if (!min.isNil() && !max.isNil() && cmpAndCmpint(context, op_cmp, op_gt, op_lt, min, max) > 0) {
-            throw argumentError(context, "min argument must be smaller than max argument");
+            throw argumentError(context, "min argument must be less than or equal to max argument");
         }
 
         if (!min.isNil()) {

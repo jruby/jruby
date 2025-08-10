@@ -41,6 +41,8 @@ import org.jruby.compiler.ClassLoaderMode;
 import org.jruby.runtime.Constants;
 import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
+import org.jruby.util.collections.ClassValue;
+
 import static org.jruby.util.cli.Category.*;
 import static org.jruby.RubyInstanceConfig.Verbosity;
 import static org.jruby.RubyInstanceConfig.ProfilingMode;
@@ -54,7 +56,6 @@ import static org.jruby.RubyInstanceConfig.CompileMode;
  */
 public class Options {
     private static final List<Option> _loadedOptions = new ArrayList<>(240);
-    private static final boolean INVOKEDYNAMIC_DEFAULT = calculateInvokedynamicDefault();
     private static final boolean COLOR = System.console() != null;
 
     public static final String IR_PRINT_PATTERN_NO_PATTERN_STRING = "<NO_PATTERN>";
@@ -73,7 +74,7 @@ public class Options {
 
     public static final Option<CompileMode> COMPILE_MODE = enumeration(COMPILER, "compile.mode", CompileMode.class, CompileMode.JIT, "Set compilation mode. JIT = at runtime; FORCE = before execution.");
     public static final Option<Boolean> COMPILE_DUMP = bool(COMPILER, "compile.dump", false, "Dump to console all bytecode generated at runtime.");
-    public static final Option<Boolean> COMPILE_INVOKEDYNAMIC = bool(COMPILER, "compile.invokedynamic", INVOKEDYNAMIC_DEFAULT, "Use invokedynamic for optimizing Ruby code.");
+    public static final Option<Boolean> COMPILE_INVOKEDYNAMIC = bool(COMPILER, "compile.invokedynamic", true, "Use invokedynamic for optimizing Ruby code.");
     public static final Option<Boolean> COMPILE_CACHE_CLASSES = bool(COMPILER, "compile.cache.classes", false, "Use cache of compiled script classes");
     public static final Option<Boolean> COMPILE_CACHE_CLASSES_LOGGING = bool(COMPILER, "compile.cache.classes.logging", false, "Log whether cached script classes are being saved or used");
 
@@ -143,7 +144,7 @@ public class Options {
     public static final Option<Boolean> OBJECTSPACE_ENABLED = bool(MISCELLANEOUS, "objectspace.enabled", false, "Enable or disable ObjectSpace.each_object.");
     public static final Option<Boolean> SIPHASH_ENABLED = bool(MISCELLANEOUS, "siphash.enabled", false, "Enable or disable SipHash for String hash function.");
     public static final Option<Boolean> LAUNCH_INPROC = bool(MISCELLANEOUS, "launch.inproc", false, "Set in-process launching of e.g. system('ruby ...').");
-    public static final Option<String> BYTECODE_VERSION = string(MISCELLANEOUS, "bytecode.version", SafePropertyAccessor.getProperty("java.specification.version", "17"), "Specify the major Java bytecode version.");
+    public static final Option<String> BYTECODE_VERSION = string(MISCELLANEOUS, "bytecode.version", SafePropertyAccessor.getProperty("java.specification.version", "21"), "Specify the major Java bytecode version.");
     public static final Option<Boolean> MANAGEMENT_ENABLED = bool(MISCELLANEOUS, "management.enabled", false, "Set whether JMX management is enabled.");
     public static final Option<Boolean> JUMP_BACKTRACE = bool(MISCELLANEOUS, "jump.backtrace", false, "Make non-local flow jumps generate backtraces.");
     public static final Option<Boolean> PROCESS_NOUNWRAP = bool(MISCELLANEOUS, "process.noUnwrap", false, "Do not unwrap process streams (issue on some recent JVMs).");
@@ -199,6 +200,7 @@ public class Options {
     public static final Option<Boolean> JI_LOAD_LAZY = bool(JAVA_INTEGRATION, "ji.load.lazy", true, "Load Java support (class extensions) lazily on demand or ahead of time.");
     public static final Option<Boolean> JI_CLOSE_CLASSLOADER = bool(JAVA_INTEGRATION, "ji.close.classloader", false, "Close the JRubyClassLoader used by each runtime");
     public static final Option<String> JI_NESTED_JAR_TMPDIR = string(JAVA_INTEGRATION, "ji.nested.jar.tmpdir", "Use specified dir as a base for unpacking nested jar files.");
+    public static final Option<ClassValue.Type> JI_CLASS_VALUES = enumeration(JAVA_INTEGRATION, "ji.class.values", ClassValue.Type.class, ClassValue.Type.STABLE, "use the specified type of class-to-value holder for JI proxy structures");
 
     public static final Option<Integer> PROFILE_MAX_METHODS = integer(PROFILING, "profile.max.methods", 100000, "Maximum number of methods to consider for profiling.");
 
@@ -230,6 +232,8 @@ public class Options {
     public static final Option<String> CLI_PROFILING_SERVICE = string(CLI, "cli.profiling.service", "Profiling service class to use.");
     public static final Option<Boolean> CLI_RUBYGEMS_ENABLE = bool(CLI, "cli.rubygems.enable", true, "Enable/disable RubyGems.");
     public static final Option<Boolean> CLI_DID_YOU_MEAN_ENABLE = bool(CLI, "cli.did_you_mean.enable", true, "Enable/disable did_you_mean.");
+    public static final Option<Boolean> CLI_ERROR_HIGHLIGHT_ENABLE = bool(CLI, "cli.error_highlight.enable", false, "Ignored. ErrorHighlight does not currently support JRuby.");
+    public static final Option<Boolean> CLI_SYNTAX_SUGGEST_ENABLE = bool(CLI, "cli.syntax_suggest.enable", true, "Enable/disable syntax_suggest.");
     public static final Option<Boolean> CLI_RUBYOPT_ENABLE = bool(CLI, "cli.rubyopt.enable", true, "Enable/disable RUBYOPT processing at start.");
     public static final Option<Boolean> CLI_STRIP_HEADER = bool(CLI, "cli.strip.header", false, "Strip text before shebang in script. Same as -x.");
     public static final Option<Boolean> CLI_LOAD_GEMFILE = bool(CLI, "cli.load.gemfile", false, "Load a bundler Gemfile in cwd before running. Same as -G.");
@@ -288,11 +292,6 @@ public class Options {
         }
         _loadedOptions.add(option);
         return option;
-    }
-
-    private static boolean calculateInvokedynamicDefault() {
-        // We were defaulting on for Java 8 and might again later if JEP 210 helps reduce warmup time.
-        return false;
     }
 
     private static Verbosity calculateVerbosityDefault() {
@@ -406,9 +405,6 @@ public class Options {
     public static final Option<Boolean> INVOKEDYNAMIC_CACHE_IVARS = bool(INVOKEDYNAMIC, "invokedynamic.cache.ivars", true, "Use invokedynamic to get/set instance variables.");
 
     @Deprecated
-    public static final Option<String> JIT_CODECACHE = string(JIT, "jit.codeCache", new String[]{"dir"}, "Save jitted methods to <dir> as they're compiled, for future runs.");
-
-    @Deprecated
     public static final Option<Boolean> JIT_CACHE = bool(JIT, "jit.cache", !COMPILE_INVOKEDYNAMIC.load(), "(DEPRECATED) Cache jitted method in-memory bodies across runtimes and loads.");    public static final Option<Boolean> INVOKEDYNAMIC_ALL = bool(INVOKEDYNAMIC, "invokedynamic.all", false, "Enable all possible uses of invokedynamic.");
 
     @Deprecated
@@ -419,10 +415,6 @@ public class Options {
 
     @Deprecated
     public static final Option<Boolean> FFI_COMPILE_INVOKEDYNAMIC = bool(NATIVE, "ffi.compile.invokedynamic", false, "Use invokedynamic to bind FFI invocations.");
-
-    // Most (all?) OpenJDK default this to false. See jruby/jruby#4869
-    @Deprecated
-    public static final Option<Boolean> PREFER_IPV4 = bool(MISCELLANEOUS, "net.preferIPv4", false, "(DEPRECATED) Prefer IPv4 network stack");
 
     // internal IO mimics what this was doing, and this has been untested and unsupported for many years
     @Deprecated
@@ -454,4 +446,7 @@ public class Options {
 
     @Deprecated
     public static final Option<Boolean> JAVA_HANDLES = bool(JAVA_INTEGRATION, "java.handles", false, "Use generated handles instead of reflection for calling Java.");
+
+    @Deprecated
+    public static final Option<Boolean> NAME_ERROR_INSPECT_OBJECT = bool(MISCELLANEOUS, "nameError.inspect.object", true, "Inspect the target object for display in NameError messages.");
 }

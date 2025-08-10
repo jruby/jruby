@@ -152,7 +152,7 @@ public class ConvertBytes {
 
     /**
      * Return a cached ByteList for values -256..255. Any values outside this range are not cached and use of this
-     * method should be guarded appropriately. A short parameter is used to accomodate unsigned byte values 128..255.
+     * method should be guarded appropriately. A short parameter is used to accommodate unsigned byte values 128..255.
      * @param i
      * @return
      */
@@ -361,10 +361,12 @@ public class ConvertBytes {
         return new ConvertBytes(runtime, str, base, badcheck).byteListToInum(exception);
     }
 
+    // MRI: rb_str_convert_to_inum
     public static RubyInteger byteListToInum(Ruby runtime, ByteList str, int base, boolean badcheck) {
         return (RubyInteger) byteListToInum(runtime, str, base, badcheck, true);
     }
 
+    // MRI: rb_str_convert_to_inum
     public static RubyInteger byteListToInum(Ruby runtime, ByteList str, int off, int end, int base, boolean badcheck) {
         return (RubyInteger) new ConvertBytes(runtime, str, off, end, base, badcheck).byteListToInum(true);
     }
@@ -888,7 +890,7 @@ public class ConvertBytes {
      *
      */
     private void invalidString(String type) {
-        IRubyObject s = RubyString.newString(runtime, str).inspect();
+        IRubyObject s = RubyString.newString(runtime, str).inspect(runtime.getCurrentContext());
         throw runtime.newArgumentError("invalid value for " + type + "(): " + s);
     }
 }

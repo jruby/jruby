@@ -54,7 +54,7 @@ project 'JRuby Complete' do
             'Bundle-Description' => 'JRuby ${project.version} OSGi bundle',
             'Bundle-SymbolicName' => 'org.jruby.jruby',
             # the artifactId exclusion needs to match the jruby-core from above
-            'Embed-Dependency' => '*;type=jar;scope=provided;inline=true;artifactId=!jnr-ffi|jitescript|jakarta.annotation-api',
+            'Embed-Dependency' => '*;type=jar;scope=provided;inline=true;artifactId=!jnr-ffi|jitescript',
             'Embed-Transitive' => true
           } ) do
     # TODO fix DSL
@@ -108,20 +108,20 @@ project 'JRuby Complete' do
         plugin :dependency do
           items = set.collect do |classifier|
             { 'groupId' =>  '${project.groupId}',
-              'artifactId' =>  'jruby-core',
+              'artifactId' =>  'jruby-base',
               'version' =>  '${project.version}',
               'classifier' =>  classifier,
               'overWrite' =>  'false',
               'outputDirectory' =>  '${project.build.directory}' }
           end
           execute_goals( 'copy',
-                         :id => 'copy javadocs and sources from jruby-core',
+                         :id => 'copy javadocs and sources from jruby-base',
                          'artifactItems' => items )
         end
 
         plugin 'org.codehaus.mojo:build-helper-maven-plugin' do
           artifacts = set.collect do |classifier|
-            { 'file' =>  "${project.build.directory}/jruby-core-${project.version}-#{classifier}.jar", 'classifier' =>  classifier }
+            { 'file' =>  "${project.build.directory}/jruby-base-${project.version}-#{classifier}.jar", 'classifier' =>  classifier }
           end
           execute_goals( 'attach-artifact',
                          :id => 'attach-artifacts',

@@ -8,12 +8,10 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.api.Create;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.ChannelFD;
@@ -26,29 +24,22 @@ import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.util.Arrays;
 
+import static org.jruby.api.Access.encodingService;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Warn.warnExperimental;
 
 public class RubyIOBuffer extends RubyObject {
 
     public static final Runtime FFI_RUNTIME = Runtime.getSystemRuntime();
 
-    public static RubyClass createIOBufferClass(Ruby runtime) {
-        var context = runtime.getCurrentContext();
-
-        RubyClass IOBuffer = runtime.getIO().defineClassUnder("Buffer", runtime.getObject(), RubyIOBuffer::new);
-
-        IOBuffer.includeModule(runtime.getComparable());
-
-        IOBuffer.defineAnnotatedMethods(RubyIOBuffer.class);
-        IOBuffer.defineAnnotatedConstants(RubyIOBuffer.class);
-
-        RubyClass IO = runtime.getIO();
-
-        IO.setConstant("READABLE", asFixnum(context, OpenFile.READABLE));
-        IO.setConstant("WRITABLE", asFixnum(context, OpenFile.WRITABLE));
+    public static RubyClass createIOBufferClass(ThreadContext context, RubyClass Object, RubyModule Comparable, RubyClass IO) {
+        RubyClass IOBuffer = IO.defineClassUnder(context, "Buffer", Object, RubyIOBuffer::new).
+                include(context, Comparable).
+                defineMethods(context, RubyIOBuffer.class).
+                defineConstants(context, RubyIOBuffer.class);
 
         return IOBuffer;
     }
@@ -143,9 +134,9 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(meta = true)
     public static IRubyObject string(ThreadContext context, IRubyObject self, IRubyObject _length, Block block) {
-        int size = _length.convertToInteger().getIntValue();
+        int size = toInt(context, _length);
         if (size < 0) throw argumentError(context, "negative string size (or size too big)");
-        RubyString string = RubyString.newString(context.runtime, new byte[size]);
+        RubyString string = newString(context, new byte[size]);
         ByteList bytes = string.getByteList();
         ByteBuffer wrap = ByteBuffer.wrap(bytes.unsafeBytes(), bytes.begin(), size);
 
@@ -189,7 +180,7 @@ public class RubyIOBuffer extends RubyObject {
         int size = getSizeForMap(context, file, _size);
 
         // This is the file offset, not the buffer offset:
-        int offset = RubyNumeric.num2int(_offset);
+        int offset = toInt(context, _offset);
 
         return map(context, file, size, offset, 0);
     }
@@ -238,9 +229,9 @@ public class RubyIOBuffer extends RubyObject {
         int size = getSizeForMap(context, file, _size);
 
         // This is the file offset, not the buffer offset:
-        int offset = RubyNumeric.num2int(_offset);
+        int offset = toInt(context, _offset);
 
-        int flags = RubyNumeric.num2int(_flags);
+        int flags = toInt(context, _flags);
 
         return map(context, file, size, offset, flags);
     }
@@ -301,26 +292,22 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "initialize")
     public IRubyObject initialize(ThreadContext context, IRubyObject size) {
-        return initialize(context, size.convertToInteger().getIntValue());
+        return initialize(context, toInt(context, size));
     }
 
     @JRubyMethod(name = "initialize")
     public IRubyObject initialize(ThreadContext context, IRubyObject _size, IRubyObject flags) {
-        IRubyObject nil = context.nil;
+        int size = toInt(context, _size);
 
-        int size = _size.convertToInteger().getIntValue();
+        initialize(context, new byte[size], size, toInt(context, flags), context.nil);
 
-        initialize(context, new byte[size], size, flags.convertToInteger().getIntValue(), nil);
-
-        return nil;
+        return context.nil;
     }
 
     public IRubyObject initialize(ThreadContext context, int size) {
-        IRubyObject nil = context.nil;
+        initialize(context, new byte[size], size, flagsForSize(size), context.nil);
 
-        initialize(context, new byte[size], size, flagsForSize(size), nil);
-
-        return nil;
+        return context.nil;
     }
 
     // MRI: io_buffer_initialize
@@ -352,8 +339,7 @@ public class RubyIOBuffer extends RubyObject {
 
         warned = true;
 
-        RubyStackTraceElement trace = context.getSingleBacktrace(1);
-        context.runtime.getWarnings().warnExperimental(trace.getFileName(), trace.getLineNumber(), "IO::Buffer is experimental and both the Ruby and native interface may change in the future!");
+        warnExperimental(context, "IO::Buffer is experimental and both the Ruby and native interface may change in the future!");
     }
 
     private static ByteBuffer newBufferBase(Ruby runtime, int size, int flags) {
@@ -671,7 +657,7 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "slice")
     public IRubyObject slice(ThreadContext context, IRubyObject _offset) {
-        int offset = RubyNumeric.num2int(_offset);
+        int offset = toInt(context, _offset);
         if (offset < 0) throw argumentError(context, "Offset can't be negative!");
 
         return slice(context, offset, size - offset);
@@ -679,10 +665,10 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "slice")
     public IRubyObject slice(ThreadContext context, IRubyObject _offset, IRubyObject _length) {
-        int offset = RubyNumeric.num2int(_offset);
+        int offset = toInt(context, _offset);
         if (offset < 0) throw argumentError(context, "Offset can't be negative!");
 
-        int length = RubyNumeric.num2int(_length);
+        int length = toInt(context, _length);
         if (length < 0) throw argumentError(context, "Length can't be negative!");
 
         return slice(context, offset, length);
@@ -713,7 +699,7 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "resize")
     public IRubyObject resize(ThreadContext context, IRubyObject size) {
-        resize(context, size.convertToInteger().getIntValue());
+        resize(context, toInt(context, size));
 
         return this;
     }
@@ -752,21 +738,21 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "clear")
     public IRubyObject clear(ThreadContext context, IRubyObject value) {
-        return clear(context, RubyNumeric.num2int(value), 0, size);
+        return clear(context, toInt(context, value), 0, size);
     }
 
     @JRubyMethod(name = "clear")
     public IRubyObject clear(ThreadContext context, IRubyObject _value, IRubyObject _offset) {
-        int value = RubyNumeric.num2int(_value);
-        int offset = RubyNumeric.num2int(_offset);
+        int value = toInt(context, _value);
+        int offset = toInt(context, _offset);
         return clear(context, value, offset, size - offset);
     }
 
     @JRubyMethod(name = "clear")
     public IRubyObject clear(ThreadContext context, IRubyObject _value, IRubyObject _offset, IRubyObject _length) {
-        int value = RubyNumeric.num2int(_value);
-        int offset = RubyNumeric.num2int(_offset);
-        int length = RubyNumeric.num2int(_length);
+        int value = toInt(context, _value);
+        int offset = toInt(context, _offset);
+        int length = toInt(context, _length);
         return clear(context, value, offset, length);
     }
 
@@ -1010,12 +996,8 @@ public class RubyIOBuffer extends RubyObject {
         return asFloat(context, value);
     }
 
-    private static long unwrapLong(IRubyObject value) {
-        return value.convertToInteger().getLongValue();
-    }
-
-    private static double unwrapDouble(IRubyObject value) {
-        return value.convertToFloat().getDoubleValue();
+    private static double unwrapDouble(ThreadContext context, IRubyObject value) {
+        return value.convertToFloat().asDouble(context);
     }
 
     private static long unwrapUnsignedLong(IRubyObject value) {
@@ -1027,7 +1009,7 @@ public class RubyIOBuffer extends RubyObject {
         ByteBuffer buffer = getBufferForReading(context);
 
         DataType dataType = getDataType(type);
-        int offset = RubyNumeric.num2int(_offset);
+        int offset = toInt(context, _offset);
         int size = this.size;
 
         return getValue(context, buffer, size, dataType, offset);
@@ -1080,7 +1062,7 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "get_values")
     public IRubyObject get_values(ThreadContext context, IRubyObject dataTypes, IRubyObject _offset) {
-        int offset = RubyNumeric.num2int(_offset);
+        int offset = toInt(context, _offset);
         int size = this.size;
         ByteBuffer buffer = getBufferForReading(context);
 
@@ -1089,7 +1071,7 @@ public class RubyIOBuffer extends RubyObject {
         }
 
         int dataTypesSize = dataTypesArray.size();
-        var values = newArray(context, dataTypesSize);
+        var values = allocArray(context, dataTypesSize);
 
         for (long i = 0; i < dataTypesSize; i++) {
             IRubyObject type = dataTypesArray.eltOk(i);
@@ -1098,7 +1080,7 @@ public class RubyIOBuffer extends RubyObject {
 
             offset += dataType.type.size();
 
-            values.push(value);
+            values.append(context, value);
         }
 
         return values;
@@ -1120,7 +1102,7 @@ public class RubyIOBuffer extends RubyObject {
 
         ByteBuffer buffer = getBufferForReading(context);
         DataType dataType = getDataType(_dataType);
-        int offset = _offset.convertToInteger().getIntValue();
+        int offset = toInt(context, _offset);
 
         return each(context, buffer, dataType, offset, size - offset, block);
     }
@@ -1131,8 +1113,8 @@ public class RubyIOBuffer extends RubyObject {
 
         ByteBuffer buffer = getBufferForReading(context);
         DataType dataType = getDataType(_dataType);
-        int offset = _offset.convertToInteger().getIntValue();
-        int count = _count.convertToInteger().getIntValue();
+        int offset = toInt(context, _offset);
+        int count = toInt(context, _count);
 
         return each(context, buffer, dataType, offset, count, block);
     }
@@ -1160,7 +1142,7 @@ public class RubyIOBuffer extends RubyObject {
     public IRubyObject values(ThreadContext context, IRubyObject _dataType, IRubyObject _offset) {
         ByteBuffer buffer = getBufferForReading(context);
         DataType dataType = getDataType(_dataType);
-        int offset = _offset.convertToInteger().getIntValue();
+        int offset = toInt(context, _offset);
 
         return values(context, buffer, dataType, offset, size - offset);
     }
@@ -1169,19 +1151,19 @@ public class RubyIOBuffer extends RubyObject {
     public IRubyObject values(ThreadContext context, IRubyObject _dataType, IRubyObject _offset, IRubyObject _count) {
         ByteBuffer buffer = getBufferForReading(context);
         DataType dataType = getDataType(_dataType);
-        int offset = _offset.convertToInteger().getIntValue();
-        int count = _count.convertToInteger().getIntValue();
+        int offset = toInt(context, _offset);
+        int count = toInt(context, _count);
 
         return values(context, buffer, dataType, offset, count);
     }
 
     private RubyArray values(ThreadContext context, ByteBuffer buffer, DataType dataType, int offset, int count) {
-        var values = newArray(context, count);
+        var values = allocArray(context, count);
 
         for (int i = 0 ; i < count; i++) {
             IRubyObject value = getValue(context, buffer, size, dataType, offset);
             offset += dataType.type.size();
-            values.push(value);
+            values.push(context, value);
         }
 
         return values;
@@ -1201,7 +1183,7 @@ public class RubyIOBuffer extends RubyObject {
         if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, this, "each_byte", Helpers.arrayOf(_offset));
 
         ByteBuffer buffer = getBufferForReading(context);
-        int offset = _offset.convertToInteger().getIntValue();
+        int offset = toInt(context, _offset);
 
         return eachByte(context, buffer, offset, size - offset, block);
     }
@@ -1211,8 +1193,8 @@ public class RubyIOBuffer extends RubyObject {
         if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, this, "each_byte", Helpers.arrayOf(_offset, _count));
 
         ByteBuffer buffer = getBufferForReading(context);
-        int offset = _offset.convertToInteger().getIntValue();
-        int count = _count.convertToInteger().getIntValue();
+        int offset = toInt(context, _offset);
+        int count = toInt(context, _count);
 
         return eachByte(context, buffer, offset, count, block);
     }
@@ -1233,34 +1215,34 @@ public class RubyIOBuffer extends RubyObject {
 
         switch (dataType) {
             case S8:
-                writeByte(context, buffer, offset, (byte) unwrapLong(value));
+                writeByte(context, buffer, offset, (byte) toLong(context, value));
                 return;
             case U8:
-                writeUnsignedByte(context, buffer, offset, (int) unwrapLong(value));
+                writeUnsignedByte(context, buffer, offset, (int) toLong(context, value));
                 return;
             case u16:
-                writeUnsignedShort(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, (int) unwrapLong(value));
+                writeUnsignedShort(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, (int) toLong(context, value));
                 return;
             case U16:
-                writeUnsignedShort(context, buffer, offset, ByteOrder.BIG_ENDIAN, (int) unwrapLong(value));
+                writeUnsignedShort(context, buffer, offset, ByteOrder.BIG_ENDIAN, (int) toLong(context, value));
                 return;
             case s16:
-                writeShort(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, (short) unwrapLong(value));
+                writeShort(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, (short) toLong(context, value));
                 return;
             case S16:
-                writeShort(context, buffer, offset, ByteOrder.BIG_ENDIAN, (short) unwrapLong(value));
+                writeShort(context, buffer, offset, ByteOrder.BIG_ENDIAN, (short) toLong(context, value));
                 return;
             case u32:
-                writeUnsignedInt(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, unwrapLong(value));
+                writeUnsignedInt(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, toLong(context, value));
                 return;
             case U32:
-                writeUnsignedInt(context, buffer, offset, ByteOrder.BIG_ENDIAN, unwrapLong(value));
+                writeUnsignedInt(context, buffer, offset, ByteOrder.BIG_ENDIAN, toLong(context, value));
                 return;
             case s32:
-                writeInt(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, (int) unwrapLong(value));
+                writeInt(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, (int) toLong(context, value));
                 return;
             case S32:
-                writeInt(context, buffer, offset, ByteOrder.BIG_ENDIAN, (int) unwrapLong(value));
+                writeInt(context, buffer, offset, ByteOrder.BIG_ENDIAN, (int) toLong(context, value));
                 return;
             case u64:
                 writeUnsignedLong(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, unwrapUnsignedLong(value));
@@ -1269,22 +1251,22 @@ public class RubyIOBuffer extends RubyObject {
                 writeUnsignedLong(context, buffer, offset, ByteOrder.BIG_ENDIAN, unwrapUnsignedLong(value));
                 return;
             case s64:
-                writeLong(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, unwrapLong(value));
+                writeLong(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, toLong(context, value));
                 return;
             case S64:
-                writeLong(context, buffer, offset, ByteOrder.BIG_ENDIAN, unwrapLong(value));
+                writeLong(context, buffer, offset, ByteOrder.BIG_ENDIAN, toLong(context, value));
                 return;
             case f32:
-                writeFloat(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, (float) unwrapDouble(value));
+                writeFloat(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, (float) unwrapDouble(context, value));
                 return;
             case F32:
-                writeFloat(context, buffer, offset, ByteOrder.BIG_ENDIAN, (float) unwrapDouble(value));
+                writeFloat(context, buffer, offset, ByteOrder.BIG_ENDIAN, (float) unwrapDouble(context, value));
                 return;
             case f64:
-                writeDouble(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, unwrapDouble(value));
+                writeDouble(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, unwrapDouble(context, value));
                 return;
             case F64:
-                writeDouble(context, buffer, offset, ByteOrder.BIG_ENDIAN, unwrapDouble(value));
+                writeDouble(context, buffer, offset, ByteOrder.BIG_ENDIAN, unwrapDouble(context, value));
                 return;
         }
 
@@ -1296,7 +1278,7 @@ public class RubyIOBuffer extends RubyObject {
         ByteBuffer buffer = getBufferForWriting(context);
 
         DataType dataType = getDataType(_dataType);
-        int offset = RubyNumeric.num2int(_offset);
+        int offset = toInt(context, _offset);
         int size = this.size;
 
         setValue(context, buffer, size, dataType, offset, _value);
@@ -1306,7 +1288,7 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "set_values")
     public IRubyObject set_values(ThreadContext context, IRubyObject _dataTypes, IRubyObject _offset, IRubyObject _values) {
-        int offset = RubyNumeric.num2int(_offset);
+        int offset = toInt(context, _offset);
         int size = this.size;
         ByteBuffer buffer = getBufferForWriting(context);
 
@@ -1348,7 +1330,7 @@ public class RubyIOBuffer extends RubyObject {
     public IRubyObject copy(ThreadContext context, IRubyObject source, IRubyObject _offset) {
         RubyIOBuffer sourceBuffer = (RubyIOBuffer) source;
 
-        int offset = RubyNumeric.num2int(_offset);
+        int offset = toInt(context, _offset);
 
         return copy(context, sourceBuffer, offset, sourceBuffer.size, 0);
     }
@@ -1357,8 +1339,8 @@ public class RubyIOBuffer extends RubyObject {
     public IRubyObject copy(ThreadContext context, IRubyObject source, IRubyObject _offset, IRubyObject _length) {
         RubyIOBuffer sourceBuffer = (RubyIOBuffer) source;
 
-        int offset = RubyNumeric.num2int(_offset);
-        int length = RubyNumeric.num2int(_length);
+        int offset = toInt(context, _offset);
+        int length = toInt(context, _length);
 
         return copy(context, sourceBuffer, offset, length, 0);
     }
@@ -1384,9 +1366,9 @@ public class RubyIOBuffer extends RubyObject {
     public IRubyObject copy(ThreadContext context, IRubyObject source, IRubyObject _offset, IRubyObject _length, IRubyObject _sourceOffset) {
         RubyIOBuffer sourceBuffer = (RubyIOBuffer) source;
 
-        int offset = RubyNumeric.num2int(_offset);
-        int length = RubyNumeric.num2int(_length);
-        int sourceOffset = RubyNumeric.num2int(_sourceOffset);
+        int offset = toInt(context, _offset);
+        int length = toInt(context, _length);
+        int sourceOffset = toInt(context, _sourceOffset);
 
         return copy(context, sourceBuffer, offset, length, sourceOffset);
     }
@@ -1417,28 +1399,13 @@ public class RubyIOBuffer extends RubyObject {
     private void bufferCopy(ThreadContext context, int offset, ByteBuffer sourceBuffer, int sourceOffset, int sourceSize, int length) {
         ByteBuffer destBuffer = getBufferForWriting(context);
 
-        sourceBuffer.position(sourceOffset);
-        sourceBuffer.limit(sourceOffset + length);
-        if (offset == 0) {
-            destBuffer.put(sourceBuffer);
-        } else {
-            destBuffer.position(offset);
-            destBuffer.put(sourceBuffer);
-        }
-        destBuffer.clear();
-        sourceBuffer.clear();
+        destBuffer.put(offset, sourceBuffer, sourceOffset, length);
     }
 
     private void bufferCopy(ThreadContext context, int offset, ByteList sourceBuffer, int sourceOffset, int sourceSize, int length) {
         ByteBuffer destBuffer = getBufferForWriting(context);
 
-        if (offset == 0) {
-            destBuffer.put(sourceBuffer.getUnsafeBytes(), sourceBuffer.begin() + sourceOffset, length);
-        } else {
-            destBuffer.position(offset);
-            destBuffer.put(sourceBuffer.getUnsafeBytes(), sourceBuffer.begin() + sourceOffset, length);
-        }
-        destBuffer.clear();
+        destBuffer.put(offset, sourceBuffer.getUnsafeBytes(), sourceBuffer.begin() + sourceOffset, length);
     }
 
     @JRubyMethod(name = "get_string")
@@ -1465,7 +1432,7 @@ public class RubyIOBuffer extends RubyObject {
     public IRubyObject get_string(ThreadContext context, IRubyObject _offset, IRubyObject _length, IRubyObject _encoding) {
         int offset = extractOffset(context, _offset);
         int length = extractLength(context, _length, offset);
-        Encoding encoding = context.runtime.getEncodingService().getEncodingFromObject(_encoding);
+        Encoding encoding = encodingService(context).getEncodingFromObject(_encoding);
 
         return getString(context, offset, length, encoding);
     }
@@ -1476,19 +1443,15 @@ public class RubyIOBuffer extends RubyObject {
         validateRange(context, offset, length);
 
         byte[] bytes = new byte[length];
-        if (offset == 0) {
-            buffer.get(bytes, 0, length);
-        } else {
-            buffer.position(offset);
-            buffer.get(bytes, 0, length);
-            buffer.clear();
-        }
+        buffer.get(offset, bytes, 0, length);
 
-        return RubyString.newString(context.runtime, bytes, 0, length, encoding);
+        return RubyString.newStringNoCopy(context.runtime, bytes, 0, length, encoding);
     }
 
     @JRubyMethod(name = "set_string")
     public IRubyObject set_string(ThreadContext context, IRubyObject _string) {
+        checkFrozen();
+
         RubyString string = _string.convertToString();
 
         return copy(context, string, 0, string.size(), 0);
@@ -1496,6 +1459,8 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "set_string")
     public IRubyObject set_string(ThreadContext context, IRubyObject _string, IRubyObject _offset) {
+        checkFrozen();
+
         RubyString string = _string.convertToString();
         int offset = extractOffset(context, _offset);
 
@@ -1531,9 +1496,9 @@ public class RubyIOBuffer extends RubyObject {
 
     public IRubyObject set_string(ThreadContext context, IRubyObject _string, IRubyObject _offset, IRubyObject _length, IRubyObject _stringOffset) {
         RubyString string = _string.convertToString();
-        int offset = RubyNumeric.num2int(_offset);
-        int length = RubyNumeric.num2int(_length);
-        int stringOffset = RubyNumeric.num2int(_stringOffset);
+        int offset = toInt(context, _offset);
+        int length = toInt(context, _length);
+        int stringOffset = toInt(context, _stringOffset);
 
         return copy(context, string, offset, length, stringOffset);
     }
@@ -1723,50 +1688,45 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "read")
     public IRubyObject read(ThreadContext context, IRubyObject io, IRubyObject _length) {
-        if (_length.isNil()) {
-            return read(context, io);
-        }
+        if (_length.isNil()) return read(context, io);
 
         IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
-        RubyInteger lengthInteger = _length.convertToInteger();
+        RubyInteger lengthInteger = toInteger(context, _length);
 
         if (!scheduler.isNil()) {
             IRubyObject result = FiberScheduler.ioRead(context, scheduler, io, this, lengthInteger, RubyFixnum.zero(context.runtime));
 
-            if (result != null) {
-                return result;
-            }
+            if (result != null) return result;
         }
 
-        return read(context, io, lengthInteger.getIntValue(), 0);
+        return read(context, io, lengthInteger.asInt(context), 0);
     }
 
     @JRubyMethod(name = "read")
     public IRubyObject read(ThreadContext context, IRubyObject io, IRubyObject _length, IRubyObject _offset) {
         IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
-        RubyInteger offsetInteger = _offset.convertToInteger();
-        int offset = offsetInteger.getIntValue();
+        RubyInteger offset = toInteger(context, _offset);
 
         int length;
         RubyInteger lengthInteger;
         if (_length.isNil()) {
-            length = size - offset;
+            length = size - offset.asInt(context);
             lengthInteger = null;
         } else {
-            lengthInteger = _length.convertToInteger();
-            length = lengthInteger.getIntValue();
+            lengthInteger = toInteger(context, _length);
+            length = lengthInteger.asInt(context);
         }
 
         if (!scheduler.isNil()) {
             if (lengthInteger == null) lengthInteger = asFixnum(context, length);
-            IRubyObject result = FiberScheduler.ioRead(context, scheduler, io, this, lengthInteger, offsetInteger);
+            IRubyObject result = FiberScheduler.ioRead(context, scheduler, io, this, lengthInteger, offset);
 
             if (result != UNDEF) {
                 return result;
             }
         }
 
-        return read(context, io, length, offset);
+        return read(context, io, length, offset.asInt(context));
     }
 
     public IRubyObject read(ThreadContext context, IRubyObject io, int length, int offset) {
@@ -1807,7 +1767,7 @@ public class RubyIOBuffer extends RubyObject {
     @JRubyMethod(name = "pread")
     public IRubyObject pread(ThreadContext context, IRubyObject io, IRubyObject _from) {
         IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
-        RubyInteger fromInteger = _from.convertToInteger();
+        RubyInteger fromInteger = toInteger(context, _from);
         int offset = 0;
         int length = defaultLength(context, offset);
 
@@ -1818,8 +1778,7 @@ public class RubyIOBuffer extends RubyObject {
             if (result != UNDEF) return result;
         }
 
-        int from = RubyNumeric.num2int(_from);
-
+        int from = toInt(context, _from);
 
         return pread(context, RubyIO.convertToIO(context, io), from, length, offset);
     }
@@ -1827,19 +1786,15 @@ public class RubyIOBuffer extends RubyObject {
     @JRubyMethod(name = "pread")
     public IRubyObject pread(ThreadContext context, IRubyObject io, IRubyObject _from, IRubyObject _length) {
         IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
-        RubyInteger fromInteger = _from.convertToInteger();
-        RubyInteger lengthInteger = _length.convertToInteger();
+        RubyInteger fromInteger = toInteger(context, _from);
+        RubyInteger lengthInteger = toInteger(context, _length);
 
         if (!scheduler.isNil()) {
-            IRubyObject result = FiberScheduler.ioPRead(context, scheduler, io, this, fromInteger, lengthInteger, RubyFixnum.zero(context.runtime));
-
-            if (result != UNDEF) {
-                return result;
-            }
+            IRubyObject result = FiberScheduler.ioPRead(context, scheduler, io, this, fromInteger, lengthInteger, asFixnum(context, 0));
+            if (result != UNDEF) return result;
         }
 
-        int from = RubyNumeric.num2int(fromInteger);
-
+        int from = toInt(context, fromInteger);
         int offset = 0;
         int length = extractLength(context, lengthInteger, offset);
 
@@ -1864,20 +1819,16 @@ public class RubyIOBuffer extends RubyObject {
 
     public IRubyObject pread(ThreadContext context, IRubyObject io, IRubyObject _from, IRubyObject _length, IRubyObject _offset) {
         IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
-        RubyInteger fromInteger = _from.convertToInteger();
-        RubyInteger lengthInteger = _length.convertToInteger();
-        RubyInteger offsetInteger = _offset.convertToInteger();
+        RubyInteger fromInteger = toInteger(context, _from);
+        RubyInteger lengthInteger = toInteger(context, _length);
+        RubyInteger offsetInteger = toInteger(context, _offset);
 
         if (!scheduler.isNil()) {
             IRubyObject result = FiberScheduler.ioPRead(context, scheduler, io, this, fromInteger, lengthInteger, offsetInteger);
-
-            if (result != UNDEF) {
-                return result;
-            }
+            if (result != UNDEF) return result;
         }
 
-        int from = RubyNumeric.num2int(fromInteger);
-
+        int from = toInt(context, fromInteger);
         int offset = extractOffset(context, offsetInteger);
         int length = extractLength(context, lengthInteger, offset);
 
@@ -1927,7 +1878,7 @@ public class RubyIOBuffer extends RubyObject {
                 throw argumentError(context, "Length can't be negative!");
             }
 
-            return RubyNumeric.num2int(_length);
+            return toInt(context, _length);
         }
 
         return defaultLength(context, offset);
@@ -1948,7 +1899,7 @@ public class RubyIOBuffer extends RubyObject {
             throw argumentError(context, "Offset can't be negative!");
         }
 
-        return RubyNumeric.num2int(_offset);
+        return toInt(context, _offset);
     }
 
     private static int extractSize(ThreadContext context, IRubyObject _size) {
@@ -1956,7 +1907,7 @@ public class RubyIOBuffer extends RubyObject {
             throw argumentError(context, "Size can't be negative!");
         }
 
-        return RubyNumeric.num2int(_size);
+        return toInt(context, _size);
     }
 
     @JRubyMethod(name = "write")
@@ -1976,34 +1927,28 @@ public class RubyIOBuffer extends RubyObject {
     @JRubyMethod(name = "write")
     public IRubyObject write(ThreadContext context, IRubyObject io, IRubyObject length) {
         IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
-        RubyInteger lengthInteger = length.convertToInteger();
+        RubyInteger lengthInteger = toInteger(context, length);
 
         if (!scheduler.isNil()) {
             IRubyObject result = FiberScheduler.ioWrite(context, scheduler, io, this, lengthInteger, RubyFixnum.zero(context.runtime));
-
-            if (result != null) {
-                return result;
-            }
+            if (result != null) return result;
         }
 
-        return write(context, io, lengthInteger.getIntValue(), 0);
+        return write(context, io, lengthInteger.asInt(context), 0);
     }
 
     @JRubyMethod(name = "write")
     public IRubyObject write(ThreadContext context, IRubyObject io, IRubyObject length, IRubyObject offset) {
         IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
-        RubyInteger lengthInteger = length.convertToInteger();
-        RubyInteger offsetInteger = offset.convertToInteger();
+        RubyInteger lengthInteger = toInteger(context, length);
+        RubyInteger offsetInteger = toInteger(context, offset);
 
         if (!scheduler.isNil()) {
             IRubyObject result = FiberScheduler.ioWrite(context, scheduler, io, this, lengthInteger, offsetInteger);
-
-            if (result != null) {
-                return result;
-            }
+            if (result != null) return result;
         }
 
-        return write(context, io, lengthInteger.getIntValue(), offsetInteger.getIntValue());
+        return write(context, io, lengthInteger.asInt(context), offsetInteger.asInt(context));
     }
 
     public IRubyObject write(ThreadContext context, IRubyObject io, int length, int offset) {
@@ -2031,18 +1976,17 @@ public class RubyIOBuffer extends RubyObject {
     @JRubyMethod(name = "pwrite")
     public IRubyObject pwrite(ThreadContext context, IRubyObject io, IRubyObject _from) {
         IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
-        RubyInteger fromInteger = _from.convertToInteger();
+        RubyInteger fromInteger = toInteger(context, _from);
         int offset = 0;
         int length = defaultLength(context, offset);
 
         if (!scheduler.isNil()) {
             IRubyObject result = FiberScheduler.ioPWrite(context, scheduler, io, this, fromInteger,
                     asFixnum(context, length), asFixnum(context, 0));
-
             if (result != null) return result;
         }
 
-        int from = RubyNumeric.num2int(fromInteger);
+        int from = toInt(context, fromInteger);
 
         return pwrite(context, RubyIO.convertToIO(context, io), from, length, offset);
     }
@@ -2050,19 +1994,15 @@ public class RubyIOBuffer extends RubyObject {
     @JRubyMethod(name = "pwrite")
     public IRubyObject pwrite(ThreadContext context, IRubyObject io, IRubyObject _from, IRubyObject _length) {
         IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
-        RubyInteger fromInteger = _from.convertToInteger();
-        RubyInteger lengthInteger = _length.convertToInteger();
+        RubyInteger fromInteger = toInteger(context, _from);
+        RubyInteger lengthInteger = toInteger(context, _length);
 
         if (!scheduler.isNil()) {
             IRubyObject result = FiberScheduler.ioPWrite(context, scheduler, io, this, fromInteger, lengthInteger, RubyFixnum.zero(context.runtime));
-
-            if (result != null) {
-                return result;
-            }
+            if (result != null) return result;
         }
 
-        int from = RubyNumeric.num2int(fromInteger);
-
+        int from = toInt(context, fromInteger);
         int offset = 0;
         int length = extractLength(context, lengthInteger, offset);
 
@@ -2087,20 +2027,16 @@ public class RubyIOBuffer extends RubyObject {
 
     public IRubyObject pwrite(ThreadContext context, IRubyObject io, IRubyObject _from, IRubyObject _length, IRubyObject _offset) {
         IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
-        RubyInteger fromInteger = _from.convertToInteger();
-        RubyInteger lengthInteger = _length.convertToInteger();
-        RubyInteger offsetInteger = _offset.convertToInteger();
+        RubyInteger fromInteger = toInteger(context, _from);
+        RubyInteger lengthInteger = toInteger(context, _length);
+        RubyInteger offsetInteger = toInteger(context, _offset);
 
         if (!scheduler.isNil()) {
             IRubyObject result = FiberScheduler.ioPWrite(context, scheduler, io, this, fromInteger, lengthInteger, offsetInteger);
-
-            if (result != null) {
-                return result;
-            }
+            if (result != null) return result;
         }
 
-        int from = RubyNumeric.num2int(fromInteger);
-
+        int from = toInt(context, fromInteger);
         int offset = extractOffset(context, offsetInteger);
         int length = extractLength(context, lengthInteger, offset);
 

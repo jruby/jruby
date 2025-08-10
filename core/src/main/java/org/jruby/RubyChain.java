@@ -33,7 +33,6 @@ import org.jruby.runtime.Block;
 
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.FiberSites;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -42,7 +41,9 @@ import org.jruby.util.ByteList;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyEnumerator.SizeFn;
+import static org.jruby.api.Access.floatClass;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.toInt;
 
 /**
  * Implements Enumerator::Chain
@@ -53,13 +54,10 @@ public class RubyChain extends RubyObject {
     private IRubyObject[] enums;
     private int pos = -1;
 
-    public static RubyClass createChainClass(Ruby runtime, RubyClass enumeratorModule) {
-        RubyClass chainc = runtime.defineClassUnder("Chain", runtime.getObject(), RubyChain::new, enumeratorModule);
-
-        chainc.includeModule(runtime.getEnumerable());
-        chainc.defineAnnotatedMethods(RubyChain.class);
-
-        return chainc;
+    public static RubyClass createChainClass(ThreadContext context, RubyClass Object, RubyClass Enumerator, RubyModule Enumerable) {
+        return Enumerator.defineClassUnder(context, "Chain", Object, RubyChain::new).
+                include(context, Enumerable).
+                defineMethods(context, RubyChain.class);
     }
 
     public RubyChain(Ruby runtime, RubyClass klass) {
@@ -121,17 +119,12 @@ public class RubyChain extends RubyObject {
         return this;
     }
 
-    @Override
-    public final IRubyObject inspect() {
-        return inspect(getRuntime().getCurrentContext());
-    }
-
     @JRubyMethod
     public RubyString inspect(ThreadContext context) {
 
         ByteList str = new ByteList();
         str.append('#').append('<');
-        str.append(getMetaClass().getRealClass().getName().getBytes());
+        str.append(getMetaClass().getRealClass().getName(context).getBytes());
         str.append(':').append(' ');
 
         if (enums == null) {
@@ -161,17 +154,15 @@ public class RubyChain extends RubyObject {
     // enum_chain_total_size
     private static IRubyObject enumChainTotalSize(ThreadContext context, IRubyObject[] args) {
 
-        RubyFixnum total = RubyFixnum.zero(context.runtime);
+        RubyFixnum total = asFixnum(context, 0);
         for (int i = 0; i < args.length; i++) {
             IRubyObject size = args[i].respondsTo("size") ? args[i].callMethod(context, "size") : context.nil;
 
-            if (size.isNil() || (size instanceof RubyFloat) && size.equals(context.runtime.getFloat().getConstant("INFINITY"))) {
+            if (size.isNil() || (size instanceof RubyFloat flote) && flote.getValue() == RubyFloat.INFINITY) {
                 return size;
             }
 
-            if (!(size instanceof RubyInteger)) {
-                return context.nil;
-            }
+            if (!(size instanceof RubyInteger)) return context.nil;
 
             total = (RubyFixnum)total.callMethod("+", size);
         }
@@ -201,10 +192,10 @@ public class RubyChain extends RubyObject {
 
     @JRubyMethod(name = "with_index")
     public IRubyObject with_index(ThreadContext context, IRubyObject arg, final Block block) {
-        final int index = arg.isNil() ? 0 : RubyNumeric.num2int(arg);
-        if ( ! block.isGiven() ) {
+        final int index = arg.isNil() ? 0 : toInt(context, arg);
+        if (!block.isGiven()) {
             return arg.isNil() ?
-                enumeratorizeWithSize(context, this, "with_index", RubyChain::size) :
+                    enumeratorizeWithSize(context, this, "with_index", RubyChain::size) :
                     enumeratorizeWithSize(context, this, "with_index", new IRubyObject[]{asFixnum(context, index)}, RubyChain::size);
         }
 

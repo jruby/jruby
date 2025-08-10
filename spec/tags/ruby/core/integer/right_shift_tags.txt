@@ -1,1 +1,0 @@
-fails:Integer#>> (with n >> m) when m is a bignum or larger than int raises RangeError when m < 0 and n != 0

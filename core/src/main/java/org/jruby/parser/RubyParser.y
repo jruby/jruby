@@ -129,6 +129,7 @@ import org.jruby.lexer.yacc.LexContext;
 import org.jruby.lexer.yacc.LexContext.InRescue.*;
 import @@lex_package@@.RubyLexer;
 import org.jruby.lexer.yacc.StackState;
+import org.jruby.parser.NodeExits;
 import org.jruby.parser.ProductionState;
 import org.jruby.parser.ParserState;
 import org.jruby.runtime.ThreadContext;
@@ -186,55 +187,55 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
 
 // patch_parser.rb will look for token lines with {{ and }} within it to put
 // in reasonable strings we expect during a parsing error.
-%token <@@keyword_type@@> keyword_class        /* {{`class''}} */
-%token <@@keyword_type@@> keyword_module       /* {{`module'}} */
-%token <@@keyword_type@@> keyword_def          /* {{`def'}} */
-%token <@@keyword_type@@> keyword_undef        /* {{`undef'}} */
-%token <@@keyword_type@@> keyword_begin        /* {{`begin'}} */
-%token <@@keyword_type@@> keyword_rescue       /* {{`rescue'}} */
-%token <@@keyword_type@@> keyword_ensure       /* {{`ensure'}} */
-%token <@@keyword_type@@> keyword_end          /* {{`end'}} */
-%token <@@keyword_type@@> keyword_if           /* {{`if'}} */
-%token <@@keyword_type@@> keyword_unless       /* {{`unless'}} */
-%token <@@keyword_type@@> keyword_then         /* {{`then'}} */
-%token <@@keyword_type@@> keyword_elsif        /* {{`elsif'}} */
-%token <@@keyword_type@@> keyword_else         /* {{`else'}} */
-%token <@@keyword_type@@> keyword_case         /* {{`case'}} */
-%token <@@keyword_type@@> keyword_when         /* {{`when'}} */
-%token <@@keyword_type@@> keyword_while        /* {{`while'}} */
-%token <@@keyword_type@@> keyword_until        /* {{`until'}} */
-%token <@@keyword_type@@> keyword_for          /* {{`for'}} */
-%token <@@keyword_type@@> keyword_break        /* {{`break'}} */
-%token <@@keyword_type@@> keyword_next         /* {{`next'}} */
-%token <@@keyword_type@@> keyword_redo         /* {{`redo'}} */
-%token <@@keyword_type@@> keyword_retry        /* {{`retry'}} */
-%token <Object> keyword_in                     /* {{`in'}} */
-%token <@@keyword_type@@> keyword_do           /* {{`do'}} */
-%token <@@keyword_type@@> keyword_do_cond      /* {{`do' for condition}} */
-%token <@@keyword_type@@> keyword_do_block     /* {{`do' for block}} */
-%token <@@keyword_type@@> keyword_do_LAMBDA    /* {{`do' for lambda}} */
-%token <@@keyword_type@@> keyword_return       /* {{`return'}} */
-%token <@@keyword_type@@> keyword_yield        /* {{`yield'}} */
-%token <@@keyword_type@@> keyword_super        /* {{`super'}} */
-%token <@@keyword_type@@> keyword_self         /* {{`self'}} */
-%token <@@keyword_type@@> keyword_nil          /* {{`nil'}} */
-%token <@@keyword_type@@> keyword_true         /* {{`true'}} */
-%token <@@keyword_type@@> keyword_false        /* {{`false'}} */
-%token <@@keyword_type@@> keyword_and          /* {{`and'}} */
-%token <@@keyword_type@@> keyword_or           /* {{`or'}} */
-%token <@@keyword_type@@> keyword_not          /* {{`not'}} */
-%token <@@keyword_type@@> modifier_if          /* {{`if' modifier}} */
-%token <@@keyword_type@@> modifier_unless      /* {{`unless' modifier}} */
-%token <@@keyword_type@@> modifier_while       /* {{`while' modifier}} */
-%token <@@keyword_type@@> modifier_until       /* {{`until' modifier}} */
-%token <@@keyword_type@@> modifier_rescue      /* {{`rescue' modifier}} */
-%token <@@keyword_type@@> keyword_alias        /* {{`alias'}} */
-%token <@@keyword_type@@> keyword_defined      /* {{`defined'}} */
-%token <@@keyword_type@@> keyword_BEGIN        /* {{`BEGIN'}} */
-%token <@@keyword_type@@> keyword_END          /* {{`END'}} */
-%token <@@keyword_type@@> keyword__LINE__      /* {{`__LINE__'}} */
-%token <@@keyword_type@@> keyword__FILE__      /* {{`__FILE__'}} */
-%token <@@keyword_type@@> keyword__ENCODING__  /* {{`__ENCODING__'}} */
+%token <@@keyword_type@@> keyword_class        /* {{'class''}} */
+%token <@@keyword_type@@> keyword_module       /* {{'module'}} */
+%token <@@keyword_type@@> keyword_def          /* {{'def'}} */
+%token <@@keyword_type@@> keyword_undef        /* {{'undef'}} */
+%token <@@keyword_type@@> keyword_begin        /* {{'begin'}} */
+%token <@@keyword_type@@> keyword_rescue       /* {{'rescue'}} */
+%token <@@keyword_type@@> keyword_ensure       /* {{'ensure'}} */
+%token <@@keyword_type@@> keyword_end          /* {{'end'}} */
+%token <@@keyword_type@@> keyword_if           /* {{'if'}} */
+%token <@@keyword_type@@> keyword_unless       /* {{'unless'}} */
+%token <@@keyword_type@@> keyword_then         /* {{'then'}} */
+%token <@@keyword_type@@> keyword_elsif        /* {{'elsif'}} */
+%token <@@keyword_type@@> keyword_else         /* {{'else'}} */
+%token <@@keyword_type@@> keyword_case         /* {{'case'}} */
+%token <@@keyword_type@@> keyword_when         /* {{'when'}} */
+%token <@@keyword_type@@> keyword_while        /* {{'while'}} */
+%token <@@keyword_type@@> keyword_until        /* {{'until'}} */
+%token <@@keyword_type@@> keyword_for          /* {{'for'}} */
+%token <@@keyword_type@@> keyword_break        /* {{'break'}} */
+%token <@@keyword_type@@> keyword_next         /* {{'next'}} */
+%token <@@keyword_type@@> keyword_redo         /* {{'redo'}} */
+%token <@@keyword_type@@> keyword_retry        /* {{'retry'}} */
+%token <Object> keyword_in                     /* {{'in'}} */
+%token <@@keyword_type@@> keyword_do           /* {{'do'}} */
+%token <@@keyword_type@@> keyword_do_cond      /* {{'do' for condition}} */
+%token <@@keyword_type@@> keyword_do_block     /* {{'do' for block}} */
+%token <@@keyword_type@@> keyword_do_LAMBDA    /* {{'do' for lambda}} */
+%token <@@keyword_type@@> keyword_return       /* {{'return'}} */
+%token <@@keyword_type@@> keyword_yield        /* {{'yield'}} */
+%token <@@keyword_type@@> keyword_super        /* {{'super'}} */
+%token <@@keyword_type@@> keyword_self         /* {{'self'}} */
+%token <@@keyword_type@@> keyword_nil          /* {{'nil'}} */
+%token <@@keyword_type@@> keyword_true         /* {{'true'}} */
+%token <@@keyword_type@@> keyword_false        /* {{'false'}} */
+%token <@@keyword_type@@> keyword_and          /* {{'and'}} */
+%token <@@keyword_type@@> keyword_or           /* {{'or'}} */
+%token <@@keyword_type@@> keyword_not          /* {{'not'}} */
+%token <@@keyword_type@@> modifier_if          /* {{'if' modifier}} */
+%token <@@keyword_type@@> modifier_unless      /* {{'unless' modifier}} */
+%token <@@keyword_type@@> modifier_while       /* {{'while' modifier}} */
+%token <@@keyword_type@@> modifier_until       /* {{'until' modifier}} */
+%token <@@keyword_type@@> modifier_rescue      /* {{'rescue' modifier}} */
+%token <@@keyword_type@@> keyword_alias        /* {{'alias'}} */
+%token <@@keyword_type@@> keyword_defined      /* {{'defined'}} */
+%token <@@keyword_type@@> keyword_BEGIN        /* {{'BEGIN'}} */
+%token <@@keyword_type@@> keyword_END          /* {{'END'}} */
+%token <@@keyword_type@@> keyword__LINE__      /* {{'__LINE__'}} */
+%token <@@keyword_type@@> keyword__FILE__      /* {{'__FILE__'}} */
+%token <@@keyword_type@@> keyword__ENCODING__  /* {{'__ENCODING__'}} */
 %token <@@token_type@@> tIDENTIFIER          /* {{local variable or method}} */
 %token <@@token_type@@> tFID                 /* {{method}} */
 %token <@@token_type@@> tGVAR                /* {{global variable}} */
@@ -584,7 +585,6 @@ allow_exits     : {
 k_END           : keyword_END lex_ctxt {
                    $$ = $2;
                    p.getLexContext().in_rescue = LexContext.InRescue.BEFORE_RESCUE;
-                   /*% ripper: get_value($:2); %*/
                 };
 
 stmt            : keyword_alias fitem {
@@ -780,7 +780,9 @@ command_asgn    : lhs '=' lex_ctxt command_rhs {
 endless_command : command
                 | endless_command modifier_rescue after_rescue arg {
                     p.getLexContext().in_rescue = $3.in_rescue;
+                    /*%%%*/
                     $$ = p.rescued_expr(@1.start(), $1, $4);
+                    /*% %*/
                     /*% ripper: rescue_mod!($:1, $:4) %*/
                 }
                 | keyword_not opt_nl endless_command {
@@ -862,6 +864,7 @@ def_name        : fname {
                     %*/
                     ctxt.in_def = true;
                     ctxt.in_rescue = LexContext.InRescue.BEFORE_RESCUE;
+                    ctxt.cant_return = false;
                     p.setCurrentArg(null);
                 };
 
@@ -974,9 +977,10 @@ command        : fcall command_args %prec tLOWEST {
                     /*% ripper: method_add_block!(command_call!($1, ID2VAL(idCOLON2), $3, $4), $5) %*/
                 }
                 | primary_value tCOLON2 tCONSTANT '{' brace_body '}' {
-  //set_embraced_location($5, &@4, &@6);
+                    /*%%%*/
                     $$ = p.new_call($1, $3, null, $5);
-                    /*% ripper: method_add_block!(command_call!($:1, $:2, $:3, Qundef), $:5) %*/
+                    /*% %*/
+                    /*% ripper: method_add_block!(command_call!($:1, $:2, $:3, Qnil), $:5) %*/
                 }
                 | keyword_super command_args {
                     /*%%%*/
@@ -1933,7 +1937,9 @@ arg             : lhs '=' lex_ctxt arg_rhs {
 endless_arg     : arg %prec modifier_rescue
                 | endless_arg modifier_rescue after_rescue arg {
                     p.getLexContext().in_rescue = $3.in_rescue;
+                    /*%%%*/
                     $$ = p.rescued_expr(@1.start(), $1, $4);
+                    /*% %*/
                     /*% ripper: rescue_mod!($:1, $:4) %*/
                 }
                 | keyword_not opt_nl endless_arg {
@@ -2157,7 +2163,7 @@ args            : arg_value { // ArrayNode
                     /*%%%*/
                     $$ = p.newSplatNode($1);
                     /*% %*/
-                    /*% ripper: args_add_star!(args_new!, $2) %*/
+                    /*% ripper: args_add_star!(args_new!, $1) %*/
                 }
                 | args ',' arg_value { // ArgsCatNode, SplatNode, ArrayNode
                     /*%%%*/
@@ -2173,15 +2179,7 @@ args            : arg_value { // ArrayNode
                 }
                 | args ',' arg_splat { // ArgsCatNode, SplatNode, ArrayNode
                     /*%%%*/
-                    Node node = null;
-
-                    // FIXME: lose syntactical elements here (and others like this)
-                    if ($3 instanceof ArrayNode &&
-                        (node = p.splat_array($1)) != null) {
-                        $$ = p.list_concat(node, $3);
-                    } else {
-                        $$ = arg_concat($1, $3);
-                    }
+                    $$ = p.rest_arg_append($1, p.newSplatNode($3));
                     /*% %*/
                     /*% ripper: args_add_star!($1, $3) %*/
                 };
@@ -2191,8 +2189,10 @@ arg_splat       : tSTAR arg_value {
                     /*% ripper: get_value($2); %*/
                 }
                 | tSTAR /* none */ {
+                    /*%%%*/
                     p.forwarding_arg_check(FWD_REST, FWD_ALL, "rest");
                     $$ = p.declareIdentifier(FWD_REST);
+                    /*% %*/
                     /*% ripper: Qnil %*/
                 };
 
@@ -2443,6 +2443,7 @@ primary         : literal
                     LexContext ctxt = p.getLexContext();
                     p.popCurrentScope();
                     ctxt.in_class = $1.in_class;
+                    ctxt.cant_return = $1.cant_return;
                     ctxt.shareable_constant_value = $1.shareable_constant_value;
                 }
                 | k_class tLSHFT expr_value {
@@ -2457,6 +2458,7 @@ primary         : literal
                     LexContext ctxt = p.getLexContext();
                     ctxt.in_def = $1.in_def;
                     ctxt.in_class = $1.in_class;
+                    ctxt.cant_return = $1.cant_return;
                     ctxt.shareable_constant_value = $1.shareable_constant_value;
                     p.popCurrentScope();
                 }
@@ -2472,6 +2474,7 @@ primary         : literal
                     p.popCurrentScope();
                     LexContext ctxt = p.getLexContext();
                     ctxt.in_class = $1.in_class;
+                    ctxt.cant_return = $1.cant_return;
                     ctxt.shareable_constant_value = $1.shareable_constant_value;
                 }
                 | defn_head f_arglist {
@@ -2635,7 +2638,7 @@ k_end           : keyword_end {
 
 k_return        : keyword_return {
                     LexContext ctxt = p.getLexContext();
-                    if (ctxt.in_class && !ctxt.in_def && !p.getCurrentScope().isBlockScope()) {
+                    if (ctxt.cant_return && !p.dyna_in_block()) {
                         p.compile_error("Invalid return in class/module body");
                     }
                 };
@@ -2917,7 +2920,7 @@ lambda          : tLAMBDA {
                 } max_numparam numparam it_id allow_exits f_larglist {
                     p.getCmdArgumentState().push0();
                 } lambda_body {
-                    Node it_id = p.it_id();
+                    @@prod_type@@ it_id = p.it_id();
                     int max_numparam = p.restoreMaxNumParam($<Integer>3);
                     p.set_it_id($5);
                     p.getCmdArgumentState().pop();
@@ -3086,7 +3089,7 @@ brace_block     : '{' brace_body '}' {
 brace_body      : {
                     p.pushBlockScope();
                 } max_numparam numparam it_id allow_exits opt_block_param compstmt {
-                    Node it_id = p.it_id();
+                    @@prod_type@@ it_id = p.it_id();
                     int max_numparam = p.restoreMaxNumParam($<Integer>2);
                     p.set_it_id($4);
                     // Changed from MRI args_with_numbered put into parser codepath and not used by ripper (since it is just a passthrough method and types do not match).
@@ -3103,7 +3106,7 @@ do_body 	: {
                     p.pushBlockScope();
                     p.getCmdArgumentState().push0();
                 } max_numparam numparam it_id allow_exits opt_block_param bodystmt {
-                    Node it_id = p.it_id();
+                    @@prod_type@@ it_id = p.it_id();
                     int max_numparam = p.restoreMaxNumParam($<Integer>2);
                     p.set_it_id($4);
                     // Changed from MRI args_with_numbered put into parser codepath and not used by ripper (since it is just a passthrough method and types do not match).
@@ -3389,9 +3392,11 @@ p_find          : p_rest ',' p_args_post ',' p_rest {
 
 // ByteList
 p_rest          : tSTAR tIDENTIFIER {
-                    p.error_duplicate_pattern_variable($2);
+                    p.error_duplicate_pattern_variable(@2.id);
+                    /*%%%*/
                     $$ = $2;
-                    /*% ripper: ripper_assignable(p, $2, var_field(p, get_value($:2))) %*/
+                    /*% %*/
+                    /*% p.assignable(@2.id, p.var_field(p.get_value($2))); %*/
                 }
                 | tSTAR {
                     $$ = null;
@@ -4797,7 +4802,9 @@ assoc           : arg_value tASSOC arg_value {
                 }
                 | tDSTAR {
                     p.forwarding_arg_check(FWD_KWREST, FWD_ALL, "keyword rest");
+                    /*%%%*/
                     $$ = p.createKeyValue(null, p.declareIdentifier(FWD_KWREST));
+                    /*% %*/
                     /*% ripper: assoc_splat!(Qnil) %*/
                 };
 

@@ -13,6 +13,8 @@ import org.jruby.util.ByteList;
 
 import java.util.List;
 
+import static org.jruby.api.Create.dupString;
+
 /**
  * Represents a literal string value.
  *
@@ -78,7 +80,7 @@ public class MutableString extends Operand implements Stringable, StringLiteral 
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temp) {
-        return frozenString.retrieve(context, self, currScope, currDynScope, temp).strDup(context.runtime);
+        return dupString(context, frozenString.retrieve(context, self, currScope, currDynScope, temp));
     }
 
     @Override

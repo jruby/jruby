@@ -1,1 +1,2 @@
 fails:Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RAW overwrites the protocol when using IPPROTO_MTP
+fails(low priority excluded from JRuby 10):Addrinfo#initialize using an Array with extra arguments with the AF_INET address family and an explicit socket protocol and the socket type is set to SOCK_RAW overwrites the protocol when using IPPROTO_MAX

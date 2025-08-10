@@ -196,6 +196,7 @@ public class IRClosure extends IRScope {
     public IRMethod convertToMethod(ByteList name) {
         // We want variable scoping to be the same as a method and not see outside itself.
         if (source == null ||
+            isWithinMethod() ||                 // def foo; define_method {}; end has potential to implicitly access parents var yield
             accessesParentsLocalVariables() ||  // Built methods cannot search down past method scope
             receivesClosureArg() ||             // we pass in captured block at define_method as block so explicits ones not supported
             usesZSuper() ||                     // methods defined from closures cannot use zsuper

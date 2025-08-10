@@ -70,6 +70,7 @@ import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.parser.RubyParser.*;
 import static org.jruby.util.StringSupport.CR_7BIT;
 
@@ -493,12 +494,16 @@ public class RubyLexer extends LexingCommon {
 
             message += (addNewline ? "\n" : "") + pre + shortLine + post;
             addNewline = !message.endsWith("\n");
-            String highlightLine = new String(new char[pb + (pre.length() == 3 ? -4 : 0)]);
-            highlightLine = highlightLine.replace("\0", " ") + "^";
-            if (end_column - start_column > 1) {
-                String underscore = new String(new char[end_column - start_column - 1]);
-                underscore = underscore.replace("\0", "~");
-                highlightLine += underscore;
+            int highlightSize = pb + (pre.length() == 3 ? -4 : 0);
+            String highlightLine = "";
+            if (highlightSize >= 0) {
+                highlightLine = new String(new char[highlightSize]);
+                highlightLine = highlightLine.replace("\0", " ") + "^";
+                if (end_column - start_column > 1) {
+                    String underscore = new String(new char[end_column - start_column - 1]);
+                    underscore = underscore.replace("\0", "~");
+                    highlightLine += underscore;
+                }
             }
 
             message += (addNewline ? "\n" : "") + highlightLine;
@@ -579,8 +584,8 @@ public class RubyLexer extends LexingCommon {
         Ruby runtime = getRuntime();
         Encoding newEncoding = runtime.getEncodingService().loadEncoding(name);
 
-        if (newEncoding == null) throw runtime.newArgumentError("unknown encoding name: " + name.toString());
-        if (!newEncoding.isAsciiCompatible()) throw runtime.newArgumentError(name.toString() + " is not ASCII compatible");
+        if (newEncoding == null) throw argumentError(runtime.getCurrentContext(), "unknown encoding name: " + name.toString());
+        if (!newEncoding.isAsciiCompatible()) throw argumentError(runtime.getCurrentContext(), "" + name + " is not ASCII compatible");
 
         setEncoding(newEncoding);
     }
@@ -853,7 +858,7 @@ public class RubyLexer extends LexingCommon {
     private boolean arg_ambiguous(int c) {
         if (warnings.isVerbose() && Options.PARSER_WARN_AMBIGUOUS_ARGUMENTS.load()) {
             if (c == '/') {
-                warning(ID.AMBIGUOUS_ARGUMENT, "ambiguity between regexp and two divisions: wrap regexp in parentheses or add a space after `/' operator");
+                warning(ID.AMBIGUOUS_ARGUMENT, "ambiguity between regexp and two divisions: wrap regexp in parentheses or add a space after '/' operator");
             } else {
                 warning(ID.AMBIGUOUS_ARGUMENT, "ambiguous first argument; put parentheses or a space even after '" + (char) c + "' operator");
             }
@@ -1231,7 +1236,7 @@ public class RubyLexer extends LexingCommon {
         int tmpLine = ruby_sourceline;
         if (IS_SPCARG(c, spaceSeen)) {
             if (warnings.isVerbose() && Options.PARSER_WARN_ARGUMENT_PREFIX.load())
-                warning(ID.ARGUMENT_AS_PREFIX, getFile(), tmpLine, "`&' interpreted as argument prefix");
+                warning(ID.ARGUMENT_AS_PREFIX, getFile(), tmpLine, "'&' interpreted as argument prefix");
             c = tAMPER;
         } else if (IS_BEG()) {
             c = tAMPER;
@@ -1259,18 +1264,18 @@ public class RubyLexer extends LexingCommon {
 
         if (c == EOF || !isIdentifierChar(c)) {
             if (result == tIVAR) {
-                compile_error("`@' without identifiers is not allowed as an instance variable name");
+                compile_error("'@' without identifiers is not allowed as an instance variable name");
             } else {
-                compile_error("`@@' without identifiers is not allowed as a class variable name");
+                compile_error("'@@' without identifiers is not allowed as a class variable name");
             }
             setState(EXPR_END);
             return result;
         } else if (Character.isDigit(c)) {
             pushback(c);
             if (result == tIVAR) {
-                compile_error("`@" + ((char) c) + "' is not allowed as an instance variable name");
+                compile_error("'@" + ((char) c) + "' is not allowed as an instance variable name");
             } else {
-                compile_error("`@@" + ((char) c) + "' is not allowed as a class variable name");
+                compile_error("'@@" + ((char) c) + "' is not allowed as a class variable name");
             }
             setState(EXPR_END);
             return result;
@@ -1499,10 +1504,10 @@ public class RubyLexer extends LexingCommon {
         default:
             if (!isIdentifierChar(c)) {
                 if (c == EOF || isSpace(c)) {
-                    compile_error("`$' without identifiers is not allowed as a global variable name");
+                    compile_error("'$' without identifiers is not allowed as a global variable name");
                 } else {
                     pushback(c);
-                    compile_error("`$" + ((char) c) + "' is not allowed as a global variable name");
+                    compile_error("'$" + ((char) c) + "' is not allowed as a global variable name");
                 }
             }
 
@@ -1593,7 +1598,7 @@ public class RubyLexer extends LexingCommon {
         if (!isIdentifierChar(c)) {
             StringBuilder builder = new StringBuilder();
             Formatter formatter = new Formatter(builder, Locale.US);
-            formatter.format("Invalid char `\\x%02x' in expression", c & 0xff);
+            formatter.format("Invalid char '\\x%02x' in expression", c & 0xff);
             compile_error(builder.toString());
         }
 
@@ -2106,7 +2111,7 @@ public class RubyLexer extends LexingCommon {
 
             if (IS_SPCARG(c, spaceSeen)) {
                 if (warnings.isVerbose() && Options.PARSER_WARN_ARGUMENT_PREFIX.load())
-                    warning(ID.ARGUMENT_AS_PREFIX, "`**' interpreted as argument prefix");
+                    warning(ID.ARGUMENT_AS_PREFIX, "'**' interpreted as argument prefix");
                 c = tDSTAR;
             } else if (IS_BEG()) {
                 c = tDSTAR;
@@ -2123,7 +2128,7 @@ public class RubyLexer extends LexingCommon {
             pushback(c);
             if (IS_SPCARG(c, spaceSeen)) {
                 if (warnings.isVerbose() && Options.PARSER_WARN_ARGUMENT_PREFIX.load())
-                    warning(ID.ARGUMENT_AS_PREFIX, "`*' interpreted as argument prefix");
+                    warning(ID.ARGUMENT_AS_PREFIX, "'*' interpreted as argument prefix");
                 c = tSTAR;
             } else if (IS_BEG()) {
                 c = tSTAR;

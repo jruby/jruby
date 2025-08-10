@@ -1,0 +1,1 @@
+fails:ObjectSpace::WeakKeyMap#getkey returns nil when a key cannot be garbage collected

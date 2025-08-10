@@ -1,6 +1,7 @@
 package org.jruby.javasupport.binding;
 
 import org.jruby.RubyModule;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 
 /**
@@ -22,7 +23,7 @@ public abstract class NamedInstaller {
         this.type = type;
     }
 
-    abstract void install(RubyModule proxy);
+    abstract void install(ThreadContext context, RubyModule proxy);
 
     // small hack to save a cast later on
     boolean hasLocalMethod() { return true; }

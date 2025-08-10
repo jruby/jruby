@@ -3,8 +3,97 @@ require 'reline/line_editor'
 require 'stringio'
 
 class Reline::LineEditor
+
+  class CompletionBlockTest < Reline::TestCase
+    def setup
+      @original_quote_characters = Reline.completer_quote_characters
+      @original_word_break_characters = Reline.completer_word_break_characters
+      @line_editor = Reline::LineEditor.new(nil)
+    end
+
+    def retrieve_completion_block(lines, line_index, byte_pointer)
+      @line_editor.instance_variable_set(:@buffer_of_lines, lines)
+      @line_editor.instance_variable_set(:@line_index, line_index)
+      @line_editor.instance_variable_set(:@byte_pointer, byte_pointer)
+      @line_editor.retrieve_completion_block
+    end
+
+    def retrieve_completion_quote(line)
+      _, _, _, quote = retrieve_completion_block([line], 0, line.bytesize)
+      quote
+    end
+
+    def teardown
+      Reline.completer_quote_characters = @original_quote_characters
+      Reline.completer_word_break_characters = @original_word_break_characters
+    end
+
+    def test_retrieve_completion_block
+      Reline.completer_word_break_characters = ' ([{'
+      Reline.completer_quote_characters = ''
+      assert_equal(['', '', 'foo', nil], retrieve_completion_block(['foo'], 0, 0))
+      assert_equal(['', 'f', 'oo', nil], retrieve_completion_block(['foo'], 0, 1))
+      assert_equal(['foo ', 'ba', 'r baz', nil], retrieve_completion_block(['foo bar baz'], 0, 6))
+      assert_equal(['foo([', 'b', 'ar])baz', nil], retrieve_completion_block(['foo([bar])baz'], 0, 6))
+      assert_equal(['foo([{', '', '}])baz', nil], retrieve_completion_block(['foo([{}])baz'], 0, 6))
+      assert_equal(["abc\nfoo ", 'ba', "r baz\ndef", nil], retrieve_completion_block(['abc', 'foo bar baz', 'def'], 1, 6))
+    end
+
+    def test_retrieve_completion_block_with_quote_characters
+      Reline.completer_word_break_characters = ' ([{'
+      Reline.completer_quote_characters = ''
+      assert_equal(['"" ', '"wo', 'rd', nil], retrieve_completion_block(['"" "word'], 0, 6))
+      Reline.completer_quote_characters = '"'
+      assert_equal(['"" "', 'wo', 'rd', nil], retrieve_completion_block(['"" "word'], 0, 6))
+    end
+
+    def test_retrieve_completion_quote
+      Reline.completer_quote_characters = '"\''
+      assert_equal('"', retrieve_completion_quote('"\''))
+      assert_equal(nil, retrieve_completion_quote('""'))
+      assert_equal("'", retrieve_completion_quote('""\'"'))
+      assert_equal(nil, retrieve_completion_quote('""\'\''))
+      assert_equal('"', retrieve_completion_quote('"\\"'))
+      assert_equal(nil, retrieve_completion_quote('"\\""'))
+      assert_equal(nil, retrieve_completion_quote('"\\\\"'))
+    end
+  end
+
+  class CursorPositionTest < Reline::TestCase
+    def setup
+      @line_editor = Reline::LineEditor.new(nil)
+      @line_editor.instance_variable_set(:@config, Reline::Config.new)
+    end
+
+    def test_cursor_position_with_escaped_input
+      @line_editor.instance_variable_set(:@screen_size, [4, 16])
+      @line_editor.instance_variable_set(:@prompt, "\e[1mprompt\e[0m> ")
+      @line_editor.instance_variable_set(:@buffer_of_lines, ["\e[1m\0\1\2\3\4\5\6\7abcd"])
+      @line_editor.instance_variable_set(:@line_index, 0)
+      # prompt> ^[[1m^@^
+      # A^B^C^D^E^F^Gabc
+      # d
+      @line_editor.instance_variable_set(:@byte_pointer, 0)
+      assert_equal [8, 0], @line_editor.wrapped_cursor_position
+      @line_editor.instance_variable_set(:@byte_pointer, 5)
+      assert_equal [15, 0], @line_editor.wrapped_cursor_position
+      @line_editor.instance_variable_set(:@byte_pointer, 6)
+      assert_equal [1, 1], @line_editor.wrapped_cursor_position
+      @line_editor.instance_variable_set(:@byte_pointer, 14)
+      assert_equal [15, 1], @line_editor.wrapped_cursor_position
+      @line_editor.instance_variable_set(:@byte_pointer, 15)
+      assert_equal [0, 2], @line_editor.wrapped_cursor_position
+      @line_editor.instance_variable_set(:@byte_pointer, 16)
+      assert_equal [1, 2], @line_editor.wrapped_cursor_position
+    end
+  end
+
   class RenderLineDifferentialTest < Reline::TestCase
     class TestIO < Reline::IO
+      def write(string)
+        @output << string
+      end
+
       def move_cursor_column(col)
         @output << "[COL_#{col}]"
       end
@@ -16,11 +105,10 @@ class Reline::LineEditor
 
     def setup
       verbose, $VERBOSE = $VERBOSE, nil
-      @line_editor = Reline::LineEditor.new(nil, Encoding::UTF_8)
+      @line_editor = Reline::LineEditor.new(nil)
       @original_iogate = Reline::IOGate
       @output = StringIO.new
       @line_editor.instance_variable_set(:@screen_size, [24, 80])
-      @line_editor.instance_variable_set(:@output, @output)
       Reline.send(:remove_const, :IOGate)
       Reline.const_set(:IOGate, TestIO.new)
       Reline::IOGate.instance_variable_set(:@output, @output)

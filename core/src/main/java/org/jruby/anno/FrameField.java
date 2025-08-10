@@ -93,6 +93,7 @@ public enum FrameField {
         return bits;
     }
 
+    @SuppressWarnings("unchecked")
     public static Set<FrameField> unpack(int bits) {
         Set<FrameField> frameFields = Collections.EMPTY_SET;
         for (FrameField frameField : values()) {

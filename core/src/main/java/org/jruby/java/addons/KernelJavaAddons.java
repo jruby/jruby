@@ -2,6 +2,7 @@ package org.jruby.java.addons;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBasicObject;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.util.ArrayUtils;
@@ -16,11 +17,9 @@ public class KernelJavaAddons {
 
     @JRubyMethod
     public static IRubyObject to_java(ThreadContext context, final IRubyObject fromObject) {
-        final Ruby runtime = context.runtime;
-        if ( fromObject instanceof RubyArray ) {
-            return toJavaArray(runtime, Object.class, (RubyArray) fromObject);
-        }
-        return Java.getInstance(runtime, fromObject.toJava(Object.class));
+        return fromObject instanceof RubyArray ary ?
+                toJavaArray(context, Object.class, ary) :
+                Java.getInstance(context.runtime, fromObject.toJava(Object.class));
     }
 
     @JRubyMethod
@@ -29,17 +28,17 @@ public class KernelJavaAddons {
 
         final Class targetType = Java.resolveClassType(context, type);
         if ( fromObject instanceof RubyArray ) {
-            return toJavaArray(context.runtime, targetType, (RubyArray) fromObject);
+            return toJavaArray(context, targetType, (RubyArray) fromObject);
         }
         return Java.getInstance(context.runtime, fromObject.toJava(targetType));
     }
 
-    static ArrayJavaProxy toJavaArray(final Ruby runtime, final Class<?> type, final RubyArray fromArray) {
-        final Object newArray = toJavaArrayInternal(runtime, type, fromArray);
-        return new ArrayJavaProxy(runtime, Java.getProxyClassForObject(runtime, newArray), newArray, JavaUtil.getJavaConverter(type));
+    static ArrayJavaProxy toJavaArray(ThreadContext context, final Class<?> type, final RubyArray fromArray) {
+        final Object newArray = toJavaArrayInternal(context, type, fromArray);
+        return new ArrayJavaProxy(context.runtime, Java.getProxyClassForObject(context, newArray), newArray, JavaUtil.getJavaConverter(type));
     }
 
-    private static Object toJavaArrayInternal(final Ruby runtime, final Class<?> type, final RubyArray fromArray) {
+    private static Object toJavaArrayInternal(ThreadContext context, final Class<?> type, final RubyArray fromArray) {
         final Object newArray = Array.newInstance(type, fromArray.size());
 
         if (type.isArray()) {
@@ -49,7 +48,7 @@ public class KernelJavaAddons {
                 final IRubyObject element = fromArray.eltInternal(i);
                 final Object nestedArray;
                 if ( element instanceof RubyArray ) { // recurse
-                    nestedArray = toJavaArrayInternal(runtime, nestedType, (RubyArray) element);
+                    nestedArray = toJavaArrayInternal(context, nestedType, (RubyArray) element);
                 }
                 else if ( type.isInstance(element) ) {
                     nestedArray = element;
@@ -57,7 +56,7 @@ public class KernelJavaAddons {
                 else { // still try (nested) toJava conversion :
                     nestedArray = element.toJava(type);
                 }
-                ArrayUtils.setWithExceptionHandlingDirect(runtime, newArray, i, nestedArray);
+                ArrayUtils.setWithExceptionHandlingDirect(context.runtime, newArray, i, nestedArray);
             }
         } else {
             ArrayUtils.copyDataToJavaArrayDirect(fromArray, newArray);
@@ -66,46 +65,74 @@ public class KernelJavaAddons {
         return newArray;
     }
 
-    @JRubyMethod(rest = true)
+    @Deprecated(since = "10.0")
     public static IRubyObject java_signature(IRubyObject recv, IRubyObject[] args) {
-        // empty stub for now
-        return recv.getRuntime().getNil();
+        return java_signature(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
 
     @JRubyMethod(rest = true)
+    public static IRubyObject java_signature(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return context.nil;
+    }
+
+    @Deprecated(since = "10.0")
     public static IRubyObject java_name(IRubyObject recv, IRubyObject[] args) {
-        // empty stub for now
-        return recv.getRuntime().getNil();
+        return java_name(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
 
     @JRubyMethod(rest = true)
+    public static IRubyObject java_name(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return context.nil;
+    }
+
+    @Deprecated(since = "10.0")
     public static IRubyObject java_implements(IRubyObject recv, IRubyObject[] args) {
-        // empty stub for now
-        return recv.getRuntime().getNil();
+        return java_implements(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
 
     @JRubyMethod(rest = true)
+    public static IRubyObject java_implements(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return context.nil;
+    }
+
+    @Deprecated(since = "10.0")
     public static IRubyObject java_annotation(IRubyObject recv, IRubyObject[] args) {
-        // empty stub for now
-        return recv.getRuntime().getNil();
+        return java_annotation(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
 
     @JRubyMethod(rest = true)
+    public static IRubyObject java_annotation(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return context.nil;
+    }
+
+    @Deprecated(since = "10.0")
     public static IRubyObject java_require(IRubyObject recv, IRubyObject[] args) {
-        // empty stub for now
-        return recv.getRuntime().getNil();
+        return java_require(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
 
     @JRubyMethod(rest = true)
+    public static IRubyObject java_require(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return context.nil;
+    }
+
+    @Deprecated(since = "10.0")
     public static IRubyObject java_package(IRubyObject recv, IRubyObject[] args) {
-        // empty stub for now
-        return recv.getRuntime().getNil();
+        return java_package(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
 
     @JRubyMethod(rest = true)
+    public static IRubyObject java_package(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return context.nil;
+    }
+
+    @Deprecated(since = "10.0")
     public static IRubyObject java_field(IRubyObject recv, IRubyObject[] args) {
-        // empty stub for now
-        return recv.getRuntime().getNil();
+        return java_field(((RubyBasicObject) recv).getCurrentContext(), recv, args);
+    }
+
+    @JRubyMethod(rest = true)
+    public static IRubyObject java_field(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return context.nil;
     }
 
 }

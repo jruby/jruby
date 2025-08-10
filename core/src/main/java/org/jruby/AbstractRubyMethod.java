@@ -35,7 +35,6 @@ package org.jruby;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.api.Convert;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.DelegatingDynamicMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -52,9 +51,13 @@ import org.jruby.runtime.marshal.DataType;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newString;
 
 /**
+ * Base type for the two Ruby Method types.
+ *
  * @see RubyMethod
  * @see RubyUnboundMethod
  */
@@ -90,6 +93,11 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
         return arity(getCurrentContext());
     }
 
+    @Deprecated(since = "9.4-") // since 2017
+    public final IRubyObject op_eql19(ThreadContext context, IRubyObject other) {
+        return op_eql(context, other);
+    }
+
     @JRubyMethod(name = "eql?")
     public IRubyObject op_eql(ThreadContext context, IRubyObject other) {
         return asBoolean(context,  equals(other) );
@@ -104,7 +112,7 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
 
     @JRubyMethod(name = "name")
     public IRubyObject name(ThreadContext context) {
-        return context.runtime.newSymbol(methodName);
+        return asSymbol(context, methodName);
     }
 
     public String getMethodName() {
@@ -127,8 +135,23 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
         String filename = getFilename();
 
         return filename != null ?
-                newArray(context, Convert.asString(context, filename), asFixnum(context, getLine())) :
+                newArray(context, newString(context, filename), asFixnum(context, getLine())) :
                 context.nil;
+    }
+
+    @Deprecated(since = "10.0")
+    public RubyBoolean public_p(ThreadContext context) {
+        return context.runtime.newBoolean(method.getVisibility().isPublic());
+    }
+
+    @Deprecated(since = "10.0")
+    public RubyBoolean protected_p(ThreadContext context) {
+        return context.runtime.newBoolean(method.getVisibility().isProtected());
+    }
+
+    @Deprecated(since = "10.0")
+    public RubyBoolean private_p(ThreadContext context) {
+        return context.runtime.newBoolean(method.getVisibility().isPrivate());
     }
 
     public String getFilename() {
@@ -151,7 +174,7 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
 
     @JRubyMethod(name = "parameters")
     public IRubyObject parameters(ThreadContext context) {
-        return Helpers.methodToParameters(context.runtime, this);
+        return Helpers.methodToParameters(context, this);
     }
 
     protected IRubyObject super_method(ThreadContext context, IRubyObject receiver, RubyModule superClass) {
@@ -173,21 +196,16 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
 
     @JRubyMethod
     public IRubyObject original_name(ThreadContext context) {
-        if (method instanceof AliasMethod) {
-            return context.runtime.newSymbol(((AliasMethod) method).getOldName());
-        }
-
-        return context.runtime.newSymbol(method.getName());
+        return asSymbol(context, method instanceof AliasMethod alias ? alias.getOldName() : method.getName());
     }
 
     public IRubyObject inspect(IRubyObject receiver) {
-        Ruby runtime = getRuntime();
-        ThreadContext context = runtime.getCurrentContext();
+        ThreadContext context = getRuntime().getCurrentContext();
 
-        RubyString str = RubyString.newString(runtime, "#<");
+        RubyString str = newString(context, "#<");
         String sharp = "#";
 
-        str.catString(getType().getName()).catString(": ");
+        str.catString(getType().getName(context)).catString(": ");
 
         RubyModule definedClass;
         RubyModule mklass = originModule;
@@ -221,24 +239,24 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
         } else {
             if (receiver instanceof RubyClass) {
                 str.catString("#<");
-                str.cat(mklass.rubyName());
+                str.cat(mklass.rubyName(context));
                 str.catString(":");
-                str.cat(((RubyClass) receiver).rubyName());
+                str.cat(((RubyClass) receiver).rubyName(context));
                 str.catString(">");
             } else {
-                str.cat(mklass.rubyName());
+                str.cat(mklass.rubyName(context));
             }
             if (definedClass != mklass) {
                 str.catString("(");
-                str.cat(definedClass.rubyName());
+                str.cat(definedClass.rubyName(context));
                 str.catString(")");
             }
         }
         str.catString(sharp);
-        str.cat(runtime.newSymbol(this.methodName).asString());
+        str.cat(asSymbol(context, methodName).asString());
         if (!methodName.equals(method.getName())) {
             str.catString("(");
-            str.cat(runtime.newSymbol(method.getRealMethod().getName()).asString());
+            str.cat(asSymbol(context, method.getRealMethod().getName()).asString());
             str.catString(")");
         }
         if (method.isNotImplemented()) {
@@ -246,7 +264,7 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
         }
 
         str.catString("(");
-        ArgumentDescriptor[] descriptors = Helpers.methodToArgumentDescriptors(method);
+        ArgumentDescriptor[] descriptors = Helpers.methodToArgumentDescriptors(context, method);
         if (descriptors.length > 0) {
             RubyString desc = descriptors[0].asParameterName(context);
 

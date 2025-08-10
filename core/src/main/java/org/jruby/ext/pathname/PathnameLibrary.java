@@ -35,6 +35,7 @@ import org.jruby.runtime.load.Library;
 
 public class PathnameLibrary implements Library {
     public void load(Ruby runtime, boolean wrap) throws IOException {
-        RubyPathname.createPathnameClass(runtime);
+        var context = runtime.getCurrentContext();
+        RubyPathname.createPathnameClass(context);
     }
 }

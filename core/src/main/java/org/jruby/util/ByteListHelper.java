@@ -57,7 +57,7 @@ public class ByteListHelper {
      * If you know you have an ASCII ByteList you should do something else.  This will continue walking the
      * bytelist 'while' as long as each continues to be true.  When it stops being true it will return the
      * last byte index processed (on full walk it will be length otherwise the beginning of the codepoint
-     * which did not satisfy each.
+     * which did not satisfy each).
      *
      * @param bytelist of the mbc-laden bytes
      * @param offset place in bytes to search past begin
@@ -115,7 +115,7 @@ public class ByteListHelper {
      * @return last T from headVisitor
      * @deprecated This was only used by Module#const_defined, but was difficult to match MRI's equivalent in this form
      */
-    @Deprecated(since = "9.4-", forRemoval = true)
+    @Deprecated(since = "9.4-")
     public static <T> T split(ByteList value, ByteList pattern, Visit<ByteList, T> bodyVisitor, Visit<ByteList, T> headVisitor) {
         if (headVisitor == null) headVisitor = bodyVisitor;
 

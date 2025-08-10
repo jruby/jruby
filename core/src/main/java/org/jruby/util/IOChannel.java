@@ -47,6 +47,7 @@ import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.callsite.RespondToCallSite;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.toInt;
 
 /**
  * Wrap an IO object in a Channel.
@@ -95,21 +96,21 @@ public abstract class IOChannel implements Channel {
 
         CacheEntry readMethodEntry = read.retrieveCache(io);
         RubyFixnum remainingFixnum = asFixnum(context, remaining);
-        IRubyObject readValue;
+        IRubyObject readValue, retValue;
         if (readMethodEntry.method.getSignature().isTwoArguments()) {
             if (dst.hasArray()) {
                 readValue = RubyString.newStringNoCopy(runtime, dst.array(), dst.position(), remaining);
             } else {
                 readValue = RubyString.newStringLight(runtime, remaining);
             }
-            read.call(context, io, io, remainingFixnum, readValue);
+            retValue = read.call(context, io, io, remainingFixnum, readValue);
         } else {
-            readValue = read.call(context, io, io, remainingFixnum);
+            retValue = readValue = read.call(context, io, io, remainingFixnum);
         }
 
         int returnValue = -1;
         RubyString readString;
-        if (!readValue.isNil()
+        if (!retValue.isNil()
                 && (readString = readValue.convertToString()).size() > 0) {
             ByteList str = readString.getByteList();
             int realSize = str.getRealSize();
@@ -150,14 +151,13 @@ public abstract class IOChannel implements Channel {
             buffer.append(src, remaining);
         }
 
+        var context = runtime.getCurrentContext();
         // call write with new String based on this ByteList
-        IRubyObject written = write.call(runtime.getCurrentContext(), io, io, RubyString.newStringLight(runtime, buffer));
-        int wrote = written.convertToInteger().getIntValue();
+        IRubyObject written = write.call(context, io, io, RubyString.newStringLight(runtime, buffer));
+        int wrote = toInt(context, written);
 
         // set source position to match bytes written
-        if (wrote > 0) {
-            src.position(position + wrote);
-        }
+        if (wrote > 0) src.position(position + wrote);
 
         return wrote;
     }
@@ -178,7 +178,7 @@ public abstract class IOChannel implements Channel {
         } else if (io.respondsTo("<<")) {
             return new FunctionalCachingCallSite("<<");
         } else {
-            throw new IllegalArgumentException(io.getMetaClass() + "not coercible to " + getClass().getSimpleName() + ": no `write' method");
+            throw new IllegalArgumentException(io.getMetaClass() + "not coercible to " + getClass().getSimpleName() + ": no 'write' method");
         }
     }
 

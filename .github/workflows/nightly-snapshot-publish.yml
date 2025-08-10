@@ -1,4 +1,4 @@
-name: Nightly Master Snapshot
+name: Nightly Snapshots using Java 8
 
 on:
   schedule:
@@ -13,9 +13,11 @@ permissions:
 jobs:
   publish-snapshot:
     permissions:
-      contents: none
-    if: ${{ github.ref == 'refs/heads/master' }}
-    uses: jruby/jruby/.github/workflows/snapshot-publish.yml@6cd0d4d96d9406635183d81cf91acc82cd78245f
+      contents: read
+    if: ${{ github.ref == 'refs/heads/jruby-9.4' && github.repository == 'jruby/jruby' }}
+    uses: jruby/jruby/.github/workflows/snapshot-publish.yml@659a649a802bafb69c5d216f6fbc4160c749d454
+    with:
+      javaLevel: 8
     secrets:
       SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
       SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}

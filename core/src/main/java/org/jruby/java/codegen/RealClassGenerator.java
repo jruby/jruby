@@ -69,7 +69,6 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.proxies.ConcreteJavaProxy.SplitCtorData;
 import org.jruby.java.proxies.MapJavaProxy;
-import org.jruby.javasupport.Java.JCreateMethod;
 import org.jruby.javasupport.Java.JCtorCache;
 import org.jruby.javasupport.JavaConstructor;
 import org.jruby.javasupport.JavaUtil;
@@ -194,7 +193,7 @@ public abstract class RealClassGenerator {
                 String pathName = name.replace('.', '/');
 
                 // construct the class, implementing all supertypes
-                cw.visit(V_BC, ACC_PUBLIC | ACC_SUPER, pathName, null, p(Object.class), superTypeNames);
+                cw.visit(V_BC, ACC_PUBLIC | ACC_SUPER | ACC_SYNTHETIC, pathName, null, p(Object.class), superTypeNames);
                 cw.visitSource(pathName + ".gen", null);
 
                 // fields needed for dispatch and such
@@ -440,7 +439,7 @@ public abstract class RealClassGenerator {
 
         int cacheSize = 0;
 
-        final HashSet<String> implementedNames = new HashSet<String>();
+        final HashSet<String> implementedNames = new HashSet<>();
 
         // for each simple method name, implement the complex methods, calling the simple version
         for (Map.Entry<String, List<Method>> entry : simpleToAll.entrySet()) {

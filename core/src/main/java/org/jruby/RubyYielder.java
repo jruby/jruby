@@ -34,6 +34,8 @@ import org.jruby.runtime.CallBlock19;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
+
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -41,15 +43,11 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class RubyYielder extends RubyObject {
     private Block block;
 
-    public static RubyClass createYielderClass(Ruby runtime) {
-        RubyClass yielderc = runtime.defineClassUnder("Yielder", runtime.getObject(), RubyYielder::new, runtime.getEnumerator());
-
-        yielderc.setClassIndex(ClassIndex.YIELDER);
-        yielderc.kindOf = new RubyModule.JavaClassKindOf(RubyYielder.class);
-
-        yielderc.defineAnnotatedMethods(RubyYielder.class);
-
-        return yielderc;
+    public static RubyClass createYielderClass(ThreadContext context, RubyClass Object, RubyClass Enumerator) {
+        return Enumerator.defineClassUnder(context, "Yielder", Object, RubyYielder::new).
+                kindOf(new RubyModule.JavaClassKindOf(RubyYielder.class)).
+                classIndex(ClassIndex.YIELDER).
+                defineMethods(context, RubyYielder.class);
     }
 
     public RubyYielder(Ruby runtime, RubyClass klass) {
@@ -97,10 +95,6 @@ public class RubyYielder extends RubyObject {
 
     }
 
-    private void checkInit() {
-        if (block == null) throw getRuntime().newArgumentError("uninitialized yielder");
-    }
-
     @JRubyMethod(visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, Block block) {
         Ruby runtime = context.runtime;
@@ -111,7 +105,7 @@ public class RubyYielder extends RubyObject {
 
     @JRubyMethod(rest = true, keywords = true)
     public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
-        checkInit();
+        if (block == null) throw argumentError(context, "uninitialized yielder");
         return block.yieldValues(context, args);
     }
 

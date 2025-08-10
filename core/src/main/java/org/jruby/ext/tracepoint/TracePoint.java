@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import org.jruby.Ruby;
 import org.jruby.RubyBinding;
-import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyObject;
 import org.jruby.RubySymbol;
@@ -19,17 +18,18 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
 
-import static org.jruby.api.Convert.asBoolean;
-import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Access.symbolClass;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.runtimeError;
+import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.util.RubyStringBuilder.str;
 
 public class TracePoint extends RubyObject {
-    public static void createTracePointClass(Ruby runtime) {
-        RubyClass tracePoint = runtime.defineClass("TracePoint", runtime.getObject(), TracePoint::new);
-        
-        tracePoint.defineAnnotatedMethods(TracePoint.class);
+    public static void createTracePointClass(ThreadContext context, RubyClass Object) {
+        defineClass(context, "TracePoint", Object, TracePoint::new).defineMethods(context, TracePoint.class);
     }
     
     public TracePoint(Ruby runtime, RubyClass klass) {
@@ -48,7 +48,7 @@ public class TracePoint extends RubyObject {
     public IRubyObject initialize(ThreadContext context, IRubyObject[] _events, final Block block) {
         ArrayList<RubyEvent> events = new ArrayList<RubyEvent>(_events.length);
         for (int i = 0; i < _events.length; i++) {
-            RubySymbol _event = (RubySymbol) TypeConverter.convertToType(context, _events[i], context.runtime.getSymbol(), sites(context).to_sym);
+            RubySymbol _event = (RubySymbol) TypeConverter.convertToType(context, _events[i], symbolClass(context), sites(context).to_sym);
 
             String eventName = _event.asJavaString().toUpperCase();
             RubyEvent event = null;
@@ -83,6 +83,8 @@ public class TracePoint extends RubyObject {
             public void event(ThreadContext context, RubyEvent event, String file, int line, String name, IRubyObject type) {
                 if (!enabled || threadToTrace != context || context.isWithinTrace()) return;
 
+                int savedCallInfo = resetCallInfo(context);
+
                 synchronized (this) {
                     inside = true;
 
@@ -107,6 +109,7 @@ public class TracePoint extends RubyObject {
                         update(null, null, line, null, context.nil, context.nil, context.nil, context.nil);
                         context.postTrace();
                         inside = false;
+                        context.callInfo = savedCallInfo;
                     }
                 }
             }
@@ -163,17 +166,14 @@ public class TracePoint extends RubyObject {
     public IRubyObject event(ThreadContext context) {
         checkInside(context);
         
-        return eventName == null ? context.nil : context.runtime.newSymbol(eventName);
+        return eventName == null ? context.nil : asSymbol(context, eventName);
     }
     
     @JRubyMethod
     public IRubyObject inspect(ThreadContext context) {
-        if (inside) {
-            // TODO: event-specific inspect output
-            return newString(context, "#<TracePoint:" + eventName + ">");
-        }
-        
-        return newString(context, "#<TracePoint:" + (enabled ? "enabled" : "disabled") + ">");
+        return inside ? // TODO: event-specific inspect output
+                newString(context, "#<TracePoint:" + eventName + ">") :
+                newString(context, "#<TracePoint:" + (enabled ? "enabled" : "disabled") + ">");
     }
     
     @JRubyMethod
@@ -187,7 +187,7 @@ public class TracePoint extends RubyObject {
     public IRubyObject method_id(ThreadContext context) {
         checkInside(context);
         
-        return name == null ? context.nil : context.runtime.newSymbol(name);
+        return name == null ? context.nil : asSymbol(context, name);
     }
 
     @JRubyMethod
@@ -195,8 +195,7 @@ public class TracePoint extends RubyObject {
         checkInside(context);
 
         // TODO: actually get called name, requires modifying trace handling in bindings
-
-        return name == null ? context.nil : context.runtime.newSymbol(name);
+        return name == null ? context.nil : asSymbol(context, name);
     }
     
     @JRubyMethod
@@ -269,14 +268,14 @@ public class TracePoint extends RubyObject {
         enabled = toggle;
         
         if (toggle) {
-            context.traceEvents.addEventHook(hook);
+            context.traceEvents.addEventHook(context, hook);
         } else {
             context.traceEvents.removeEventHook(hook);
         }
     }
 
     private void checkInside(ThreadContext context) throws RaiseException {
-        if (!inside) throw context.runtime.newRuntimeError("access from outside");
+        if (!inside) throw runtimeError(context, "access from outside");
     }
 
     private static JavaSites.TracePointSites sites(ThreadContext context) {

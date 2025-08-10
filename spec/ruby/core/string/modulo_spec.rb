@@ -391,16 +391,8 @@ describe "String#%" do
     ("%c" % 'A').should == "A"
   end
 
-  ruby_version_is ""..."3.2" do
-    it "raises an exception for multiple character strings as argument for %c" do
-      -> { "%c" % 'AA' }.should raise_error(ArgumentError)
-    end
-  end
-
-  ruby_version_is "3.2" do
-    it "supports only the first character as argument for %c" do
-      ("%c" % 'AA').should == "A"
-    end
+  it "supports only the first character as argument for %c" do
+    ("%c" % 'AA').should == "A"
   end
 
   it "calls to_str on argument for %c formats" do
@@ -749,9 +741,11 @@ describe "String#%" do
       (format % "-10.4e-20").should == (format % -10.4e-20)
       (format % ".5").should == (format % 0.5)
       (format % "-.5").should == (format % -0.5)
-      ruby_bug("#20705", ""..."3.4") do
+
+      ruby_version_is "3.4" do
         (format % "10.").should == (format % 10)
       end
+
       # Something's strange with this spec:
       # it works just fine in individual mode, but not when run as part of a group
       (format % "10_1_0.5_5_5").should == (format % 1010.555)

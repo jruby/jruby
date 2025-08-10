@@ -1,8 +1,0 @@
-exclude :"test_ancestors", "work in progress"
-exclude :"test_import_methods", "work in progress"
-exclude :"test_prepend_refined_module", "work in progress"
-exclude :"test_refine_frozen_class", "work in progress"
-exclude :"test_refine_recursion", "work in progress"
-exclude :"test_refine_scoping", "work in progress"
-exclude :"test_refined_method_alias_warning", "work in progress"
-exclude :"test_unbound_refine_method", "work in progress"

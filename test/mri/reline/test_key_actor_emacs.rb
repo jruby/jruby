@@ -9,8 +9,8 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
     Reline::HISTORY.instance_variable_set(:@config, @config)
     Reline::HISTORY.clear
     @encoding = Reline.core.encoding
-    @line_editor = Reline::LineEditor.new(@config, @encoding)
-    @line_editor.reset(@prompt, encoding: @encoding)
+    @line_editor = Reline::LineEditor.new(@config)
+    @line_editor.reset(@prompt)
   end
 
   def teardown
@@ -138,11 +138,25 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
     assert_line_around_cursor("か\u3099", '')
   end
 
+  def test_bracketed_paste_insert
+    set_line_around_cursor('A', 'Z')
+    input_key_by_symbol(:insert_multiline_text, char: "abc\n\C-abc")
+    assert_whole_lines(['Aabc', "\C-abcZ"])
+    assert_line_around_cursor("\C-abc", 'Z')
+  end
+
   def test_ed_quoted_insert
-    input_keys("ab\C-v\C-acd")
-    assert_line_around_cursor("ab\C-acd", '')
-    input_keys("\C-q\C-b")
-    assert_line_around_cursor("ab\C-acd\C-b", '')
+    set_line_around_cursor('A', 'Z')
+    input_key_by_symbol(:insert_raw_char, char: "\C-a")
+    assert_line_around_cursor("A\C-a", 'Z')
+  end
+
+  def test_ed_quoted_insert_with_vi_arg
+    input_keys("a\C-[3")
+    input_key_by_symbol(:insert_raw_char, char: "\C-a")
+    input_keys("b\C-[4")
+    input_key_by_symbol(:insert_raw_char, char: '1')
+    assert_line_around_cursor("a\C-a\C-a\C-ab1111", '')
   end
 
   def test_ed_kill_line
@@ -157,18 +171,18 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
   end
 
   def test_em_kill_line
-    @line_editor.input_key(Reline::Key.new(:em_kill_line, :em_kill_line, false))
+    input_key_by_symbol(:em_kill_line)
     assert_line_around_cursor('', '')
     input_keys('abc')
-    @line_editor.input_key(Reline::Key.new(:em_kill_line, :em_kill_line, false))
+    input_key_by_symbol(:em_kill_line)
     assert_line_around_cursor('', '')
     input_keys('abc')
     input_keys("\C-b", false)
-    @line_editor.input_key(Reline::Key.new(:em_kill_line, :em_kill_line, false))
+    input_key_by_symbol(:em_kill_line)
     assert_line_around_cursor('', '')
     input_keys('abc')
     input_keys("\C-a", false)
-    @line_editor.input_key(Reline::Key.new(:em_kill_line, :em_kill_line, false))
+    input_key_by_symbol(:em_kill_line)
     assert_line_around_cursor('', '')
   end
 
@@ -273,12 +287,12 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
   def test_key_delete
     input_keys('abc')
     assert_line_around_cursor('abc', '')
-    @line_editor.input_key(Reline::Key.new(:key_delete, :key_delete, false))
+    input_key_by_symbol(:key_delete)
     assert_line_around_cursor('abc', '')
   end
 
   def test_key_delete_does_not_end_editing
-    @line_editor.input_key(Reline::Key.new(:key_delete, :key_delete, false))
+    input_key_by_symbol(:key_delete)
     assert_line_around_cursor('', '')
     refute(@line_editor.finished?)
   end
@@ -287,7 +301,7 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
     input_keys('abc')
     input_keys("\C-b", false)
     assert_line_around_cursor('ab', 'c')
-    @line_editor.input_key(Reline::Key.new(:key_delete, :key_delete, false))
+    input_key_by_symbol(:key_delete)
     assert_line_around_cursor('ab', '')
   end
 
@@ -731,10 +745,10 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
     input_keys("\C-b", false)
     assert_line_around_cursor('foo', 'o')
     assert_equal(nil, @line_editor.instance_variable_get(:@menu_info))
-    @line_editor.input_key(Reline::Key.new(:em_delete_or_list, :em_delete_or_list, false))
+    input_key_by_symbol(:em_delete_or_list)
     assert_line_around_cursor('foo', '')
     assert_equal(nil, @line_editor.instance_variable_get(:@menu_info))
-    @line_editor.input_key(Reline::Key.new(:em_delete_or_list, :em_delete_or_list, false))
+    input_key_by_symbol(:em_delete_or_list)
     assert_line_around_cursor('foo', '')
     assert_equal(%w{foo_foo foo_bar foo_baz}, @line_editor.instance_variable_get(:@menu_info).list)
   end
@@ -853,28 +867,6 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
     assert_equal(%w{foo_foo foo_bar foo_baz}, @line_editor.instance_variable_get(:@menu_info).list)
   end
 
-  def test_completion_with_indent_and_completer_quote_characters
-    @line_editor.completion_proc = proc { |word|
-      %w{
-        "".foo_foo
-        "".foo_bar
-        "".foo_baz
-        "".qux
-      }.map { |i|
-        i.encode(@encoding)
-      }
-    }
-    input_keys('  "".fo')
-    assert_line_around_cursor('  "".fo', '')
-    assert_equal(nil, @line_editor.instance_variable_get(:@menu_info))
-    input_keys("\C-i", false)
-    assert_line_around_cursor('  "".foo_', '')
-    assert_equal(nil, @line_editor.instance_variable_get(:@menu_info))
-    input_keys("\C-i", false)
-    assert_line_around_cursor('  "".foo_', '')
-    assert_equal(%w{"".foo_foo "".foo_bar "".foo_baz}, @line_editor.instance_variable_get(:@menu_info).list)
-  end
-
   def test_completion_with_perfect_match
     @line_editor.completion_proc = proc { |word|
       %w{
@@ -908,10 +900,6 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
     input_keys('_')
     input_keys("\C-i", false)
     assert_line_around_cursor('foo_bar', '')
-    assert_equal(Reline::LineEditor::CompletionState::MENU_WITH_PERFECT_MATCH, @line_editor.instance_variable_get(:@completion_state))
-    assert_equal(nil, matched)
-    input_keys("\C-i", false)
-    assert_line_around_cursor('foo_bar', '')
     assert_equal(Reline::LineEditor::CompletionState::PERFECT_MATCH, @line_editor.instance_variable_get(:@completion_state))
     assert_equal(nil, matched)
     input_keys("\C-i", false)
@@ -941,6 +929,46 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
     assert_line_around_cursor('foo', '')
     input_keys("\C-i", false)
     assert_line_around_cursor('foo', '')
+  end
+
+  def test_completion_append_character
+    @line_editor.completion_proc = proc { |word|
+      %w[foo_ foo_foo foo_bar].select { |s| s.start_with? word }
+    }
+    @line_editor.completion_append_character = 'X'
+    input_keys('f')
+    input_keys("\C-i", false)
+    assert_line_around_cursor('foo_', '')
+    input_keys('f')
+    input_keys("\C-i", false)
+    assert_line_around_cursor('foo_fooX', '')
+    input_keys(' foo_bar')
+    input_keys("\C-i", false)
+    assert_line_around_cursor('foo_fooX foo_barX', '')
+  end
+
+  def test_completion_with_quote_append
+    @line_editor.completion_proc = proc { |word|
+      %w[foo bar baz].select { |s| s.start_with? word }
+    }
+    set_line_around_cursor('x = "b', '')
+    input_keys("\C-i", false)
+    assert_line_around_cursor('x = "ba', '')
+    set_line_around_cursor('x = "f', ' ')
+    input_keys("\C-i", false)
+    assert_line_around_cursor('x = "foo', ' ')
+    set_line_around_cursor("x = 'f", '')
+    input_keys("\C-i", false)
+    assert_line_around_cursor("x = 'foo'", '')
+    set_line_around_cursor('"a "f', '')
+    input_keys("\C-i", false)
+    assert_line_around_cursor('"a "foo', '')
+    set_line_around_cursor('"a\\" "f', '')
+    input_keys("\C-i", false)
+    assert_line_around_cursor('"a\\" "foo', '')
+    set_line_around_cursor('"a" "f', '')
+    input_keys("\C-i", false)
+    assert_line_around_cursor('"a" "foo"', '')
   end
 
   def test_completion_with_completion_ignore_case
@@ -974,6 +1002,9 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
     input_keys('b')
     input_keys("\C-i", false)
     assert_line_around_cursor('foo_ba', '')
+    input_keys('Z')
+    input_keys("\C-i", false)
+    assert_line_around_cursor('Foo_baz', '')
   end
 
   def test_completion_in_middle_of_line
@@ -1346,7 +1377,7 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
   def test_incremental_search_history_cancel_by_symbol_key
     # ed_prev_char should move cursor left and cancel incremental search
     input_keys("abc\C-r")
-    input_key_by_symbol(:ed_prev_char)
+    input_key_by_symbol(:ed_prev_char, csi: true)
     input_keys('d')
     assert_line_around_cursor('abd', 'c')
   end
@@ -1457,7 +1488,9 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
   end
 
   def test_ignore_NUL_by_ed_quoted_insert
-    input_keys(%Q{"\C-v\C-@"}, false)
+    input_keys('"')
+    input_key_by_symbol(:insert_raw_char, char: 0.chr)
+    input_keys('"')
     assert_line_around_cursor('""', '')
   end
 
@@ -1470,6 +1503,7 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
   end
 
   def test_halfwidth_kana_width_dakuten
+    omit "This test is for UTF-8 but the locale is #{Reline.core.encoding}" if Reline.core.encoding != Encoding::UTF_8
     input_raw_keys('ｶﾞｷﾞｹﾞｺﾞ')
     assert_line_around_cursor('ｶﾞｷﾞｹﾞｺﾞ', '')
     input_keys("\C-b\C-b", false)
@@ -1502,7 +1536,7 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
   def test_undo
     input_keys("\C-_", false)
     assert_line_around_cursor('', '')
-    input_keys("aあb\C-h\C-h\C-h", false)
+    input_keys("aあb\C-h\C-h\C-h".encode(@encoding), false)
     assert_line_around_cursor('', '')
     input_keys("\C-_", false)
     assert_line_around_cursor('a', '')
@@ -1523,7 +1557,7 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
     assert_line_around_cursor('a', 'c')
     input_keys("\C-_", false)
     assert_line_around_cursor('ab', 'c')
-    input_keys("あいう\C-b\C-h", false)
+    input_keys("あいう\C-b\C-h".encode(@encoding), false)
     assert_line_around_cursor('abあ', 'うc')
     input_keys("\C-_", false)
     assert_line_around_cursor('abあい', 'うc')
@@ -1568,7 +1602,7 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
   end
 
   def test_redo
-    input_keys("aあb", false)
+    input_keys("aあb".encode(@encoding), false)
     assert_line_around_cursor('aあb', '')
     input_keys("\M-\C-_", false)
     assert_line_around_cursor('aあb', '')
@@ -1656,6 +1690,20 @@ class Reline::KeyActor::EmacsTest < Reline::TestCase
     assert_whole_lines(["1", "3"])
     assert_line_index(1)
     assert_line_around_cursor('3', '')
+  end
+
+  def test_undo_redo_restores_indentation
+    @line_editor.multiline_on
+    @line_editor.confirm_multiline_termination_proc = proc {}
+    input_keys(" 1", false)
+    assert_whole_lines([' 1'])
+    input_keys("2", false)
+    assert_whole_lines([' 12'])
+    @line_editor.auto_indent_proc = proc { 2 }
+    input_keys("\C-_", false)
+    assert_whole_lines([' 1'])
+    input_keys("\M-\C-_", false)
+    assert_whole_lines([' 12'])
   end
 
   def test_redo_with_many_times

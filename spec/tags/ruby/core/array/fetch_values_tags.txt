@@ -1,0 +1,2 @@
+fails:Array#fetch_values with matched indexes returns the values for indexes
+fails:Array#fetch_values with unmatched indexes raises a index error if no block is provided

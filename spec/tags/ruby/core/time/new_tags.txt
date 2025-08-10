@@ -1,10 +1,13 @@
 fails:Time.new with a utc_offset argument returns a Time with a UTC offset of the specified number of Rational seconds
 fails:Time.new with a utc_offset argument raises ArgumentError if the String argument is not in an ASCII-compatible encoding
 fails:Time.new with a utc_offset argument with an argument that responds to #to_r coerces using #to_r
-fails:Time.new with a utc_offset argument raises ArgumentError if the month is greater than 12
 fails(not implemented, jruby/jruby#6161):Time.new with a timezone argument the #abbr method is used by '%Z' in #strftime
 fails(not implemented, jruby/jruby#6161):Time.new with a timezone argument Time-like argument of #utc_to_local and #local_to_utc methods has attribute values the same as a Time object in UTC
 fails(not implemented, jruby/jruby#6161):Time.new with a timezone argument #name method uses the optional #name method for marshaling
 fails(not implemented, jruby/jruby#6161):Time.new with a timezone argument #name method cannot marshal Time if #name method isn't implemented
 fails(not implemented, jruby/jruby#6161):Time.new with a timezone argument subject's class implements .find_timezone method calls .find_timezone to build a time object at loading marshaled data
 fails(only during full spec run):Time.new with a utc_offset argument raises ArgumentError if the String argument is not of the form (+|-)HH:MM
+fails:Time.new with a timezone argument returned value by #utc_to_local and #local_to_utc methods cannot have arbitrary #utc_offset if it is an instance of Time
+fails(https://github.com/jruby/jruby/issues/8736):Time.new with a timezone argument Time.new with a String argument accepts precision keyword argument and truncates specified digits of sub-second part
+fails(https://github.com/jruby/jruby/issues/8736):Time.new with a timezone argument Time.new with a String argument raises ArgumentError if date/time parts values are not valid
+fails(https://github.com/jruby/jruby/issues/8736):Time.new with a timezone argument Time.new with a String argument raises ArgumentError if utc offset parts are not valid

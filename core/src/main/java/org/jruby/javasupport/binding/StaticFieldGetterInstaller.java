@@ -2,6 +2,7 @@ package org.jruby.javasupport.binding;
 
 import org.jruby.RubyModule;
 import org.jruby.java.invokers.StaticFieldGetter;
+import org.jruby.runtime.ThreadContext;
 
 import java.lang.reflect.Field;
 
@@ -13,9 +14,9 @@ public class StaticFieldGetterInstaller extends FieldInstaller {
         super(name, STATIC_FIELD, field);
     }
 
-    @Override void install(final RubyModule proxy) {
+    @Override void install(ThreadContext context, final RubyModule proxy) {
         if (isAccessible()) {
-            proxy.getSingletonClass().addMethod(name, new StaticFieldGetter(name, proxy, field));
+            proxy.singletonClass(context).addMethod(context, name, new StaticFieldGetter(name, proxy, field));
         }
     }
 }

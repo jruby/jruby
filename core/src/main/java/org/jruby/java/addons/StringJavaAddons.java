@@ -8,7 +8,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class StringJavaAddons {
     @JRubyMethod
     public static IRubyObject to_java_bytes(ThreadContext context, IRubyObject self) {
-        return JavaArrayUtilities.ruby_string_to_bytes(self, self);
+        return JavaArrayUtilities.ruby_string_to_bytes(context, self, self);
     }
     
     @JRubyMethod(meta = true)

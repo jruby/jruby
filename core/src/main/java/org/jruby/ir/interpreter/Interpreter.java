@@ -8,8 +8,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.ir.IRManager;
-import org.jruby.ir.IRMethod;
-import org.jruby.ir.IRModuleBody;
 import org.jruby.ir.builder.IRBuilder;
 import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRScope;
@@ -24,7 +22,6 @@ import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Frame;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -32,6 +29,7 @@ import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
+import static org.jruby.api.Access.objectClass;
 import static org.jruby.runtime.Helpers.arrayOf;
 
 public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
@@ -52,16 +50,15 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
     }
 
     @Override
-    protected IRubyObject execute(Ruby runtime, IRScriptBody irScope, IRubyObject self) {
+    protected IRubyObject execute(ThreadContext context, IRScriptBody irScope, IRubyObject self) {
         InterpreterContext ic = irScope.getInterpreterContext();
 
-        if (IRRuntimeHelpers.shouldPrintIR(runtime) && IRRuntimeHelpers.shouldPrintScope(irScope)) {
+        if (IRRuntimeHelpers.shouldPrintIR(context.runtime) && IRRuntimeHelpers.shouldPrintScope(irScope)) {
             ByteArrayOutputStream baos = IRDumper.printIR(irScope, false);
 
             LOG.info("Printing simple IR for " + irScope.getId() + ":\n" + new String(baos.toByteArray()));
         }
 
-        ThreadContext context = runtime.getCurrentContext();
         String name = ROOT;
 
         if (IRRuntimeHelpers.isDebug()) LOG.info("Executing {}", ic);
@@ -74,7 +71,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         if (currModule == null) {
             // SSS FIXME: Looks like this has to do with Kernel#load
             // and the wrap parameter. Figure it out and document it here.
-            currModule = context.getRuntime().getObject();
+            currModule = objectClass(context);
         }
 
         scope.setModule(currModule);

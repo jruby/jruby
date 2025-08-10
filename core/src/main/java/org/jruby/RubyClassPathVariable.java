@@ -42,19 +42,16 @@ import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 
-/**
- * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
- */
 public class RubyClassPathVariable extends RubyObject {
-    public static void createClassPathVariable(Ruby runtime) {
-        RubyClassPathVariable self = new RubyClassPathVariable(runtime);
-        runtime.getEnumerable().extend_object(self);
-        runtime.defineReadonlyVariable("$CLASSPATH", self, GlobalVariable.Scope.GLOBAL);
-        self.getMetaClass().defineAnnotatedMethods(RubyClassPathVariable.class);
+    public static void createClassPathVariable(ThreadContext context, RubyModule Enumerable, RubyClass Object) {
+        RubyClassPathVariable self = new RubyClassPathVariable(context, Object);
+        Enumerable.extend_object(context, self);
+        context.runtime.defineReadonlyVariable("$CLASSPATH", self, GlobalVariable.Scope.GLOBAL);
+        self.getMetaClass().defineMethods(context, RubyClassPathVariable.class);
     }
 
-    private RubyClassPathVariable(Ruby runtime) {
-        super(runtime, runtime.getObject());
+    private RubyClassPathVariable(ThreadContext context, RubyClass Object) {
+        super(context.runtime, Object);
     }
     
     @Deprecated
@@ -122,15 +119,13 @@ public class RubyClassPathVariable extends RubyObject {
 
     @Override
     @JRubyMethod
-    public IRubyObject to_s() {
-        final ThreadContext context = getRuntime().getCurrentContext();
+    public IRubyObject to_s(ThreadContext context) {
         return callMethod(context, "to_a").callMethod(context, "to_s");
     }
 
     @Override
     @JRubyMethod(name = "inspect")
-    public IRubyObject inspect() {
-        final ThreadContext context = getRuntime().getCurrentContext();
+    public IRubyObject inspect(ThreadContext context) {
         return callMethod(context, "to_a").callMethod(context, "inspect");
     }
 }// RubyClassPathVariable

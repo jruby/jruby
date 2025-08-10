@@ -18,10 +18,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- *
- * @author headius
- */
 public class CodegenUtils {
     /**
      * Creates a dotted class name from a path/package name
@@ -225,6 +221,13 @@ public class CodegenUtils {
         classes[1] = cls2;
         classes[2] = cls3;
         classes[3] = cls4;
+        return classes;
+    }
+
+    public static Class[] params(Class clsFill, int times, Class clsTail) {
+        Class[] classes = new Class[times + 1];
+        Arrays.fill(classes, 0, times, clsFill);
+        classes[times] = clsTail;
         return classes;
     }
 

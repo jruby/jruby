@@ -1,4 +1,4 @@
-# -*- encoding: binary -*-
+# encoding: binary
 require_relative '../../../spec_helper'
 require_relative '../fixtures/classes'
 require_relative 'shared/basic'
@@ -93,5 +93,17 @@ describe "String#unpack with format 'u'" do
       [")P[G#NL.[P[S#\n",           ["\xc3\xb9\xc3\xba\xc3\xbb\xc3\xbc\xc3"]],
       ["%O<.^P[\\`\n",              ["\xbd\xc3\xbe\xc3\xbf"]]
     ].should be_computed_by(:unpack, "u")
+  end
+
+  it "correctly decodes inputs longer than 2^31 / 3 characters" do
+    line = "M" + ("X" * 60) + "\n"
+    count = (2**31 / 3) / line.length + 1
+    (line * count).unpack("u").first.length.should == 45 * count
+  end
+
+  it "correctly decodes inputs longer than 2^32 / 3 characters" do
+    line = "M" + ("X" * 60) + "\n"
+    count = (2**32 / 3) / line.length + 1
+    (line * count).unpack("u").first.length.should == 45 * count
   end
 end

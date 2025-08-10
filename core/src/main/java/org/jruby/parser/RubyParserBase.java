@@ -58,7 +58,6 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.OperatorCallNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.common.RubyWarnings;
 import org.jruby.ext.coverage.CoverageData;
 import org.jruby.ir.builder.StringStyle;
 import org.jruby.lexer.LexerSource;
@@ -87,9 +86,6 @@ import static org.jruby.parser.RubyParserBase.IDType.*;
 import static org.jruby.util.CommonByteLists.*;
 import static org.jruby.util.RubyStringBuilder.*;
 
-/** 
- *
- */
 public abstract class RubyParserBase {
     // Parser states:
     protected StaticScope currentScope;
@@ -113,6 +109,7 @@ public abstract class RubyParserBase {
     private Node numParamCurrent = null;
     private Node numParamInner = null;
     private Node numParamOuter = null;
+    protected static final int ORDINAL_PARAM = -1;
 
     private Ruby runtime;
 
@@ -203,28 +200,13 @@ public abstract class RubyParserBase {
     }
 
     public ArgsNode args_with_numbered(ArgsNode args, int paramCount, Node itNode) {
-        if (args.isEmpty()) {
-            if (paramCount > 0) {
-                ListNode pre = makePreNumArgs(paramCount);
-                args = new_args(lexer.getRubySourceline(), pre, null, null, null, null);
-            } else if (itNode != null) {
-                DVarNode dvar = (DVarNode) itNode;
-                Node arg = new ArgumentNode(dvar.getLine(), dvar.getName(), dvar.getDepth());
-                args = new_args(lexer.getRubySourceline(), newArrayNode(arg.getLine(), arg), null, null, null, null);
-            }
-        } else {
-            if (itNode != null) {
-                boolean hasNormalIt = false;
-                for (Node arg : args.getArgs()) {
-                    if (arg instanceof INameNode && "it".equals(((INameNode) arg).getName().idString())) {
-                        hasNormalIt = true;
-                        break;
-                    }
-                }
-
-                if (!hasNormalIt) yyerror("ordinary parameter is defined");
-            }
-            // FIXME: multiple mismatch errors need to be defined.
+        if (paramCount > 0) {
+            ListNode pre = makePreNumArgs(paramCount);
+            args = new_args(lexer.getRubySourceline(), pre, null, null, null, null);
+        } else if (itNode != null) {
+            DVarNode dvar = (DVarNode) itNode;
+            Node arg = new ArgumentNode(dvar.getLine(), dvar.getName(), dvar.getDepth());
+            args = new_args(lexer.getRubySourceline(), newArrayNode(arg.getLine(), arg), null, null, null, null);
         }
         return args;
     }
@@ -286,9 +268,6 @@ public abstract class RubyParserBase {
 
             if (currentScope.isBlockScope() && slot != -1) {
                 if (isNumParamId(id) && isNumParamNested()) return null;
-                if (name.getBytes().equals(lexer.getCurrentArg())) {
-                    compile_error(str(getRuntime(), "circular argument reference - ", name));
-                }
 
                 Node newNode = new DVarNode(node.getLine(), slot, name);
 
@@ -300,9 +279,6 @@ public abstract class RubyParserBase {
 
             StaticScope.Type type = currentScope.getType();
             if (type == StaticScope.Type.LOCAL) {
-                if (name.getBytes().equals(lexer.getCurrentArg())) {
-                    compile_error(str(getRuntime(), "circular argument reference - ", name));
-                }
 
                 Node newNode = new LocalVarNode(node.getLine(), slot, name);
 
@@ -369,6 +345,15 @@ public abstract class RubyParserBase {
         return true;
     }
 
+    private boolean isItUsed() {
+        if (it_id() != null) {
+            compile_error("'it' is already used in\n" + lexer.getFile() + ":" + it_id().getLine() + ": " +
+                    (numParamOuter != null ? "outer" : "inner") + " block here");
+            // FIXME: Show error line
+        }
+        return false;
+    }
+
     private boolean isNumParamId(String id) {
         if (id.length() != 2 || id.charAt(0) != '_') return false;
 
@@ -388,9 +373,6 @@ public abstract class RubyParserBase {
 
     public Node declareIdentifier(ByteList byteName) {
         RubySymbol name = symbolID(byteName);
-        if (byteName.equals(lexer.getCurrentArg())) {
-            compile_error(str(getRuntime(), "circular argument reference - ", name));
-        }
 
         String id = name.idString();
         boolean isNumParam = isNumParamId(id);
@@ -413,10 +395,20 @@ public abstract class RubyParserBase {
         } else if ("**".equals(id)) {
             slot = currentScope.addVariable(id);
             node = new LocalVarNode(lexer.tokline, slot, name);
-        } else if (id.equals("it") && !this.scopedParserState.hasDefinedVariables()) {
-            slot = currentScope.addVariable(id);
-            node = new DVarNode(lexer.tokline, slot, name);
-            set_it_id(node);
+        } else if (dyna_in_block() && id.equals("it")) {
+            if (!hasArguments()) {
+                int existing = currentScope.isDefined(id);
+                slot = existing == -1 ?
+                        currentScope.addVariable(id) : existing;
+                node = new DVarNode(lexer.tokline, slot, name);
+                if (existing == -1) set_it_id(node);
+            } else {
+                slot = currentScope.isDefined(id);
+                // A special it cannot exist without being marked as a special it.
+                if (it_id() == null && slot == -1) compile_error("`it` is not allowed when an ordinary parameter is defined");
+
+                node = currentScope.declare(lexer.tokline, name);
+            }
         }  else {
             node = currentScope.declare(lexer.tokline, name);
             slot = currentScope.isDefined(id); // FIXME: we should not do this extra call.
@@ -510,13 +502,6 @@ public abstract class RubyParserBase {
         if (tail == null) return head;
         if (head == null) return tail;
 
-        switch (head.getNodeType()) {
-            case BIGNUMNODE: case FIXNUMNODE: case FLOATNODE: // NODE_LIT
-            case STRNODE: case SELFNODE: case TRUENODE: case FALSENODE: case NILNODE:
-                if (!(head instanceof InvisibleNode)) warning(ID.MISCELLANEOUS, lexer.getFile(), tail.getLine(), "unused literal ignored");
-                return tail;
-        }
-
         if (!(head instanceof BlockNode)) {
             head = new BlockNode(head.getLine()).add(head);
         }
@@ -588,6 +573,39 @@ public abstract class RubyParserBase {
         return call_bin_op(firstNode, CommonByteLists.EQUAL_TILDE, secondNode);
     }
 
+    private void aryset_check(Node args) {
+        Node block = null;
+        boolean keywords = false;
+        if (args instanceof BlockPassNode bp) {
+            block = bp.getBodyNode();
+            args = bp.getArgsNode();
+        }
+
+        if (args != null && args instanceof ArgsCatNode ac) {
+            args = ac.getSecondNode();
+        }
+
+        if (args != null && args instanceof ArgsPushNode ap) {
+            keywords = ap.getSecondNode() instanceof KeywordArgNode || ap.getSecondNode() instanceof KeywordRestArgNode;
+        } else {
+            if (args instanceof ListNode list) {
+                for (int i = 0; i < list.size(); i++) {
+                    Node next = list.get(i);
+                    if (next instanceof HashNode hash && !hash.isLiteral()) {
+                        keywords = true;
+                    }
+                }
+            }
+        }
+
+        if (keywords) {
+            yyerror("keyword arg given in index");
+        }
+        if (block != null) {
+            yyerror("block arg given in index");
+        }
+    }
+
     /**
      * Define an array set condition so we can return lhs
      * 
@@ -597,6 +615,7 @@ public abstract class RubyParserBase {
      */
     public Node aryset(Node receiver, Node index) {
         value_expr(receiver);
+        aryset_check(index);
 
         return new_attrassign(receiver.getLine(), receiver, CommonByteLists.ASET_METHOD, index, false);
     }
@@ -618,7 +637,7 @@ public abstract class RubyParserBase {
 
     public void backref_error(Node node) {
         String varName = "$" + (node instanceof NthRefNode ?
-                ((NthRefNode) node).getMatchNumber() : ((BackRefNode) node).getType());
+                ((NthRefNode) node).getMatchNumber() : ""+((BackRefNode) node).getType());
         lexer.compile_error("Can't set variable " + varName + '.');
     }
 
@@ -846,7 +865,7 @@ public abstract class RubyParserBase {
                 int slot = currentScope.isDefined(id2);
 
                 if (currentScope.isBlockScope() && slot != -1) {
-                    if (isNumParamId(id2) && isNumParamNested()) return null;
+                    if (isNumParamId(id2) && (isNumParamNested() || isItUsed())) return null;
                     if (name.getBytes().equals(lexer.getCurrentArg())) {
                         compile_error(str(getRuntime(), "circular argument reference - ", name));
                     }
@@ -873,16 +892,16 @@ public abstract class RubyParserBase {
 
                     return newNode;
                 }
-                if (type == StaticScope.Type.BLOCK && isNumParamId(id2) && numberedParam(id2)) {
-                    if (isNumParamNested()) return null;
+                if (dyna_in_block() && isNumParamId(id2) && numberedParam(id2)) {
+                    if (isNumParamNested() || isItUsed()) return null;
 
                     Node newNode = new DVarNode(loc, slot, name);
                     if (numParamCurrent == null) numParamCurrent = newNode;
                     return newNode;
                 }
-                if (type == StaticScope.Type.BLOCK && id.equals("it") && !this.scopedParserState.hasDefinedVariables()) {
+                if (dyna_in_block() && id.equals("it") && !hasArguments()) {
                     if (hasNumParam()) return null;
-                    if (maxNumParam == -1) {
+                    if (maxNumParam == ORDINAL_PARAM) {
                         compile_error("ordinary parameter is defined");
                         return null;
                     }
@@ -931,7 +950,7 @@ public abstract class RubyParserBase {
         if (node instanceof MultipleAsgnNode || node instanceof LocalAsgnNode || node instanceof DAsgnNode || node instanceof GlobalAsgnNode || node instanceof InstAsgnNode) {
             Node valueNode = ((AssignableNode) node).getValueNode();
             if (isStaticContent(valueNode)) {
-                warning(ID.ASSIGNMENT_IN_CONDITIONAL, lexer.getFile(), valueNode.getLine(), "found `= literal' in conditional, should be ==");
+                warning(ID.ASSIGNMENT_IN_CONDITIONAL, lexer.getFile(), valueNode.getLine(), "found '= literal' in conditional, should be ==");
             }
             return true;
         } 
@@ -1604,7 +1623,7 @@ public abstract class RubyParserBase {
             if (encounteredKeys.containsKey(key)) {
                 Ruby runtime = getRuntime();
                 IRubyObject value = ((LiteralValue) key).literalValue(runtime);
-                warning(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), hash.getLine(), str(runtime, "key ", value.inspect(),
+                warning(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), hash.getLine(), str(runtime, "key ", value.inspect(runtime.getCurrentContext()),
                         " is duplicated and overwritten on line " + (key.getLine() + 1)));
             }
             // even if the key was previously seen, we replace the value to properly remove multiple duplicates
@@ -1721,7 +1740,7 @@ public abstract class RubyParserBase {
     }
 
     public enum IDType {
-        Local, Global, Instance, AttrSet, Constant, Class;
+        Local, Global, Instance, AttrSet, Constant, Class, Error;
     }
 
     public static IDType id_type(ByteList identifier) {
@@ -1736,10 +1755,16 @@ public abstract class RubyParserBase {
                 return Global;
         }
 
-        byte last = (byte) identifier.get(identifier.length() - 1);
+        int length = identifier.length();
+        byte last = (byte) identifier.get(length - 1);
         if (last == '=') {
+            if (length > 1 && identifier.charAt(length - 2) == '=') {
+                return Local;
+            }
             return AttrSet;
         }
+
+        if (last == '!' || last == '?') return Error;
 
         return Local;
     }
@@ -1960,12 +1985,16 @@ public abstract class RubyParserBase {
         LexContext ctxt = getLexContext();
         ctxt.in_class = name != null;
         if (!ctxt.in_class) {
+            ctxt.cant_return = !ctxt.in_def;
             ctxt.in_def = false;
         } else if (ctxt.in_def) {
             yyerror((name != null ? (name + " ") : "") + "definition in method body");
+        } else {
+            ctxt.cant_return = true;
         }
         pushLocalScope();
     }
+
     public Set<ByteList> push_pvtbl() {
         Set<ByteList> currentTable = variableTable;
 
@@ -2056,10 +2085,6 @@ public abstract class RubyParserBase {
         }
 
         return new HashPatternNode(line, restArg, keywordArgs == null ? new HashNode(line) : keywordArgs);
-    }
-
-    public void warn_experimental(int line, String message) {
-        ((RubyWarnings) getWarnings()).warnExperimental(lexer.getFile(), line, message);
     }
 
     public Node rescued_expr(int line, Node arg, Node rescue) {
@@ -2345,10 +2370,8 @@ public abstract class RubyParserBase {
     }
 
     public boolean isCoverageEnabled() {
-        CoverageData coverage = getRuntime().getCoverageData();
-        if (!coverage.isCoverageEnabled()) return false;
-
-        return !isEval() || coverage.isEvalCovered();
+        Ruby runtime = this.runtime;
+        return runtime.isCoverageEnabled() && !isEval() || runtime.getCoverageData().isEvalCovered();
     }
 
     /**
@@ -2461,5 +2484,13 @@ public abstract class RubyParserBase {
 
     protected void WARN_EOL(String name) {
         // FIXME: IMpl
+    }
+
+    protected boolean dyna_in_block() {
+        return currentScope.isBlockScope() && currentScope.getType() != StaticScope.Type.EVAL;
+    }
+
+    private boolean hasArguments() {
+        return !currentScope.getSignature().isNoArguments();
     }
 }

@@ -45,6 +45,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
+import static org.jruby.api.Access.instanceConfig;
+
 public class RubyRunnable implements ThreadedRunnable {
 
     private static final Logger LOG = LoggerFactory.getLogger(RubyRunnable.class);
@@ -98,7 +100,7 @@ public class RubyRunnable implements ThreadedRunnable {
             javaThread.setContextClassLoader(runtime.getJRubyClassLoader());
         } catch (SecurityException se) {
             // can't set TC classloader
-            if (!warnedAboutTC && runtime.getInstanceConfig().isVerbose()) {
+            if (!warnedAboutTC && instanceConfig(context).isVerbose()) {
                 warnedAboutTC = true;
                 LOG.info("WARNING: Security restrictions disallowed setting context classloader for Ruby threads.");
             }
@@ -135,14 +137,14 @@ public class RubyRunnable implements ThreadedRunnable {
                     javaThread.setContextClassLoader(oldContextClassLoader);
                 } catch (SecurityException se) {
                     // can't set TC classloader
-                    if (!warnedAboutTC && runtime.getInstanceConfig().isVerbose()) {
+                    if (!warnedAboutTC && instanceConfig(context).isVerbose()) {
                         warnedAboutTC = true;
                         LOG.info("WARNING: Security restrictions disallowed setting context classloader for Ruby threads.");
                     }
                 }
 
                 // dump profile, if any
-                if (runtime.getInstanceConfig().isProfilingEntireRun()) {
+                if (instanceConfig(context).isProfilingEntireRun()) {
                     runtime.printProfileData(context.getProfileCollection());
                 }
             }

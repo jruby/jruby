@@ -30,12 +30,10 @@
 package org.jruby.test;
 
 import org.jcodings.specific.UTF8Encoding;
-import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.util.ByteList;
 
 import static org.jruby.api.Create.newString;
@@ -48,26 +46,17 @@ public class TestRubyString extends Base {
         super(name);
     }
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
-        if (runtime == null) {
-        	runtime = Ruby.newInstance();
-        }
-    }
-
     /**
      * JRUBY-5646: RubyString.newUnicodeString in 1.9 mode produces ASCII-8BIT
      */
     public void testNewUnicodeString() throws Exception {
-        RubyString str = RubyString.newUnicodeString(runtime, "hello");
+        RubyString str = RubyString.newUnicodeString(context.runtime, "hello");
         assertEquals(UTF8Encoding.INSTANCE, str.getByteList().getEncoding());
     }
 
     public void testSplit() throws RaiseException {
-        ThreadContext context = runtime.getCurrentContext();
         RubyString str = newString(context, "JRuby is so awesome!");
-        RubyArray res = str.split(newString(context, " "));
+        RubyArray res = str.split(context, newString(context, " "), 0);
         assertEquals(4, res.size());
         assertEquals("JRuby", res.get(0));
         res = str.split(newString(context, " "), 2);
@@ -75,13 +64,13 @@ public class TestRubyString extends Base {
         assertEquals("JRuby", res.get(0));
         assertEquals("is so awesome!", res.get(1));
 
-        RubyRegexp pat = RubyRegexp.newRegexp(runtime, ByteList.create("[ie]s"));
-        res = str.split(pat);
+        RubyRegexp pat = RubyRegexp.newRegexp(context.runtime, ByteList.create("[ie]s"));
+        res = str.split(context, pat, 0);
         assertEquals(3, res.size());
         assertEquals("JRuby ", res.get(0));
         assertEquals(" so aw", res.get(1));
         assertEquals("ome!", res.get(2));
-        res = str.split(pat, 4);
+        res = str.split(context, pat, 4);
         assertEquals(3, res.size());
     }
 }

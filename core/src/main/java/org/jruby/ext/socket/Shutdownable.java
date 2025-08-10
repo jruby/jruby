@@ -30,10 +30,7 @@ package org.jruby.ext.socket;
 
 import java.io.IOException;
 
-/**
- * @author <a href="mailto:hongli@phusion.nl">Hongli Lai</a>
- */
 public interface Shutdownable {
-    public void shutdownInput() throws IOException;
-    public void shutdownOutput() throws IOException;
+    void shutdownInput() throws IOException;
+    void shutdownOutput() throws IOException;
 }

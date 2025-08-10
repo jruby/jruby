@@ -28,7 +28,7 @@ end
 
 properties( 'tesla.dump.pom' => 'pom.xml',
             'tesla.dump.readonly' => true,
-            'jruby.plugins.version' => '3.0.2',
+            'jruby.plugins.version' => '3.0.6',
             # we share the already installed gems
             'gem.home' => '${jruby_home}/lib/ruby/gems/shared',
             # need jruby_home but not jruby.home as name otherwise
@@ -55,7 +55,7 @@ jruby_plugin!( :gem,
                :gemspec => 'jruby-jars.gemspec',
                # tell maven to include the jar files into gem
                :includeDependencies => true,
-               :jrubyVersion => '9.3.0.0') do
+               :jrubyVersion => version) do
   execute_goals :id => 'default-push', :skip => true
 end
 

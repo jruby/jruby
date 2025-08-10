@@ -36,7 +36,6 @@ import java.util.List;
 
 import org.jruby.*;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.api.Convert;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.java.proxies.ConcreteJavaProxy;
@@ -49,10 +48,14 @@ import org.jruby.runtime.load.BasicLibraryService;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.ClasspathLauncher;
 
-import static org.jruby.api.Convert.asBoolean;
-import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Access.instanceConfig;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Warn.warn;
+import static org.jruby.api.Warn.warnDeprecated;
+import static org.jruby.api.Warn.warningDeprecated;
 import static org.jruby.util.URLUtil.getPath;
 
 /**
@@ -64,12 +67,13 @@ import static org.jruby.util.URLUtil.getPath;
 public class JRubyUtilLibrary implements Library {
 
     public void load(Ruby runtime, boolean wrap) {
-        RubyModule JRuby = runtime.getOrCreateModule("JRuby");
-        RubyModule JRubyUtil = JRuby.defineModuleUnder("Util");
-        JRubyUtil.defineAnnotatedMethods(JRubyUtilLibrary.class);
-        JRubyUtil.setConstant("SEPARATOR", runtime.newString(org.jruby.util.cli.ArgumentProcessor.SEPARATOR));
-        JRubyUtil.setConstant("ON_WINDOWS", runtime.newBoolean(org.jruby.platform.Platform.IS_WINDOWS));
-        JRubyUtil.setConstant("ON_SOLARIS", runtime.newBoolean(org.jruby.platform.Platform.IS_SOLARIS));
+        var context = runtime.getCurrentContext();
+        RubyModule JRuby = defineModule(context, "JRuby");
+        JRuby.defineModuleUnder(context, "Util").
+                defineMethods(context, JRubyUtilLibrary.class).
+                defineConstant(context, "SEPARATOR", newString(context, org.jruby.util.cli.ArgumentProcessor.SEPARATOR)).
+                defineConstant(context, "ON_WINDOWS", asBoolean(context, org.jruby.platform.Platform.IS_WINDOWS)).
+                defineConstant(context, "ON_SOLARIS", asBoolean(context, org.jruby.platform.Platform.IS_SOLARIS));
     }
 
     @JRubyMethod(module = true)
@@ -83,20 +87,24 @@ public class JRubyUtilLibrary implements Library {
         return asBoolean(context, context.runtime.isObjectSpaceEnabled());
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4-")
     public static IRubyObject getObjectSpaceEnabled(IRubyObject recv) {
-        return getObjectSpaceEnabled(recv.getRuntime().getCurrentContext(), recv);
+        return getObjectSpaceEnabled(((RubyBasicObject) recv).getCurrentContext(), recv);
+    }
+
+    @Deprecated(since = "10.0")
+    public static IRubyObject setObjectSpaceEnabled(IRubyObject recv, IRubyObject arg) {
+        return setObjectSpaceEnabled(((RubyBasicObject) recv).getCurrentContext(), recv, arg);
     }
 
     @JRubyMethod(name = { "objectspace=", "object_space=" }, module = true)
-    public static IRubyObject setObjectSpaceEnabled(IRubyObject recv, IRubyObject arg) {
-        final Ruby runtime = recv.getRuntime();
+    public static IRubyObject setObjectSpaceEnabled(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         boolean enabled = arg.isTrue();
         if (enabled) {
-            runtime.getWarnings().warn("ObjectSpace impacts performance. See https://github.com/jruby/jruby/wiki/PerformanceTuning#dont-enable-objectspace");
+            warn(context, "ObjectSpace impacts performance. See https://github.com/jruby/jruby/wiki/PerformanceTuning#dont-enable-objectspace");
         }
-        runtime.setObjectSpaceEnabled(enabled);
-        return runtime.newBoolean(enabled);
+        context.runtime.setObjectSpaceEnabled(enabled);
+        return enabled ? context.tru : context.fals;
     }
 
     @JRubyMethod(meta = true, name = "native_posix?")
@@ -106,7 +114,7 @@ public class JRubyUtilLibrary implements Library {
 
     @Deprecated
     public static IRubyObject getClassLoaderResources(IRubyObject recv, IRubyObject name) {
-        return class_loader_resources(recv.getRuntime().getCurrentContext(), recv, name);
+        return class_loader_resources(((RubyBasicObject) recv).getCurrentContext(), recv, name);
     }
 
     /**
@@ -118,7 +126,7 @@ public class JRubyUtilLibrary implements Library {
      */
     @JRubyMethod(meta = true)
     public static IRubyObject load_java_class(ThreadContext context, IRubyObject recv, IRubyObject name) {
-        Class<?> klass = Java.getJavaClass(context.runtime, name.convertToString().asJavaString());
+        Class<?> klass = Java.getJavaClass(context, name.convertToString().asJavaString());
         return Java.getInstance(context.runtime, klass);
     }
 
@@ -163,18 +171,21 @@ public class JRubyUtilLibrary implements Library {
 
     @JRubyMethod(meta = true) // for RubyGems' JRuby defaults
     public static IRubyObject classpath_launcher(ThreadContext context, IRubyObject recv) {
-        String launcher = context.runtime.getInstanceConfig().getEnvironment().get("RUBY");
-        if ( launcher == null ) launcher = ClasspathLauncher.jrubyCommand(context.runtime);
+        String launcher = instanceConfig(context).getEnvironment().get("RUBY");
+        if (launcher == null) launcher = ClasspathLauncher.jrubyCommand(context.runtime);
+
         return newString(context, launcher);
     }
 
     @JRubyMethod(name = "extra_gem_paths", meta = true) // used from RGs' JRuby defaults
     public static IRubyObject extra_gem_paths(ThreadContext context, IRubyObject recv) {
-        final List<String> extraGemPaths = context.runtime.getInstanceConfig().getExtraGemPaths();
+        final List<String> extraGemPaths = instanceConfig(context).getExtraGemPaths();
         IRubyObject[] extra_gem_paths = new IRubyObject[extraGemPaths.size()];
+
         int i = 0; for (String gemPath : extraGemPaths) {
             extra_gem_paths[i++] = newString(context, gemPath);
         }
+
         return RubyArray.newArrayNoCopy(context.runtime, extra_gem_paths);
     }
 
@@ -187,9 +198,7 @@ public class JRubyUtilLibrary implements Library {
     public static IRubyObject set_last_exit_status(ThreadContext context, IRubyObject recv,
                                                    IRubyObject status, IRubyObject pid) {
         RubyProcess.RubyStatus processStatus = RubyProcess.RubyStatus.newProcessStatus(context.runtime,
-                status.convertToInteger().getLongValue(),
-                pid.convertToInteger().getLongValue()
-        );
+                toLong(context, status), toLong(context, pid));
         context.setLastExitStatus(processStatus);
         return processStatus;
     }
@@ -216,17 +225,18 @@ public class JRubyUtilLibrary implements Library {
         if (klass instanceof RubySymbol) {
             return switch (klass.asJavaString()) {
                 case "string" -> {
-                    CoreExt.loadStringExtensions(context.runtime);
+                    CoreExt.loadStringExtensions(context);
                     yield context.tru;
                 }
                 default -> throw argumentError(context, ':' + klass.asJavaString());
             };
         }
-        return loadExtension(context.runtime, klass.convertToString().toString()) ? context.tru : context.fals;
+        return loadExtension(context, klass.convertToString().toString()) ? context.tru : context.fals;
     }
 
-    private static boolean loadExtension(final Ruby runtime, final String className) {
-        Class<?> clazz = Java.getJavaClass(runtime, className);
+    private static boolean loadExtension(ThreadContext context, final String className) {
+        var runtime = context.runtime;
+        Class<?> clazz = Java.getJavaClass(context, className);
         // 1. BasicLibraryService interface
         if (BasicLibraryService.class.isAssignableFrom(clazz)) {
             try {
@@ -322,7 +332,7 @@ public class JRubyUtilLibrary implements Library {
     public static IRubyObject wait(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject timeoutMillis) throws InterruptedException {
         Object obj = getSyncObject(arg);
 
-        obj.wait(timeoutMillis.convertToInteger().getLongValue());
+        obj.wait(toLong(context, timeoutMillis));
 
         return arg;
     }
@@ -342,11 +352,7 @@ public class JRubyUtilLibrary implements Library {
      */
     @JRubyMethod(module = true)
     public static IRubyObject wait(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject timeoutMillis, IRubyObject timeoutNanos) throws InterruptedException {
-        Object obj = getSyncObject(arg);
-
-        obj.wait(
-                timeoutMillis.convertToInteger().getLongValue(),
-                timeoutNanos.convertToInteger().getIntValue());
+        getSyncObject(arg).wait(toLong(context, timeoutMillis), toInt(context, timeoutNanos));
 
         return arg;
     }
@@ -411,11 +417,10 @@ public class JRubyUtilLibrary implements Library {
      */
     @JRubyMethod(name = "cache_stats", module = true)
     public static IRubyObject cache_stats(ThreadContext context, IRubyObject self) {
-        RubyHash stat = RubyHash.newHash(context.runtime);
         var caches = context.runtime.getCaches();
-        stat.op_aset(context, Convert.asSymbol(context, "method_invalidation_count"), asFixnum(context, caches.getMethodInvalidationCount()));
-        stat.op_aset(context, Convert.asSymbol(context, "constant_invalidation_count"), asFixnum(context, caches.getConstantInvalidationCount()));
-
+        var stat = newHash(context);
+        stat.op_aset(context, asSymbol(context, "method_invalidation_count"), asFixnum(context, caches.getMethodInvalidationCount()));
+        stat.op_aset(context, asSymbol(context, "constant_invalidation_count"), asFixnum(context, caches.getConstantInvalidationCount()));
         return stat;
     }
 
@@ -423,12 +428,20 @@ public class JRubyUtilLibrary implements Library {
      * Return a list of files and extensions that JRuby treats as internal (or "built-in"),
      * skipping load path and filesystem search.
      *
-     * This was added for Bootsnap in https://github.com/Shopify/bootsnap/issues/162
+     * This was added for <a href="https://github.com/Shopify/bootsnap/issues/162">Bootsnap</a>
      */
     @JRubyMethod(module = true)
-    @Deprecated(since = "9.4-", forRemoval = true)
+    @Deprecated(since = "9.4-")
     public static RubyArray internal_libraries(ThreadContext context, IRubyObject self) {
-        context.runtime.getWarnings().warn("JRuby::Util.internal_libraries is deprecated");
+        warnDeprecated(context, "JRuby::Util.internal_libraries is deprecated");
         return newEmptyArray(context);
+    }
+
+    /**
+     * @see ThreadContext#safeRecurse(ThreadContext.RecursiveFunctionEx, Object, IRubyObject, String, boolean)
+     */
+    @JRubyMethod(module = true)
+    public static IRubyObject safe_recurse(ThreadContext context, IRubyObject utilModule, IRubyObject state, IRubyObject obj, IRubyObject name, Block block) {
+        return context.safeRecurse(block, state, obj, name.convertToString().toString(), false);
     }
 }

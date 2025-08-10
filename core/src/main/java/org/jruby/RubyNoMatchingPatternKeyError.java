@@ -37,9 +37,10 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Define.defineClass;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.runtime.Visibility.PRIVATE;
-import static org.jruby.runtime.Visibility.PUBLIC;
 
 /**
  * The Java representation of a Ruby ArgumentError.
@@ -59,12 +60,9 @@ public class RubyNoMatchingPatternKeyError extends RubyStandardError {
         super(runtime, exceptionClass, message);
     }
 
-    static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass clazz = runtime.defineClass("NoMatchingPatternKeyError", exceptionClass, RubyNoMatchingPatternKeyError::new);
-
-        clazz.defineAnnotatedMethods(RubyNoMatchingPatternKeyError.class);
-
-        return clazz;
+    static RubyClass define(ThreadContext context, RubyClass StandardError) {
+        return defineClass(context, "NoMatchingPatternKeyError", StandardError, RubyNoMatchingPatternKeyError::new).
+                defineMethods(context, RubyNoMatchingPatternKeyError.class);
     }
 
     @Override
@@ -97,12 +95,12 @@ public class RubyNoMatchingPatternKeyError extends RubyStandardError {
                 }
                 break;
             case 2:
-                if ((callInfo & ThreadContext.CALL_KEYWORD) == 0) throw getRuntime().newArgumentError(2, 0, 1);
+                if ((callInfo & ThreadContext.CALL_KEYWORD) == 0) throw argumentError(context, 2, 0, 1);
                 IRubyObject[] opts = ArgsUtil.extractKeywordArgs(context, ((RubyHash) args[1]), INITIALIZE_KEYWORDS);
                 setValues(context, args[0], opts[0], opts[1]);
                 break;
             default:
-                throw getRuntime().newArgumentError(args.length, 0, 1);
+                throw argumentError(context, args.length, 0, 1);
         }
 
         return context.nil;

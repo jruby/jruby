@@ -6,10 +6,6 @@ package org.jruby.ast.java_signature;
 
 import java.util.List;
 
-/**
- *
- * @author enebo
- */
 public class ArrayAnnotationExpression implements AnnotationExpression {
     private final List<AnnotationExpression> expressions;
     

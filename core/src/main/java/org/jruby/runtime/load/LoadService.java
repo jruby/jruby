@@ -59,25 +59,25 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.RubyThread;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.api.Convert;
-import org.jruby.exceptions.CatchThrow;
 import org.jruby.exceptions.JumpException;
-import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.platform.Platform;
-import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
-import org.jruby.util.StringSupport;
 import org.jruby.util.collections.StringArraySet;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
+import static org.jruby.api.Access.loadService;
+import static org.jruby.api.Access.objectClass;
+import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Warn.warn;
+import static org.jruby.runtime.Helpers.throwException;
 import static org.jruby.util.URLUtil.getPath;
 
 /**
@@ -209,7 +209,7 @@ public class LoadService {
     public void init(List<String> prependDirectories) {
         var context = runtime.getCurrentContext();
         loadPath = newArray(context);
-        loadPath.getMetaClass().defineAnnotatedMethods(LoadPathMethods.class);
+        loadPath.getMetaClass().defineMethods(context, LoadPathMethods.class);
 
         String jrubyHome = runtime.getJRubyHome();
 
@@ -221,7 +221,7 @@ public class LoadService {
         addPaths(prependDirectories);
 
         // add $RUBYLIB paths
-        RubyHash env = (RubyHash) runtime.getObject().getConstant("ENV");
+        RubyHash env = (RubyHash) objectClass(context).getConstant(context, "ENV");
         RubyString env_rubylib = newString(context, "RUBYLIB");
 
         if (env.has_key_p(context, env_rubylib).isTrue()) {
@@ -301,30 +301,22 @@ public class LoadService {
     public static class LoadPathMethods {
         @JRubyMethod
         public static IRubyObject resolve_feature_path(ThreadContext context, IRubyObject self, IRubyObject pathArg) {
-            RubyString path = StringSupport.checkEmbeddedNulls(context.runtime, RubyFile.get_path(context, pathArg));
-            String file = path.toString();
+            RubyString path = RubyFile.get_path(context, pathArg);
             LibrarySearcher.FoundLibrary[] libraryHolder = {null};
-            char extension = context.runtime.getLoadService().searchForRequire(file, libraryHolder);
+            char extension = loadService(context).searchForRequire(path.toString(), libraryHolder);
 
             if (extension == 0) return context.nil;
 
-            RubySymbol ext;
-            switch (extension) {
-                case 'r':
-                    ext = Convert.asSymbol(context, "rb");
-                    break;
-                case 's':
-                    ext = Convert.asSymbol(context, "so"); // FIXME: should this be so or jar?
-                    break;
-                default:
-                    ext = Convert.asSymbol(context, "unknown");
-                    break;
-            }
+            RubySymbol ext = switch (extension) {
+                case 'r' -> asSymbol(context, "rb");
+                case 's' -> asSymbol(context, "so"); // FIXME: should this be so or jar?
+                default -> asSymbol(context, "unknown");
+            };
 
             RubyString name;
             if (libraryHolder[0] == null) {
                 // FIXME: Our builtin libraries are returning 'r' is ext but has no loader.
-                ext = Convert.asSymbol(context, "so"); // FIXME: should this be so or jar?
+                ext = asSymbol(context, "so"); // FIXME: should this be so or jar?
                 name = path;
             } else {
                 name = newString(context, libraryHolder[0].getLoadName());
@@ -363,7 +355,7 @@ public class LoadService {
         int currentLine = runtime.getCurrentLine();
         try {
             if(!runtime.getProfile().allowLoad(file)) {
-                throw runtime.newLoadError("no such file to load -- " + file, file);
+                throw loadFailed(runtime, file);
             }
 
             LibrarySearcher.FoundLibrary library = librarySearcher.findLibraryForLoad(file);
@@ -372,16 +364,15 @@ public class LoadService {
             if (library == null) {
                 FileResource fileResource = JRubyFile.createResourceAsFile(runtime, file);
 
-                if (!fileResource.exists()) throw runtime.newLoadError("no such file to load -- " + file, file);
+                if (!fileResource.exists()) throw loadFailed(runtime, file);
 
                 library = new LibrarySearcher.FoundLibrary(file, file, LibrarySearcher.ResourceLibrary.create(file, file, fileResource));
             }
 
             try {
                 library.load(runtime, wrap);
-            } catch (IOException e) {
-                debugLoadException(runtime, e);
-                throw newLoadErrorFromThrowable(runtime, file, e);
+            } catch (IOException ex) {
+                throw runtime.newIOErrorFromException(ex);
             }
         } finally {
             runtime.setCurrentLine(currentLine);
@@ -399,7 +390,7 @@ public class LoadService {
 
             LoadServiceResource resource = getClassPathResource(classLoader, file);
 
-            if (resource == null) throw runtime.newLoadError("no such file to load -- " + file);
+            if (resource == null) throw loadFailed(runtime, file);
 
             String loadName = resolveLoadName(resource, file);
             LibrarySearcher.FoundLibrary library =
@@ -408,8 +399,7 @@ public class LoadService {
             try {
                 library.load(runtime, wrap);
             } catch (IOException e) {
-                debugLoadException(runtime, e);
-                throw newLoadErrorFromThrowable(runtime, file, e);
+                throw runtime.newIOErrorFromException(e);
             }
         } finally {
             runtime.setCurrentLine(currentLine);
@@ -462,51 +452,59 @@ public class LoadService {
             ThreadContext currentContext = runtime.getCurrentContext();
             RubyThread thread = currentContext.getThread();
 
-            RequireLock lock = pool.get(path);
-
-            // Check if lock is already there
-            if (lock == null) {
-                RequireLock newLock = new RequireLock();
-
-                // If lock is new, lock and return LOCKED
-                lock = pool.computeIfAbsent(path, (name) -> {
-                    thread.lock(newLock);
-                    return newLock;
-                });
-
-                if (lock == newLock) {
-                    // Lock is ours, run ifLocked and then clean up
-                    return executeAndClearLock(path, ifLocked, thread, lock);
-                }
-            }
-
-            if (lock.isHeldByCurrentThread()) {
-                // we hold the lock, which means we're re-locking for the same file; warn about this
-                if (circularRequireWarning && runtime.isVerbose()) {
-                    warnCircularRequire(path);
-                }
-
-                return null;
-            }
-
-            // Other thread holds the lock, wait to acquire
+            // loop until require fails for us or succeeds for another thread
             while (true) {
-                try {
-                    thread.lockInterruptibly(lock);
-                    break;
-                } catch (InterruptedException ie) {
-                    currentContext.pollThreadEvents();
+                RequireLock lock = pool.get(path);
+
+                // Check if lock is already there
+                if (lock == null) {
+                    RequireLock newLock = new RequireLock();
+
+                    // If lock is new, lock and return LOCKED
+                    lock = pool.computeIfAbsent(path, (name) -> {
+                        thread.lock(newLock);
+                        return newLock;
+                    });
+
+                    RequireState state = null;
+                    if (lock == newLock) {
+                        // Lock is ours, run ifLocked and then clean up
+                        try {
+                            return state = executeAndClearLock(path, ifLocked, thread, lock);
+                        } finally {
+                            // failed load, remove our lock and let other threads fight it out
+                            if (state == null) pool.remove(path);
+                        }
+                    }
                 }
-            }
 
-            // Lock has been acquired, confirm other thread has completed and return default
-            if (lock.destroyed) {
+                if (lock.isHeldByCurrentThread()) {
+                    // we hold the lock, which means we're re-locking for the same file; warn about this
+                    if (circularRequireWarning && runtime.isVerbose()) {
+                        warnCircularRequire(path);
+                    }
+
+                    return null;
+                }
+
+                // Other thread holds the lock, wait to acquire
+                while (true) {
+                    try {
+                        thread.lockInterruptibly(lock);
+                        break;
+                    } catch (InterruptedException ie) {
+                        currentContext.pollThreadEvents();
+                    }
+                }
+
+                // Lock has been acquired, confirm other thread has completed and return default
                 thread.unlock(lock);
-                return defaultResult;
-            }
+                if (lock.destroyed) {
+                    return defaultResult;
+                }
 
-            // Other thread failed to load, try on this thread instead
-            return executeAndClearLock(path, ifLocked, thread, lock);
+                // Other thread failed to load, try again to lock and load
+            }
         }
 
         private RequireState executeAndClearLock(String path, Function<String, RequireState> ifLocked, RubyThread thread, RequireLock lock) {
@@ -531,24 +529,26 @@ public class LoadService {
     }
 
     protected void warnCircularRequire(String requireName) {
+        var context = runtime.getCurrentContext();
         StringBuilder sb = new StringBuilder("loading in progress, circular require considered harmful - " + requireName);
+        sb.append("\n");
 
-        runtime.getCurrentContext().renderCurrentBacktrace(sb);
-        runtime.getWarnings().warn(sb.toString());
+        context.renderCurrentBacktrace(sb);
+        warn(context, sb.toString());
     }
 
     private RequireState smartLoadInternal(String file, boolean circularRequireWarning) {
         checkEmptyLoad(file);
 
         if (!runtime.getProfile().allowRequire(file)) {
-            throw runtime.newLoadError("no such file to load -- " + file, file);
+            throw loadFailed(runtime, file);
         }
 
         LibrarySearcher.FoundLibrary[] libraryHolder = {null};
         char found = searchForRequire(file, libraryHolder);
 
         if (found == 0) {
-            throw runtime.newLoadError("no such file to load -- " + file, file);
+            throw loadFailed(runtime, file);
         }
 
         LibrarySearcher.FoundLibrary library = libraryHolder[0];
@@ -672,42 +672,27 @@ public class LoadService {
             library.load(runtime, false);
             return true;
         }
-        catch (MainExitException ex) {
-            // allow MainExitException to propagate out for exec and friends
-            throw ex;
-        }
         catch (RaiseException ex) {
-            if ( ex instanceof Unrescuable ) Helpers.throwException(ex);
-            if ( isJarfileLibrary(library, searchFile) ) return true;
-            throw ex;
+            if ( ex instanceof Unrescuable || !isJarfileLibrary(library, searchFile) ) throw ex;
+
+            return true;
         }
         catch (JumpException ex) {
             throw ex;
         }
-        catch (CatchThrow ex) {
-            throw ex;
+        catch (IOException ex) {
+            throw runtime.newIOErrorFromException(ex);
         }
         catch (Throwable ex) {
-            if ( ex instanceof Unrescuable ) Helpers.throwException(ex);
-            if ( isJarfileLibrary(library, searchFile) ) return true;
+            if ( ex instanceof Unrescuable || !isJarfileLibrary(library, searchFile) ) throwException(ex);
 
-            debugLoadException(runtime, ex);
-
-            RaiseException re = newLoadErrorFromThrowable(runtime, searchFile, ex);
-            re.initCause(ex);
-            throw re;
+            return true;
         }
-    }
-
-    private static RaiseException newLoadErrorFromThrowable(Ruby runtime, String file, Throwable t) {
-        if (RubyInstanceConfig.DEBUG_PARSER || RubyInstanceConfig.IR_READING_DEBUG) t.printStackTrace();
-
-        return runtime.newLoadError(String.format("load error: %s -- %s: %s", file, t.getClass().getName(), t.getMessage()), file);
     }
 
     protected void checkEmptyLoad(String file) throws RaiseException {
         if (file.isEmpty()) {
-            throw runtime.newLoadError("no such file to load -- " + file, file);
+            throw loadFailed(runtime, file);
         }
     }
 
@@ -785,6 +770,11 @@ public class LoadService {
         } else {
             return new ExternalScript(resource, location);
         }
+    }
+
+    // MRI: load_failed
+    static RaiseException loadFailed(Ruby runtime, String name) {
+        return runtime.newLoadError("cannot load such file -- " + name, name);
     }
 
     protected String getLoadPathEntry(IRubyObject entry) {
@@ -995,5 +985,10 @@ public class LoadService {
         }
 
         return filename;
+    }
+
+    public void tearDown() {
+        loadedFeatures.clear();
+        librarySearcher.tearDown();
     }
 }

@@ -1479,7 +1479,6 @@ CLASSDEF
 
   # JRUBY-2106
   def test_package_load_doesnt_set_error
-    $! = nil
     undo = javax.swing.undo
     assert_nil($!)
     assert undo
@@ -1487,11 +1486,9 @@ CLASSDEF
 
   # JRUBY-2106
   def test_top_level_package_load_doesnt_set_error
-    $! = nil
     Java::boom
     assert_nil($!)
 
-    $! = nil
     Java::Boom
     assert_nil($!)
   end
@@ -1735,6 +1732,29 @@ CLASSDEF
     assert_raises(ArgumentError) do
       java.lang.Character.name(42) # `getName(int)' NOT mapped to `name(i)'
     end
+  end
+
+  def test_no_warnings_on_interface_impls_being_set_as_constants
+    runner_base = Class.new do
+      class << self
+        def run; self != self end
+      end
+    end
+
+    runner_impl1 = Class.new(runner_base)
+    runner_impl2 = Class.new(runner_base)
+    runner_impl3 = Class.new(runner_base)
+
+    output = with_stderr_captured do
+      threads = []
+      threads << java.lang.Thread.new(runner_impl1)
+      threads << java.lang.Thread.new(runner_impl2)
+      threads << java.lang.Thread.new(runner_impl3)
+      threads.each(&:start)
+      threads.each(&:join)
+    end
+    # expect no warning: already initialized constant org.jruby.gen::InterfaceImpl1353309827
+    refute output.index('already initialized constant'), output
   end
 
   def test_no_warnings_on_concurrent_package_const_initialization
@@ -1983,6 +2003,15 @@ CLASSDEF
     #assert ! output.index('ambiguous'), output
     pend('[ji] did not select (float,float,float) ctor') if color.getRed != 255
     assert_equal 255, color.getRed # assert we called (float,float,float)
+  end
+
+  def test_no_ambiguous_warning_when_method_inherited_from_2_interfaces
+    map = org.jruby.javasupport.test.TestConcurrentMapFactory.newMap
+    output = with_stderr_captured do # exact match should not warn:
+      map.compute(:key) { 42 } # warning: multiple Java methods found, use -Xjruby.ji.ambiguous.calls.debug for backtrace.
+      # Choosing compute(java.lang.Object,java.util.function.BiFunction)
+    end
+    assert_equal "", output
   end
 
   class Runner

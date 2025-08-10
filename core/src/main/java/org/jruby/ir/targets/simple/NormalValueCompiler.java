@@ -108,11 +108,13 @@ public class NormalValueCompiler implements ValueCompiler {
         compiler.adapter.invokestatic(p(RubyString.class), "newStringShared", sig(RubyString.class, Ruby.class, ByteList.class, int.class));
     }
 
-    public void pushChilledString(ByteList bl, int cr) {
+    public void pushChilledString(ByteList bl, int cr, String file, int line) {
         pushRuntime();
         pushByteList(bl);
         compiler.adapter.ldc(cr);
-        compiler.adapter.invokestatic(p(RubyString.class), "newChilledString", sig(RubyString.class, Ruby.class, ByteList.class, int.class));
+        compiler.adapter.ldc(file);
+        compiler.adapter.ldc(line);
+        compiler.adapter.invokestatic(p(RubyString.class), "newChilledString", sig(RubyString.class, Ruby.class, ByteList.class, int.class, String.class, int.class));
     }
 
     public void pushFrozenString(final ByteList bl, final int cr, final String file, final int line) {

@@ -13,7 +13,7 @@ project 'JRuby Integration Tests' do
   repository :id => :mavengems, :url => 'mavengem:http://rubygems.org'
   plugin_repository :id => :mavengems, :url => 'mavengem:http://rubygems.org'
 
-  plugin_repository( :url => 'https://oss.sonatype.org/content/repositories/snapshots/',
+  plugin_repository( :url => 'https://central.sonatype.com/repository/maven-snapshots/',
                      :id => 'sonatype' ) do
     releases 'false'
     snapshots 'true'
@@ -25,7 +25,6 @@ project 'JRuby Integration Tests' do
 
   scope :test do
     jar 'junit:junit:4.11'
-    jar 'jakarta.annotation:jakarta.annotation-api:2.0.0'
     jar 'commons-logging:commons-logging:1.1.3'
     jar 'org.livetribe:livetribe-jsr223:2.0.7'
     jar 'org.jruby:jruby-core', '${project.version}'
@@ -83,13 +82,6 @@ project 'JRuby Integration Tests' do
                                           'overWrite' =>  'false',
                                           'outputDirectory' =>  'target',
                                           'destFileName' =>  'junit.jar' },
-                                        { 'groupId' =>  'jakarta.annotation',
-                                          'artifactId' =>  'jakarta.annotation-api',
-                                          'version' =>  '2.0.0',
-                                          'type' =>  'jar',
-                                          'overWrite' =>  'false',
-                                          'outputDirectory' =>  'target',
-                                          'destFileName' =>  'annotation-api.jar' },
                                         { 'groupId' =>  'com.googlecode.jarjar',
                                           'artifactId' =>  'jarjar',
                                           'version' =>  '1.1',

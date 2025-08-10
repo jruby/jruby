@@ -881,6 +881,7 @@ class TestHash < Test::Unit::TestCase
     assert_equal(quote2, eval(quote2).inspect)
     assert_equal(quote3, eval(quote3).inspect)
     begin
+      verbose_bak, $VERBOSE = $VERBOSE, nil
       enc = Encoding.default_external
       Encoding.default_external = Encoding::ASCII
       utf8_ascii_hash = '{"\\u3042": 1}'
@@ -893,6 +894,7 @@ class TestHash < Test::Unit::TestCase
       assert_equal(eval(sjis_hash).inspect, sjis_hash)
     ensure
       Encoding.default_external = enc
+      $VERBOSE = verbose_bak
     end
   end
 

@@ -13,6 +13,7 @@ import org.jruby.RubySymbol;
 import org.jruby.RubyThread;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.exceptions.FiberKill;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ir.operands.IRException;
@@ -39,7 +40,9 @@ import java.util.function.BiConsumer;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.castAsHash;
+import static org.jruby.api.Create.newHash;
 import static org.jruby.api.Error.*;
+import static org.jruby.api.Warn.warnExperimental;
 
 public class ThreadFiber extends RubyObject implements ExecutionContext {
 
@@ -132,8 +135,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
     public IRubyObject initialize(ThreadContext context, IRubyObject _opts, Block block) {
         if (!block.isGiven()) throw argumentError(context, "tried to create Proc object without block");
 
-        IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, _opts);
-
+        IRubyObject opts = ArgsUtil.getOptionsArg(context, _opts);
         boolean blocking = false;
 
         if (!opts.isNil()) {
@@ -215,7 +217,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         }
 
         if (result.type == RequestType.RAISE) {
-            throw ((RubyException) result.data).toThrowable();
+            throw (RuntimeException) result.data;
         }
 
         return processResultData(context, result);
@@ -236,10 +238,10 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
     }
 
     public static class FiberRequest {
-        final IRubyObject data;
+        final Object data;
         final RequestType type;
 
-        FiberRequest(IRubyObject data, RequestType type) {
+        FiberRequest(Object data, RequestType type) {
             this.data = data;
             this.type = type;
         }
@@ -374,16 +376,14 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         }
 
         if (result.type == RequestType.RAISE) {
-            throw ((RubyException) result.data).toThrowable();
+            throw (RuntimeException) result.data;
         }
 
         return processResultData(context, result);
     }
+
     public IRubyObject raise(ThreadContext context, IRubyObject exception) {
         Ruby runtime = context.runtime;
-
-        final FiberData data = this.data;
-        if (data.prev != null) throw runtime.newFiberError("double resume");
 
         if (!alive()) throw runtime.newFiberError("dead fiber called");
 
@@ -393,9 +393,12 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
             RubyKernel.raise(context, this, exception);
         }
 
+        final FiberData data = this.data;
+        if (data.prev != null) throw runtime.newFiberError("double resume");
+
         if (data.parent != context.getFiberCurrentThread()) fiberCalledAcrossThreads(runtime);
 
-        FiberRequest val = new FiberRequest(exception, RequestType.RAISE);
+        FiberRequest val = new FiberRequest(((RubyException) exception).toThrowable(), RequestType.RAISE);
 
         data.prev = context.getFiber();
 
@@ -411,7 +414,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         }
 
         if (result.type == RequestType.RAISE) {
-            throw ((RubyException) result.data).toThrowable();
+            throw (RuntimeException) result.data;
         }
 
         return processResultData(context, result);
@@ -432,14 +435,14 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         FiberRequest result = exchangeWithFiber(context, currentFiberData, prevFiberData, new FiberRequest(value, RequestType.DATA));
 
         if (result.type == RequestType.RAISE) {
-            throw ((RubyException) result.data).toThrowable();
+            throw (RuntimeException) result.data;
         }
 
         return processResultData(context, result);
     }
 
     private static IRubyObject processResultData(ThreadContext context, FiberRequest result) {
-        IRubyObject data = result.data;
+        IRubyObject data = (IRubyObject) result.data;
 
         if (data == RubyBasicObject.NEVER) return context.nil;
 
@@ -461,7 +464,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         FiberRequest result = exchangeWithFiber(context, currentFiberData, prevFiberData, new FiberRequest(RubyArray.newArrayNoCopy(runtime, value), RequestType.DATA));
 
         if (result.type == RequestType.RAISE) {
-            throw ((RubyException) result.data).toThrowable();
+            throw (RuntimeException) result.data;
         }
 
         return processResultData(context, result);
@@ -532,7 +535,12 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                             if (init == NEVER) {
                                 result = new FiberRequest(block.yieldSpecific(ctxt), RequestType.DATA);
                             } else {
-                                result = new FiberRequest(block.yieldArray(ctxt, init.data, null), RequestType.DATA);
+                                // terminated before first resume
+                                if (init.type == RequestType.RAISE) {
+                                    throw (RuntimeException) init.data;
+                                }
+
+                                result = new FiberRequest(block.yieldArray(ctxt, (IRubyObject) init.data, null), RequestType.DATA);
                             }
 
                             // Clear ThreadFiber's thread since we're on the way out and need to appear non-alive?
@@ -548,6 +556,11 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                             context.runtime.getThreadService().unregisterCurrentThread(ctxt);
                             ThreadFiber tf = data.fiber.get();
                             if (tf != null) tf.thread = null;
+                        }
+                    } catch (FiberKill fk) {
+                        // push a final result and quietly die
+                        if (data.prev != null) {
+                            data.prev.data.queue.push(ctxt, new FiberRequest(ctxt.nil, RequestType.DATA));
                         }
                     } catch (JumpException.FlowControlException fce) {
                         if (data.prev != null) {
@@ -567,7 +580,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                         }
                     } catch (RaiseException re) {
                         if (data.prev != null) {
-                            data.prev.data.queue.push(ctxt, new FiberRequest(re.getException(), RequestType.RAISE));
+                            data.prev.data.queue.push(ctxt, new FiberRequest(re.getException().toThrowable(), RequestType.RAISE));
                         }
                     } catch (Throwable t) {
                         if (data.prev != null) {
@@ -717,7 +730,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "[]", meta = true)
     public static IRubyObject op_aref(ThreadContext context, IRubyObject recv, IRubyObject key) {
-        if (!(key instanceof RubySymbol)) throw typeError(context, key, "Symbol");
+        key = RubySymbol.toSymbol(context, key);
 
         RubyHash storage = context.getFiber().storage;
 
@@ -732,7 +745,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "[]=", meta = true)
     public static IRubyObject op_aset(ThreadContext context, IRubyObject recv, IRubyObject key, IRubyObject value) {
-        if (!(key instanceof RubySymbol)) throw typeError(context, key, "Symbol");
+        key = RubySymbol.toSymbol(context, key);
 
         ThreadFiber current = context.getFiber();
         boolean nil = value.isNil();
@@ -741,7 +754,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         if (storage == null) {
             if (nil) return context.nil;
 
-            current.storage = storage = RubyHash.newHash(context.runtime);
+            current.storage = storage = newHash(context);
         }
 
         if (nil) {
@@ -774,6 +787,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "storage=")
     public IRubyObject storage_set(ThreadContext context, IRubyObject hash) {
+        warnExperimental(context, "Fiber#storage= is experimental and may be removed in the future!");
         checkSameFiber(context);
 
         setStorage(context, hash);
@@ -798,21 +812,26 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         });
     }
 
+    @JRubyMethod
+    public IRubyObject kill(ThreadContext context) {
+        if (root) return this;
+
+        if (context.getFiber() == this) {
+            throw new FiberKill();
+        }
+
+        data.queue.push(context, new FiberRequest(new FiberKill(), RequestType.RAISE));
+
+        return context.nil;
+    }
+
     public static class FiberSchedulerSupport {
         // MRI: rb_fiber_s_schedule_kw and rb_fiber_s_schedule, kw passes on context
         @JRubyMethod(name = "schedule", meta = true, rest = true, keywords = true)
         public static IRubyObject schedule(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-            RubyThread thread = context.getThread();
-            IRubyObject scheduler = thread.getScheduler();
-            IRubyObject fiber = context.nil;
-
-            if (!scheduler.isNil()) {
-                fiber = scheduler.callMethod(context, "fiber", args, block);
-            } else {
-                throw context.runtime.newRuntimeError("No scheduler is available!");
-            }
-
-            return fiber;
+            IRubyObject scheduler = context.getThread().getScheduler();
+            if (scheduler.isNil()) throw runtimeError(context, "No scheduler is available!");
+            return scheduler.callMethod(context, "fiber", args, block);
         }
 
         // MRI: rb_fiber_s_scheduler

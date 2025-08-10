@@ -22,6 +22,8 @@ module RbConfig
   limits['LLONG_MAX'] = limits['INT64_MAX']
   limits['LLONG_MIN'] = limits['INT64_MIN']
   limits['ULLONG_MAX'] = limits['UINT64_MAX']
+  limits['UCHAR_MAX'] = 0xFF
+  limits['SIZE_MAX'] = limits['INT_MAX']
   limits.freeze
   LIMITS = limits
 end

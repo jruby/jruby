@@ -40,6 +40,7 @@ import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.ir.targets.JVMVisitor;
 import org.jruby.ir.targets.JVMVisitorMethodContext;
 import org.jruby.runtime.ArgumentDescriptor;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.util.collections.IntHashMap;
 
 class MethodJITTask extends JITCompiler.Task {
@@ -56,35 +57,32 @@ class MethodJITTask extends JITCompiler.Task {
     }
 
     @Override
-    public void exec() throws NoSuchMethodException, IllegalAccessException {
+    public void exec(ThreadContext context) throws NoSuchMethodException, IllegalAccessException {
         // Check if the method has been explicitly excluded
         String excludeModuleName = checkExcludedMethod(jitCompiler.config, className, methodName, method);
         if (excludeModuleName != null) {
             method.setCallCount(-1);
-            if (jitCompiler.config.isJitLogging()) {
-                logImpl("skipping method in " + excludeModuleName);
-            }
+            if (jitCompiler.config.isJitLogging()) logImpl(context, "skipping method in " + excludeModuleName);
             return;
         }
 
         String key = SexpMaker.sha1(method.getIRScope());
-        Ruby runtime = jitCompiler.runtime;
-        JVMVisitor visitor = JVMVisitor.newForJIT(runtime);
-        MethodJITClassGenerator generator = new MethodJITClassGenerator(className, methodName, key, runtime, method, visitor);
+        JVMVisitor visitor = JVMVisitor.newForJIT(context.runtime);
+        MethodJITClassGenerator generator = new MethodJITClassGenerator(className, methodName, key, context.runtime, method, visitor);
 
-        JVMVisitorMethodContext context = new JVMVisitorMethodContext();
-        generator.compile(context);
+        JVMVisitorMethodContext methodContext = new JVMVisitorMethodContext();
+        generator.compile(methodContext);
 
         Class<?> sourceClass = defineClass(generator, visitor, method.getIRScope(), method.ensureInstrsReady());
         if (sourceClass == null) return; // class could not be found nor generated; give up on JIT and bail out
 
-        String variableName = context.getVariableName();
-        MethodHandle variable = JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, variableName, context.getNativeSignature(-1));
-        IntHashMap<MethodType> signatures = context.getNativeSignaturesExceptVariable();
+        String variableName = methodContext.getVariableName();
+        MethodHandle variable = JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, variableName, methodContext.getNativeSignature(-1));
+        IntHashMap<MethodType> signatures = methodContext.getNativeSignaturesExceptVariable();
 
         if (signatures.size() == 0) {
             // only variable-arity
-            method.completeBuild(
+            method.completeBuild(context,
                     new CompiledIRMethod(
                             variable,
                             null,
@@ -97,10 +95,10 @@ class MethodJITTask extends JITCompiler.Task {
         } else {
             // also specific-arity
             for (IntHashMap.Entry<MethodType> entry : signatures.entrySet()) {
-                method.completeBuild(
+                method.completeBuild(context,
                         new CompiledIRMethod(
                                 variable,
-                                JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, context.getSpecificName(), entry.getValue()),
+                                JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, methodContext.getSpecificName(), entry.getValue()),
                                 entry.getKey(),
                                 method.getIRScope(),
                                 method.getVisibility(),
@@ -117,18 +115,18 @@ class MethodJITTask extends JITCompiler.Task {
     }
 
     @Override
-    protected void logJitted() {
-        logImpl("method done jitting");
+    protected void logJitted(ThreadContext context) {
+        logImpl(context, "method done jitting");
     }
 
     @Override
-    protected void logFailed(final Throwable ex) {
-        logImpl("could not compile method; passes run: " + method.getIRScope().getExecutedPasses(), ex);
+    protected void logFailed(ThreadContext context, final Throwable ex) {
+        logImpl(context, "could not compile method; passes run: " + method.getIRScope().getExecutedPasses(), ex);
     }
 
     @Override
-    protected void logImpl(String message, Object... reason) {
-        JITCompiler.log(method, methodName, message, reason);
+    protected void logImpl(ThreadContext context, String message, Object... reason) {
+        JITCompiler.log(context, method, methodName, message, reason);
     }
 
     static String checkExcludedMethod(final RubyInstanceConfig config, final String className, final String methodName,
@@ -138,8 +136,8 @@ class MethodJITTask extends JITCompiler.Task {
             String excludeModuleName = className;
             if (implementationClass.getMethodLocation().isSingleton()) {
                 RubyBasicObject possibleRealClass = ((MetaClass) implementationClass).getAttached();
-                if (possibleRealClass instanceof RubyModule) {
-                    excludeModuleName = "Meta:" + ((RubyModule) possibleRealClass).getName();
+                if (possibleRealClass instanceof RubyModule mod) {
+                    excludeModuleName = "Meta:" + mod.getName(mod.getRuntime().getCurrentContext());
                 }
             }
 

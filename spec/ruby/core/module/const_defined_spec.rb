@@ -65,6 +65,8 @@ describe "Module#const_defined?" do
     str = "CS_CONSTλ".encode("euc-jp")
     ConstantSpecs.const_set str, 1
     ConstantSpecs.const_defined?(str).should be_true
+  ensure
+    ConstantSpecs.send(:remove_const, str)
   end
 
   it "returns false if the constant is not defined in the receiver, its superclass, or any included modules" do
@@ -163,5 +165,12 @@ describe "Module#const_defined?" do
 
     name.should_receive(:to_str).and_return(123)
     -> { ConstantSpecs.const_defined? name }.should raise_error(TypeError)
+  end
+
+  it "does not search Object for a scoped constant name" do
+    Object.const_defined?("ConstantSpecs::ModueA::String").should == false
+    Object.const_defined?("ConstantSpecs::ClassA::String").should == false
+    ConstantSpecs.const_defined?("ModuleA::String").should == false
+    ConstantSpecs.const_defined?("ClassA::String").should == false
   end
 end

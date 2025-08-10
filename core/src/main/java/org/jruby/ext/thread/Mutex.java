@@ -28,7 +28,6 @@
 
 package org.jruby.ext.thread;
 
-import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
@@ -39,7 +38,7 @@ import org.jruby.RubyTime;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.DataType;
@@ -70,15 +69,9 @@ public class Mutex extends RubyObject implements DataType {
         super(runtime, type);
     }
 
-    public static RubyClass setup(RubyClass threadClass, RubyClass objectClass) {
-        RubyClass cMutex = threadClass.defineClassUnder("Mutex", objectClass, Mutex::new);
-
-        cMutex.setReifiedClass(Mutex.class);
-        cMutex.defineAnnotatedMethods(Mutex.class);
-
-        objectClass.setConstant("Mutex", cMutex);
-
-        return cMutex;
+    public static RubyClass setup(ThreadContext context, RubyClass Thread, RubyClass Object) {
+        return (RubyClass) Object.setConstant(context, "Mutex",
+                Thread.defineClassUnder(context, "Mutex", Object, Mutex::new).reifiedClass(Mutex.class).defineMethods(context, Mutex.class));
     }
 
     @JRubyMethod(name = "locked?")
@@ -133,7 +126,15 @@ public class Mutex extends RubyObject implements DataType {
         this.lockingThread = thread;
 
         // always check for thread interrupts after acquiring lock
-        thread.pollThreadEvents(context);
+        try {
+            thread.pollThreadEvents(context);
+        } catch (Throwable t) {
+            // Thread poll triggered an exception event, release locked locks before propagating
+            if (lock.isHeldByCurrentThread()) {
+                thread.unlock(lock);
+            }
+            Helpers.throwException(t);
+        }
 
         return this;
     }

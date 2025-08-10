@@ -47,118 +47,70 @@ import static org.jruby.javasupport.JavaUtil.unwrapIfJavaObject;
  */
 public class JavaTime {
 
-    public static void define(final Ruby runtime) {
-        JavaExtensions.put(runtime, java.time.Instant.class, (proxyClass) -> Instant.define(runtime, proxyClass));
-        JavaExtensions.put(runtime, java.time.OffsetDateTime.class, (proxyClass) -> OffsetDateTime.define(runtime, proxyClass));
-        JavaExtensions.put(runtime, java.time.LocalDateTime.class, (proxyClass) -> LocalDateTime.define(runtime, proxyClass));
-        JavaExtensions.put(runtime, java.time.ZonedDateTime.class, (proxyClass) -> ZonedDateTime.define(runtime, proxyClass));
+    public static void define(ThreadContext context) {
+        var runtime = context.runtime;
+        JavaExtensions.put(runtime, java.time.Instant.class, proxy -> proxy.defineMethods(context, Instant.class));
+        JavaExtensions.put(runtime, java.time.OffsetDateTime.class, proxy -> proxy.defineMethods(context, OffsetDateTime.class));
+        JavaExtensions.put(runtime, java.time.LocalDateTime.class, proxy -> proxy.defineMethods(context, LocalDateTime.class));
+        JavaExtensions.put(runtime, java.time.ZonedDateTime.class, proxy -> proxy.defineMethods(context, ZonedDateTime.class));
         JavaExtensions.put(runtime, java.time.ZoneId.class, (klass) -> {
-            klass.addMethod("inspect", new JavaLang.InspectRawValue(klass));
+            klass.addMethod(context, "inspect", new JavaLang.InspectRawValue(klass));
         });
         JavaExtensions.put(runtime, java.time.temporal.Temporal.class, (klass) -> {
-            klass.addMethod("inspect", new JavaLang.InspectValueWithTypePrefix(klass));
+            klass.addMethod(context, "inspect", new JavaLang.InspectValueWithTypePrefix(klass));
         });
     }
 
     @JRubyModule(name = "Java::JavaTime::Instant")
     public static class Instant {
-
-        static RubyModule define(final Ruby runtime, final RubyModule proxy) {
-            proxy.defineAnnotatedMethods(Instant.class);
-            return proxy;
-        }
-
         @JRubyMethod(name = "to_time")
         public static IRubyObject to_time(ThreadContext context, IRubyObject self) {
             final java.time.Instant val = unwrapIfJavaObject(self);
             long nano = val.getNano();
             long millis = val.getEpochSecond() * 1000 + (nano / 1_000_000);
             nano = nano % 1_000_000;
-            final Ruby runtime = context.runtime;
-            return RubyTime.newTime(runtime, new DateTime(millis, RubyTime.getLocalTimeZone(runtime)), nano);
+            return RubyTime.newTime(context.runtime, new DateTime(millis, RubyTime.getLocalTimeZone(context)), nano);
         }
 
     }
 
     @JRubyModule(name = "Java::JavaTime::LocalDateTime")
     public static class LocalDateTime {
-
-        static RubyModule define(final Ruby runtime, final RubyModule proxy) {
-            proxy.defineAnnotatedMethods(LocalDateTime.class);
-            return proxy;
-        }
-
         @JRubyMethod(name = "to_time")
         public static IRubyObject to_time(ThreadContext context, IRubyObject self) {
             java.time.LocalDateTime val = unwrapIfJavaObject(self);
-            final Ruby runtime = context.runtime;
-            return toTime(runtime,
-                    val.getYear(),
-                    val.getMonthValue(),
-                    val.getDayOfMonth(),
-                    val.getHour(),
-                    val.getMinute(),
-                    val.getSecond(),
-                    val.getNano(),
-                    RubyTime.getLocalTimeZone(runtime)
-            );
+            return toTime(context, val.getYear(), val.getMonthValue(), val.getDayOfMonth(),
+                    val.getHour(), val.getMinute(), val.getSecond(),
+                    val.getNano(), RubyTime.getLocalTimeZone(context));
         }
 
     }
 
     @JRubyModule(name = "Java::JavaTime::OffsetDateTime")
     public static class OffsetDateTime {
-
-        static RubyModule define(final Ruby runtime, final RubyModule proxy) {
-            proxy.defineAnnotatedMethods(OffsetDateTime.class);
-            return proxy;
-        }
-
         @JRubyMethod(name = "to_time")
         public static IRubyObject to_time(ThreadContext context, IRubyObject self) {
             java.time.OffsetDateTime val = unwrapIfJavaObject(self);
-            final Ruby runtime = context.runtime;
-            return toTime(runtime,
-                    val.getYear(),
-                    val.getMonthValue(),
-                    val.getDayOfMonth(),
-                    val.getHour(),
-                    val.getMinute(),
-                    val.getSecond(),
-                    val.getNano(),
-                    convertZone(val.getOffset().getId())
-            );
+            return toTime(context, val.getYear(), val.getMonthValue(), val.getDayOfMonth(),
+                    val.getHour(), val.getMinute(), val.getSecond(),
+                    val.getNano(), convertZone(val.getOffset().getId()));
         }
 
     }
 
     @JRubyModule(name = "Java::JavaTime::ZonedDateTime")
     public static class ZonedDateTime {
-
-        static RubyModule define(final Ruby runtime, final RubyModule proxy) {
-            proxy.defineAnnotatedMethods(ZonedDateTime.class);
-            return proxy;
-        }
-
         @JRubyMethod(name = "to_time")
         public static IRubyObject to_time(ThreadContext context, IRubyObject self) {
             java.time.ZonedDateTime val = unwrapIfJavaObject(self);
-            final Ruby runtime = context.runtime;
-            return toTime(runtime,
-                    val.getYear(),
-                    val.getMonthValue(),
-                    val.getDayOfMonth(),
-                    val.getHour(),
-                    val.getMinute(),
-                    val.getSecond(),
-                    val.getNano(),
-                    convertZone(val.getZone().getId())
-            );
+            return toTime(context, val.getYear(), val.getMonthValue(), val.getDayOfMonth(),
+                    val.getHour(), val.getMinute(), val.getSecond(),
+                    val.getNano(), convertZone(val.getZone().getId()));
         }
 
     }
 
-    private static RubyTime toTime(final Ruby runtime,
+    private static RubyTime toTime(ThreadContext context,
                                    int year, int month, int day, int hour, int min, int sec, int nano,
                                    DateTimeZone zone) {
         int millisOfSec = nano / 1_000_000;
@@ -172,7 +124,7 @@ public class JavaTime {
                 millisOfSec,
                 zone
         );
-        return RubyTime.newTime(runtime, dt, nano % 1_000_000);
+        return RubyTime.newTime(context.runtime, dt, nano % 1_000_000);
     }
 
     /**

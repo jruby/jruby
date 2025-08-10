@@ -44,6 +44,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Error.typeError;
 
+@Deprecated(since = "10.0", forRemoval = true)
+@SuppressWarnings("removal")
 public class UnmarshalCache {
     private final Ruby runtime;
     private final List<IRubyObject> links = new ArrayList<>();

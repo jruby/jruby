@@ -38,7 +38,6 @@ package org.jruby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 
-import org.jruby.api.Convert;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -52,7 +51,6 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.MethodBlockBody;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -61,12 +59,13 @@ import org.jruby.runtime.marshal.DataType;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineClass;
+import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Warn.warn;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.util.RubyStringBuilder.types;
 
-/**
- * @author  jpetersen
- */
 @JRubyClass(name="Proc")
 public class RubyProc extends RubyObject implements DataType {
     private Block block = Block.NULL_BLOCK;
@@ -99,15 +98,11 @@ public class RubyProc extends RubyObject implements DataType {
         this.block = block;
     }
 
-    public static RubyClass createProcClass(Ruby runtime) {
-        RubyClass procClass = runtime.defineClass("Proc", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-
-        procClass.setClassIndex(ClassIndex.PROC);
-        procClass.setReifiedClass(RubyProc.class);
-
-        procClass.defineAnnotatedMethods(RubyProc.class);
-
-        return procClass;
+    public static RubyClass createProcClass(ThreadContext context, RubyClass Object) {
+        return defineClass(context, "Proc", Object, NOT_ALLOCATABLE_ALLOCATOR).
+                reifiedClass(RubyProc.class).
+                classIndex(ClassIndex.PROC).
+                defineMethods(context, RubyProc.class);
     }
 
     public Block getBlock() {
@@ -127,7 +122,7 @@ public class RubyProc extends RubyObject implements DataType {
         if (type == Block.Type.NORMAL) type = Block.Type.PROC;
 
         RubyProc proc = new RubyProc(runtime, runtime.getProc(), type);
-        proc.setup(block);
+        proc.setup(runtime, block);
 
         return proc;
     }
@@ -135,7 +130,7 @@ public class RubyProc extends RubyObject implements DataType {
     @Deprecated
     public static RubyProc newProc(Ruby runtime, Block block, Block.Type type, ISourcePosition sourcePosition) {
         RubyProc proc = new RubyProc(runtime, runtime.getProc(), type, sourcePosition);
-        proc.setup(block);
+        proc.setup(runtime, block);
 
         return proc;
     }
@@ -147,7 +142,7 @@ public class RubyProc extends RubyObject implements DataType {
 
     public static RubyProc newProc(Ruby runtime, RubyClass clazz, Block block, Block.Type type, String file, int line) {
         RubyProc proc = new RubyProc(runtime, clazz, type, file, line);
-        proc.setup(block);
+        proc.setup(runtime, block);
 
         return proc;
     }
@@ -160,7 +155,7 @@ public class RubyProc extends RubyObject implements DataType {
     @JRubyMethod(name = "new", rest = true, meta = true)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         // No passed in block, lets check next outer frame for one ('Proc.new')
-        if (!block.isGiven()) throw context.runtime.newArgumentError("tried to create Proc object without a block");
+        if (!block.isGiven()) throw argumentError(context, "tried to create Proc object without a block");
 
         // This metaclass == recv check seems gross, but MRI seems to do the same:
         // if (!proc && ruby_block->block_obj && CLASS_OF(ruby_block->block_obj) == klass) {
@@ -169,16 +164,14 @@ public class RubyProc extends RubyObject implements DataType {
         }
 
         RubyProc obj = new RubyProc(context.runtime, (RubyClass)recv, Block.Type.PROC);
-        obj.setup(block);
+        obj.setup(context.runtime, block);
 
         obj.callMethod(context, "initialize", args, block);
         return obj;
     }
 
-    private void setup(Block procBlock) {
-        if (!procBlock.isGiven()) {
-            throw getRuntime().newArgumentError("tried to create Proc object without a block");
-        }
+    private void setup(Ruby runtime, Block procBlock) {
+        if (!procBlock.isGiven()) throw argumentError(runtime.getCurrentContext(), "tried to create Proc object without a block");
 
         if (isLambda()) {
             // TODO: warn "tried to create Proc object without a block"
@@ -239,12 +232,11 @@ public class RubyProc extends RubyObject implements DataType {
 
     @Override
     @JRubyMethod(name = "to_s", alias = "inspect")
-    public IRubyObject to_s() {
-        Ruby runtime = getRuntime();
-        RubyString string = runtime.newString("#<");
+    public IRubyObject to_s(ThreadContext context) {
+        RubyString string = newString(context, "#<");
         string.setEncoding(RubyString.ASCII);
 
-        string.append(types(runtime, type()));
+        string.append(types(context.runtime, type()));
         string.catStringUnsafe(":0x" + Integer.toString(System.identityHashCode(block), 16));
 
         boolean isSymbolProc = block.getBody() instanceof RubySymbol.SymbolProcBody;
@@ -265,7 +257,7 @@ public class RubyProc extends RubyObject implements DataType {
         checkFrozen();
 
         if (fromMethod) {
-            context.runtime.getWarnings().warn(IRubyWarnings.ID.MISCELLANEOUS, "Skipping set of ruby2_keywords flag for proc (proc created from method)");
+            warn(context, "Skipping set of ruby2_keywords flag for proc (proc created from method)");
             return this;
         }
 
@@ -275,11 +267,11 @@ public class RubyProc extends RubyObject implements DataType {
             if (signature.hasRest() && !signature.hasKwargs()) {
                 ((IRBlockBody) body).getScope().setRuby2Keywords();
             } else {
-                context.runtime.getWarnings().warn(IRubyWarnings.ID.MISCELLANEOUS, "Skipping set of ruby2_keywords flag for proc (proc accepts keywords or proc does not accept argument splat)");
+                warn(context, "Skipping set of ruby2_keywords flag for proc (proc accepts keywords or proc does not accept argument splat)");
             }
 
         } else {
-            context.runtime.getWarnings().warn(IRubyWarnings.ID.MISCELLANEOUS, "Skipping set of ruby2_keywords flag for proc (proc not defined in Ruby)");
+            warn(context, "Skipping set of ruby2_keywords flag for proc (proc not defined in Ruby)");
         }
         return this;
     }
@@ -319,7 +311,7 @@ public class RubyProc extends RubyObject implements DataType {
 
     private static IRubyObject[] checkArityForLambda(ThreadContext context, Block.Type type, BlockBody blockBody, IRubyObject... args) {
         if (type == Block.Type.LAMBDA) {
-            blockBody.getSignature().checkArity(context.runtime, args);
+            blockBody.getSignature().checkArity(context, args);
         }
 
         return args;
@@ -397,11 +389,11 @@ public class RubyProc extends RubyObject implements DataType {
     public RubyFixnum arity(ThreadContext context) {
         Signature signature = block.getSignature();
 
-        if (block.type == Block.Type.LAMBDA) return asFixnum(context, signature.arityValue());
+        int min = signature.min();
+        int max = signature.max();
+        boolean test = isLambda() ? min == max : max != -1; // specific value or unlimited
 
-        // FIXME: Consider min/max like MRI here instead of required + kwarg count.
-        return asFixnum(context, signature.hasRest() ?
-                signature.arityValue() : signature.required() + signature.getRequiredKeywordForArityCount());
+        return asFixnum(context, test ? min : -min-1);
     }
 
     @JRubyMethod(name = "to_proc")
@@ -419,7 +411,7 @@ public class RubyProc extends RubyObject implements DataType {
             // block+binding may exist for a core method, which will have a null filename
             if (binding.getFile() != null) {
                 return newArray(context,
-                        Convert.asString(context, binding.getFile()),
+                        newString(context, binding.getFile()),
                         asFixnum(context, binding.getLine() + 1 /*zero-based*/));
             }
         }
@@ -435,9 +427,16 @@ public class RubyProc extends RubyObject implements DataType {
     @JRubyMethod(keywords = true)
     public IRubyObject parameters(ThreadContext context, IRubyObject opts) {
         int callInfo = resetCallInfo(context);
-        boolean isLambda = (callInfo & ThreadContext.CALL_KEYWORD) != 0 ?
-                ArgsUtil.extractKeywordArg(context, (RubyHash) opts, "lambda").isTrue() :
-                isLambda();
+        boolean isLambda = isLambda();
+
+        IRubyObject lambdaOpt = ArgsUtil.extractKeywordArg(context, (RubyHash) opts, "lambda");
+
+        // ignore option if nil
+        if (!lambdaOpt.isNil()) {
+            isLambda = (callInfo & ThreadContext.CALL_KEYWORD) != 0 ?
+                    lambdaOpt.isTrue() :
+                    isLambda();
+        }
 
         return parametersCommon(context, isLambda);
     }

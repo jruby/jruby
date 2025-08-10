@@ -114,8 +114,7 @@ public class RubyObjectSpecializer {
             throw new RuntimeException(e);
         }
 
-        klass.setReifiedClass(cna.cls);
-        klass.setAllocator(cna.allocator);
+        klass.reifiedClass(cna.cls).allocator(cna.allocator);
 
         return cna.allocator;
     }
@@ -154,7 +153,8 @@ public class RubyObjectSpecializer {
     }
 
     private static String uniqueClassName(RubyClass klass) {
-        String className = klass.getName();
+        var context = klass.getRuntime().getCurrentContext();
+        String className = klass.getName(context);
 
         if (className.startsWith("#")) {
             className = "Anonymous" + Integer.toHexString(System.identityHashCode(klass));

@@ -90,7 +90,7 @@ public class RubyTestCase extends TestCase {
         runtime.defineReadonlyVariable("$\"", empty, GlobalVariable.Scope.GLOBAL);
         runtime.defineReadonlyVariable("$*", empty, GlobalVariable.Scope.GLOBAL);
         runtime.defineReadonlyVariable("$:", empty, GlobalVariable.Scope.GLOBAL);
-        runtime.defineGlobalConstant("ARGV", empty);
+        runtime.getObject().defineConstant(runtime.getCurrentContext(), "ARGV", empty);
     }
 }
 

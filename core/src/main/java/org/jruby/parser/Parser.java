@@ -46,6 +46,7 @@ import org.jruby.RubyFile;
 import org.jruby.RubyHash;
 import org.jruby.RubyIO;
 import org.jruby.RubySymbol;
+import org.jruby.api.Create;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.BlockNode;
 import org.jruby.ast.CallNode;
@@ -68,7 +69,9 @@ import org.jruby.runtime.load.LoadServiceResourceInputStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
 
+import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Create.newString;
 import static org.jruby.parser.ParserType.*;
 
@@ -109,7 +112,8 @@ public class Parser {
             try {
                 return parse(lexerSource, existingScope, type);
             } finally {
-                if (requiresClosing && runtime.getObject().getConstantAt("DATA") != io) io.close();
+                var context = runtime.getCurrentContext();
+                if (requiresClosing && objectClass(context).getConstantAt(context, "DATA") != io) io.close();
 
                 // In case of GetsLexerSource we actually will dispatch to gets which will increment $.
                 // We do not want that in the case of raw parsing.
@@ -173,7 +177,8 @@ public class Parser {
             try {
                 return parse(file, lexerSource, blockScope, configuration);
             } finally {
-                if (requiresClosing && runtime.getObject().getConstantAt("DATA") != io) io.close();
+                var context = runtime.getCurrentContext();
+                if (requiresClosing && objectClass(context).getConstantAt(context, "DATA") != io) io.close();
 
                 // In case of GetsLexerSource we actually will dispatch to gets which will increment $.
                 // We do not want that in the case of raw parsing.
@@ -204,7 +209,7 @@ public class Parser {
             if (parser.lexer.isEndSeen() && configuration.isSaveData()) {
                 IRubyObject verbose = runtime.getVerbose();
                 runtime.setVerbose(runtime.getNil());
-                runtime.defineGlobalConstant("DATA", lexerSource.getRemainingAsIO());
+                runtime.getObject().defineConstant(runtime.getCurrentContext(), "DATA", lexerSource.getRemainingAsIO());
                 runtime.setVerbose(verbose);
             }
         } catch (IOException e) {
@@ -219,14 +224,17 @@ public class Parser {
     }
 
     protected RubyArray<?> getLines(boolean isEvalParse, String file, int length) {
-        if (isEvalParse && !runtime.getCoverageData().isEvalCovered()) return null;
+        Ruby runtime = this.runtime;
 
-        IRubyObject scriptLines = runtime.getObject().getConstantAt("SCRIPT_LINES__");
-        if (!(scriptLines instanceof RubyHash)) return null;
+        // only gather eval lines if eval coverage is enabled
+        if (isEvalParse && (!runtime.isCoverageEnabled() || !runtime.getCoverageData().isEvalCovered())) return null;
 
         var context = runtime.getCurrentContext();
-        var list = length == -1 ? newArray(context) : newArray(context, length);
-        ((RubyHash) scriptLines).op_aset(context, newString(context, file), list);
+        IRubyObject scriptLines = objectClass(context).getConstantAt(context, "SCRIPT_LINES__");
+        if (!(scriptLines instanceof RubyHash hash)) return null;
+
+        var list = length == -1 ? newEmptyArray(context) : Create.allocArray(context, length);
+        hash.op_aset(context, newString(context, file), list);
         return list;
     }
 

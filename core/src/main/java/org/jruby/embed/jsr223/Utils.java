@@ -48,6 +48,9 @@ import org.jruby.embed.variable.TransientLocalVariable;
 import org.jruby.embed.variable.VariableInterceptor;
 import org.jruby.internal.runtime.GlobalVariable;
 
+import static org.jruby.api.Access.globalVariables;
+import static org.jruby.api.Access.objectClass;
+
 /**
  * A collection of JSR223 specific utility methods.
  *
@@ -139,12 +142,12 @@ public class Utils {
         }
         map.put(AttributeName.WRITER, writer);
         
-        Ruby runtime = container.getProvider().getRuntime();
-        RubyIO io = getRubyIO(runtime, writer);
-        runtime.defineVariable(new OutputGlobalVariable(runtime, "$stdout", io), GlobalVariable.Scope.GLOBAL);
-        runtime.getObject().storeConstant("STDOUT", io);
-        runtime.getGlobalVariables().alias("$>", "$stdout");
-        runtime.getGlobalVariables().alias("$defout", "$stdout");
+        var context = container.getProvider().getRuntime().getCurrentContext();
+        RubyIO io = getRubyIO(context.runtime, writer);
+        context.runtime.defineVariable(new OutputGlobalVariable(context.runtime, "$stdout", io), GlobalVariable.Scope.GLOBAL);
+        objectClass(context).storeConstant(context, "STDOUT", io);
+        globalVariables(context).alias("$>", "$stdout");
+        globalVariables(context).alias("$defout", "$stdout");
     }
     
     private static void setStdErr(ScriptingContainer container, Writer writer) {
@@ -160,11 +163,11 @@ public class Utils {
         }
         map.put(AttributeName.ERROR_WRITER, writer);
         
-        Ruby runtime = container.getProvider().getRuntime();
-        RubyIO io = getRubyIO(runtime, writer);
-        runtime.defineVariable(new OutputGlobalVariable(runtime, "$stderr", io), GlobalVariable.Scope.GLOBAL);
-        runtime.getObject().storeConstant("STDERR", io);
-        runtime.getGlobalVariables().alias("$deferr", "$stderr");
+        var context = container.getProvider().getRuntime().getCurrentContext();
+        RubyIO io = getRubyIO(context.runtime, writer);
+        context.runtime.defineVariable(new OutputGlobalVariable(context.runtime, "$stderr", io), GlobalVariable.Scope.GLOBAL);
+        objectClass(context).storeConstant(context, "STDERR", io);
+        globalVariables(context).alias("$deferr", "$stderr");
     }
     
     private static RubyIO getRubyIO(Ruby runtime, Writer writer) {

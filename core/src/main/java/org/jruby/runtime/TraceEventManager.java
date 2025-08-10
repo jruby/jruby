@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Warn.warn;
 
 public class TraceEventManager {
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
@@ -66,10 +67,15 @@ public class TraceEventManager {
                     RubyEvent.RETURN
             );
 
+    @Deprecated(since = "10.0")
     public synchronized void addEventHook(EventHook hook) {
+        addEventHook(runtime.getCurrentContext(), hook);
+    }
+
+    public synchronized void addEventHook(ThreadContext context, EventHook hook) {
         if (!RubyInstanceConfig.FULL_TRACE_ENABLED && hook.needsDebug()) {
             // without full tracing, many events will not fire
-            runtime.getWarnings().warn("tracing (e.g. set_trace_func) will not capture all events without --debug flag");
+            warn(context, "tracing (e.g. set_trace_func) will not capture all events without --debug flag");
         }
 
         EventHook[] hooks = eventHooks;
@@ -147,7 +153,7 @@ public class TraceEventManager {
         if (traceFunction == null) return;
 
         hook.setTraceFunc(traceFunction);
-        addEventHook(hook);
+        addEventHook(runtime.getCurrentContext(), hook);
     }
 
     /**

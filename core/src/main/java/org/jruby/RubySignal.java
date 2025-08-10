@@ -41,7 +41,10 @@ import org.jruby.util.NoFunctionalitySignalFacade;
 import java.util.*;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.toInt;
+import static org.jruby.api.Create.newHash;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.argumentError;
 
 @JRubyModule(name="Signal")
@@ -57,7 +60,7 @@ public class RubySignal {
         }
     }
     
-    public static void createSignal(Ruby runtime) {
+    public static void createSignal(ThreadContext context) {
         // We force java.lang.Process et al to load so that JVM's CHLD handler can be
         // overwritten by users (jruby/jruby#3283)
         if (!Platform.IS_WINDOWS) {
@@ -69,9 +72,7 @@ public class RubySignal {
             }
         }
 
-        RubyModule mSignal = runtime.defineModule("Signal");
-        
-        mSignal.defineAnnotatedMethods(RubySignal.class);
+        defineModule(context, "Signal").defineMethods(context, RubySignal.class);
         //registerThreadDumpSignalHandler(runtime);
     }
 
@@ -145,7 +146,7 @@ public class RubySignal {
         synchronized (recv) {
             names = (RubyHash) recv.getInternalVariables().getInternalVariable("signal_list");
             if (names == null) {
-                names = RubyHash.newHash(runtime);
+                names = newHash(context);
                 for (Map.Entry<String, Integer> sig : RubySignal.list().entrySet()) {
                     names.op_aset(context, runtime.newDeduplicatedString(sig.getKey()), asFixnum(context, sig.getValue()));
                 }
@@ -159,29 +160,49 @@ public class RubySignal {
         return names;
     }
 
-    @JRubyMethod(meta = true)
+    @Deprecated(since = "10.0")
     public static IRubyObject __jtrap_kernel(final IRubyObject recv, IRubyObject block, IRubyObject sig) {
-        return SIGNAL_FACADE.trap(recv, block, sig);
+        return __jtrap_kernel(((RubyBasicObject) recv).getCurrentContext(), recv, block, sig);
     }
 
     @JRubyMethod(meta = true)
+    public static IRubyObject __jtrap_kernel(ThreadContext context, final IRubyObject recv, IRubyObject block, IRubyObject sig) {
+        return SIGNAL_FACADE.trap(context, recv, block, sig);
+    }
+
+    @Deprecated(since = "10.0")
     public static IRubyObject __jtrap_platform_kernel(final IRubyObject recv, IRubyObject sig) {
-        return SIGNAL_FACADE.restorePlatformDefault(recv, sig);
+        return __jtrap_platform_kernel(((RubyBasicObject) recv).getCurrentContext(), recv, sig);
     }
 
     @JRubyMethod(meta = true)
+    public static IRubyObject __jtrap_platform_kernel(ThreadContext context, final IRubyObject recv, IRubyObject sig) {
+        return SIGNAL_FACADE.restorePlatformDefault(context, recv, sig);
+    }
+
+    @Deprecated(since = "10.0")
     public static IRubyObject __jtrap_osdefault_kernel(final IRubyObject recv, IRubyObject sig) {
-        return SIGNAL_FACADE.restoreOSDefault(recv, sig);
+        return __jtrap_osdefault_kernel(((RubyBasicObject) recv).getCurrentContext(), recv, sig);
     }
 
     @JRubyMethod(meta = true)
+    public static IRubyObject __jtrap_osdefault_kernel(ThreadContext context, final IRubyObject recv, IRubyObject sig) {
+        return SIGNAL_FACADE.restoreOSDefault(context, recv, sig);
+    }
+
+    @Deprecated(since = "10.0")
     public static IRubyObject __jtrap_restore_kernel(final IRubyObject recv, IRubyObject sig) {
-        return SIGNAL_FACADE.ignore(recv, sig);
+        return __jtrap_restore_kernel(((RubyBasicObject) recv).getCurrentContext(), recv, sig);
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject __jtrap_restore_kernel(ThreadContext context, final IRubyObject recv, IRubyObject sig) {
+        return SIGNAL_FACADE.ignore(context, recv, sig);
     }
 
     @JRubyMethod(meta = true)
     public static IRubyObject signame(ThreadContext context, final IRubyObject recv, IRubyObject rubySig) {
-        long sig = rubySig.convertToInteger().getLongValue();
+        long sig = toInt(context, rubySig);
         String signame = signo2signm(sig);
         if (signame == null) {
             if (sig == 0) return newString(context, "EXIT");

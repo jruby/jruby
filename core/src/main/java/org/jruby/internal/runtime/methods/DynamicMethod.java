@@ -32,6 +32,8 @@ package org.jruby.internal.runtime.methods;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Collections;
@@ -109,6 +111,7 @@ public abstract class DynamicMethod {
     /**
      * A no-arg constructor used only by the UndefinedMethod subclass and
      * CompiledMethod handles. instanceof assertions make sure this is so.
+     * @param name the name of the method
      */
     protected DynamicMethod(String name) {
         this.visibility = (byte) Visibility.PUBLIC.ordinal();
@@ -209,40 +212,40 @@ public abstract class DynamicMethod {
     // dynamic method handles.
     ////////////////////////////////////////////////////////////////////////////
 
-    /** Arity 0, no block */
+    /* Arity 0, no block */
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name) {
         return call(context, self, klazz, name, Block.NULL_BLOCK);
     }
-    /** Arity 0, with block; calls through IRubyObject[] path */
+    /* Arity 0, with block; calls through IRubyObject[] path */
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, Block block) {
         return call(context, self, klazz, name, IRubyObject.NULL_ARRAY, block);
     }
-    /** Arity 1, no block */
+    /* Arity 1, no block */
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0) {
         return call(context, self, klazz, name, arg0, Block.NULL_BLOCK);
     }
-    /** Arity 1, with block; calls through IRubyObject[] path */
+    /* Arity 1, with block; calls through IRubyObject[] path */
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, Block block) {
         return call(context, self, klazz, name, new IRubyObject[] {arg0}, block);
     }
-    /** Arity 2, no block */
+    /* Arity 2, no block */
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, IRubyObject arg1) {
         return call(context, self, klazz, name, arg0, arg1, Block.NULL_BLOCK);
     }
-    /** Arity 2, with block; calls through IRubyObject[] path */
+    /* Arity 2, with block; calls through IRubyObject[] path */
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
         return call(context, self, klazz, name, new IRubyObject[] {arg0, arg1}, block);
     }
-    /** Arity 3, no block */
+    /* Arity 3, no block */
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         return call(context, self, klazz, name, arg0, arg1, arg2, Block.NULL_BLOCK);
     }
-    /** Arity 3, with block; calls through IRubyObject[] path */
+    /* Arity 3, with block; calls through IRubyObject[] path */
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         return call(context, self, klazz, name, new IRubyObject[] {arg0, arg1, arg2}, block);
     }
 
-    /**
+    /*
      * Will call respond_to?/respond_to_missing? on object and name
      */
     public boolean callRespondTo(ThreadContext context, IRubyObject self, String respondToMethodName, RubyModule klazz, RubySymbol name) {
@@ -319,9 +322,8 @@ public abstract class DynamicMethod {
         while (cls.isIncluded()) cls = cls.getMetaClass();
 
         // For visibility we need real meta class and not anonymous one from class << self
-        if (cls instanceof MetaClass) cls = ((MetaClass) cls).getRealClass();
-
-        if (cls instanceof PrependedModule) cls = ((PrependedModule) cls).getOrigin();
+        if (cls instanceof MetaClass meta) cls = meta.getRealClass();
+        if (cls instanceof PrependedModule prep) cls = prep.getOrigin();
 
         return cls;
     }
@@ -362,6 +364,7 @@ public abstract class DynamicMethod {
 
     /**
      * Get the original owner of this method/
+     * @return the module method was defined in
      */
     public RubyModule getDefinedClass() {
         RubyModule definedClass = this.definedClass;
@@ -373,6 +376,7 @@ public abstract class DynamicMethod {
 
     /**
      * Set the defining class for this method, as when restructuring hierarchy for prepend.
+     * @param definedClass that method was defined in
      */
     public void setDefinedClass(RubyModule definedClass) {
         this.definedClass = definedClass;
@@ -458,6 +462,8 @@ public abstract class DynamicMethod {
         private final boolean statik;
         private final boolean java;
         private Method reflected;
+        private MethodHandle handle;
+        private boolean notFound;
 
         public NativeCall(Class nativeTarget, String nativeName, Class nativeReturn, Class[] nativeSignature, boolean statik) {
             this(nativeTarget, nativeName, nativeReturn, nativeSignature, statik, false);
@@ -515,8 +521,47 @@ public abstract class DynamicMethod {
             try {
                 return this.reflected = nativeTarget.getDeclaredMethod(nativeName, nativeSignature);
             } catch (Exception e) {
+                this.notFound = true;
                 throw new RuntimeException(e);
             }
+        }
+
+        /**
+         * Get the java.lang.reflect.Method for this NativeCall quietly.
+         *
+         * If an error is raised, this method will return null;
+         *
+         * @return the reflected method corresponding to this NativeCall, or null if it could not be found
+         */
+        public Method getMethodQuiet() {
+            Method reflected = this.reflected;
+            if (reflected != null || notFound) return reflected;
+            try {
+                return this.reflected = nativeTarget.getDeclaredMethod(nativeName, nativeSignature);
+            } catch (Exception e) {
+                this.notFound = true;
+                return null;
+            }
+        }
+
+        /**
+         * Get the java.lang.reflect.Method for this NativeCall quietly.
+         *
+         * If an error is raised, this method will return null;
+         *
+         * @return the reflected method corresponding to this NativeCall, or null if it could not be found
+         */
+        public MethodHandle getHandleQuiet(MethodHandles.Lookup lookup) {
+            MethodHandle handle = this.handle;
+            if (handle != null || notFound) return null;
+
+            Method reflected = getMethodQuiet();
+            try {
+                if (reflected != null) return lookup.unreflect(reflected);
+            } catch (Exception e) {
+                this.notFound = true;
+            }
+            return null;
         }
 
         @Override
@@ -565,6 +610,7 @@ public abstract class DynamicMethod {
      * Whether this method is "not implemented". This is
      * primarily to support Ruby 1.9's behavior of respond_to? yielding false if
      * the feature in question is unsupported (but still having the method defined).
+     * @return is this a method which is marked as not implemented
      */
     public boolean isNotImplemented() {
         return (flags & NOTIMPL_FLAG) == NOTIMPL_FLAG;
@@ -572,6 +618,7 @@ public abstract class DynamicMethod {
     
     /**
      * Additional metadata about this method.
+     * @return method data (defined in sub classes)
      */
     public MethodData getMethodData() {
         return MethodData.NULL;
@@ -583,6 +630,7 @@ public abstract class DynamicMethod {
     
     /**
      * Set whether this method is "not implemented".
+     * @param setNotImplemented is this not implement or not
      */
     public void setNotImplemented(boolean setNotImplemented) {
         if (setNotImplemented) {
@@ -621,6 +669,8 @@ public abstract class DynamicMethod {
     }
 
     /**
+     * @param implementationClass of the method
+     * @param visibility of the method
      * @deprecated Use {@link DynamicMethod#DynamicMethod(RubyModule, Visibility, String)}
      */
     @Deprecated

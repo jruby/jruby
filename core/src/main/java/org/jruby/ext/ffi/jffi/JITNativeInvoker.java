@@ -16,9 +16,8 @@ import org.jruby.util.cli.Options;
 
 import java.util.Arrays;
 
-/**
- *
- */
+import static org.jruby.api.Error.argumentError;
+
 abstract public class JITNativeInvoker extends NativeInvoker {
     protected static final Invoker invoker = Invoker.getInstance();
     protected final com.kenai.jffi.Function function;
@@ -151,75 +150,58 @@ abstract public class JITNativeInvoker extends NativeInvoker {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name) {
-        throw context.runtime.newArgumentError(0, arity);
+        throw argumentError(context, 0, arity);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name,
                             IRubyObject arg1) {
-        throw context.runtime.newArgumentError(1, arity);
+        throw argumentError(context, 1, arity);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name,
                             IRubyObject arg1, IRubyObject arg2) {
 
-        throw context.runtime.newArgumentError(2, arity);
+        throw argumentError(context, 2, arity);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name,
                             IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
-        throw context.runtime.newArgumentError(3, arity);
+        throw argumentError(context, 3, arity);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name,
                             IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4) {
-        throw context.runtime.newArgumentError(4, arity);
+        throw argumentError(context, 4, arity);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name,
                             IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5) {
-        throw context.runtime.newArgumentError(5, arity);
+        throw argumentError(context, 5, arity);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name,
                             IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4,
                             IRubyObject arg5, IRubyObject arg6) {
-        throw context.runtime.newArgumentError(6, arity);
+        throw argumentError(context, 6, arity);
     }
 
     @Override
     public final IRubyObject call(ThreadContext context, IRubyObject self,
                                     RubyModule clazz, String name, IRubyObject[] args) {
-        if (args.length != arity) {
-            throw context.runtime.newArgumentError(args.length, arity);
-        }
+        if (args.length != arity) throw argumentError(context,  args.length, arity);
 
-        switch (args.length) {
-            case 0:
-                return call(context, self, clazz, name);
-
-            case 1:
-                return call(context, self, clazz, name, args[0]);
-
-            case 2:
-                return call(context, self, clazz, name, args[0], args[1]);
-
-            case 3:
-                return call(context, self, clazz, name, args[0], args[1], args[2]);
-
-            case 4:
-                return call(context, self, clazz, name, args[0], args[1], args[2], args[3]);
-
-            case 5:
-                return call(context, self, clazz, name, args[0], args[1], args[2], args[3], args[4]);
-
-            case 6:
-                return call(context, self, clazz, name, args[0], args[1], args[2], args[3], args[4], args[5]);
-
-            default:
-                throw context.runtime.newArgumentError("too many arguments: " + args.length);
-        }
+        return switch (args.length) {
+            case 0 -> call(context, self, clazz, name);
+            case 1 -> call(context, self, clazz, name, args[0]);
+            case 2 -> call(context, self, clazz, name, args[0], args[1]);
+            case 3 -> call(context, self, clazz, name, args[0], args[1], args[2]);
+            case 4 -> call(context, self, clazz, name, args[0], args[1], args[2], args[3]);
+            case 5 -> call(context, self, clazz, name, args[0], args[1], args[2], args[3], args[4]);
+            case 6 -> call(context, self, clazz, name, args[0], args[1], args[2], args[3], args[4], args[5]);
+            default -> throw argumentError(context, "too many arguments: " + args.length);
+        };
     }
 }

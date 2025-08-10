@@ -1,9 +1,8 @@
 #-*- mode: ruby -*-
 
 # default versions will be overwritten by pom.rb from root directory
-properties( 'jruby.plugins.version' => '3.0.2',
-            'mavengem.wagon.version' => '2.0.1',
-            'jruby.version' => '9.4.3.0' )
+properties( 'jruby.plugins.version' => '3.0.6',
+            'mavengem.wagon.version' => '2.0.1' )
 
 gemfile
 

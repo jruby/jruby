@@ -265,7 +265,7 @@ public abstract class BlockBody {
 
     public IRubyObject[] prepareArgumentsForCall(ThreadContext context, IRubyObject[] args, Block.Type type) {
         if (type == Block.Type.LAMBDA) {
-            signature.checkArity(context.runtime, args);
+            signature.checkArity(context, args);
         } else if (args.length == 1) {
             args = IRRuntimeHelpers.convertValueIntoArgArray(context, args[0], signature);
         }

@@ -15,7 +15,7 @@ project 'JRuby Core' do
 
   jar 'org.jruby:jruby-base', '${project.version}'
 
-  plugin :'com.coderplus.maven.plugins:copy-rename-maven-plugin' do
+  plugin :'com.coderplus.maven.plugins:copy-rename-maven-plugin', '1.0' do
     execute_goals 'copy',
                   id: 'copy to lib/jruby.jar',
                   phase: 'package',
@@ -69,6 +69,8 @@ project 'JRuby Core' do
                        compress: true
         )
       end
+
+      plugin( :javadoc, failOnError: false )
     end
   end
 end

@@ -1,1 +1,1 @@
-fails:String#-@ interns the provided string if it is frozen
+fails(dedup'ed strings are a different internal type than simple frozen strings, https://github.com/ruby/spec/issues/1249):String#-@ interns the provided string if it is frozen

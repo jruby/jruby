@@ -33,7 +33,6 @@ import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.MutableString;
 import org.jruby.ir.operands.Nil;
-import org.jruby.ir.operands.NthRef;
 import org.jruby.ir.operands.NullBlock;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Range;
@@ -338,7 +337,6 @@ public class IRDumper extends IRVisitor {
     public void Label(Label label) { print(label.toString()); }
     public void LocalVariable(LocalVariable localvariable) { print(localvariable.getName()); }
     public void Nil(Nil nil) { }
-    public void NthRef(NthRef nthref) { print(nthref.getId()); }
     public void NullBlock(NullBlock nullblock) { }
     public void Rational(Rational rational) { print(rational.getNumerator() + "/" + rational.getDenominator()); }
     public void Range(Range range) { print(range.getBegin() + (range.isExclusive() ? "..." : "..") + range.getEnd()); }

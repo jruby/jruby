@@ -1,15 +1,22 @@
 package org.jruby.api;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyFrozenError;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.ArgumentError;
-import org.jruby.exceptions.FrozenError;
+import org.jruby.exceptions.EOFError;
+import org.jruby.exceptions.IOError;
+import org.jruby.exceptions.NotImplementedError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.TypeError;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.io.IOException;
+
+import static org.jruby.api.Access.argumentErrorClass;
 import static org.jruby.api.Create.newString;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
@@ -25,7 +32,19 @@ public class Error {
      * @return the created exception
      */
     public static ArgumentError argumentError(ThreadContext context, String message) {
-        return (ArgumentError) context.runtime.newRaiseException(context.runtime.getArgumentError(), message);
+        return (ArgumentError) context.runtime.newRaiseException(argumentErrorClass(context), message);
+    }
+
+    /**
+     * Return an instance of ArgumentError for the given argument list length, min, and max.
+     *
+     * @param context the current thread context
+     * @param got how many arguments we received
+     * @param expected how many arguments we expect
+     * @return the created exception
+     */
+    public static ArgumentError argumentError(ThreadContext context, int got, int expected) {
+        return argumentError(context, got, expected, expected);
     }
 
     /**
@@ -41,6 +60,10 @@ public class Error {
         return (ArgumentError) context.runtime.newArgumentError(length, min, max);
     }
 
+    public static RaiseException floatDomainError(ThreadContext context, String message){
+        return context.runtime.newRaiseException(context.runtime.getFloatDomainError(), message);
+    }
+
     /**
      * Create a frozen error with a simple ASCII String.
      *
@@ -51,6 +74,77 @@ public class Error {
      */
     public static RaiseException frozenError(ThreadContext context, IRubyObject object, String message) {
         return RubyFrozenError.newFrozenError(context, newString(context, message), object).toThrowable();
+    }
+
+
+    /**
+     * Create an index error with a simple ASCII String.
+     *
+     * @param context the current thread context
+     * @param message to be displayed in the error
+     * @return the error
+     */
+    public static RaiseException indexError(ThreadContext context, String message) {
+        return context.runtime.newRaiseException(context.runtime.getIndexError(), message);
+    }
+
+    /**
+     * Create a name error with a simple ASCII String and the failing name.
+     *
+     * @param context the current thread context
+     * @param message to be displayed in the error
+     * @param name involved in the error
+     * @return the error
+     */
+    public static RaiseException nameError(ThreadContext context, String message, String name) {
+        return context.runtime.newNameError(message, name, null, false);
+    }
+
+    /**
+     * Create a name error with a simple ASCII String and the failing name.
+     *
+     * @param context the current thread context
+     * @param message to be displayed in the error
+     * @param name involved in the error
+     * @return the error
+     */
+    public static RaiseException nameError(ThreadContext context, String message, IRubyObject name) {
+        return context.runtime.newNameError(message, name, (Throwable) null, false);
+    }
+
+    /**
+     * Create a name error with a simple ASCII String and the failing name.
+     *
+     * @param context the current thread context
+     * @param message to be displayed in the error
+     * @param name involved in the error
+     * @param throwable the exception which caused this name error
+     * @return the error
+     */
+    public static RaiseException nameError(ThreadContext context, String message, String name, Throwable throwable) {
+        return context.runtime.newNameError(message, name, throwable, false);
+    }
+
+    /**
+     * Create a range error with a simple ASCII String.
+     *
+     * @param context the current thread context
+     * @param message to be displayed in the error
+     * @return the error
+     */
+    public static RaiseException rangeError(ThreadContext context, String message) {
+        return context.runtime.newRaiseException(context.runtime.getRangeError(), message);
+    }
+
+    /**
+     * Create a runtime error with a simple ASCII String.
+     *
+     * @param context the current thread context
+     * @param message to be displayed in the error
+     * @return the error
+     */
+    public static RaiseException runtimeError(ThreadContext context, String message) {
+        return context.runtime.newRaiseException(context.runtime.getRuntimeError(), message);
     }
 
     /**
@@ -101,6 +195,16 @@ public class Error {
     }
 
     /**
+     * Create a TypeError with the given message.
+     *
+     * @param context the current thread context
+     */
+    public static RaiseException zeroDivisionError(ThreadContext context) {
+        return context.runtime.newRaiseException(context.runtime.getZeroDivisionError(), "divided by 0");
+    }
+
+
+    /**
      * Create an instance of TypeError with the given message.
      *
      * @param context the current thread context
@@ -137,7 +241,39 @@ public class Error {
         return error;
     }
 
+    public static NotImplementedError notImplementedError(ThreadContext context, String message) {
+        return (NotImplementedError) context.runtime.newNotImplementedError(message);
+    }
+
+    public static ArgumentError keywordError(ThreadContext context, String error, RubyArray keys) {
+        long i = 0, len = keys.size();
+        StringBuilder message = new StringBuilder(error).append(" keyword");
+        if (len > 1) {
+            message.append('s');
+        }
+
+        if (len > 0) {
+            message.append(": ");
+            while (true) {
+                IRubyObject key = keys.eltOk(i);
+                message.append(key.inspect(context).toString());
+                if (++i >= len) break;
+                message.append(", ");
+            }
+        }
+
+        return argumentError(context, message.toString());
+    }
+
+    public static org.jruby.exceptions.Exception toRubyException(ThreadContext context, IOException ioe) {
+        return (org.jruby.exceptions.Exception) Helpers.newIOErrorFromException(context.runtime, ioe);
+    }
+
     private static IRubyObject typeFor(Ruby runtime, IRubyObject object) {
         return object instanceof RubyModule ? types(runtime, (RubyModule) object) : object.getMetaClass().getRealClass();
+    }
+
+    public static EOFError eofError(ThreadContext context, String message) {
+        return (EOFError) context.runtime.newEOFError(message);
     }
 }

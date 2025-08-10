@@ -39,6 +39,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
@@ -68,6 +69,7 @@ public class IncludedModuleWrapper extends IncludedModule {
     public IncludedModuleWrapper(Ruby runtime, RubyClass superClass, RubyModule origin, RubyModule methodsHolder) {
         super(runtime, superClass, origin);
         origin.addIncludingHierarchy(this);
+        // force writeable methods table so we see future updates
         methods = methodsHolder.getMethodsForWrite();
     }
 
@@ -80,12 +82,11 @@ public class IncludedModuleWrapper extends IncludedModule {
     @Override
     @Deprecated
     public IncludedModuleWrapper newIncludeClass(RubyClass superClass) {
-        IncludedModuleWrapper includedModule = new IncludedModuleWrapper(getRuntime(), superClass, getOrigin());
+        var context = getCurrentContext();
+        IncludedModuleWrapper includedModule = new IncludedModuleWrapper(context.runtime, superClass, getOrigin());
 
         // include its parent (and in turn that module's parents)
-        if (getSuperClass() != null) {
-            includedModule.includeModule(getSuperClass());
-        }
+        if (getSuperClass() != null) includedModule.includeModule(context, getSuperClass());
 
         return includedModule;
     }
@@ -161,8 +162,8 @@ public class IncludedModuleWrapper extends IncludedModule {
     }
 
     @Override
-    protected IRubyObject getAutoloadConstant(String name, boolean forceLoad) {
-        return origin.getAutoloadConstant(name, forceLoad);
+    protected IRubyObject getAutoloadConstant(ThreadContext context, String name, boolean forceLoad) {
+        return origin.getAutoloadConstant(context, name, forceLoad);
     }
 
     @Override

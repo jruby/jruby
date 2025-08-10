@@ -35,6 +35,7 @@ import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.targets.JVMVisitor;
 import org.jruby.ir.targets.JVMVisitorMethodContext;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.util.collections.IntHashMap;
 
 import static org.jruby.compiler.MethodJITTask.*;
@@ -56,13 +57,13 @@ class MethodCompiledJITTask extends JITCompiler.Task {
     }
 
     @Override
-    public void exec() throws NoSuchMethodException, IllegalAccessException {
+    public void exec(ThreadContext context) throws NoSuchMethodException, IllegalAccessException {
         // Check if the method has been explicitly excluded
         String excludeModuleName = checkExcludedMethod(jitCompiler.config, className, methodName, method);
         if (excludeModuleName != null) {
             method.setCallCount(-1);
             if (jitCompiler.config.isJitLogging()) {
-                logImpl("skipping (compiled) method in " + excludeModuleName);
+                logImpl(context, "skipping (compiled) method in " + excludeModuleName);
             }
             return;
         }
@@ -70,24 +71,23 @@ class MethodCompiledJITTask extends JITCompiler.Task {
         IRScope methodScope = method.getIRScope();
 
         final String key = SexpMaker.sha1(methodScope);
-        final Ruby runtime = jitCompiler.runtime;
-        JVMVisitor visitor = JVMVisitor.newForJIT(runtime);
-        MethodJITClassGenerator generator = new MethodJITClassGenerator(className, methodName, key, runtime, method, visitor);
+        JVMVisitor visitor = JVMVisitor.newForJIT(context.runtime);
+        MethodJITClassGenerator generator = new MethodJITClassGenerator(className, methodName, key, context.runtime, method, visitor);
 
-        JVMVisitorMethodContext context = new JVMVisitorMethodContext();
-        generator.compile(context);
+        JVMVisitorMethodContext methodContext = new JVMVisitorMethodContext();
+        generator.compile(methodContext);
 
         Class<?> sourceClass = defineClass(generator, visitor, methodScope, method.ensureInstrsReady());
         if (sourceClass == null) return; // class could not be found nor generated; give up on JIT and bail out
 
-        String variableName = context.getVariableName();
-        MethodHandle variable = JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, variableName, context.getNativeSignature(-1));
-        IntHashMap<MethodType> signatures = context.getNativeSignaturesExceptVariable();
+        String variableName = methodContext.getVariableName();
+        MethodHandle variable = JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, variableName, methodContext.getNativeSignature(-1));
+        IntHashMap<MethodType> signatures = methodContext.getNativeSignaturesExceptVariable();
 
         method.setVariable(variable);
         if (signatures.size() != 0) {
             for (IntHashMap.Entry<MethodType> entry : signatures.entrySet()) {
-                method.setSpecific(JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, context.getSpecificName(), entry.getValue()));
+                method.setSpecific(JITCompiler.PUBLIC_LOOKUP.findStatic(sourceClass, methodContext.getSpecificName(), entry.getValue()));
                 break; // FIXME: only supports one arity
             }
         }
@@ -99,18 +99,18 @@ class MethodCompiledJITTask extends JITCompiler.Task {
     }
 
     @Override
-    protected void logJitted() {
-        logImpl("(compiled) method done jitting");
+    protected void logJitted(ThreadContext context) {
+        logImpl(context, "(compiled) method done jitting");
     }
 
     @Override
-    protected void logFailed(final Throwable ex) {
-        logImpl("could not re-compile method; passes run: " + method.getIRScope().getExecutedPasses(), ex);
+    protected void logFailed(ThreadContext context, final Throwable ex) {
+        logImpl(context, "could not re-compile method; passes run: " + method.getIRScope().getExecutedPasses(), ex);
     }
 
     @Override
-    protected void logImpl(final String message, Object... reason) {
-        JITCompiler.log(method, methodName, message, reason);
+    protected void logImpl(ThreadContext context, final String message, Object... reason) {
+        JITCompiler.log(context, method, methodName, message, reason);
     }
 
 }

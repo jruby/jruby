@@ -32,6 +32,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -47,9 +48,8 @@ import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.specialized.RubyObjectSpecializer;
 import org.jruby.util.ArraySupport;
-import org.jruby.util.cli.Options;
-import org.jruby.util.unsafe.UnsafeHolder;
 
+import static org.jruby.api.Error.nameError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 
@@ -107,6 +107,27 @@ public class VariableTableManager {
     }
 
     /**
+     * Copy constructor with deep cloning.
+     *
+     * @param original VariableTableManager to copy
+     */
+    VariableTableManager(VariableTableManager original) {
+        synchronized (original) {
+            this.realClass = original.realClass;
+            this.variableAccessors = copyVariableAccessors(original.variableAccessors);
+            this.variableNames = original.variableNames.clone();
+            this.hasObjectID = original.hasObjectID;
+            this.hasFFI = original.hasFFI;
+            this.hasObjectspaceGroup = original.hasObjectspaceGroup;
+            this.fieldVariables = original.fieldVariables;
+        }
+    }
+
+    public RubyClass getRealClass() {
+        return realClass;
+    }
+
+    /**
      * Get the map of all current variable accessors with intent to read from it.
      *
      * @return a map of current variable accessors
@@ -154,11 +175,7 @@ public class VariableTableManager {
      * @param value the value
      */
     public void setVariableInternal(RubyBasicObject self, int index, Object value) {
-        if(UnsafeHolder.U == null) {
-            SynchronizedVariableAccessor.setVariable(self,realClass,index,value);
-        } else {
-            StampedVariableAccessor.setVariable(self,realClass,index,value);
-        }
+        AtomicVariableTable.setVariableAtomic(self,realClass,true,index,value);
     }
 
     /**
@@ -170,11 +187,7 @@ public class VariableTableManager {
      * @param value the value of the variable
      */
     public static void setVariableInternal(RubyClass realClass, RubyBasicObject self, int index, Object value) {
-        if(UnsafeHolder.U == null) {
-            SynchronizedVariableAccessor.setVariable(self,realClass,index,value);
-        } else {
-            StampedVariableAccessor.setVariable(self,realClass,index,value);
-        }
+        AtomicVariableTable.setVariableAtomic(self,realClass,true,index,value);
     }
 
     /**
@@ -183,7 +196,7 @@ public class VariableTableManager {
      */
     public synchronized void requestFieldStorage(String name, Class<?> fieldType,  Boolean unwrap, Class<?> toType) {
         DirectFieldConfiguration config = new JavaClassConfiguration.DirectFieldConfiguration(name, fieldType, unwrap, toType);
-        if (realClass.getReifiedClass() != null)
+        if (realClass.reifiedClass() != null)
             requestFieldStorage(config);
         else {
             if (realClass.getClassConfig().requestedStorageVariables == null)
@@ -198,7 +211,7 @@ public class VariableTableManager {
      */
     public void requestFieldStorage(DirectFieldConfiguration config) {
         try {
-            Class<? extends Reified> reifiedClass = realClass.getReifiedClass();
+            Class<? extends Reified> reifiedClass = realClass.reifiedClass();
             Class<?> fieldType = reifiedClass.getField(config.name).getType();
             if (fieldType != config.fieldType) {
                 throw typeError(realClass.getClassRuntime().getCurrentContext(), "java_field " + config.name + " has incorrectly specified types for @ivar mapping");
@@ -218,7 +231,7 @@ public class VariableTableManager {
                     RubyObjectSpecializer.LOOKUP.findGetter(reifiedClass, config.name, fieldType),
                     RubyObjectSpecializer.LOOKUP.findSetter(reifiedClass, config.name, fieldType));
         } catch (NoSuchFieldException e) {
-            throw realClass.getClassRuntime().newNameError("java_field " + config.name + " was marked for @ivar mapping, but wasn't found (was the class reifed already?)", config.name);
+            throw nameError(realClass.getClassRuntime().getCurrentContext(), "java_field " + config.name + " was marked for @ivar mapping, but wasn't found (was the class reifed already?)", config.name);
         } catch (IllegalAccessException e) {
             throw realClass.getClassRuntime().newSecurityError("Error in accessing java_field " +config.name+ ": " + e.getMessage());
         }
@@ -262,16 +275,22 @@ public class VariableTableManager {
                 if (ivarAccessor == null) {
                     // allocate a new accessor and populate a new table
                     ivarAccessor = allocateVariableAccessors(name, defaultAccessorBuilder);
-                    Map<String, VariableAccessor> newVariableAccessors = new LinkedHashMap<>(myVariableAccessors.size() + 1);
-
-                    newVariableAccessors.putAll(myVariableAccessors);
-                    newVariableAccessors.put(name, ivarAccessor);
-
-                    variableAccessors = newVariableAccessors;
+                    variableAccessors = copyVariableAccessors(myVariableAccessors, name, ivarAccessor);
                 }
             }
         }
         return ivarAccessor;
+    }
+
+    private static Map<String, VariableAccessor> copyVariableAccessors(Map<String, VariableAccessor> myVariableAccessors) {
+        return new LinkedHashMap<>(myVariableAccessors);
+    }
+
+    private static Map<String, VariableAccessor> copyVariableAccessors(Map<String, VariableAccessor> myVariableAccessors, String name, VariableAccessor ivarAccessor) {
+        LinkedHashMap<String, VariableAccessor> newVariableAccessors = new LinkedHashMap<>(myVariableAccessors.size() + 1);
+        newVariableAccessors.putAll(myVariableAccessors);
+        newVariableAccessors.put(name, ivarAccessor);
+        return newVariableAccessors;
     }
 
     /**
@@ -424,32 +443,23 @@ public class VariableTableManager {
 
             Object[] otherVars = ((RubyBasicObject) other).varTable;
 
-            if(UnsafeHolder.U == null)
-            {
-                synchronized (self) {
-                    self.varTable = makeSyncedTable(self.varTable, otherVars, idIndex);
-                }
-            } else {
-                for(;;) {
-                    int oldStamp = self.varTableStamp;
-                    // wait for read mode
-                    if((oldStamp & 0x01) == 1)
-                        continue;
-                    // acquire exclusive write mode
-                    if(!UnsafeHolder.U.compareAndSwapInt(self, RubyBasicObject.STAMP_OFFSET, oldStamp, ++oldStamp))
-                        continue;
+            for(;;) {
+                int oldStamp = self.varTableStamp;
+                // wait for read mode
+                if((oldStamp & 0x01) == 1)
+                    continue;
+                // acquire exclusive write mode
+                if(!VariableAccessor.STAMP_HANDLE.compareAndSet(self, oldStamp, ++oldStamp))
+                    continue;
 
-                    Object[] currentTable = (Object[]) UnsafeHolder.U.getObjectVolatile(self, RubyBasicObject.VAR_TABLE_OFFSET);
-                    Object[] newTable = makeSyncedTable(currentTable,otherVars, idIndex);
+                Object[] currentTable = (Object[]) VariableAccessor.VAR_TABLE_HANDLE.getVolatile(self);
+                Object[] newTable = makeSyncedTable(currentTable,otherVars, idIndex);
 
-                    UnsafeHolder.U.putOrderedObject(self, RubyBasicObject.VAR_TABLE_OFFSET, newTable);
+                VariableAccessor.VAR_TABLE_HANDLE.setRelease(self, newTable);
 
-                    // release write mode
-                    self.varTableStamp = oldStamp+1;
-                    break;
-                }
-
-
+                // release write mode
+                self.varTableStamp = oldStamp+1;
+                break;
             }
 
         } else {
@@ -530,6 +540,10 @@ public class VariableTableManager {
 
             return value;
         }
+    }
+
+    public VariableTableManager duplicate() {
+        return new VariableTableManager(this);
     }
 
     /**
@@ -621,20 +635,7 @@ public class VariableTableManager {
      * Makes a standard table accessor builder. Pass this into getVariableAccessorWithBuilder
      */
     final Function<Integer, VariableAccessor> makeTableVariableAccessorBuilder(String name) {
-        if (Options.VOLATILE_VARIABLES.load()) {
-            if (UnsafeHolder.U == null) {
-                return (newIndex) -> new SynchronizedVariableAccessor(realClass, name, newIndex, realClass.id);
-            } else {
-                return (newIndex) -> new StampedVariableAccessor(realClass, name, newIndex, realClass.id);
-            }
-        } else {
-            if (UnsafeHolder.U == null) {
-                return (newIndex) -> new NonvolatileVariableAccessor(realClass, name, newIndex, realClass.id);
-            } else {
-                // We still need safe updating of the vartable, so we fall back on sync here too.
-                return (newIndex) -> new StampedVariableAccessor(realClass, name, newIndex, realClass.id);
-            }
-        }
+        return (newIndex) -> new StampedVariableAccessor(realClass, name, newIndex, realClass.id);
     }
 
     /**
@@ -683,7 +684,7 @@ public class VariableTableManager {
      * @return the lazy accessor for object_id
      * @deprecated Use {@link #getObjectIdAccessorForRead()} or {@link #getObjectIdAccessorForWrite()}
      */
-    @Deprecated(since = "9.4-", forRemoval = true)
+    @Deprecated(since = "9.4-")
     public VariableAccessorField getObjectIdAccessorField() {
         return objectIdVariableAccessorField;
     }
@@ -694,7 +695,7 @@ public class VariableTableManager {
      * @return the lazy accessor for FFI handle
      * @deprecated Use {@link #getFFIHandleAccessorForRead()} or {@link #getFFIHandleAccessorForWrite()}
      */
-    @Deprecated(since = "9.4-", forRemoval = true)
+    @Deprecated(since = "9.4-")
     public VariableAccessorField getFFIHandleAccessorField() {
         return ffiHandleVariableAccessorField;
     }
@@ -705,7 +706,7 @@ public class VariableTableManager {
      * @return the lazy accessor for object group
      * @deprecated Use {@link #getObjectGroupAccessorForRead()} or {@link #getObjectGroupAccessorForWrite()}
      */
-    @Deprecated(since = "9.4-", forRemoval = true)
+    @Deprecated(since = "9.4-")
     public VariableAccessorField getObjectGroupAccessorField() {
         return objectGroupVariableAccessorField;
     }

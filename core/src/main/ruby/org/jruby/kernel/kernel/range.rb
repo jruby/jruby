@@ -3,21 +3,27 @@ class Range
     b = self.begin
     e = self.end
 
-    return to_enum(:bsearch) unless block_given?
-
     if b.is_a?(Float) || e.is_a?(Float)
-      BSearch.float_search(b, e, exclude_end?, &cond)
+      return to_enum(:bsearch) if !cond
+      return BSearch.float_search(b, e, exclude_end?, &cond)
     else
-      BSearch.integer_search(b, e, exclude_end?, &cond)
+      b_int = b.is_a?(Integer)
+      e_int = e.is_a?(Integer)
+      if b_int || e_int
+        return to_enum(:bsearch) if !cond
+        return BSearch.integer_search(b, b_int, e, e_int, exclude_end?, &cond)
+      end
     end
+
+    raise TypeError, "can't do binary search for #{b.class}"
   end
 
   class BSearch
     def self.float_search(b, e, excl)
       satisfied = nil
 
-      low = double_as_long(b.nil? ? -(Float::INFINITY) : b)
-      high = double_as_long(e.nil? ? Float::INFINITY : e)
+      low = double_as_long(b.nil? ? NEGATIVE_INFINITY : b)
+      high = double_as_long(e.nil? ? INFINITY : e)
 
       high -= 1 if excl
 
@@ -82,18 +88,17 @@ class Range
       satisfied
     end
 
-    def self.integer_search(b, e, excl, &cond)
-      b_int = b.is_a?(Integer)
-      e_int = e.is_a?(Integer)
-
+    def self.integer_search(b, b_int, e, e_int, excl, &cond)
       if b_int
         if e_int
           return binary_search(b, e, excl, &cond)
         elsif e.nil?
+          return to_enum(:bsearch) unless block_given?
           return integer_begin(b, &cond)
         end
       elsif e_int
         if b.nil?
+          return to_enum(:bsearch) unless block_given?
           return integer_end(e, &cond)
         end
       end
@@ -104,6 +109,8 @@ class Range
     private
 
     def self.binary_search(low, high, excl)
+      return to_enum(:bsearch) unless block_given?
+
       satisfied = nil
 
       high -= 1 if excl
@@ -246,4 +253,30 @@ class Range
     end
   end
   private_constant :BSearch
+
+  def overlap?(other)
+    raise TypeError, "wrong argument type #{other.class} (expected Range)" unless other.is_a?(Range)
+
+    self_begin = self.begin || NEGATIVE_INFINITY
+    self_end = self.end || INFINITY
+    self_exclude = exclude_end?
+    other_begin = other.begin || NEGATIVE_INFINITY
+    other_end = other.end || INFINITY
+    other_exclude = other.exclude_end?
+
+    !!(__overlap(other_begin, self_end, self_exclude) &&
+      __overlap(self_begin, other_end, other_exclude) &&
+      __overlap(self_begin, self_end, self_exclude) &&
+      __overlap(other_begin, other_end, other_exclude))
+  end
+
+  private def __overlap(from, to, excl)
+    less = from <=> to
+    less = +1 if less == 0 && excl
+    less && less <= 0
+  end
+
+  INFINITY = Float::INFINITY
+  NEGATIVE_INFINITY = -Float::INFINITY
+  private_constant :NEGATIVE_INFINITY, :INFINITY
 end

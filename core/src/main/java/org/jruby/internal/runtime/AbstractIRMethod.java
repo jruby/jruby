@@ -50,6 +50,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ivars.MethodData;
 import org.jruby.util.cli.Options;
 
+import static org.jruby.api.Access.instanceConfig;
+
 public abstract class AbstractIRMethod extends DynamicMethod implements IRMethodArgs, PositionAware, Cloneable {
 
     protected final Signature signature;
@@ -84,27 +86,36 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
         }
     }
 
-    public static <T extends AbstractIRMethod & Compilable> void tryJit(ThreadContext context, T self) {
-        final Ruby runtime = context.runtime;
-        if (runtime.isBooting() && !Options.JIT_KERNEL.load()) return; // don't JIT during runtime boot
+    protected static <T extends AbstractIRMethod & Compilable> void tryJit(ThreadContext context, T self, boolean force) {
+        if (context.runtime.isBooting() && !Options.JIT_KERNEL.load()) return; // don't JIT during runtime boot
 
         if (self.callCount < 0) return;
         // we don't synchronize callCount++ it does not matter if count isn't accurate
-        if (self.callCount++ >= runtime.getInstanceConfig().getJitThreshold()) {
+        if (self.callCount++ >= instanceConfig(context).getJitThreshold()) {
             synchronized (self) { // disable same jit tasks from entering queue twice
                 if (self.callCount >= 0) {
-                    self.callCount = Integer.MIN_VALUE; // so that callCount++ stays < 0
-
-                    runtime.getJITCompiler().buildThresholdReached(context, self);
+                    build(context, self, false);
                 }
             }
         }
+    }
+
+    protected static <T extends AbstractIRMethod & Compilable> void build(ThreadContext context, T self, boolean force) {
+        self.callCount = Integer.MIN_VALUE; // so that callCount++ stays < 0
+
+        context.runtime.getJITCompiler().buildThresholdReached(context, self, force);
     }
 
     public final void setCallCount(int callCount) {
         synchronized (this) {
             this.callCount = callCount;
         }
+    }
+
+    // Overrides method in Compilable but this class does not implement that.
+    public boolean isBuildComplete() {
+        // Successful build and disabled build both set callCount to -1, indicating no further build is possible.
+        return callCount < 0;
     }
 
     public IRScope getIRScope() {
@@ -212,7 +223,7 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
         return ruby2Keywords;
     }
 
-    /**
+    /*
      * Calls a split method (java constructor-invoked initialize) and returns the paused state. If
      * this method doesn't have a super call, returns null without execution.
      */

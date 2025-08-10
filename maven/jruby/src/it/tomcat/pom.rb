@@ -4,7 +4,7 @@ id 'dummy:tomcat:1.0-SNAPSHOT'
 packaging 'war'
 
 # default versions will be overwritten by pom.rb from root directory
-properties( 'jruby.plugins.version' => '3.0.2',
+properties( 'jruby.plugins.version' => '3.0.6',
             'project.build.sourceEncoding' => 'utf-8' )
 
 pom( 'org.jruby:jruby', '${jruby.version}' )

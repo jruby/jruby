@@ -39,9 +39,13 @@ import junit.framework.TestCase;
 
 import org.jruby.Ruby;
 import org.jruby.RubyString;
+import org.jruby.api.Create;
 import org.jruby.runtime.ObjectSpace;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Access.arrayClass;
+import static org.jruby.api.Access.stringClass;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
 
@@ -50,7 +54,7 @@ import static org.jruby.api.Create.newString;
 */
 public class TestObjectSpace extends TestCase {
 
-    private Ruby runtime;
+    private ThreadContext context;
     private ObjectSpace target;
 
     public TestObjectSpace(String name) {
@@ -59,13 +63,13 @@ public class TestObjectSpace extends TestCase {
 
     public void setUp() throws Exception {
         super.setUp();
-        runtime = Ruby.newInstance();
+        context = Ruby.newInstance().getCurrentContext();
         target = new ObjectSpace();
     }
 
     public void testIdentities() {
-        RubyString o1 = runtime.newString("hey");
-        RubyString o2 = runtime.newString("ho");
+        RubyString o1 = newString(context, "hey");
+        RubyString o2 = newString(context, "ho");
 
         long id1 = target.createAndRegisterObjectId(o1);
         long id2 = target.createAndRegisterObjectId(o2);
@@ -81,10 +85,9 @@ public class TestObjectSpace extends TestCase {
     }
 
     public void testObjectSpace() {
-        var context = runtime.getCurrentContext();
-        IRubyObject o1 = newArray(context, 10);
-        IRubyObject o2 = newArray(context, 20);
-        IRubyObject o3 = newArray(context, 30);
+        IRubyObject o1 = Create.allocArray(context, 10);
+        IRubyObject o2 = Create.allocArray(context, 20);
+        IRubyObject o3 = Create.allocArray(context, 30);
         IRubyObject o4 = newString(context, "hello");
 
         target.add(o1);
@@ -97,11 +100,11 @@ public class TestObjectSpace extends TestCase {
         storedArrays.add(o2);
         storedArrays.add(o3);
 
-        Iterator strings = target.iterator(runtime.getString());
+        Iterator strings = target.iterator(stringClass(context));
         assertSame(o4, strings.next());
         assertNull(strings.next());
 
-        Iterator array = target.iterator(runtime.getArray());
+        Iterator array = target.iterator(arrayClass(context));
         for (int i = 0; i < 3; i++) {
             Object item = array.next();
             assertTrue(storedArrays.contains(item));

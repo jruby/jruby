@@ -16,6 +16,8 @@ public class LexContext {
     // Is the parser currently within a method definition
     public boolean in_def;
 
+    public boolean cant_return;
+
     public boolean in_defined;
 
     public boolean in_kwarg;

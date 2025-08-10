@@ -1012,7 +1012,7 @@ describe "C-API String function" do
       result = @s.rb_str_export_to_enc(source, Encoding::UTF_8)
       source.bytes.should == [0, 255]
     end
-end
+  end
 
   describe "rb_sprintf" do
     it "replaces the parts like sprintf" do
@@ -1040,11 +1040,19 @@ end
       @s.rb_sprintf3(true.class).should == s
     end
 
-    ruby_bug "#19167", ""..."3.2" do
-      it "formats a TrueClass VALUE as 'true' if sign specified in format" do
-        s = 'Result: TrueClass.'
-        @s.rb_sprintf4(true.class).should == s
-      end
+    it "formats a TrueClass VALUE as 'true' if sign specified in format" do
+      s = 'Result: TrueClass.'
+      @s.rb_sprintf4(true.class).should == s
+    end
+
+    it "formats nil using to_s if sign not specified in format" do
+      s = 'Result: .'
+      @s.rb_sprintf3(nil).should == s
+    end
+
+    it "formats nil using inspect if sign specified in format" do
+      s = 'Result: nil.'
+      @s.rb_sprintf4(nil).should == s
     end
 
     it "truncates a string to a supplied precision if that is shorter than the string" do
@@ -1203,28 +1211,50 @@ end
 
   describe "rb_str_locktmp" do
     it "raises an error when trying to lock an already locked string" do
-      str = "test"
+      str = +"test"
       @s.rb_str_locktmp(str).should == str
       -> { @s.rb_str_locktmp(str) }.should raise_error(RuntimeError, 'temporal locking already locked string')
     end
 
     it "locks a string so that modifications would raise an error" do
-      str = "test"
+      str = +"test"
       @s.rb_str_locktmp(str).should == str
       -> { str.upcase! }.should raise_error(RuntimeError, 'can\'t modify string; temporarily locked')
+    end
+
+    ruby_bug "#20998", ""..."3.6" do # TODO: check when Ruby 3.5 is released
+      it "raises FrozenError if string is frozen" do
+        str = -"rb_str_locktmp"
+        -> { @s.rb_str_locktmp(str) }.should raise_error(FrozenError)
+
+        str = +"rb_str_locktmp"
+        str.freeze
+        -> { @s.rb_str_locktmp(str) }.should raise_error(FrozenError)
+      end
     end
   end
 
   describe "rb_str_unlocktmp" do
     it "unlocks a locked string" do
-      str = "test"
+      str = +"test"
       @s.rb_str_locktmp(str)
       @s.rb_str_unlocktmp(str).should == str
       str.upcase!.should == "TEST"
     end
 
     it "raises an error when trying to unlock an already unlocked string" do
-      -> { @s.rb_str_unlocktmp("test") }.should raise_error(RuntimeError, 'temporal unlocking already unlocked string')
+      -> { @s.rb_str_unlocktmp(+"test") }.should raise_error(RuntimeError, 'temporal unlocking already unlocked string')
+    end
+
+    ruby_bug "#20998", ""..."3.6" do # TODO: check when Ruby 3.5 is released
+      it "raises FrozenError if string is frozen" do
+        str = -"rb_str_locktmp"
+        -> { @s.rb_str_unlocktmp(str) }.should raise_error(FrozenError)
+
+        str = +"rb_str_locktmp"
+        str.freeze
+        -> { @s.rb_str_unlocktmp(str) }.should raise_error(FrozenError)
+      end
     end
   end
 
@@ -1260,6 +1290,51 @@ end
       it "uses the default encoding if encoding is null" do
         str = "hello"
         val = @s.rb_enc_interned_str_cstr(str, nil)
+        val.encoding.should == Encoding::ASCII_8BIT
+      end
+    end
+  end
+
+  describe "rb_enc_interned_str" do
+    it "returns a frozen string" do
+      str = "hello"
+      val = @s.rb_enc_interned_str(str, str.bytesize, Encoding::US_ASCII)
+
+      val.should.is_a?(String)
+      val.encoding.should == Encoding::US_ASCII
+      val.should.frozen?
+    end
+
+    it "returns the same frozen string" do
+      str = "hello"
+      result1 = @s.rb_enc_interned_str(str, str.bytesize, Encoding::US_ASCII)
+      result2 = @s.rb_enc_interned_str(str, str.bytesize, Encoding::US_ASCII)
+      result1.should.equal?(result2)
+    end
+
+    it "returns different frozen strings for different encodings" do
+      str = "hello"
+      result1 = @s.rb_enc_interned_str(str, str.bytesize, Encoding::US_ASCII)
+      result2 = @s.rb_enc_interned_str(str, str.bytesize, Encoding::UTF_8)
+      result1.should_not.equal?(result2)
+    end
+
+    it 'returns the same string when using non-ascii characters' do
+      str = 'こんにちは'
+      result1 = @s.rb_enc_interned_str(str, str.bytesize, Encoding::UTF_8)
+      result2 = @s.rb_enc_interned_str(str, str.bytesize, Encoding::UTF_8)
+      result1.should.equal?(result2)
+    end
+
+    it "returns the same string as String#-@" do
+      str = "hello"
+      @s.rb_enc_interned_str(str, str.bytesize, Encoding::UTF_8).should.equal?(-str)
+    end
+
+    ruby_bug "#20322", ""..."3.4" do
+      it "uses the default encoding if encoding is null" do
+        str = "hello"
+        val = @s.rb_enc_interned_str(str, str.bytesize, nil)
         val.encoding.should == Encoding::ASCII_8BIT
       end
     end

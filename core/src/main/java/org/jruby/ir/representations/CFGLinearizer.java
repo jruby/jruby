@@ -14,11 +14,11 @@ import static org.jruby.ir.representations.CFG.EdgeType.*;
  * This produces a linear list of BasicBlocks so that the linearized instruction
  * list is in executable form.  In generating this list, we will also add jumps
  * where required and remove as many jumps as possible.
- * </p>
+ * <p>
  * Ordinary BasicBlocks will follow FollowThrough edges and just concatenate
  * together eliminating the need for executing a jump instruction during
  * execution.
- * </p>
+ * <p>
  * Notes:
  * 1. Basic blocks ending in branches have two edges (FollowTrough/NotTaken and Taken)
  * 2. All BasicBlocks can possibly have two additional edges related to exceptions:
@@ -28,7 +28,7 @@ import static org.jruby.ir.representations.CFG.EdgeType.*;
  *      situations where we bypass the rescue block (breaks and thread-kill).
  * 3. Branch, Jump, Return, and Exceptions are all boundaries for BasicBlocks
  * 4. Dummy Entry and Exit BasicBlocks exist in all CFGs
- * </p>
+ * <p>
  * NOTE: When the IR builder first builds its list, and the CFG builder builds the CFG,
  * the order in which BBs are created should already be a linearized list.  Need to verify
  * this, and we might be able to skip linearization if the CFG has not been transformed

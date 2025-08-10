@@ -4,12 +4,6 @@
  */
 package org.jruby.ast.java_signature;
 
-/**
- *
- * 
- * 
- * @author enebo
- */
 // @Foo(@bar)         DEFAULT for single value anno
 // @Foo(value=@bar)   ANNO
 // @Foo(value={@bar}) LIST

@@ -7,10 +7,6 @@ package org.jruby.ast;
 
 import org.jruby.RubySymbol;
 
-/**
- *
- * @author enebo
- */
 public class Colon2ConstNode extends Colon2Node {
     public Colon2ConstNode(int line, Node leftNode, RubySymbol name) {
         super(line, leftNode, name);

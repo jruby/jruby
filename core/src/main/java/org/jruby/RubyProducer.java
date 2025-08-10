@@ -34,6 +34,8 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.asFloat;
+
 /**
  * Implements Enumerator::Producer
  */
@@ -43,13 +45,10 @@ public class RubyProducer extends RubyObject {
     private IRubyObject init;
     private Block producerBlock;
 
-    public static RubyClass createProducerClass(Ruby runtime, RubyClass enumeratorModule) {
-        RubyClass producerc = runtime.defineClassUnder("Producer", runtime.getObject(), RubyProducer::new, enumeratorModule);
-
-        producerc.includeModule(runtime.getEnumerable());
-        producerc.defineAnnotatedMethods(RubyProducer.class);
-
-        return producerc;
+    public static RubyClass createProducerClass(ThreadContext context, RubyClass Object, RubyClass Enumerator, RubyModule Enumerable) {
+        return Enumerator.defineClassUnder(context, "Producer", Object, RubyProducer::new).
+                include(context, Enumerable).
+                defineMethods(context, RubyProducer.class);
     }
 
     public RubyProducer(Ruby runtime, RubyClass klass) {
@@ -69,7 +68,7 @@ public class RubyProducer extends RubyObject {
     /** MRI: producer_size
      */
     public static IRubyObject size(ThreadContext context, RubyProducer self, IRubyObject[] args) {
-        return RubyNumeric.dbl2num(context.runtime, Double.POSITIVE_INFINITY);
+        return asFloat(context, Double.POSITIVE_INFINITY);
     }
 
     @JRubyMethod(rest = true)

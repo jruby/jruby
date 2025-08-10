@@ -13,7 +13,10 @@ import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Define.defineClass;
+import static org.jruby.api.Error.runtimeError;
 
 @JRubyClass(name = "Monitor")
 public class Monitor extends RubyObject {
@@ -27,10 +30,8 @@ public class Monitor extends RubyObject {
         mutex = new Mutex(runtime, runtime.getMutex());
     }
 
-    public static void createMonitorClass(Ruby runtime) {
-        RubyClass cMonitor = runtime.defineClass("Monitor", runtime.getObject(), Monitor::new);
-
-        cMonitor.defineAnnotatedMethods(Monitor.class);
+    public static void createMonitorClass(ThreadContext context) {
+        defineClass(context, "Monitor", objectClass(context), Monitor::new).defineMethods(context, Monitor.class);
     }
 
     @JRubyMethod
@@ -65,7 +66,7 @@ public class Monitor extends RubyObject {
     public IRubyObject exit(ThreadContext context) {
         mon_check_owner(context);
 
-        if (count <= 0) throw context.runtime.newRuntimeError("monitor_exit: count:" + count + "\n");
+        if (count <= 0) throw runtimeError(context, "monitor_exit: count:" + count + "\n");
 
         count--;
 

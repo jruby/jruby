@@ -28,7 +28,6 @@ package org.jruby.ext.coverage;
 
 import java.util.Map;
 
-import org.jruby.Ruby;
 import org.jruby.RubyHash;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
@@ -40,10 +39,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.collections.IntList;
 
-import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Convert.castAsSymbol;
+import static org.jruby.api.Access.hashClass;
+import static org.jruby.api.Convert.*;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Error.runtimeError;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Warn.warn;
 import static org.jruby.ext.coverage.CoverageData.CoverageDataState.*;
 import static org.jruby.ext.coverage.CoverageData.EVAL;
 import static org.jruby.ext.coverage.CoverageData.LINES;
@@ -54,50 +55,43 @@ import static org.jruby.util.RubyStringBuilder.str;
  * Implementation of Ruby 1.9.2's "Coverage" module
  */
 public class CoverageModule {
-    @JRubyMethod(module = true, optional = 1, keywords = true, checkArity = false)
+    @JRubyMethod(module = true, optional = 1, checkArity = false)
     public static IRubyObject setup(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 0, 1);
+        int mode;
+        CoverageData data = context.runtime.getCoverageData();
 
-        Ruby runtime = context.runtime;
-        int mode = 0;
+        if (data.getCurrentState() != IDLE) throw runtimeError(context, "coverage measurement is already setup");
 
-        CoverageData data = runtime.getCoverageData();
+        IRubyObject opt = argc == 0 ? context.nil : args[0];
+        if (argc == 0) {
+            mode = 0;
+        } else  if (opt instanceof RubySymbol && opt == asSymbol(context, "all")) {
+            mode = CoverageData.ALL;
+        } else {
+            mode = 0;
 
-        if (data.getCurrentState() != IDLE) {
-            throw runtime.newRuntimeError("coverage measurement is already setup");
-        }
+            RubyHash keywords = (RubyHash) TypeConverter.convertToType(opt, hashClass(context), "to_hash");
 
-        if (argc != 0) {
-            boolean keyword = hasKeywords(ThreadContext.resetCallInfo(context));
+            if (ArgsUtil.extractKeywordArg(context, "lines", keywords).isTrue()) {
+                mode |= LINES;
+            }
+            if (ArgsUtil.extractKeywordArg(context, "eval", keywords).isTrue()) {
+                mode |= EVAL;
+            }
+            if (ArgsUtil.extractKeywordArg(context, "branches", keywords).isTrue()) {
+                warn(context, "branch coverage is not supported");
+                mode |= CoverageData.BRANCHES;
+            }
+            if (ArgsUtil.extractKeywordArg(context, "methods", keywords).isTrue()) {
+                warn(context, "method coverage is not supported");
+                mode |= CoverageData.METHODS;
+            }
+            if (ArgsUtil.extractKeywordArg(context, "oneshot_lines", keywords).isTrue()) {
+                if ((mode & LINES) != 0) throw runtimeError(context, "cannot enable lines and oneshot_lines simultaneously");
 
-            if (keyword) {
-                RubyHash keywords = (RubyHash) TypeConverter.convertToType(args[0], runtime.getHash(), "to_hash");
-
-                if (ArgsUtil.extractKeywordArg(context, "lines", keywords).isTrue()) {
-                    mode |= LINES;
-                }
-                if (ArgsUtil.extractKeywordArg(context, "eval", keywords).isTrue()) {
-                    mode |= EVAL;
-                }
-                if (ArgsUtil.extractKeywordArg(context, "branches", keywords).isTrue()) {
-                    runtime.getWarnings().warn("branch coverage is not supported");
-                    mode |= CoverageData.BRANCHES;
-                }
-                if (ArgsUtil.extractKeywordArg(context, "methods", keywords).isTrue()) {
-                    runtime.getWarnings().warn("method coverage is not supported");
-                    mode |= CoverageData.METHODS;
-                }
-                if (ArgsUtil.extractKeywordArg(context, "oneshot_lines", keywords).isTrue()) {
-                    if ((mode & LINES) != 0) {
-                        throw runtime.newRuntimeError("cannot enable lines and oneshot_lines simultaneously");
-                    }
-                    mode |= LINES;
-                    mode |= CoverageData.ONESHOT_LINES;
-                }
-            } else if (args[0] instanceof RubySymbol && args[0] == runtime.newSymbol("all")) {
-                mode |= CoverageData.ALL;
-            } else {
-                throw typeError(context, str(runtime, "no implicit conversion of ", args[0].getMetaClass(), " into Hash"));
+                mode |= LINES;
+                mode |= CoverageData.ONESHOT_LINES;
             }
         }
 
@@ -107,7 +101,7 @@ public class CoverageModule {
 
             data.setCoverage(mode, currentMode, SUSPENDED);
         } else if (currentMode != data.getCurrentMode()) {
-            throw runtime.newRuntimeError("cannot change the measuring target during coverage measurement");
+            throw runtimeError(context, "cannot change the measuring target during coverage measurement");
         }
 
         return context.nil;
@@ -117,11 +111,8 @@ public class CoverageModule {
     public static IRubyObject resume(ThreadContext context, IRubyObject self) {
         CoverageData data = context.runtime.getCoverageData();
 
-        if (data.getCurrentState() == IDLE) {
-            throw context.runtime.newRuntimeError("coverage measurement is not set up yet");
-        } else if (data.getCurrentState() == RUNNING) {
-            throw context.runtime.newRuntimeError("coverage measurement is already running");
-        }
+        if (data.getCurrentState() == IDLE) throw runtimeError(context, "coverage measurement is not set up yet");
+        if (data.getCurrentState() == RUNNING) throw runtimeError(context, "coverage measurement is already running");
 
         data.resumeCoverage();
 
@@ -132,9 +123,7 @@ public class CoverageModule {
     public static IRubyObject suspend(ThreadContext context, IRubyObject self) {
         CoverageData data = context.runtime.getCoverageData();
 
-        if (data.getCurrentState() != RUNNING) {
-            throw context.runtime.newRuntimeError("coverage measurement is not running");
-        }
+        if (data.getCurrentState() != RUNNING) throw runtimeError(context, "coverage measurement is not running");
 
         data.suspendCoverage();
 
@@ -151,37 +140,28 @@ public class CoverageModule {
     @JRubyMethod(module = true, optional = 1, keywords = true, checkArity = false)
     public static IRubyObject result(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 0, 1);
+        CoverageData data = context.runtime.getCoverageData();
 
-        Ruby runtime = context.runtime;
-        CoverageData data = runtime.getCoverageData();
-
-        if (data.getCurrentState() == IDLE) {
-            throw runtime.newRuntimeError("coverage measurement is not enabled");
-        }
+        if (data.getCurrentState() == IDLE) throw runtimeError(context, "coverage measurement is not enabled");
 
         boolean stop = true;
         boolean clear = true;
 
         if (argc > 0 && hasKeywords(ThreadContext.resetCallInfo(context))) {
-            RubyHash keywords = (RubyHash) TypeConverter.convertToType(args[0], runtime.getHash(), "to_hash");
+            RubyHash keywords = (RubyHash) TypeConverter.convertToType(args[0], hashClass(context), "to_hash");
             stop = ArgsUtil.extractKeywordArg(context, "stop", keywords).isTrue();
             clear = ArgsUtil.extractKeywordArg(context, "clear", keywords).isTrue();
         }
 
         IRubyObject result = peek_result(context, self);
         if (stop && !clear) {
-            runtime.getWarnings().warn("stop implies clear");
+            warn(context, "stop implies clear");
             clear = true;
         }
 
-        if (clear) {
-            data.clearCoverage();
-        }
-
+        if (clear) data.clearCoverage();
         if (stop) {
-            if (data.getCurrentState() == RUNNING) {
-                data.suspendCoverage();
-            }
+            if (data.getCurrentState() == RUNNING) data.suspendCoverage();
             data.resetCoverage();
             data.setCurrentState(IDLE);
         }
@@ -193,9 +173,7 @@ public class CoverageModule {
     public static IRubyObject peek_result(ThreadContext context, IRubyObject self) {
         CoverageData coverageData = context.runtime.getCoverageData();
 
-        if (!coverageData.isCoverageEnabled()) {
-            throw context.runtime.newRuntimeError("coverage measurement is not enabled");
-        }
+        if (!coverageData.isCoverageEnabled()) throw runtimeError(context, "coverage measurement is not enabled");
 
         return convertCoverageToRuby(context, coverageData.getCoverage(), coverageData.getCurrentMode());
     }
@@ -207,15 +185,11 @@ public class CoverageModule {
 
     @JRubyMethod(module = true)
     public static IRubyObject state(ThreadContext context, IRubyObject self) {
-        Ruby runtime = context.runtime;
-
-        switch (runtime.getCoverageData().getCurrentState()) {
-            case IDLE: return runtime.newSymbol("idle");
-            case SUSPENDED: return runtime.newSymbol("suspended");
-            case RUNNING: return runtime.newSymbol("running");
-        }
-
-        return context.nil;
+        return switch (context.runtime.getCoverageData().getCurrentState()) {
+            case IDLE -> asSymbol(context, "idle");
+            case SUSPENDED -> asSymbol(context, "suspended");
+            case RUNNING -> asSymbol(context, "running");
+        };
     }
 
     @JRubyMethod(module = true)
@@ -227,49 +201,45 @@ public class CoverageModule {
     public static IRubyObject supported_p(ThreadContext context, IRubyObject self, IRubyObject arg) {
         RubySymbol mode = castAsSymbol(context, arg);
 
-        if (mode == context.runtime.newSymbol("lines") ||
-                mode == context.runtime.newSymbol("oneshot_lines") ||
-                mode == context.runtime.newSymbol("eval")) {
-            return context.tru;
-        }
-
-        return context.fals;
+        return mode == asSymbol(context, "lines") || mode == asSymbol(context, "oneshot_lines") || mode == asSymbol(context, "eval") ?
+                context.tru : context.fals;
     }
 
     private static IRubyObject convertCoverageToRuby(ThreadContext context, Map<String, IntList> coverage, int mode) {
-        Ruby runtime = context.runtime;
-        // populate a Ruby Hash with coverage data
-        RubyHash covHash = RubyHash.newHash(runtime);
-        if (coverage != null) {
-            for (Map.Entry<String, IntList> entry : coverage.entrySet()) {
-                final IntList val = entry.getValue();
-                boolean oneshot = (mode & CoverageData.ONESHOT_LINES) != 0;
+        if (coverage == null) return newSmallHash(context);
 
-                var ary = newArray(context, val.size());
-                for (int i = 0; i < val.size(); i++) {
-                    int integer = val.get(i);
-                    if (oneshot) {
-                        ary.push(asFixnum(context, integer + 1));
-                    } else {
-                        ary.store(i, integer == -1 ? context.nil : asFixnum(context, integer));
-                    }
+        RubyHash covHash = newHash(context);         // populate a Ruby Hash with coverage data
+
+        for (Map.Entry<String, IntList> entry : coverage.entrySet()) {
+            final IntList val = entry.getValue();
+            boolean oneshot = (mode & CoverageData.ONESHOT_LINES) != 0;
+
+            int size = val.size();
+            var ary = allocArray(context, size);
+            for (int i = 0; i < size; i++) {
+                int integer = val.get(i);
+                if (oneshot) {
+                    ary.push(context, asFixnum(context, integer + 1));
+                } else {
+                    ary.store(i, integer == -1 ? context.nil : asFixnum(context, integer));
                 }
-
-                RubyString key = newString(context, entry.getKey());
-                IRubyObject value = ary;
-
-                if (mode != 0) {
-                    RubyHash oneshotHash = RubyHash.newSmallHash(runtime);
-                    RubySymbol linesKey = runtime.newSymbol(oneshot ? "oneshot_lines" : "lines");
-                    oneshotHash.fastASetSmall(linesKey, ary);
-                    value = oneshotHash;
-                }
-
-                covHash.fastASetCheckString(runtime, key, value);
             }
+
+            RubyString key = newString(context, entry.getKey());
+            IRubyObject value;
+
+            if (mode != 0) {
+                RubyHash oneshotHash = newSmallHash(context);
+                RubySymbol linesKey = asSymbol(context, oneshot ? "oneshot_lines" : "lines");
+                oneshotHash.fastASetSmall(linesKey, ary);
+                value = oneshotHash;
+            } else {
+                value = ary;
+            }
+
+            covHash.fastASetCheckString(context.runtime, key, value);
         }
-        
+
         return covHash;
     }
-    
 }

@@ -31,32 +31,50 @@ package org.jruby.runtime;
 import java.io.IOException;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
-import org.jruby.runtime.marshal.MarshalStream;
-import org.jruby.runtime.marshal.NewMarshal;
-import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.runtime.marshal.MarshalDumper;
+import org.jruby.runtime.marshal.MarshalLoader;
+import org.jruby.util.io.RubyInputStream;
+import org.jruby.util.io.RubyOutputStream;
 
 import static org.jruby.api.Error.typeError;
 
-/**
- *
- * @author headius
- */
 public interface ObjectMarshal<T> {
     ObjectMarshal NOT_MARSHALABLE_MARSHAL = new ObjectMarshal() {
-        public void marshalTo(Ruby runtime, Object obj, RubyClass type, MarshalStream marshalStream) {
-            throw typeError(runtime.getCurrentContext(), "no marshal_dump is defined for class " + type.getName());
+        public void marshalTo(ThreadContext context, RubyOutputStream out, Object obj, RubyClass type, MarshalDumper marshalStream) {
+            throw typeError(context, "no marshal_dump is defined for class " + type.getName(context));
         }
 
-        public void marshalTo(Object obj, RubyClass type, NewMarshal marshalStream, ThreadContext context, NewMarshal.RubyOutputStream out) {
-            throw typeError(context, "no marshal_dump is defined for class " + type.getName());
+        public Object unmarshalFrom(ThreadContext context, RubyInputStream in, RubyClass type, MarshalLoader loader) {
+            throw typeError(context, "no marshal_load is defined for class " + type.getName(context));
         }
 
-        public Object unmarshalFrom(Ruby runtime, RubyClass type, UnmarshalStream unmarshalStream) {
-            throw typeError(runtime.getCurrentContext(), "no marshal_load is defined for class " + type.getName());
+        @Deprecated(since = "10.0", forRemoval = true)
+        @SuppressWarnings("removal")
+        public void marshalTo(Ruby runtime, Object obj, RubyClass type, org.jruby.runtime.marshal.MarshalStream marshalStream) {
+            var context = runtime.getCurrentContext();
+            throw typeError(context, "no marshal_dump is defined for class " + type.getName(context));
+        }
+
+        @Deprecated(since = "10.0", forRemoval = true)
+        @SuppressWarnings("removal")
+        public Object unmarshalFrom(Ruby runtime, RubyClass type, org.jruby.runtime.marshal.UnmarshalStream unmarshalStream) {
+            var context = runtime.getCurrentContext();
+            throw typeError(context, "no marshal_load is defined for class " + type.getName(context));
         }
     };
-    
-    void marshalTo(Ruby runtime, T obj, RubyClass type, MarshalStream marshalStream) throws IOException;
-    void marshalTo(T obj, RubyClass type, NewMarshal marshalStream, ThreadContext context, NewMarshal.RubyOutputStream out);
-    T unmarshalFrom(Ruby runtime, RubyClass type, UnmarshalStream unmarshalStream) throws IOException;
+
+    void marshalTo(ThreadContext context, RubyOutputStream out, T obj, RubyClass type, MarshalDumper dumper);
+    T unmarshalFrom(ThreadContext context, RubyInputStream in, RubyClass type, MarshalLoader loader);
+
+    @Deprecated(since = "10.0", forRemoval = true)
+    @SuppressWarnings("removal")
+    default void marshalTo(Ruby runtime, T obj, RubyClass type, org.jruby.runtime.marshal.MarshalStream marshalStream) throws IOException {
+        // no-op to allow implementing only the MarshalDumper version
+    }
+    @Deprecated(since = "10.0", forRemoval = true)
+    @SuppressWarnings("removal")
+    default T unmarshalFrom(Ruby runtime, RubyClass type, org.jruby.runtime.marshal.UnmarshalStream unmarshalStream) throws IOException {
+        // no-op to allow implementing only the MarshalLoader version
+        return null;
+    }
 }

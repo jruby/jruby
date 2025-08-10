@@ -30,13 +30,9 @@ package org.jruby.runtime;
 
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- * 
- * @author jpetersen
- */
 public interface IAccessor {
-    public IRubyObject getValue();
-    public IRubyObject setValue(IRubyObject newValue);
+    IRubyObject getValue();
+    IRubyObject setValue(IRubyObject newValue);
     default void forceValue(IRubyObject newValue) {
         setValue(newValue);
     }

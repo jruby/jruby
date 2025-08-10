@@ -1,2 +1,3 @@
 fails:Process.groups sets the list of gids of groups in the supplemental group access list
 fails:Process.groups= raises Errno::EPERM
+fails(missing one group on MacOS, unsure if it is important):Process.groups gets an Array of the gids of groups in the supplemental group access list

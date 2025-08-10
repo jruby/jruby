@@ -49,11 +49,17 @@ import org.jruby.util.ShellLauncher;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
+import static org.jruby.api.Access.encodingService;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.toInt;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.runtimeError;
 import static org.jruby.util.StringSupport.*;
 
 public class OpenFile implements Finalizable {
+
+    private static final int IO_MAX_BUFFER_GROWTH = 8 * 1024 * 1024;
 
     // RB_IO_FPTR_NEW, minus fields that Java already initializes the same way
     public OpenFile(RubyIO io, IRubyObject nil) {
@@ -961,7 +967,7 @@ public class OpenFile implements Finalizable {
 
         if (!err.isNil() && !noraise) {
             if (err instanceof RubyFixnum || err instanceof RubyBignum) {
-                posix.setErrno(Errno.valueOf(RubyNumeric.num2int(err)));
+                posix.setErrno(Errno.valueOf(toInt(context, err)));
                 throw runtime.newErrnoFromErrno(posix.getErrno(), pathv);
             } else {
                 throw ((RubyException)err).toThrowable();
@@ -979,7 +985,7 @@ public class OpenFile implements Finalizable {
 
     // MRI: NEED_WRITECONV
     public boolean needsWriteConversion(ThreadContext context) {
-        Encoding ascii8bit = context.runtime.getEncodingService().getAscii8bitEncoding();
+        Encoding ascii8bit = encodingService(context).getAscii8bitEncoding();
 
         return Platform.IS_WINDOWS ?
                 ((encs.enc != null && encs.enc != ascii8bit) || (encs.ecflags & ((EConvFlags.DECORATOR_MASK & ~EConvFlags.CRLF_NEWLINE_DECORATOR)|EConvFlags.STATEFUL_DECORATOR_MASK)) != 0)
@@ -1031,7 +1037,7 @@ public class OpenFile implements Finalizable {
         ecflags = encs.ecflags & ~EConvFlags.NEWLINE_DECORATOR_READ_MASK;
         ecopts = encs.ecopts;
 
-        Encoding ascii8bit = context.runtime.getEncodingService().getAscii8bitEncoding();
+        Encoding ascii8bit = encodingService(context).getAscii8bitEncoding();
         if (encs.enc == null || (encs.enc == ascii8bit && encs.enc2 == null)) {
             /* no encoding conversion */
             writeconvPreEcflags = 0;
@@ -1102,7 +1108,7 @@ public class OpenFile implements Finalizable {
     private static final byte[] EMPTY_BYTE_ARRAY = ByteList.NULL_ARRAY;
 
     // MRI: appendline
-    public int appendline(ThreadContext context, int delim, final ByteList[] strp, final int[] lp) {
+    public int appendline(ThreadContext context, int delim, final ByteList[] strp, final int[] lp, Encoding enc) {
         ByteList str = strp[0];
         int limit = lp[0];
 
@@ -1116,9 +1122,9 @@ public class OpenFile implements Finalizable {
                     byte[] pBytes = READ_CHAR_PENDING_PTR();
                     p = READ_CHAR_PENDING_OFF();
                     if (0 < limit && limit < searchlen) searchlen = limit;
-                    e = memchr(pBytes, p, delim, searchlen);
+                    e = searchDelimiter(pBytes, p, delim, searchlen, enc);
                     if (e != -1) {
-                        int len = e - p + 1;
+                        int len = e - p;
                         if (str == null) {
                             strp[0] = str = new ByteList(pBytes, p, len);
                         } else {
@@ -1160,8 +1166,8 @@ public class OpenFile implements Finalizable {
                 int last;
 
                 if (limit > 0 && pending > limit) pending = limit;
-                int e = memchr(pBytes, p, delim, pending);
-                if (e != -1) pending = e - p + 1;
+                int e = searchDelimiter(pBytes, p, delim, pending, enc);
+                if (e != -1) pending = e - p;
                 if (str != null) {
                     last = str.getRealSize();
                     str.ensure(last + pending);
@@ -1186,6 +1192,29 @@ public class OpenFile implements Finalizable {
         } while (fillbuf(context) >= 0);
         lp[0] = limit;
         return EOF;
+    }
+
+    // MRI: search_delim
+    private static int searchDelimiter(byte[] pBytes, int p, int delim, int len, Encoding enc) {
+        if (enc.minLength() == 1) {
+            p = memchr(pBytes, p, delim, len);
+            if (p != -1) return p + 1;
+        } else {
+            int end = p + len;
+            while (p < end) {
+                int r = StringSupport.preciseLength(enc, pBytes, p, end);
+                if (!MBCLEN_CHARFOUND_P(r)) {
+                    p += enc.minLength();
+                    continue;
+                }
+                int n = MBCLEN_CHARFOUND_LEN(r);
+                if (enc.mbcToCode(pBytes, p, end) == delim) {
+                    return p + n;
+                }
+                p += n;
+            }
+        }
+        return -1;
     }
 
     private static int memchr(byte[] pBytes, int p, int delim, int length) {
@@ -1267,7 +1296,7 @@ public class OpenFile implements Finalizable {
                     rbuf.len += putbackable;
                 }
 
-                exc = EncodingUtils.makeEconvException(context.runtime, readconv);
+                exc = EncodingUtils.makeEconvException(context, readconv);
                 if (exc != null)
                     return exc;
 
@@ -1692,12 +1721,10 @@ public class OpenFile implements Finalizable {
 
     // swallow
     public boolean swallow(ThreadContext context, int term) {
-        Ruby runtime = context.runtime;
-
         boolean locked = lock();
         try {
             if (needsReadConversion()) {
-                Encoding enc = readEncoding(runtime);
+                Encoding enc = readEncoding(context.runtime);
                 boolean needconv = enc.minLength() != 1;
                 SET_BINARY_MODE();
                 makeReadConversion(context);
@@ -1737,7 +1764,7 @@ public class OpenFile implements Finalizable {
                     i = cnt;
                     while (--i != 0 && (pBytes[++p] & 0xFF) == term) ;
                     if (readBufferedData(buf, 0, cnt - i) == 0) /* must not fail */
-                        throw context.runtime.newRuntimeError("failure copying buffered IO bytes");
+                        throw runtimeError(context, "failure copying buffered IO bytes");
                 }
                 READ_CHECK(context);
             } while (fillbuf(context) == 0);
@@ -1787,7 +1814,6 @@ public class OpenFile implements Finalizable {
 
     // rb_io_getline_fast
     public IRubyObject getlineFast(ThreadContext context, Encoding enc, RubyIO io, boolean chomp) {
-        Ruby runtime = context.runtime;
         RubyString str = null;
         ByteList strByteList;
         int len = 0;
@@ -1811,7 +1837,7 @@ public class OpenFile implements Finalizable {
                         if (chomp) chomplen = ((pending > 1 && pBytes[e - 1] == '\r') ? 1 : 0) + 1;
                     }
                     if (str == null) {
-                        str = RubyString.newString(runtime, pBytes, p, pending - chomplen);
+                        str = newString(context, pBytes, p, pending - chomplen);
                         strByteList = str.getByteList();
                         rbuf.off += pending;
                         rbuf.len -= pending;
@@ -1834,9 +1860,9 @@ public class OpenFile implements Finalizable {
                 READ_CHECK(context);
             } while (fillbuf(context) >= 0);
             if (str == null) return context.nil;
-            str = (RubyString) EncodingUtils.ioEncStr(runtime, str, this);
+            str = EncodingUtils.ioEncStr(context.runtime, str, this);
             str.setCodeRange(cr);
-            incrementLineno(runtime, io);
+            incrementLineno(context.runtime, io);
         } finally {
             if (locked) unlock();
         }
@@ -1876,28 +1902,29 @@ public class OpenFile implements Finalizable {
         int pos;
         Encoding enc;
         int cr;
+        RubyString string;
 
         boolean locked = lock();
         try {
             if (needsReadConversion()) {
                 SET_BINARY_MODE();
-                str = EncodingUtils.setStrBuf(runtime, str, 0);
+                string = EncodingUtils.setStrBuf(runtime, str, 0);
                 makeReadConversion(context);
                 while (true) {
                     Object v;
                     if (cbuf.len != 0) {
-                        str = shiftCbuf(context, cbuf.len, str);
+                        string = shiftCbuf(context, cbuf.len, string);
                     }
                     v = fillCbuf(context, 0);
                     if (!v.equals(MORE_CHAR_SUSPENDED) && !v.equals(MORE_CHAR_FINISHED)) {
                         if (cbuf.len != 0) {
-                            shiftCbuf(context, cbuf.len, str);
+                            shiftCbuf(context, cbuf.len, string);
                         }
                         throw (RaiseException) v;
                     }
                     if (v.equals(MORE_CHAR_FINISHED)) {
                         clearReadConversion();
-                        return EncodingUtils.ioEncStr(runtime, str, this);
+                        return EncodingUtils.ioEncStr(runtime, string, this);
                     }
                 }
             }
@@ -1912,11 +1939,11 @@ public class OpenFile implements Finalizable {
             if (siz == 0) siz = BUFSIZ;
             for (; ; ) {
                 READ_CHECK(context);
-                str = EncodingUtils.setStrBuf(context.runtime, str, siz);
-                ByteList strByteList = ((RubyString) str).getByteList();
+                str = string = EncodingUtils.setStrBuf(context.runtime, str, siz);
+                ByteList strByteList = string.getByteList();
                 n = fread(context, strByteList.unsafeBytes(), strByteList.begin() + bytes, siz - bytes);
                 if (n == 0 && bytes == 0) {
-                    ((RubyString) str).resize(0);
+                    string.resize(0);
                     break;
                 }
                 bytes += n;
@@ -1929,16 +1956,25 @@ public class OpenFile implements Finalizable {
                 }
                 if (bytes < siz) break;
                 siz += BUFSIZ;
-                ((RubyString) str).modify(BUFSIZ);
+
+                int capa = string.capacity();
+                if (capa < string.size() + BUFSIZ) {
+                    if (capa < BUFSIZ) {
+                        capa = BUFSIZ;
+                    } else if (capa > IO_MAX_BUFFER_GROWTH) {
+                        capa = IO_MAX_BUFFER_GROWTH;
+                    }
+                    string.modifyExpand(capa);
+                }
             }
-            str = EncodingUtils.ioEncStr(runtime, str, this);
+            string = EncodingUtils.ioEncStr(runtime, string, this);
         } finally {
             if (locked) unlock();
         }
 
-        ((RubyString)str).setCodeRange(cr);
+        string.setCodeRange(cr);
 
-        return str;
+        return string;
     }
 
     // io_bufread
@@ -2092,7 +2128,7 @@ public class OpenFile implements Finalizable {
                 return context.nil;
             }
             if (enc.isAsciiCompatible() && Encoding.isAscii(rbuf.ptr[rbuf.off])) {
-                str = RubyString.newString(runtime, rbuf.ptr, rbuf.off, 1);
+                str = newString(context, rbuf.ptr, rbuf.off, 1);
                 rbuf.off += 1;
                 rbuf.len -= 1;
                 cr = StringSupport.CR_7BIT;
@@ -2101,13 +2137,13 @@ public class OpenFile implements Finalizable {
                 r = preciseLength(enc, rbuf.ptr, rbuf.off, rbuf.off + rbuf.len);
                 if (StringSupport.MBCLEN_CHARFOUND_P(r) &&
                         (n = StringSupport.MBCLEN_CHARFOUND_LEN(r)) <= rbuf.len) {
-                    str = RubyString.newString(runtime, rbuf.ptr, rbuf.off, n);
+                    str = newString(context, rbuf.ptr, rbuf.off, n);
                     rbuf.off += n;
                     rbuf.len -= n;
                     cr = StringSupport.CR_VALID;
                 }
                 else if (StringSupport.MBCLEN_NEEDMORE_P(r)) {
-                    str = RubyString.newString(runtime, rbuf.ptr, rbuf.off, rbuf.len);
+                    str = newString(context, rbuf.ptr, rbuf.off, rbuf.len);
                     rbuf.len = 0;
                     getc_needmore: while (true) {
                         if (fillbuf(context) != -1) {
@@ -2127,7 +2163,7 @@ public class OpenFile implements Finalizable {
                     }
                 }
                 else {
-                    str = RubyString.newString(runtime, rbuf.ptr, rbuf.off, 1);
+                    str = newString(context, rbuf.ptr, rbuf.off, 1);
                     rbuf.off++;
                     rbuf.len--;
                 }
@@ -2320,7 +2356,7 @@ public class OpenFile implements Finalizable {
                 Encoding common_encoding = getCommonEncodingForWriteConv(context, str.getEncoding());
 
                 if (common_encoding != null) {
-                    str = (RubyString) EncodingUtils.rbStrEncode(context, str, runtime.getEncodingService().convertEncodingToRubyEncoding(common_encoding), writeconvPreEcflags, writeconvPreEcopts);
+                    str = (RubyString) EncodingUtils.rbStrEncode(context, str, encodingService(context).convertEncodingToRubyEncoding(common_encoding), writeconvPreEcflags, writeconvPreEcopts);
                 }
 
                 if (writeconv != null) {
@@ -2620,7 +2656,7 @@ public class OpenFile implements Finalizable {
                     if (res == EConvResult.InvalidByteSequence ||
                             res == EConvResult.IncompleteInput ||
                             res == EConvResult.UndefinedConversion) {
-                        return noalloc ? context.tru : EncodingUtils.makeEconvException(runtime, writeconv).getException();
+                        return noalloc ? context.tru : EncodingUtils.makeEconvException(context, writeconv).getException();
                     }
                 }
 
@@ -2642,7 +2678,7 @@ public class OpenFile implements Finalizable {
                 if (res == EConvResult.InvalidByteSequence ||
                         res == EConvResult.IncompleteInput ||
                         res == EConvResult.UndefinedConversion) {
-                    return noalloc ? context.tru : EncodingUtils.makeEconvException(runtime, writeconv).getException();
+                    return noalloc ? context.tru : EncodingUtils.makeEconvException(context, writeconv).getException();
                 }
             }
         } finally {

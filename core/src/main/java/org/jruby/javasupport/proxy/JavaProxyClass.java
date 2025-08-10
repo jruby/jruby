@@ -32,6 +32,7 @@ package org.jruby.javasupport.proxy;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
@@ -39,6 +40,7 @@ import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Access;
 import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.proxies.ConcreteJavaProxy.NewMethodReified;
@@ -47,7 +49,7 @@ import org.jruby.java.proxies.JavaProxy;
 import org.jruby.java.util.ClassUtils;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JavaNameMangler;
 
@@ -64,9 +66,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.castAsClass;
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.javasupport.JavaCallable.inspectParameterTypes;
+import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
 /**
  * Generalized proxy for classes and interfaces.
@@ -91,8 +97,8 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     private final ArrayList<JavaProxyMethod> methods = new ArrayList<>();
     private final HashMap<String, ArrayList<JavaProxyMethod>> methodMap = new HashMap<>();
 
-    private JavaProxyClass(final Ruby runtime, final Class<?> proxyClass) {
-        super(runtime, runtime.getModule("Java").getClass("JavaProxyClass"));
+    private JavaProxyClass(ThreadContext context, final Class<?> proxyClass) {
+        super(context.runtime, Access.getClass(context, "Java", "JavaProxyClass"));
         this.proxyClass = proxyClass;
     }
 
@@ -127,20 +133,25 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
     private transient JavaProxyConstructor[] constructors;
 
+    @Deprecated(since = "10.0")
     public JavaProxyConstructor[] getConstructors() {
+        return getConstructors(getCurrentContext());
+    }
+
+    public JavaProxyConstructor[] getConstructors(ThreadContext context) {
         JavaProxyConstructor[] constructorsCached = this.constructors;
         if ( constructorsCached != null ) return constructorsCached;
 
-        final Ruby runtime = getRuntime();
         final Constructor[] ctors = proxyClass.getConstructors();
         List<JavaProxyConstructor> constructors = new ArrayList<>(ctors.length);
         for (int i = 0; i < ctors.length; i++) {
-            JavaProxyConstructor jpc = new JavaProxyConstructor(runtime, this, ctors[i]);
+            JavaProxyConstructor jpc = new JavaProxyConstructor(context.runtime, this, ctors[i]);
             if (!jpc.isExportable()) constructors.add(jpc);
         }
         return this.constructors = constructors.toArray(new JavaProxyConstructor[constructors.size()]);
     }
 
+    @Deprecated(since = "10.0")
     public JavaProxyConstructor getConstructor(final Class[] args)
         throws SecurityException, NoSuchMethodException {
 
@@ -151,7 +162,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
         @SuppressWarnings("unchecked")
         Constructor<?> constructor = proxyClass.getConstructor(realArgs);
-        return new JavaProxyConstructor(getRuntime(), this, constructor);
+        return new JavaProxyConstructor(getCurrentContext().runtime, this, constructor);
     }
 
     public JavaProxyMethod[] getMethods() {
@@ -186,26 +197,25 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
         private Object state;
 
-        public static RubyClass createJavaProxyMethodClass(Ruby runtime, RubyModule Java) {
-            RubyClass JavaProxyMethod = Java.defineClassUnder("JavaProxyMethod",
-                runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        public static RubyClass createJavaProxyMethodClass(ThreadContext context, RubyClass Object, RubyModule Java) {
+            var JavaProxyMethod = (RubyClass) Java.defineClassUnder(context, "JavaProxyMethod", Object, NOT_ALLOCATABLE_ALLOCATOR).
+                    defineMethods(context, ProxyMethodImpl.class);
+            JavaProxyReflectionObject.registerRubyMethods(context, JavaProxyMethod);
 
-            JavaProxyReflectionObject.registerRubyMethods(runtime, JavaProxyMethod);
-            JavaProxyMethod.defineAnnotatedMethods(ProxyMethodImpl.class);
             return JavaProxyMethod;
         }
 
         public ProxyMethodImpl(Ruby runtime, final JavaProxyClass clazz,
             final Method method, final Method superMethod) {
-            super(runtime, getJavaProxyMethod(runtime));
+            super(runtime, getJavaProxyMethod(runtime.getCurrentContext()));
             this.method = method;
             this.parameterTypes = method.getParameterTypes();
             this.superMethod = superMethod;
             this.proxyClass = clazz;
         }
 
-        private static RubyClass getJavaProxyMethod(final Ruby runtime) {
-            return runtime.getJavaSupport().getJavaModule().getClass("JavaProxyMethod");
+        private static RubyClass getJavaProxyMethod(ThreadContext context) {
+            return context.runtime.getJavaSupport().getJavaModule(context).getClass(context, "JavaProxyMethod");
         }
 
         @Override
@@ -297,8 +307,9 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             return method.getReturnType();
         }
 
+        @Deprecated(since = "10.0")
         public RubyObject name() {
-            return getRuntime().newString(getName());
+            return newString(getCurrentContext(), getName());
         }
 
         @JRubyMethod(name = "declaring_class")
@@ -306,46 +317,72 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             return proxyClass;
         }
 
-        @JRubyMethod
+        @Deprecated(since = "10.0")
         public RubyArray argument_types() {
-            return toClassArray(getRuntime(), getParameterTypes());
+            return argument_types(getCurrentContext());
+        }
+
+        @JRubyMethod
+        public RubyArray argument_types(ThreadContext context) {
+            return toClassArray(context, getParameterTypes());
+        }
+
+        @Deprecated(since = "10.0")
+        public IRubyObject super_p() {
+            return super_p(getCurrentContext());
         }
 
         @JRubyMethod(name = "super?")
-        public IRubyObject super_p() {
-            return hasSuperImplementation() ? getRuntime().getTrue() : getRuntime().getFalse();
+        public IRubyObject super_p(ThreadContext context) {
+            return hasSuperImplementation() ? context.tru : context.fals;
+        }
+
+        @Deprecated(since = "10.0")
+        public RubyFixnum arity() {
+            return arity(getCurrentContext());
         }
 
         @JRubyMethod
-        public RubyFixnum arity() {
-            return RubyFixnum.newFixnum(getRuntime(), getArity());
+        public RubyFixnum arity(ThreadContext context) {
+            return asFixnum(context, getArity());
+        }
+
+        @Deprecated(since = "10.0")
+        public RubyString inspect() {
+            return inspect(getCurrentContext());
         }
 
         @Override
         @JRubyMethod
-        public RubyString inspect() {
-            StringBuilder str = new StringBuilder();
-            str.append("#<");
-            str.append( getDeclaringClass().nameOnInspection() ).append('/').append( getName() );
-            inspectParameterTypes(str, this);
-            str.append('>');
-            return RubyString.newString(getRuntime(), str);
+        public RubyString inspect(ThreadContext context) {
+            StringBuilder buf = new StringBuilder();
+            buf.append("#<");
+            buf.append( getDeclaringClass().nameOnInspection() ).append('/').append( getName() );
+            inspectParameterTypes(buf, this);
+            buf.append('>');
+            return newString(context, buf.toString());
         }
 
-        @JRubyMethod(name = "invoke", rest = true)
+        /**
+         * @param args
+         * @return
+         * @deprecated Use {@link ProxyMethodImpl#do_invoke(ThreadContext, IRubyObject[])} instead.
+         */
+        @Deprecated(since = "10.0")
         public IRubyObject do_invoke(final IRubyObject[] args) {
-            final Ruby runtime=  getRuntime();
-            if ( args.length != 1 + getArity() ) {
-                throw runtime.newArgumentError(args.length, 1 + getArity());
+            return do_invoke(getCurrentContext(), args);
+        }
+
+
+        @JRubyMethod(name = "invoke", rest = true)
+        public IRubyObject do_invoke(ThreadContext context, final IRubyObject[] args) {
+            if (args.length != 1 + getArity()) throw argumentError(context, args.length, 1 + getArity());
+
+            if (!(args[0] instanceof JavaProxy invokee)) {
+                throw typeError(context, "not a java proxy: " + (args[0] == null ? null : args[0].getClass()));
             }
 
-            final IRubyObject invokee = args[0];
-            if (!(invokee instanceof JavaProxy)) {
-                throw typeError(runtime.getCurrentContext(), "not a java proxy: " + (invokee == null ? null : invokee.getClass()));
-            }
-
-            Object receiver_value = ((JavaProxy) invokee).getObject();
-
+            Object receiver_value = invokee.getObject();
             final Object[] arguments = new Object[ args.length - 1 ];
 
             final Class[] parameterTypes = getParameterTypes();
@@ -355,20 +392,16 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
             try {
                 Object javaResult = superMethod.invoke(receiver_value, arguments);
-                return JavaUtil.convertJavaToRuby(runtime, javaResult, getReturnType());
-            }
-            catch (IllegalArgumentException ex) {
-                throw typeError(runtime.getCurrentContext(), "expected " + argument_types().inspect());
-            }
-            catch (IllegalAccessException ex) {
-                throw typeError(runtime.getCurrentContext(), "illegal access on '" + superMethod.getName() + "': " +
-                        ex.getMessage());
-            }
-            catch (InvocationTargetException ex) {
-                if ( runtime.getDebug().isTrue() ) ex.getTargetException().printStackTrace();
+                return JavaUtil.convertJavaToRuby(context.runtime, javaResult, getReturnType());
+            } catch (IllegalArgumentException ex) {
+                throw typeError(context, "expected " + argument_types(context).inspect(context));
+            } catch (IllegalAccessException ex) {
+                throw typeError(context, "illegal access on '" + superMethod.getName() + "': " + ex.getMessage());
+            } catch (InvocationTargetException ex) {
+                if (context.runtime.getDebug().isTrue()) ex.getTargetException().printStackTrace();
 
-                runtime.getJavaSupport().handleNativeException(ex.getTargetException(), superMethod);
-                return runtime.getNil(); // only reached if there was an exception handler installed
+                context.runtime.getJavaSupport().handleNativeException(ex.getTargetException(), superMethod);
+                return context.nil; // only reached if there was an exception handler installed
             }
         }
 
@@ -378,9 +411,9 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
     }
 
-    //called from reified java concrete-extended classes with super-overrides
+    //called from reified java concrete-extended classes with super-overrides in RubyClass#extraClinitLookup
     @SuppressWarnings("unchecked")
-    public void initMethod(final String name, final String desc, final boolean hasSuper) {
+    public void initMethod(ThreadContext context, final String name, final String desc, final boolean hasSuper) {
         final Class proxy = this.proxyClass;
         try {
             Class[] paramTypes = parse(proxy.getClassLoader(), desc);
@@ -390,7 +423,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
                 superMethod = proxy.getDeclaredMethod(generateSuperName(proxy.getName(), name), paramTypes);
             }
 
-            JavaProxyMethod proxyMethod = new ProxyMethodImpl(getRuntime(), this, method, superMethod);
+            JavaProxyMethod proxyMethod = new ProxyMethodImpl(context.runtime, this, method, superMethod);
             methods.add(proxyMethod);
 
             ArrayList<JavaProxyMethod> methodsWithName = this.methodMap.get(name);
@@ -481,18 +514,17 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     // Ruby-level methods
     //
 
-    public static void createJavaProxyClasses(final Ruby runtime, final RubyModule Java) {
-        JavaProxyClass.createJavaProxyClassClass(runtime, Java);
-        ProxyMethodImpl.createJavaProxyMethodClass(runtime, Java);
-        JavaProxyConstructor.createJavaProxyConstructorClass(runtime, Java);
+    public static void createJavaProxyClasses(ThreadContext context, final RubyModule Java, RubyClass Object) {
+        JavaProxyClass.createJavaProxyClassClass(context, Object, Java);
+        ProxyMethodImpl.createJavaProxyMethodClass(context, Object, Java);
+        JavaProxyConstructor.createJavaProxyConstructorClass(context, Object, Java);
     }
 
-    public static RubyClass createJavaProxyClassClass(final Ruby runtime, final RubyModule Java) {
-        RubyClass JavaProxyClass = Java.defineClassUnder("JavaProxyClass",
-            runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR
-        );
-        JavaProxyReflectionObject.registerRubyMethods(runtime, JavaProxyClass);
-        JavaProxyClass.defineAnnotatedMethods(JavaProxyClass.class);
+    public static RubyClass createJavaProxyClassClass(ThreadContext context, RubyClass Object, final RubyModule Java) {
+        RubyClass JavaProxyClass = Java.defineClassUnder(context, "JavaProxyClass", Object, NOT_ALLOCATABLE_ALLOCATOR).
+                defineMethods(context, JavaProxyClass.class);
+        JavaProxyReflectionObject.registerRubyMethods(context, JavaProxyClass);
+
         return JavaProxyClass;
     }
 //
@@ -511,31 +543,35 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         EXCLUDE_MODULES.add("Enumerable");
     }
 
-    @JRubyMethod(meta = true)
+    @Deprecated(since = "10.0")
     public static RubyObject get_with_class(final IRubyObject self, IRubyObject obj) {
-        final Ruby runtime = self.getRuntime();
-        return getProxyClass(runtime, castAsClass(runtime.getCurrentContext(), obj));
+        return get_with_class(((RubyBasicObject) self).getCurrentContext(), self, obj);
+    }
+
+    @JRubyMethod(meta = true)
+    public static RubyObject get_with_class(ThreadContext context, final IRubyObject self, IRubyObject obj) {
+        return getProxyClass(context, castAsClass(context, obj));
     }
     
     // Note: called from <clinit> of reified classes
-    public static JavaProxyClass setProxyClassReified(final Ruby runtime, final RubyClass clazz,
+    public static JavaProxyClass setProxyClassReified(ThreadContext context, final RubyClass clazz,
             final Class<? extends ReifiedJavaProxy> reified, final boolean allocator) {
-        JavaProxyClass proxyClass = new JavaProxyClass(runtime, reified);
+        JavaProxyClass proxyClass = new JavaProxyClass(context, reified);
         clazz.setInstanceVariable("@java_proxy_class", proxyClass);
 
-        RubyClass singleton = clazz.getSingletonClass();
+        RubyClass singleton = clazz.singletonClass(context);
 
         singleton.setInstanceVariable("@java_proxy_class", proxyClass);
-        singleton.setInstanceVariable("@java_class", Java.wrapJavaObject(runtime, reified));
+        singleton.setInstanceVariable("@java_class", Java.wrapJavaObject(context, reified));
 
         if (allocator) {
             DynamicMethod oldNewMethod = singleton.searchMethod("new");
             boolean defaultNew = !(oldNewMethod instanceof AbstractIRMethod); // TODO: is this the proper way to check if user-code has/not defined a method?
             if (defaultNew) {
-                singleton.addMethod("new", new NewMethodReified(clazz, reified));
+                singleton.addMethod(context, "new", new NewMethodReified(clazz, reified));
             }
             // Install initialize
-            StaticJCreateMethod.tryInstall(runtime, clazz, proxyClass, reified, defaultNew);
+            StaticJCreateMethod.tryInstall(context.runtime, clazz, proxyClass, reified, defaultNew);
         }
         return proxyClass;
     }
@@ -570,29 +606,54 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         return objects;
     }
 
+    @Deprecated(since = "10.0")
     public static JavaProxyClass getProxyClass(final Ruby runtime, final RubyClass clazz) {
+        return getProxyClass(runtime.getCurrentContext(), clazz);
+    }
+
+    public static JavaProxyClass getProxyClass(ThreadContext context, final RubyClass clazz) {
     	clazz.reifyWithAncestors();
     	return (JavaProxyClass) clazz.getInstanceVariable("@java_proxy_class");
     }
 
-    @JRubyMethod
+    @Deprecated(since = "10.0")
     public IRubyObject superclass() {
-        return Java.getInstance(getRuntime(), getSuperclass());
+        return superclass(getCurrentContext());
     }
 
     @JRubyMethod
+    public IRubyObject superclass(ThreadContext context) {
+        return Java.getInstance(context.runtime, getSuperclass());
+    }
+
+    @Deprecated(since = "10.0")
     public RubyArray methods() {
-        return toRubyArray( getMethods() );
+        return methods(getCurrentContext());
     }
 
     @JRubyMethod
+    public RubyArray methods(ThreadContext context) {
+        return toRubyArray(context, getMethods());
+    }
+
+    @Deprecated(since = "10.0")
     public RubyArray interfaces() {
-        return toClassArray(getRuntime(), getInterfaces());
+        return interfaces(getCurrentContext());
     }
 
     @JRubyMethod
+    public RubyArray interfaces(ThreadContext context) {
+        return toClassArray(context, getInterfaces());
+    }
+
+    @Deprecated(since = "10.0")
     public final RubyArray constructors() {
-        return toRubyArray(getConstructors());
+        return constructors(getCurrentContext());
+    }
+
+    @JRubyMethod
+    public final RubyArray constructors(ThreadContext context) {
+        return toRubyArray(context, getConstructors(context));
     }
 
     public final String nameOnInspection() {

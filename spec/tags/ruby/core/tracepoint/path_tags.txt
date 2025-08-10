@@ -1,1 +1,2 @@
 debug:TracePoint#path returns the path of the file being run
+fails:TracePoint#path returns the path of the file being run

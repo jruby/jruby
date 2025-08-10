@@ -15,7 +15,7 @@ jobs:
 
     strategy:
       matrix:
-        target: ['test:jruby:int', 'spec:ruby:fast', 'spec:ji', 'spec:ffi']
+        target: ['test:jruby:int', 'spec:ruby:fast', 'spec:ji', 'spec:ffi', 'test:mri:core:jit', 'test:mri:extra', 'spec:ruby:fast:jit', 'test:mri:stdlib', 'spec:ruby:slow', 'spec:ruby:debug', 'test:jruby:aot', 'test:slow_suites', 'spec:compiler', 'spec:regression', 'spec:jruby', 'spec:jrubyc', 'spec:profiler']
         java-version: ['21', '23']
       fail-fast: false
 
@@ -33,21 +33,19 @@ jobs:
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
       - name: bootstrap
-        run: mvn -Pbootstrap clean package
+        run: mvn -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake ${{ matrix.target }}
         run: bin/jruby -S rake ${{ matrix.target }}
 
-  rake-test-21:
+  repeat-specs:
     runs-on: ubuntu-latest
 
     strategy:
-      matrix:
-        target: ['test:mri:core:jit', 'test:mri:extra', 'spec:ruby:fast:jit', 'test:mri:stdlib', 'spec:ruby:slow', 'spec:ruby:debug', 'test:jruby:aot', 'test:slow_suites', 'spec:compiler', 'spec:regression', 'spec:jruby', 'spec:jrubyc', 'spec:profiler']
       fail-fast: false
 
-    name: rake ${{ matrix.target }} (Java 21)
+    name: run specs repeatedly to test optimizations
 
     steps:
       - name: checkout
@@ -58,14 +56,16 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
-          java-version: '21'
+          java-version: 21
           cache: 'maven'
       - name: bootstrap
-        run: mvn -Pbootstrap clean package
+        run: mvn -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
-      - name: rake ${{ matrix.target }}
-        run: bin/jruby -S rake ${{ matrix.target }}
+      - name: run specs
+        env:
+          JAVA_OPTS: '-XX:TieredStopAtLevel=1'
+        run: bin/jruby spec/mspec/bin/mspec ci -R 4 -T-Xjit.threshold=0 :language
 
   jruby-tests-dev:
     runs-on: ubuntu-latest
@@ -88,13 +88,13 @@ jobs:
           java-version: 21
           cache: 'maven'
       - name: bootstrap
-        run: mvn -Pbootstrap clean package
+        run: mvn -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake test:jruby
         run: bin/jruby --dev -S rake test:jruby
 
-  rake-test-21-indy:
+  rake-test-indy-off:
     runs-on: ubuntu-latest
 
     strategy:
@@ -103,10 +103,10 @@ jobs:
         java-version: ['21', '23']
       fail-fast: false
 
-    name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }} +indy)
+    name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }} -indy)
 
     env:
-      JRUBY_OPTS: '-Xcompile.invokedynamic -X+C -Xjit.threshold=0'
+      JRUBY_OPTS: '-Xcompile.invokedynamic=false -X+C -Xjit.threshold=0'
 
     steps:
       - name: checkout
@@ -120,7 +120,7 @@ jobs:
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
       - name: bootstrap
-        run: mvn -Pbootstrap clean package
+        run: mvn -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake ${{ matrix.target }}
@@ -149,7 +149,7 @@ jobs:
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
       - name: bootstrap
-        run: mvn -Pbootstrap clean package
+        run: mvn -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: mvn package ${{ matrix.package-flags }}
@@ -181,7 +181,7 @@ jobs:
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
       - name: bootstrap
-        run: mvn -Pbootstrap clean package
+        run: mvn -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: mvn package ${{ matrix.package-flags }}
@@ -210,7 +210,7 @@ jobs:
           java-version: 21
           cache: 'maven'
       - name: bootstrap
-        run: mvn -Pbootstrap clean package
+        run: mvn -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake spec:regression
@@ -238,7 +238,7 @@ jobs:
           java-version: 21
           cache: 'maven'
       - name: bootstrap
-        run: mvn -Pbootstrap clean package
+        run: mvn -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake test:jruby
@@ -312,6 +312,13 @@ jobs:
           MYSQL_DATABASE: sequel_test
         ports: [ "3306:3306" ]
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+      mariadb:
+        image: mariadb:latest
+        env:
+          MARIADB_ROOT_PASSWORD: root
+          MARIADB_DATABASE: sequel_test
+        ports: ["3307:3306"]
+        options: --health-cmd="healthcheck.sh --connect --innodb_initialized" --health-interval=10s --health-timeout=5s --health-retries=3
 
     steps:
       - name: checkout
@@ -325,7 +332,7 @@ jobs:
           java-version: 21
           cache: 'maven'
       - name: bootstrap
-        run: mvn -Pbootstrap clean package
+        run: mvn -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: sequel
@@ -349,7 +356,7 @@ jobs:
           java-version: 21
           cache: 'maven'
       - name: bootstrap
-        run: mvn -Pbootstrap clean package
+        run: mvn -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: concurrent-ruby
@@ -427,7 +434,7 @@ jobs:
           java-version: '21'
           cache: 'maven'
       - name: bootstrap
-        run: mvn -Pbootstrap clean package
+        run: mvn -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby -S bundle install
       - name: test profile
@@ -435,42 +442,27 @@ jobs:
         env:
           PHASE: 'package -Ptest'
 
-  rake-test-wip-21:
+  jruby-shell-check:
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        target: ['test:mri:core_wip', 'test:mri:stdlib_wip']
-      fail-fast: false
-
-    name: rake ${{ matrix.target }} (Java 21)
+    name: shellcheck jruby.sh
 
     steps:
       - name: checkout
         uses: actions/checkout@v3
-      - name: remove default java except 21
-        run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
-      - name: set up java 21
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'zulu'
-          java-version: '21'
-          cache: 'maven'
-      - name: bootstrap
-        run: mvn -Pbootstrap clean package
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
-      - name: rake ${{ matrix.target }}
-        continue-on-error: true
-        run: "bin/jruby -S rake ${{ matrix.target }}"
-      - run: true
+      - name: install shellcheck
+        run: sudo apt install shellcheck
+      - name: run shellcheck
+        run: shellcheck bin/jruby.sh
 
   publish-snapshot:
     permissions:
-      contents: none
-    if: ${{ github.ref == 'refs/heads/master' || github.ref == 'refs/heads/jruby-9.5' }}
-    needs: [mvn-test, mvn-test-extended, mvn-test-windows, dependency-check, rake-test, rake-test-21-indy, rake-test-21, test-versions, sequel, concurrent-ruby, jruby-tests-dev, regression-specs-jit]
-    uses: jruby/jruby/.github/workflows/snapshot-publish.yml@6cd0d4d96d9406635183d81cf91acc82cd78245f
+      contents: read
+    if: ${{ github.ref == 'refs/heads/master' && github.repository == 'jruby/jruby' }}
+    needs: [mvn-test, mvn-test-extended, mvn-test-windows, dependency-check, rake-test, rake-test-indy-off, rake-test, test-versions, sequel, concurrent-ruby, jruby-tests-dev, regression-specs-jit]
+    uses: jruby/jruby/.github/workflows/snapshot-publish.yml@46678ce513443c231ce91c7782ad72b886aed5b4
+    with:
+      javaLevel: 21
     secrets:
       SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
       SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}

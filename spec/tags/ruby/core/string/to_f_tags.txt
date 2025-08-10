@@ -1,0 +1,3 @@
+fails:String#to_f stops if the underscore is not followed or preceded by a number
+fails:String#to_f ignores leading and trailing whitespace
+fails:String#to_f raises Encoding::CompatibilityError if String is in not ASCII-compatible encoding

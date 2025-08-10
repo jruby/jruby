@@ -4,6 +4,7 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyModule;
+import org.jruby.RubyNumeric;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.ArgReceiver;
@@ -67,6 +68,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Error.runtimeError;
 
 /**
  * Base full interpreter.  Subclasses can use utility methods here and override what they want.  This method requires
@@ -219,7 +221,7 @@ public class InterpreterEngine {
         }
 
         // Control should never get here!
-        throw context.runtime.newRuntimeError("BUG: interpreter fell through to end unexpectedly");
+        throw runtimeError(context, "BUG: interpreter fell through to end unexpectedly");
     }
 
     protected static void interpretIntOp(AluInstr instr, Operation op, long[] fixnums, boolean[] booleans) {
@@ -518,23 +520,15 @@ public class InterpreterEngine {
 
             case UNBOX_FLOAT: {
                 UnboxInstr ui = (UnboxInstr)instr;
-                Object val = retrieveOp(ui.getValue(), context, self, currDynScope, currScope, temp);
-                if (val instanceof RubyFloat) {
-                    floats[((TemporaryLocalVariable)ui.getResult()).offset] = ((RubyFloat)val).getValue();
-                } else {
-                    floats[((TemporaryLocalVariable)ui.getResult()).offset] = ((RubyFixnum)val).getDoubleValue();
-                }
+                var val = (RubyNumeric) retrieveOp(ui.getValue(), context, self, currDynScope, currScope, temp);
+                floats[((TemporaryLocalVariable)ui.getResult()).offset] = val.asDouble(context);
                 break;
             }
 
             case UNBOX_FIXNUM: {
                 UnboxInstr ui = (UnboxInstr)instr;
-                Object val = retrieveOp(ui.getValue(), context, self, currDynScope, currScope, temp);
-                if (val instanceof RubyFloat) {
-                    fixnums[((TemporaryLocalVariable)ui.getResult()).offset] = ((RubyFloat)val).getLongValue();
-                } else {
-                    fixnums[((TemporaryLocalVariable)ui.getResult()).offset] = ((RubyFixnum)val).getLongValue();
-                }
+                var val = (RubyNumeric) retrieveOp(ui.getValue(), context, self, currDynScope, currScope, temp);
+                fixnums[((TemporaryLocalVariable)ui.getResult()).offset] = val.asLong(context);
                 break;
             }
 

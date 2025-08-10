@@ -32,10 +32,8 @@ package org.jruby.internal.runtime;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- * 
- * @author jpetersen
- */
+import static org.jruby.api.Error.nameError;
+
 public class ReadonlyAccessor implements IAccessor {
     private String name;
     private IAccessor accessor;
@@ -55,7 +53,7 @@ public class ReadonlyAccessor implements IAccessor {
     public IRubyObject setValue(IRubyObject newValue) {
         assert newValue != null;
 
-        throw newValue.getRuntime().newNameError(name + " is a read-only variable", name);
+        throw nameError(newValue.getRuntime().getCurrentContext(), name + " is a read-only variable", name);
     }
 
     public void forceValue(IRubyObject newValue) {

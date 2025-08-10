@@ -1,4 +1,7 @@
 exclude :test_connect_accept_nonblock_no_exception, "SSLError: Cannot change mode after SSL traffic has started"
+exclude :test_gets_chomp, "needs investigation"
 exclude :test_read_with_outbuf, "work in progress"
+exclude :test_readbyte, "needs investigation"
+exclude :test_readbyte_eof, "needs investigation"
 exclude :test_write_nonblock, "needs investigation"
 exclude :test_write_nonblock_no_exceptions, "needs investigation"

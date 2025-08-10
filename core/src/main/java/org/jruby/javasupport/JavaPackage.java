@@ -41,12 +41,19 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.NullMethod;
-import org.jruby.runtime.*;
+import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.Signature;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ClassProvider;
-import org.jruby.util.TypeConverter;
 
+import static org.jruby.api.Check.checkID;
 import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Create.newString;
+import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.nameError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 /**
@@ -59,18 +66,15 @@ import static org.jruby.runtime.Visibility.PRIVATE;
 @JRubyClass(name="Java::JavaPackage", parent="Module")
 public class JavaPackage extends RubyModule {
 
-    static RubyClass createJavaPackageClass(final Ruby runtime, final RubyModule Java) {
-        RubyClass superClass = new BlankSlateWrapper(runtime, runtime.getModule(), runtime.getKernel());
-        RubyClass JavaPackage = RubyClass.newClass(runtime, superClass);
-        JavaPackage.setMetaClass(runtime.getModule());
-        JavaPackage.setAllocator(ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        ((MetaClass) JavaPackage.makeMetaClass(superClass)).setAttached(JavaPackage);
-
-        JavaPackage.setBaseName("JavaPackage");
+    static RubyClass createJavaPackageClass(ThreadContext context, final RubyModule Java, RubyClass Module, RubyModule Kernel) {
+        RubyClass superClass = new BlankSlateWrapper(context.runtime, Module, Kernel);
+        RubyClass JavaPackage = RubyClass.newClass(context, superClass, null);
+        JavaPackage.setMetaClass(Module);
+        JavaPackage.allocator(ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR).
+                baseName("JavaPackage").
+                defineMethods(context, JavaPackage.class);
+        ((MetaClass) JavaPackage.makeMetaClass(context, superClass)).setAttached(JavaPackage);
         JavaPackage.setParent(Java);
-        // JavaPackage.setReifiedClass(JavaPackage.class);
-
-        JavaPackage.defineAnnotatedMethods(JavaPackage.class);
         return JavaPackage;
     }
 
@@ -101,18 +105,27 @@ public class JavaPackage extends RubyModule {
 
     // NOTE: name is Ruby name not pkg.name ~ maybe it should be just like with JavaClass?
 
-    @JRubyMethod(name = "package_name", alias = "to_s")
+    @Deprecated(since = "10.0")
     public RubyString package_name() {
-        return getRuntime().newString(packageName);
+        return package_name(getCurrentContext());
+    }
+
+    @JRubyMethod(name = "package_name", alias = "to_s")
+    public RubyString package_name(ThreadContext context) {
+        return newString(context, packageName);
+    }
+
+    @Deprecated(since = "10.0")
+    public RubyString to_s() {
+        return (RubyString) to_s(getCurrentContext());
     }
 
     @Override
-    public RubyString to_s() { return package_name(); }
+    public IRubyObject to_s(ThreadContext context) { return package_name(); }
 
-    @Override
     @JRubyMethod
-    public IRubyObject inspect() {
-        return getRuntime().newString(getName()); // super.to_s()
+    public IRubyObject inspect(ThreadContext context) {
+        return newString(context, getName(context)); // super.to_s()
     }
 
     @Override
@@ -130,26 +143,14 @@ public class JavaPackage extends RubyModule {
     @JRubyMethod(name = "const_get")
     public final IRubyObject const_get(final ThreadContext context, final IRubyObject name) {
         // skip constant validation and do not inherit or include object
-        IRubyObject constant = getConstantNoConstMissing(name.toString(), false, false);
-        if ( constant != null ) return constant;
-        return relativeJavaClassOrPackage(context, name, false); // e.g. javax.const_get(:script)
+        IRubyObject constant = getConstantNoConstMissing(context, name.toString(), false, false);
+        return constant != null ? constant : relativeJavaClassOrPackage(context, name, false); // e.g. javax.const_get(:script)
     }
 
     @JRubyMethod(name = "const_get")
-    public final IRubyObject const_get(final ThreadContext context,
-        final IRubyObject name, final IRubyObject inherit) {
-        IRubyObject constant = getConstantNoConstMissing(name.toString(), inherit.isTrue(), false);
-        if ( constant != null ) return constant;
-        return relativeJavaClassOrPackage(context, name, false);
-    }
-
-    @Override // so that e.g. java::util gets stored as expected
-    public final IRubyObject storeConstant(String name, IRubyObject value) {
-        // skip constant name validation
-        assert value != null : "value is null";
-
-        ensureConstantsSettable();
-        return constantTableStore(name, value);
+    public final IRubyObject const_get(final ThreadContext context, final IRubyObject name, final IRubyObject inherit) {
+        IRubyObject constant = getConstantNoConstMissing(context, name.toString(), inherit.isTrue(), false);
+        return constant != null ? constant : relativeJavaClassOrPackage(context, name, false);
     }
 
     @Override // skip constant name assert
@@ -158,20 +159,13 @@ public class JavaPackage extends RubyModule {
     }
 
     @Override // skip constant name assert
-    public final IRubyObject fetchConstant(String name, boolean includePrivate) {
+    public final IRubyObject fetchConstant(ThreadContext context, String name, boolean includePrivate) {
         ConstantEntry entry = constantEntryFetch(name);
         if (entry == null) return null;
         if (entry.hidden && !includePrivate) {
-            throw getRuntime().newNameError("private constant " + getName() + "::" + name + " referenced", name);
+            throw nameError(context, "private constant " + getName(context) + "::" + name + " referenced", name);
         }
         return entry.value;
-    }
-
-    @Override // skip constant name assert
-    public final IRubyObject deleteConstant(String name) {
-        assert name != null : "name is null";
-        ensureConstantsSettable();
-        return constantTableRemove(name);
     }
 
     final CharSequence packageRelativeName(final CharSequence name) {
@@ -188,9 +182,11 @@ public class JavaPackage extends RubyModule {
         return Java.getProxyOrPackageUnderPackage(context, this, name.toString(), cacheMethod);
     }
 
+    @Deprecated(since = "10.0")
     RubyModule relativeJavaProxyClass(final Ruby runtime, final IRubyObject name) {
+        var context = runtime.getCurrentContext();
         final String fullName = packageRelativeName( name.toString() ).toString();
-        return Java.getProxyClass(runtime, Java.getJavaClass(runtime, fullName));
+        return Java.getProxyClass(context, Java.getJavaClass(context, fullName));
     }
 
     @JRubyMethod(name = "respond_to?")
@@ -204,7 +200,7 @@ public class JavaPackage extends RubyModule {
     }
 
     private IRubyObject respond_to(final ThreadContext context, IRubyObject mname, final boolean includePrivate) {
-        RubySymbol name = TypeConverter.checkID(mname);
+        RubySymbol name = checkID(context, mname);
 
         if (getMetaClass().respondsToMethod(name.idString(), !includePrivate)) return context.tru;
         /*
@@ -215,7 +211,7 @@ public class JavaPackage extends RubyModule {
         }
         */
 
-        //if ( ! (mname instanceof RubySymbol) ) mname = context.runtime.newSymbol(name);
+        //if ( ! (mname instanceof RubySymbol) ) mname = asSymbol(context, name);
         //IRubyObject respond = Helpers.invoke(context, this, "respond_to_missing?", mname, asBoolean(context, includePrivate));
         //return asBoolean(context, respond.isTrue());
 
@@ -245,7 +241,7 @@ public class JavaPackage extends RubyModule {
     }
 
     private RubyBoolean respond_to_missing(final ThreadContext context, IRubyObject mname, final boolean includePrivate) {
-        return asBoolean(context, BlankSlateWrapper.handlesMethod(TypeConverter.checkID(mname).idString()) == null);
+        return asBoolean(context, BlankSlateWrapper.handlesMethod(checkID(context, mname).idString()) == null);
     }
 
     @JRubyMethod(name = "method_missing")
@@ -256,16 +252,15 @@ public class JavaPackage extends RubyModule {
 
     @JRubyMethod(name = "method_missing", rest = true)
     public IRubyObject method_missing(ThreadContext context, final IRubyObject[] args) {
-        if (args.length > 1) {
-            throw packageMethodArgumentMismatch(context.runtime, this, args[0].toString(), args.length - 1);
-        }
+        if (args.length > 1) throw packageMethodArgumentMismatch(context, this, args[0].toString(), args.length - 1);
+
         return method_missing(context, args[0]);
     }
     
-    static RaiseException packageMethodArgumentMismatch(final Ruby runtime, final RubyModule pkg,
+    static RaiseException packageMethodArgumentMismatch(ThreadContext context, final RubyModule pkg,
         final String method, final int argsLength) {
         String packageName = ((JavaPackage) pkg).packageName;
-        return runtime.newArgumentError(
+        return argumentError(context,
                 "Java package '" + packageName + "' does not have a method '" +
                         method + "' with " + argsLength + (argsLength == 1 ? " argument" : " arguments")
         );
@@ -303,27 +298,31 @@ public class JavaPackage extends RubyModule {
         return super.toJava(target);
     }
 
+    @Override
+    public int hashCode() {
+        // avoid any dynamic calls to #hash
+        return id;
+    }
+
     private static class JavaClassProvider implements ClassProvider {
 
         static final JavaClassProvider INSTANCE = new JavaClassProvider();
 
-        public RubyClass defineClassUnder(RubyModule pkg, String name, RubyClass superClazz) {
+        public RubyClass defineClassUnder(ThreadContext context, RubyModule pkg, String name, RubyClass superClazz) {
             // shouldn't happen, but if a superclass is specified, it's not ours
             if ( superClazz != null ) return null;
 
             final String subPackageName = JavaPackage.buildPackageName(pkg, name).toString();
 
-            final Ruby runtime = pkg.getRuntime();
-            Class<?> javaClass = Java.getJavaClass(runtime, subPackageName);
-            return (RubyClass) Java.getProxyClass(runtime, javaClass);
+            Class<?> javaClass = Java.getJavaClass(context, subPackageName);
+            return (RubyClass) Java.getProxyClass(context, javaClass);
         }
 
-        public RubyModule defineModuleUnder(RubyModule pkg, String name) {
+        public RubyModule defineModuleUnder(ThreadContext context, RubyModule pkg, String name) {
             final String subPackageName = JavaPackage.buildPackageName(pkg, name).toString();
 
-            final Ruby runtime = pkg.getRuntime();
-            Class<?> javaClass = Java.getJavaClass(runtime, subPackageName);
-            return Java.getInterfaceModule(runtime, javaClass);
+            Class<?> javaClass = Java.getJavaClass(context, subPackageName);
+            return Java.getInterfaceModule(context, javaClass);
         }
 
     }

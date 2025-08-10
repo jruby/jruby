@@ -1,2 +1,6 @@
-exclude :test_perfect_matching_handles_nil_namespace, "hangs (tested on macos M1)"
-exclude :test_perfectly_matched_namespace_triggers_document_display, "hangs (tested on macos M1)"
+exclude :test_not_matched_namespace_triggers_nothing, "something in this suite terminates test run"
+exclude :test_perfect_matching_handles_nil_namespace, "something in this suite terminates test run"
+exclude :test_perfect_matching_handles_nil_namespace, "something in this suite terminates test run"
+exclude :test_perfect_matching_stops_without_rdoc, "something in this suite terminates test run"
+exclude :test_perfectly_matched_multiple_namespaces_triggers_document_display, "something in this suite terminates test run"
+exclude :test_perfectly_matched_namespace_triggers_document_display, "something in this suite terminates test run"

@@ -24,8 +24,14 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.jruby.util.TypeConverter;
 
+import static java.lang.System.lineSeparator;
+import static org.jruby.api.Access.exceptionClass;
+import static org.jruby.api.Access.instanceConfig;
+import static org.jruby.api.Check.checkID;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Create.newEmptyString;
+import static org.jruby.api.Create.newHash;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.util.RubyStringBuilder.str;
 
@@ -94,14 +100,14 @@ public class TraceType {
     /**
      * @deprecated use {@link #logException(org.jruby.RubyException)}
      */
-    @Deprecated(since = "9.4-", forRemoval = true)
+    @Deprecated(since = "9.4-") // since 2015
     public static void dumpException(RubyException exception) {
         logException(exception);
     }
 
     public static void dumpBacktrace(RubyException exception) {
         Ruby runtime = exception.getRuntime();
-        System.err.println("Backtrace generated:\n" + printBacktraceJRuby(exception, runtime.getPosix().isatty(FileDescriptor.err)));
+        System.err.println("Backtrace generated:" + lineSeparator() + printBacktraceJRuby(exception, runtime.getPosix().isatty(FileDescriptor.err)));
     }
 
     public static void logCaller(RubyArray trace) {
@@ -111,7 +117,7 @@ public class TraceType {
 
         for (int i = 0; i < trace.size(); i++) {
             // elements are already rendered as its an Array<RubyString>
-            buffer.append("  ").append(trace.eltInternal(i)).append('\n');
+            buffer.append("  ").append(trace.eltInternal(i)).append(lineSeparator());
         }
 
         LOG.info(buffer.toString());
@@ -120,7 +126,7 @@ public class TraceType {
     /**
      * @deprecated use {@link #logCaller(org.jruby.RubyArray)}
      */
-    @Deprecated(since = "9.4-", forRemoval = true)
+    @Deprecated(since = "9.4-") // since 2015
     public static void dumpCaller(RubyArray trace) {
         logCaller(trace);
     }
@@ -128,7 +134,7 @@ public class TraceType {
     public static void logCaller(RubyStackTraceElement[] trace) {
         if (trace == null) trace = RubyStackTraceElement.EMPTY_ARRAY;
 
-        LOG.info( formatWithMRIBacktrace("Caller backtrace generated:\n", trace).toString() );
+        LOG.info( formatWithMRIBacktrace("Caller backtrace generated:" + lineSeparator(), trace).toString() );
     }
 
     private static StringBuilder formatWithMRIBacktrace(final String message, RubyStackTraceElement[] trace) {
@@ -144,7 +150,7 @@ public class TraceType {
     /**
      * @deprecated use {@link #logCaller(org.jruby.runtime.backtrace.RubyStackTraceElement[]) }
      */
-    @Deprecated(since = "9.4-", forRemoval = true)
+    @Deprecated(since = "9.4-") // since 2015
     public static void dumpCaller(RubyStackTraceElement[] trace) {
         logCaller(trace);
     }
@@ -152,13 +158,13 @@ public class TraceType {
     public static void logWarning(RubyStackTraceElement[] trace) {
         if (trace == null) trace = RubyStackTraceElement.EMPTY_ARRAY;
 
-        LOG.info( formatWithMRIBacktrace("Warning backtrace generated:\n", trace).toString() );
+        LOG.info( formatWithMRIBacktrace("Warning backtrace generated:"+ lineSeparator(), trace).toString() );
     }
 
     /**
      * @deprecated use {@link #logWarning(org.jruby.runtime.backtrace.RubyStackTraceElement[])}
      */
-    @Deprecated(since = "9.4-", forRemoval = true)
+    @Deprecated(since = "9.4-") // since 2015
     public static void dumpWarning(RubyStackTraceElement[] trace) {
         logWarning(trace);
     }
@@ -231,7 +237,7 @@ public class TraceType {
                         context.getBacktrace(),
                         false,
                         false,
-                        context.runtime.getInstanceConfig().getBacktraceMask(),
+                        instanceConfig(context).getBacktraceMask(),
                         false,
                         false);
             }
@@ -324,7 +330,7 @@ public class TraceType {
             }
 
             public void renderBacktrace(RubyStackTraceElement[] elts, StringBuilder buffer, boolean color) {
-                renderBacktraceMRI(elts, buffer, color);
+                renderBacktraceMRI(elts, "\tfrom ", buffer, color);
             }
         },
 
@@ -346,29 +352,23 @@ public class TraceType {
     }
 
     public static IRubyObject printDetailedMessage(ThreadContext context, IRubyObject exception, IRubyObject opts) {
-        IRubyObject optArg = ArgsUtil.getOptionsArg(context.runtime, opts);
-
+        IRubyObject optArg = ArgsUtil.getOptionsArg(context, opts);
         IRubyObject highlightArg = checkHighlightKeyword(context, optArg, false);
+        RubyString errorStream = newEmptyString(context);
 
-        RubyString errorStream = RubyString.newEmptyString(context.runtime);
-
-        printErrMessageToStream(exception, errorStream, highlightArg.isTrue());
+        printErrMessageToStream(context, exception, errorStream, highlightArg.isTrue());
 
         return errorStream;
     }
 
     public static RubyString printFullMessage(ThreadContext context, IRubyObject exception, IRubyObject opts) {
-        Ruby runtime = context.runtime;
-        IRubyObject optArg = ArgsUtil.getOptionsArg(runtime, opts);
-
+        IRubyObject optArg = ArgsUtil.getOptionsArg(context, opts);
         IRubyObject highlightArg = checkHighlightKeyword(context, optArg, true);
         boolean reverse = checkOrderKeyword(context, optArg);
 
-        if (optArg.isNil()) {
-            optArg = RubyHash.newHash(runtime);
-        }
+        if (optArg.isNil()) optArg = newHash(context);
 
-        ((RubyHash) optArg).fastASet(runtime.newSymbol("highlight"), highlightArg);
+        ((RubyHash) optArg).fastASet(asSymbol(context, "highlight"), highlightArg);
 
         return printBacktraceMRI(exception, optArg, highlightArg.isTrue(), reverse);
     }
@@ -379,7 +379,7 @@ public class TraceType {
             reverse = false;
         } else {
             RubyHash optHash = (RubyHash) optArg;
-            IRubyObject highlightOrder = optHash.fastARef(context.runtime.newSymbol("order"));
+            IRubyObject highlightOrder = optHash.fastARef(asSymbol(context, "order"));
             reverse = determineDirection(context, highlightOrder);
         }
         return reverse;
@@ -395,15 +395,13 @@ public class TraceType {
             highlightArg = optHash.fastARef(highlightSym);
 
             if (highlightArg == null) highlightArg = context.nil;
-            if (!(highlightArg.isNil()
-                    || highlightArg == context.tru
-                    || highlightArg == context.fals)) {
+            if (!(highlightArg.isNil() || highlightArg == context.tru || highlightArg == context.fals)) {
                 throw argumentError(context, "expected true or false as highlight: " + highlightArg);
             }
         }
 
         if (highlightArg.isNil()) {
-            highlightArg = asBoolean(context, autoTTYDetect && RubyException.to_tty_p(context, context.runtime.getException()).isTrue());
+            highlightArg = asBoolean(context, autoTTYDetect && RubyException.to_tty_p(context, exceptionClass(context)).isTrue());
         }
 
         return highlightArg;
@@ -412,20 +410,20 @@ public class TraceType {
     private static boolean determineDirection(ThreadContext context, IRubyObject vOrder) {
         if (vOrder == null || vOrder.isNil()) return false;
 
-        IRubyObject id = TypeConverter.checkID(vOrder);
-        if (id == Convert.asSymbol(context, "bottom")) return true;
-        if (id == Convert.asSymbol(context, "top")) return false;
+        IRubyObject id = checkID(context, vOrder);
+        if (id == asSymbol(context, "bottom")) return true;
+        if (id == asSymbol(context, "top")) return false;
         throw argumentError(context, str(context.runtime, "expected :top or :bottom as order: ", vOrder));
     }
 
     private static RubyString printBacktraceMRI(IRubyObject exception, IRubyObject opts, boolean highlight, boolean reverse) {
-        RubyString errorStream = RubyString.newEmptyString(exception.getRuntime());
+        RubyString errorStream = newEmptyString(exception.getRuntime().getCurrentContext());
 
         if (reverse) {
             if (highlight) errorStream.catString(BOLD);
             errorStream.catString("Traceback");
             if (highlight) errorStream.catString(RESET);
-            errorStream.catString(" (most recent call last):\n");
+            errorStream.catString(" (most recent call last):" + lineSeparator());
         }
 
         final Set<Object> shownCauses = new HashSet<>();
@@ -489,7 +487,7 @@ public class TraceType {
         } else if (((RubyArray) backtrace).getLength() == 0) {
             printErrorPos(context, errorStream);
         } else {
-            IRubyObject mesg = ((RubyArray) backtrace).first();
+            IRubyObject mesg = ((RubyArray) backtrace).first(context);
 
             if (mesg.isNil()) {
                 printErrorPos(context, errorStream);
@@ -521,7 +519,7 @@ public class TraceType {
             errorStream.append(str);
         } else if (message.isNil()) {
             if (highlight) errorStream.catString(UNDERLINE);
-            errorStream.append(type.getRealClass().rubyName());
+            errorStream.append(type.getRealClass().rubyName(context));
             if (highlight) errorStream.catString(RESET);
 
         } else {
@@ -531,17 +529,17 @@ public class TraceType {
         errorStream.cat('\n');
     }
 
-    private static void printErrMessageToStream(IRubyObject exception, RubyString errorStream, boolean highlight) {
+    private static void printErrMessageToStream(ThreadContext context, IRubyObject exception, RubyString errorStream, boolean highlight) {
         RubyClass type = exception.getMetaClass();
         String info = exception.toString();
 
-        if (type == exception.getRuntime().getRuntimeError() && (info == null || info.length() == 0)) {
+        if (type == context.runtime.getRuntimeError() && (info == null || info.length() == 0)) {
 
             if (highlight) errorStream.catString(UNDERLINE);
             errorStream.catString("unhandled exception");
             if (highlight) errorStream.catString(RESET);
         } else {
-            String path = type.getName();
+            String path = type.getName(context);
 
             if (info.length() == 0) {
                 if (highlight) errorStream.catString(UNDERLINE);
@@ -576,7 +574,7 @@ public class TraceType {
                 }
 
                 if (tail != null && tail.length() > 0) {
-                    errorStream.cat('\n');
+                    errorStream.catString(lineSeparator());
                     if (!highlight) {
                         errorStream.catString(tail);
                     } else {
@@ -585,7 +583,7 @@ public class TraceType {
                             errorStream.catString(BOLD);
                             errorStream.catString(tail.substring(start, end));
                             errorStream.catString(RESET);
-                            errorStream.cat('\n');
+                            errorStream.catString(lineSeparator());
                             start = end + 1;
                             end = tail.indexOf('\n', start);
                         }
@@ -652,7 +650,7 @@ public class TraceType {
         if (exception.getMetaClass() == runtime.getRuntimeError() && message.length() == 0) {
             message = "No current exception";
         }
-        String type = exception.getMetaClass().getName();
+        String type = exception.getMetaClass().getName(context);
 
         errorStream.print(printBacktraceJRuby(runtime, exception.getBacktraceElements(), type, message, console));
     }
@@ -706,17 +704,13 @@ public class TraceType {
                 buffer.append(CLEAR_COLOR);
             }
 
-            buffer.append('\n');
+            buffer.append(lineSeparator());
         }
 
         if (runtime != null && (frames.length > maxBacktraceLines)) {
             String suppressedLines = String.valueOf(frames.length - maxBacktraceLines);
-            buffer.append("... " + suppressedLines + " levels...\n");
+            buffer.append("... " + suppressedLines + " levels..." + lineSeparator());
         }
-    }
-
-    private static void renderBacktraceMRI(RubyStackTraceElement[] trace, StringBuilder buffer, boolean color) {
-        renderBacktraceMRI(trace, "", buffer, color);
     }
 
     private static void renderBacktraceMRI(RubyStackTraceElement[] trace, String linePrefix, StringBuilder buffer, boolean color) {
@@ -727,7 +721,7 @@ public class TraceType {
                     .append(element.getFileName())
                     .append(':')
                     .append(element.getLineNumber())
-                    .append(":in `")
+                    .append(":in '")
                     .append(element.getMethodName())
                     .append("'\n");
         }
@@ -751,12 +745,12 @@ public class TraceType {
     }
 
     public static void printBacktraceToStream(ThreadContext context, IRubyObject backtrace, RubyString errorStream, boolean reverse, int skip) {
-        if ( backtrace.isNil() ) return;
-        if ( backtrace instanceof RubyArray ) {
-            IRubyObject[] elements = ((RubyArray) backtrace).toJavaArrayMaybeUnsafe();
-            int optionBacktraceLimit = context.runtime.getInstanceConfig().getBacktraceLimit();
+        if (backtrace.isNil()) return;
+        if (backtrace instanceof RubyArray bt) {
+            IRubyObject[] elements = bt.toJavaArrayMaybeUnsafe();
+            int optionBacktraceLimit = instanceConfig(context).getBacktraceLimit();
             int limitPlusSkip = optionBacktraceLimit + skip;
-            int maxBacktraceLines =  (optionBacktraceLimit == -1 || limitPlusSkip > elements.length) ? elements.length : limitPlusSkip;
+            int maxBacktraceLines = optionBacktraceLimit == -1 || limitPlusSkip > elements.length ? elements.length : limitPlusSkip;
 
             int i, len = maxBacktraceLines;
             final int threshold = 1000000000;
@@ -773,7 +767,7 @@ public class TraceType {
                 }
                 if (stackTraceLine instanceof RubyString) {
                     errorStream.catString("from " + stackTraceLine);
-                    errorStream.cat('\n');
+                    errorStream.catString(lineSeparator());
                 }
                 else {
                     errorStream.append(stackTraceLine);
@@ -782,7 +776,7 @@ public class TraceType {
 
             if ((elements.length > i)) {
                 String suppressedLines = String.valueOf(elements.length - (i));
-                errorStream.catString("\t ... " + suppressedLines + " levels...\n");
+                errorStream.catString("\t ... " + suppressedLines + " levels..." + lineSeparator());
             }
         }
     }

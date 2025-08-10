@@ -35,6 +35,7 @@ import org.jruby.RubyInstanceConfig.ProfilingMode;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.util.collections.IntHashMap;
 import org.jruby.util.collections.IntHashMap.Entry;
 
@@ -138,7 +139,8 @@ public abstract class ProfilePrinter {
             DynamicMethod method = profileMethod.getMethod();
             String id = profileMethod.getName();
             if (id == null) id = method.getName();
-            displayName = moduleHashMethod(method.getImplementationClass(), id.toString());
+            var implClass = method.getImplementationClass();
+            displayName = moduleHashMethod(implClass.getRuntime().getCurrentContext(), implClass, id.toString());
         } else {
             displayName = "<unknown>";
         }
@@ -179,26 +181,21 @@ public abstract class ProfilePrinter {
     static final String PROFILER_PROFILE_METHOD = "JRuby::Profiler.profile";
     static final String PROFILER_PROFILED_CODE_METHOD = "JRuby::Profiler.profiled_code";
     
-    private static String moduleHashMethod(RubyModule module, String id) {
-        Ruby runtime = module.getRuntime();
-
+    private static String moduleHashMethod(ThreadContext context, RubyModule module, String id) {
+        var runtime = context.runtime;
         if (module instanceof MetaClass) {
             RubyBasicObject obj = ((MetaClass) module).getAttached();
-            if (obj instanceof RubyModule) {
-                return str(runtime, types(runtime, (RubyModule) obj), ".", ids(runtime, id));
-            } 
-            if (obj instanceof RubyObject) {
-                return str(runtime, types(runtime, obj.getType()), "(singleton)#", ids(runtime, id));
-            }
-            return str(runtime, "unknown#", ids(runtime, id));
+            if (obj instanceof RubyModule mod) return str(runtime, types(runtime, mod), ".", ids(runtime, id));
+
+            return obj instanceof RubyObject ?
+                    str(runtime, types(runtime, obj.getType()), "(singleton)#", ids(runtime, id)) :
+                    str(runtime, "unknown#", ids(runtime, id));
         }
         if (module.isSingleton()) {
             return str(runtime, types(runtime, ((RubyClass) module).getRealClass()), "(singleton)#", ids(runtime, id));
         }
-        if (module instanceof RubyClass) {
-            return str(runtime, types(runtime, module), "#", ids(runtime, id)); // instance method
-        }
-        return str(runtime, types(runtime, module), ".", ids(runtime, id)); // module method
+
+        return str(runtime, types(runtime, module), (module instanceof RubyClass ? "#" : "."), ids(runtime, id));
     }
     
     protected static void pad(PrintStream out, int size, String body) {

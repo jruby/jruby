@@ -2,7 +2,8 @@
 require 'test/unit'
 
 class TestRequireLib < Test::Unit::TestCase
-  libdir = __dir__ + '/../../lib'
+  # Modified for JRuby
+  libdir = __dir__ + '/../../../lib/ruby/stdlib'
 
   # .rb files at lib
   scripts = Dir.glob('*.rb', base: libdir).map {|f| f.chomp('.rb')}

@@ -23,6 +23,7 @@ import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
 import java.util.stream.IntStream;
 
+import static org.jruby.api.Access.arrayClass;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.util.CodegenUtils.p;
@@ -94,12 +95,12 @@ public class ArrayBootstrap {
 
     private static <ArrayType> RubyArray bindArray(ThreadContext context, MutableCallSite site, ArrayType values, int size, ObjectObjectIntFunction<Ruby, ArrayType, IRubyObject> mapper) {
         Ruby runtime = context.runtime;
-        RubyClass arrayClass = runtime.getArray();
+        var Array = arrayClass(context);
 
         return switch (size) {
-            case 1 -> bindArray(site, arrayClass, mapper.apply(runtime, values, 0));
-            case 2 -> bindArray(site, arrayClass, mapper.apply(runtime, values, 0), mapper.apply(runtime, values, 1));
-            default -> bindArray(site, arrayClass,
+            case 1 -> bindArray(site, Array, mapper.apply(runtime, values, 0));
+            case 2 -> bindArray(site, Array, mapper.apply(runtime, values, 0), mapper.apply(runtime, values, 1));
+            default -> bindArray(site, Array,
                     IntStream.range(0, size).mapToObj(i -> mapper.apply(runtime, values, i)).toArray(IRubyObject[]::new));
         };
     }

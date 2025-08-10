@@ -87,9 +87,9 @@ public class IndyValueCompiler implements ValueCompiler {
         compiler.adapter.invokedynamic("string", sig(RubyString.class, ThreadContext.class), StringBootstrap.STRING_BOOTSTRAP, RubyEncoding.decodeRaw(bl), bl.getEncoding().toString(), cr);
     }
 
-    public void pushChilledString(ByteList bl, int cr) {
+    public void pushChilledString(ByteList bl, int cr, String file, int line) {
         compiler.loadContext();
-        compiler.adapter.invokedynamic("chilled", sig(RubyString.class, ThreadContext.class), StringBootstrap.CSTRING_BOOTSTRAP, RubyEncoding.decodeRaw(bl), bl.getEncoding().toString(), cr);
+        compiler.adapter.invokedynamic("chilled", sig(RubyString.class, ThreadContext.class), StringBootstrap.CSTRING_BOOTSTRAP, RubyEncoding.decodeRaw(bl), bl.getEncoding().toString(), cr, file, line);
     }
 
     public void pushFrozenString(ByteList bl, int cr, String file, int line) {
@@ -113,7 +113,7 @@ public class IndyValueCompiler implements ValueCompiler {
     }
 
     public void buildDynamicString(Encoding encoding, int estimatedSize, boolean frozen, boolean chilled, boolean debugFrozen, String file, int line, List<DStringElement> elements) {
-        if (elements.size() > 50 || !Options.COMPILE_INVOKEDYNAMIC.load()) {
+        if (elements.size() > BuildDynamicStringSite.MAX_ELEMENTS || !Options.COMPILE_INVOKEDYNAMIC.load()) {
             normalValueCompiler.buildDynamicString(encoding, estimatedSize, frozen, chilled, debugFrozen, file, line, elements);
             return;
         }
@@ -128,7 +128,7 @@ public class IndyValueCompiler implements ValueCompiler {
             switch (elt.type()) {
                 case STRING:
                     StringLiteral str = (StringLiteral) elt.value();
-                    descriptor |= (1 << bit);
+                    descriptor = setBit(descriptor, bit);
                     bootstrapArgs.add(RubyEncoding.decodeRaw(str.getByteList()));
                     bootstrapArgs.add(str.getByteList().getEncoding().toString());
                     bootstrapArgs.add(str.getCodeRange());
@@ -148,6 +148,10 @@ public class IndyValueCompiler implements ValueCompiler {
         bootstrapArgs.add(bit);
 
         compiler.adapter.invokedynamic("buildDynamicString", sig(RubyString.class, params(ThreadContext.class, IRubyObject.class, otherCount)), BuildDynamicStringSite.BUILD_DSTRING_BOOTSTRAP, bootstrapArgs.toArray());
+    }
+
+    private static long setBit(long descriptor, int bit) {
+        return descriptor | (1L << bit);
     }
 
     public void pushByteList(ByteList bl) {

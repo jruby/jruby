@@ -56,6 +56,7 @@ import org.jruby.util.collections.IntHashMap;
 import org.jruby.util.collections.NonBlockingHashMapLong;
 
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.nameError;
 import static org.jruby.util.CodegenUtils.prettyParams;
 
 public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMethod {
@@ -456,7 +457,7 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
             final T[] callablesForArity;
             if ( javaCallables.length <= 1 || (callablesForArity = javaCallables[1]) == null ) {
                 if ((callable = matchVarArgsCallableArityOne(self, arg0)) == null) {
-                    throw runtime.newArgumentError(1, javaCallables.length - 1);
+                    throw argumentError(runtime.getCurrentContext(), 1, javaCallables.length - 1);
                 }
                 return callable;
             }
@@ -479,7 +480,7 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
             final T[] callablesForArity;
             if ( javaCallables.length <= 2 || (callablesForArity = javaCallables[2]) == null ) {
                 if ((callable = matchVarArgsCallableArityTwo(self, arg0, arg1)) == null ) {
-                    throw runtime.newArgumentError(2, javaCallables.length - 1);
+                    throw argumentError(runtime.getCurrentContext(), 2, javaCallables.length - 1);
                 }
                 return callable;
             }
@@ -502,7 +503,7 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
             final T[] callablesForArity;
             if ( javaCallables.length <= 3 || (callablesForArity = javaCallables[3]) == null ) {
                 if ( ( callable = matchVarArgsCallableArityThree(self, arg0, arg1, arg2) ) == null ) {
-                    throw runtime.newArgumentError(3, javaCallables.length - 1);
+                    throw argumentError(runtime.getCurrentContext(), 3, javaCallables.length - 1);
                 }
                 return callable;
             }
@@ -525,7 +526,7 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
             final T[] callablesForArity;
             if ( javaCallables.length <= 4 || (callablesForArity = javaCallables[4]) == null ) {
                 if ( ( callable = matchVarArgsCallableArityFour(self, arg0, arg1, arg2, arg3) ) == null ) {
-                    throw runtime.newArgumentError(4, javaCallables.length - 1);
+                    throw argumentError(runtime.getCurrentContext(), 4, javaCallables.length - 1);
                 }
                 return callable;
             }
@@ -547,7 +548,7 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
             final T[] callablesForArity;
             if ( arity >= javaCallables.length || (callablesForArity = javaCallables[arity]) == null ) {
                 if ( ( callable = matchVarArgsCallableArityN(self, args) ) == null ) {
-                    throw runtime.newArgumentError(args.length, javaCallables.length - 1);
+                    throw argumentError(runtime.getCurrentContext(), args.length, javaCallables.length - 1);
                 }
                 return callable;
             }
@@ -638,7 +639,7 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
 
     private void checkCallableArity(final T callable, final int expected) {
         final int arity = callable.getArity();
-        if ( arity != expected ) throw runtime.newArgumentError(expected, arity);
+        if ( arity != expected ) throw argumentError(runtime.getCurrentContext(), expected, arity);
     }
 
     private T someCallable() {
@@ -689,7 +690,7 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
         }
 
         // TODO should have been ArgumentError - might break users to refactor at this point
-        return runtime.newNameError(error.toString(), (String) null);
+        return nameError(runtime.getCurrentContext(), error.toString(), (String) null);
     }
 
     private RaiseException newErrorDueNoMatchingCallable(final IRubyObject receiver, final String name) {
@@ -716,10 +717,9 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
     }
 
     private static String formatReceiver(final IRubyObject object) {
-        if ( object instanceof RubyModule ) {
-            return ((RubyModule) object).getName();
-        }
-        return object.getMetaClass().getRealClass().getName();
+        var context = object.getRuntime().getCurrentContext();
+        return object instanceof RubyModule mod ?
+                mod.getName(context) : object.getMetaClass().getRealClass().getName(context);
     }
 
     private static class NullHashMapLong<V> extends NonBlockingHashMapLong<V> {

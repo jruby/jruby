@@ -34,11 +34,14 @@ package org.jruby.javasupport;
 import java.lang.reflect.Array;
 
 import org.jruby.Ruby;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyFixnum;
 import org.jruby.api.Convert;
 import org.jruby.java.util.ArrayUtils;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.javasupport.Java.castToJavaObject;
 
 /**
@@ -63,8 +66,9 @@ public class JavaArray extends JavaObject {
         return getValue().getClass().getComponentType();
     }
 
+    @Deprecated(since = "10.0")
     public RubyFixnum length() {
-        return RubyFixnum.newFixnum(getRuntime(), getLength());
+        return asFixnum(getCurrentContext(), getLength());
     }
 
     public int getLength() {
@@ -81,16 +85,18 @@ public class JavaArray extends JavaObject {
         return 17 * getValue().hashCode();
     }
 
+    @Deprecated(since = "10.0")
     public IRubyObject arefDirect(Ruby runtime, int intIndex) {
         return ArrayUtils.arefDirect(runtime, getValue(), javaConverter, intIndex);
     }
 
+    @Deprecated(since = "10.0")
     public IRubyObject aset(IRubyObject indexArg, IRubyObject value) {
-        var context = getRuntime().getCurrentContext();
-        var index = Convert.castAsInteger(context, indexArg).getIntValue();
+        var context = getCurrentContext();
+        var index = Convert.castAsInteger(context, indexArg).asInt(context);
         var javaObject = castToJavaObject(context, value).getValue();
 
-        ArrayUtils.setWithExceptionHandlingDirect(getRuntime(), javaObject, index, javaObject);
+        ArrayUtils.setWithExceptionHandlingDirect(context.runtime, javaObject, index, javaObject);
 
         return value;
     }
@@ -99,26 +105,28 @@ public class JavaArray extends JavaObject {
         return ArrayUtils.asetDirect(runtime, getValue(), javaConverter, intIndex, value);
     }
 
-    public void setWithExceptionHandling(int intIndex, Object javaObject) {
-        ArrayUtils.setWithExceptionHandlingDirect(getRuntime(), getValue(), intIndex, javaObject);
+    @Deprecated(since = "10.0")
+    public void setWithExceptionHandling(ThreadContext context, int intIndex, Object javaObject) {
+        ArrayUtils.setWithExceptionHandlingDirect(context.runtime, getValue(), intIndex, javaObject);
     }
 
+    @Deprecated(since = "10.0")
     public IRubyObject afill(IRubyObject beginArg, IRubyObject endArg, IRubyObject value) {
-        var context = getRuntime().getCurrentContext();
-        var beginIndex = Convert.castAsInteger(context, beginArg).getIntValue();
-        var endIndex = Convert.castAsInteger(context, endArg).getIntValue();
+        var context = ((RubyBasicObject) beginArg).getCurrentContext();
+        var beginIndex = Convert.castAsInteger(context, beginArg).asInt(context);
+        var endIndex = Convert.castAsInteger(context, endArg).asInt(context);
         var javaValue = castToJavaObject(context, value).getValue();
 
-        fillWithExceptionHandling(beginIndex, endIndex, javaValue);
+        fillWithExceptionHandling(context, beginIndex, endIndex, javaValue);
 
         return value;
     }
 
-    public final void fillWithExceptionHandling(int start, int end, Object javaValue) {
-        final Ruby runtime = getRuntime();
+    @Deprecated(since = "10.0")
+    public final void fillWithExceptionHandling(ThreadContext context, int start, int end, Object javaValue) {
         final Object array = getValue();
         for (int i = start; i < end; i++) {
-            ArrayUtils.setWithExceptionHandlingDirect(runtime, array, i, javaValue);
+            ArrayUtils.setWithExceptionHandlingDirect(context.runtime, array, i, javaValue);
         }
     }
 }

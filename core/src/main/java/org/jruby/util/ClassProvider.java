@@ -30,13 +30,23 @@ package org.jruby.util;
 
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
+import org.jruby.runtime.ThreadContext;
 
-/**
- * @author Bill Dortch
- *
- */
 public interface ClassProvider {
+    @Deprecated(since = "10.0")
+    default RubyClass defineClassUnder(RubyModule module, String name, RubyClass superClazz) {
+        return defineClassUnder(module.getCurrentContext(), module, name, superClazz);
+    }
 
-    public RubyClass defineClassUnder(RubyModule module, String name, RubyClass superClazz);
-    public RubyModule defineModuleUnder(RubyModule module, String name);
+    default RubyClass defineClassUnder(ThreadContext context, RubyModule module, String name, RubyClass superClazz) {
+        throw new RuntimeException("Missing defineClassUnder implementation");
+    }
+
+    @Deprecated(since = "10.0")
+    default RubyModule defineModuleUnder(RubyModule module, String name) {
+        return defineModuleUnder(module.getCurrentContext(), module, name);
+    }
+    default RubyModule defineModuleUnder(ThreadContext context, RubyModule module, String name) {
+        throw new RuntimeException("Missing defineModuleUnder implementation");
+    }
 }

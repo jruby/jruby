@@ -36,12 +36,14 @@ import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.runtime.ObjectAllocator;
+import org.jruby.api.Access;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.ModeFlags;
 
 import java.nio.channels.ByteChannel;
+
+import static org.jruby.api.Convert.toInt;
 
 /**
  * An IO implementation that reads/writes to a native file descriptor.
@@ -56,11 +58,15 @@ public class FileDescriptorIO extends RubyIO {
     }
 
     public FileDescriptorIO(Ruby runtime, IRubyObject fd) {
-        super(runtime, runtime.getModule("FFI").getClass(CLASS_NAME));
+        this(runtime.getCurrentContext(), fd);
+    }
+
+    public FileDescriptorIO(ThreadContext context, IRubyObject fd) {
+        super(context.runtime, Access.getClass(context, "FFI", CLASS_NAME));
         MakeOpenFile();
-        ModeFlags modes = newModeFlags(runtime, ModeFlags.RDWR);
-        int fileno = RubyNumeric.fix2int(fd);
-        FileStat stat = runtime.getPosix().fstat(fileno);
+        ModeFlags modes = newModeFlags(context.runtime, ModeFlags.RDWR);
+        int fileno = toInt(context, fd);
+        FileStat stat = context.runtime.getPosix().fstat(fileno);
         ByteChannel channel;
 
         if (stat.isSocket()) {
@@ -68,7 +74,7 @@ public class FileDescriptorIO extends RubyIO {
         } else if (stat.isBlockDev() || stat.isCharDev()) {
             channel = new jnr.enxio.channels.NativeDeviceChannel(fileno);
         } else {
-            channel = new FileDescriptorByteChannel(runtime, fileno);
+            channel = new FileDescriptorByteChannel(context.runtime, fileno);
         }
 
 //        openFile.setMainStream(ChannelStream.open(getRuntime(), new ChannelDescriptor(channel, modes, FileDescriptorHelper.wrap(fileno))));
@@ -78,22 +84,19 @@ public class FileDescriptorIO extends RubyIO {
         openFile.setSync(true);
     }
 
-    public static RubyClass createFileDescriptorIOClass(Ruby runtime, RubyModule module) {
-        RubyClass result = runtime.defineClassUnder(CLASS_NAME, runtime.getClass("IO"),
-                FileDescriptorIO::new, module);
-        result.defineAnnotatedMethods(FileDescriptorIO.class);
-        result.defineAnnotatedConstants(FileDescriptorIO.class);
-
-        return result;
+    public static RubyClass createFileDescriptorIOClass(ThreadContext context, RubyModule FFI, RubyClass IO) {
+        return FFI.defineClassUnder(context, CLASS_NAME, IO, FileDescriptorIO::new).
+                defineMethods(context, FileDescriptorIO.class).
+                defineConstants(context, FileDescriptorIO.class);
     }
 
     @JRubyMethod(name = "new", meta = true)
     public static FileDescriptorIO newInstance(ThreadContext context, IRubyObject recv, IRubyObject fd) {
-        return new FileDescriptorIO(context.runtime, fd);
+        return new FileDescriptorIO(context, fd);
     }
 
     @JRubyMethod(name = "wrap", meta = true)
     public static RubyIO wrap(ThreadContext context, IRubyObject recv, IRubyObject fd) {
-        return new FileDescriptorIO(context.runtime, fd);
+        return new FileDescriptorIO(context, fd);
     }
 }

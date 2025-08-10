@@ -13,7 +13,8 @@ require 'tempfile'
 require 'tmpdir'
 require 'stringio'
 
-require_relative '../../../lib/rdoc'
+# Modified for JRuby
+require_relative '../../../../lib/ruby/stdlib/rdoc'
 
 ##
 # RDoc::TestCase is an abstract TestCase to provide common setup and teardown

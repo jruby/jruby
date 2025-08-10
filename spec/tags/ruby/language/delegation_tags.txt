@@ -1,0 +1,3 @@
+fails(low-priority missing syntax error):delegation with def(*) within a block that accepts anonymous rest within a method that accepts anonymous rest does not allow delegating rest
+fails(low-priority missing syntax error):delegation with def(**) within a block that accepts anonymous kwargs within a method that accepts anonymous kwargs does not allow delegating kwargs
+fails(low-priority missing syntax error):delegation with def(&) within a block that accepts anonymous block within a method that accepts anonymous block does not allow delegating a block

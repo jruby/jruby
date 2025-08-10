@@ -1,8 +1,0 @@
-exclude :"test_getlocal_utc", "work in progress"
-exclude :"test_inspect", "work in progress"
-exclude :"test_marshal_distant_future", "work in progress"
-exclude :"test_marshal_distant_past", "work in progress"
-exclude :"test_new", "work in progress"
-exclude :"test_strfimte_zoneoffset", "work in progress"
-exclude :"test_strftime", "work in progress"
-exclude :"test_strftime_wide_precision", "work in progress"

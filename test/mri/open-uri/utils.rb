@@ -1,5 +1,6 @@
 require 'socket'
 require 'net/http'
+require 'tmpdir'
 begin
   require 'openssl'
 rescue LoadError
@@ -16,6 +17,7 @@ class SimpleHTTPServer
     @procs[path] = proc
   end
 
+  # NOTE: patched by JRuby
   def start
     @thread = Thread.new do
       loop do
@@ -26,9 +28,9 @@ class SimpleHTTPServer
     end
   end
 
+  # NOTE: patched by JRuby
   def shutdown
     @thread.kill
-    @server.close
   end
 
   private
@@ -160,6 +162,7 @@ class SimpleHTTPProxyServer
     @access_log = access_log
   end
 
+  # NOTE: patched by JRuby
   def start
     @thread = Thread.new do
       loop do
@@ -179,9 +182,9 @@ class SimpleHTTPProxyServer
     end
   end
 
+  # NOTE: patched by JRuby
   def shutdown
     @thread.kill
-    @server.close
   end
 
   private
@@ -270,6 +273,7 @@ class SimpleHTTPSServer
     @ssl_server = OpenSSL::SSL::SSLServer.new(@server, context)
   end
 
+  # NOTE: patched by JRuby
   def start
     @thread = Thread.new do
       loop do
@@ -281,8 +285,8 @@ class SimpleHTTPSServer
     end
   end
 
+  # NOTE: patched by JRuby
   def shutdown
-    @thread.kill
     @server.close
   end
 

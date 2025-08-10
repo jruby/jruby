@@ -35,15 +35,14 @@ import java.io.IOException;
 import org.jruby.Ruby;
 import org.jruby.runtime.load.Library;
 
-/**
- * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
- * @version $Revision: 1.2 $
- */
+import static org.jruby.api.Access.loadService;
+
 public class BigDecimalLibrary implements Library {
     public void load(Ruby runtime, boolean wrap) throws IOException {
-        RubyBigDecimal.createBigDecimal(runtime);
+        var context = runtime.getCurrentContext();
+        RubyBigDecimal.createBigDecimal(context);
 
         // using load since this file does not exist in MRI
-        runtime.getLoadService().load("org/jruby/kernel/bigdecimal.rb", false);
+        loadService(context).load("org/jruby/kernel/bigdecimal.rb", false);
     }
 }// BigDecimalLibrary

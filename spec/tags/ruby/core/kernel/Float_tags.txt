@@ -1,0 +1,6 @@
+fails(https://github.com/jruby/jruby/issues/8659):Kernel.Float allows String representation without a fractional part
+fails(https://github.com/jruby/jruby/issues/8659):Kernel#Float allows String representation without a fractional part
+fails:Kernel.Float for hexadecimal literals does not accept embedded _ if the number contains a-f
+fails:Kernel.Float for hexadecimal literals accepts a fractional part
+fails:Kernel#Float for hexadecimal literals does not accept embedded _ if the number contains a-f
+fails:Kernel#Float for hexadecimal literals accepts a fractional part

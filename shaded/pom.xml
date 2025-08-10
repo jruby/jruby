@@ -12,7 +12,7 @@ DO NOT MODIFY - GENERATED CODE
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>10.0.0.0-SNAPSHOT</version>
+    <version>10.0.3.0-SNAPSHOT</version>
   </parent>
   <artifactId>jruby-core</artifactId>
   <name>JRuby Core</name>
@@ -33,6 +33,7 @@ DO NOT MODIFY - GENERATED CODE
       <plugin>
         <groupId>com.coderplus.maven.plugins</groupId>
         <artifactId>copy-rename-maven-plugin</artifactId>
+        <version>1.0</version>
         <executions>
           <execution>
             <id>copy to lib/jruby.jar</id>
@@ -126,6 +127,12 @@ DO NOT MODIFY - GENERATED CODE
               </execution>
             </executions>
           </plugin>
+          <plugin>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <configuration>
+              <failOnError>false</failOnError>
+            </configuration>
+          </plugin>
         </plugins>
       </build>
     </profile>
@@ -180,6 +187,12 @@ DO NOT MODIFY - GENERATED CODE
                 </configuration>
               </execution>
             </executions>
+          </plugin>
+          <plugin>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <configuration>
+              <failOnError>false</failOnError>
+            </configuration>
           </plugin>
         </plugins>
       </build>
@@ -236,6 +249,12 @@ DO NOT MODIFY - GENERATED CODE
               </execution>
             </executions>
           </plugin>
+          <plugin>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <configuration>
+              <failOnError>false</failOnError>
+            </configuration>
+          </plugin>
         </plugins>
       </build>
     </profile>
@@ -290,6 +309,12 @@ DO NOT MODIFY - GENERATED CODE
                 </configuration>
               </execution>
             </executions>
+          </plugin>
+          <plugin>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <configuration>
+              <failOnError>false</failOnError>
+            </configuration>
           </plugin>
         </plugins>
       </build>
@@ -346,6 +371,12 @@ DO NOT MODIFY - GENERATED CODE
               </execution>
             </executions>
           </plugin>
+          <plugin>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <configuration>
+              <failOnError>false</failOnError>
+            </configuration>
+          </plugin>
         </plugins>
       </build>
     </profile>
@@ -400,6 +431,12 @@ DO NOT MODIFY - GENERATED CODE
                 </configuration>
               </execution>
             </executions>
+          </plugin>
+          <plugin>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <configuration>
+              <failOnError>false</failOnError>
+            </configuration>
           </plugin>
         </plugins>
       </build>
@@ -456,6 +493,12 @@ DO NOT MODIFY - GENERATED CODE
               </execution>
             </executions>
           </plugin>
+          <plugin>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <configuration>
+              <failOnError>false</failOnError>
+            </configuration>
+          </plugin>
         </plugins>
       </build>
     </profile>
@@ -511,6 +554,12 @@ DO NOT MODIFY - GENERATED CODE
               </execution>
             </executions>
           </plugin>
+          <plugin>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <configuration>
+              <failOnError>false</failOnError>
+            </configuration>
+          </plugin>
         </plugins>
       </build>
     </profile>
@@ -565,6 +614,12 @@ DO NOT MODIFY - GENERATED CODE
                 </configuration>
               </execution>
             </executions>
+          </plugin>
+          <plugin>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <configuration>
+              <failOnError>false</failOnError>
+            </configuration>
           </plugin>
         </plugins>
       </build>

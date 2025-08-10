@@ -23,6 +23,8 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.SwitchPoint;
 
+import static org.jruby.api.Access.hashClass;
+import static org.jruby.api.Create.dupString;
 import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
 
@@ -57,7 +59,7 @@ public class ArrayDerefInvokeSite extends NormalInvokeSite {
         DynamicMethod method = entry.method;
 
         if (method.isBuiltin() &&
-                testOptimizedHash(context.runtime.getHash(), self) &&
+                testOptimizedHash(hashClass(context), self) &&
                 !((RubyHash) self).isComparedByIdentity()) {
             // fast path since we know we're working with a normal hash and have a pre-frozen string
             mh = SmartBinder.from(signature)
@@ -73,13 +75,13 @@ public class ArrayDerefInvokeSite extends NormalInvokeSite {
             // slow path follows normal invoke logic with a strDup for the key
 
             // strdup for this call
-            args[0] = ((RubyString) args[0]).strDup(context.runtime);
+            args[0] = dupString(context, (RubyString) args[0]);
 
             if (methodMissing(entry, caller)) {
                 return callMethodMissing(entry, callType, context, self, selfClass, methodName, args, block);
             }
 
-            mh = getHandle(self, entry);
+            mh = getHandle(context, self, entry);
             // strdup for future calls
             mh = MethodHandles.filterArguments(mh, 3, STRDUP_FILTER);
 
@@ -120,7 +122,7 @@ public class ArrayDerefInvokeSite extends NormalInvokeSite {
         CacheEntry entry = cache;
 
         // strdup for all calls
-        arg0 = ((RubyString) arg0).strDup(context.runtime);
+        arg0 = dupString(context, (RubyString) arg0);
 
         if (entry.typeOk(selfClass)) {
             return entry.method.call(context, self, entry.sourceModule, name, arg0, block);

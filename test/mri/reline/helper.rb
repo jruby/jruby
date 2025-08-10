@@ -19,12 +19,12 @@ rescue LoadError
 end
 
 module Reline
-  class <<self
+  class << self
     def test_mode(ansi: false)
       @original_iogate = IOGate
 
-      if ENV['RELINE_TEST_ENCODING']
-        encoding = Encoding.find(ENV['RELINE_TEST_ENCODING'])
+      if defined?(RELINE_TEST_ENCODING)
+        encoding = RELINE_TEST_ENCODING
       else
         encoding = Encoding::UTF_8
       end
@@ -88,51 +88,57 @@ end
 class Reline::TestCase < Test::Unit::TestCase
   private def convert_str(input, options = {}, normalized = nil)
     return nil if input.nil?
-    input.chars.map { |c|
+    input = input.chars.map { |c|
       if Reline::Unicode::EscapedChars.include?(c.ord)
         c
       else
-        c.encode(@line_editor.instance_variable_get(:@encoding), Encoding::UTF_8, **options)
+        c.encode(@line_editor.encoding, Encoding::UTF_8, **options)
       end
     }.join
   rescue Encoding::UndefinedConversionError, Encoding::InvalidByteSequenceError
-    input = input.unicode_normalize(:nfc)
-    if normalized
-      options[:undef] = :replace
-      options[:replace] = '?'
+    if unicode?(input.encoding)
+      input = input.unicode_normalize(:nfc)
+      if normalized
+        options[:undef] = :replace
+        options[:replace] = '?'
+      end
+      normalized = true
+      retry
     end
-    normalized = true
-    retry
+    input
   end
 
-  def input_key_by_symbol(input)
-    @line_editor.input_key(Reline::Key.new(input, input, false))
+  def input_key_by_symbol(method_symbol, char: nil, csi: false)
+    char ||= csi ? "\e[A" : "\C-a"
+    @line_editor.input_key(Reline::Key.new(char, method_symbol, false))
   end
 
   def input_keys(input, convert = true)
-    input = convert_str(input) if convert
-    input.chars.each do |c|
-      if c.bytesize == 1
-        eighth_bit = 0b10000000
-        byte = c.bytes.first
-        if byte.allbits?(eighth_bit)
-          @line_editor.input_key(Reline::Key.new(byte ^ eighth_bit, byte, true))
-        else
-          @line_editor.input_key(Reline::Key.new(byte, byte, false))
-        end
-      else
-        c.bytes.each do |b|
-          @line_editor.input_key(Reline::Key.new(b, b, false))
-        end
-      end
-    end
+    # Reline does not support convert-meta, but test data includes \M-char. It should be converted to ESC+char.
+    # Note that mixing unicode chars and \M-char is not recommended. "\M-C\M-\C-A" is a single unicode character.
+    input = input.chars.map do |c|
+      c.valid_encoding? ? c : "\e#{(c.bytes[0] & 0x7f).chr}"
+    end.join
+    input_raw_keys(input, convert)
   end
 
   def input_raw_keys(input, convert = true)
     input = convert_str(input) if convert
-    input.bytes.each do |b|
-      @line_editor.input_key(Reline::Key.new(b, b, false))
+    key_stroke = Reline::KeyStroke.new(@config, @encoding)
+    input_bytes = input.bytes
+    until input_bytes.empty?
+      expanded, input_bytes = key_stroke.expand(input_bytes)
+      expanded.each do |key|
+        @line_editor.input_key(key)
+      end
     end
+  end
+
+  def set_line_around_cursor(before, after)
+    input_keys("\C-a\C-k")
+    input_keys(after)
+    input_keys("\C-a")
+    input_keys(before)
   end
 
   def assert_line_around_cursor(before, after)
@@ -170,5 +176,9 @@ class Reline::TestCase < Test::Unit::TestCase
       @config.editing_mode = editing_mode
       assert_equal(method_symbol, @config.editing_mode.get(input.bytes))
     end
+  end
+
+  private def unicode?(encoding)
+    [Encoding::UTF_8, Encoding::UTF_16BE, Encoding::UTF_16LE, Encoding::UTF_32BE, Encoding::UTF_32LE].include?(encoding)
   end
 end

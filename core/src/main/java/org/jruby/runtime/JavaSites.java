@@ -57,6 +57,7 @@ public class JavaSites {
     public final MethodSites Method = new MethodSites();
     public final SymbolSites Symbol = new SymbolSites();
     public final ProcSites Proc = new ProcSites();
+    public final ModuleSites Module = new ModuleSites();
 
     public static class BasicObjectSites {
         public final CallSite respond_to = new FunctionalCachingCallSite("respond_to?");
@@ -132,6 +133,7 @@ public class JavaSites {
         public final CallSite op_gt_sort = new FunctionalCachingCallSite(">");
         public final CallSite op_lt_sort = new FunctionalCachingCallSite("<");
         public final CachingCallSite self_each = new FunctionalCachingCallSite("each");
+        public final CachingCallSite initialize_copy = new FunctionalCachingCallSite("initialize_copy");
     }
 
     public static class Array2Sites {
@@ -392,6 +394,8 @@ public class JavaSites {
         public final CheckedSites to_i_checked = new CheckedSites("to_i");
         public final CheckedSites to_ary_checked = new CheckedSites("to_ary");
         public final CheckedSites to_a_checked = new CheckedSites("to_a");
+        public final CheckedSites to_r_checked = new CheckedSites("to_r");
+        public final CheckedSites to_str_checked = new CheckedSites("to_str");
     }
 
     public static class HelpersSites {
@@ -433,6 +437,7 @@ public class JavaSites {
         public final CallSite infinite = new FunctionalCachingCallSite("infinite?");
         public final CallSite fdiv = new FunctionalCachingCallSite("fdiv");
         public final CheckedSites to_c_checked = new CheckedSites("to_c");
+        public final CallSite op_cmp = new FunctionalCachingCallSite("<=>");
     }
 
     public static class RationalSites {
@@ -468,7 +473,7 @@ public class JavaSites {
     }
 
     public static class WarningSites {
-        public final CallSite warn = new FunctionalCachingCallSite("warn");
+        public final CachingCallSite warn = new FunctionalCachingCallSite("warn");
         public final CallSite write = new FunctionalCachingCallSite("write");
     }
 
@@ -560,6 +565,10 @@ public class JavaSites {
     public static class ProcSites {
         public final CallSite initialize_clone = new FunctionalCachingCallSite("initialize_clone");
         public final CallSite initialize_dup = new FunctionalCachingCallSite("initialize_dup");
+    }
+
+    public static class ModuleSites {
+        public final CachingCallSite hash = new FunctionalCachingCallSite("hash");
     }
 
     public static class CheckedSites {

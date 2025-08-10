@@ -30,8 +30,10 @@
 
 package org.jruby.ext.socket;
 
+import jnr.constants.platform.Errno;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.anno.JRubyMethod;
@@ -59,14 +61,12 @@ import static jnr.constants.platform.AddressFamily.AF_INET;
 import static jnr.constants.platform.AddressFamily.AF_INET6;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.*;
+import static org.jruby.api.Define.defineClass;
 
 public class RubyTCPSocket extends RubyIPSocket {
-    static void createTCPSocket(Ruby runtime) {
-        RubyClass rb_cTCPSocket = runtime.defineClass("TCPSocket", runtime.getClass("IPSocket"), RubyTCPSocket::new);
-
-        rb_cTCPSocket.defineAnnotatedMethods(RubyTCPSocket.class);
-
-        runtime.getObject().setConstant("TCPsocket",rb_cTCPSocket);
+    static RubyClass createTCPSocket(ThreadContext context, RubyClass IPSocket) {
+        return defineClass(context, "TCPSocket", IPSocket, RubyTCPSocket::new).
+                defineMethods(context, RubyTCPSocket.class);
     }
 
     public RubyTCPSocket(Ruby runtime, RubyClass type) {
@@ -97,7 +97,7 @@ public class RubyTCPSocket extends RubyIPSocket {
                 if (opts != null) {
                     IRubyObject timeoutObj = ArgsUtil.extractKeywordArg(context, opts, "connect_timeout");
                     if (!timeoutObj.isNil()) {
-                        timeout = (long) (timeoutObj.convertToFloat().getDoubleValue() * 1000);
+                        timeout = (long) (timeoutObj.convertToFloat().asDouble(context) * 1000);
                     }
                 }
 
@@ -113,14 +113,14 @@ public class RubyTCPSocket extends RubyIPSocket {
                     return channel;
                 }
 
-                throw context.runtime.newErrnoETIMEDOUTError();
+                throw RubyIOTimeoutError.newIOTimeoutError(context.runtime, Errno.ETIMEDOUT.description()).toThrowable();
             } catch (ConnectException e) {
                 // fall through and try next valid address for the host.
             }
         }
 
         // did not complete and only path out is n repeated ConnectExceptions
-        throw context.runtime.newErrnoECONNREFUSEDError("connect(2) for " + host.inspect() + " port " + remotePort);
+        throw context.runtime.newErrnoECONNREFUSEDError("connect(2) for " + host.inspect(context) + " port " + remotePort);
     }
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
@@ -135,11 +135,9 @@ public class RubyTCPSocket extends RubyIPSocket {
     public IRubyObject initialize(ThreadContext context, IRubyObject host, IRubyObject port, IRubyObject localOrOpts) {
         final String remoteHost = host.isNil() ? "localhost" : host.convertToString().toString();
         final int remotePort = SocketUtils.getPortFrom(context, port);
+        IRubyObject opts = ArgsUtil.getOptionsArg(context, localOrOpts);
 
-        IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, localOrOpts);
-        if (!opts.isNil()) {
-            return initialize(context, remoteHost, remotePort, host, null, 0, (RubyHash) opts);
-        }
+        if (!opts.isNil()) return initialize(context, remoteHost, remotePort, host, null, 0, (RubyHash) opts);
 
         String localHost = localOrOpts.isNil() ? null : localOrOpts.convertToString().toString();
 
@@ -157,10 +155,8 @@ public class RubyTCPSocket extends RubyIPSocket {
         RubyHash opts = null;
 
         switch (argc) {
-            case 2:
-                return initialize(context, args[0], args[1]);
-            case 3:
-                return initialize(context, args[0], args[1], args[2]);
+            case 2 -> { return initialize(context, args[0], args[1]); }
+            case 3 -> { return initialize(context, args[0], args[1], args[2]); }
         }
 
         // cut switch in half to evaluate early args first
@@ -174,7 +170,7 @@ public class RubyTCPSocket extends RubyIPSocket {
             case 4:
                 if (!args[2].isNil()) localHost = args[2].convertToString().toString();
 
-                maybeOpts = ArgsUtil.getOptionsArg(context.runtime, args[3]);
+                maybeOpts = ArgsUtil.getOptionsArg(context, args[3]);
                 if (!maybeOpts.isNil()) {
                     opts = (RubyHash) maybeOpts;
                 } else if (!args[3].isNil()) {
@@ -232,7 +228,7 @@ public class RubyTCPSocket extends RubyIPSocket {
 
             return RubyArray.newArray(context.runtime,
                     newString(context, do_not_reverse_lookup(context, recv).isTrue() ? addr.getHostAddress() : addr.getCanonicalHostName()),
-                    newArray(context),
+                    newEmptyArray(context),
                     asFixnum(context, addr instanceof Inet4Address ? AF_INET.longValue() : AF_INET6.longValue()),
                     newString(context, addr.getHostAddress()));
         }
@@ -243,11 +239,11 @@ public class RubyTCPSocket extends RubyIPSocket {
 
     @Deprecated
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
-        return open(recv.getRuntime().getCurrentContext(), recv, args, block);
+        return open(((RubyBasicObject) recv).getCurrentContext(), recv, args, block);
     }
 
     @Deprecated
     public static IRubyObject gethostbyname(IRubyObject recv, IRubyObject hostname) {
-        return gethostbyname(recv.getRuntime().getCurrentContext(), recv, hostname);
+        return gethostbyname(((RubyBasicObject) recv).getCurrentContext(), recv, hostname);
     }
 }

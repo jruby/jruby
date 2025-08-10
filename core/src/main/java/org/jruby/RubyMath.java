@@ -38,30 +38,27 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asFloat;
+import static org.jruby.api.Convert.toDouble;
+import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Define.defineModule;
 
 @JRubyModule(name="Math")
 public class RubyMath {
     /** Create the Math module and add it to the Ruby runtime.
      * 
      */
-    public static RubyModule createMathModule(Ruby runtime) {
-        var context = runtime.getCurrentContext();
-        RubyModule result = runtime.defineModule("Math");
-
-        result.defineConstant("E", asFloat(context, Math.E));
-        result.defineConstant("PI", asFloat(context, Math.PI));
-        
-        result.defineAnnotatedMethods(RubyMath.class);
-
-        return result;
+    public static RubyModule createMathModule(ThreadContext context) {
+        return defineModule(context, "Math").
+                defineConstant(context, "E", asFloat(context, Math.E)).
+                defineConstant(context, "PI", asFloat(context, Math.PI)).
+                defineMethods(context, RubyMath.class);
     }
 
-    private static void domainCheck(IRubyObject recv, double value, String msg) {
-        if (Double.isNaN(value)) {
-            throw recv.getRuntime().newMathDomainError(msg);
-        }
+    private static void domainCheck(ThreadContext context, double value, String msg) {
+        if (Double.isNaN(value)) throw context.runtime.newMathDomainError(msg);
     }
 
     public static double chebylevSerie(double x, double coef[]) {
@@ -86,27 +83,27 @@ public class RubyMath {
 
     @JRubyMethod(name = "atan2", module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat atan2(ThreadContext context, IRubyObject recv, IRubyObject x, IRubyObject y) {
-        return asFloat(context, Math.atan2(RubyNumeric.num2dbl(context, x), RubyNumeric.num2dbl(context, y)));
+        return asFloat(context, Math.atan2(toDouble(context, x), toDouble(context, y)));
     }
 
     @JRubyMethod(name = "cos", module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat cos(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        return asFloat(context, Math.cos(RubyNumeric.num2dbl(context, x)));
+        return asFloat(context, Math.cos(toDouble(context, x)));
     }
 
     @JRubyMethod(name = "sin", module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat sin(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        return asFloat(context, Math.sin(RubyNumeric.num2dbl(context, x)));
+        return asFloat(context, Math.sin(toDouble(context, x)));
     }
 
     @JRubyMethod(name = "tan", module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat tan(ThreadContext context, IRubyObject recv,  IRubyObject x) {
-        return asFloat(context, Math.tan(RubyNumeric.num2dbl(context, x)));
+        return asFloat(context, Math.tan(toDouble(context, x)));
     }
 
     @JRubyMethod(name = "asin", module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat asin(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        double value = RubyNumeric.num2dbl(context, x);
+        double value = toDouble(context, x);
 
         if (value < -1.0 || value > 1.0) throw context.runtime.newMathDomainError("asin");
 
@@ -115,7 +112,7 @@ public class RubyMath {
 
     @JRubyMethod(name = "acos", module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat acos(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        double value = RubyNumeric.num2dbl(context, x);
+        double value = toDouble(context, x);
 
         if (value < -1.0 || value > 1.0) throw context.runtime.newMathDomainError("acos");
 
@@ -124,31 +121,31 @@ public class RubyMath {
 
     @JRubyMethod(name = "atan", module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat atan(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        return asFloat(context, Math.atan(RubyNumeric.num2dbl(context, x)));
+        return asFloat(context, Math.atan(toDouble(context, x)));
     }
 
     @JRubyMethod(name = "cosh", module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat cosh(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        double value = RubyNumeric.num2dbl(context, x);
+        double value = toDouble(context, x);
         
         return asFloat(context, (Math.exp(value) + Math.exp(-value)) / 2.0);
     }
 
     @JRubyMethod(name = "sinh", module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat sinh(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        double value = RubyNumeric.num2dbl(context, x);
+        double value = toDouble(context, x);
         
         return asFloat(context, (Math.exp(value) - Math.exp(-value)) / 2.0);
     }
 
     @JRubyMethod(name = "tanh", module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat tanh(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        return asFloat(context, Math.tanh(RubyNumeric.num2dbl(context, x)));
+        return asFloat(context, Math.tanh(toDouble(context, x)));
     }
 
     @JRubyMethod(name = "acosh", module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat acosh(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        double value = RubyNumeric.num2dbl(context, x);
+        double value = toDouble(context, x);
         double result;
         
         if (Double.isNaN(value)) {
@@ -190,7 +187,7 @@ public class RubyMath {
 
     @JRubyMethod(name = "asinh", module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat asinh(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        double value = RubyNumeric.num2dbl(context, x);
+        double value = toDouble(context, x);
         double  y = Math.abs(value);
         double result;
         
@@ -231,7 +228,7 @@ public class RubyMath {
 
     @JRubyMethod(name = "atanh", module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat atanh(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        double value = RubyNumeric.num2dbl(context, x);
+        double value = toDouble(context, x);
 
         if (value < -1.0 || value > 1.0) throw context.runtime.newMathDomainError("atanh");
 
@@ -261,7 +258,7 @@ public class RubyMath {
     }
 
     public static RubyFloat exp(ThreadContext context, IRubyObject exponent) {
-        return asFloat(context, Math.exp(RubyNumeric.num2dbl(context, exponent)));
+        return asFloat(context, Math.exp(toDouble(context, exponent)));
     }
 
     // MRI : get_double_rshift
@@ -278,7 +275,7 @@ public class RubyMath {
             }
         }
 
-        return new double[]{RubyNumeric.num2dbl(context, x), numbits};
+        return new double[]{toDouble(context, x), numbits};
     }
 
     private static int DBL_MANT_DIG = 53;
@@ -306,7 +303,7 @@ public class RubyMath {
     @JRubyMethod(name = "log", module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat log(ThreadContext context, IRubyObject recv, IRubyObject val, IRubyObject base) {
         double [] ret = get_double_rshift(context, val);
-        double _base = RubyNumeric.num2dbl(context, base);
+        double _base = toDouble(context, base);
 
         if (ret[0] < 0 || _base < 0) throw context.runtime.newMathDomainError("log");
 
@@ -346,7 +343,7 @@ public class RubyMath {
 
     @JRubyMethod(name = "sqrt", module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat sqrt(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        double value = RubyNumeric.num2dbl(context, x);
+        double value = toDouble(context, x);
 
         if (value < 0) throw context.runtime.newMathDomainError("sqrt");
 
@@ -355,7 +352,7 @@ public class RubyMath {
 
     @JRubyMethod(name = "cbrt", module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat cbrt(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        return asFloat(context, Math.cbrt(RubyNumeric.num2dbl(context, x)));
+        return asFloat(context, Math.cbrt(toDouble(context, x)));
     }
 
     @Deprecated
@@ -365,8 +362,8 @@ public class RubyMath {
 
     @JRubyMethod(name = "hypot", module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat hypot(ThreadContext context, IRubyObject recv, IRubyObject x, IRubyObject y) {
-        double valuea = RubyNumeric.num2dbl(context, x);
-        double valueb = RubyNumeric.num2dbl(context, y);
+        double valuea = toDouble(context, x);
+        double valueb = toDouble(context, y);
         double result;
         
         if (Math.abs(valuea) > Math.abs(valueb)) {
@@ -393,7 +390,7 @@ public class RubyMath {
      */
     @JRubyMethod(name = "frexp", module = true, visibility = Visibility.PRIVATE)
     public static RubyArray frexp(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        double mantissa = RubyNumeric.num2dbl(context, other);
+        double mantissa = toDouble(context, other);
         short sign = 1;
         long exponent = 0;
 
@@ -411,7 +408,7 @@ public class RubyMath {
             for (; mantissa >= 1.0; mantissa *= 0.5, exponent +=1) { }
         }
 	 
-        return newArray(context, asFloat(context, sign * mantissa), RubyNumeric.int2fix(context.runtime, exponent));
+        return newArray(context, asFloat(context, sign * mantissa), asFixnum(context, exponent));
     }
 
     /*
@@ -419,8 +416,8 @@ public class RubyMath {
      */
     @JRubyMethod(name = "ldexp", module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat ldexp(ThreadContext context, IRubyObject recv, IRubyObject mantissa, IRubyObject exponent) {
-        double m = RubyNumeric.num2dbl(context, mantissa);
-        int e = RubyNumeric.num2int(exponent);
+        double m = toDouble(context, mantissa);
+        int e = toInt(context, exponent);
 
         return e > 1023 ? // avoid overflow. Math.power(2.0, 1024) is greater than Math.MAX_VALUE.
                 asFloat(context, m * Math.pow(2.0, e - 1023) * Math.pow(2.0, 1023)) :
@@ -446,7 +443,7 @@ public class RubyMath {
 
     @JRubyMethod(name = "erf", module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat erf(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        double value = RubyNumeric.num2dbl(context, x);
+        double value = toDouble(context, x);
         double  y = Math.abs(value);
         double  result;
 
@@ -529,7 +526,7 @@ public class RubyMath {
 
     @JRubyMethod(name = "erfc", module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat erfc(ThreadContext context, IRubyObject recv, IRubyObject x) {
-        double value = RubyNumeric.num2dbl(context, x);
+        double value = toDouble(context, x);
         double  result;
         double  y = Math.abs(value);
 
@@ -637,7 +634,7 @@ public class RubyMath {
 
         if (Double.isNaN(value)) return asFloat(context, Double.NaN);
 
-        domainCheck(recv, result, "gamma");
+        domainCheck(context, result, "gamma");
         return asFloat(context, result);
 
     }
@@ -660,7 +657,7 @@ public class RubyMath {
 
         NemesLogGamma l = new NemesLogGamma(value);
 
-        return newArray(context, asFloat(context, l.value), RubyInteger.int2fix(context.runtime, (int) l.sign));
+        return newArray(context, asFloat(context, l.value), asFixnum(context, (int) l.sign));
     }
 
     public static double nemes_gamma(double x) {

@@ -51,8 +51,8 @@ project 'JRuby Base' do
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
-  jar 'org.jruby.joni:joni:2.2.2-SNAPSHOT'
-  jar 'org.jruby.jcodings:jcodings:1.0.58'
+  jar 'org.jruby.joni:joni:2.2.6'
+  jar 'org.jruby.jcodings:jcodings:1.0.63'
   jar 'org.jruby:dirgra:0.5'
 
   jar 'com.headius:invokebinder:1.14'
@@ -241,11 +241,11 @@ project 'JRuby Base' do
                    'filesets' => [ { 'directory' =>  '${project.build.sourceDirectory}',
                                      'includes' => [ '${Constants.java}' ] },
                                    { 'directory' =>  '${project.basedir}/..',
-                                     'includes' => [ 'bin/jruby' ] },
-                                   { 'directory' =>  '${project.basedir}/..',
                                      'includes' => [ 'lib/jni/**' ] },
                                    { 'directory' =>  '${project.basedir}/..',
-                                     'includes' => [ 'lib/modules/**' ] } ],
+                                     'includes' => [ 'lib/modules/**' ] },
+                                   { 'directory' =>  '${project.basedir}/..',
+                                     'includes' => [ 'lib/jni/**' ] } ],
                    'failOnError' =>  'false' )
   end
 
@@ -312,27 +312,10 @@ project 'JRuby Base' do
                     },
                     {
                       directory: '..',
-                      includes: [ 'BSDL', 'COPYING', 'LEGAL', 'LICENSE.RUBY' ],
+                      includes: [ 'BSDL', 'COPYING', 'LEGAL', 'LICENSE.RUBY', 'VERSION' ],
                       target_path: '${project.build.sourceDirectory}/META-INF/'
                     }
                   ])
-  end
-
-  copy_goal = [:exec, :executable => '/bin/sh', :arguments => ['-c', 'cp ${jruby.basedir}/bin/jruby.sh ${jruby.basedir}/bin/jruby']]
-
-  profile :clean do
-    activation do
-      # hack to get the os triggeer into the model
-      os = org.apache.maven.model.ActivationOS.new
-      os.family = 'unix'
-      @current.os = os
-    end
-
-    phase :clean do
-      plugin 'org.codehaus.mojo:exec-maven-plugin' do
-        execute_goals( *copy_goal )
-      end
-    end
   end
 
   profile 'error-prone' do
@@ -367,26 +350,6 @@ project 'JRuby Base' do
                         }
                     ) )
     end
-  end
-
-  profile 'jruby.sh' do
-
-    activation do
-      file( :missing => '../bin/jruby' )
-    end
-    activation do
-      # hack to get the os triggeer into the model
-      os = org.apache.maven.model.ActivationOS.new
-      os.family = 'unix'
-      @current.os = os
-    end
-
-    phase :initialize do
-      plugin 'org.codehaus.mojo:exec-maven-plugin' do
-        execute_goals *copy_goal
-      end
-    end
-
   end
 
   jni_config = [ 'unpack', { :id => 'unzip native',

@@ -28,12 +28,14 @@ package org.jruby;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Error;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.FrozenError;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import static org.jruby.api.Define.defineClass;
 
 /**
  * The Java representation of a Ruby FrozenError.
@@ -48,18 +50,13 @@ public class RubyFrozenError extends RubyRuntimeError {
         super(runtime, exceptionClass);
     }
 
-    static RubyClass define(Ruby runtime, RubyClass exceptionClass) {
-        RubyClass frozenErrorClass = runtime.defineClass("FrozenError", exceptionClass, RubyFrozenError::new);
-
-        frozenErrorClass.defineAnnotatedMethods(RubyFrozenError.class);
-
-        return frozenErrorClass;
+    static RubyClass define(ThreadContext context, RubyClass RuntimeError) {
+        return defineClass(context, "FrozenError", RuntimeError, RubyFrozenError::new).
+                defineMethods(context, RubyFrozenError.class);
     }
 
     public static RubyFrozenError newFrozenError(ThreadContext context, IRubyObject message, IRubyObject receiver) {
-        Ruby runtime = context.runtime;
-
-        RubyFrozenError rfe = new RubyFrozenError(runtime, runtime.getFrozenError());
+        RubyFrozenError rfe = new RubyFrozenError(context.runtime, context.runtime.getFrozenError());
 
         rfe.initializeCommon(context, message, receiver);
 
@@ -105,7 +102,7 @@ public class RubyFrozenError extends RubyRuntimeError {
     public IRubyObject receiver(ThreadContext context) {
         IRubyObject receiver = this.receiver;
 
-        if (receiver == null) return context.nil;
+        if (receiver == null) throw Error.argumentError(context, "no receiver is available");
 
         return receiver;
     }

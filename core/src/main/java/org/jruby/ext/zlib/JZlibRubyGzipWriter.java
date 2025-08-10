@@ -33,6 +33,7 @@ import com.jcraft.jzlib.GZIPOutputStream;
 import com.jcraft.jzlib.JZlib;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.Ruby;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyIO;
 import org.jruby.RubyKernel;
@@ -53,25 +54,32 @@ import org.jruby.util.io.EncodingUtils;
 
 import java.io.IOException;
 
+import static org.jruby.api.Access.fileClass;
+import static org.jruby.api.Access.globalVariables;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.toByte;
+import static org.jruby.api.Convert.toInt;
+import static org.jruby.api.Convert.toLong;
+import static org.jruby.api.Create.dupString;
 import static org.jruby.api.Create.newString;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
-/**
- *
- */
 @JRubyClass(name = "Zlib::GzipWriter", parent = "Zlib::GzipFile")
 public class JZlibRubyGzipWriter extends RubyGzipFile {
     @JRubyMethod(name = "new", rest = true, meta = true, keywords = true)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        JZlibRubyGzipWriter result = newInstance(recv, args);
+        JZlibRubyGzipWriter result = newInstance(context, (RubyClass) recv, args);
 
         return RubyGzipFile.wrapBlock(context, result, block);
     }
 
+    @Deprecated(since = "10.0")
     public static JZlibRubyGzipWriter newInstance(IRubyObject recv, IRubyObject[] args) {
-        RubyClass klass = (RubyClass) recv;
-        JZlibRubyGzipWriter result = (JZlibRubyGzipWriter) klass.allocate();
+        return newInstance(((RubyBasicObject) recv).getCurrentContext(), (RubyClass) recv, args);
+    }
+
+    public static JZlibRubyGzipWriter newInstance(ThreadContext context, RubyClass klass, IRubyObject[] args) {
+        JZlibRubyGzipWriter result = (JZlibRubyGzipWriter) klass.allocate(context);
 
         result.callInit(args, Block.NULL_BLOCK);
 
@@ -81,9 +89,9 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
     @JRubyMethod(name = "open", required = 1, optional = 3, checkArity = false, meta = true)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Arity.checkArgumentCount(context, args, 1, 4);
-        args[0] = Helpers.invoke(context, context.runtime.getFile(), "open", args[0], newString(context, "wb"));
+        args[0] = Helpers.invoke(context, fileClass(context), "open", args[0], newString(context, "wb"));
         
-        JZlibRubyGzipWriter gzio = newInstance(recv, args);
+        JZlibRubyGzipWriter gzio = newInstance(context, (RubyClass) recv, args);
         
         return RubyGzipFile.wrapBlock(context, gzio, block);
     }
@@ -92,25 +100,25 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         super(runtime, type);
     }
 
+    @Deprecated(since = "10.0")
     public IRubyObject initialize(IRubyObject[] args) {
-        return initialize(getRuntime().getCurrentContext(), args, Block.NULL_BLOCK);
+        return initialize(getCurrentContext(), args, Block.NULL_BLOCK);
     }
 
     @JRubyMethod(name = "initialize", rest = true, visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
-        Ruby runtime = context.getRuntime();
         IRubyObject opt = context.nil;
         
         int argc = args.length;
         if (argc > 1) {
-            opt = TypeConverter.checkHashType(runtime, opt);
+            opt = TypeConverter.checkHashType(context.runtime, opt);
             if (!opt.isNil()) argc--;
         }
         
-        level = processLevel(argc, args, runtime);
+        level = processLevel(context, argc, args);
         
         // unused; could not figure out how to get JZlib to take this right
-        /*int strategy = */processStrategy(argc, args);
+        /*int strategy = */processStrategy(context, argc, args);
         
         initializeCommon(context, args[0], level);
         
@@ -119,14 +127,14 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         return this;
     }
 
-    private int processStrategy(int argc, IRubyObject[] args) {
-        return argc < 3 ? JZlib.Z_DEFAULT_STRATEGY : RubyZlib.FIXNUMARG(args[2], JZlib.Z_DEFAULT_STRATEGY);
+    private int processStrategy(ThreadContext context, int argc, IRubyObject[] args) {
+        return argc < 3 ? JZlib.Z_DEFAULT_STRATEGY : RubyZlib.FIXNUMARG(context, args[2], JZlib.Z_DEFAULT_STRATEGY);
     }
 
-    private int processLevel(int argc, IRubyObject[] args, Ruby runtime) {
-        int level = argc < 2 ? JZlib.Z_DEFAULT_COMPRESSION : RubyZlib.FIXNUMARG(args[1], JZlib.Z_DEFAULT_COMPRESSION);
+    private int processLevel(ThreadContext context, int argc, IRubyObject[] args) {
+        int level = argc < 2 ? JZlib.Z_DEFAULT_COMPRESSION : RubyZlib.FIXNUMARG(context, args[1], JZlib.Z_DEFAULT_COMPRESSION);
 
-        checkLevel(runtime, level);
+        checkLevel(context, level);
 
         return level;
     }
@@ -168,24 +176,22 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         }
     }
     
-    private static void checkLevel(Ruby runtime, int level) {
+    private static void checkLevel(ThreadContext context, int level) {
         if (level != JZlib.Z_DEFAULT_COMPRESSION && (level < JZlib.Z_NO_COMPRESSION || level > JZlib.Z_BEST_COMPRESSION)) {
-            throw RubyZlib.newStreamError(runtime, "stream error: invalid level");
+            throw RubyZlib.newStreamError(context, "stream error: invalid level");
         }
     }
 
 
     @Override
     @JRubyMethod(name = "close")
-    public IRubyObject close() {
+    public IRubyObject close(ThreadContext context) {
         if (!closed) {
             try {
                 io.close();
-                if (realIo.respondsTo("close")) {
-                    realIo.callMethod(realIo.getRuntime().getCurrentContext(), "close");
-                }
+                if (realIo.respondsTo("close")) realIo.callMethod(context, "close");
             } catch (IOException ioe) {
-                throw getRuntime().newIOErrorFromException(ioe);
+                throw context.runtime.newIOErrorFromException(ioe);
             }
         }
         
@@ -205,73 +211,103 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
     public IRubyObject printf(ThreadContext context, IRubyObject[] args) {
         write(RubyKernel.sprintf(context, this, args));
         
-        return context.getRuntime().getNil();
+        return context.nil;
+    }
+
+    /**
+     * @param args
+     * @return
+     * @deprecated Use {@link JZlibRubyGzipWriter#print(ThreadContext, IRubyObject[])} instead.
+     */
+    @Deprecated(since = "10.0")
+    public IRubyObject print(IRubyObject[] args) {
+        return print(getCurrentContext(), args);
     }
 
     @JRubyMethod(name = "print", rest = true)
-    public IRubyObject print(IRubyObject[] args) {
+    public IRubyObject print(ThreadContext context, IRubyObject[] args) {
         if (args.length != 0) {
             for (int i = 0, j = args.length; i < j; i++) {
                 write(args[i]);
             }
         }
 
-        IRubyObject sep = getRuntime().getGlobalVariables().get("$\\");
+        IRubyObject sep = globalVariables(context).get("$\\");
         if (!sep.isNil()) write(sep);
 
-        return getRuntime().getNil();
+        return context.nil;
+    }
+
+    @Deprecated(since = "10.0")
+    public IRubyObject pos() {
+        return pos(getCurrentContext());
     }
 
     @JRubyMethod(name = {"pos", "tell"})
-    public IRubyObject pos() {
-        return RubyNumeric.int2fix(getRuntime(), io.getTotalIn());
+    public IRubyObject pos(ThreadContext context) {
+        return asFixnum(context, io.getTotalIn());
+    }
+
+    @Deprecated(since = "10.0")
+    public IRubyObject set_orig_name(IRubyObject obj) {
+        return set_orig_name(getCurrentContext(), obj);
     }
 
     @JRubyMethod(name = "orig_name=")
-    public IRubyObject set_orig_name(IRubyObject obj) {
-        nullFreeOrigName = obj.convertToString().strDup(getRuntime());
-        ensureNonNull(nullFreeOrigName);
-        
+    public IRubyObject set_orig_name(ThreadContext context, IRubyObject obj) {
+        nullFreeOrigName = ensureNonNull(dupString(context, obj.convertToString()));
+
         try {
             io.setName(nullFreeOrigName.toString());
         } catch (GZIPException e) {
-            throw RubyZlib.newGzipFileError(getRuntime(), "header is already written");
+            throw RubyZlib.newGzipFileError(context, "header is already written");
         }
         
         return obj;
+    }
+
+    @Deprecated(since = "10.0")
+    public IRubyObject set_comment(IRubyObject obj) {
+        return set_comment(getCurrentContext(), obj);
     }
 
     @JRubyMethod(name = "comment=")
-    public IRubyObject set_comment(IRubyObject obj) {
-        nullFreeComment = obj.convertToString().strDup(getRuntime());
-        ensureNonNull(nullFreeComment);
-        
+    public IRubyObject set_comment(ThreadContext context, IRubyObject obj) {
+        nullFreeComment = ensureNonNull(dupString(context, obj.convertToString()));
+
         try {
             io.setComment(nullFreeComment.toString());
         } catch (GZIPException e) {
-            throw RubyZlib.newGzipFileError(getRuntime(), "header is already written");
+            throw RubyZlib.newGzipFileError(context, "header is already written");
         }
         
         return obj;
     }
 
-    private void ensureNonNull(RubyString obj) {
+    private RubyString ensureNonNull(RubyString obj) {
         String str = obj.toString();
         
         if (str.indexOf('\0') >= 0) {
             String trim = str.substring(0, str.indexOf('\0'));
             obj.setValue(new ByteList(trim.getBytes()));
         }
+
+        return obj;
+    }
+
+    @Deprecated(since = "10.0")
+    public IRubyObject putc(IRubyObject p1) {
+        return putc(getCurrentContext(), p1);
     }
 
     @JRubyMethod(name = "putc")
-    public IRubyObject putc(IRubyObject p1) {
+    public IRubyObject putc(ThreadContext context, IRubyObject p1) {
         try {
-            io.write(RubyNumeric.num2chr(p1));
+            io.write(toByte(context, p1));
             
             return p1;
         } catch (IOException ioe) {
-            throw getRuntime().newIOErrorFromException(ioe);
+            throw context.runtime.newIOErrorFromException(ioe);
         }
     }
 
@@ -281,12 +317,12 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
     }
 
     @Override
-    public IRubyObject finish() {
+    public IRubyObject finish(ThreadContext context) {
         if (!finished) {
             try {
                 io.finish();
             } catch (IOException ioe) {
-                throw getRuntime().newIOErrorFromException(ioe);
+                throw context.runtime.newIOErrorFromException(ioe);
             }
         }
         
@@ -297,20 +333,15 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
 
     @Deprecated
     public IRubyObject flush(IRubyObject[] args) {
-        return flush(getRuntime().getCurrentContext(), args);
+        return flush(getCurrentContext(), args);
     }
 
     @JRubyMethod(name = "flush", optional = 1, checkArity = false)
     public IRubyObject flush(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 0, 1);
-
-        int flush = JZlib.Z_SYNC_FLUSH;
-        
-        if (argc > 0 && !args[0].isNil()) {
-            flush = RubyNumeric.fix2int(args[0]);
-        }
-        
+        int flush = argc > 0 && !args[0].isNil() ? toInt(context, args[0]) : JZlib.Z_SYNC_FLUSH;
         boolean tmp = io.getSyncFlush();
+
         try {
             if (flush != 0 /*
                      * NO_FLUSH
@@ -327,24 +358,25 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         return context.nil;
     }
 
-    @JRubyMethod(name = "mtime=")
+    @Deprecated(since = "10.0")
     public IRubyObject set_mtime(IRubyObject arg) {
-        Ruby runtime = getRuntime();
+        return set_mtime(getCurrentContext(), arg);
+    }
 
-        if (arg instanceof RubyTime) {
-            this.mtime = ((RubyTime) arg);
-        } else if (arg.isNil()) {
-            // ...nothing
-        } else {
-            this.mtime = RubyTime.newTime(runtime, RubyNumeric.fix2long(arg) * 1000);
+    @JRubyMethod(name = "mtime=")
+    public IRubyObject set_mtime(ThreadContext context, IRubyObject arg) {
+        if (arg instanceof RubyTime timeArg) {
+            this.mtime = timeArg;
+        } else if (!arg.isNil()) {
+            this.mtime = RubyTime.newTime(context.runtime, toLong(context, arg) * 1000);
         }
         try {
-            io.setModifiedTime(this.mtime.to_i(runtime.getCurrentContext()).getLongValue());
+            io.setModifiedTime(mtime.to_i_long());
         } catch (GZIPException e) {
-            throw RubyZlib.newGzipFileError(runtime, "header is already written");
+            throw RubyZlib.newGzipFileError(context, "header is already written");
         }
         
-        return runtime.getNil();
+        return context.nil;
     }
 
     @Override
@@ -358,7 +390,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
             // not calculated yet
         }
         
-        return getRuntime().newFixnum(crc);
+        return asFixnum(context, crc);
     }
 
     @Deprecated
@@ -388,8 +420,8 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
 
     @Override
     @JRubyMethod
-    public IRubyObject set_sync(IRubyObject arg) {
-        IRubyObject s = super.set_sync(arg);
+    public IRubyObject set_sync(ThreadContext context, IRubyObject arg) {
+        IRubyObject s = super.set_sync(context, arg);
         
         io.setSyncFlush(sync);
         

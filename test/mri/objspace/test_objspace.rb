@@ -287,6 +287,47 @@ class TestObjSpace < Test::Unit::TestCase
     assert true # success
   end
 
+  def test_trace_object_allocations_compaction
+    omit "compaction is not supported on this platform" unless GC.respond_to?(:compact)
+
+    assert_separately(%w(-robjspace), <<~RUBY)
+      ObjectSpace.trace_object_allocations do
+        objs = 100.times.map do
+          Object.new
+        end
+
+        assert_equal(__FILE__, ObjectSpace.allocation_sourcefile(objs[0]))
+
+        GC.verify_compaction_references(expand_heap: true, toward: :empty)
+
+        assert_equal(__FILE__, ObjectSpace.allocation_sourcefile(objs[0]))
+      end
+    RUBY
+  end
+
+  def test_trace_object_allocations_compaction_freed_pages
+    omit "compaction is not supported on this platform" unless GC.respond_to?(:compact)
+
+    assert_normal_exit(<<~RUBY)
+      require "objspace"
+
+      objs = []
+      ObjectSpace.trace_object_allocations do
+        1_000_000.times do
+          objs << Object.new
+        end
+      end
+
+      objs = nil
+
+      # Free pages that the objs were on
+      GC.start
+
+      # Run compaction and check that it doesn't crash
+      GC.compact
+    RUBY
+  end
+
   def test_dump_flags
     # Ensure that the fstring is promoted to old generation
     4.times { GC.start }
@@ -900,6 +941,12 @@ class TestObjSpace < Test::Unit::TestCase
 
   def test_load_allocation_path_load_from_binary
     # load_allocation_path_helper 'iseq = RubyVM::InstructionSequence.load_from_binary(File.binread(path))', to_binary: true
+  end
+
+  def test_escape_class_name
+    class_name = '" little boby table [Bug #20892]'
+    json = ObjectSpace.dump(Class.new.tap { |c| c.set_temporary_name(class_name) })
+    assert_equal class_name, JSON.parse(json)["name"]
   end
 
   def test_utf8_method_names

@@ -42,17 +42,17 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import jnr.posix.FileStat;
 import jnr.posix.util.Platform;
-import org.jruby.api.Convert;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
-import org.jruby.util.StringSupport;
 
+import static org.jruby.RubyTime.newTimeFromNanoseconds;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 
 /**
@@ -74,14 +74,10 @@ public class RubyFileStat extends RubyObject {
         if (stat == null) throw typeError(context, "uninitialized File::Stat");
     }
 
-    public static RubyClass createFileStatClass(Ruby runtime) {
-        // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here. Confirm. JRUBY-415
-        final RubyClass fileStatClass = runtime.getFile().defineClassUnder("Stat",runtime.getObject(), RubyFileStat::new);
-
-        fileStatClass.includeModule(runtime.getModule("Comparable"));
-        fileStatClass.defineAnnotatedMethods(RubyFileStat.class);
-
-        return fileStatClass;
+    public static RubyClass createFileStatClass(ThreadContext context, RubyClass Object, RubyClass File, RubyModule Comparable) {
+        return File.defineClassUnder(context, "Stat", Object, RubyFileStat::new).
+                include(context, Comparable).
+                defineMethods(context, RubyFileStat.class);
     }
 
     protected RubyFileStat(Ruby runtime, RubyClass clazz) {
@@ -152,23 +148,23 @@ public class RubyFileStat extends RubyObject {
         return initialize(fname, unusedBlock);
     }
 
-    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
+    @Deprecated(since = "10.0")
     public IRubyObject initialize(IRubyObject fname, Block unusedBlock) {
-        Ruby runtime = getRuntime();
-        ThreadContext context = runtime.getCurrentContext();
-        RubyString path = StringSupport.checkEmbeddedNulls(runtime, RubyFile.get_path(context, fname));
-        setup(path.convertToString().toString(), false);
+        return initialize(getCurrentContext(), fname, unusedBlock);
+    }
 
-        return this;    
+    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
+    public IRubyObject initialize(ThreadContext context, IRubyObject fname, Block unusedBlock) {
+        setup(RubyFile.get_path(context, fname).toString(), false);
+        return this;
     }
     
     @JRubyMethod(name = "atime")
     public IRubyObject atime(ThreadContext context) {
         checkInitialized(context);
-        if (stat instanceof NanosecondFileStat) {
-            return RubyTime.newTimeFromNanoseconds(context.runtime, stat.atime() * BILLION + ((NanosecondFileStat) stat).aTimeNanoSecs());
-        }
-        return context.runtime.newTime(stat.atime() * 1000);
+        return stat instanceof NanosecondFileStat nanoStat ?
+                newTimeFromNanoseconds(context, stat.atime() * BILLION + nanoStat.aTimeNanoSecs()) :
+                context.runtime.newTime(stat.atime() * 1000);
     }
 
     @Deprecated
@@ -249,8 +245,8 @@ public class RubyFileStat extends RubyObject {
     @JRubyMethod(name = "ctime")
     public IRubyObject ctime(ThreadContext context) {
         checkInitialized(context);
-        if (stat instanceof NanosecondFileStat) {
-            return RubyTime.newTimeFromNanoseconds(context.runtime, stat.ctime() * BILLION + ((NanosecondFileStat) stat).cTimeNanoSecs());
+        if (stat instanceof NanosecondFileStat nfs) {
+            return newTimeFromNanoseconds(context, stat.ctime() * BILLION + nfs.cTimeNanoSecs());
         }
         return context.runtime.newTime(stat.ctime() * 1000);
     }
@@ -362,7 +358,7 @@ public class RubyFileStat extends RubyObject {
     @JRubyMethod(name = "ftype")
     public RubyString ftype(ThreadContext context) {
         checkInitialized(context);
-        return Convert.asString(context, stat.ftype());
+        return newString(context, stat.ftype());
     }
 
     @Deprecated
@@ -395,9 +391,8 @@ public class RubyFileStat extends RubyObject {
     }
     
     @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
-    @Override
-    public IRubyObject initialize_copy(IRubyObject original) {
-        if (!(original instanceof RubyFileStat)) throw typeError(getRuntime().getCurrentContext(), "wrong argument class");
+    public IRubyObject initialize_copy(ThreadContext context, IRubyObject original) {
+        if (!(original instanceof RubyFileStat)) throw typeError(context, "wrong argument class");
 
         checkFrozen();
         
@@ -421,11 +416,9 @@ public class RubyFileStat extends RubyObject {
     }
 
     @JRubyMethod(name = "inspect")
-    @Override
-    public IRubyObject inspect() {
-        ThreadContext context = metaClass.runtime.getCurrentContext();
+    public IRubyObject inspect(ThreadContext context) {
         StringBuilder buf = new StringBuilder("#<");
-        buf.append(getMetaClass().getRealClass().getName());
+        buf.append(getMetaClass().getRealClass().getName(context));
         if (stat == null) {
             buf.append(": uninitialized");
         } else {
@@ -442,19 +435,19 @@ public class RubyFileStat extends RubyObject {
             try { buf.append("rdev=0x").append(Long.toHexString(stat.rdev())); } catch (Exception e) {} finally { buf.append(", "); }
             buf.append("size=").append(sizeInternal(context)).append(", ");
             try {
-                buf.append("blksize=").append(blockSize(context).inspect().toString()); } catch (Exception e) {} finally { buf.append(", "); }
-            try { buf.append("blocks=").append(blocks().inspect().toString()); } catch (Exception e) {} finally { buf.append(", "); }
+                buf.append("blksize=").append(blockSize(context).inspect(context).toString()); } catch (Exception e) {} finally { buf.append(", "); }
+            try { buf.append("blocks=").append(blocks().inspect(context).toString()); } catch (Exception e) {} finally { buf.append(", "); }
 
-            buf.append("atime=").append(atime().inspect()).append(", ");
-            buf.append("mtime=").append(mtime().inspect()).append(", ");
-            buf.append("ctime=").append(ctime().inspect());
+            buf.append("atime=").append(atime().inspect(context)).append(", ");
+            buf.append("mtime=").append(mtime().inspect(context)).append(", ");
+            buf.append("ctime=").append(ctime().inspect(context));
             if (Platform.IS_BSD || Platform.IS_MAC) {
                 buf.append(", ").append("birthtime=").append(birthtime());
             }
         }
         buf.append('>');
         
-        return Convert.asString(context, buf.toString());
+        return newString(context, buf.toString());
     }
 
     @JRubyMethod(name = "uid")
@@ -484,7 +477,7 @@ public class RubyFileStat extends RubyObject {
     public IRubyObject mtime(ThreadContext context) {
         checkInitialized(context);
         return stat instanceof NanosecondFileStat ?
-                RubyTime.newTimeFromNanoseconds(context.runtime, stat.mtime() * BILLION + ((NanosecondFileStat) stat).mTimeNanoSecs()) :
+                newTimeFromNanoseconds(context, stat.mtime() * BILLION + ((NanosecondFileStat) stat).mTimeNanoSecs()) :
                 context.runtime.newTime(stat.mtime() * 1000);
     }
 
@@ -779,8 +772,7 @@ public class RubyFileStat extends RubyObject {
     private IRubyObject getWorldMode(ThreadContext context, int mode) {
         checkInitialized(context);
         if ((stat.mode() & mode) == mode) {
-            return RubyNumeric.int2fix(context.runtime,
-                    (stat.mode() & (S_IRUGO | S_IWUGO | S_IXUGO) ));
+            return asFixnum(context, (stat.mode() & (S_IRUGO | S_IWUGO | S_IXUGO)));
         }
         return context.nil;
     }

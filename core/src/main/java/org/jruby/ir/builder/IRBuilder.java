@@ -53,6 +53,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import static org.jruby.api.Warn.warning;
 import static org.jruby.ir.IRFlags.*;
 import static org.jruby.ir.builder.StringStyle.Frozen;
 import static org.jruby.ir.builder.StringStyle.Mutable;
@@ -1806,7 +1807,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
     protected Operand buildNthRef(int matchNumber) {
-        return copy(new NthRef(scope, matchNumber));
+        return addResultInstr(new BuildNthRefInstr(temp(), matchNumber));
     }
 
     // FIXME: The logic for lazy and non-lazy building is pretty icky...clean up
@@ -2521,8 +2522,16 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         addInstr(new LabelInstr(caughtLabel));
         if (reference != null) {
             Variable exception = addResultInstr(new GetGlobalVariableInstr(temp(), symbol("$!")));
+
             buildAssignment(reference, exception);  // Prism does not desugar
         }
+
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            // Explicit line number here because we need a line number for trace before we process any nodes
+            addInstr(getManager().newLineNumber(scope.getLine() + 1));
+            addInstr(new TraceInstr(RubyEvent.RESCUE, getCurrentModuleVariable(), getName(), getFileName(), scope.getLine() + 1));
+        }
+
         Operand x = build(body);
         if (x != U_NIL) { // can be U_NIL if the rescue block has an explicit return
             // Set up node return value 'rv'
@@ -2675,7 +2684,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             addInstr(new ThreadPollInstr(true));
             // Restore $! and jump back to the entry of the rescue block
             RescueBlockInfo rbi = activeRescueBlockStack.peek();
-            addInstr(new PutGlobalVarInstr(symbol("$!"), rbi.savedExceptionVariable));
+            addInstr(new RuntimeHelperCall(temp(), RESET_GVAR_UNDERSCORE, new Operand[] { rbi.savedExceptionVariable }));
             addInstr(new JumpInstr(rbi.entryLabel));
             // Retries effectively create a loop
             scope.setHasLoops();
@@ -2703,7 +2712,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                 // for non-local returns (from rescue block) we need to restore $! so it does not get carried over
                 if (!activeRescueBlockStack.isEmpty()) {
                     RescueBlockInfo rbi = activeRescueBlockStack.peek();
-                    addInstr(new PutGlobalVarInstr(symbol("$!"), rbi.savedExceptionVariable));
+                    addInstr(new RuntimeHelperCall(temp(), RESET_GVAR_UNDERSCORE, new Operand[] { rbi.savedExceptionVariable }));
                 }
 
                 addInstr(new NonlocalReturnInstr(retVal, definedWithinMethod ? scope.getNearestMethod().getId() : "--none--"));
@@ -2830,8 +2839,9 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
         if (literal != null) {
             if (seenLiterals.contains(literal)) {
-                getManager().getRuntime().getWarnings().warning(IRubyWarnings.ID.MISCELLANEOUS, getFileName(), getLine(value),
-                        "duplicated 'when' clause with line " + (origLocs.get(literal) + 1) + " is ignored");
+                var context = manager.getRuntime().getCurrentContext();
+                warning(context, "'when' clause on line " + getLine(value) +
+                        " duplicates 'when' clause on line " + (origLocs.get(literal) + 1) + " and is ignored");
                 return false;
             } else {
                 seenLiterals.add(literal);

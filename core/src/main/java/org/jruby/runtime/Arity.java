@@ -40,6 +40,8 @@ import org.jruby.api.Error;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ArraySupport;
 
+import static org.jruby.api.Error.argumentError;
+
 /**
  * The arity of a method is the number of arguments it takes.
  */
@@ -164,13 +166,9 @@ public final class Arity implements Serializable {
 
     public void checkArity(Ruby runtime, int length) {
         if (isFixed()) {
-            if (length != required()) {
-                throw runtime.newArgumentError(length, required());
-            }
+            if (length != required()) throw argumentError(runtime.getCurrentContext(), length, required());
         } else {
-            if (length < required()) {
-                throw runtime.newArgumentError(length, required());
-            }
+            if (length < required()) throw argumentError(runtime.getCurrentContext(), length, required());
         }
     }
 
@@ -234,7 +232,7 @@ public final class Arity implements Serializable {
     // FIXME: JRuby 2/next should change this name since it only sometimes raises an error
     public static void raiseArgumentError(ThreadContext context, int length, int min, int max) {
         if (length < min || (max > UNLIMITED_ARGUMENTS && length > max))
-            throw Error.argumentError(context, length, min, max);
+            throw argumentError(context, length, min, max);
     }
 
     // FIXME: JRuby 2/next should change this name since it only sometimes raises an error
@@ -244,33 +242,36 @@ public final class Arity implements Serializable {
 
     public static void raiseArgumentError(ThreadContext context, int length, int min, int max, boolean hasKwargs) {
         if (length < min) {
-            throw Error.argumentError(context, length, min, max);
+            throw argumentError(context, length, min, max);
         }
         if (max > UNLIMITED_ARGUMENTS && length > max) {
             if (hasKwargs  && length == max + 1) {
                 // we have an extra arg, but kwargs active; let it fall through to assignment
                 return;
             }
-            throw Error.argumentError(context, length, min, max);
+            throw argumentError(context, length, min, max);
         }
     }
 
     // FIXME: JRuby 2/next should change this name since it only sometimes raises an error
     public static void raiseArgumentError(ThreadContext context, String name, int length, int min, int max) {
-        if (length < min || (max > UNLIMITED_ARGUMENTS && length > max))
-            throw context.runtime.newArgumentError(name, length, min, max);
+        if (length < min || (max > UNLIMITED_ARGUMENTS && length > max)) throw argumentError(context, length, min, max);
     }
 
     // FIXME: JRuby 2/next should change this name since it only sometimes raises an error
     public static void raiseArgumentError(Ruby runtime, String name, int length, int min, int max, boolean hasKwargs) {
-        if (length < min) throw runtime.newArgumentError(name, length, min, max);
+        if (length < min) throw argumentError(runtime.getCurrentContext(), length, min, max);
         if (max > UNLIMITED_ARGUMENTS && length > max) {
-            if (hasKwargs  && length == max + 1) {
-                // we have an extra arg, but kwargs active; let it fall through to assignment
-                return;
-            }
-            throw runtime.newArgumentError(name, length, min, max);
+            // we have an extra arg, but kwargs active; let it fall through to assignment
+            if (hasKwargs  && length == max + 1) return;
+
+            throw argumentError(runtime.getCurrentContext(), length, min, max);
         }
+    }
+
+    @Deprecated(since = "10.0")
+    public static IRubyObject[] scanArgs(Ruby runtime, IRubyObject[] args, int required, int optional) {
+        return scanArgs(runtime.getCurrentContext(), args, required, optional);
     }
 
     /**

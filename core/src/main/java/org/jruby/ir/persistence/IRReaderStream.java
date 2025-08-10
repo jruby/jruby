@@ -41,10 +41,6 @@ import org.jruby.util.ByteList;
 
 import static com.headius.backport9.buffer.Buffers.positionBuffer;
 
-/**
- *
- * @author enebo
- */
 public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
     private final ByteBuffer buf;
     private final IRManager manager;
@@ -272,6 +268,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case BUILD_COMPOUND_ARRAY: return BuildCompoundArrayInstr.decode(this);
             case BUILD_COMPOUND_STRING: return BuildCompoundStringInstr.decode(this);
             case BUILD_DREGEXP: return BuildDynRegExpInstr.decode(this);
+            case BUILD_NTHREF: return BuildNthRefInstr.decode(this);
             case BUILD_RANGE: return BuildRangeInstr.decode(this);
             case BUILD_SPLAT: return BuildSplatInstr.decode(this);
             case CALL_1F:
@@ -536,7 +533,6 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case LABEL: return Label.decode(this);
             case LOCAL_VARIABLE: return LocalVariable.decode(this);
             case NIL: return manager.getNil();
-            case NTH_REF: return NthRef.decode(this);
             case NULL_BLOCK: return NullBlock.decode(this);
             case RANGE: return Range.decode(this);
             case RATIONAL: return Rational.decode(this);

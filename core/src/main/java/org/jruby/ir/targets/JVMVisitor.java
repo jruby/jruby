@@ -1163,7 +1163,7 @@ public class JVMVisitor extends IRVisitor {
                 jvmAdapter().invokevirtual(p(ThreadContext.class), "match_last", sig(IRubyObject.class));
                 break;
             default:
-                assert false: "backref with invalid type";
+                throw new NotCompilableException("backref with invalid type");
         }
         jvmStoreLocal(instr.getResult());
     }
@@ -1230,6 +1230,14 @@ public class JVMVisitor extends IRVisitor {
 
         m.getDynamicValueCompiler().pushDRegexp(r, options, operands.length);
 
+        jvmStoreLocal(instr.getResult());
+    }
+
+    @Override
+    public void BuildNthRefInstr(BuildNthRefInstr instr) {
+        jvmMethod().loadContext();
+        jvmAdapter().pushInt(instr.group);
+        jvmMethod().invokeIRHelper("nthMatch", sig(IRubyObject.class, ThreadContext.class, int.class));
         jvmStoreLocal(instr.getResult());
     }
 
@@ -2311,6 +2319,12 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void RuntimeHelperCall(RuntimeHelperCall runtimehelpercall) {
         switch (runtimehelpercall.getHelperMethod()) {
+            case RESET_GVAR_UNDERSCORE:
+                jvmMethod().loadContext();
+                visit(runtimehelpercall.getArgs()[0]);
+                jvmAdapter().invokevirtual(p(ThreadContext.class), "setErrorInfo", sig(IRubyObject.class, IRubyObject.class));
+                jvmStoreLocal(runtimehelpercall.getResult());
+                break;
             case HANDLE_PROPAGATED_BREAK:
                 jvmMethod().loadContext();
                 jvmLoadLocal(DYNAMIC_SCOPE);
@@ -2747,7 +2761,7 @@ public class JVMVisitor extends IRVisitor {
     }
 
     public void ChilledString(ChilledString chilled) {
-        jvmMethod().getValueCompiler().pushChilledString(chilled.getByteList(), chilled.getCodeRange());
+        jvmMethod().getValueCompiler().pushChilledString(chilled.getByteList(), chilled.getCodeRange(), chilled.frozenString.file, chilled.frozenString.line);
     }
 
 
@@ -2862,12 +2876,6 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().getValueCompiler().pushNil();
     }
 
-    @Override
-    public void NthRef(NthRef nthref) {
-        jvmMethod().loadContext();
-        jvmAdapter().pushInt(nthref.matchNumber);
-        jvmMethod().invokeIRHelper("nthMatch", sig(IRubyObject.class, ThreadContext.class, int.class));
-    }
 
     @Override
     public void NullBlock(NullBlock nullblock) {

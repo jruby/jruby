@@ -72,10 +72,6 @@ import org.jruby.util.log.LoggerFactory;
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.Stream.concat;
 
-/**
- *
- * @author headius
- */
 public class MethodIndex {
     private static final boolean DEBUG = false;
 

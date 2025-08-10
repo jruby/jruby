@@ -53,6 +53,8 @@ import org.jruby.lexer.StrftimeLexer;
 import org.jruby.runtime.ThreadContext;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.toLong;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.util.CommonByteLists.*;
 import static org.jruby.util.RubyDateFormatter.FieldType.*;
 
@@ -292,7 +294,7 @@ public class RubyDateFormatter {
         compiledPatternLength = 0;
         patternEncoding = pattern.getEncoding();
         if (!patternEncoding.isAsciiCompatible()) {
-            throw runtime.newArgumentError("format should have ASCII compatible encoding");
+            throw argumentError(runtime.getCurrentContext(), "format should have ASCII compatible encoding");
         }
 
         lexer.reset(pattern);
@@ -548,7 +550,7 @@ public class RubyDateFormatter {
                     break;
                 case FORMAT_ZONE_ID:
                     // Should be safe to assume all time zone labels will be ASCII 7bit.
-                    data = RubyTime.getRubyTimeZoneName(runtime, dt);
+                    data = RubyTime.getRubyTimeZoneName(runtime.getCurrentContext(), dt);
                     break;
                 case FORMAT_CENTURY:
                     type = NUMERIC;
@@ -635,7 +637,7 @@ public class RubyDateFormatter {
         RubyNumeric truncated = (RubyNumeric) sub_millis.numerator(context).
                 convertToInteger().op_mul(context, power);
         truncated = (RubyNumeric) truncated.idiv(context, sub_millis.denominator(context));
-        long decimals = truncated.convertToInteger().getLongValue();
+        long decimals = truncated.asLong(context);
         RubyTimeOutputFormatter.formatNumber(buff, decimals, prec, '0');
     }
 

@@ -36,6 +36,7 @@ import java.util.Map;
 
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.RefinedMarker;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -56,11 +57,13 @@ public class PrependedModule extends RubyClass implements DelegatedModule {
         origin = prependedClass;
         this.metaClass = origin.metaClass;
         if (superClass != null) {
-            setClassIndex(superClass.getClassIndex()); // use same ClassIndex as metaclass, since we're technically still of that type
+            classIndex(superClass.getClassIndex()); // use same ClassIndex as metaclass, since we're technically still of that type
         }
-        this.methods = prependedClass.methods;
-        prependedClass.methods = Collections.EMPTY_MAP;
+        this.methods = prependedClass.getMethodsForWrite();
+        prependedClass.methods = null;
         prependedClass.methodLocation = this;
+
+        Map<String, DynamicMethod> methods = getMethods();
         for (Map.Entry<String, DynamicMethod> entry : methods.entrySet()) {
             DynamicMethod method = entry.getValue();
             if (moveRefinedMethod(entry.getKey(), method, prependedClass)) {
@@ -120,8 +123,8 @@ public class PrependedModule extends RubyClass implements DelegatedModule {
     }
 
     @Override
-    public String getName() {
-        return origin.getName();
+    public String getName(ThreadContext context) {
+        return origin.getName(context);
     }
 
     @Override
@@ -148,9 +151,10 @@ public class PrependedModule extends RubyClass implements DelegatedModule {
     public IRubyObject id() {
         return origin.id();
     }
+
     @Override
-    public void addMethod(String id, DynamicMethod method) {
-        super.addMethod(id, method);
+    public void addMethod(ThreadContext context, String id, DynamicMethod method) {
+        super.addMethod(context, id, method);
         method.setDefinedClass(origin);
     }
 
@@ -192,8 +196,8 @@ public class PrependedModule extends RubyClass implements DelegatedModule {
     }
 
     @Override
-    protected IRubyObject getAutoloadConstant(String name, boolean forceLoad) {
-        return origin.getAutoloadConstant(name, forceLoad);
+    protected IRubyObject getAutoloadConstant(ThreadContext context, String name, boolean forceLoad) {
+        return origin.getAutoloadConstant(context, name, forceLoad);
     }
 
     @Override
