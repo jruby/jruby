@@ -749,7 +749,7 @@ public class ArgumentProcessor {
         // run as a command if we couldn't find a script
         if (config.getScriptFileName() == null) {
             config.setScriptFileName(scriptName);
-            config.getRequiredLibraries().add("jruby/commands");
+            config.getRequiredLibraries().add("org/jruby/kernel/commands");
             config.getInlineScript().append("JRuby::Commands.").append(scriptName);
             config.getInlineScript().append("\n");
             config.setHasInlineScript(true);

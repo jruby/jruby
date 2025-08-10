@@ -605,27 +605,18 @@ JAVA_OPTS="$JAVA_OPTS_TEMP"
 
 CP_DELIMITER=":"
 
+module_path="$JRUBY_HOME/lib/modules"
+readonly module_path
+
 # Find main jruby jar and add it to the classpath
 jruby_jar=
-for j in "$JRUBY_HOME"/lib/jruby.jar "$JRUBY_HOME"/lib/jruby-complete.jar; do
-    if [ ! -e "$j" ]; then
-        continue
-    fi
-    if [ "${JRUBY_CP-}" ]; then
-        JRUBY_CP="$JRUBY_CP$CP_DELIMITER$j"
-    else
-        JRUBY_CP="$j"
-    fi
+for j in "$JRUBY_HOME"/lib/modules/jruby*.jar; do
     if [ -n "$jruby_jar" ]; then
         echo "WARNING: more than one JRuby JAR found in lib directory" 1>&2
     fi
     jruby_jar="$j"
 done
 readonly jruby_jar
-
-if $cygwin; then
-    JRUBY_CP="$(cygpath -p -w "$JRUBY_CP")"
-fi
 
 # ----- Add additional jars from lib to classpath -----------------------------
 
@@ -635,9 +626,6 @@ if [ "${JRUBY_PARENT_CLASSPATH-}" ]; then
 else
     # add other jars in lib to CP for command-line execution
     for j in "$JRUBY_HOME"/lib/*.jar; do
-        case "${j#"$JRUBY_HOME/lib/"}" in
-            jruby.jar|jruby-complete.jar) continue
-        esac
         if [ -z "${CP-}" ]; then
             CP="$j"
         else
@@ -929,24 +917,20 @@ fi
 
 prepend java_args "$JAVACMD"
 
-if $NO_BOOTCLASSPATH || $VERIFY_JRUBY; then
-    if $use_modules; then
-        # Use module path instead of classpath for the jruby libs
-        append java_args --module-path "$JRUBY_CP" -classpath "$CLASSPATH"
-    else
-        append java_args -classpath "$JRUBY_CP$CP_DELIMITER$CLASSPATH"
-    fi
-else
-    append java_args -Xbootclasspath/a:"$JRUBY_CP"
-    append java_args -classpath "$CLASSPATH"
-    append java_args -Djruby.home="$JRUBY_HOME"
-fi
+# Use module path instead of classpath for the jruby libs
+append java_args -p "$module_path" -classpath "$CLASSPATH"
 
 append java_args -Djruby.home="$JRUBY_HOME" \
     -Djruby.lib="$JRUBY_HOME/lib" \
     -Djruby.script=jruby \
-    -Djruby.shell="$JRUBY_SHELL" \
-    "$java_class"
+    -Djruby.shell="$JRUBY_SHELL"
+
+if $use_modules; then
+    append java_args "-m" "org.jruby.base/$java_class"
+else
+    append java_args "$java_class"
+fi
+
 extend java_args ruby_args
 
 eval set -- "$java_args"

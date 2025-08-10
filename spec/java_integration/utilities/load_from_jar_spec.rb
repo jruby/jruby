@@ -59,7 +59,7 @@ end
 describe "Opening files from a jar file" do
   # jruby/jruby#3399
   it "silently fails to seek on those files" do
-    File.open("uri:classloader:jruby/kernel.rb") do |kernel_file|
+    File.open("uri:classloader:org/jruby/kernel/kernel.rb") do |kernel_file|
       expect(kernel_file.pos).to eq(0)
       kernel_file.read(5)
       expect(kernel_file.pos).to eq(0)

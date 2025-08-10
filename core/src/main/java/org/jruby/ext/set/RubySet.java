@@ -78,7 +78,7 @@ public class RubySet extends RubyObject implements Set {
                 defineMethods(context, RubySet.class).
                 tap(c -> c.marshalWith(new SetMarshal(c.getMarshal())));
 
-        loadService(context).require("jruby/set.rb");
+        loadService(context).require("org/jruby/kernel/set.rb");
 
         return Set;
     }

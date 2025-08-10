@@ -102,6 +102,6 @@ module JRuby
 
   end
 
-  autoload :ASM, 'jruby/asm.rb'
+  autoload :ASM, 'org/jruby/kernel/asm.rb'
 
 end

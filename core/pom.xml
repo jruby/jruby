@@ -187,12 +187,6 @@ DO NOT MODIFY - GENERATED CODE
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.apache.ant</groupId>
-      <artifactId>ant</artifactId>
-      <version>${ant.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
       <groupId>org.osgi</groupId>
       <artifactId>org.osgi.core</artifactId>
       <version>5.0.0</version>
@@ -219,7 +213,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>me.qmx.jitescript</groupId>
       <artifactId>jitescript</artifactId>
-      <version>0.4.1</version>
+      <version>0.4.3</version>
       <exclusions>
         <exclusion>
           <groupId>org.ow2.asm</groupId>
@@ -450,6 +444,7 @@ DO NOT MODIFY - GENERATED CODE
                 <include>org/jruby/util/CodegenUtils.java</include>
                 <include>org/jruby/util/SafePropertyAccessor.java</include>
               </includes>
+              <release>8</release>
             </configuration>
           </execution>
           <execution>
@@ -470,6 +465,13 @@ DO NOT MODIFY - GENERATED CODE
                 <compilerArg>-J-Dfile.encoding=UTF-8</compilerArg>
                 <compilerArg>-J-Xmx${jruby.compile.memory}</compilerArg>
               </compilerArgs>
+              <annotationProcessorPaths>
+                <annotationProcessorPath>
+                  <groupId>org.jruby</groupId>
+                  <artifactId>jruby-base</artifactId>
+                  <version>${project.version}</version>
+                </annotationProcessorPath>
+              </annotationProcessorPaths>
             </configuration>
           </execution>
           <execution>
@@ -479,8 +481,7 @@ DO NOT MODIFY - GENERATED CODE
               <goal>compile</goal>
             </goals>
             <configuration>
-              <debug>false</debug>
-              <fork>true</fork>
+              <debug>true</debug>
               <compilerArgs>
                 <compilerArg>-XDignore.symbol.file=true</compilerArg>
                 <compilerArg>-J-Duser.language=en</compilerArg>
@@ -489,6 +490,7 @@ DO NOT MODIFY - GENERATED CODE
               </compilerArgs>
               <includes>
                 <include>org/jruby/gen/**/*.java</include>
+                <include>module-info.java</include>
               </includes>
             </configuration>
           </execution>
@@ -511,10 +513,7 @@ DO NOT MODIFY - GENERATED CODE
           <verbose>false</verbose>
           <showWarnings>true</showWarnings>
           <showDeprecation>true</showDeprecation>
-          <source>${base.java.version}</source>
-          <source>21</source>
-          <target>${base.javac.version}</target>
-          <target>21</target>
+          <release>21</release>
           <useIncrementalCompilation>false</useIncrementalCompilation>
         </configuration>
       </plugin>
@@ -533,6 +532,18 @@ DO NOT MODIFY - GENERATED CODE
                   <directory>${project.build.sourceDirectory}</directory>
                   <includes>
                     <include>${Constants.java}</include>
+                  </includes>
+                </fileset>
+                <fileset>
+                  <directory>${project.basedir}/..</directory>
+                  <includes>
+                    <include>lib/jni/**</include>
+                  </includes>
+                </fileset>
+                <fileset>
+                  <directory>${project.basedir}/..</directory>
+                  <includes>
+                    <include>lib/modules/**</include>
                   </includes>
                 </fileset>
                 <fileset>
@@ -575,10 +586,45 @@ DO NOT MODIFY - GENERATED CODE
         <configuration>
           <archive>
             <manifestEntries>
-              <Automatic-Module-Name>org.jruby</Automatic-Module-Name>
+              <Automatic-Module-Name>org.jruby.base</Automatic-Module-Name>
             </manifestEntries>
           </archive>
         </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>copy dependencies to lib</id>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+              <prependGroupId>true</prependGroupId>
+              <includeScope>runtime</includeScope>
+              <outputDirectory>${basedir}/../lib/modules</outputDirectory>
+              <excludeArtifactIds>joda-timezones</excludeArtifactIds>
+            </configuration>
+          </execution>
+          <execution>
+            <id>copy jruby jar to lib</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+            <configuration>
+              <prependGroupId>true</prependGroupId>
+              <outputDirectory>${basedir}/../lib/modules</outputDirectory>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>${project.groupId}</groupId>
+                  <artifactId>${project.artifactId}</artifactId>
+                  <version>${project.version}</version>
+                </artifactItem>
+              </artifactItems>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <artifactId>maven-resources-plugin</artifactId>
@@ -682,6 +728,13 @@ DO NOT MODIFY - GENERATED CODE
                     <compilerArg>-XDcompilePolicy=simple</compilerArg>
                     <compilerArg>-Xplugin:ErrorProne</compilerArg>
                   </compilerArgs>
+                  <annotationProcessorPaths>
+                    <annotationProcessorPath>
+                      <groupId>org.jruby</groupId>
+                      <artifactId>jruby-base</artifactId>
+                      <version>${project.version}</version>
+                    </annotationProcessorPath>
+                  </annotationProcessorPaths>
                   <annotationProcessorPaths>
                     <path>
                       <groupId>com.google.errorprone</groupId>

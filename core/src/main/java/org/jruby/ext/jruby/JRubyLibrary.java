@@ -77,7 +77,7 @@ public class JRubyLibrary implements Library {
         var Object = objectClass(context);
 
         // load Ruby parts of the 'jruby' library
-        loadService(context).loadFromClassLoader(runtime.getJRubyClassLoader(), "jruby/jruby.rb", false);
+        loadService(context).loadFromClassLoader(runtime.getJRubyClassLoader(), "org/jruby/kernel/jruby.rb", false);
 
         var JRuby = defineModule(context, "JRuby").
                 defineMethods(context, JRubyLibrary.class).defineMethods(context, JRubyUtilLibrary.class);

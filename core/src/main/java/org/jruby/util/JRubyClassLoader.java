@@ -195,8 +195,11 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
             // A hack to allow unloading all JDBC Drivers loaded by this classloader.
             // See http://bugs.jruby.org/4226
             getJDBCDriverUnloader().run();
+        } catch (NoClassDefFoundError ncdfe) {
+            // if we can't access it, we can't clear it; ignore
+        } catch (Exception ex) {
+            LOG.debug(ex);
         }
-        catch (Exception ex) { LOG.debug(ex); }
 
         terminateJarIndexCacheEntries();
     }

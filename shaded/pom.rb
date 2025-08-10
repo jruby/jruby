@@ -14,24 +14,6 @@ project 'JRuby Core' do
             )
 
   jar 'org.jruby:jruby-base', '${project.version}'
-  plugin :shade do
-    execute_goals( 'shade',
-                   id: 'create shaded jar',
-                   phase: 'package',
-                   artifactSet: {
-                       excludes: 'javax.annotation:javax.annotation-api'
-                   },
-                   relocations: [
-                       {pattern: 'org.objectweb', shadedPattern: 'org.jruby.org.objectweb' },
-                       {pattern: 'me.qmx.jitescript', shadedPattern: 'org.jruby.me.qmx.jitescript'},
-                   ],
-                   transformers: [ {'@implementation' => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
-                                         mainClass: 'org.jruby.Main',
-                                         manifestEntries: {'Automatic-Module-Name' => 'org.jruby.dist'}}],
-                   createSourcesJar: false,
-                   compress: false
-    )
-  end
 
   plugin :'com.coderplus.maven.plugins:copy-rename-maven-plugin', '1.0' do
     execute_goals 'copy',

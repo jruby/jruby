@@ -48,7 +48,7 @@ jruby-findbugs.html
 latest_source_cache
 core/src/main/java/META-INF/
 lib/jni
-lib/jruby*.jar
+lib/modules
 lib/jruby*.jsa*
 lib/native
 lib/ruby/gems

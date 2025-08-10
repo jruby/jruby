@@ -1671,7 +1671,7 @@ public class ShellLauncher {
             } else {
                 var loadService = Access.loadService(context);
                 synchronized (loadService) {
-                    loadService.require("jruby/path_helper");
+                    loadService.require("org/jruby/kernel/path_helper");
                 }
                 RubyModule pathHelper = runtime.getClassFromPath("JRuby::PathHelper");
                 RubyArray parts = (RubyArray) Helpers.invoke(context, pathHelper, "smart_split_command", rawArgs);
