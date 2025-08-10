@@ -1214,14 +1214,23 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod
     public IRubyObject count(ThreadContext context, Block block) {
-        if (isBeginless || isEndless) return asFloat(context, RubyFloat.INFINITY);
+        if (!block.isGiven()) {
+            if (isBeginless || isEndless) return asFloat(context, RubyFloat.INFINITY);
 
-        if (begin instanceof RubyInteger) {
-            IRubyObject size = size(context);
-            if (!size.isNil()) return size;
+            if (begin instanceof RubyInteger) {
+                IRubyObject size = size(context);
+                if (!size.isNil()) return size;
+            }
+
+            // fall back on Enumerable logic for other cases
         }
 
         return RubyEnumerable.count(context, this, block);
+    }
+
+    @JRubyMethod
+    public IRubyObject count(ThreadContext context, IRubyObject arg, Block block) {
+        return RubyEnumerable.count(context, this, arg, block);
     }
 
     @JRubyMethod
