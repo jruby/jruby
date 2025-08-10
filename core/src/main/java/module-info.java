@@ -22,7 +22,7 @@ open module org.jruby.base {
     requires org.jruby.dirgra;
     requires org.jruby.jzlib;
     requires static java.scripting;
-    requires java.sql;
+    requires static java.sql;
     requires static java.compiler;
     requires me.qmx.jitescript;
     requires static slf4j.api;
