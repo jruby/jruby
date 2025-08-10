@@ -9,4 +9,18 @@ describe "Range#count" do
     (...nil).count.should == inf
     (..10.0).count.should == inf
   end
+
+  it "accepts an argument for comparison using ==" do
+    (1..10).count(2).should == 1
+  end
+
+  it "uses a block for comparison" do
+    (1..10).count{|x| x%2==0 }.should == 5
+  end
+
+  it "ignores the block when given an argument" do
+    -> {
+      (1..10).count(4){|x| x%2==0 }.should == 1
+    }.should complain(/given block not used/)
+  end
 end
