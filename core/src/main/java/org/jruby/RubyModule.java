@@ -71,6 +71,7 @@ import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JavaMethodDescriptor;
 import org.jruby.anno.TypePopulator;
+import org.jruby.api.Convert;
 import org.jruby.api.JRubyAPI;
 import org.jruby.api.Warn;
 import org.jruby.common.IRubyWarnings.ID;
@@ -3241,7 +3242,7 @@ public class RubyModule extends RubyObject {
             if (attached instanceof RubyModule) {
                 buffer.catWithCodeRange(attached.inspect(context).convertToString());
             } else if (attached != null) {
-                buffer.catWithCodeRange((RubyString) attached.anyToString());
+                buffer.catWithCodeRange((RubyString) Convert.anyToString(context, attached));
             }
             buffer.cat('>', buffer.getEncoding());
 

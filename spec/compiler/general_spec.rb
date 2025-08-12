@@ -1579,6 +1579,9 @@ modes.each do |mode|
     end
 
     it "compiles very long dynamic strings" do
+      run('"a#{$$}a#{$$}a#{$$}a#{$$}"') do
+        expect(it).to eq("a#{$$}" * 4)
+      end
       run('"a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}a#{$$}"') do
         expect(it).to eq("a#{$$}" * 24)
       end

@@ -59,6 +59,7 @@ import org.joni.Regex;
 import org.joni.Region;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Convert;
 import org.jruby.api.Create;
 import org.jruby.api.JRubyAPI;
 import org.jruby.ast.util.ArgsUtil;
@@ -1609,7 +1610,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     public static RubyString objAsString(ThreadContext context, IRubyObject obj) {
         if (obj instanceof RubyString str) return str;
         IRubyObject str = sites(context).to_s.call(context, obj, obj);
-        if (!(str instanceof RubyString)) return (RubyString) obj.anyToString();
+        if (!(str instanceof RubyString)) return (RubyString) Convert.anyToString(context, obj);
         // TODO: MRI sets an fstring flag on fstrings and uses that flag here
         return (RubyString) str;
     }

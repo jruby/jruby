@@ -43,6 +43,7 @@ import org.joni.exception.JOniException;
 import org.joni.exception.ValueException;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Convert;
 import org.jruby.api.Create;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.Arity;
@@ -419,7 +420,7 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod
     @Override
     public RubyString inspect(ThreadContext context) {
-        if (str == null) return (RubyString) anyToString();
+        if (str == null) return (RubyString) Convert.anyToString(context, this);
 
         RubyString result = newString(context, "#<");
         result.append(getMetaClass().getRealClass().to_s(context));
