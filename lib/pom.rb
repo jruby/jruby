@@ -20,7 +20,7 @@ default_gems = [
     ['rubygems-update', '3.6.9', { bin: false, require_paths: ['lib'] }],
     ['benchmark', '0.4.0'],
     ['bundler', '2.6.9'],
-    ['cgi', '0.4.1'],
+    ['cgi', '0.4.2'],
     # Currently using a stub gem for JRuby until we can incorporate our code.
     # https://github.com/ruby/date/issues/48
     ['date', '3.4.1'],
