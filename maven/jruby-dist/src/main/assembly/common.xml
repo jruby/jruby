@@ -52,6 +52,8 @@
         <include>COPYING*</include>
         <include>BSDL</include>
         <include>LEGAL</include>
+        <include>USERS.md</include>
+        <include>README.md</include>
         <include>lib/jni/**/*</include>
         <include>samples/**/*</include>
         <include>docs/**/*</include>
