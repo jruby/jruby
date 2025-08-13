@@ -16,22 +16,27 @@ Adding yourself as a user
 
 If you are using JRuby or it is integrated into your product, service, or
 platform, please consider adding yourself as a user with a quick
-description of your use case by opening a pull request to this file and adding
-a section describing your usage of JRuby. If you are open to others contacting
-you about your use of JRuby on Matrix, add your Matrix nickname as well.
+description of your use case by [opening a pull request to this file](https://github.com/jruby/jruby/blob/master/USERS.md)
+and adding a section describing your usage of JRuby:
 
-    N: Name of user (company)
-    D: Description
-    U: Usage of features
-    L: Link with further information (optional)
-    Q: Contacts available for questions (optional)
+If you are open to others contacting you about your use of JRuby, add your
+Matrix nickname or contact info as well.
+
+    Name: Name of user (company)
+    Desc: Description
+    Usage: Usage of features
+    Since: How long have you used JRuby (optional)
+    Link: Link with further information (optional)
+    Contact: Contacts available for questions (optional)
 
 Example entry:
 
-    * N: JRuby Example User Inc.
-      D: JRuby Example User Inc. is using JRuby to scale our app
-      U: Parallelism, deploying to Java servers, calling JVM libraries
-      Q: @slacknick1, @slacknick2
+    * Name: The JRuby Project
+      Desc: The project that brings you JRuby
+      Usage: JRuby uses JRuby to build JRuby via our Maven toolchain
+      Since: 2009
+      Link: https://github.com/jruby/jruby
+      Contact: @headius, @enebo
 
 Requirements to be listed
 -------------------------
