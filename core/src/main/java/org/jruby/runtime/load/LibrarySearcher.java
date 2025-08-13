@@ -705,13 +705,17 @@ public class LibrarySearcher {
         }
         else {
             int e;
-            for (e = nameLength - 1; e >= 0 && name.charAt(e) != '.' && name.charAt(e) != '/'; --e);
+            // search from end until we find '.' or '/' or we're at the first character
+            for (e = nameLength - 1; e > 0 && name.charAt(e) != '.' && name.charAt(e) != '/'; --e);
+            // if initial character is not '.' or we have too few chars left or the remaining region doesn't match, quit
             if (name.charAt(e) != '.' ||
                     e < featureLength ||
                     !name.regionMatches(e - featureLength, feature, 0, featureLength))
                 return null;
+            // new path length is current position minus the feature length
             plen = e - featureLength;
         }
+        // if path length is zero or the last character of path is not '/', quit
         if (plen > 0 && name.charAt(plen-1) != '/') {
             return null;
         }
