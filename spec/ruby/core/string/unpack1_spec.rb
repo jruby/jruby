@@ -113,4 +113,17 @@ describe "String#unpack1" do
       ("X" * (2 ** 32 / 3 + 99)).unpack1("m0").length.should == 1073741898
     end
   end
+
+  context "with format 'm0'" do
+    # unpack1("m0") takes a special code path that calls Pack.unpackBase46Strict instead of Pack.unpack_m,
+    # which is why we repeat the tests for unpack("m0") here.
+
+    it "decodes base64" do
+      "dGVzdA==".unpack1("m0").should == "test"
+    end
+
+    it "raises an ArgumentError for an invalid base64 character" do
+      -> { "dGV%zdA==".unpack1("m0") }.should raise_error(ArgumentError)
+    end
+  end
 end
