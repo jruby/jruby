@@ -1414,7 +1414,7 @@ DO NOT MODIFY - GENERATED CODE
       <plugin>
         <groupId>io.takari.polyglot</groupId>
         <artifactId>polyglot-maven-plugin</artifactId>
-        <version>0.5.0</version>
+        <version>0.8.1</version>
         <executions>
           <execution>
             <id>install_gems</id>
@@ -1465,7 +1465,7 @@ DO NOT MODIFY - GENERATED CODE
           <dependency>
             <groupId>io.takari.polyglot</groupId>
             <artifactId>polyglot-ruby</artifactId>
-            <version>0.5.0</version>
+            <version>0.8.1</version>
           </dependency>
         </dependencies>
         <inherited>false</inherited>
