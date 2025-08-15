@@ -227,21 +227,6 @@ project 'JRuby Lib Setup' do
 
     FileUtils.mkdir_p( default_specs )
 
-    # have an empty openssl.rb so we do not run in trouble with not having
-    # jopenssl which is part of the default gems
-    lib_dir = File.join( target, 'lib' )
-    openssl = File.join( lib_dir, 'openssl.rb' )
-    FileUtils.mkdir_p( lib_dir )
-    FileUtils.touch( openssl )
-    $LOAD_PATH.unshift lib_dir
-
-    # since the bouncy castle .jars are version-ed (e.g. bcprov-jdk15on-1.47)
-    # make sure we cleanup before adding the ones from the jruby-openssl.gem:
-    Dir.glob( File.join( lib_dir, "bc{prov,pkix}*.jar" ) ).each do |f|
-      # use this instead of FileUtils.rm_f - issue #1698
-      File.delete( f ) if File.exists?( f )
-    end
-
     # now we can require the rubygems staff
     require 'rubygems/installer'
     require 'rubygems/package'
