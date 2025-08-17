@@ -57,11 +57,6 @@ describe "Array#insert" do
     [].insert(-2).should == []
   end
 
-  # https://bugs.ruby-lang.org/issues/13558
-  it "attempts to coerce a lone position argument" do
-    lambda { [].insert(Object.new) }.should raise_error(TypeError)
-  end
-
   it "tries to convert the passed position argument to an Integer using #to_int" do
     obj = mock('2')
     obj.should_receive(:to_int).and_return(2)

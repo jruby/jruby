@@ -134,14 +134,16 @@ describe "Ruby character strings" do
   end
 
   it "uses an internal representation when #to_s doesn't return a String" do
-    # don't use mocking so we have a predictable string representation below (#<Object...>)
-    obj = Object.new
-    def obj.to_s
-      42
-    end
+    obj = mock('to_s')
+    obj.stub!(:to_s).and_return(42)
 
-    # ensure the interpolation succeeds and the content included does not include the non-string value.
-    "#{obj}".should =~ /#<Object:0x[0-9a-fA-F]+>/
+    # See rubyspec commit 787c132d by yugui. There is value in
+    # ensuring that this behavior works. So rather than removing
+    # this spec completely, the only thing that can be asserted
+    # is that if you interpolate an object that fails to return
+    # a String, you will still get a String and not raise an
+    # exception.
+    "#{obj}".should be_an_instance_of(String)
   end
 
   it "allows a dynamic string to parse a nested do...end block as an argument to a call without parens, interpolated" do

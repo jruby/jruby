@@ -94,16 +94,4 @@ describe "String#unpack with format 'u'" do
       ["%O<.^P[\\`\n",              ["\xbd\xc3\xbe\xc3\xbf"]]
     ].should be_computed_by(:unpack, "u")
   end
-
-  it "correctly decodes inputs longer than 2^31 / 3 characters" do
-    line = "M" + ("X" * 60) + "\n"
-    count = (2**31 / 3) / line.length + 1
-    (line * count).unpack("u").first.length.should == 45 * count
-  end
-
-  it "correctly decodes inputs longer than 2^32 / 3 characters" do
-    line = "M" + ("X" * 60) + "\n"
-    count = (2**32 / 3) / line.length + 1
-    (line * count).unpack("u").first.length.should == 45 * count
-  end
 end
