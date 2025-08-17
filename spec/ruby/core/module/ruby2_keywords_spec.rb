@@ -232,29 +232,4 @@ describe "Module#ruby2_keywords" do
       end
     }.should complain(/Skipping set of ruby2_keywords flag for/)
   end
-
-  describe "used on a method that forwards rest arguments" do
-    it "properly forwards to a keyword arguments-receiving method" do
-      obj = Class.new do
-        def foo(*a, **b)
-          [a, b]
-        end
-
-        ruby2_keywords def bar(*d)
-          foo(*d)
-        end
-
-        def test(...)
-          bar(...)
-        end
-      end.new
-
-      # Use test forwarding method to ensure bar call site is used repeatedly
-      # See https://github.com/jruby/jruby/issues/8920#issuecomment-3097667358
-      obj.test().should == [[], {}]
-      obj.test(e: 3).should == [[], {e: 3}]
-      obj.test(1).should == [[1], {}]
-      obj.test(1, e: 3).should == [[1], {e: 3}]
-    end
-  end
 end

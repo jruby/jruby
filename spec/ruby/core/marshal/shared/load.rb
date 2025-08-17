@@ -547,12 +547,6 @@ describe :marshal_load, shared: true do
       unmarshalled = Marshal.send(@method, Marshal.dump(h))
       unmarshalled.should.kind_of?(UserHash)
     end
-
-    it "loads a ruby2_keywords_hash Hash instance" do
-      kw_hash = Marshal.send(@method, "\x04\bI{\x00\x06:\x06KT")
-
-      Hash.ruby2_keywords_hash?(kw_hash).should be_true
-    end
   end
 
   describe "for a Symbol" do

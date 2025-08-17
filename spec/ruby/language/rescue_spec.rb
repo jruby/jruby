@@ -1,6 +1,5 @@
 require_relative '../spec_helper'
 require_relative 'fixtures/rescue'
-require_relative '../fixtures/code_loading'
 
 class SpecificExampleException < StandardError
 end
@@ -135,22 +134,12 @@ describe "The rescue keyword" do
       ScratchPad.recorded.should == ["message"]
     end
 
-    describe "at the top-level" do
-      before :each do
-        CodeLoadingSpecs.spec_setup
-      end
+    it 'captures successfully at the top-level' do
+      ScratchPad.record []
 
-      after :each do
-        CodeLoadingSpecs.spec_cleanup
-      end
+      require_relative 'fixtures/rescue/top_level'
 
-      it 'captures successfully at the top-level' do
-        ScratchPad.record []
-
-        require_relative 'fixtures/rescue/top_level'
-
-        ScratchPad.recorded.should == ["message"]
-      end
+      ScratchPad.recorded.should == ["message"]
     end
   end
 
