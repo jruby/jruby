@@ -656,7 +656,13 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
     protected Operand addRaiseError(String id, String message) {
-        return addRaiseError(id, new MutableString(message));
+        switch (id) {
+            case "TypeError":
+                addInstr(new RaiseTypeErrorInstr(message));
+                return temp();
+            default:
+                return addRaiseError(id, new MutableString(message));
+        }
     }
 
     Operand addRaiseError(String id, Operand message) {
