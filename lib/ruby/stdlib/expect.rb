@@ -1,4 +1,8 @@
 # frozen_string_literal: true
+
+# Note: This file normally comes from the pty gem but JRuby does not use that gem. Don't delete until we can source this
+#       file from the pty gem.
+
 $expect_verbose = false
 
 class IO

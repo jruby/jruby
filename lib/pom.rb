@@ -40,7 +40,7 @@ default_gems = [
     ['fileutils', '1.7.3'],
     ['find', '0.2.0'],
     ['forwardable', '1.3.3'],
-    ['io-console', '0.8.0'],
+    ['io-console', '0.8.1'],
     # https://github.com/ruby/io-nonblock/issues/4
     # ['io-nonblock', '0.3.1'],
     ['io-wait', '0.3.1'],
@@ -68,7 +68,7 @@ default_gems = [
     ['pstore', '0.1.4'],
     ['psych', '5.2.3'],
     ['rake-ant', '1.0.6'],
-    ['rdoc', '6.10.0'],
+    ['rdoc', '6.14.0'],
     ['reline', '0.6.0'],
     # https://github.com/ruby/resolv/issues/19
     # ['resolv', '0.6.0'],
@@ -118,7 +118,7 @@ bundled_gems = [
     ['net-ftp', '0.3.8'],
     ['net-imap', '0.5.8'],
     ['net-pop', '0.1.2'],
-    ['net-smtp', '0.5.0'],
+    ['net-smtp', '0.5.1'],
     ['nkf', '0.2.0'],
     ['observer', '0.1.2'],
     ['power_assert', '2.0.5'],
