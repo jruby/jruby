@@ -1029,83 +1029,56 @@ public class RubyKernel {
     public static IRubyObject sprintf(IRubyObject recv, IRubyObject[] args) {
         return sprintf(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
-    public static IRubyObject raise(ThreadContext context, IRubyObject self, IRubyObject arg0) {
-        // semi extract_raise_opts :
-        if (arg0 instanceof RubyHash opt && !opt.isEmpty() &&
-                opt.has_key_p(context, asSymbol(context, "cause")) == context.tru) {
-                throw argumentError(context, "only cause is given with no arguments");
+
+    @JRubyMethod(name = {"raise", "fail"}, module = true, visibility = PRIVATE, omit = true)
+    public static IRubyObject raise(ThreadContext context, IRubyObject recv) {
+        IRubyObject errorInfo = globalVariables(context).get("$!");
+
+        maybeRaiseJavaException(context, errorInfo);
+
+        RaiseException raise;
+        if (errorInfo.isNil()) {
+            raise = RaiseException.from(context.runtime, runtimeErrorClass(context), "");
+        } else {
+            // non RubyException value is allowed to be assigned as $!.
+            raise = ((RubyException) errorInfo).toThrowable();
         }
 
-        IRubyObject cause = context.getErrorInfo(); // returns nil for no error-info
-
-        maybeRaiseJavaException(context, arg0);
-
-        RaiseException raise = arg0 instanceof RubyString ?
-                ((RubyException) context.runtime.getRuntimeError().newInstance(context, arg0)).toThrowable() :
-                convertToException(context, arg0, null).toThrowable();
-
         var exception = raise.getException();
-
         if (context.runtime.isDebug()) printExceptionSummary(context, exception);
-        if (exception.getCause() == null && cause != exception) exception.setCause(cause);
 
         throw raise;
     }
 
-    @JRubyMethod(name = {"raise", "fail"}, optional = 3, checkArity = false, module = true, visibility = PRIVATE, omit = true)
-    public static IRubyObject raise(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        int argc = Arity.checkArgumentCount(context, args, 0, 3);
+    @JRubyMethod(name = {"raise", "fail"}, module = true, visibility = PRIVATE, omit = true)
+    public static IRubyObject raise(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
         boolean forceCause = false;
 
         // semi extract_raise_opts :
         IRubyObject cause = null;
-        if (argc > 0) {
-            IRubyObject last = args[argc - 1];
-            if (last instanceof RubyHash opt) {
-                RubySymbol key;
-                if (!opt.isEmpty() && (opt.has_key_p(context, key = asSymbol(context, "cause")) == context.tru)) {
-                    cause = opt.delete(context, key, Block.NULL_BLOCK);
-                    forceCause = true;
-                    if (opt.isEmpty() && --argc == 0) { // more opts will be passed along
-                        throw argumentError(context, "only cause is given with no arguments");
-                    }
+        int argc = 1;
+        IRubyObject last = arg0;
+        if (last instanceof RubyHash opt) {
+            RubySymbol key;
+            if (!opt.isEmpty() && (opt.has_key_p(context, key = asSymbol(context, "cause")) == context.tru)) {
+                cause = opt.delete(context, key, Block.NULL_BLOCK);
+                forceCause = true;
+                if (opt.isEmpty() && --argc == 0) { // more opts will be passed along
+                    throw argumentError(context, "only cause is given with no arguments");
                 }
             }
         }
 
-        if ( argc > 0 ) { // for argc == 0 we will be raising $!
-            // NOTE: getErrorInfo needs to happen before new RaiseException(...)
-            if ( cause == null ) cause = context.getErrorInfo(); // returns nil for no error-info
-        }
+        // NOTE: getErrorInfo needs to happen before new RaiseException(...)
+        if ( cause == null ) cause = context.getErrorInfo(); // returns nil for no error-info
 
-        maybeRaiseJavaException(context, args, argc);
+        maybeRaiseJavaException(context, arg0);
 
         RaiseException raise;
-        switch (argc) {
-            case 0:
-                IRubyObject lastException = globalVariables(context).get("$!");
-                if (lastException.isNil()) {
-                    raise = RaiseException.from(context.runtime, runtimeErrorClass(context), "");
-                } else {
-                    // non RubyException value is allowed to be assigned as $!.
-                    raise = ((RubyException) lastException).toThrowable();
-                }
-                break;
-            case 1:
-                if (args[0] instanceof RubyString) {
-                    raise = ((RubyException) runtimeErrorClass(context).newInstance(context, args, block)).toThrowable();
-                } else {
-                    raise = convertToException(context, args[0], null).toThrowable();
-                }
-                break;
-            case 2:
-                raise = convertToException(context, args[0], args[1]).toThrowable();
-                break;
-            default:
-                RubyException exception = convertToException(context, args[0], args[1]);
-                exception.setBacktrace(context, args[2]);
-                raise = exception.toThrowable();
-                break;
+        if (arg0 instanceof RubyString) {
+            raise = ((RubyException) runtimeErrorClass(context).newInstance(context, arg0)).toThrowable();
+        } else {
+            raise = convertToException(context, arg0, null).toThrowable();
         }
 
         var exception = raise.getException();
@@ -1115,19 +1088,92 @@ public class RubyKernel {
         throw raise;
     }
 
-    private static void maybeRaiseJavaException(ThreadContext context, final IRubyObject[] args, final int argc) {
-        // Check for a Java exception
-        IRubyObject maybeException = null;
-        switch (argc) {
-            case 0:
-                maybeException = globalVariables(context).get("$!");
-                break;
-            case 1:
-                if (args.length == 1) maybeException = args[0];
-                break;
+    @JRubyMethod(name = {"raise", "fail"}, module = true, visibility = PRIVATE, omit = true)
+    public static IRubyObject raise(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
+        boolean forceCause = false;
+
+        // semi extract_raise_opts :
+        IRubyObject cause = null;
+        int argc = 2;
+        if (arg1 instanceof RubyHash opt) {
+            RubySymbol key;
+            if (!opt.isEmpty() && (opt.has_key_p(context, key = asSymbol(context, "cause")) == context.tru)) {
+                cause = opt.delete(context, key, Block.NULL_BLOCK);
+                forceCause = true;
+                if (opt.isEmpty()) --argc;
+            }
         }
 
-        maybeRaiseJavaException(context, maybeException);
+        // NOTE: getErrorInfo needs to happen before new RaiseException(...)
+        if ( cause == null ) cause = context.getErrorInfo(); // returns nil for no error-info
+
+        RaiseException raise;
+        if (argc == 1) {
+            maybeRaiseJavaException(context, arg0);
+
+            if (arg0 instanceof RubyString) {
+                raise = ((RubyException) runtimeErrorClass(context).newInstance(context, arg0)).toThrowable();
+            } else {
+                raise = convertToException(context, arg0, null).toThrowable();
+            }
+        } else {
+            raise = convertToException(context, arg0, arg1).toThrowable();
+        }
+
+        var exception = raise.getException();
+        if (context.runtime.isDebug()) printExceptionSummary(context, exception);
+        if (forceCause || exception.getCause() == null && cause != exception) exception.setCause(cause);
+
+        throw raise;
+    }
+
+    @JRubyMethod(name = {"raise", "fail"}, module = true, visibility = PRIVATE, omit = true)
+    public static IRubyObject raise(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        boolean forceCause = false;
+
+        // semi extract_raise_opts :
+        IRubyObject cause = null;
+        int argc = 3;
+        if (arg2 instanceof RubyHash opt) {
+            RubySymbol key;
+            if (!opt.isEmpty() && (opt.has_key_p(context, key = asSymbol(context, "cause")) == context.tru)) {
+                cause = opt.delete(context, key, Block.NULL_BLOCK);
+                forceCause = true;
+                if (opt.isEmpty()) --argc;
+            }
+        }
+
+        // NOTE: getErrorInfo needs to happen before new RaiseException(...)
+        if ( cause == null ) cause = context.getErrorInfo(); // returns nil for no error-info
+
+        RaiseException raise;
+        if (argc == 2) {
+            raise = convertToException(context, arg0, arg1).toThrowable();
+        } else {
+            RubyException exception = convertToException(context, arg0, arg1);
+            exception.setBacktrace(context, arg2);
+            raise = exception.toThrowable();
+        }
+
+        var exception = raise.getException();
+        if (context.runtime.isDebug()) printExceptionSummary(context, exception);
+        if (forceCause || exception.getCause() == null && cause != exception) exception.setCause(cause);
+
+        throw raise;
+    }
+
+    public static IRubyObject raise(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return switch (args.length) {
+            case 0 -> raise(context, recv);
+            case 1 -> raise(context, recv, args[0]);
+            case 2 -> raise(context, recv, args[0], args[1]);
+            default -> raise(context, recv, args[0], args[1], args[2]);
+        };
+    }
+
+    @Deprecated(since = "10.0.3.0")
+    public static IRubyObject raise(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        return raise(context, recv, args);
     }
 
     private static void maybeRaiseJavaException(ThreadContext context, final IRubyObject arg) {

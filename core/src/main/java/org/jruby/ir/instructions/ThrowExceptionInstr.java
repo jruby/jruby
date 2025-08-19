@@ -48,7 +48,7 @@ public class ThrowExceptionInstr extends OneOperandInstr implements FixedArityIn
         Object excObj = getException().retrieve(context, self, currScope, currDynScope, temp);
 
         if (excObj instanceof IRubyObject exc) {
-            RubyKernel.raise(context, kernelModule(context), new IRubyObject[] {exc}, Block.NULL_BLOCK);
+            RubyKernel.raise(context, kernelModule(context), exc);
         } else if (excObj instanceof Throwable exc) { // java exception -- avoid having to add 'throws' clause everywhere!
             Helpers.throwException(exc);
         }

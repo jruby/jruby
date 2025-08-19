@@ -300,10 +300,11 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                     if (getStatus() == Status.SLEEP) exitSleep();
 
                     // if it's a Ruby exception, force the cause through
-                    IRubyObject[] args = err instanceof RubyException exc ?
-                            Helpers.arrayOf(err, RubyHash.newKwargs(runtime, "cause", exc.cause(context))) :
-                            Helpers.arrayOf(err);
-                    RubyKernel.raise(context, this, args, Block.NULL_BLOCK);
+                    if (err instanceof RubyException exc) {
+                        RubyKernel.raise(context, this, err, RubyHash.newKwargs(runtime, "cause", exc.cause(context)));
+                    } else {
+                        RubyKernel.raise(context, this, err);
+                    }
                 }
             }
 
