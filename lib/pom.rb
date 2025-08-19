@@ -24,7 +24,7 @@ default_gems = [
     # Extension still lives in JRuby. See https://github.com/ruby/bigdecimal/issues/268
     ['bigdecimal', '3.1.4'],
     ['bundler', '2.6.3'],
-    ['cgi', '0.3.6'],
+    ['cgi', '0.3.7'],
     ['csv', '3.2.5'],
     # Currently using a stub gem for JRuby until we can incorporate our code.
     # https://github.com/ruby/date/issues/48
@@ -113,7 +113,7 @@ default_gems = [
     # ['tmpdir', '0.1.2'],
     ['tsort', '0.1.0'],
     ['un', '0.2.0'],
-    ['uri', '0.12.3'],
+    ['uri', '0.12.4'],
     ['weakref', '0.1.1'],
     # https://github.com/ruby/win32ole/issues/12
     # ['win32ole', '1.8.8'],
@@ -130,14 +130,14 @@ bundled_gems = [
     ['net-ftp', '0.3.7'],
     ['net-imap', '0.2.5'],
     ['net-pop', '0.1.1'],
-    ['net-smtp', '0.3.1'],
+    ['net-smtp', '0.3.1.1'],
     ['prime', '0.1.2'],
     ['power_assert', '2.0.1'],
     ['rake', '${rake.version}'],
     # Depends on many CRuby internals
     # ['rbs', '2.0.0'],
     ['rexml', '3.3.9'],
-    ['rss', '0.2.9'],
+    ['rss', '0.3.1'],
     ['test-unit', '3.5.3'],
     # Depends on many CRuby internals
     # ['typeprof', '0.21.1'],
