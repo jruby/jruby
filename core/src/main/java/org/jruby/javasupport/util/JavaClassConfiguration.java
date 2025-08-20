@@ -26,6 +26,9 @@
 
 package org.jruby.javasupport.util;
 
+import org.jruby.specialized.RubyObjectSpecializer;
+
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -129,15 +132,22 @@ public class JavaClassConfiguration implements Cloneable {
     
     public static class DirectFieldConfiguration {
         public String name;
+        public String rubyName;
         public Class<?> fieldType;
         public Boolean unwrap;
         public Class<?> unwrapType;
+        public MethodHandles.Lookup lookup;
         public DirectFieldConfiguration(String name, Class<?> fieldType, Boolean unwrap, Class<?> unwrapType) {
+            this(name, '@' + name, fieldType, unwrap, unwrapType, RubyObjectSpecializer.LOOKUP);
+        }
+
+        public DirectFieldConfiguration(String name, String rubyName, Class<?> fieldType, Boolean unwrap, Class<?> unwrapType, MethodHandles.Lookup lookup) {
             this.name = name;
+            this.rubyName = rubyName;
             this.fieldType = fieldType;
             this.unwrap = unwrap;
             this.unwrapType = unwrapType;
+            this.lookup = lookup;
         }
-        
     }
 }
