@@ -403,7 +403,7 @@ project 'JRuby Lib Setup' do
   end
 
   execute 'jrubydir', 'prepare-package' do |ctx|
-    require( ctx.project.basedir.to_pathname + '/../core/src/main/ruby/jruby/commands.rb' )
+    require( ctx.project.basedir.to_pathname + '/../core/src/main/ruby/org/jruby/kernel/commands.rb' )
     JRuby::Commands.generate_dir_info( ctx.project.build.output_directory.to_pathname + '/META-INF/jruby.home' )
   end
 

@@ -37,7 +37,6 @@
 package org.jruby.runtime;
 
 import com.headius.backport9.stack.StackWalker;
-import com.headius.backport9.stack.impl.StackWalker8;
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -872,7 +871,7 @@ public final class ThreadContext {
     }
 
     public static final StackWalker WALKER = StackWalker.getInstance();
-    public static final StackWalker WALKER8 = new StackWalker8();
+    public static final StackWalker WALKER8 = StackWalker.getInstance8();
 
     /**
      * Create an Array with backtrace information for Kernel#caller

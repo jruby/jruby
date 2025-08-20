@@ -31,43 +31,6 @@ DO NOT MODIFY - GENERATED CODE
   <build>
     <plugins>
       <plugin>
-        <artifactId>maven-shade-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>create shaded jar</id>
-            <phase>package</phase>
-            <goals>
-              <goal>shade</goal>
-            </goals>
-            <configuration>
-              <artifactSet>
-                <excludes>javax.annotation:javax.annotation-api</excludes>
-              </artifactSet>
-              <relocations>
-                <relocation>
-                  <pattern>org.objectweb</pattern>
-                  <shadedPattern>org.jruby.org.objectweb</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>me.qmx.jitescript</pattern>
-                  <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
-                </relocation>
-              </relocations>
-              <transformers>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                  <mainClass>org.jruby.Main</mainClass>
-                  <manifestEntries>
-                    <Automatic-Module-Name>org.jruby.dist</Automatic-Module-Name>
-                  </manifestEntries>
-                </transformer>
-              </transformers>
-              <createSourcesJar>false</createSourcesJar>
-              <compress>false</compress>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <groupId>com.coderplus.maven.plugins</groupId>
         <artifactId>copy-rename-maven-plugin</artifactId>
         <version>1.0</version>

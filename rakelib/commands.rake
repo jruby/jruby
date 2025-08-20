@@ -6,9 +6,11 @@ rescue Exception => ex
 end
 require 'rbconfig'
 
+JRUBY_CLASSPATH = Dir["lib/modules/*.jar"].join(':')
+
 def initialize_paths
   ant.path(:id => "jruby.execute.classpath") do
-    pathelement :path => "lib/jruby.jar"
+    pathelement :path => JRUBY_CLASSPATH
   end
 
   ant.path(:id => "test.class.path") do
@@ -18,7 +20,7 @@ def initialize_paths
     pathelement :path => File.join(BUILD_LIB_DIR, 'bsf.jar')
     pathelement :path => File.join(BUILD_LIB_DIR, 'commons-logging.jar')
     #  pathelement :path => "${java.class.path}"/>
-    pathelement :path => File.join(LIB_DIR, 'jruby.jar')
+    pathelement :path => JRUBY_CLASSPATH
     pathelement :location => TEST_CLASSES_DIR
     pathelement :path => File.join(TEST_DIR, 'jruby', 'requireTest.jar')
     pathelement :location => TEST_DIR
@@ -36,7 +38,7 @@ def jruby(java_options = {}, &code)
   puts "JAVA options: #{java_options.inspect}"
 
   ant.java(java_options) do
-    classpath :path => 'lib/jruby.jar'
+    classpath :path => JRUBY_CLASSPATH
     sysproperty :key => "jruby.home", :value => BASE_DIR
     instance_eval(&code) if block_given?
   end
