@@ -242,18 +242,6 @@ project 'JRuby Lib Setup' do
       File.join(global_bin, "jruby#{RbConfig::CONFIG['EXEEXT']}")
     end
 
-    # Disable extension build for gems (none of ours require a build)
-    class Gem::Ext::Builder
-      def build_extensions
-        return if @spec.extensions.empty?
-
-        say "Skipping native extensions."
-
-        FileUtils.mkdir_p File.dirname(@spec.gem_build_complete_path)
-        FileUtils.touch @spec.gem_build_complete_path
-      end
-    end
-
     ctx.project.artifacts.select do |a|
       a.group_id == 'rubygems' || a.group_id == 'org.jruby.gems'
     end.each do |a|
