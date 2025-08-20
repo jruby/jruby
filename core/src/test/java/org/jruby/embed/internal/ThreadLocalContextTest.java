@@ -188,7 +188,7 @@ public class ThreadLocalContextTest {
 		}
 		assertNotNull("LocalContext not garbage-collected", clearedRef);
 		assertEquals("some other object was garbage-collected?!", ref.get(), clearedRef);
-		assertTrue("reference wasn't cleared?!", ref.get().refersTo(null));
+		assertTrue("reference wasn't cleared?!", ref.get().get() == null);
 	}
 
 	private class Cage extends Thread {
