@@ -2221,6 +2221,37 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return select(channel, io == null ? null : io.getOpenFile(), ops, timeout);
     }
 
+    public boolean selectFor(ThreadContext context, Channel channel, OpenFile fptr, int ops) {
+        long timeout = prepareTimeout(context, fptr.timeout());
+        boolean result = select(channel, fptr, ops, timeout);
+
+        if (timeout >= 0 && result == false) {
+            throw RubyIO.RubyIOTimeoutError.newIOTimeoutError(context.runtime, "IO operation timed out").toThrowable();
+        }
+        
+        return result;
+    }
+
+    public boolean selectFor(ThreadContext context, Channel channel, RubyIO io, int ops) {
+        if (io == null) {
+            return context.getThread().select(channel, io, ops);
+        }
+
+        return selectFor(context, channel, io.getOpenFile(), ops);
+    }
+
+    public static long prepareTimeout(ThreadContext context, IRubyObject timeout) {
+        long tv;
+        if (timeout.isNil()) {
+            tv = -1;
+        }
+        else {
+            tv = (long)(RubyTime.convertTimeInterval(context, timeout) * 1000);
+            if (tv < 0) throw argumentError(context, "time interval must be positive");
+        }
+        return tv;
+    }
+
     /**
      * Perform an interruptible select operation on the given channel and fptr,
      * waiting for the requested operations or the given timeout.

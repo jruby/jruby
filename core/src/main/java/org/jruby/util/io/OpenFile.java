@@ -69,6 +69,7 @@ public class OpenFile implements Finalizable {
         writeconvPreEcopts = nil;
         encs.ecopts = nil;
         posix = new PosixShim(runtime);
+        timeout = nil;
         fiberScheduler = Options.FIBER_SCHEDULER.load();
     }
 
@@ -172,6 +173,8 @@ public class OpenFile implements Finalizable {
     private final Ptr dpPtr = new Ptr();
 
     private final boolean fiberScheduler;
+
+    private IRubyObject timeout;
 
     public void clearStdio() {
         stdio_file = null;
@@ -1624,7 +1627,11 @@ public class OpenFile implements Finalizable {
                     && !fptr.nonblock) {
 
                 // keep selecting for read until ready, polling each time we wake up
-                while (!context.getThread().select(fd.chSelect, fptr, SelectionKey.OP_READ)) {
+                while (true) {
+                    boolean result = context.getThread().selectFor(context, fd.chSelect, fptr, SelectionKey.OP_READ);
+
+                    if (result) break;
+
                     context.pollThreadEvents();
                 }
             }
@@ -1663,7 +1670,7 @@ public class OpenFile implements Finalizable {
             if (fd.chSelect != null) {
                 unlock();
                 try {
-                    return context.getThread().select(fd.chSelect, this, SelectionKey.OP_READ);
+                    return context.getThread().selectFor(context, fd.chSelect, this, SelectionKey.OP_READ);
                 } finally {
                     lock();
                 }
@@ -3042,6 +3049,14 @@ public class OpenFile implements Finalizable {
 
     public boolean lockedByMe() {
         return lock.isHeldByCurrentThread();
+    }
+
+    public IRubyObject timeout() {
+        return timeout;
+    }
+
+    public void timeout(IRubyObject timeout) {
+        this.timeout = timeout;
     }
 
     @Deprecated
