@@ -241,7 +241,7 @@ project 'JRuby Lib Setup' do
     end
 
     # Disable extension build for gems (none of ours require a build)
-    module Gem
+    module ::Gem
       module Ext
         class Builder
           def build_extensions

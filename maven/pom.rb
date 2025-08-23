@@ -35,10 +35,11 @@ project 'JRuby Artifacts' do
   end
 
   # module to profile map
-  map = { jruby: %i[apps release main osgi j2ee snapshots],
-          "jruby-complete": %i[release complete osgi jruby_complete_jar_extended snapshots],
-          "jruby-dist": %i[release dist snapshots],
-          "jruby-jars": %i[release jruby-jars snapshots] }
+  # rubocop:disable Style/StringHashKeys
+  map = { 'jruby' => %i[apps release main osgi j2ee snapshots],
+          'jruby-complete' => %i[release complete osgi jruby_complete_jar_extended snapshots],
+          'jruby-dist' => %i[release dist snapshots],
+          'jruby-jars' => %i[release jruby-jars snapshots] }
 
   profile :all do
     modules map.keys
