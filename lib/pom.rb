@@ -241,18 +241,15 @@ project 'JRuby Lib Setup' do
     end
 
     # Disable extension build for gems (none of ours require a build)
-    module Gem
-      module Ext
-        class Builder
-          def build_extensions
-            return if @spec.extensions.empty?
+    # rubocop:disable Style/ClassAndModuleChildren
+    class Gem::Ext::Builder
+      def build_extensions
+        return if @spec.extensions.empty?
 
-            say 'Skipping native extensions.'
+        say 'Skipping native extensions.'
 
-            FileUtils.mkdir_p File.dirname(@spec.gem_build_complete_path)
-            FileUtils.touch @spec.gem_build_complete_path
-          end
-        end
+        FileUtils.mkdir_p File.dirname(@spec.gem_build_complete_path)
+        FileUtils.touch @spec.gem_build_complete_path
       end
     end
 

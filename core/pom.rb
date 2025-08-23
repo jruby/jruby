@@ -249,8 +249,9 @@ project 'JRuby Base' do
            "jruby.home": '${basedir}/..'
          },
          argLine: '-Xmx${jruby.test.memory} -Dfile.encoding=UTF-8 -Djava.awt.headless=true',
+         # rubocop:disable Style/StringHashKeys
          environmentVariables: {
-           JDK_JAVA_OPTIONS: '--add-modules java.scripting --add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED'
+           'JDK_JAVA_OPTIONS' => '--add-modules java.scripting --add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.base/java.io=ALL-UNNAMED'
          },
          includes: [
            'org/jruby/test/**/*Test*.java',
@@ -311,7 +312,7 @@ project 'JRuby Base' do
                       id: 'default-compile_with_error_prone',
                       phase: 'compile',
                       fork: 'true',
-                      compilerArgs: default_compile_configuration['compilerArgs'] + [
+                      compilerArgs: default_compile_configuration[:compilerArgs] + [
                         '-XDcompilePolicy=simple', '-Xplugin:ErrorProne'
                       ],
                       annotationProcessorPaths: { path: [{
