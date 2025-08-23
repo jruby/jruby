@@ -1,8 +1,10 @@
-#-*- mode: ruby -*-
+# frozen_string_literal: true
+
+# -*- mode: ruby -*-
 
 # default versions will be overwritten by pom.rb from root directory
-properties( 'jruby.plugins.version' => '3.0.5' )
+properties("jruby.plugins.version": '3.0.5')
 
 packaging :pom
 
-modules [ 'zip_gem', 'app' ]
+modules %w[zip_gem app]
