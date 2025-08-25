@@ -679,6 +679,13 @@ DO NOT MODIFY - GENERATED CODE
                     <compilerArg>-J-Duser.language=en</compilerArg>
                     <compilerArg>-J-Dfile.encoding=UTF-8</compilerArg>
                     <compilerArg>-J-Xmx${jruby.compile.memory}</compilerArg>
+                  </compilerArgs>
+                  <fork>true</fork>
+                  <compilerArgs>
+                    <compilerArg>-XDignore.symbol.file=true</compilerArg>
+                    <compilerArg>-J-Duser.language=en</compilerArg>
+                    <compilerArg>-J-Dfile.encoding=UTF-8</compilerArg>
+                    <compilerArg>-J-Xmx${jruby.compile.memory}</compilerArg>
                     <compilerArg>-XDcompilePolicy=simple</compilerArg>
                     <compilerArg>-Xplugin:ErrorProne</compilerArg>
                   </compilerArgs>
