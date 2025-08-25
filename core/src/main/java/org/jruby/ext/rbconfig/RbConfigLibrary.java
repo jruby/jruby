@@ -50,6 +50,7 @@ import org.jruby.runtime.Constants;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.SafePropertyAccessor;
+import org.jruby.util.cli.Options;
 
 import static org.jruby.api.Access.loadService;
 import static org.jruby.api.Access.objectClass;
@@ -374,8 +375,8 @@ public class RbConfigLibrary implements Library {
         setConfig(context, CONFIG, "ridir", newFile(shareDir, "ri").getPath());
 
         // These will be used as jruby defaults for rubygems if found
-        String gemhome = SafePropertyAccessor.getProperty("jruby.gem.home");
-        String gempath = SafePropertyAccessor.getProperty("jruby.gem.path");
+        String gemhome = Options.GEM_HOME.load();
+        String gempath = Options.GEM_PATH.load();
         if (gemhome != null) setConfig(context, CONFIG, "default_gem_home", gemhome);
         if (gempath != null) setConfig(context, CONFIG, "default_gem_path", gempath);
 

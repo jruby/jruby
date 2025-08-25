@@ -2256,7 +2256,7 @@ public class RubyEnumerable {
                     break;
                 default:
                     IRubyObject v = RubyArray.newArrayMayCopy(context.runtime, largs);
-                    value = blockGiven ? block.yield(context, v) : v;
+                    value = blockGiven ? block.yieldArray(context, v, null) : v;
                     break;
             }
 
