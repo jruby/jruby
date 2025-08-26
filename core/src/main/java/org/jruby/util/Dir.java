@@ -819,11 +819,15 @@ public class Dir {
 
     private static int glob_helper(Ruby runtime, String cwd, ByteList path, int sub, int flags, GlobFunc<GlobArgs> func, GlobArgs arg) {
         int begin = path.getBegin();
-        final int end = begin + path.length();
+        int end = begin + path.length();
         final Encoding enc = path.getEncoding();
-        final byte[] bytes = path.getUnsafeBytes();
+        byte[] bytes = path.getUnsafeBytes();
         final byte[] scheme = extractScheme(bytes, begin, end);
-        if (scheme != null) begin += scheme.length;
+        if (scheme != null) {
+            bytes = Arrays.copyOfRange(bytes, begin + scheme.length, end);
+            begin = 0;
+            end = bytes.length;
+        }
         return glob_helper(runtime, cwd, scheme, bytes, begin, end, enc, sub, flags, func, arg);
     }
 
@@ -1004,7 +1008,10 @@ public class Dir {
                     for ( DirGlobber globber : links ) {
                         final ByteList link = globber.link;
                         if ( status == 0 ) {
-                            resource = JRubyFile.createResource(runtime, cwd, new String(link.unsafeBytes(), link.begin(), link.length(), enc.getCharset()));
+                            String fullPath = scheme != null ?
+                                    new String(prependScheme(scheme, link.unsafeBytes(), link.begin(), link.length()), enc.getCharset()) :
+                                    new String(link.unsafeBytes(), link.begin(), link.length(), enc.getCharset());
+                            resource = JRubyFile.createResource(runtime, cwd, fullPath);
                             if ( resource.isDirectory() ) {
                                 final int len = link.getRealSize();
                                 buf.length(0);
