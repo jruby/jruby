@@ -884,7 +884,7 @@ public class Dir {
 
             final int SLASH_INDEX = indexOf(path, ptr, end, (byte) '/');
             final GlobMagic magical = has_magic(path, ptr, SLASH_INDEX == -1 ? end : SLASH_INDEX, flags);
-            if (magical.compareTo(nonMagic) > 0) {
+            if (magical == GlobMagic.MAGICAL) {
                 finalize: do {
                     byte[] base = extract_path(path, begin, ptr);
                     byte[] dir = begin == ptr ? new byte[] { '.' } : base;
