@@ -33,6 +33,9 @@ abstract class JarResource implements FileResource, DummyResourceStat.FileResour
         // normalize path -- issue #2017
         if (StringSupport.startsWith(entryPath, '/', '/')) entryPath = entryPath.substring(1);
 
+        // special case: "jar:file:blah.jar!." is just "jar:file:blah.jar!"
+        if (entryPath.equals(".")) entryPath = "";
+
         // TODO: Do we really need to support both test.jar!foo/bar.rb and test.jar!/foo/bar.rb cases?
         JarResource resource = createJarResource(jarPath, entryPath, false);
 
