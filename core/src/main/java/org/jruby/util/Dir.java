@@ -834,33 +834,24 @@ public class Dir {
 
         final GlobMagic nonMagic = CASEFOLD_FILESYSTEM ? GlobMagic.PLAIN : GlobMagic.ALPHA;
 
-        // This section only uses path+scheme
-        if ( has_magic(path, ptr, end, flags).compareTo(nonMagic) <= 0 ) {
-            if (DOSISH || (flags & FNM_NOESCAPE) == 0) {
-                end = remove_backslashes(path, ptr, end);
-            }
+        // No magical characters, so we just process it as if it was a single file.
+        if (has_magic(path, ptr, end, flags) != GlobMagic.MAGICAL) {
+            if (DOSISH || (flags & FNM_NOESCAPE) == 0) end = remove_backslashes(path, ptr, end);
 
             if (scheme != null) {
                 path = prependScheme(scheme, path, begin, end);
                 begin = 0; end = path.length;
             }
 
-            if (end > begin) {
-                if ( isAbsolutePath(path, begin, end) ) {
-                    status = addToResultIfExists(runtime, null, path, begin, end, enc, flags, func, arg);
-                } else {
-                    status = addToResultIfExists(runtime, cwd, path, begin, end, enc, flags, func, arg);
-                }
-            }
-
-            return status;
+            if (end <= begin) return 0;
+            String pwd = isAbsolutePath(path, begin, end) ? null : cwd;
+            return addToResultIfExists(runtime, pwd, path, begin, end, enc, flags, func, arg);
         }
 
         final ArrayList<ByteList> links = new ArrayList<>();
 
         ByteList buf = new ByteList(20);
         buf.setEncoding(enc);
-        FileResource resource;
 
         mainLoop: while(ptr != -1 && status == 0) {
             if ( path[ptr] == '/' ) ptr++;
@@ -878,7 +869,7 @@ public class Dir {
                     byte[] magic = extract_path(path, ptr, segmentEnd);
                     boolean recursive = false;
 
-                    resource = JRubyFile.createResource(runtime, cwd, new String(dir, enc.getCharset()));
+                    FileResource resource = JRubyFile.createResource(runtime, cwd, new String(dir, enc.getCharset()));
                     if (!resource.isDirectory()) break mainLoop;
 
                     if (slashIndex != -1 && Arrays.equals(magic, DOUBLE_STAR)) {
@@ -912,21 +903,11 @@ public class Dir {
                         flags |= FNM_GLOB_SKIPDOT;
                     }
 
-                    final String[] files = files(resource);
+                    for (String file: files(resource)) {
+                        if (isIgnorableDotOrDotDot(file, recursive, flags, skipdot)) continue;
 
-                    for ( int i = 0; i < files.length; i++ ) {
-                        final String file = files[i];
                         final byte[] fileBytes = getBytesInUTF8(file);
 
-                        if (file.charAt(0) == '.') {
-                            int length = file.length();
-                            if (length == 1) {
-                                if (recursive && (flags & FNM_DOTMATCH) == 0) continue;
-                                if (skipdot) continue;
-                            } else if (length == 2 && file.charAt(1) == '.') {
-                                continue;
-                            }
-                        }
                         if (recursive) {
                             if ( fnmatch(STAR, 0, 1, fileBytes, 0, fileBytes.length, flags) != 0) {
                                 continue;
@@ -943,8 +924,8 @@ public class Dir {
                                 bufBegin = 0;
                                 bufLen = bufBytes.length;
                             }
-                            resource = JRubyFile.createResource(runtime, cwd, new String(bufBytes, bufBegin, bufLen, enc.getCharset()));
-                            if ( !resource.isSymLink() && resource.isDirectory() && !".".equals(file) && !"..".equals(file) ) {
+                            FileResource r = JRubyFile.createResource(runtime, cwd, new String(bufBytes, bufBegin, bufLen, enc.getCharset()));
+                            if ( !r.isSymLink() && r.isDirectory() && !".".equals(file) && !"..".equals(file) ) {
                                 final int len = buf.getRealSize();
                                 buf.append(SLASH);
                                 buf.append(DOUBLE_STAR);
@@ -961,8 +942,8 @@ public class Dir {
                             buf.append( getBytesInUTF8(file) );
                             boolean dirMatch = false;
                             if (slashIndex == end - 1) {
-                                resource = JRubyFile.createResource(runtime, cwd, new String(buf.unsafeBytes(), buf.begin(), buf.length(), enc.getCharset()));
-                                dirMatch = resource.isDirectory();
+                                dirMatch = JRubyFile.createResource(runtime, cwd,
+                                        new String(buf.unsafeBytes(), buf.begin(), buf.length(), enc.getCharset())).isDirectory();
                             }
                             if ( dirMatch || slashIndex == -1 ) {
                                 if (scheme != null) {
@@ -989,8 +970,7 @@ public class Dir {
                             String fullPath = scheme != null ?
                                     new String(prependScheme(scheme, link.unsafeBytes(), link.begin(), link.length()), enc.getCharset()) :
                                     new String(link.unsafeBytes(), link.begin(), link.length(), enc.getCharset());
-                            resource = JRubyFile.createResource(runtime, cwd, fullPath);
-                            if ( resource.isDirectory() ) {
+                            if (JRubyFile.createResource(runtime, cwd, fullPath).isDirectory()) {
                                 final int len = link.getRealSize();
                                 buf.length(0);
                                 buf.append(link);
@@ -1006,6 +986,20 @@ public class Dir {
         }
 
         return status;
+    }
+
+    private static boolean isIgnorableDotOrDotDot(String file, boolean recursive, int flags, boolean skipdot) {
+        if (file.charAt(0) == '.') {
+            int length = file.length();
+            if (length == 1) {
+                if (recursive && (flags & FNM_DOTMATCH) == 0) return true;
+                if (skipdot) return true;
+            } else if (length == 2 && file.charAt(1) == '.') {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static byte[] getBytesInUTF8(final String str) {
