@@ -54,8 +54,6 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v3
-      - name: remove default java except 21
-        run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v3
         with:
