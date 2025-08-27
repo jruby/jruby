@@ -1,5 +1,6 @@
 require 'rspec'
 require 'fileutils'
+require 'tmpdir'
 
 describe "Dir.glob" do
   let(:dir_name) { 'test_dir!' }
@@ -75,6 +76,51 @@ describe "Dir.glob" do
       test5_files = Dir.glob("file:#{__dir__}/fixtures/**/test4.txt")
       expect(test5_files[0]).to eq "file:#{__dir__}/fixtures/testdir/test4.txt"
       expect(File.read(test5_files[0])).to eq "test4"
+    end
+  end
+
+  describe "with a jar:file: scheme" do
+    before :all do
+      tmpdir = Dir.mktmpdir
+      @test_files_jar = "#{tmpdir}/spec_jruby_dir_glob.jar"
+      system "jar cf #{@test_files_jar} -C #{__dir__} fixtures"
+    end
+
+    after :all do
+      FileUtils.rm_f @test_files_jar
+    end
+
+    it "can find a specific file" do
+      test1_files = Dir.glob("jar:file:#{@test_files_jar}!fixtures/*")
+      expect(test1_files[0]).to eq "jar:file:#{@test_files_jar}!fixtures/test1.txt"
+      expect(File.read(test1_files[0])).to eq "test1"
+    end
+
+    it "can find a set of files for a wildcard filename" do
+      test_txt_files = Dir.glob("jar:file:#{@test_files_jar}!fixtures/test*.txt")
+      expect(test_txt_files).to eq %w[test1 test2 test3].map { "jar:file:#{@test_files_jar}!fixtures/#{_1}.txt" }
+      test_txt_files.each { expect(File.read(_1)).to eq File.basename(_1).split(".").first }
+
+      test_txt_files = Dir.glob("jar:file:#{@test_files_jar}!fixtures/test?.txt")
+      expect(test_txt_files).to eq %w[test1 test2 test3].map { "jar:file:#{@test_files_jar}!fixtures/#{_1}.txt" }
+      test_txt_files.each { expect(File.read(_1)).to eq File.basename(_1).split(".").first }
+    end
+
+    it "can find a specific file in a double star path" do
+      test5_files = Dir.glob("jar:file:#{@test_files_jar}!fixtures/**/test4.txt")
+      expect(test5_files[0]).to eq "jar:file:#{@test_files_jar}!fixtures/testdir/test4.txt"
+      expect(File.read(test5_files[0])).to eq "test4"
+    end
+
+    it "can find a specific file in a \".\" relative path" do
+      test1_files = Dir.glob("jar:file:#{@test_files_jar}!./fixtures/test1.txt")
+      expect(test1_files[0]).to eq "jar:file:#{@test_files_jar}!./fixtures/test1.txt"
+      expect(File.read(test1_files[0])).to eq "test1"
+    end
+
+    it "treats a bare \".\" path as its own entry" do
+      test1_files = Dir.glob("jar:file:#{@test_files_jar}!.")
+      expect(test1_files[0]).to eq "jar:file:#{@test_files_jar}!."
     end
   end
 end
