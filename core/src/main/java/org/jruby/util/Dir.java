@@ -37,9 +37,9 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
-import org.jruby.RubyString;
 import org.jruby.platform.Platform;
-import static org.jruby.util.ByteList.NULL_ARRAY;
+
+import static org.jruby.api.Convert.asJavaString;
 import static org.jruby.util.ByteList.memcmp;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 import static org.jruby.util.StringSupport.codePoint;
@@ -76,14 +76,7 @@ public class Dir {
     }
 
     private static boolean isdirsep(byte c) {
-        return isdirsep((int)(c & 0xFF));
-    }
-
-    private static int rb_path_next(byte[] _s, int s, int send) {
-        while(s < send && !isdirsep(_s[s])) {
-            s++;
-        }
-        return s;
+        return isdirsep(c & 0xFF);
     }
 
     static class FilenameMatch {
@@ -392,8 +385,8 @@ public class Dir {
     }
 
     public static List<ByteList> push_glob(Ruby runtime, String cwd, ByteList globByteList, int flags, boolean sort) {
-        if (globByteList.length() > 0) {
-            final ArrayList<ByteList> result = new ArrayList<ByteList>();
+        if (!globByteList.isEmpty()) {
+            List<ByteList> result = new ArrayList<>();
             push_braces(runtime, cwd, result, new GlobPattern(globByteList, flags), sort);
             return result;
         }
@@ -459,10 +452,6 @@ public class Dir {
             index = begin;
         }
 
-        public void setIndex(int value) {
-            index = value;
-        }
-
         // Get index of last read byte
         public int index() {
             return index - 1;
@@ -482,6 +471,9 @@ public class Dir {
 
     private interface GlobFunc<T> {
         int call(byte[] ptr, int p, int len, Encoding enc, T ary);
+        default int call(ByteList buf, T ary) {
+            return call(buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize(), buf.getEncoding(), ary);
+        }
     }
 
     private static class GlobArgs {
@@ -495,17 +487,13 @@ public class Dir {
         }
     }
 
-    private final static GlobFunc<List<ByteList>> push_pattern = new GlobFunc<List<ByteList>>() {
-        public int call(byte[] ptr, int p, int len, Encoding enc, List<ByteList> ary) {
-            ary.add(new ByteList(ptr, p, len, enc, true));
-            return 0;
-        }
+    private final static GlobFunc<List<ByteList>> push_pattern = (ptr, p, len, enc, ary) -> {
+        ary.add(new ByteList(ptr, p, len, enc, true));
+        return 0;
     };
-    private final static GlobFunc<GlobArgs> glob_caller = new GlobFunc<GlobArgs>() {
-        public int call(byte[] ptr, int p, int len, Encoding enc, GlobArgs args) {
-            args.c = p;
-            return args.func.call(ptr, args.c, len, enc, args.arg);
-        }
+    private final static GlobFunc<GlobArgs> glob_caller = (ptr, p, len, enc, args) -> {
+        args.c = p;
+        return args.func.call(ptr, args.c, len, enc, args.arg);
     };
 
     /*
@@ -566,10 +554,8 @@ public class Dir {
     private static int push_globs(Ruby runtime, String cwd, List<ByteList> ary, ByteList pattern, int flags, boolean sort) {
         flags |= FNM_SYSCASE;
         List<ByteList> tmpAry = new ArrayList<>();
-        int globRet = glob_helper(runtime, cwd, pattern, -1, flags, glob_caller, new GlobArgs(push_pattern, tmpAry));
-        if (sort) {
-            Collections.sort(tmpAry);
-        }
+        int globRet = glob_helper(runtime, cwd, pattern, flags, new GlobArgs(push_pattern, tmpAry));
+        if (sort) Collections.sort(tmpAry);
         ary.addAll(tmpAry);
         return globRet;
     }
@@ -618,7 +604,7 @@ public class Dir {
         if(lbrace >= 0 && rbrace >= 0) {
             int pos = lbrace;
             String front = pattern.substring(0, lbrace);
-            String back = pattern.substring(rbrace + 1, pattern.length());
+            String back = pattern.substring(rbrace + 1);
 
             while(pos < rbrace) {
                 int nest = 0;
@@ -653,7 +639,7 @@ public class Dir {
     }
 
     /* NOTE: Order here is important */
-    enum GlobMagic  { PLAIN, ALPHA, MAGICAL };
+    enum GlobMagic { PLAIN, ALPHA, MAGICAL }
 
     private static GlobMagic has_magic(byte[] bytes, int begin, int end, int flags) {
         boolean escape = (flags & FNM_NOESCAPE) == 0;
@@ -724,18 +710,13 @@ public class Dir {
         return alloc;
     }
     
-    private static int extractScheme(byte[] path, int begin, int end) {
-        int colon = findScheme(path, begin, end);
+    private static int extractScheme(ByteList path) {
+        int colon = findScheme(path);
         if (colon == -1) return 0;
-        do { colon++; } while (colon < end && path[colon] == '/');
+        byte[] bytes = path.getUnsafeBytes();
+        int end = path.begin() + path.realSize();
+        do { colon++; } while (colon < end && bytes[colon] == '/');
         return colon - 1;
-    }
-
-    private static byte[] prependScheme(byte[] scheme, byte[] path, int begin, int end) {
-        byte [] newpath = new byte[scheme.length + (end - begin)];
-        System.arraycopy(scheme, 0, newpath, 0, scheme.length);
-        System.arraycopy(path, begin, newpath, scheme.length, end - begin);
-        return newpath;
     }
 
     // Win drive letter X:/
@@ -743,8 +724,8 @@ public class Dir {
         return DOSISH && begin + 2 < end && path[begin + 1] == ':' && isdirsep(path[begin + 2]);
     }
 
-    private static int findScheme(byte[] path, int begin, int end) {
-        String schemeStr = new String(path, begin, Math.min(16, end - begin));
+    private static int findScheme(ByteList path) {
+        String schemeStr = new String(path.getUnsafeBytes(), path.begin(), Math.min(16, path.realSize()));
         if (schemeStr.startsWith("uri:classloader:")) return 16;
         if (schemeStr.startsWith("uri:")) return 4;
         if (schemeStr.startsWith("file:")) return 5;
@@ -770,17 +751,7 @@ public class Dir {
         return files == null ? EMPTY_STRING_ARRAY : files;
     }
 
-    private static boolean isSpecialFile(String name) {
-        int length = name.length();
-
-        if (length < 1 || length > 3 || name.charAt(0) != '.') return false;
-        if (length == 1) return true;
-        char c = name.charAt(1);
-        if (length == 2 && (c == '.' || c == '/')) return true;
-        return c == '.' && name.charAt(2) == '/';
-    }
-
-    private static int addToResultIfExists(Ruby runtime, String cwd, byte[] bytes, int begin, int end, Encoding enc, int flags, GlobFunc<GlobArgs> func, GlobArgs arg) {
+    private static int addToResultIfExists(Ruby runtime, String cwd, byte[] bytes, int begin, int end, Encoding enc, GlobFunc<GlobArgs> func, GlobArgs arg) {
         final String fileName = new String(bytes, begin, end - begin, enc.getCharset());
 
         // FIXME: Ultimately JRubyFile.createResource should do this but all 1.7.x is only selectively honoring raw
@@ -800,25 +771,15 @@ public class Dir {
         return 0;
     }
 
-    private static int glob_helper(Ruby runtime, String cwd, ByteList path, int sub, int flags, GlobFunc<GlobArgs> func, GlobArgs arg) {
-        int begin = path.getBegin();
-        int end = begin + path.length();
-        final Encoding enc = path.getEncoding();
-        byte[] bytes = path.getUnsafeBytes();
-        final int scheme = extractScheme(bytes, begin, end);
-        return glob_helper(runtime, cwd, scheme, bytes, begin, end, enc, sub, flags, func, arg);
+    private static int glob_helper(Ruby runtime, String cwd, ByteList path, int flags, GlobArgs arg) {
+        return glob_helper(runtime, cwd, extractScheme(path), path, -1, flags, Dir.glob_caller, arg);
     }
 
-    private static int glob_helper(Ruby runtime, String cwd, int scheme, ByteList path, int sub, int flags, GlobFunc<GlobArgs> func, GlobArgs arg) {
-        final int begin = path.getBegin();
-        final int end = begin + path.length();
-        final Encoding enc = path.getEncoding();
-        return glob_helper(runtime, cwd, scheme, path.getUnsafeBytes(), begin, end, enc, sub, flags, func, arg);
-    }
-
-    private static int glob_helper(Ruby runtime, String cwd, int scheme,
-        byte[] path, int begin, int end, Encoding enc, int sub,
-        int flags, GlobFunc<GlobArgs> func, GlobArgs arg) {
+    private static int glob_helper(Ruby runtime, String cwd, int scheme, ByteList p, int sub, int flags, GlobFunc<GlobArgs> func, GlobArgs arg) {
+        byte[] path = p.getUnsafeBytes();
+        final int begin = p.getBegin();
+        int end = begin + p.length();
+        final Encoding enc = p.getEncoding();
         int status = 0;
 
         int ptr = sub != -1 ? sub : begin + scheme;
@@ -826,11 +787,11 @@ public class Dir {
         final GlobMagic nonMagic = CASEFOLD_FILESYSTEM ? GlobMagic.PLAIN : GlobMagic.ALPHA;
 
         // No magical characters, so we just process it as if it was a single file.
-        if (has_magic(path, ptr, end, flags) != GlobMagic.MAGICAL) {
+        if (has_magic(path, ptr, end, flags).compareTo(nonMagic) <= 0) {
             if (DOSISH || (flags & FNM_NOESCAPE) == 0) end = remove_backslashes(path, ptr, end);
             if (end <= begin) return 0;
             String pwd = isAbsolutePath(path, begin, end) ? null : cwd;
-            return addToResultIfExists(runtime, pwd, path, begin, end, enc, flags, func, arg);
+            return addToResultIfExists(runtime, pwd, path, begin, end, enc, func, arg);
         }
 
         final ArrayList<ByteList> links = new ArrayList<>();
@@ -845,9 +806,9 @@ public class Dir {
             int segmentEnd = slashIndex == -1 ? end : slashIndex;
             final GlobMagic magical = has_magic(path, ptr, segmentEnd, flags);
             if (magical.compareTo(nonMagic) > 0) {
-                finalize: do {
+                do {
                     byte[] base = extract_path(path, begin, ptr);
-                    byte[] dir = begin == ptr ? new byte[] { '.' } : base;
+                    byte[] dir = begin == ptr ? new byte[]{'.'} : base;
                     byte[] magic = extract_path(path, ptr, segmentEnd);
                     boolean recursive = false;
 
@@ -866,10 +827,10 @@ public class Dir {
                             indexOfSlash = indexOf(path, nextStartIndex, end, (byte) '/');
                             int nextEndIndex = indexOfSlash == -1 ? end : indexOfSlash;
                             magic = extract_path(path, nextStartIndex, nextEndIndex);
-                        } while(Arrays.equals(magic, DOUBLE_STAR) && indexOfSlash != -1);
+                        } while (Arrays.equals(magic, DOUBLE_STAR) && indexOfSlash != -1);
 
                         int remainingPathStartIndex;
-                        if(Arrays.equals(magic, DOUBLE_STAR)) {
+                        if (Arrays.equals(magic, DOUBLE_STAR)) {
                             remainingPathStartIndex = nextStartIndex;
                         } else {
                             remainingPathStartIndex = nextStartIndex - 1;
@@ -877,7 +838,7 @@ public class Dir {
                         remainingPathStartIndex = lengthOfBase > 0 ? remainingPathStartIndex : remainingPathStartIndex + 1;
                         buf.append(path, remainingPathStartIndex, end - remainingPathStartIndex);
                         status = glob_helper(runtime, cwd, scheme, buf, lengthOfBase, flags, func, arg);
-                        if ( status != 0 ) break finalize;
+                        if (status != 0) break;
                     }
 
                     boolean skipdot = (flags & FNM_GLOB_SKIPDOT) != 0;
@@ -885,46 +846,41 @@ public class Dir {
                         flags |= FNM_GLOB_SKIPDOT;
                     }
 
-                    for (String file: files(resource)) {
+                    for (String file : files(resource)) {
                         if (isIgnorableDotOrDotDot(file, recursive, flags, skipdot)) continue;
 
                         final byte[] fileBytes = getBytesInUTF8(file);
 
                         if (recursive) {
-                            if ( fnmatch(STAR, 0, 1, fileBytes, 0, fileBytes.length, flags) != 0) continue;
+                            if (fnmatch(STAR, 0, 1, fileBytes, 0, fileBytes.length, flags) != 0) continue;
 
                             buf.length(0);
                             buf.append(base);
                             if (!isRoot(base)) buf.append(SLASH);
-                            buf.append( getBytesInUTF8(file) );
-                            byte [] bufBytes = buf.unsafeBytes();
-                            int bufBegin = buf.begin();
-                            int bufLen = buf.length();
-                            FileResource r = JRubyFile.createResource(runtime, cwd, new String(bufBytes, bufBegin, bufLen, enc.getCharset()));
-                            if ( !r.isSymLink() && r.isDirectory() && !".".equals(file) && !"..".equals(file) ) {
+                            buf.append(getBytesInUTF8(file));
+                            FileResource r = JRubyFile.createResource(runtime, cwd, asJavaString(buf, enc));
+                            if (!r.isSymLink() && r.isDirectory() && !".".equals(file) && !"..".equals(file)) {
                                 final int len = buf.getRealSize();
                                 buf.append(SLASH);
                                 buf.append(DOUBLE_STAR);
                                 buf.append(path, slashIndex, end - slashIndex);
                                 status = glob_helper(runtime, cwd, scheme, buf, buf.getBegin() + len, flags, func, arg);
-                                if ( status != 0 ) break;
+                                if (status != 0) break;
                             }
                             continue;
                         }
-                        if ( fnmatch(magic, 0, magic.length, fileBytes, 0, fileBytes.length, flags) == 0 ) {
+                        if (fnmatch(magic, 0, magic.length, fileBytes, 0, fileBytes.length, flags) == 0) {
                             buf.length(0);
                             buf.append(base);
                             if (!isRoot(base)) buf.append(SLASH);
-                            buf.append( getBytesInUTF8(file) );
-                            boolean dirMatch = false;
-                            if (slashIndex == end - 1) {
-                                dirMatch = JRubyFile.createResource(runtime, cwd,
-                                        new String(buf.unsafeBytes(), buf.begin(), buf.length(), enc.getCharset())).isDirectory();
-                            }
-                            if ( dirMatch || slashIndex == -1 ) {
+                            buf.append(getBytesInUTF8(file));
+                            boolean dirMatch = slashIndex == end - 1 ?
+                                    JRubyFile.createResource(runtime, cwd, asJavaString(buf, enc)).isDirectory() :
+                                    false;
+                            if (dirMatch || slashIndex == -1) {
                                 if (dirMatch) buf.append(SLASH);
-                                status = func.call(buf.getUnsafeBytes(), 0, buf.getRealSize(), enc, arg);
-                                if ( status != 0 ) break;
+                                status = func.call(buf, arg);
+                                if (status != 0) break;
                                 continue;
                             }
                             links.add(buf);
@@ -932,12 +888,11 @@ public class Dir {
                             buf.setEncoding(enc);
                         }
                     }
-                } while(false);
+                } while (false);
 
                 for (ByteList link: links) {
                     if (status != 0) return status;
-                    String fullPath = new String(link.unsafeBytes(), link.begin(), link.length(), enc.getCharset());
-                    if (JRubyFile.createResource(runtime, cwd, fullPath).isDirectory()) {
+                    if (JRubyFile.createResource(runtime, cwd, asJavaString(link, enc)).isDirectory()) {
                         var linkSub = link.begin() + link.realSize();
                         link.append(path, slashIndex, end - slashIndex);
                         status = glob_helper(runtime, cwd, scheme, link, linkSub, flags, func, arg);
@@ -953,12 +908,8 @@ public class Dir {
     private static boolean isIgnorableDotOrDotDot(String file, boolean recursive, int flags, boolean skipdot) {
         if (file.charAt(0) == '.') {
             int length = file.length();
-            if (length == 1) {
-                if (recursive && (flags & FNM_DOTMATCH) == 0) return true;
-                if (skipdot) return true;
-            } else if (length == 2 && file.charAt(1) == '.') {
-                return true;
-            }
+            if (length == 1) return skipdot || recursive && (flags & FNM_DOTMATCH) == 0;
+            return length == 2 && file.charAt(1) == '.';
         }
 
         return false;
