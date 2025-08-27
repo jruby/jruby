@@ -732,7 +732,7 @@ public class Dir {
         if (schemeStr.startsWith("file:")) return 5;
         if (schemeStr.startsWith("classpath:")) return 10;
         if (schemeStr.startsWith("jar:file:")) {
-            return memchr(path, begin, '!', end - begin) + 1;
+            return memchr(path.getUnsafeBytes(), path.begin(), '!', path.realSize()) + 1;
         }
         return -1;
     }
