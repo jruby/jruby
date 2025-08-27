@@ -67,7 +67,6 @@ public class Dir {
     public final static int FNM_NOMATCH = 1;
     public final static int FNM_ERROR   = 2;
 
-    public final static byte[] EMPTY = NULL_ARRAY; // new byte[0];
     public final static byte[] SLASH = new byte[]{'/'};
     public final static byte[] STAR = new byte[]{'*'};
     public final static byte[] DOUBLE_STAR = new byte[]{'*','*'};
@@ -892,12 +891,11 @@ public class Dir {
                         final byte[] fileBytes = getBytesInUTF8(file);
 
                         if (recursive) {
-                            if ( fnmatch(STAR, 0, 1, fileBytes, 0, fileBytes.length, flags) != 0) {
-                                continue;
-                            }
+                            if ( fnmatch(STAR, 0, 1, fileBytes, 0, fileBytes.length, flags) != 0) continue;
+
                             buf.length(0);
                             buf.append(base);
-                            buf.append( isRoot(base) ? EMPTY : SLASH );
+                            if (!isRoot(base)) buf.append(SLASH);
                             buf.append( getBytesInUTF8(file) );
                             byte [] bufBytes = buf.unsafeBytes();
                             int bufBegin = buf.begin();
@@ -916,7 +914,7 @@ public class Dir {
                         if ( fnmatch(magic, 0, magic.length, fileBytes, 0, fileBytes.length, flags) == 0 ) {
                             buf.length(0);
                             buf.append(base);
-                            buf.append( isRoot(base) ? EMPTY : SLASH );
+                            if (!isRoot(base)) buf.append(SLASH);
                             buf.append( getBytesInUTF8(file) );
                             boolean dirMatch = false;
                             if (slashIndex == end - 1) {
@@ -936,20 +934,14 @@ public class Dir {
                     }
                 } while(false);
 
-                if (!links.isEmpty()) {
-                    for (ByteList link : links) {
-                        if (status == 0) {
-                            String fullPath = new String(link.unsafeBytes(), link.begin(), link.length(), enc.getCharset());
-                            if (JRubyFile.createResource(runtime, cwd, fullPath).isDirectory()) {
-                                final int len = link.getRealSize();
-                                buf.length(0);
-                                buf.append(link);
-                                buf.append(path, slashIndex, end - slashIndex);
-                                status = glob_helper(runtime, cwd, scheme, buf, buf.getBegin() + len, flags, func, arg);
-                            }
-                        }
+                for (ByteList link: links) {
+                    if (status != 0) return status;
+                    String fullPath = new String(link.unsafeBytes(), link.begin(), link.length(), enc.getCharset());
+                    if (JRubyFile.createResource(runtime, cwd, fullPath).isDirectory()) {
+                        var linkSub = link.begin() + link.realSize();
+                        link.append(path, slashIndex, end - slashIndex);
+                        status = glob_helper(runtime, cwd, scheme, link, linkSub, flags, func, arg);
                     }
-                    break mainLoop;
                 }
             }
             ptr = slashIndex;
