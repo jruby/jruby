@@ -72,7 +72,34 @@ jobs:
 
     strategy:
       matrix:
-        target: ['test:mri:core:jit', 'test:mri:extra', 'spec:ruby:fast:jit', 'test:mri:stdlib', 'spec:ruby:slow', 'spec:ruby:debug', 'test:jruby:aot', 'test:slow_suites', 'spec:compiler', 'spec:regression', 'spec:jruby', 'spec:jrubyc', 'spec:profiler']
+        target: ['test:mri:core:jit', 'test:mri:extra', 'spec:ruby:fast:jit', 'test:mri:stdlib', 'spec:ruby:slow', 'spec:ruby:debug', 'test:jruby:aot', 'test:slow_suites', 'spec:compiler', 'spec:regression', 'spec:jrubyc', 'spec:profiler']
+      fail-fast: false
+
+    name: rake ${{ matrix.target }} (Java 8)
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: set up java 8
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '8'
+          cache: 'maven'
+      - name: bootstrap
+        run: mvn -ntp -Pbootstrap clean package
+      - name: bundle install
+        run: bin/jruby --dev -S bundle install
+      - name: rake ${{ matrix.target }}
+        run: bin/jruby -S rake ${{ matrix.target }}
+
+  rake-test-8-multiplatform:
+    runs-on: ${{ matrix.platform }}
+
+    strategy:
+      matrix:
+        target: ['spec:jruby']
+        platform: ['ubuntu-latest', 'macos-latest']
       fail-fast: false
 
     name: rake ${{ matrix.target }} (Java 8)

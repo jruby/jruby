@@ -15,6 +15,7 @@ describe "File#absolute_path" do
 
   # This represents internal paths for files contain within jar files.
   it "should return itself for 'classpath:uri:/'" do
+    skip("jruby/jruby#8981") if RbConfig::CONFIG['host_os']
     ['classpath:uri:/', 'classpath:uri:/home/me'].each do |path|
       expect(File.absolute_path(path)).to eq path
     end
