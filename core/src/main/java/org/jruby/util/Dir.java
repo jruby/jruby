@@ -725,14 +725,11 @@ public class Dir {
         return alloc;
     }
     
-    private static byte[] extractScheme(byte[] path, int begin, int end) {
+    private static int extractScheme(byte[] path, int begin, int end) {
         int colon = findScheme(path, begin, end);
-        if (colon == -1) return null;
+        if (colon == -1) return 0;
         do { colon++; } while (colon < end && path[colon] == '/');
-        colon--;
-        byte[] scheme = new byte[colon - begin];
-        System.arraycopy(path, begin, scheme, 0, colon - begin);
-        return scheme;
+        return colon - 1;
     }
 
     private static byte[] prependScheme(byte[] scheme, byte[] path, int begin, int end) {
@@ -809,40 +806,29 @@ public class Dir {
         int end = begin + path.length();
         final Encoding enc = path.getEncoding();
         byte[] bytes = path.getUnsafeBytes();
-        final byte[] scheme = extractScheme(bytes, begin, end);
-        if (scheme != null) {
-            bytes = Arrays.copyOfRange(bytes, begin + scheme.length, end);
-            begin = 0;
-            end = bytes.length;
-        }
+        final int scheme = extractScheme(bytes, begin, end);
         return glob_helper(runtime, cwd, scheme, bytes, begin, end, enc, sub, flags, func, arg);
     }
 
-    private static int glob_helper(Ruby runtime, String cwd, byte[] scheme, ByteList path, int sub, int flags, GlobFunc<GlobArgs> func, GlobArgs arg) {
+    private static int glob_helper(Ruby runtime, String cwd, int scheme, ByteList path, int sub, int flags, GlobFunc<GlobArgs> func, GlobArgs arg) {
         final int begin = path.getBegin();
         final int end = begin + path.length();
         final Encoding enc = path.getEncoding();
         return glob_helper(runtime, cwd, scheme, path.getUnsafeBytes(), begin, end, enc, sub, flags, func, arg);
     }
 
-    private static int glob_helper(Ruby runtime, String cwd, byte[] scheme,
+    private static int glob_helper(Ruby runtime, String cwd, int scheme,
         byte[] path, int begin, int end, Encoding enc, int sub,
         int flags, GlobFunc<GlobArgs> func, GlobArgs arg) {
         int status = 0;
 
-        int ptr = sub != -1 ? sub : begin;
+        int ptr = sub != -1 ? sub : begin + scheme;
 
         final GlobMagic nonMagic = CASEFOLD_FILESYSTEM ? GlobMagic.PLAIN : GlobMagic.ALPHA;
 
         // No magical characters, so we just process it as if it was a single file.
         if (has_magic(path, ptr, end, flags) != GlobMagic.MAGICAL) {
             if (DOSISH || (flags & FNM_NOESCAPE) == 0) end = remove_backslashes(path, ptr, end);
-
-            if (scheme != null) {
-                path = prependScheme(scheme, path, begin, end);
-                begin = 0; end = path.length;
-            }
-
             if (end <= begin) return 0;
             String pwd = isAbsolutePath(path, begin, end) ? null : cwd;
             return addToResultIfExists(runtime, pwd, path, begin, end, enc, flags, func, arg);
@@ -863,9 +849,6 @@ public class Dir {
                 finalize: do {
                     byte[] base = extract_path(path, begin, ptr);
                     byte[] dir = begin == ptr ? new byte[] { '.' } : base;
-                    if (scheme != null) {
-                        dir = prependScheme(scheme, dir, 0, dir.length);
-                    }
                     byte[] magic = extract_path(path, ptr, segmentEnd);
                     boolean recursive = false;
 
@@ -919,11 +902,6 @@ public class Dir {
                             byte [] bufBytes = buf.unsafeBytes();
                             int bufBegin = buf.begin();
                             int bufLen = buf.length();
-                            if (scheme != null) {
-                                bufBytes = prependScheme(scheme, bufBytes, bufBegin, bufBegin + bufLen);
-                                bufBegin = 0;
-                                bufLen = bufBytes.length;
-                            }
                             FileResource r = JRubyFile.createResource(runtime, cwd, new String(bufBytes, bufBegin, bufLen, enc.getCharset()));
                             if ( !r.isSymLink() && r.isDirectory() && !".".equals(file) && !"..".equals(file) ) {
                                 final int len = buf.getRealSize();
@@ -946,12 +924,6 @@ public class Dir {
                                         new String(buf.unsafeBytes(), buf.begin(), buf.length(), enc.getCharset())).isDirectory();
                             }
                             if ( dirMatch || slashIndex == -1 ) {
-                                if (scheme != null) {
-                                    byte[] bufBytes = buf.bytes();
-                                    buf.length(0);
-                                    buf.append(scheme);
-                                    buf.append(bufBytes);
-                                }
                                 if (dirMatch) buf.append(SLASH);
                                 status = func.call(buf.getUnsafeBytes(), 0, buf.getRealSize(), enc, arg);
                                 if ( status != 0 ) break;
@@ -967,9 +939,7 @@ public class Dir {
                 if (!links.isEmpty()) {
                     for (ByteList link : links) {
                         if (status == 0) {
-                            String fullPath = scheme != null ?
-                                    new String(prependScheme(scheme, link.unsafeBytes(), link.begin(), link.length()), enc.getCharset()) :
-                                    new String(link.unsafeBytes(), link.begin(), link.length(), enc.getCharset());
+                            String fullPath = new String(link.unsafeBytes(), link.begin(), link.length(), enc.getCharset());
                             if (JRubyFile.createResource(runtime, cwd, fullPath).isDirectory()) {
                                 final int len = link.getRealSize();
                                 buf.length(0);
