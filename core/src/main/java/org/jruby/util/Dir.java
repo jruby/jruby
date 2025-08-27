@@ -840,6 +840,7 @@ public class Dir {
 
         final GlobMagic nonMagic = CASEFOLD_FILESYSTEM ? GlobMagic.PLAIN : GlobMagic.ALPHA;
 
+        // This section only uses path+scheme
         if ( has_magic(path, ptr, end, flags).compareTo(nonMagic) <= 0 ) {
             if (DOSISH || (flags & FNM_NOESCAPE) == 0) {
                 end = remove_backslashes(path, ptr, end);
@@ -883,35 +884,33 @@ public class Dir {
                     byte[] magic = extract_path(path, ptr, segmentEnd);
                     boolean recursive = false;
 
-                    resource = JRubyFile.createResource(runtime, cwd, new String(dir, 0, dir.length, enc.getCharset()));
-                    if ( resource.isDirectory() ) {
-                        if ( slashIndex != -1 && Arrays.equals(magic, DOUBLE_STAR) ) {
-                            final int lengthOfBase = base.length;
-                            recursive = true;
-                            buf.length(0);
-                            buf.append(base);
-                            int nextStartIndex;
-                            int indexOfSlash = slashIndex;
-                            do {
-                                nextStartIndex = indexOfSlash + 1;
-                                indexOfSlash = indexOf(path, nextStartIndex, end, (byte) '/');
-                                int nextEndIndex = indexOfSlash == -1 ? end : indexOfSlash;
-                                magic = extract_path(path, nextStartIndex, nextEndIndex);
-                            } while(Arrays.equals(magic, DOUBLE_STAR) && indexOfSlash != -1);
+                    resource = JRubyFile.createResource(runtime, cwd, new String(dir, enc.getCharset()));
+                    if (!resource.isDirectory()) break mainLoop;
 
-                            int remainingPathStartIndex;
-                            if(Arrays.equals(magic, DOUBLE_STAR)) {
-                                remainingPathStartIndex = nextStartIndex;
-                            } else {
-                                remainingPathStartIndex = nextStartIndex - 1;
-                            }
-                            remainingPathStartIndex = lengthOfBase > 0 ? remainingPathStartIndex : remainingPathStartIndex + 1;
-                            buf.append(path, remainingPathStartIndex, end - remainingPathStartIndex);
-                            status = glob_helper(runtime, cwd, scheme, buf, lengthOfBase, flags, func, arg);
-                            if ( status != 0 ) break finalize;
+                    if (slashIndex != -1 && Arrays.equals(magic, DOUBLE_STAR)) {
+                        final int lengthOfBase = base.length;
+                        recursive = true;
+                        buf.length(0);
+                        buf.append(base);
+                        int nextStartIndex;
+                        int indexOfSlash = slashIndex;
+                        do {
+                            nextStartIndex = indexOfSlash + 1;
+                            indexOfSlash = indexOf(path, nextStartIndex, end, (byte) '/');
+                            int nextEndIndex = indexOfSlash == -1 ? end : indexOfSlash;
+                            magic = extract_path(path, nextStartIndex, nextEndIndex);
+                        } while(Arrays.equals(magic, DOUBLE_STAR) && indexOfSlash != -1);
+
+                        int remainingPathStartIndex;
+                        if(Arrays.equals(magic, DOUBLE_STAR)) {
+                            remainingPathStartIndex = nextStartIndex;
+                        } else {
+                            remainingPathStartIndex = nextStartIndex - 1;
                         }
-                    } else {
-                        break mainLoop;
+                        remainingPathStartIndex = lengthOfBase > 0 ? remainingPathStartIndex : remainingPathStartIndex + 1;
+                        buf.append(path, remainingPathStartIndex, end - remainingPathStartIndex);
+                        status = glob_helper(runtime, cwd, scheme, buf, lengthOfBase, flags, func, arg);
+                        if ( status != 0 ) break finalize;
                     }
 
                     boolean skipdot = (flags & FNM_GLOB_SKIPDOT) != 0;
@@ -990,7 +989,7 @@ public class Dir {
                     }
                 } while(false);
 
-                if ( links.size() > 0 ) {
+                if (!links.isEmpty()) {
                     for ( DirGlobber globber : links ) {
                         final ByteList link = globber.link;
                         if ( status == 0 ) {
