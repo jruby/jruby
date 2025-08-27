@@ -841,17 +841,8 @@ public class Dir {
         final GlobMagic nonMagic = CASEFOLD_FILESYSTEM ? GlobMagic.PLAIN : GlobMagic.ALPHA;
 
         if ( has_magic(path, ptr, end, flags).compareTo(nonMagic) <= 0 ) {
-            if ( DOSISH || (flags & FNM_NOESCAPE) == 0 ) {
-                if ( sub != -1 ) { // can modify path (our internal buf[])
-                    end = remove_backslashes(path, sub, end);
-                }
-                else {
-                    final int len = end - begin;
-                    final byte[] newPath = new byte[len];
-                    System.arraycopy(path, begin, newPath, 0, len);
-                    begin = 0; end = remove_backslashes(newPath, 0, len);
-                    path = newPath;
-                }
+            if (DOSISH || (flags & FNM_NOESCAPE) == 0) {
+                end = remove_backslashes(path, ptr, end);
             }
 
             if (scheme != null) {
