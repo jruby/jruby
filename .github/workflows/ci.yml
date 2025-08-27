@@ -15,7 +15,7 @@ jobs:
 
     strategy:
       matrix:
-        target: ['test:jruby:int', 'spec:ruby:fast', 'spec:ji', 'spec:ffi', 'test:mri:core:jit', 'test:mri:extra', 'spec:ruby:fast:jit', 'test:mri:stdlib', 'spec:ruby:slow', 'spec:ruby:debug', 'test:jruby:aot', 'test:slow_suites', 'spec:compiler', 'spec:regression', 'spec:jruby', 'spec:jrubyc', 'spec:profiler']
+        target: ['test:jruby:int', 'spec:ruby:fast', 'spec:ji', 'spec:ffi', 'test:mri:core:jit', 'test:mri:extra', 'spec:ruby:fast:jit', 'test:mri:stdlib', 'spec:ruby:slow', 'spec:ruby:debug', 'test:jruby:aot', 'test:slow_suites', 'spec:compiler', 'spec:regression', 'spec:jrubyc', 'spec:profiler']
         java-version: ['21', '23']
       fail-fast: false
 
@@ -26,6 +26,34 @@ jobs:
         uses: actions/checkout@v3
       - name: remove default java except 21
         run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
+      - name: set up java ${{ matrix.java-version }}
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: ${{ matrix.java-version }}
+          cache: 'maven'
+      - name: bootstrap
+        run: mvn -ntp -Pbootstrap clean package
+      - name: bundle install
+        run: bin/jruby --dev -S bundle install
+      - name: rake ${{ matrix.target }}
+        run: bin/jruby -S rake ${{ matrix.target }}
+
+  rake-test-multiplatform:
+    runs-on: ${{ matrix.platform }}
+
+    strategy:
+      matrix:
+        target: ['spec:jruby']
+        platform: ['ubuntu-latest', 'macos-latest']
+        java-version: ['21', '23']
+      fail-fast: false
+
+    name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }})
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v3
         with:

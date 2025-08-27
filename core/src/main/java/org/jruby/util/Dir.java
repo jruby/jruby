@@ -43,6 +43,7 @@ import static org.jruby.api.Convert.asJavaString;
 import static org.jruby.util.ByteList.memcmp;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 import static org.jruby.util.StringSupport.codePoint;
+import static org.jruby.util.StringSupport.memchr;
 
 /**
  * This class exists as a counterpart to the dir.c file in
@@ -730,6 +731,9 @@ public class Dir {
         if (schemeStr.startsWith("uri:")) return 4;
         if (schemeStr.startsWith("file:")) return 5;
         if (schemeStr.startsWith("classpath:")) return 10;
+        if (schemeStr.startsWith("jar:file:")) {
+            return memchr(path, begin, '!', end - begin) + 1;
+        }
         return -1;
     }
 
