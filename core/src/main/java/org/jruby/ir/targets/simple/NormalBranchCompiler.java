@@ -1,6 +1,7 @@
 package org.jruby.ir.targets.simple;
 
 import org.jruby.RubyArray;
+import org.jruby.api.Error;
 import org.jruby.ir.targets.BranchCompiler;
 import org.jruby.ir.targets.IRBytecodeAdapter;
 import org.jruby.ir.targets.indy.Bootstrap;
@@ -69,5 +70,11 @@ public class NormalBranchCompiler implements BranchCompiler {
         compiler.adapter.ldc(rest);
         compiler.adapter.ldc(restKey);
         compiler.adapter.invokestatic(p(CheckArityBootstrap.class), "checkAritySpecificArgs", sig(void.class, params(ThreadContext.class, StaticScope.class, Object[].class, Block.class, int.class, int.class, boolean.class, int.class)));
+    }
+
+    public void raiseTypeError(String message) {
+        compiler.adapter.ldc(message);
+        compiler.adapter.invokestatic(p(Error.class), "typeError", sig(Throwable.class, ThreadContext.class, String.class));
+        compiler.adapter.athrow();
     }
 }

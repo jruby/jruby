@@ -2066,6 +2066,12 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void RaiseTypeErrorInstr(RaiseTypeErrorInstr instr) {
+        jvmMethod().loadContext();
+        jvmMethod().getBranchCompiler().raiseTypeError(instr.getMessage());
+    }
+
+    @Override
     public void PushMethodFrameInstr(PushMethodFrameInstr pushframeinstr) {
         jvmMethod().loadContext();
         jvmMethod().loadFrameClass();
