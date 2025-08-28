@@ -895,13 +895,14 @@ public class Dir {
                 } while (false);
 
                 for (ByteList link: links) {
-                    if (status != 0) return status;
+                    if (status != 0) break;
                     if (JRubyFile.createResource(runtime, cwd, asJavaString(link, enc)).isDirectory()) {
                         var linkSub = link.begin() + link.realSize();
                         link.append(path, slashIndex, end - slashIndex);
                         status = glob_helper(runtime, cwd, scheme, link, linkSub, flags, func, arg);
                     }
                 }
+                break;
             }
             ptr = slashIndex;
         }
