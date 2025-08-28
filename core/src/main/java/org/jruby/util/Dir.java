@@ -784,7 +784,6 @@ public class Dir {
         final int begin = p.getBegin();
         int end = begin + p.length();
         final Encoding enc = p.getEncoding();
-        int status = 0;
 
         int ptr = sub != -1 ? sub : begin + scheme;
 
@@ -799,9 +798,7 @@ public class Dir {
         }
 
         final ArrayList<ByteList> links = new ArrayList<>();
-
-        ByteList buf = new ByteList(20);
-        buf.setEncoding(enc);
+        int status = 0;
 
         mainLoop: while(ptr != -1 && status == 0) {
             if ( path[ptr] == '/' ) ptr++;
@@ -822,8 +819,7 @@ public class Dir {
                     if (slashIndex != -1 && Arrays.equals(magic, DOUBLE_STAR)) {
                         final int lengthOfBase = base.length;
                         recursive = true;
-                        buf.length(0);
-                        buf.append(base);
+                        ByteList buf = createPath(base, null, enc);
                         int nextStartIndex;
                         int indexOfSlash = slashIndex;
                         do {
@@ -854,14 +850,11 @@ public class Dir {
                         if (isIgnorableDotOrDotDot(file, recursive, flags, skipdot)) continue;
 
                         final byte[] fileBytes = getBytesInUTF8(file);
+                        ByteList buf = createPath(base, fileBytes, enc);
 
-                        if (recursive) {
+                        if (recursive) { // processing subdirs after having found a '**' higher in glob spec
                             if (fnmatch(STAR, 0, 1, fileBytes, 0, fileBytes.length, flags) != 0) continue;
 
-                            buf.length(0);
-                            buf.append(base);
-                            if (!isRoot(base)) buf.append(SLASH);
-                            buf.append(getBytesInUTF8(file));
                             FileResource r = JRubyFile.createResource(runtime, cwd, asJavaString(buf, enc));
                             if (!r.isSymLink() && r.isDirectory() && !".".equals(file) && !"..".equals(file)) {
                                 final int len = buf.getRealSize();
@@ -871,25 +864,16 @@ public class Dir {
                                 status = glob_helper(runtime, cwd, scheme, buf, buf.getBegin() + len, flags, func, arg);
                                 if (status != 0) break;
                             }
-                            continue;
-                        }
-                        if (fnmatch(magic, 0, magic.length, fileBytes, 0, fileBytes.length, flags) == 0) {
-                            buf.length(0);
-                            buf.append(base);
-                            if (!isRoot(base)) buf.append(SLASH);
-                            buf.append(getBytesInUTF8(file));
-                            boolean dirMatch = slashIndex == end - 1 ?
-                                    JRubyFile.createResource(runtime, cwd, asJavaString(buf, enc)).isDirectory() :
-                                    false;
-                            if (dirMatch || slashIndex == -1) {
+                        } else if (fnmatch(magic, 0, magic.length, fileBytes, 0, fileBytes.length, flags) == 0) {
+                            boolean dirMatch = slashIndex == end - 1 &&
+                                    JRubyFile.createResource(runtime, cwd, asJavaString(buf, enc)).isDirectory();
+                            if (slashIndex == -1 || dirMatch) { // found file or dir that ends in '/'
                                 if (dirMatch) buf.append(SLASH);
                                 status = func.call(buf, arg);
                                 if (status != 0) break;
-                                continue;
+                            } else {                            // more subdirs to process
+                                links.add(buf);
                             }
-                            links.add(buf);
-                            buf = new ByteList(20);
-                            buf.setEncoding(enc);
                         }
                     }
                 } while (false);
@@ -908,6 +892,17 @@ public class Dir {
         }
 
         return status;
+    }
+
+    private static ByteList createPath(byte[] base, byte[] segment, Encoding encoding) {
+        ByteList buf = new ByteList(20);
+        buf.setEncoding(encoding);
+        buf.append(base);
+        if (segment != null) {
+            if (!isRoot(base)) buf.append(SLASH);
+            buf.append(segment);
+        }
+        return buf;
     }
 
     private static boolean isIgnorableDotOrDotDot(String file, boolean recursive, int flags, boolean skipdot) {
