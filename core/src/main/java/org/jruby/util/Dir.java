@@ -937,18 +937,11 @@ public class Dir {
                     }
 
                     for (String file: files(resource)) {
-                        byte[] fileBytes = getBytesInUTF8(file);
-                        ByteList buf = createPath(base, getBytesInUTF8(file), enc);
+                        if (isIgnorableDotOrDotDot(file, recursive, flags, skipdot)) continue;
 
-                        if (file.charAt(0) == '.') {
-                            int length = file.length();
-                            if (length == 1) {
-                                if (recursive && (flags & FNM_DOTMATCH) == 0) continue;
-                                if (skipdot) continue;
-                            } else if (length == 2 && file.charAt(1) == '.') {
-                                continue;
-                            }
-                        }
+                        byte[] fileBytes = getBytesInUTF8(file);
+                        ByteList buf = createPath(base, fileBytes, enc);
+
                         if (recursive) {
                             if ( fnmatch(STAR, 0, 1, fileBytes, 0, fileBytes.length, flags) != 0) continue;
 
@@ -1006,6 +999,16 @@ public class Dir {
         }
 
         return status;
+    }
+
+    private static boolean isIgnorableDotOrDotDot(String file, boolean recursive, int flags, boolean skipdot) {
+        if (file.charAt(0) == '.') {
+            int length = file.length();
+            if (length == 1) return skipdot || recursive && (flags & FNM_DOTMATCH) == 0;
+            return length == 2 && file.charAt(1) == '.';
+        }
+
+        return false;
     }
 
     private static ByteList createPath(byte[] base, byte[] segment, Encoding encoding) {
