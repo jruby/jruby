@@ -858,6 +858,8 @@ public class Dir {
                         int remainingPathStartIndex = Arrays.equals(magic, DOUBLE_STAR) ? nextStartIndex : nextStartIndex - 1;
                         remainingPathStartIndex = base.length > 0 ? remainingPathStartIndex : remainingPathStartIndex + 1;
                         buf.append(path, remainingPathStartIndex, end - remainingPathStartIndex);
+                        // Not in MRI but nested ** should not include '.' unless it explicitly asks for them.
+                        if ((flags & FNM_DOTMATCH) == 0) flags |= FNM_GLOB_SKIPDOT;
                         status = glob_helper(runtime, cwd, scheme, buf, base.length, flags, func, arg);
                         if (status != 0) break;
                     }
