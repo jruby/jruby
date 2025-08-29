@@ -1016,7 +1016,7 @@ public class Dir {
                         status = glob_helper(runtime, cwd, scheme, buf, buf.getBegin() + len, flags, func, arg);
                     }
                 }
-                break;
+                break mainLoop;
             }
             ptr = SLASH_INDEX;
         }
