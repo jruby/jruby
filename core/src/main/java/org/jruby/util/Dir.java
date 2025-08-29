@@ -728,13 +728,6 @@ public class Dir {
         return alloc;
     }
 
-    private static byte[] extract_elem(byte[] bytes, int begin, int end) {
-        int elementEnd = indexOf(bytes, begin, end, (byte)'/');
-        if (elementEnd == -1) elementEnd = end;
-
-        return extract_path(bytes, begin, elementEnd);
-    }
-
     private static byte[] extractScheme(byte[] path, int begin, int end) {
         int colon = findScheme(path, begin, end);
         if (colon == -1) return null;
@@ -868,36 +861,36 @@ public class Dir {
         final ArrayList<ByteList> links = new ArrayList<>();
         int status = 0;
         mainLoop: while(ptr != -1 && status == 0) {
-            if ( path[ptr] == '/' ) ptr++;
+            if (path[ptr] == '/') ptr++;
 
-            final int SLASH_INDEX = indexOf(path, ptr, end, (byte) '/');
-            final GlobMagic magical = has_magic(path, ptr, SLASH_INDEX == -1 ? end : SLASH_INDEX, flags);
+            int slashIndex = indexOf(path, ptr, end, (byte) '/');
+            int segmentEnd = slashIndex == -1 ? end : slashIndex;
+            final GlobMagic magical = has_magic(path, ptr, segmentEnd, flags);
             if (magical.compareTo(nonMagic) > 0) {
                 finalize: do {
                     byte[] base = extract_path(path, begin, ptr);
                     byte[] dir = begin == ptr ? new byte[] { '.' } : base;
-                    if (scheme != null) {
-                        dir = prependScheme(scheme, dir, 0, dir.length);
-                    }
-                    byte[] magic = extract_elem(path, ptr, end);
+                    if (scheme != null) dir = prependScheme(scheme, dir, 0, dir.length);
+                    byte[] magic = extract_path(path, ptr, segmentEnd);
                     boolean recursive = false;
 
                     FileResource resource = JRubyFile.createResource(runtime, cwd, new String(dir, enc.getCharset()));
                     if (resource.isDirectory()) {
-                        if ( SLASH_INDEX != -1 && Arrays.equals(magic, DOUBLE_STAR) ) {
+                        if ( slashIndex != -1 && Arrays.equals(magic, DOUBLE_STAR) ) {
                             final int lengthOfBase = base.length;
                             recursive = true;
                             ByteList buf = createPath(base, null, enc);
                             int nextStartIndex;
-                            int indexOfSlash = SLASH_INDEX;
+                            int indexOfSlash = slashIndex;
                             do {
                                 nextStartIndex = indexOfSlash + 1;
                                 indexOfSlash = indexOf(path, nextStartIndex, end, (byte) '/');
-                                magic = extract_elem(path, nextStartIndex, end);
+                                int nextEndIndex = indexOfSlash == -1 ? end : indexOfSlash;
+                                magic = extract_path(path, nextStartIndex, nextEndIndex);
                             } while(Arrays.equals(magic, DOUBLE_STAR) && indexOfSlash != -1);
 
                             int remainingPathStartIndex;
-                            if(Arrays.equals(magic, DOUBLE_STAR)) {
+                            if (Arrays.equals(magic, DOUBLE_STAR)) {
                                 remainingPathStartIndex = nextStartIndex;
                             } else {
                                 remainingPathStartIndex = nextStartIndex - 1;
@@ -931,14 +924,14 @@ public class Dir {
                                 final int len = buf.getRealSize();
                                 buf.append(SLASH);
                                 buf.append(DOUBLE_STAR);
-                                buf.append(path, SLASH_INDEX, end - SLASH_INDEX);
+                                buf.append(path, slashIndex, end - slashIndex);
                                 status = glob_helper(runtime, cwd, scheme, buf, buf.getBegin() + len, flags, func, arg);
                                 if ( status != 0 ) break;
                             }
                         } else if (fnmatch(magic, 0, magic.length, fileBytes, 0, fileBytes.length, flags) == 0) {
-                            boolean dirMatch = SLASH_INDEX == end - 1 &&
+                            boolean dirMatch = slashIndex == end - 1 &&
                                     JRubyFile.createResource(runtime, cwd, asJavaString(buf, enc)).isDirectory();
-                            if ( dirMatch || SLASH_INDEX == -1 ) {
+                            if ( dirMatch || slashIndex == -1 ) {
                                 if (scheme != null) {
                                     byte[] bufBytes = buf.bytes();
                                     buf.length(0);
@@ -964,14 +957,14 @@ public class Dir {
                         String fullPath = new String(asJavaString(scheme != null ? prepend(link, scheme) : link, enc));
                         if (JRubyFile.createResource(runtime, cwd, fullPath).isDirectory()) {
                             int linkSub = link.begin() + link.realSize();
-                            link.append(path, SLASH_INDEX, end - SLASH_INDEX);
+                            link.append(path, slashIndex, end - slashIndex);
                             status = glob_helper(runtime, cwd, scheme, link, linkSub, flags, func, arg);
                         }
                     }
                     break;
                 }
             }
-            ptr = SLASH_INDEX;
+            ptr = slashIndex;
         }
 
         return status;
