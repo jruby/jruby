@@ -931,21 +931,14 @@ public class Dir {
                         } else if (fnmatch(magic, 0, magic.length, fileBytes, 0, fileBytes.length, flags) == 0) {
                             boolean dirMatch = slashIndex == end - 1 &&
                                     JRubyFile.createResource(runtime, cwd, asJavaString(buf, enc)).isDirectory();
-                            if ( dirMatch || slashIndex == -1 ) {
-                                if (scheme != null) {
-                                    byte[] bufBytes = buf.bytes();
-                                    buf.length(0);
-                                    buf.append(scheme);
-                                    buf.append(bufBytes);
-                                }
+                            if (slashIndex == -1 || dirMatch) {  // found file or dir that ends in '/'
+                                if (scheme != null) buf = prepend(buf, scheme);
                                 if (dirMatch) buf.append(SLASH);
-                                status = func.call(buf.getUnsafeBytes(), 0, buf.getRealSize(), enc, arg);
-                                if ( status != 0 ) break;
-                                continue;
+                                status = func.call(buf.getUnsafeBytes(), buf.begin(), buf.getRealSize(), enc, arg);
+                                if (status != 0) break;
+                            } else {                             // more subdirs to process
+                                links.add(buf);
                             }
-                            links.add(buf);
-                            buf = new ByteList(20);
-                            buf.setEncoding(enc);
                         }
                     }
                 } while(false);
