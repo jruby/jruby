@@ -804,7 +804,8 @@ public class Dir {
         return c == '.' && name.charAt(2) == '/';
     }
 
-    private static int addToResultIfExists(Ruby runtime, String cwd, byte[] bytes, int begin, int end, Encoding enc, int flags, GlobFunc<GlobArgs> func, GlobArgs arg) {
+    private static int addToResultIfExists(Ruby runtime, String cwd, byte[] bytes, int begin, int end, Encoding enc,
+                                           GlobFunc<GlobArgs> func, GlobArgs arg) {
         final String fileName = new String(bytes, begin, end - begin, enc.getCharset());
 
         // FIXME: Ultimately JRubyFile.createResource should do this but all 1.7.x is only selectively honoring raw
@@ -845,47 +846,27 @@ public class Dir {
         return glob_helper(runtime, cwd, scheme, path.getUnsafeBytes(), begin, end, enc, sub, flags, func, arg);
     }
 
-    private static int glob_helper(Ruby runtime, String cwd, byte[] scheme,
-        byte[] path, int begin, int end, Encoding enc, int sub,
-        int flags, GlobFunc<GlobArgs> func, GlobArgs arg) {
-        int status = 0;
-
+    private static int glob_helper(Ruby runtime, String cwd, byte[] scheme, byte[] path, int begin, int end,
+                                   Encoding enc, int sub, int flags, GlobFunc<GlobArgs> func, GlobArgs arg) {
         int ptr = sub != -1 ? sub : begin;
-
-        final GlobMagic nonMagic = CASEFOLD_FILESYSTEM ? GlobMagic.PLAIN : GlobMagic.ALPHA;
+        GlobMagic nonMagic = CASEFOLD_FILESYSTEM ? GlobMagic.PLAIN : GlobMagic.ALPHA;
 
         if ( has_magic(path, ptr, end, flags).compareTo(nonMagic) <= 0 ) {
-            if ( DOSISH || (flags & FNM_NOESCAPE) == 0 ) {
-                if ( sub != -1 ) { // can modify path (our internal buf[])
-                    end = remove_backslashes(path, sub, end);
-                }
-                else {
-                    final int len = end - begin;
-                    final byte[] newPath = new byte[len];
-                    System.arraycopy(path, begin, newPath, 0, len);
-                    begin = 0; end = remove_backslashes(newPath, 0, len);
-                    path = newPath;
-                }
-            }
+            if (DOSISH || (flags & FNM_NOESCAPE) == 0) end = remove_backslashes(path, ptr, end);
+            if (end <= begin) return 0;
 
             if (scheme != null) {
                 path = prependScheme(scheme, path, begin, end);
-                begin = 0; end = path.length;
+                begin = 0;
+                end = path.length;
             }
 
-            if (end > begin) {
-                if ( isAbsolutePath(path, begin, end) ) {
-                    status = addToResultIfExists(runtime, null, path, begin, end, enc, flags, func, arg);
-                } else {
-                    status = addToResultIfExists(runtime, cwd, path, begin, end, enc, flags, func, arg);
-                }
-            }
-
-            return status;
+            String pwd = isAbsolutePath(path, begin, end) ? null : cwd;
+            return addToResultIfExists(runtime, pwd, path, begin, end, enc, func, arg);
         }
 
         final ArrayList<ByteList> links = new ArrayList<>();
-
+        int status = 0;
         mainLoop: while(ptr != -1 && status == 0) {
             if ( path[ptr] == '/' ) ptr++;
 
