@@ -885,7 +885,6 @@ public class Dir {
         }
 
         final ArrayList<ByteList> links = new ArrayList<>();
-        FileResource resource;
 
         mainLoop: while(ptr != -1 && status == 0) {
             if ( path[ptr] == '/' ) ptr++;
@@ -902,8 +901,8 @@ public class Dir {
                     byte[] magic = extract_elem(path, ptr, end);
                     boolean recursive = false;
 
-                    resource = JRubyFile.createResource(runtime, cwd, new String(dir, enc.getCharset()));
-                    if ( resource.isDirectory() ) {
+                    FileResource resource = JRubyFile.createResource(runtime, cwd, new String(dir, enc.getCharset()));
+                    if (resource.isDirectory()) {
                         if ( SLASH_INDEX != -1 && Arrays.equals(magic, DOUBLE_STAR) ) {
                             final int lengthOfBase = base.length;
                             recursive = true;
@@ -946,8 +945,8 @@ public class Dir {
                             if ( fnmatch(STAR, 0, 1, fileBytes, 0, fileBytes.length, flags) != 0) continue;
 
                             ByteList resBuf = scheme != null ?  prepend(buf, scheme) : buf;
-                            resource = JRubyFile.createResource(runtime, cwd, asJavaString(resBuf, enc));
-                            if ( !resource.isSymLink() && resource.isDirectory() && !".".equals(file) && !"..".equals(file) ) {
+                            FileResource r = JRubyFile.createResource(runtime, cwd, asJavaString(resBuf, enc));
+                            if (!r.isSymLink() && r.isDirectory() && !".".equals(file) && !"..".equals(file)) {
                                 final int len = buf.getRealSize();
                                 buf.append(SLASH);
                                 buf.append(DOUBLE_STAR);
@@ -956,11 +955,8 @@ public class Dir {
                                 if ( status != 0 ) break;
                             }
                         } else if (fnmatch(magic, 0, magic.length, fileBytes, 0, fileBytes.length, flags) == 0) {
-                            boolean dirMatch = false;
-                            if (SLASH_INDEX == end - 1) {
-                                resource = JRubyFile.createResource(runtime, cwd, asJavaString(buf, enc));
-                                dirMatch = resource.isDirectory();
-                            }
+                            boolean dirMatch = SLASH_INDEX == end - 1 &&
+                                    JRubyFile.createResource(runtime, cwd, asJavaString(buf, enc)).isDirectory();
                             if ( dirMatch || SLASH_INDEX == -1 ) {
                                 if (scheme != null) {
                                     byte[] bufBytes = buf.bytes();
@@ -985,8 +981,7 @@ public class Dir {
                         if (status != 0) break;
 
                         String fullPath = new String(asJavaString(scheme != null ? prepend(link, scheme) : link, enc));
-                        resource = JRubyFile.createResource(runtime, cwd, fullPath);
-                        if ( resource.isDirectory() ) {
+                        if (JRubyFile.createResource(runtime, cwd, fullPath).isDirectory()) {
                             int linkSub = link.begin() + link.realSize();
                             link.append(path, SLASH_INDEX, end - SLASH_INDEX);
                             status = glob_helper(runtime, cwd, scheme, link, linkSub, flags, func, arg);
