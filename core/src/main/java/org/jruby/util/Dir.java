@@ -746,7 +746,7 @@ public class Dir {
     }
 
     private static ByteList prepend(ByteList buf, byte[] prefix) {
-        ByteList newbuf = new ByteList(prefix.length + buf.length());
+        ByteList newbuf = new ByteList(prefix);
         newbuf.setEncoding(buf.getEncoding());
         newbuf.append(buf);
         return newbuf;
@@ -963,8 +963,8 @@ public class Dir {
                             buf.append(base);
                             buf.append( isRoot(base) ? EMPTY : SLASH );
                             buf.append( getBytesInUTF8(file) );
-                            if (scheme != null) buf = prepend(buf, scheme);
-                            resource = JRubyFile.createResource(runtime, cwd, asJavaString(buf, enc));
+                            ByteList resBuf = scheme != null ?  prepend(buf, scheme) : buf;
+                            resource = JRubyFile.createResource(runtime, cwd, asJavaString(resBuf, enc));
                             if ( !resource.isSymLink() && resource.isDirectory() && !".".equals(file) && !"..".equals(file) ) {
                                 final int len = buf.getRealSize();
                                 buf.append(SLASH);
