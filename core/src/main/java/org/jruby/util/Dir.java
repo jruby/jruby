@@ -885,9 +885,6 @@ public class Dir {
         }
 
         final ArrayList<ByteList> links = new ArrayList<>();
-
-        ByteList buf = new ByteList(20);
-        buf.setEncoding(enc);
         FileResource resource;
 
         mainLoop: while(ptr != -1 && status == 0) {
@@ -910,8 +907,7 @@ public class Dir {
                         if ( SLASH_INDEX != -1 && Arrays.equals(magic, DOUBLE_STAR) ) {
                             final int lengthOfBase = base.length;
                             recursive = true;
-                            buf.length(0);
-                            buf.append(base);
+                            ByteList buf = createPath(base, null, enc);
                             int nextStartIndex;
                             int indexOfSlash = SLASH_INDEX;
                             do {
@@ -959,10 +955,8 @@ public class Dir {
                             if ( fnmatch(STAR, 0, 1, fileBytes, 0, fileBytes.length, flags) != 0) {
                                 continue;
                             }
-                            buf.length(0);
-                            buf.append(base);
-                            buf.append( isRoot(base) ? EMPTY : SLASH );
-                            buf.append( getBytesInUTF8(file) );
+
+                            ByteList buf = createPath(base, getBytesInUTF8(file), enc);
                             ByteList resBuf = scheme != null ?  prepend(buf, scheme) : buf;
                             resource = JRubyFile.createResource(runtime, cwd, asJavaString(resBuf, enc));
                             if ( !resource.isSymLink() && resource.isDirectory() && !".".equals(file) && !"..".equals(file) ) {
@@ -976,10 +970,7 @@ public class Dir {
                             continue;
                         }
                         if ( fnmatch(magic, 0, magic.length, fileBytes, 0, fileBytes.length, flags) == 0 ) {
-                            buf.length(0);
-                            buf.append(base);
-                            buf.append( isRoot(base) ? EMPTY : SLASH );
-                            buf.append( getBytesInUTF8(file) );
+                            ByteList buf = createPath(base, getBytesInUTF8(file), enc);
                             boolean dirMatch = false;
                             if (SLASH_INDEX == end - 1) {
                                 resource = JRubyFile.createResource(runtime, cwd, asJavaString(buf, enc));
@@ -1011,11 +1002,9 @@ public class Dir {
                         String fullPath = new String(asJavaString(scheme != null ? prepend(link, scheme) : link, enc));
                         resource = JRubyFile.createResource(runtime, cwd, fullPath);
                         if ( resource.isDirectory() ) {
-                            final int len = link.getRealSize();
-                            buf.length(0);
-                            buf.append(link);
-                            buf.append(path, SLASH_INDEX, end - SLASH_INDEX);
-                            status = glob_helper(runtime, cwd, scheme, buf, buf.getBegin() + len, flags, func, arg);
+                            int linkSub = link.begin() + link.realSize();
+                            link.append(path, SLASH_INDEX, end - SLASH_INDEX);
+                            status = glob_helper(runtime, cwd, scheme, link, linkSub, flags, func, arg);
                         }
                     }
                     break;
@@ -1025,6 +1014,17 @@ public class Dir {
         }
 
         return status;
+    }
+
+    private static ByteList createPath(byte[] base, byte[] segment, Encoding encoding) {
+        ByteList buf = new ByteList(20);
+        buf.setEncoding(encoding);
+        buf.append(base);
+        if (segment != null) {
+            if (!isRoot(base)) buf.append(SLASH);
+            buf.append(segment);
+        }
+        return buf;
     }
 
     private static byte[] getBytesInUTF8(final String str) {
