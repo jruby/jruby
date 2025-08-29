@@ -602,7 +602,7 @@ public abstract class RubyParserBase {
             yyerror("keyword arg given in index");
         }
         if (block != null) {
-            yyerror("block arg given in index");
+            yyerror("block arg given in index assignment");
         }
     }
 
@@ -1252,6 +1252,8 @@ public abstract class RubyParserBase {
 
     public Node new_ary_op_assign(Node receiverNode, Node argsNode, ByteList operatorName, Node valueNode) {
         int line = lexer.tokline;
+
+        aryset_check(argsNode);
 
         // We extract BlockPass from tree and insert it as a block node value (MRI wraps it around the args)
         Node blockNode = null;
