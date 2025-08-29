@@ -1011,18 +1011,17 @@ public class Dir {
                 if ( links.size() > 0 ) {
                     for ( DirGlobber globber : links ) {
                         final ByteList link = globber.link;
-                        if ( status == 0 ) {
-                            String fullPath = scheme != null ?
-                                    new String(prependScheme(scheme, link.unsafeBytes(), link.begin(), link.length()), enc.getCharset()) :
-                                    new String(link.unsafeBytes(), link.begin(), link.length(), enc.getCharset());
-                            resource = JRubyFile.createResource(runtime, cwd, fullPath);
-                            if ( resource.isDirectory() ) {
-                                final int len = link.getRealSize();
-                                buf.length(0);
-                                buf.append(link);
-                                buf.append(path, SLASH_INDEX, end - SLASH_INDEX);
-                                status = glob_helper(runtime, cwd, scheme, buf, buf.getBegin() + len, flags, func, arg);
-                            }
+                        if ( status != 0 ) break;
+                        String fullPath = scheme != null ?
+                                new String(prependScheme(scheme, link.unsafeBytes(), link.begin(), link.length()), enc.getCharset()) :
+                                new String(link.unsafeBytes(), link.begin(), link.length(), enc.getCharset());
+                        resource = JRubyFile.createResource(runtime, cwd, fullPath);
+                        if ( resource.isDirectory() ) {
+                            final int len = link.getRealSize();
+                            buf.length(0);
+                            buf.append(link);
+                            buf.append(path, SLASH_INDEX, end - SLASH_INDEX);
+                            status = glob_helper(runtime, cwd, scheme, buf, buf.getBegin() + len, flags, func, arg);
                         }
                     }
                     break mainLoop;
