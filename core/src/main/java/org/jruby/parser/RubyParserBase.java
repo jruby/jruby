@@ -602,7 +602,7 @@ public abstract class RubyParserBase {
             yyerror("keyword arg given in index");
         }
         if (block != null) {
-            yyerror("block arg given in index");
+            yyerror("block arg given in index assignment");
         }
     }
 
