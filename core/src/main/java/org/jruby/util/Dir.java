@@ -795,26 +795,17 @@ public class Dir {
     private static int glob_helper(Ruby runtime, String cwd, ByteList path, int flags, GlobArgs arg) {
         int begin = path.getBegin();
         int end = begin + path.length();
-        final Encoding enc = path.getEncoding();
         byte[] bytes = path.getUnsafeBytes();
         final byte[] scheme = extractScheme(bytes, begin, end);
-        if (scheme != null) {
-            bytes = Arrays.copyOfRange(bytes, begin + scheme.length, end);
-            begin = 0;
-            end = bytes.length;
-        }
-        return glob_helper(runtime, cwd, scheme, bytes, begin, end, enc, -1, flags, Dir.glob_caller, arg);
+        if (scheme != null) path.delete(begin, scheme.length);
+        return glob_helper(runtime, cwd, scheme, path, -1, flags, Dir.glob_caller, arg);
     }
 
-    private static int glob_helper(Ruby runtime, String cwd, byte[] scheme, ByteList path, int sub, int flags, GlobFunc<GlobArgs> func, GlobArgs arg) {
-        final int begin = path.getBegin();
-        final int end = begin + path.length();
-        final Encoding enc = path.getEncoding();
-        return glob_helper(runtime, cwd, scheme, path.getUnsafeBytes(), begin, end, enc, sub, flags, func, arg);
-    }
-
-    private static int glob_helper(Ruby runtime, String cwd, byte[] scheme, byte[] path, int begin, int end,
-                                   Encoding enc, int sub, int flags, GlobFunc<GlobArgs> func, GlobArgs arg) {
+    private static int glob_helper(Ruby runtime, String cwd, byte[] scheme, ByteList b, int sub, int flags, GlobFunc<GlobArgs> func, GlobArgs arg) {
+        byte[] path = b.getUnsafeBytes();
+        int begin = b.getBegin();
+        int end = begin + b.length();
+        Encoding enc = b.getEncoding();
         int ptr = sub != -1 ? sub : begin;
         GlobMagic nonMagic = CASEFOLD_FILESYSTEM ? GlobMagic.PLAIN : GlobMagic.ALPHA;
 
