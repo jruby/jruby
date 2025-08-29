@@ -875,33 +875,31 @@ public class Dir {
                     boolean recursive = false;
 
                     FileResource resource = JRubyFile.createResource(runtime, cwd, new String(dir, enc.getCharset()));
-                    if (resource.isDirectory()) {
-                        if ( slashIndex != -1 && Arrays.equals(magic, DOUBLE_STAR) ) {
-                            final int lengthOfBase = base.length;
-                            recursive = true;
-                            ByteList buf = createPath(base, null, enc);
-                            int nextStartIndex;
-                            int indexOfSlash = slashIndex;
-                            do {
-                                nextStartIndex = indexOfSlash + 1;
-                                indexOfSlash = indexOf(path, nextStartIndex, end, (byte) '/');
-                                int nextEndIndex = indexOfSlash == -1 ? end : indexOfSlash;
-                                magic = extract_path(path, nextStartIndex, nextEndIndex);
-                            } while(Arrays.equals(magic, DOUBLE_STAR) && indexOfSlash != -1);
+                    if (!resource.isDirectory()) break mainLoop;
 
-                            int remainingPathStartIndex;
-                            if (Arrays.equals(magic, DOUBLE_STAR)) {
-                                remainingPathStartIndex = nextStartIndex;
-                            } else {
-                                remainingPathStartIndex = nextStartIndex - 1;
-                            }
-                            remainingPathStartIndex = lengthOfBase > 0 ? remainingPathStartIndex : remainingPathStartIndex + 1;
-                            buf.append(path, remainingPathStartIndex, end - remainingPathStartIndex);
-                            status = glob_helper(runtime, cwd, scheme, buf, lengthOfBase, flags, func, arg);
-                            if ( status != 0 ) break finalize;
+                    if ( slashIndex != -1 && Arrays.equals(magic, DOUBLE_STAR) ) {
+                        final int lengthOfBase = base.length;
+                        recursive = true;
+                        ByteList buf = createPath(base, null, enc);
+                        int nextStartIndex;
+                        int indexOfSlash = slashIndex;
+                        do {
+                            nextStartIndex = indexOfSlash + 1;
+                            indexOfSlash = indexOf(path, nextStartIndex, end, (byte) '/');
+                            int nextEndIndex = indexOfSlash == -1 ? end : indexOfSlash;
+                            magic = extract_path(path, nextStartIndex, nextEndIndex);
+                        } while(Arrays.equals(magic, DOUBLE_STAR) && indexOfSlash != -1);
+
+                        int remainingPathStartIndex;
+                        if (Arrays.equals(magic, DOUBLE_STAR)) {
+                            remainingPathStartIndex = nextStartIndex;
+                        } else {
+                            remainingPathStartIndex = nextStartIndex - 1;
                         }
-                    } else {
-                        break mainLoop;
+                        remainingPathStartIndex = lengthOfBase > 0 ? remainingPathStartIndex : remainingPathStartIndex + 1;
+                        buf.append(path, remainingPathStartIndex, end - remainingPathStartIndex);
+                        status = glob_helper(runtime, cwd, scheme, buf, lengthOfBase, flags, func, arg);
+                        if ( status != 0 ) break finalize;
                     }
 
                     boolean skipdot = (flags & FNM_GLOB_SKIPDOT) != 0;
