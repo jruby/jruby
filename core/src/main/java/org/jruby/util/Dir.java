@@ -785,12 +785,6 @@ public class Dir {
         return files == null ? EMPTY_STRING_ARRAY : files;
     }
 
-    private static final class DirGlobber {
-        public final ByteList link;
-
-        DirGlobber(ByteList link) { this.link = link; }
-    }
-
     private static boolean isSpecialFile(String name) {
         int length = name.length();
 
@@ -881,7 +875,7 @@ public class Dir {
             return status;
         }
 
-        final ArrayList<DirGlobber> links = new ArrayList<DirGlobber>();
+        final ArrayList<ByteList> links = new ArrayList<>();
 
         ByteList buf = new ByteList(20);
         buf.setEncoding(enc);
@@ -1001,17 +995,17 @@ public class Dir {
                                 if ( status != 0 ) break;
                                 continue;
                             }
-                            links.add(new DirGlobber(buf));
+                            links.add(buf);
                             buf = new ByteList(20);
                             buf.setEncoding(enc);
                         }
                     }
                 } while(false);
 
-                if ( links.size() > 0 ) {
-                    for ( DirGlobber globber : links ) {
-                        final ByteList link = globber.link;
-                        if ( status != 0 ) break;
+                if (!links.isEmpty()) {
+                    for (ByteList link: links) {
+                        if (status != 0) break;
+
                         String fullPath = scheme != null ?
                                 new String(prependScheme(scheme, link.unsafeBytes(), link.begin(), link.length()), enc.getCharset()) :
                                 new String(link.unsafeBytes(), link.begin(), link.length(), enc.getCharset());
@@ -1024,7 +1018,7 @@ public class Dir {
                             status = glob_helper(runtime, cwd, scheme, buf, buf.getBegin() + len, flags, func, arg);
                         }
                     }
-                    break mainLoop;
+                    break;
                 }
             }
             ptr = SLASH_INDEX;
