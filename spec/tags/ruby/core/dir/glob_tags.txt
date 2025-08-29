@@ -1,5 +1,3 @@
-fails:Dir.glob will follow symlinks when processing a `*/` pattern.
-fails:Dir.glob will follow symlinks when testing directory after recursive directory in pattern
 fails:Dir.glob matches directory with special characters in their name in complex patterns
 fails:Dir.glob handles **/ with base keyword argument
 
