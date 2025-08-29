@@ -1,1 +1,0 @@
-fails:Assignments using += using a #[] given block argument raises SyntaxError

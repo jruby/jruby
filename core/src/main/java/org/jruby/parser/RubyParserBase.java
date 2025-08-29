@@ -1253,6 +1253,8 @@ public abstract class RubyParserBase {
     public Node new_ary_op_assign(Node receiverNode, Node argsNode, ByteList operatorName, Node valueNode) {
         int line = lexer.tokline;
 
+        aryset_check(argsNode);
+
         // We extract BlockPass from tree and insert it as a block node value (MRI wraps it around the args)
         Node blockNode = null;
         if (argsNode instanceof BlockPassNode) {
