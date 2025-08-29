@@ -936,11 +936,9 @@ public class Dir {
                         flags |= FNM_GLOB_SKIPDOT;
                     }
 
-                    final String[] files = files(resource);
-
-                    for ( int i = 0; i < files.length; i++ ) {
-                        final String file = files[i];
-                        final byte[] fileBytes = getBytesInUTF8(file);
+                    for (String file: files(resource)) {
+                        byte[] fileBytes = getBytesInUTF8(file);
+                        ByteList buf = createPath(base, getBytesInUTF8(file), enc);
 
                         if (file.charAt(0) == '.') {
                             int length = file.length();
@@ -952,11 +950,8 @@ public class Dir {
                             }
                         }
                         if (recursive) {
-                            if ( fnmatch(STAR, 0, 1, fileBytes, 0, fileBytes.length, flags) != 0) {
-                                continue;
-                            }
+                            if ( fnmatch(STAR, 0, 1, fileBytes, 0, fileBytes.length, flags) != 0) continue;
 
-                            ByteList buf = createPath(base, getBytesInUTF8(file), enc);
                             ByteList resBuf = scheme != null ?  prepend(buf, scheme) : buf;
                             resource = JRubyFile.createResource(runtime, cwd, asJavaString(resBuf, enc));
                             if ( !resource.isSymLink() && resource.isDirectory() && !".".equals(file) && !"..".equals(file) ) {
@@ -967,10 +962,7 @@ public class Dir {
                                 status = glob_helper(runtime, cwd, scheme, buf, buf.getBegin() + len, flags, func, arg);
                                 if ( status != 0 ) break;
                             }
-                            continue;
-                        }
-                        if ( fnmatch(magic, 0, magic.length, fileBytes, 0, fileBytes.length, flags) == 0 ) {
-                            ByteList buf = createPath(base, getBytesInUTF8(file), enc);
+                        } else if (fnmatch(magic, 0, magic.length, fileBytes, 0, fileBytes.length, flags) == 0) {
                             boolean dirMatch = false;
                             if (SLASH_INDEX == end - 1) {
                                 resource = JRubyFile.createResource(runtime, cwd, asJavaString(buf, enc));
