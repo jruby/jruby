@@ -844,7 +844,6 @@ public class Dir {
                     if (!resource.isDirectory()) break mainLoop;
 
                     if (slashIndex != -1 && Arrays.equals(magic, DOUBLE_STAR)) {
-                        final int lengthOfBase = base.length;
                         recursive = true;
                         ByteList buf = createPath(base, null, enc);
                         int nextStartIndex;
@@ -856,15 +855,10 @@ public class Dir {
                             magic = extract_path(path, nextStartIndex, nextEndIndex);
                         } while (Arrays.equals(magic, DOUBLE_STAR) && indexOfSlash != -1);
 
-                        int remainingPathStartIndex;
-                        if (Arrays.equals(magic, DOUBLE_STAR)) {
-                            remainingPathStartIndex = nextStartIndex;
-                        } else {
-                            remainingPathStartIndex = nextStartIndex - 1;
-                        }
-                        remainingPathStartIndex = lengthOfBase > 0 ? remainingPathStartIndex : remainingPathStartIndex + 1;
+                        int remainingPathStartIndex = Arrays.equals(magic, DOUBLE_STAR) ? nextStartIndex : nextStartIndex - 1;
+                        remainingPathStartIndex = base.length > 0 ? remainingPathStartIndex : remainingPathStartIndex + 1;
                         buf.append(path, remainingPathStartIndex, end - remainingPathStartIndex);
-                        status = glob_helper(runtime, cwd, scheme, buf, lengthOfBase, flags, func, arg);
+                        status = glob_helper(runtime, cwd, scheme, buf, base.length, flags, func, arg);
                         if (status != 0) break;
                     }
 
@@ -893,7 +887,7 @@ public class Dir {
                         } else if (fnmatch(magic, 0, magic.length, fileBytes, 0, fileBytes.length, flags) == 0) {
                             boolean dirMatch = slashIndex == end - 1 &&
                                     JRubyFile.createResource(runtime, cwd, asJavaString(buf, enc)).isDirectory();
-                            if (slashIndex == -1 || dirMatch) {  // found file or dir that ends in '/'
+                            if (slashIndex == -1 || dirMatch) {  // found normal entry OR a dir that ends in '/'
                                 if (scheme != null) buf = prepend(buf, scheme);
                                 if (dirMatch) buf.append(SLASH);
                                 status = func.call(buf.getUnsafeBytes(), buf.begin(), buf.getRealSize(), enc, arg);
@@ -906,7 +900,7 @@ public class Dir {
                 } while(false);
 
                 if (!links.isEmpty()) {
-                    for (ByteList link: links) {
+                    for (ByteList link: links) {  // process matching directories found in this segment
                         if (status != 0) break;
 
                         String fullPath = asJavaString(scheme != null ? prepend(link, scheme) : link, enc);
