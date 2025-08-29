@@ -595,7 +595,7 @@ public class Convert {
         // FIXME: Make proper impl which is amalgam of RubyNumeric num2int and convertToInteger and hen have numTo{Long,Int} use this
         return arg.convertToInteger();
     }
-    
+
     /**
      * Create a Java String from a ByteList with the specified encoding.
      * @param bytes to be made into a string

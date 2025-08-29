@@ -39,6 +39,8 @@ import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyString;
 import org.jruby.platform.Platform;
+
+import static org.jruby.api.Convert.asJavaString;
 import static org.jruby.util.ByteList.NULL_ARRAY;
 import static org.jruby.util.ByteList.memcmp;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
@@ -743,6 +745,13 @@ public class Dir {
         return scheme;
     }
 
+    private static ByteList prepend(ByteList buf, byte[] prefix) {
+        ByteList newbuf = new ByteList(prefix.length + buf.length());
+        newbuf.setEncoding(buf.getEncoding());
+        newbuf.append(buf);
+        return newbuf;
+    }
+
     private static byte[] prependScheme(byte[] scheme, byte[] path, int begin, int end) {
         byte [] newpath = new byte[scheme.length + (end - begin)];
         System.arraycopy(scheme, 0, newpath, 0, scheme.length);
@@ -896,7 +905,7 @@ public class Dir {
                     byte[] magic = extract_elem(path, ptr, end);
                     boolean recursive = false;
 
-                    resource = JRubyFile.createResource(runtime, cwd, new String(dir, 0, dir.length, enc.getCharset()));
+                    resource = JRubyFile.createResource(runtime, cwd, new String(dir, enc.getCharset()));
                     if ( resource.isDirectory() ) {
                         if ( SLASH_INDEX != -1 && Arrays.equals(magic, DOUBLE_STAR) ) {
                             final int lengthOfBase = base.length;
@@ -954,15 +963,8 @@ public class Dir {
                             buf.append(base);
                             buf.append( isRoot(base) ? EMPTY : SLASH );
                             buf.append( getBytesInUTF8(file) );
-                            byte [] bufBytes = buf.unsafeBytes();
-                            int bufBegin = buf.begin();
-                            int bufLen = buf.length();
-                            if (scheme != null) {
-                                bufBytes = prependScheme(scheme, bufBytes, bufBegin, bufBegin + bufLen);
-                                bufBegin = 0;
-                                bufLen = bufBytes.length;
-                            }
-                            resource = JRubyFile.createResource(runtime, cwd, new String(bufBytes, bufBegin, bufLen, enc.getCharset()));
+                            if (scheme != null) buf = prepend(buf, scheme);
+                            resource = JRubyFile.createResource(runtime, cwd, asJavaString(buf, enc));
                             if ( !resource.isSymLink() && resource.isDirectory() && !".".equals(file) && !"..".equals(file) ) {
                                 final int len = buf.getRealSize();
                                 buf.append(SLASH);
@@ -980,7 +982,7 @@ public class Dir {
                             buf.append( getBytesInUTF8(file) );
                             boolean dirMatch = false;
                             if (SLASH_INDEX == end - 1) {
-                                resource = JRubyFile.createResource(runtime, cwd, new String(buf.unsafeBytes(), buf.begin(), buf.length(), enc.getCharset()));
+                                resource = JRubyFile.createResource(runtime, cwd, asJavaString(buf, enc));
                                 dirMatch = resource.isDirectory();
                             }
                             if ( dirMatch || SLASH_INDEX == -1 ) {
@@ -1006,9 +1008,7 @@ public class Dir {
                     for (ByteList link: links) {
                         if (status != 0) break;
 
-                        String fullPath = scheme != null ?
-                                new String(prependScheme(scheme, link.unsafeBytes(), link.begin(), link.length()), enc.getCharset()) :
-                                new String(link.unsafeBytes(), link.begin(), link.length(), enc.getCharset());
+                        String fullPath = new String(asJavaString(scheme != null ? prepend(link, scheme) : link, enc));
                         resource = JRubyFile.createResource(runtime, cwd, fullPath);
                         if ( resource.isDirectory() ) {
                             final int len = link.getRealSize();
