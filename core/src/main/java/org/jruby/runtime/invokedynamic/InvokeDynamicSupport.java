@@ -28,6 +28,7 @@
 package org.jruby.runtime.invokedynamic;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 
 import org.jruby.*;
@@ -43,7 +44,9 @@ import org.jruby.runtime.callsite.CacheEntry;
 import static java.lang.invoke.MethodHandles.*;
 
 public class InvokeDynamicSupport {
-    
+    private static final Lookup LOOKUP = MethodHandles.lookup();
+    private static final Module JRUBY_MODULE = InvokeDynamicSupport.class.getModule();
+
     ////////////////////////////////////////////////////////////////////////////
     // method_missing support code
     ////////////////////////////////////////////////////////////////////////////
@@ -72,7 +75,8 @@ public class InvokeDynamicSupport {
     
     public static MethodHandle findStatic(Class target, String name, MethodType type) {
         try {
-            return lookup().findStatic(target, name, type);
+            JRUBY_MODULE.addReads(target.getModule());
+            return LOOKUP.findStatic(target, name, type);
         } catch (NoSuchMethodException|IllegalAccessException ex) {
             throw new RuntimeException(ex);
         }
@@ -80,7 +84,8 @@ public class InvokeDynamicSupport {
 
     public static MethodHandle findVirtual(Class target, String name, MethodType type) {
         try {
-            return lookup().findVirtual(target, name, type);
+            JRUBY_MODULE.addReads(target.getModule());
+            return LOOKUP.findVirtual(target, name, type);
         } catch (NoSuchMethodException|IllegalAccessException ex) {
             throw new RuntimeException(ex);
         }
