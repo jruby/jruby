@@ -1586,5 +1586,12 @@ modes.each do |mode|
         expect(it).to eq("a#{$$}" * 24)
       end
     end
+
+    it "can invoke java.lang.reflect.Proxy dynamic proxy objects" do
+      run(<<~RUBY) { expect(it).to eq [1].to_java }
+        proxy = java.lang.reflect.Proxy.newProxyInstance(JRuby.runtime.jruby_class_loader, [java.util.function.Function].to_java(java.lang.Class)) {|o, m, x| x}
+        proxy.apply(1)
+      RUBY
+    end
   end
 end
