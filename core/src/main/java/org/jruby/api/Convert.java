@@ -1,10 +1,13 @@
 package org.jruby.api;
 
+import org.jcodings.Encoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
+import org.jruby.RubyEncoding;
 import org.jruby.RubyFile;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
@@ -591,6 +594,18 @@ public class Convert {
     public static RubyInteger toInteger(ThreadContext context, IRubyObject arg) {
         // FIXME: Make proper impl which is amalgam of RubyNumeric num2int and convertToInteger and hen have numTo{Long,Int} use this
         return arg.convertToInteger();
+    }
+
+    /**
+     * Create a Java String from a ByteList with the specified encoding.
+     * @param bytes to be made into a string
+     * @return a new Java String
+     */
+    public static String asJavaString(ByteList bytes) {
+        var encoding = bytes.getEncoding();
+        return encoding == UTF8Encoding.INSTANCE ?
+                RubyEncoding.decodeUTF8(bytes.unsafeBytes(), bytes.begin(), bytes.length()) :
+                RubyEncoding.decode(bytes.getUnsafeBytes(), bytes.begin(), bytes.length(), encoding.getCharset());
     }
 
     /**
