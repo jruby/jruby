@@ -874,10 +874,10 @@ public class Dir {
                         ByteList buf = createPath(base, fileBytes, enc);
 
                         if (recursive) {
-                            if ( fnmatch(STAR, 0, 1, fileBytes, 0, fileBytes.length, flags) != 0) continue;
+                            if (fnmatch(STAR, 0, 1, fileBytes, 0, fileBytes.length, flags) != 0) continue;
 
                             ByteList resBuf = scheme != null ?  prepend(buf, scheme) : buf;
-                            FileResource r = JRubyFile.createResource(runtime, cwd, asJavaString(resBuf, enc));
+                            FileResource r = JRubyFile.createResource(runtime, cwd, asJavaString(resBuf));
                             if (!r.isSymLink() && r.isDirectory() && !".".equals(file) && !"..".equals(file)) {
                                 final int len = buf.getRealSize();
                                 buf.append(SLASH);
@@ -888,7 +888,7 @@ public class Dir {
                             }
                         } else if (fnmatch(magic, 0, magic.length, fileBytes, 0, fileBytes.length, flags) == 0) {
                             boolean dirMatch = slashIndex == end - 1 &&
-                                    JRubyFile.createResource(runtime, cwd, asJavaString(buf, enc)).isDirectory();
+                                    JRubyFile.createResource(runtime, cwd, asJavaString(buf)).isDirectory();
                             if (slashIndex == -1 || dirMatch) {  // found normal entry OR a dir that ends in '/'
                                 if (scheme != null) buf = prepend(buf, scheme);
                                 if (dirMatch) buf.append(SLASH);
@@ -905,7 +905,7 @@ public class Dir {
                     for (ByteList link: links) {  // process matching directories found in this segment
                         if (status != 0) break;
 
-                        String fullPath = asJavaString(scheme != null ? prepend(link, scheme) : link, enc);
+                        String fullPath = asJavaString(scheme != null ? prepend(link, scheme) : link);
                         if (JRubyFile.createResource(runtime, cwd, fullPath).isDirectory()) {
                             int linkSub = link.begin() + link.realSize();
                             link.append(path, slashIndex, end - slashIndex);

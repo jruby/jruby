@@ -599,10 +599,10 @@ public class Convert {
     /**
      * Create a Java String from a ByteList with the specified encoding.
      * @param bytes to be made into a string
-     * @param encoding use encodings charset to make the String
      * @return a new Java String
      */
-    public static String asJavaString(ByteList bytes, Encoding encoding) {
+    public static String asJavaString(ByteList bytes) {
+        var encoding = bytes.getEncoding();
         return encoding == UTF8Encoding.INSTANCE ?
                 RubyEncoding.decodeUTF8(bytes.unsafeBytes(), bytes.begin(), bytes.length()) :
                 RubyEncoding.decode(bytes.getUnsafeBytes(), bytes.begin(), bytes.length(), encoding.getCharset());
