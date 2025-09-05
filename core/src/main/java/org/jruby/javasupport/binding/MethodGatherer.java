@@ -170,13 +170,13 @@ public class MethodGatherer {
     }
 
     public static void eachAccessibleMethod(final Class<?> javaClass, Predicate<Method[]> classProcessor, Predicate<Method[]> interfaceProcessor) {
-        boolean isPublic = Modifier.isPublic(javaClass.getModifiers());
+        boolean isPublic = Ruby.JRUBY_MODULE.canRead(javaClass.getModule()) && Modifier.isPublic(javaClass.getModifiers());
 
         // we scan all superclasses, but avoid adding superclass methods with
         // same name+signature as subclass methods (see JRUBY-3130)
         for ( Class<?> klass = javaClass; klass != null; klass = klass.getSuperclass() ) {
             // only add if target class is public or source class is public, and package is exported
-            if ((isPublic || Modifier.isPublic(klass.getModifiers())) && Modules.isExported(klass, Java.class)) {
+            if ((isPublic || (Ruby.JRUBY_MODULE.canRead(klass.getModule()) && Modifier.isPublic(klass.getModifiers()))) && Modules.isExported(klass, Java.class)) {
                 // for each class, scan declared methods for new signatures
                 try {
                     // add methods, including static if this is the actual class,

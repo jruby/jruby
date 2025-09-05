@@ -75,7 +75,6 @@ public class InvokeDynamicSupport {
     
     public static MethodHandle findStatic(Class target, String name, MethodType type) {
         try {
-            JRUBY_MODULE.addReads(target.getModule());
             return LOOKUP.findStatic(target, name, type);
         } catch (NoSuchMethodException|IllegalAccessException ex) {
             throw new RuntimeException(ex);
@@ -84,7 +83,6 @@ public class InvokeDynamicSupport {
 
     public static MethodHandle findVirtual(Class target, String name, MethodType type) {
         try {
-            JRUBY_MODULE.addReads(target.getModule());
             return LOOKUP.findVirtual(target, name, type);
         } catch (NoSuchMethodException|IllegalAccessException ex) {
             throw new RuntimeException(ex);

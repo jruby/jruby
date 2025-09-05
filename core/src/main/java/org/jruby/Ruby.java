@@ -5362,6 +5362,8 @@ public final class Ruby implements Constantizable {
     private JavaSupport javaSupport;
     private final JRubyClassLoader jrubyClassLoader;
 
+    public static final Module JRUBY_MODULE = Ruby.class.getModule();
+
     // Object Specializer
     private final RubyObjectSpecializer objectSpecializer;
 
