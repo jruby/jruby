@@ -5639,12 +5639,17 @@ public class RubyModule extends RubyObject {
 
                 storeConstant(context, name, value, hidden, file, line);
             } else {
-                boolean autoloading = setAutoloadConstant(context, name, value, hidden, file, line);
-                if (autoloading) {
-                    // invoke const_added for Autoload in progress
-                    callMethod(context, "const_added", asSymbol(context, name));
-                } else {
+                if (value == UNDEF) {
+                    // original autoload was not loaded, just update visibility
                     storeConstant(context, name, value, hidden, file, line);
+                } else {
+                    boolean autoloading = setAutoloadConstant(context, name, value, hidden, file, line);
+                    if (autoloading) {
+                        // invoke const_added for Autoload in progress
+                        callMethod(context, "const_added", asSymbol(context, name));
+                    } else {
+                        storeConstant(context, name, value, hidden, file, line);
+                    }
                 }
             }
         } else {
