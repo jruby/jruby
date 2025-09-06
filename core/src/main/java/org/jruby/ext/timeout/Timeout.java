@@ -223,12 +223,9 @@ public class Timeout {
             return RubyKernel.raise( // throws
                     context,
                     kernelModule(context),
-                    new IRubyObject[] {
-                        getTimeoutError(context, timeout), // Timeout::Error
-                        rubyException.callMethod(context, "message"),
-                        rubyException.callMethod(context, "backtrace")
-                    },
-                    Block.NULL_BLOCK);
+                    getTimeoutError(context, timeout), // Timeout::Error
+                    rubyException.callMethod(context, "message"),
+                    rubyException.callMethod(context, "backtrace"));
         }
         return null;
     }
