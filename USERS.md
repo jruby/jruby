@@ -51,6 +51,20 @@ Requirements to be listed
 Users (most recent first)
 ----------------------
 
+### AsciidoctorJ
+
+**Desc:** AsciidoctorJ is a Java port of the Asciidoctor document processor,
+a fast and open source text processor and publishing toolchain for converting
+AsciiDoc content to HTML 5, PDF and other formats That is implemented in Ruby.
+
+**Usage:** JRuby is used to run the original Asciidoctor processor inside the JVM. JRuby allows to provide Java APIs and SPIs that make the port feel like a native Java library.
+
+**Since:** 2014
+
+**Links:** [asciidoctor.org](https://asciidoctor.org), [Asciidoctorj](https://github.com/asciidoctor/asciidoctorj) [Docs](https://docs.asciidoctor.org/asciidoctorj/latest/)
+
+**Contact:** @robertpanzer
+
 ### SubstituteAlert Inc.
 
 Additional content in the [JRuby Success Stories](https://github.com/jruby/jruby/wiki/SuccessStories#substitutealert-inc) wiki page.
