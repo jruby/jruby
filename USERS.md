@@ -78,3 +78,17 @@ Additional content in the [JRuby Success Stories](https://github.com/jruby/jruby
 **Links:** [https://www.subalert.com](https://www.subalert.com), [iPhone App](https://apps.apple.com/us/app/subalert-for-frontline-ed/id557785741), [Android App](https://play.google.com/store/apps/details?id=com.substitutealert)
 
 **Contact:** @mohamedhafez83 
+
+### eazyBI
+
+**Desc:** eazyBI is a Business Intelligence application for creating reports, charts, and dashboards from many different data sources. eazyBI's most popular integration is with Atlassian Jira and other Jira apps. It is one of the top-selling third-party apps on the Atlassian Marketplace.
+
+**Usage:** eazyBI is a Ruby on Rails application that runs on JRuby. JRuby allows embedding a Java-based Mondrian OLAP engine, integrating with Apache POI and Batik libraries, as well as packaging eazyBI as a Jira Data Center plugin (Java jar file).
+eazyBI is deployed both in the cloud as well as installed on thousands of customer servers running Linux or Windows and connecting to PostgreSQL, MySQL, Oracle, and Microsoft SQL Server databases.
+One of the eazyBI core components is [mondrian-olap](https://github.com/rsim/mondrian-olap) which provides JRuby DSL for using the Mondrian OLAP engine.
+
+**Since:** 2011
+
+**Links:** [eazyBI](https://eazybi.com)
+
+**Contact:** @rsim
