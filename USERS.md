@@ -84,7 +84,7 @@ server, automating the software build-test-release cycle to enable frequent and 
 software builds & deployments. It helps teams visualise and streamline complex development workflows 
 by allowing teams to visualize their entire delivery process through "pipelines as code"
 ensuring that software can be released at any time.
-* **Usage:** While originally used more widely within GoCD, JRuby/Rails/[Jruby Rack](https://github.com/jruby/jruby-rack) is still used 
+* **Usage:** While originally used more widely within GoCD, JRuby/Rails/[JRuby-Rack](https://github.com/jruby/jruby-rack) is still used 
 via [Jetty](https://jetty.org/) for server-side rendering of various interfaces for users to interact with their pipeline job runs 
 and interoperate with the rest of the Java-based server.
 * **Since:** 2007
