@@ -173,6 +173,11 @@ public class RubyKernel {
 
     public static RubyModule finishKernelModule(ThreadContext context, RubyModule Kernel, RubyInstanceConfig config) {
         Kernel.defineMethods(context, RubyKernel.class);
+
+        if (context.runtime.getInstanceConfig().getProfile().allowClass("IO")) {
+            Kernel.defineMethods(context, RubyKernel.KernelIO.class);
+        }
+
         Kernel.setFlag(RubyModule.NEEDSIMPL_F, false); //Kernel is the only normal Module that doesn't need an implementor
 
         var runtime = context.runtime;
@@ -202,6 +207,103 @@ public class RubyKernel {
         recacheBuiltinMethods(runtime, Kernel);
 
         return Kernel;
+    }
+
+    public interface KernelIO {
+        @JRubyMethod(name = "`", module = true, visibility = PRIVATE)
+        static IRubyObject backquote(ThreadContext context, IRubyObject recv, IRubyObject str) {
+            return RubyKernel.backquote(context, recv, str);
+        }
+
+        @JRubyMethod(optional = 1, checkArity = false)
+        static IRubyObject display(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+            return RubyKernel.display(context, self, args);
+        }
+
+        @JRubyMethod(optional = 1, keywords = true, checkArity = false, module = true, visibility = PRIVATE)
+        static IRubyObject gets(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+            return RubyKernel.gets(context, recv, args);
+        }
+
+        @JRubyMethod(rest = true, module = true, visibility = PRIVATE)
+        static IRubyObject p(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+            return RubyKernel.p(context, recv, args);
+        }
+
+        @JRubyMethod(module = true, visibility = PRIVATE, reads = LASTLINE)
+        static IRubyObject print(ThreadContext context, IRubyObject recv) {
+            return RubyKernel.print(context, recv);
+        }
+
+        @JRubyMethod(module = true, visibility = PRIVATE)
+        static IRubyObject print(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
+            return RubyKernel.print(context, recv, arg0);
+        }
+
+        @JRubyMethod(module = true, visibility = PRIVATE)
+        static IRubyObject print(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
+            return RubyKernel.print(context, recv, arg0, arg1);
+        }
+
+        @JRubyMethod(module = true, visibility = PRIVATE)
+        static IRubyObject print(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+            return RubyKernel.print(context, recv, arg0, arg1, arg2);
+        }
+
+        @JRubyMethod(rest = true, module = true, visibility = PRIVATE, reads = LASTLINE)
+        static IRubyObject print(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+            return RubyKernel.print(context, recv, args);
+        }
+
+        @JRubyMethod(rest = true, module = true, visibility = PRIVATE)
+        static IRubyObject printf(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+            return RubyKernel.printf(context, recv, args);
+        }
+
+        @JRubyMethod(module = true, visibility = PRIVATE)
+        static IRubyObject putc(ThreadContext context, IRubyObject recv, IRubyObject ch) {
+            return RubyKernel.putc(context, recv, ch);
+        }
+
+        @JRubyMethod(module = true, visibility = PRIVATE)
+        static IRubyObject puts(ThreadContext context, IRubyObject recv) {
+            return RubyKernel.puts(context, recv);
+        }
+
+        @JRubyMethod(module = true, visibility = PRIVATE)
+        static IRubyObject puts(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
+            return RubyKernel.puts(context, recv, arg0);
+        }
+
+        @JRubyMethod(module = true, visibility = PRIVATE)
+        static IRubyObject puts(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
+            return RubyKernel.puts(context, recv, arg0, arg1);
+        }
+
+        @JRubyMethod(module = true, visibility = PRIVATE)
+        static IRubyObject puts(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+            return RubyKernel.puts(context, recv, arg0, arg1, arg2);
+        }
+
+        @JRubyMethod(rest = true, module = true, visibility = PRIVATE)
+        static IRubyObject puts(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+            return RubyKernel.print(context, recv, args);
+        }
+
+        @JRubyMethod(optional = 1, keywords = true, checkArity = false, module = true, visibility = PRIVATE)
+        static IRubyObject readline(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+            return RubyKernel.readline(context, recv, args);
+        }
+
+        @JRubyMethod(optional = 1, keywords = true, checkArity = false, module = true, visibility = PRIVATE)
+        static IRubyObject readlines(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+            return RubyKernel.readlines(context, recv, args);
+        }
+
+        @JRubyMethod(name = {"sprintf", "format"}, required = 1, rest = true, checkArity = false, module = true, visibility = PRIVATE)
+        static IRubyObject sprintf(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+            return RubyKernel.sprintf(context, recv, args);
+        }
     }
 
     /**
@@ -346,7 +448,6 @@ public class RubyKernel {
     }
 
     // MRI: rb_f_gets
-    @JRubyMethod(optional = 1, keywords = true, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject gets(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         var ArgsFile = argsFile(context);
 
@@ -664,7 +765,6 @@ public class RubyKernel {
     }
 
     // MRI: rb_f_p
-    @JRubyMethod(rest = true, module = true, visibility = PRIVATE)
     public static IRubyObject p(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return RubyThread.uninterruptible(context, args, RubyKernel::pBody);
     }
@@ -713,7 +813,6 @@ public class RubyKernel {
 
     /** rb_f_putc
      */
-    @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject putc(ThreadContext context, IRubyObject recv, IRubyObject ch) {
         IRubyObject defout = globalVariables(context).get("$>");
         if (recv == defout) {
@@ -722,7 +821,6 @@ public class RubyKernel {
         return sites(context).putc.call(context, defout, defout, ch);
     }
 
-    @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject puts(ThreadContext context, IRubyObject recv) {
         IRubyObject defout = globalVariables(context).get("$>");
 
@@ -733,7 +831,6 @@ public class RubyKernel {
         return sites(context).puts.call(context, defout, defout);
     }
 
-    @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject puts(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
         IRubyObject defout = globalVariables(context).get("$>");
 
@@ -744,7 +841,6 @@ public class RubyKernel {
         return sites(context).puts.call(context, defout, defout, arg0);
     }
 
-    @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject puts(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
         IRubyObject defout = globalVariables(context).get("$>");
 
@@ -755,7 +851,6 @@ public class RubyKernel {
         return sites(context).puts.call(context, defout, defout, arg0, arg1);
     }
 
-    @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject puts(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         IRubyObject defout = globalVariables(context).get("$>");
 
@@ -766,7 +861,6 @@ public class RubyKernel {
         return sites(context).puts.call(context, defout, defout, arg0, arg1, arg2);
     }
 
-    @JRubyMethod(rest = true, module = true, visibility = PRIVATE)
     public static IRubyObject puts(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         IRubyObject defout = globalVariables(context).get("$>");
 
@@ -778,33 +872,27 @@ public class RubyKernel {
     }
 
     // rb_f_print
-    @JRubyMethod(module = true, visibility = PRIVATE, reads = LASTLINE)
     public static IRubyObject print(ThreadContext context, IRubyObject recv) {
         return RubyIO.print0(context, globalVariables(context).get("$>"));
     }
 
-    @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject print(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
         return RubyIO.print1(context, globalVariables(context).get("$>"), arg0);
     }
 
-    @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject print(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
         return RubyIO.print2(context, globalVariables(context).get("$>"), arg0, arg1);
     }
 
-    @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject print(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         return RubyIO.print3(context, globalVariables(context).get("$>"), arg0, arg1, arg2);
     }
 
-    @JRubyMethod(rest = true, module = true, visibility = PRIVATE, reads = LASTLINE)
     public static IRubyObject print(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return RubyIO.print(context, globalVariables(context).get("$>"), args);
     }
 
     // rb_f_printf
-    @JRubyMethod(rest = true, module = true, visibility = PRIVATE)
     public static IRubyObject printf(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         if (args.length == 0) return context.nil;
 
@@ -821,7 +909,6 @@ public class RubyKernel {
         return context.nil;
     }
 
-    @JRubyMethod(optional = 1, keywords = true, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject readline(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         IRubyObject line = gets(context, recv, args);
 
@@ -832,7 +919,6 @@ public class RubyKernel {
         return line;
     }
 
-    @JRubyMethod(optional = 1, keywords = true, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject readlines(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return RubyArgsFile.readlines(context, argsFile(context), args);
     }
@@ -1007,7 +1093,6 @@ public class RubyKernel {
         return asBoolean(context, frameBlock.isGiven());
     }
 
-    @JRubyMethod(name = {"sprintf", "format"}, required = 1, rest = true, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject sprintf(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         if (args.length == 0) throw argumentError(context, "sprintf must have at least one argument");
 
@@ -1786,7 +1871,6 @@ public class RubyKernel {
         return cmd;
     }
 
-    @JRubyMethod(name = "`", module = true, visibility = PRIVATE)
     public static IRubyObject backquote(ThreadContext context, IRubyObject recv, IRubyObject str) {
         Ruby runtime = context.runtime;
 
@@ -2248,7 +2332,6 @@ public class RubyKernel {
         return ((RubyBasicObject)self).dup();
     }
 
-    @JRubyMethod(optional = 1, checkArity = false)
     public static IRubyObject display(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 1);
 
