@@ -1484,7 +1484,7 @@ public class RubyKernel {
                 argMessagesLen--;
 
                 IRubyObject[] ret = ArgsUtil.extractKeywordArgs(context, (RubyHash) opts, "uplevel", "category");
-                if (ret[0] != null) {
+                if (ret[0] != null && !ret[0].isNil()) {
                     explicitUplevel = true;
                     uplevel = toInt(context, ret[0]);
                     if (uplevel < 0) throw argumentError(context, "negative level (" + uplevel + ")");
