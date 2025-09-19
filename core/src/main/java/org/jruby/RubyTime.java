@@ -628,15 +628,14 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = "localtime")
     public RubyTime localtime(ThreadContext context, IRubyObject arg) {
-        final DateTimeZone zone = getTimeZoneFromUtcOffset(context, arg);
+        setIsTzRelative(false);
+        final DateTimeZone zone = handleUTCDateTimeZone(context, arg);
 
         if (zone == null) {
             throw invalidUTCOffset(context);
-        } else if (zone == DateTimeZone.UTC) {
-            return gmtime(context);
         }
 
-        return adjustTimeZone(context, zone, true);
+        return adjustTimeZone(context, zone, isTzRelative);
     }
 
     private RubyTime adjustTimeZone(ThreadContext context, final DateTimeZone zone, boolean isTzRelative) {
@@ -2300,15 +2299,15 @@ public class RubyTime extends RubyObject {
 
         if (zoneLocalTime(context, zone, time)) return time;
 
-        if ((dtz = getTimeZoneFromUtcOffset(context, off)) == null) {
+        time.setIsTzRelative(false);
+
+        if ((dtz = time.handleUTCDateTimeZone(context, off)) == null) {
             zone = time.findTimezone(context, zone);
             if (!zoneLocalTime(context, zone, time)) throw invalidUTCOffset(context, zone);
             return time;
-        } else if (dtz == DateTimeZone.UTC) {
-            return time.gmtime(context);
         }
 
-        time.adjustTimeZone(context, dtz, false);
+        time.adjustTimeZone(context, dtz, time.isTzRelative);
 
         return time;
     }
