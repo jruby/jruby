@@ -250,7 +250,12 @@ public class LibrarySearcher {
     }
 
     public static boolean isSourceExt(String file) {
-        return file.endsWith(".rb");
+        for (Suffix suffix : Suffix.SOURCES) {
+            if (file.endsWith(suffix.extension)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static boolean isLibraryExt(String file) {
