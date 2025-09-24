@@ -141,7 +141,7 @@ bundled_gems = [
   # Depends on prism gem with native ext
   # ['repl_type_completer', '0.1.1'],
   ['resolv-replace', '0.1.1'],
-  ['rexml', '3.4.0'],
+  ['rexml', '3.4.4'],
   ['rinda', '0.2.0'],
   ['rss', '0.3.1'],
   # https://github.com/ruby/syslog/issues/1
