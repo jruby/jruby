@@ -709,7 +709,7 @@ public abstract class InvokeSite extends MutableCallSite {
 
         NativeCallMethod nativeMethod;
         if (method instanceof AbstractIRMethod) {
-            // Ruby methods with ruby2_keywords don't use formal keywords
+            // Ruby methods handle clearing kwargs flags on their own
             acceptsKeywords = true;
         } else if (method instanceof NativeCallMethod && (nativeMethod = (NativeCallMethod) method).getNativeCall() != null) {
             // native methods accept keywords only if specified
