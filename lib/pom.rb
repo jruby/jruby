@@ -140,7 +140,7 @@ bundled_gems = [
   ['rake', '${rake.version}'],
   # Depends on many CRuby internals
   # ['rbs', '2.0.0'],
-  ['rexml', '3.3.9'],
+  ['rexml', '3.4.4'],
   ['rss', '0.3.1'],
   ['test-unit', '3.5.3']
   # Depends on many CRuby internals
