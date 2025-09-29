@@ -1,6 +1,6 @@
 require_relative '../spec_helper'
 
-describe "JRuby::Compiler.compile_argv" do
+describe "Ruby code compiled with JRuby::Compiler.compile_argv" do
 
   def compile_files(files)
     JRuby::Compiler.compile_argv(files)
@@ -77,4 +77,21 @@ describe "JRuby::Compiler.compile_argv" do
     expect( res ).to eql [ true, { :foo => :bar, :baz => 0 }]
   end
 
+  describe "can be required" do
+    before(:each) do
+      @old_loaded_features = $LOADED_FEATURES.dup
+    end
+
+    after(:each) do
+      $LOADED_FEATURES.replace(@old_loaded_features)
+    end
+
+    it "using base filename" do
+      puts File.exist?(File.join(FILES_DIR, 'symbol_proc.class'))
+      require File.join(FILES_DIR, 'symbol_proc.class')
+
+      expect( $symbol_proc_result ).to_not be nil
+      expect( $symbol_proc_result ).to eql [ 1, 2, 3 ]
+    end
+  end
 end
