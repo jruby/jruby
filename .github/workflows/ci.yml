@@ -16,7 +16,7 @@ jobs:
     strategy:
       matrix:
         target: ['test:jruby:int', 'spec:ruby:fast', 'spec:ji', 'spec:ffi', 'test:mri:core:jit', 'test:mri:extra', 'spec:ruby:fast:jit', 'test:mri:stdlib', 'spec:ruby:slow', 'spec:ruby:debug', 'test:jruby:aot', 'test:slow_suites', 'spec:compiler', 'spec:regression', 'spec:jrubyc', 'spec:profiler']
-        java-version: ['21', '23']
+        java-version: ['21', '25']
       fail-fast: false
 
     name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }})
@@ -46,7 +46,7 @@ jobs:
       matrix:
         target: ['spec:jruby']
         platform: ['ubuntu-latest', 'macos-latest']
-        java-version: ['21', '23']
+        java-version: ['21', '25']
       fail-fast: false
 
     name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }})
@@ -128,7 +128,7 @@ jobs:
     strategy:
       matrix:
         target: ['test:mri:core:jit', 'test:jruby:jit', 'spec:compiler', 'spec:ruby:fast:jit', 'spec:ji']
-        java-version: ['21', '23']
+        java-version: ['21', '25']
       fail-fast: false
 
     name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }} -indy)
@@ -160,7 +160,7 @@ jobs:
     strategy:
       matrix:
         package-flags: ['-Pmain', '-Pdist', '-Pcomplete', '-Posgi', '-Ptest', '-Pmain,test -Dinvoker.test=extended']
-        java-version: [21, 23]
+        java-version: [21, 25]
       fail-fast: false
 
     name: mvn ${{ matrix.package-flags }} (Java ${{ matrix.java-version }})
@@ -191,7 +191,7 @@ jobs:
     strategy:
       matrix:
         package-flags: ['-Pjruby-jars', '-Pjruby-jars,test -Dinvoker.test=extended', '-Pjruby_complete_jar_extended -Dinvoker.skip=true']
-        java-version: [21, 23]
+        java-version: [21, 25]
       fail-fast: false
 
 
