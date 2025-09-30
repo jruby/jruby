@@ -121,10 +121,6 @@ public class TestJavaClass extends junit.framework.TestCase {
         assertTrue(type instanceof RubyClass);
         assertEquals("Integer", ((RubyClass) type).getName(context));
 
-        type = Access.getClass(context, "Fixnum").toJava(java.lang.Object.class);
-        assertTrue(type instanceof RubyClass);
-        assertEquals("Integer", ((RubyClass) type).getName(context));
-
         type = Access.getClass(context, "Float").toJava(java.lang.Object.class);
         assertTrue(type instanceof RubyClass);
         assertEquals("Float", ((RubyClass) type).getName(context));

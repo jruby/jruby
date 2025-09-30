@@ -255,6 +255,10 @@ project 'JRuby Base' do
          includes: [
            'org/jruby/test/**/*Test*.java',
            'org/jruby/embed/**/*Test*.java',
+           'org/jruby/exceptions/**/*Test*.java',
+           'org/jruby/ext/**/*Test*.java',
+           'org/jruby/java/**/*Test*.java',
+           'org/jruby/javasupport/*Test*.java',
            'org/jruby/util/**/*Test*.java',
            'org/jruby/runtime/**/*Test*.java'
          ],

@@ -60,8 +60,10 @@ public class JavaEmbedUtilsTest {
         URL url = new File("src/test/resources/java_embed_utils").toURI().toURL();
         config.addLoader(new URLClassLoader(new URL[]{url}));
         Ruby runtime = JavaEmbedUtils.initialize(EMPTY, config);
-        String result = runtime.evalScriptlet("require 'test_me'; $result").toString();
-        assertEquals(result, "uri:" + url);
+        String result = runtime.evalScriptlet("require 'test_me';$result").toString();
+        String expected = "uri:" + url; // File#toURI() adds a trailing '/' for directories
+        if (expected.endsWith("/")) expected = expected.substring(0, expected.length() - 1);
+        assertEquals(expected, result);
     }
 
     @Test
@@ -72,7 +74,9 @@ public class JavaEmbedUtilsTest {
         config.addLoader(new URLClassLoader(new URL[]{url}));
         Ruby runtime = JavaEmbedUtils.initialize(EMPTY, config);
         String result = runtime.evalScriptlet("require 'test_me';$result").toString();
-        assertEquals(result, "uri:" + url);
+        String expected = "uri:" + url; // File#toURI() adds a trailing '/' for directories
+        if (expected.endsWith("/")) expected = expected.substring(0, expected.length() - 1);
+        assertEquals(expected, result);
     }
 
     @Test

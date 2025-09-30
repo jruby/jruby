@@ -562,6 +562,10 @@ DO NOT MODIFY - GENERATED CODE
           <includes>
             <include>org/jruby/test/**/*Test*.java</include>
             <include>org/jruby/embed/**/*Test*.java</include>
+            <include>org/jruby/exceptions/**/*Test*.java</include>
+            <include>org/jruby/ext/**/*Test*.java</include>
+            <include>org/jruby/java/**/*Test*.java</include>
+            <include>org/jruby/javasupport/*Test*.java</include>
             <include>org/jruby/util/**/*Test*.java</include>
             <include>org/jruby/runtime/**/*Test*.java</include>
           </includes>
