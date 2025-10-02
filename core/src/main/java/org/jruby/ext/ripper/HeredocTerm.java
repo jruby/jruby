@@ -143,7 +143,7 @@ public class HeredocTerm extends StrTerm {
                         case '\n':
                             pend--;
                             if (pend == p || lexer.p(pend-1) == '\r') {
-                                pend++;
+                                pend--;
                                 break;
                             }
                             break;
