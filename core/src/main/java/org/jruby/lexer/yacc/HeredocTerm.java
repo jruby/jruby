@@ -125,11 +125,10 @@ public class HeredocTerm extends StrTerm {
                     switch (lexer.p(pend - 1)) {
                         case '\n':
                             pend--;
-                            if (pend == p || lexer.p(pend - 1) == '\r') {
-                                pend--;
+                            if (pend == p || lexer.p(pend - 1) != '\r') {
+                                pend++;
                                 break;
                             }
-                            break;
                         case '\r':
                             pend--;
                             break;
