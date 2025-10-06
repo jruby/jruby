@@ -66,7 +66,6 @@ import org.jruby.parser.RubyParserBase;
 import org.jruby.parser.ProductionState;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
-import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
@@ -634,7 +633,7 @@ public class RubyLexer extends LexingCommon {
 
         double d;
         try {
-            d = SafeDoubleParser.parseDouble(number);
+            d = Double.valueOf(number);
         } catch (NumberFormatException e) {
             warning(ID.FLOAT_OUT_OF_RANGE, "Float " + number + " out of range.");
 

@@ -56,7 +56,6 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
-import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
 
 import static org.jruby.api.Access.kernelModule;
@@ -1685,7 +1684,7 @@ public class RubyBigDecimal extends RubyNumeric {
     @Override
     @JRubyAPI
     public double asDouble(ThreadContext context) {
-        return SafeDoubleParser.doubleValue(value);
+        return value.doubleValue();
     }
 
     @Override
@@ -2141,7 +2140,7 @@ public class RubyBigDecimal extends RubyNumeric {
             return asFloat(context, 0);
         }
 
-        return asFloat(context, SafeDoubleParser.doubleValue(value));
+        return asFloat(context, value.doubleValue());
     }
 
     @Override
@@ -2450,7 +2449,7 @@ public class RubyBigDecimal extends RubyNumeric {
       int shift = Math.max(0, biLen - BITS + (biLen%2 == 0 ? 0 : 1));   // even shift..
       bi = bi.shiftRight(shift);                  // ..floors to 62 or 63 bit BigInteger
 
-      double root = Math.sqrt(SafeDoubleParser.doubleValue(bi));
+      double root = Math.sqrt(bi.doubleValue());
       BigDecimal halfBack = new BigDecimal(BigInteger.ONE.shiftLeft(shift/2));
 
       int scale = squarD.scale();

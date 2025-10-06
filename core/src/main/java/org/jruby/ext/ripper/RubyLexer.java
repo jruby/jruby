@@ -43,14 +43,12 @@ import org.jruby.parser.RubyParserBase;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
-import org.jruby.util.SafeDoubleParser;
 import org.jruby.util.StringSupport;
 import org.jruby.util.cli.Options;
 
 import static org.jruby.ext.ripper.RipperParser.*;
 import static org.jruby.parser.RubyParser.tGVAR;
 import static org.jruby.util.StringSupport.CR_7BIT;
-import static org.jruby.util.StringSupport.codeRangeScan;
 
 public class RubyLexer extends LexingCommon {
     private static final HashMap<String, Keyword> map;
@@ -127,13 +125,10 @@ public class RubyLexer extends LexingCommon {
             return considerComplex(tRATIONAL, suffix);
         }
 
-        double d;
         try {
-            d = SafeDoubleParser.parseDouble(number);
+            Double.valueOf(number);
         } catch (NumberFormatException e) {
             warn("Float " + number + " out of range.");
-
-            d = number.startsWith("-") ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
         }
 
         return considerComplex(tFLOAT, suffix);
