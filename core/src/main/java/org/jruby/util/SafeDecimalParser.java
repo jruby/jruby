@@ -2,7 +2,7 @@ package org.jruby.util;
 
 import java.math.BigDecimal;
 
-@Deprecated(since = "10.0.4.0")
+@Deprecated(since = "10.0.3.0")
 class SafeDecimalParser {
     /**
      * Safe parsing of a String into a Double
@@ -11,7 +11,7 @@ class SafeDecimalParser {
      * @return The Double value
      *
      */
-    @Deprecated(since = "10.0.4.0")
+    @Deprecated(since = "10.0.3.0")
     final protected static Double decimalValueOf(String s) {
         return s != null ? Double.valueOf(s) : null;
     }
@@ -23,7 +23,7 @@ class SafeDecimalParser {
      * @param number
      * @return the double value
      */
-    @Deprecated(since = "10.0.4.0")
+    @Deprecated(since = "10.0.3.0")
     final protected static double decimalValue(Number number) {
         return number != null ? number.doubleValue() : 0.0;
     }
@@ -35,7 +35,7 @@ class SafeDecimalParser {
      * @param bigDecimal
      * @return the double value
      */
-    @Deprecated(since = "10.0.4.0")
+    @Deprecated(since = "10.0.3.0")
     final protected static double decimalValue(BigDecimal bigDecimal) {
         return bigDecimal != null ? bigDecimal.doubleValue() : 0.0;
     }

@@ -7,7 +7,7 @@ import java.math.BigDecimal;
  * <p>
  * Prevents brute force attacks using the famous Java bug.
  */
-@Deprecated(since = "10.0.4.0")
+@Deprecated(since = "10.0.3.0")
 final public class SafeDoubleParser extends SafeDecimalParser {
 
     /**
@@ -17,7 +17,7 @@ final public class SafeDoubleParser extends SafeDecimalParser {
      *            The input String
      * @return the Double value
      */
-    @Deprecated(since = "10.0.4.0")
+    @Deprecated(since = "10.0.3.0")
     public static Double valueOf(String s) {
         return s != null ? Double.valueOf(s) : null;
     }
@@ -29,7 +29,7 @@ final public class SafeDoubleParser extends SafeDecimalParser {
      *            The input String
      * @return the Double value
      */
-    @Deprecated(since = "10.0.4.0")
+    @Deprecated(since = "10.0.3.0")
     public static Double parseDouble(String s) {
         return s != null ? Double.valueOf(s) : null;
     }
@@ -41,7 +41,7 @@ final public class SafeDoubleParser extends SafeDecimalParser {
      * @param number
      * @return the double value
      */
-    @Deprecated(since = "10.0.4.0")
+    @Deprecated(since = "10.0.3.0")
     public static double doubleValue(Number number) {
         return number != null ? number.doubleValue() : 0.0;
     }
@@ -53,7 +53,7 @@ final public class SafeDoubleParser extends SafeDecimalParser {
      * @param bigDecimal
      * @return the double value
      */
-    @Deprecated(since = "10.0.4.0")
+    @Deprecated(since = "10.0.3.0")
     public static double doubleValue(BigDecimal bigDecimal) {
         return bigDecimal != null ? bigDecimal.doubleValue() : 0.0;
     }
