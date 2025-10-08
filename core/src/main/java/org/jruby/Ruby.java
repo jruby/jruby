@@ -705,7 +705,7 @@ public final class Ruby implements Constantizable {
      * @see org.jruby.RubyInstanceConfig
      */
     public static Ruby newInstance() {
-        return newInstance(new RubyInstanceConfig());
+        return newInstance(new RubyInstanceConfig()).boot();
     }
 
     /**
@@ -716,9 +716,24 @@ public final class Ruby implements Constantizable {
      * @see org.jruby.RubyInstanceConfig
      */
     public static Ruby newInstance(RubyInstanceConfig config) {
-        Ruby ruby = new Ruby(config);
+        return new Ruby(config).boot();
+    }
 
-        ruby.loadRequiredLibraries();
+    /**
+     * Returns a new instance of the JRuby runtime configured and ready for main script execution.
+     *
+     * This version defers early boot steps, expecting that the normal "main" execution path will be followed
+     * ({@link #runFromMain(InputStream, String)}).
+     *
+     * Also unlike the standard {@link #newInstance()}, this sets the "global" runtime to the new Ruby instance, since
+     * it will be associated with the "main" execution path.
+     *
+     * @param config The instance configuration
+     * @return The JRuby runtime
+     * @see org.jruby.RubyInstanceConfig
+     */
+    public static Ruby newMain(RubyInstanceConfig config) {
+        Ruby ruby = new Ruby(config);
 
         setGlobalRuntimeFirstTimeOnly(ruby);
 
@@ -732,6 +747,12 @@ public final class Ruby implements Constantizable {
         for (String scriptName : this.config.getRequiredLibraries()) {
             topSelf.callMethod(context, "require", Create.newString(context, scriptName));
         }
+    }
+
+    public Ruby boot() {
+        loadRequiredLibraries();
+
+        return this;
     }
 
     /**
@@ -939,6 +960,9 @@ public final class Ruby implements Constantizable {
             }
             getGlobalVariables().set('$' + entry.getKey(), varvalue);
         }
+
+        // remaining boot steps before executing main script
+        boot();
 
         if (filename.endsWith(".class")) {
             // we are presumably running a precompiled class; load directly

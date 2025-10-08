@@ -29,8 +29,6 @@ public class DripMain extends PrebootMain {
             ruby.evalScriptlet(JRUBY_DRIP_WARMUP_DEFAULT);
         }
 
-        Ruby.clearGlobalRuntime();
-
         return args;
     }
 
