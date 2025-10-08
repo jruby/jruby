@@ -151,7 +151,7 @@ class JarCompleteTest < Test::Unit::TestCase
   end
 
   def test_binscripts_can_be_run_from_classpath
-    output = `java -cp \"#{COMPLETE_JAR}:test/jruby/dir with spaces/testgem.jar\" org.jruby.Main -S testgem`
+    output = `java -cp \"#{COMPLETE_JAR}:test/jruby/dir with spaces/testgem.jar\" org.jruby.main.Main -S testgem`
 
     assert output == "Testing... 1.. 2.. 3..\n"
   end
@@ -159,9 +159,9 @@ class JarCompleteTest < Test::Unit::TestCase
   def test_relative_require_from_gem_on_classpath
     relative_require_jar = File.expand_path('samples/relative_require.jar', File.join(File.dirname(__FILE__), '../..'))
 
-    `java -cp \"#{COMPLETE_JAR}:#{relative_require_jar}\" org.jruby.Main -rrelative_require -e "puts RelativeRequire::VERSION"`
+    `java -cp \"#{COMPLETE_JAR}:#{relative_require_jar}\" org.jruby.main.Main -rrelative_require -e "puts RelativeRequire::VERSION"`
 
-    assert $? == 0, "`java -cp ... org.jruby.Main -rrelative_require returned: #{$?.inspect}"
+    assert $? == 0, "`java -cp ... org.jruby.main.Main -rrelative_require returned: #{$?.inspect}"
   end
 
 end if complete_jar

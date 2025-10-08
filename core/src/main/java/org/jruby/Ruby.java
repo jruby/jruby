@@ -681,7 +681,7 @@ public final class Ruby implements Constantizable {
         this.beanManager.register(inlineStats);
     }
 
-    void reinitialize(boolean reinitCore) {
+    public void reinitialize(boolean reinitCore) {
         this.doNotReverseLookupEnabled = true;
         this.in                 = config.getInput();
         this.out                = config.getOutput();

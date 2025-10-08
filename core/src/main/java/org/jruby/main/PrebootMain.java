@@ -1,6 +1,5 @@
 package org.jruby.main;
 
-import org.jruby.Main;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 

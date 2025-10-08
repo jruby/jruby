@@ -65,7 +65,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.jruby.Main;
+import org.jruby.main.Main;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyHash;
@@ -577,9 +577,9 @@ public class ShellLauncher {
     }
 
     public static String changeDirInsideJar(final Ruby runtime, final String arg) {
-        // only if inside a jar and spawning org.jruby.Main we change to the current directory inside the jar
-        if (runtime.getCurrentDirectory().startsWith("uri:classloader:") && arg.contains("org.jruby.Main")) {
-            return StringSupport.replaceFirst(arg, "org.jruby.Main", "org.jruby.Main -C " + runtime.getCurrentDirectory()).toString();
+        // only if inside a jar and spawning org.jruby.main.Main we change to the current directory inside the jar
+        if (runtime.getCurrentDirectory().startsWith("uri:classloader:") && arg.contains("org.jruby.main.Main")) {
+            return StringSupport.replaceFirst(arg, "org.jruby.main.Main", "org.jruby.main.Main -C " + runtime.getCurrentDirectory()).toString();
         }
         return null;
     }
@@ -1451,11 +1451,11 @@ public class ShellLauncher {
                     // system commands can't run with a URI for the current dir, so the best we can use is user.dir
                     pwd = new File(System.getProperty("user.dir"));
 
-                    // only if we inside a jar and spawning org.jruby.Main we
+                    // only if we inside a jar and spawning org.jruby.main.Main we
                     // change to the current directory inside the jar
-                    if (args[args.length - 1].contains("org.jruby.Main")) {
-                        args[args.length - 1] = args[args.length - 1].replace("org.jruby.Main",
-                                "org.jruby.Main -C " + dir);
+                    if (args[args.length - 1].contains("org.jruby.main.Main")) {
+                        args[args.length - 1] = args[args.length - 1].replace("org.jruby.main.Main",
+                                "org.jruby.main.Main -C " + dir);
                     }
                 }
                 aProcess = buildProcess(runtime, args, getCurrentEnv(runtime, env), pwd);

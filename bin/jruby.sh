@@ -189,7 +189,7 @@ echo() {
 
 # ----- Set variable defaults -------------------------------------------------
 
-java_class=org.jruby.Main
+java_class=org.jruby.main.Main
 JRUBY_SHELL=/bin/sh
 
 # Detect cygwin and mingw environments

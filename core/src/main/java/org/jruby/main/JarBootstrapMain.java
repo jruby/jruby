@@ -26,15 +26,34 @@
  * the terms of any one of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK ****
  */
-package org.jruby;
+package org.jruby.main;
 
 /**
- * @deprecated Use {@link org.jruby.main.JarBootstrapMain} instead.
+ * A specialized "main" entry point that assumes it will run a specific file
+ * (jar-bootstrap.rb) when launching. This allows modifying only the manifest's
+ * Main-Class and adding this file to create a self-contained executable JRuby
+ * application.
+ *
+ * Example usage:
+ *
+ * <pre>
+ * ~/projects/jruby $ cp lib/jruby.jar myapp.jar
+ *
+ * ~/projects/jruby $ cat jar-bootstrap.rb
+ * puts "hello"
+ *
+ * ~/projects/jruby $ jar ufe myapp.jar org.jruby.JarBootstrapMain jar-bootstrap.rb
+ *
+ * ~/projects/jruby $ java -jar myapp.jar
+ * hello
+ * </pre>
  */
-@Deprecated(since = "10.0.3.0", forRemoval = true)
 public class JarBootstrapMain {
     public static final String JAR_BOOTSTRAP = "classpath:/jar-bootstrap.rb";
     public static void main(String[] args) {
-        org.jruby.main.JarBootstrapMain.main(args);
+        String[] newArgs = new String[args.length + 1];
+        newArgs[0] = JAR_BOOTSTRAP;
+        System.arraycopy(args, 0, newArgs, 1, args.length);
+        Main.main(newArgs);
     }
 }
