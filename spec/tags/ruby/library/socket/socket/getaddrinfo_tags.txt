@@ -8,3 +8,4 @@ fails:Socket.getaddrinfo without global reverse lookups performs a reverse looku
 fails:Socket.getaddrinfo without global reverse lookups performs a reverse lookup when the reverse_lookup argument is :hostname
 fails:Socket.getaddrinfo without global reverse lookups performs a reverse lookup when the reverse_lookup argument is :numeric
 fails:Socket.getaddrinfo without global reverse lookups accepts an Integer as the address family using IPv6
+fails:Socket.getaddrinfo raises ResolutionError when fails to resolve address
