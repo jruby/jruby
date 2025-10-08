@@ -1,2 +1,4 @@
 fails:Warning.warn isn't called by Kernel.warn when category is :deprecated but Warning[:deprecated] is false
 fails:Warning.warn isn't called by Kernel.warn when category is :experimental but Warning[:experimental] is false
+fails:Warning.warn warns when category is :strict_unused_block but Warning[:strict_unused_block] is false
+fails:Warning.warn doesn't print message when category is :strict_unused_block but Warning[:strict_unused_block] is false

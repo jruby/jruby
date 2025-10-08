@@ -1,0 +1,2 @@
+fails:Assignments using = given keyword arguments raies SyntaxError when given keyword arguments in index assignments
+fails:Assignments using += using a #[] given keyword arguments raies SyntaxError when given keyword arguments in index assignments

@@ -11,3 +11,4 @@ fails:Socket.getnameinfo using IPv6 using a 4 element Array as the first argumen
 fails:Socket.getnameinfo using IPv6 using a 4 element Array as the first argument without custom flags uses the 3rd value as the hostname if the 4th is not present
 fails:Socket.getnameinfo using IPv6 using a 4 element Array as the first argument using NI_NUMERICHOST as the flag returns an Array containing the numeric hostname and service name
 fails:Socket.getnameinfo using a String as the first argument raises SocketError or TypeError when using an invalid String
+fails:Socket.getnameinfo raises ResolutionError when fails to resolve address
