@@ -117,7 +117,7 @@ public class ConditionVariable extends RubyObject {
         return context.sites.ConditionVariable;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.8.0")
     public IRubyObject wait_ruby(ThreadContext context, IRubyObject[] args) {
         switch (args.length) {
             case 1:

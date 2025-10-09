@@ -245,7 +245,7 @@ public class Queue extends RubyObject implements DataType {
         putLock.unlock();
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     protected void initializedCheck() {
         initializedCheck(getCurrentContext());
     }
@@ -593,7 +593,7 @@ public class Queue extends RubyObject implements DataType {
         return closed;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public synchronized void checkShutdown() {
         if (isShutdown()) {
             Ruby runtime = getCurrentContext().runtime;

@@ -55,7 +55,7 @@ public class StaticScopeFactory {
         return scope;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static StaticScope newStaticScope(StaticScope parent, StaticScope.Type type, String[] names) {
         if(names == null) {
             return new StaticScope(type, parent);
@@ -64,7 +64,7 @@ public class StaticScopeFactory {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static StaticScope newStaticScope(StaticScope parent, StaticScope.Type type, String[] names, int keywordArgIndex) {
         if(names == null) {
             return new StaticScope(type, parent);

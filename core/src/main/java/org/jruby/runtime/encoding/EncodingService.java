@@ -334,7 +334,7 @@ public final class EncodingService {
         return findEncodingCommon(((RubyString) arg).getByteList(), error);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     private Encoding getEncodingFromNKFName(final String name) {
         HashEntryIterator hei = encodings.entryIterator();
         while (hei.hasNext()) {
@@ -473,7 +473,7 @@ public final class EncodingService {
         }
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public Encoding getWindowsFilesystemEncoding(Ruby runtime) {
         return getWindowsFilesystemEncoding(runtime.getCurrentContext());
     }
@@ -562,7 +562,7 @@ public final class EncodingService {
         return findEncodingEntry(e.getName());
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.1.0")
     public Encoding getFileSystemEncoding(Ruby runtime) {
         return getFileSystemEncoding();
     }

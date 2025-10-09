@@ -50,7 +50,7 @@ public class InheritanceSearchConstInstr extends OneOperandResultBaseInstr imple
         return constName;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.3.0")
     public boolean isNoPrivateConsts() {
         return false;
     }

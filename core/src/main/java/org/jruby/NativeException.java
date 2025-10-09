@@ -39,7 +39,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Define.defineClass;
 
-@Deprecated
+@Deprecated(since = "9.2.0.0")
 @JRubyClass(name = "NativeException", parent = "RuntimeError")
 public class NativeException extends RubyException {
 
@@ -82,7 +82,7 @@ public class NativeException extends RubyException {
         return Java.getInstance(getRuntime(), getCause());
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.0.0")
     public final IRubyObject cause(Block unusedBlock) {
         return cause();
     }

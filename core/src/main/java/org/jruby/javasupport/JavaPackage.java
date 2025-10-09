@@ -105,7 +105,7 @@ public class JavaPackage extends RubyModule {
 
     // NOTE: name is Ruby name not pkg.name ~ maybe it should be just like with JavaClass?
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyString package_name() {
         return package_name(getCurrentContext());
     }
@@ -115,7 +115,7 @@ public class JavaPackage extends RubyModule {
         return newString(context, packageName);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyString to_s() {
         return (RubyString) to_s(getCurrentContext());
     }
@@ -182,7 +182,7 @@ public class JavaPackage extends RubyModule {
         return Java.getProxyOrPackageUnderPackage(context, this, name.toString(), cacheMethod);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     RubyModule relativeJavaProxyClass(final Ruby runtime, final IRubyObject name) {
         var context = runtime.getCurrentContext();
         final String fullName = packageRelativeName( name.toString() ).toString();

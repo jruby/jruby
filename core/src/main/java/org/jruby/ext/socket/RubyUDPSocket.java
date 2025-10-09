@@ -664,27 +664,27 @@ public class RubyUDPSocket extends RubyIPSocket {
     private volatile Class<? extends InetAddress> explicitFamily;
     private volatile ProtocolFamily family;
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     public IRubyObject bind(IRubyObject host, IRubyObject port) {
         return bind(getCurrentContext(), host, port);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     public IRubyObject connect(IRubyObject host, IRubyObject port) {
         return connect(getCurrentContext(), host, port);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     public IRubyObject recvfrom(IRubyObject[] args) {
         return recvfrom(getCurrentContext(), args);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     public IRubyObject send(IRubyObject[] args) {
         return send(getCurrentContext(), args);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
         return open(((RubyBasicObject) recv).getCurrentContext(), recv, args, block);
     }

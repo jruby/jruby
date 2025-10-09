@@ -2191,7 +2191,7 @@ public class RubyEnumerable {
 
         private final RubyArray result;
 
-        @Deprecated
+        @Deprecated(since = "9.1.3.0")
         public AppendBlockCallback(Ruby runtime, RubyArray result) {
             this.result = result;
         }
@@ -2220,13 +2220,13 @@ public class RubyEnumerable {
         private final RubyHash result;
         private final Block block;
 
-        @Deprecated
+        @Deprecated(since = "9.1.3.0")
         public PutKeyValueCallback(Ruby runtime, RubyHash result) {
             this.result = result;
             this.block = Block.NULL_BLOCK;
         }
 
-        @Deprecated
+        @Deprecated(since = "9.3.0.0")
         public PutKeyValueCallback(Ruby runtime, RubyHash result, Block block) {
             this.result = result;
             this.block = block;
@@ -2309,18 +2309,18 @@ public class RubyEnumerable {
 
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static IRubyObject callEach(ThreadContext context, IRubyObject self, IRubyObject[] args, Signature signature,
                                        BlockCallback callback) {
         return callEach(context, eachSite(context), self, args, signature, callback);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static IRubyObject callEach(ThreadContext context, IRubyObject self, BlockCallback callback) {
         return callEach(context, eachSite(context), self, callback);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static IRubyObject each(ThreadContext context, IRubyObject self, BlockBody body) {
         return each(context, eachSite(context), self, body);
     }

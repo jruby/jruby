@@ -287,7 +287,7 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
         return !honorOverride || sites.op_cmp_fixnum.isBuiltin(runtime.getFixnum());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     protected void storeInternal(final int index, final IRubyObject value) {
         storeInternal(getCurrentContext(), index, value);
     }

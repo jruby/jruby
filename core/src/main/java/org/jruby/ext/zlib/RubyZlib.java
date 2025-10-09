@@ -187,7 +187,7 @@ public class RubyZlib {
     @JRubyClass(name="Zlib::DataError", parent="Zlib::Error")
     public static class DataError extends Error {}
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject zlib_version(IRubyObject recv) {
         return zlib_version(((RubyBasicObject) recv).getCurrentContext(), recv);
     }
@@ -218,7 +218,7 @@ public class RubyZlib {
         return asFixnum(context, result);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject crc32(IRubyObject recv, IRubyObject[] args) {
         return crc32(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
@@ -238,7 +238,7 @@ public class RubyZlib {
         return asFixnum(context, result);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject adler32(IRubyObject recv, IRubyObject[] args) {
         return adler32(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
@@ -248,7 +248,7 @@ public class RubyZlib {
         return JZlibInflate.s_inflate(context, recv, string);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject deflate(IRubyObject recv, IRubyObject[] args) {
         return deflate(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
@@ -266,7 +266,7 @@ public class RubyZlib {
         return result;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject crc_table(IRubyObject recv) {
         return crc_table(((RubyBasicObject) recv).getCurrentContext(), recv);
     }
@@ -281,7 +281,7 @@ public class RubyZlib {
         return asFixnum(context, com.jcraft.jzlib.JZlib.crc32_combine(crc1, crc2, len2));
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject crc32_combine(IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         return crc32_combine(((RubyBasicObject) recv).getCurrentContext(), recv, arg0, arg1, arg2);
     }
@@ -296,7 +296,7 @@ public class RubyZlib {
         return asFixnum(context, com.jcraft.jzlib.JZlib.adler32_combine(adler1, adler2, len2));
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject adler32_combine(IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         return adler32_combine(((RubyBasicObject) recv).getCurrentContext(), recv, arg0, arg1, arg2);
     }

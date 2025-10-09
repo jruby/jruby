@@ -113,7 +113,7 @@ public abstract class RubyInteger extends RubyNumeric {
         super(runtime, rubyClass, useObjectSpace);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     public RubyInteger(Ruby runtime, RubyClass rubyClass, boolean useObjectSpace, boolean canBeTainted) {
         super(runtime, rubyClass, useObjectSpace, canBeTainted);
     }
@@ -129,7 +129,7 @@ public abstract class RubyInteger extends RubyNumeric {
         return asFloat(context, asDouble(context));
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public int signum() {
         return signum(getCurrentContext());
     }
@@ -139,7 +139,7 @@ public abstract class RubyInteger extends RubyNumeric {
         return asBigInteger(context).signum();
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyInteger negate() {
         return negate(getCurrentContext());
     }
@@ -505,7 +505,7 @@ public abstract class RubyInteger extends RubyNumeric {
      * @return ""
      * @deprecated Use {@link org.jruby.RubyInteger#numToUint(ThreadContext, IRubyObject)} instead.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static long numToUint(IRubyObject val) {
         return numToUint(((RubyBasicObject) val).getCurrentContext(), val);
     }
@@ -560,7 +560,7 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject to_i() {
         return to_i(getCurrentContext());
     }
@@ -862,7 +862,7 @@ public abstract class RubyInteger extends RubyNumeric {
         return RubyFixnum.one(context.runtime);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyString to_s() {
         return to_s(getCurrentContext());
     }
@@ -874,7 +874,7 @@ public abstract class RubyInteger extends RubyNumeric {
         throw new RuntimeException("all numeric types must override this method");
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyString to_s(IRubyObject x) {
         return to_s(getCurrentContext(), x);
     }
@@ -1102,7 +1102,7 @@ public abstract class RubyInteger extends RubyNumeric {
     @JRubyMethod(name = "bit_length")
     public abstract IRubyObject bit_length(ThreadContext context);
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     boolean isOne() {
         return isOne(getCurrentContext());
     }
@@ -1141,17 +1141,17 @@ public abstract class RubyInteger extends RubyNumeric {
         return context.nil;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject op_uminus() {
         return op_uminus(getCurrentContext());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject op_neg() {
         return to_f(getCurrentContext());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject op_aref(IRubyObject other) {
         return op_aref(getCurrentContext(), other);
     }
@@ -1166,12 +1166,12 @@ public abstract class RubyInteger extends RubyNumeric {
         return op_rshift(getCurrentContext(), other);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject to_f() {
         return to_f(getCurrentContext());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject size() {
         return size(getCurrentContext());
     }
@@ -1187,7 +1187,7 @@ public abstract class RubyInteger extends RubyNumeric {
     /** rb_int_induced_from
      *
      */
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public static IRubyObject induced_from(ThreadContext context, IRubyObject recv, IRubyObject other) {
         if (other instanceof RubyFixnum || other instanceof RubyBignum) return other;
 
@@ -1198,27 +1198,27 @@ public abstract class RubyInteger extends RubyNumeric {
         return other.callMethod(context, "to_i");
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public IRubyObject round() {
         return this;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public IRubyObject ceil(){
         return this;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public IRubyObject floor(){
         return this;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public IRubyObject truncate(){
         return this;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public final IRubyObject op_idiv(ThreadContext context, IRubyObject arg) {
         return div(context, arg);
     }

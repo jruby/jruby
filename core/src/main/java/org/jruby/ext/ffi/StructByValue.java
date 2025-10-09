@@ -44,7 +44,7 @@ public final class StructByValue extends Type {
         this.structLayout = structLayout;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     StructByValue(Ruby runtime, RubyClass structClass, StructLayout structLayout) {
         super(runtime, Access.getClass(runtime.getCurrentContext(), "FFI", "Type", "Struct"),
                 NativeType.STRUCT, structLayout.size, structLayout.alignment);

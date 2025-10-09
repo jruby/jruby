@@ -214,7 +214,7 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
         return this;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     protected void storeInternal(final int index, final IRubyObject value) {
         storeInternal(getCurrentContext(), index, value);
     }

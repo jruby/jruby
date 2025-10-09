@@ -73,7 +73,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         return RubyGzipFile.wrapBlock(context, result, block);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static JZlibRubyGzipWriter newInstance(IRubyObject recv, IRubyObject[] args) {
         return newInstance(((RubyBasicObject) recv).getCurrentContext(), (RubyClass) recv, args);
     }
@@ -100,7 +100,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         super(runtime, type);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject initialize(IRubyObject[] args) {
         return initialize(getCurrentContext(), args, Block.NULL_BLOCK);
     }
@@ -219,7 +219,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
      * @return
      * @deprecated Use {@link JZlibRubyGzipWriter#print(ThreadContext, IRubyObject[])} instead.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject print(IRubyObject[] args) {
         return print(getCurrentContext(), args);
     }
@@ -238,7 +238,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         return context.nil;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject pos() {
         return pos(getCurrentContext());
     }
@@ -248,7 +248,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         return asFixnum(context, io.getTotalIn());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject set_orig_name(IRubyObject obj) {
         return set_orig_name(getCurrentContext(), obj);
     }
@@ -266,7 +266,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         return obj;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject set_comment(IRubyObject obj) {
         return set_comment(getCurrentContext(), obj);
     }
@@ -295,7 +295,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         return obj;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject putc(IRubyObject p1) {
         return putc(getCurrentContext(), p1);
     }
@@ -331,7 +331,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         return realIo;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject flush(IRubyObject[] args) {
         return flush(getCurrentContext(), args);
     }
@@ -358,7 +358,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         return context.nil;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject set_mtime(IRubyObject arg) {
         return set_mtime(getCurrentContext(), arg);
     }
@@ -393,7 +393,7 @@ public class JZlibRubyGzipWriter extends RubyGzipFile {
         return asFixnum(context, crc);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject write(IRubyObject p1) {
         return write(getCurrentContext(), p1);
     }

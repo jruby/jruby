@@ -120,7 +120,7 @@ public class AdoptedNativeThread implements ThreadLike {
     }
 
     @Override
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public String getRubyName() {
         Thread thread = getThread();
         if (thread != null) return thread.getName();

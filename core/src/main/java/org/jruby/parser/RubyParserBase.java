@@ -1693,7 +1693,7 @@ public abstract class RubyParserBase {
         return RubyLexer.isIdentifierChar(name.charAt(0));
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public boolean is_local_id(String name) {
         return RubyLexer.isIdentifierChar(name.charAt(0));
     }
@@ -1978,7 +1978,7 @@ public abstract class RubyParserBase {
 
     public static final ByteList INTERNAL_ID = new ByteList(new byte[] {}, USASCIIEncoding.INSTANCE);
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public String internalId() {
         return INTERNAL_ID.toString();
     }

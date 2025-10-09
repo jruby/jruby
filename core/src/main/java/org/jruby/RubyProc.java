@@ -80,7 +80,7 @@ public class RubyProc extends RubyObject implements DataType {
         this.type = type;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     protected RubyProc(Ruby runtime, RubyClass rubyClass, Block.Type type, ISourcePosition sourcePosition) {
         this(runtime, rubyClass, type, sourcePosition.getFile(), sourcePosition.getLine());
     }
@@ -111,7 +111,7 @@ public class RubyProc extends RubyObject implements DataType {
 
     // Proc class
 
-    @Deprecated
+    @Deprecated(since = "1.6.0")
     public static RubyProc newProc(Ruby runtime, Block.Type type) {
         throw runtime.newRuntimeError("deprecated RubyProc.newProc with no block; do not use");
     }
@@ -127,7 +127,7 @@ public class RubyProc extends RubyObject implements DataType {
         return proc;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public static RubyProc newProc(Ruby runtime, Block block, Block.Type type, ISourcePosition sourcePosition) {
         RubyProc proc = new RubyProc(runtime, runtime.getProc(), type, sourcePosition);
         proc.setup(runtime, block);
@@ -300,7 +300,7 @@ public class RubyProc extends RubyObject implements DataType {
      *
      * Note: nothing should be calling this any more.
      */
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static IRubyObject[] prepareArgs(ThreadContext context, Block.Type type, BlockBody blockBody, IRubyObject[] args) {
         if (type == Block.Type.LAMBDA) return args;
 
@@ -380,7 +380,7 @@ public class RubyProc extends RubyObject implements DataType {
         return newBlock.call(context, args, passedBlock);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public RubyFixnum arity() {
         return arity(getCurrentContext());
     }
@@ -472,17 +472,17 @@ public class RubyProc extends RubyObject implements DataType {
         return context.sites.Proc;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.10.0")
     public final IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject self, Block passedBlock) {
         return block.call(context, args, passedBlock);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject rbClone() {
         return rbClone(getRuntime().getCurrentContext());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject dup() {
         return dup(getRuntime().getCurrentContext());
     }

@@ -143,7 +143,7 @@ public class RubySystemCallError extends RubyStandardError {
 
     private static final ObjectMarshal SYSTEM_CALL_ERROR_MARSHAL = new ObjectMarshal() {
         @Override
-        @Deprecated(since = "10.0", forRemoval = true)
+        @Deprecated(since = "10.0.0.0", forRemoval = true)
         @SuppressWarnings("removal")
         public void marshalTo(Ruby runtime, Object obj, RubyClass type,
                               org.jruby.runtime.marshal.MarshalStream marshalStream) throws IOException {
@@ -172,7 +172,7 @@ public class RubySystemCallError extends RubyStandardError {
         }
 
         @Override
-        @Deprecated(since = "10.0", forRemoval = true)
+        @Deprecated(since = "10.0.0.0", forRemoval = true)
         @SuppressWarnings("removal")
         public Object unmarshalFrom(Ruby runtime, RubyClass type, org.jruby.runtime.marshal.UnmarshalStream input) throws IOException {
             var context = runtime.getCurrentContext();
@@ -207,7 +207,7 @@ public class RubySystemCallError extends RubyStandardError {
                 defineMethods(context, RubySystemCallError.class);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     @Override
     public IRubyObject initialize(IRubyObject[] args, Block unused) {
         return initialize(getRuntime().getCurrentContext(), args);

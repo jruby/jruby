@@ -91,7 +91,7 @@ public class AttrReaderMethod extends JavaMethodZero {
     }
 
     // Used by racc extension, needed for backward-compat with 1.7.
-    @Deprecated
+    @Deprecated(since = "9.0.3.0")
     public AttrReaderMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfiguration, String variableName) {
         this(implementationClass, visibility, variableName);
     }

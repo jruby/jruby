@@ -1280,7 +1280,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
     // Pre-Ruby 3.4 path for JRuby 9.4.x.
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     protected Operand buildDStr(Variable result, U[] nodePieces, Encoding encoding, boolean isFrozen, int line) {
         if (result == null) result = temp();
 
@@ -1924,7 +1924,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     protected abstract Operand buildColon2ForConstAsgnDeclNode(U lhs, Variable valueResult, boolean constMissing);
 
-    @Deprecated
+    @Deprecated(since = "9.4.7.0")
     protected Operand buildOpAsgnConstDecl(Y left, U right, RubySymbol operator) {
         Operand lhs = build((U) left);
         Operand rhs = build(right);
@@ -1940,7 +1940,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         return copy(temp(), putConstant(parent, name, result));
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     protected abstract Operand putConstant(Y constant, Operand value);
     protected abstract Operand putConstant(Y constant, CodeBlock value);
 

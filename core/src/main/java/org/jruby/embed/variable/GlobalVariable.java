@@ -195,7 +195,7 @@ public class GlobalVariable extends AbstractVariable {
         // do nothing
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.20")
     public void tryEagerInjection(Ruby runtime, IRubyObject receiver) {
         tryEagerInjection(receiver);
     }

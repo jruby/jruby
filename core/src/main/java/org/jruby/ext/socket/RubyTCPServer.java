@@ -304,17 +304,17 @@ public class RubyTCPServer extends RubyTCPSocket {
         throw context.runtime.newErrnoENOTCONNError();
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     public IRubyObject accept() {
         return accept(getCurrentContext());
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     public IRubyObject listen(IRubyObject backlog) {
         return listen(((RubyBasicObject) backlog).getCurrentContext(), backlog);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
         return open(((RubyBasicObject) recv).getCurrentContext(), recv, args, block);
     }

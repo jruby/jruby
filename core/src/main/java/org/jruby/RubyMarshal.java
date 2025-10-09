@@ -196,12 +196,12 @@ public class RubyMarshal {
         throw typeError(context, "can't dump ", self, "");
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject dump(IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         return dump(((RubyBasicObject) recv).getCurrentContext(), recv, args, unusedBlock);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject dump(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         int argc = Arity.checkArgumentCount(context, args, 1, 3);
         IRubyObject objectToDump = args[0];

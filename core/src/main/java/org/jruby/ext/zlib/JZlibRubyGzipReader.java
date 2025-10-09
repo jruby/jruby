@@ -83,7 +83,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         return RubyGzipFile.wrapBlock(context, result, block);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static JZlibRubyGzipReader newInstance(IRubyObject recv, IRubyObject[] args) {
         return newInstance(((RubyBasicObject) recv).getCurrentContext(), (RubyClass) recv, args);
     }
@@ -189,7 +189,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         return asFixnum(context, line);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject lineno() {
         return lineno(getCurrentContext());
     }
@@ -346,7 +346,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject readpartial(IRubyObject[] args) {
         return readpartial(getCurrentContext(), args);
     }
@@ -431,7 +431,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         return new ByteList(buffer, 0, length - toRead, false);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject set_lineno(IRubyObject lineArg) {
         return set_lineno(getCurrentContext(), lineArg);
     }
@@ -443,7 +443,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         return lineArg;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject pos() {
         return pos(getCurrentContext());
     }
@@ -453,7 +453,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         return asFixnum(context, position);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject readchar() {
         return readchar(getCurrentContext());
     }
@@ -472,7 +472,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject getc() {
         return getbyte(getCurrentContext());
     }
@@ -491,12 +491,12 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject getbyte() {
         return getbyte(getCurrentContext());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject readbyte() {
         return readbyte(getCurrentContext());
     }
@@ -571,7 +571,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         return realIo;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject eof() {
         return eof(getCurrentContext());
     }
@@ -585,7 +585,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         }
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject eof_p() {
         return eof_p(getCurrentContext());
     }
@@ -595,7 +595,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         return eof(context);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject unused() {
         return unused(getCurrentContext());
     }
@@ -699,7 +699,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         return context.nil;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject ungetbyte(IRubyObject b) {
         return ungetbyte(getCurrentContext(), b);
     }

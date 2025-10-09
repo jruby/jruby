@@ -21,7 +21,7 @@ public class DataConverters {
     @SuppressWarnings("unchecked")
     private static final Map<IRubyObject, NativeDataConverter> enumConverters = Collections.synchronizedMap(new WeakIdentityHashMap());
 
-    @Deprecated
+    @Deprecated(since = "1.7.17")
     static boolean isEnumConversionRequired(Type type, RubyHash enums) {
         if (type instanceof Type.Builtin && enums != null && !enums.isEmpty()) {
             switch (type.getNativeType()) {
@@ -94,7 +94,7 @@ public class DataConverters {
         return null;
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.17")
     static NativeDataConverter getParameterConverter(Type type, RubyHash enums) {
         if (isEnumConversionRequired(type, enums)) {
             NativeDataConverter converter = enumConverters.get(enums);

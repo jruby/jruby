@@ -776,13 +776,13 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     // Left for arjdbc (being phased out from 61.3 forward and newer points of newer arjdbc versions)
-    @Deprecated
+    @Deprecated(since = "9.4.7.0")
     public static RubyBigDecimal newInstance(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         return (RubyBigDecimal) newInstance(context, recv, arg, true, true);
     }
 
     // Left for arjdbc (being phased out from 61.3 forward and newer points of newer arjdbc versions)
-    @Deprecated
+    @Deprecated(since = "9.4.7.0")
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject arg, boolean strict, boolean exception) {
         switch (((RubyBasicObject) arg).getNativeClassIndex()) {
             case RATIONAL:
@@ -1633,7 +1633,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return cmp(context, arg, 'G');
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject abs() {
         return abs(getCurrentContext());
     }
@@ -1748,7 +1748,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return newArray(context, new RubyBigDecimal(runtime, div), new RubyBigDecimal(runtime, mod));
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject exponent() {
         return exponent(getCurrentContext());
     }
@@ -1763,7 +1763,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return asBoolean(context, !isNaN() && !isInfinity());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject finite_p() {
         return finite_p(getCurrentContext());
     }
@@ -1821,7 +1821,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return isZero(context) ? context.nil : this;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public IRubyObject nonzero_p() {
         return nonzero_p(getCurrentContext());
     }
@@ -1895,7 +1895,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return (value.unscaledValue().toString().length() + 8) / BASE_FIG;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.3.0")
     @JRubyMethod
     public IRubyObject precs(ThreadContext context) {
         warnDeprecated(context, "BigDecimal#precs is deprecated and will be removed in the future; use BigDecimal#precision instead.");
@@ -2034,7 +2034,7 @@ public class RubyBigDecimal extends RubyNumeric {
      * @return
      * @deprecated Use {@link org.jruby.ext.bigdecimal.RubyBigDecimal#sign(ThreadContext)} instead.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject sign() {
         return sign(getCurrentContext());
     }
@@ -2086,7 +2086,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return val.precision() - val.scale();
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject sqrt(IRubyObject arg) {
         return sqrt(getCurrentContext(), arg);
     }
@@ -2111,7 +2111,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return n;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject to_f() {
         return toFloat(getCurrentContext(), true);
     }
@@ -2148,7 +2148,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return toFloat(getRuntime().getCurrentContext(), false);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public final IRubyObject to_int() {
         return to_int(getCurrentContext());
     }
@@ -2164,13 +2164,13 @@ public class RubyBigDecimal extends RubyNumeric {
         }
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     final RubyInteger to_int(Ruby runtime) {
         return (RubyInteger) to_int(getCurrentContext());
     }
 
     @Override
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public RubyInteger convertToInteger() {
         return (RubyInteger) to_int(getCurrentContext());
     }
@@ -2355,13 +2355,13 @@ public class RubyBigDecimal extends RubyNumeric {
         return engineeringValue(context, null).toString();
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public IRubyObject to_s(IRubyObject[] args) {
         return toStringImpl(getCurrentContext(), args.length == 0 ? null : (args[0].isNil() ? null : args[0].toString()));
     }
 
     // Note: #fix has only no-arg form, but truncate allows optional parameter.
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject fix() {
         return fix(getCurrentContext());
     }
@@ -2398,7 +2398,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return asBoolean(context, isZero(context));
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public IRubyObject zero_p() {
         return zero_p(getCurrentContext());
     }

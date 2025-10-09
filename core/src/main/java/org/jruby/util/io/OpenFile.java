@@ -218,7 +218,7 @@ public class OpenFile implements Finalizable {
         return mode;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public String getModeAsString(Ruby runtime) {
         return getModeAsString(runtime.getCurrentContext());
     }
@@ -255,7 +255,7 @@ public class OpenFile implements Finalizable {
         return oflags;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static String ioOflagsModestr(Ruby runtime, int oflags) {
         return ioOflagsModestr(runtime.getCurrentContext(), oflags);
     }
@@ -286,7 +286,7 @@ public class OpenFile implements Finalizable {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static int ioModestrOflags(Ruby runtime, String modestr) {
         return ioModestrOflags(runtime.getCurrentContext(), modestr);
     }
@@ -333,7 +333,7 @@ public class OpenFile implements Finalizable {
         return oflags;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static int ioModestrFmode(Ruby runtime, String modestr) {
         return ioModestrFmode(runtime.getCurrentContext(), modestr);
     }
@@ -1884,7 +1884,7 @@ public class OpenFile implements Finalizable {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.8.0")
     public void incrementLineno(Ruby runtime) {
         boolean locked = lock();
         try {
@@ -2771,7 +2771,7 @@ public class OpenFile implements Finalizable {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public static int getFModeFromString(String modesString) throws InvalidValueException {
         int fmode = 0;
         int length = modesString.length();
@@ -3044,7 +3044,7 @@ public class OpenFile implements Finalizable {
         return lock.isHeldByCurrentThread();
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public long binwrite(ThreadContext context, byte[] ptrBytes, int ptr, int len, boolean nosync) {
         return binwriteInt(context, ptrBytes, ptr, len, nosync);
     }

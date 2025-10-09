@@ -68,7 +68,7 @@ public class RubyFileTest {
         return asBoolean(context, stat != null && stat.isBlockDev());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject blockdev_p(IRubyObject recv, IRubyObject filename) {
         return blockdev_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
     }
@@ -80,17 +80,17 @@ public class RubyFileTest {
         return asBoolean(context, stat != null && stat.isCharDev());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject chardev_p(IRubyObject recv, IRubyObject filename) {
         return chardev_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject directory_p(IRubyObject recv, IRubyObject filename) {
         return directory_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject directory_p(Ruby ruby, IRubyObject filename) {
         return directory_p(ruby.getCurrentContext(), filename);
     }
@@ -113,7 +113,7 @@ public class RubyFileTest {
         return asBoolean(context, fileResource(context, filename).canExecute());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject executable_p(IRubyObject recv, IRubyObject filename) {
         return executable_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
     }
@@ -128,12 +128,12 @@ public class RubyFileTest {
         }
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject executable_real_p(IRubyObject recv, IRubyObject filename) {
         return executable_real_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject exist_p(IRubyObject recv, IRubyObject filename) {
         return exist_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
     }
@@ -152,7 +152,7 @@ public class RubyFileTest {
         return existsOnClasspath(context, pathStr);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyBoolean file_p(IRubyObject recv, IRubyObject filename) {
         return file_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
     }
@@ -172,7 +172,7 @@ public class RubyFileTest {
         return asBoolean(context, stat != null && stat.isGroupOwned());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject grpowned_p(IRubyObject recv, IRubyObject filename) {
         return grpowned_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
     }
@@ -211,7 +211,7 @@ public class RubyFileTest {
         return asBoolean(context, stat != null && stat.isOwned());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject owned_p(IRubyObject recv, IRubyObject filename) {
         return owned_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
     }
@@ -223,12 +223,12 @@ public class RubyFileTest {
         return asBoolean(context, stat != null && stat.isNamedPipe());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject pipe_p(IRubyObject recv, IRubyObject filename) {
         return pipe_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject readable_p(IRubyObject recv, IRubyObject filename) {
         return readable_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
     }
@@ -251,7 +251,7 @@ public class RubyFileTest {
         return asBoolean(context, stat != null && stat.isROwned());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject rowned_p(IRubyObject recv, IRubyObject filename) {
         return rowned_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
     }
@@ -263,7 +263,7 @@ public class RubyFileTest {
         return asBoolean(context, stat != null && stat.isSetgid());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject setgid_p(IRubyObject recv, IRubyObject filename) {
         return setgid_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
     }
@@ -275,12 +275,12 @@ public class RubyFileTest {
         return asBoolean(context, stat != null && stat.isSetuid());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject setuid_p(IRubyObject recv, IRubyObject filename) {
         return setuid_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject size(IRubyObject recv, IRubyObject filename) {
         return size(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
     }
@@ -298,7 +298,7 @@ public class RubyFileTest {
         return asFixnum(context, stat.st_size());
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.1.0")
     public static IRubyObject size_p(IRubyObject recv, IRubyObject filename) {
         return size_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
     }
@@ -324,7 +324,7 @@ public class RubyFileTest {
         return asBoolean(context, stat != null && stat.isSocket());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject socket_p(IRubyObject recv, IRubyObject filename) {
         return socket_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
     }
@@ -336,7 +336,7 @@ public class RubyFileTest {
         return asBoolean(context, stat != null && stat.isSticky());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject sticky_p(IRubyObject recv, IRubyObject filename) {
         return sticky_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
     }
@@ -346,7 +346,7 @@ public class RubyFileTest {
         return asBoolean(context, fileResource(context, filename).isSymLink());        
     }
     
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static RubyBoolean symlink_p(IRubyObject recv, IRubyObject filename) {
         return symlink_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
     }
@@ -358,12 +358,12 @@ public class RubyFileTest {
         return asBoolean(context, fileResource(context, filename).canWrite());        
     }
     
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static RubyBoolean writable_p(IRubyObject recv, IRubyObject filename) {
         return writable_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.1.0")
     public static RubyBoolean zero_p(IRubyObject recv, IRubyObject filename) {
         return zero_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
     }
@@ -414,7 +414,7 @@ public class RubyFileTest {
             return RubyFileTest.blockdev_p(context, recv, filename);
         }
         
-        @Deprecated
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject blockdev_p(IRubyObject recv, IRubyObject filename) {
             return blockdev_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
         }
@@ -424,7 +424,7 @@ public class RubyFileTest {
             return RubyFileTest.chardev_p(context, recv, filename);            
         }
         
-        @Deprecated
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject chardev_p(IRubyObject recv, IRubyObject filename) {
             return chardev_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
         }
@@ -439,7 +439,7 @@ public class RubyFileTest {
             return RubyFileTest.executable_p(context, recv, filename);            
         }
         
-        @Deprecated
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject executable_p(IRubyObject recv, IRubyObject filename) {
             return executable_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
         }
@@ -449,7 +449,7 @@ public class RubyFileTest {
             return RubyFileTest.executable_real_p(context, recv, filename);            
         }
         
-        @Deprecated
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject executable_real_p(IRubyObject recv, IRubyObject filename) {
             return executable_real_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
         }
@@ -469,7 +469,7 @@ public class RubyFileTest {
             return RubyFileTest.grpowned_p(context, recv, filename);            
         }
         
-        @Deprecated
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject grpowned_p(IRubyObject recv, IRubyObject filename) {
             return grpowned_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
         }
@@ -484,7 +484,7 @@ public class RubyFileTest {
             return RubyFileTest.owned_p(context, recv, filename);
         }
         
-        @Deprecated
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject owned_p(IRubyObject recv, IRubyObject filename) {
             return owned_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
         }
@@ -494,7 +494,7 @@ public class RubyFileTest {
             return RubyFileTest.pipe_p(context, recv, filename);
         }
         
-        @Deprecated
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject pipe_p(IRubyObject recv, IRubyObject filename) {
             return pipe_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
         }
@@ -509,7 +509,7 @@ public class RubyFileTest {
             return RubyFileTest.setgid_p(context, recv, filename);
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject setgid_p(IRubyObject recv, IRubyObject filename) {
             return setgid_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
         }
@@ -519,7 +519,7 @@ public class RubyFileTest {
             return RubyFileTest.setuid_p(context, recv, filename);            
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject setuid_p(IRubyObject recv, IRubyObject filename) {
             return setuid_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
         }
@@ -539,7 +539,7 @@ public class RubyFileTest {
             return RubyFileTest.socket_p(context, recv, filename);            
         }
         
-        @Deprecated
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject socket_p(IRubyObject recv, IRubyObject filename) {
             return socket_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
         }
@@ -549,7 +549,7 @@ public class RubyFileTest {
             return RubyFileTest.sticky_p(context, recv, filename);
         }
 
-        @Deprecated
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject sticky_p(IRubyObject recv, IRubyObject filename) {
             return sticky_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
         }
@@ -559,7 +559,7 @@ public class RubyFileTest {
             return RubyFileTest.symlink_p(context, recv, filename);            
         }
         
-        @Deprecated
+        @Deprecated(since = "10.0.0.0")
         public static RubyBoolean symlink_p(IRubyObject recv, IRubyObject filename) {
             return symlink_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
         }
@@ -569,7 +569,7 @@ public class RubyFileTest {
             return RubyFileTest.writable_p(context, recv, filename);
         }
         
-        @Deprecated
+        @Deprecated(since = "10.0.0.0")
         public static RubyBoolean writable_p(IRubyObject recv, IRubyObject filename) {
             return writable_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
         }
@@ -589,7 +589,7 @@ public class RubyFileTest {
             return RubyFileTest.worldWritable(context, recv, filename);
         }
 
-        @Deprecated
+        @Deprecated(since = "9.4.6.0")
         public static IRubyObject identical_p(IRubyObject recv, IRubyObject filename1, IRubyObject filename2) {
             return RubyFileTest.identical_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename1, filename2);
         }
@@ -640,7 +640,7 @@ public class RubyFileTest {
         throw context.runtime.newErrnoENOENTError("No such file or directory - " + filename.convertToString());
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public static IRubyObject identical_p(IRubyObject recv, IRubyObject filename1, IRubyObject filename2) {
         return identical_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename1, filename2);
     }

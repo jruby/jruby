@@ -49,7 +49,7 @@ public class CallBlock19 extends BlockBody {
 
     // This is a stop-gap method where we try to construct an equivalent Signature from an Arity but beyond very simple Arity's it will strip
     // some info off.
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static Block newCallClosure(IRubyObject self, RubyModule imClass, Arity arity, BlockCallback callback, ThreadContext context) {
         Binding binding = context.currentBinding(self, Visibility.PUBLIC);
         BlockBody body = new CallBlock19(Signature.from(arity), callback, context);

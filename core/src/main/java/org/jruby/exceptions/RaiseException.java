@@ -296,12 +296,12 @@ public class RaiseException extends JumpException {
     public static RaiseException createNativeRaiseException(Ruby runtime, Throwable cause) {
         return createNativeRaiseException(runtime, cause, null);
     }
-    @Deprecated
+    @Deprecated(since = "9.2.7.0")
     public static RaiseException createNativeRaiseException(Ruby runtime, Throwable cause, Member target) {
         org.jruby.NativeException nativeException = new org.jruby.NativeException(runtime, runtime.getNativeException(), cause);
         return new RaiseException(cause, nativeException);
     }
-    @Deprecated
+    @Deprecated(since = "9.2.7.0")
     public RaiseException(Throwable cause, org.jruby.NativeException nativeException) {
         super(nativeException.getMessageAsJavaString(), cause);
         providedMessage = super.getMessage(); // cause.getClass().getId() + ": " + message
@@ -310,17 +310,17 @@ public class RaiseException extends JumpException {
         setStackTraceFromException();
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public RaiseException(RubyException exception) {
         this(exception.getMessageAsJavaString(), exception);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public RaiseException(RubyException exception, boolean unused) {
         this(exception.getMessageAsJavaString(), exception);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public RaiseException(RubyException exception, IRubyObject backtrace) {
         // this(exception.getMessageAsJavaString(), exception) would preRaise twice!
         super(exception.getMessageAsJavaString());
@@ -328,17 +328,17 @@ public class RaiseException extends JumpException {
         preRaise(exception.getRuntime().getCurrentContext(), backtrace, true);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public RaiseException(Ruby runtime, RubyClass exceptionClass, String msg) {
         this(runtime, exceptionClass, msg, null);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public RaiseException(Ruby runtime, RubyClass exceptionClass, String msg, boolean unused) {
         this(runtime, exceptionClass, msg, null);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public RaiseException(Ruby runtime, RubyClass exceptionClass, String msg, IRubyObject backtrace) {
         super(msg == null ? msg = "No message available" : msg);
         final ThreadContext context = runtime.getCurrentContext();
@@ -349,17 +349,17 @@ public class RaiseException extends JumpException {
         preRaise(context, backtrace, true);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public RaiseException(Ruby runtime, RubyClass exceptionClass, String msg, IRubyObject backtrace, boolean unused) {
         this(runtime, exceptionClass, msg, backtrace);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     protected final void setException(RubyException newException, boolean unused) {
         this.exception = newException;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.7.0")
     private void preRaise(ThreadContext context, StackTraceElement[] javaTrace) {
         preRaise(context, null, false);
 
@@ -371,7 +371,7 @@ public class RaiseException extends JumpException {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static RaiseException from(RubyException exception, IRubyObject backtrace) {
         return new RaiseException(exception, backtrace);
     }

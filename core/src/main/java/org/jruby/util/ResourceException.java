@@ -87,7 +87,7 @@ public abstract class ResourceException extends IOException {
         public TooManySymlinks(String path) { super("ELOOP", path); }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.1.0")
     public static class IOError extends ResourceException {
         private final IOException ioe;
 

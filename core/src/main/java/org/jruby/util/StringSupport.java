@@ -578,7 +578,7 @@ public final class StringSupport {
         return enc.mbcToCode(bytes, p, end);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static int codePoint(Ruby runtime, Encoding enc, byte[] bytes, int p, int end) {
         return codePoint(runtime.getCurrentContext(), enc, bytes, p, end);
     }
@@ -591,7 +591,7 @@ public final class StringSupport {
         }
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static int codePoint(final Ruby runtime, final ByteList value) {
         return codePoint(runtime.getCurrentContext(), value);
     }
@@ -745,12 +745,12 @@ public final class StringSupport {
         return offset(str.getEncoding(), value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), pos);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public static int toLower(Encoding enc, int c) {
         return Encoding.isAscii(c) ? AsciiTables.ToLowerCaseTable[c] : c;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public static int toUpper(Encoding enc, int c) {
         return Encoding.isAscii(c) ? AsciiTables.ToUpperCaseTable[c] : c;
     }
@@ -907,13 +907,13 @@ public final class StringSupport {
         return 0;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static int memchr(byte[] ptr, int start, final int find, int len) {
         return Helpers.memchr(ptr, start, find, len);
     }
 
     // MRI: StringValueCStr, rb_string_value_cstr without trailing null addition
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyString checkEmbeddedNulls(Ruby runtime, IRubyObject ptr) {
         return Check.checkEmbeddedNulls(runtime.getCurrentContext(), ptr);
     }
@@ -1161,7 +1161,7 @@ public final class StringSupport {
         return count;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static int strCount(ByteList str, Ruby runtime, boolean[] table, TrTables tables, Encoding enc) {
         return strCount(runtime.getCurrentContext(), str, table, tables, enc);
     }
@@ -1407,7 +1407,7 @@ public final class StringSupport {
         return tables;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static TrTables trSetupTable(final ByteList str, final Ruby runtime,
                                         final boolean[] stable, TrTables tables, final boolean first, final Encoding enc) {
         return trSetupTable(runtime.getCurrentContext(), str, stable, tables, first, enc);
@@ -1574,7 +1574,7 @@ public final class StringSupport {
         return valueCopy;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static ByteList succCommon(Ruby runtime, ByteList original) {
         return succCommon(runtime.getCurrentContext(), original);
     }
@@ -1896,12 +1896,12 @@ public final class StringSupport {
         return source.getByteList();
     }
 
-    @Deprecated(since = "9.4")
+    @Deprecated(since = "10.0.0.0")
     public static void replaceInternal19(int beg, int len, CodeRangeable source, CodeRangeable repl) {
         strUpdate(beg, len, source, repl);
     }
 
-    @Deprecated(since = "9.4")
+    @Deprecated(since = "10.0.0.0")
     public static void replaceInternal19(Ruby runtime, int beg, int len, RubyString source, RubyString repl) {
         strUpdate(runtime.getCurrentContext(), beg, len, source, repl);
     }
@@ -1930,7 +1930,7 @@ public final class StringSupport {
         if (cr != source.getCodeRange()) source.setCodeRange(cr);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static void strUpdate(Ruby runtime, int beg, int len, RubyString source, RubyString repl) {
         strUpdate(runtime.getCurrentContext(), beg, len, source, repl);
     }
@@ -2004,7 +2004,7 @@ public final class StringSupport {
         return modify ? rubyString : null;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static CodeRangeable strDeleteBang(CodeRangeable rubyString, Ruby runtime, boolean[] squeeze, TrTables tables, Encoding enc) {
         return strDeleteBang(runtime.getCurrentContext(), rubyString, squeeze, tables, enc);
     }
@@ -2572,7 +2572,7 @@ public final class StringSupport {
         return null;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static CodeRangeable trTransHelper(Ruby runtime, CodeRangeable self, CodeRangeable srcStr, CodeRangeable replStr, boolean sflag) {
         try {
             return trTransHelper(self, srcStr, replStr, sflag);
@@ -2694,7 +2694,7 @@ public final class StringSupport {
         return false;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static boolean multiByteSqueeze(Ruby runtime, ByteList value, boolean squeeze[], TrTables tables, Encoding enc, boolean isArg) {
         return multiByteSqueeze(runtime.getCurrentContext(), value, squeeze, tables, enc, isArg);
     }
@@ -2819,7 +2819,7 @@ public final class StringSupport {
         return -1;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static int checkCaseMapOptions(Ruby runtime, IRubyObject arg0, IRubyObject arg1, int flags) {
         return checkCaseMapOptions(runtime.getCurrentContext(), arg0, arg1, flags);
     }
@@ -2848,7 +2848,7 @@ public final class StringSupport {
         return flags;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static int checkCaseMapOptions(Ruby runtime, IRubyObject arg0, int flags) {
         return checkCaseMapOptions(runtime.getCurrentContext(), arg0, arg0, flags);
     }
@@ -2888,7 +2888,7 @@ public final class StringSupport {
 
     private static final int CASE_MAPPING_ADDITIONAL_LENGTH = 20;
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static ByteList caseMap(Ruby runtime, ByteList src, IntHolder flags, Encoding enc) {
         return caseMap(runtime.getCurrentContext(), src, flags, enc);
     }
@@ -2930,7 +2930,7 @@ public final class StringSupport {
         return tgt;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static void asciiOnlyCaseMap(Ruby runtime, ByteList value, IntHolder flags, Encoding enc) {
         asciiOnlyCaseMap(runtime.getCurrentContext(), value, flags);
     }
@@ -2960,7 +2960,7 @@ public final class StringSupport {
         return new String(bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.16.0")
     public static boolean isUnicode(Encoding enc) {
         return enc.isUnicode();
     }

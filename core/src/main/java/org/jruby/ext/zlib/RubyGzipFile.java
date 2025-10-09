@@ -79,12 +79,12 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return instance;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject wrap(ThreadContext context, IRubyObject recv, IRubyObject io, Block block) {
         return wrap(context, recv, new IRubyObject[]{io}, block);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject wrap19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         return wrap(context, recv, args, block);
     }
@@ -98,7 +98,7 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return wrapBlock(context, instance, block);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyGzipFile newInstance(IRubyObject recv, Block block) {
         return newInstance(((RubyBasicObject) recv).getCurrentContext(), recv, block);
     }
@@ -159,7 +159,7 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         }
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public Encoding getReadEncoding() {
         return getReadEncoding(getCurrentContext());
     }
@@ -180,7 +180,7 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return enc2;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     protected RubyString newStr(Ruby runtime, ByteList value) {
         return newStr(runtime.getCurrentContext(), value);
     }
@@ -194,7 +194,7 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
                 EncodingUtils.strConvEncOpts(context, newString(context, value), enc2, enc, ecflags, ecopts);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject os_code() {
         return os_code(getCurrentContext());
     }
@@ -204,7 +204,7 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return asFixnum(context, osCode & 0xff);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject closed_p() {
         return closed_p(getCurrentContext());
     }
@@ -218,7 +218,7 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return closed;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject orig_name() {
         return orig_name(getCurrentContext());
     }
@@ -230,7 +230,7 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return nullFreeOrigName == null ? context.nil : nullFreeOrigName;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject to_io() {
         return to_io(getCurrentContext());
     }
@@ -240,7 +240,7 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return realIo;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject comment() {
         return comment(getCurrentContext());
     }
@@ -252,7 +252,7 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return nullFreeComment == null ? context.nil : nullFreeComment;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject crc() {
         return crc(getCurrentContext());
     }
@@ -267,7 +267,7 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return mtime;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject sync() {
         return sync(getCurrentContext());
     }
@@ -277,7 +277,7 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return sync ? context.tru : context.fals;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject finish() {
         return finish(getCurrentContext());
     }
@@ -291,7 +291,7 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return realIo;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject close() {
         return close(getCurrentContext());
     }
@@ -301,7 +301,7 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return realIo;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject level() {
         return level(getCurrentContext());
     }
@@ -311,7 +311,7 @@ public class RubyGzipFile extends RubyObject implements IOEncodable {
         return asFixnum(context, level);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject set_sync(IRubyObject arg) {
         return set_sync(getCurrentContext(), arg);
     }

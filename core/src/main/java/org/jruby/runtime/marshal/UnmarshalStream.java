@@ -84,7 +84,7 @@ import static org.jruby.util.RubyStringBuilder.str;
  *
  * @author Anders
  */
-@Deprecated(since = "10.0", forRemoval = true)
+@Deprecated(since = "10.0.0.0", forRemoval = true)
 @SuppressWarnings("removal")
 public class UnmarshalStream extends InputStream {
 
@@ -759,13 +759,13 @@ public class UnmarshalStream extends InputStream {
         return inputStream.read();
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     public void defaultVariablesUnmarshal(MarshalState state, IRubyObject object) throws IOException {
         ivar(state, object, null);
     }
 
     // r_object
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     public IRubyObject unmarshalObject(boolean _callProc) throws IOException { // <-- 100% false by all callers
         IRubyObject savedProc = this.proc;
         try {
@@ -776,12 +776,12 @@ public class UnmarshalStream extends InputStream {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public UnmarshalStream(Ruby runtime, InputStream in, IRubyObject proc, boolean taint, boolean untrust) throws IOException {
         this(runtime, in, proc);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     public UnmarshalStream(Ruby runtime, InputStream in, IRubyObject proc, boolean taint) throws IOException {
         this(runtime, in, proc);
     }

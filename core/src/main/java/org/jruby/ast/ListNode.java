@@ -228,7 +228,7 @@ public class ListNode extends Node implements Iterable<Node> {
         return properList;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public List<Node> childNodes() {
         Node single = this.single;
 

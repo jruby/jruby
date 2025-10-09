@@ -1180,7 +1180,7 @@ public class RubyHash extends RubyObject implements Map {
         return this;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public RubyHash to_h(ThreadContext context) {
         return to_h(context, Block.NULL_BLOCK);
     }
@@ -1540,7 +1540,7 @@ public class RubyHash extends RubyObject implements Map {
         return hasKey(key) ? context.tru : context.fals;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.5.0")
     public RubyBoolean has_key_p(IRubyObject key) {
         return has_key_p(metaClass.runtime.getCurrentContext(), key);
     }
@@ -1880,7 +1880,7 @@ public class RubyHash extends RubyObject implements Map {
         return modified[0];
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public IRubyObject sort(ThreadContext context, Block block) {
         return to_a(context).sort_bang(context, block);
     }
@@ -2161,7 +2161,7 @@ public class RubyHash extends RubyObject implements Map {
         }
     };
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public RubyHash merge_bang(ThreadContext context, IRubyObject other, Block block) {
         return merge_bang(context, new IRubyObject[]{other}, block);
     }
@@ -2198,7 +2198,7 @@ public class RubyHash extends RubyObject implements Map {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public RubyHash merge(ThreadContext context, IRubyObject other, Block block) {
         return merge(context, new IRubyObject[]{other}, block);
     }
@@ -2555,7 +2555,7 @@ public class RubyHash extends RubyObject implements Map {
 
     // FIXME:  Total hack to get flash in Rails marshalling/unmarshalling in session ok...We need
     // to totally change marshalling to work with overridden core classes.
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0.0.0", forRemoval = true)
     @SuppressWarnings("removal")
     public static void marshalTo(final RubyHash hash, final org.jruby.runtime.marshal.MarshalStream output) throws IOException {
         var context = hash.getRuntime().getCurrentContext();
@@ -2590,7 +2590,7 @@ public class RubyHash extends RubyObject implements Map {
         if (hash.ifNone != UNDEF) output.dumpObject(context, out, hash.ifNone);
     }
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0.0.0", forRemoval = true)
     @SuppressWarnings("removal")
     private static final VisitorWithState<org.jruby.runtime.marshal.MarshalStream> MarshalDumpVisitor = new VisitorWithState<>() {
         @Override
@@ -2604,7 +2604,7 @@ public class RubyHash extends RubyObject implements Map {
         }
     };
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0.0.0", forRemoval = true)
     @SuppressWarnings("removal")
     public static RubyHash unmarshalFrom(org.jruby.runtime.marshal.UnmarshalStream input, boolean defaultValue) throws IOException {
         RubyHash result = (RubyHash) input.entry(newHash(input.getRuntime()));
@@ -3056,24 +3056,24 @@ public class RubyHash extends RubyObject implements Map {
         return context.sites.Hash;
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.5")
     public IRubyObject op_aset(IRubyObject key, IRubyObject value) {
         return op_aset(metaClass.runtime.getCurrentContext(), key, value);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public IRubyObject each_pair(final ThreadContext context, final Block block) {
         return block.isGiven() ? each_pairCommon(context, block) : enumeratorizeWithSize(context, this, "each_pair", RubyHash::size);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.3.0")
     public RubyHash each_pairCommon(final ThreadContext context, final Block block, final boolean oneNine) {
         iteratorVisitAll(context, YieldKeyValueArrayVisitor, block);
 
         return this;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.3.0")
     public final void visitAll(Visitor visitor) {
         // use -1 to disable concurrency checks
         visitLimited(getRuntime().getCurrentContext(), visitor, -1, null);
@@ -3082,7 +3082,7 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_default
      *
      */
-    @Deprecated
+    @Deprecated(since = "9.1.3.0")
     public IRubyObject default_value_get(ThreadContext context, IRubyObject[] args) {
         return switch (args.length) {
             case 0 -> default_value_get(context);
@@ -3091,63 +3091,63 @@ public class RubyHash extends RubyObject implements Map {
         };
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.16.0")
     protected void internalPutSmall(final IRubyObject key, final IRubyObject value, final boolean checkForExisting) {
         internalPutNoResize(key, value, checkForExisting);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.10.0")
     @Override
     public RubyArray to_a() {
         return to_a(getCurrentContext());
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.10.0")
     public IRubyObject default_value_set(final IRubyObject defaultValue) {
         return default_value_set(getCurrentContext(), defaultValue);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.10.0")
     public IRubyObject default_proc() {
         return (flags & PROCDEFAULT_HASH_F) != 0 ? ifNone : metaClass.runtime.getNil();
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.10.0")
     public IRubyObject set_default_proc(IRubyObject proc) {
         return set_default_proc(getCurrentContext(), proc);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.10.0")
     public RubyFixnum rb_size() {
         return rb_size(getCurrentContext());
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.10.0")
     public RubyBoolean empty_p() {
         return asBoolean(getCurrentContext(), isEmpty());
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.10.0")
     public RubyHash rehash() {
         return rehash(getCurrentContext());
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.10.0")
     public RubyHash to_hash() {
         return to_hash(getCurrentContext());
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.10.0")
     public final RubyArray rb_values() {
         return values(metaClass.runtime.getCurrentContext());
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.10.0")
     public RubyHash rb_clear() {
         return rb_clear(getCurrentContext());
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public IRubyObject any_p(ThreadContext context, IRubyObject[] args, Block block) {
         return switch (args.length) {
             case 0 -> any_p(context, block);
@@ -3156,7 +3156,7 @@ public class RubyHash extends RubyObject implements Map {
         };
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public IRubyObject initialize(IRubyObject[] args, final Block block) {
         var context = getCurrentContext();
         return switch (args.length) {

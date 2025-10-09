@@ -311,7 +311,7 @@ public class StaticScope implements Serializable, Cloneable {
         System.arraycopy(names, 0, variableNames, 0, names.length);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject getConstantDefined(String internedName) {
         return getConstantDefined(cref.getRuntime().getCurrentContext(), internedName);
     }
@@ -329,7 +329,7 @@ public class StaticScope implements Serializable, Cloneable {
         return previousCRefScope == null ? null : previousCRefScope.getConstantDefinedNoObject(context, internedName);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject getConstantDefinedNoObject(String internedName) {
         return getConstantDefinedNoObject(cref.getRuntime().getCurrentContext(), internedName);
     }
@@ -338,7 +338,7 @@ public class StaticScope implements Serializable, Cloneable {
         return previousCRefScope == null ? null : getConstantDefined(context, internedName);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject getConstant(String internedName) {
         return getConstant(cref.getRuntime().getCurrentContext(), internedName);
     }
@@ -350,7 +350,7 @@ public class StaticScope implements Serializable, Cloneable {
         return result == null ? cref.getConstantNoConstMissing(context, internedName) : result;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject getConstantInner(String internedName) {
         return getScopedConstant(cref.getRuntime().getCurrentContext(), internedName);
     }
@@ -510,7 +510,7 @@ public class StaticScope implements Serializable, Cloneable {
         return collection;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyArray getLocalVariables(Ruby runtime) {
         return getLocalVariables(runtime.getCurrentContext());
     }

@@ -138,12 +138,12 @@ public abstract class MethodInstaller extends NamedInstaller {
         aliases.remove(alias);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     final void defineMethods(RubyModule target, DynamicMethod invoker) {
         defineMethods(target.getCurrentContext(), target, invoker, true);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     protected final void defineMethods(RubyModule target, DynamicMethod invoker, boolean checkDups) {
         defineMethods(target.getCurrentContext(), target, invoker, checkDups);
     }

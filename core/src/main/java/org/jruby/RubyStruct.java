@@ -225,7 +225,7 @@ public class RubyStruct extends RubyObject {
 
     // Struct methods
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static RubyClass newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
         return newInstance(((RubyBasicObject) recv).getCurrentContext(), recv, args, block);
     }
@@ -329,7 +329,7 @@ public class RubyStruct extends RubyObject {
 
     // For binding purposes on the newly created struct types
     public static class StructMethods {
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject newStruct(IRubyObject recv, IRubyObject[] args, Block block) {
             return Create.newStruct(((RubyBasicObject) recv).getCurrentContext(), (RubyClass) recv, args, block);
         }
@@ -339,7 +339,7 @@ public class RubyStruct extends RubyObject {
             return Create.newStruct(context, (RubyClass) recv, args, block);
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject newStruct(IRubyObject recv, Block block) {
             return Create.newStruct(((RubyBasicObject) recv).getCurrentContext(), (RubyClass) recv, block);
         }
@@ -349,7 +349,7 @@ public class RubyStruct extends RubyObject {
             return Create.newStruct(context, (RubyClass) recv, block);
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject newStruct(IRubyObject recv, IRubyObject arg0, Block block) {
             return Create.newStruct(((RubyBasicObject) recv).getCurrentContext(), (RubyClass) recv, arg0, block);
         }
@@ -359,7 +359,7 @@ public class RubyStruct extends RubyObject {
             return Create.newStruct(context, (RubyClass) recv, arg0, block);
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject newStruct(IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
             return Create.newStruct(((RubyBasicObject) recv).getCurrentContext(), (RubyClass) recv, arg0, arg1, block);
         }
@@ -369,7 +369,7 @@ public class RubyStruct extends RubyObject {
             return Create.newStruct(context, (RubyClass) recv, arg0, arg1, block);
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject newStruct(IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
             return Create.newStruct(((RubyBasicObject) recv).getCurrentContext(), (RubyClass) recv, arg0, arg1, arg2, block);
         }
@@ -379,7 +379,7 @@ public class RubyStruct extends RubyObject {
             return Create.newStruct(context, (RubyClass) recv, arg0, arg1, arg2, block);
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject members(IRubyObject recv, Block block) {
             return members(((RubyBasicObject) recv).getCurrentContext(), recv);
         }
@@ -389,7 +389,7 @@ public class RubyStruct extends RubyObject {
             return RubyStruct.members(context, (RubyClass) recv);
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject inspect(IRubyObject recv) {
             return inspect(((RubyBasicObject) recv).getCurrentContext(), recv);
         }
@@ -402,7 +402,7 @@ public class RubyStruct extends RubyObject {
             return inspected.convertToString().catString("(keyword_init: true)");
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject keyword_init_p(IRubyObject self) {
             return keyword_init_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
@@ -420,7 +420,7 @@ public class RubyStruct extends RubyObject {
      *
      * @deprecated Use {@link org.jruby.api.Create#newStruct(ThreadContext, RubyClass, IRubyObject[], Block)} instead.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyStruct newStruct(IRubyObject recv, IRubyObject[] args, Block block) {
         return Create.newStruct(((RubyBasicObject) recv).getCurrentContext(), (RubyClass) recv, args, block);
     }
@@ -431,7 +431,7 @@ public class RubyStruct extends RubyObject {
      * @return
      * @deprecated Use {@link org.jruby.api.Create#newStruct(ThreadContext, RubyClass, Block)} instead.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyStruct newStruct(IRubyObject recv, Block block) {
         return Create.newStruct(((RubyBasicObject) recv).getCurrentContext(), (RubyClass) recv, block);
     }
@@ -443,7 +443,7 @@ public class RubyStruct extends RubyObject {
      * @return
      * @deprecated Use {@link org.jruby.api.Create#newStruct(ThreadContext, RubyClass, IRubyObject, Block)} instead.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyStruct newStruct(IRubyObject recv, IRubyObject arg0, Block block) {
         return Create.newStruct(((RubyBasicObject) recv).getCurrentContext(), (RubyClass) recv, arg0, block);
     }
@@ -456,7 +456,7 @@ public class RubyStruct extends RubyObject {
      * @return
      * @deprecated Use {@link org.jruby.api.Create#newStruct(ThreadContext, RubyClass, IRubyObject, IRubyObject, Block)} instead.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyStruct newStruct(IRubyObject recv, IRubyObject arg0, IRubyObject arg1, Block block) {
         return Create.newStruct(((RubyBasicObject) recv).getCurrentContext(), (RubyClass) recv, arg0, arg1, block);
     }
@@ -470,7 +470,7 @@ public class RubyStruct extends RubyObject {
      * @return
      * @deprecated Use {@link org.jruby.api.Create#newStruct(ThreadContext, RubyClass, IRubyObject, IRubyObject, IRubyObject, Block)} instead.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyStruct newStruct(IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         return Create.newStruct(((RubyBasicObject) recv).getCurrentContext(), (RubyClass) recv, arg0, arg1, arg2, block);
     }
@@ -604,7 +604,7 @@ public class RubyStruct extends RubyObject {
         return __member__(context, classOf());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyArray members() {
         return members(getCurrentContext());
     }
@@ -638,7 +638,7 @@ public class RubyStruct extends RubyObject {
         return recv.size(context);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject set(IRubyObject value, int index) {
         return set(getCurrentContext(), value, index);
     }
@@ -761,7 +761,7 @@ public class RubyStruct extends RubyObject {
         return newArray(context, values);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public RubyHash to_h(ThreadContext context) {
         return to_h(context, Block.NULL_BLOCK);
     }
@@ -797,7 +797,7 @@ public class RubyStruct extends RubyObject {
         return asFixnum(context, values.length);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public RubyFixnum size() {
         return size(getCurrentContext());
     }
@@ -830,7 +830,7 @@ public class RubyStruct extends RubyObject {
         return block.isGiven() ? each_pairInternal(context, block) : enumeratorizeWithSize(context, this, "each_pair", RubyStruct::size);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject aref(IRubyObject key) {
         return aref(getCurrentContext(), key);
     }
@@ -853,7 +853,7 @@ public class RubyStruct extends RubyObject {
         return aref(context, toInt(context, key));
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     final IRubyObject aref(int idx) {
         return aref(getCurrentContext(), idx);
     }
@@ -871,7 +871,7 @@ public class RubyStruct extends RubyObject {
         return values[index];
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject aset(IRubyObject key, IRubyObject value) {
         return aset(getCurrentContext(), key, value);
     }
@@ -897,7 +897,7 @@ public class RubyStruct extends RubyObject {
         return values[index] = value;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject values_at(IRubyObject[] args) {
         return values_at(getCurrentContext(), args);
     }
@@ -962,7 +962,7 @@ public class RubyStruct extends RubyObject {
         return argc == 1 ? val : RubyObject.dig(context, val, args, 1);
     }
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0.0.0", forRemoval = true)
     @SuppressWarnings("removal")
     public static void marshalTo(RubyStruct struct, org.jruby.runtime.marshal.MarshalStream output) throws java.io.IOException {
         var context = struct.getRuntime().getCurrentContext();
@@ -993,7 +993,7 @@ public class RubyStruct extends RubyObject {
         }
     }
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0.0.0", forRemoval = true)
     @SuppressWarnings("removal")
     public static IRubyObject unmarshalFrom(org.jruby.runtime.marshal.UnmarshalStream input) throws java.io.IOException {
         final Ruby runtime = input.getRuntime();

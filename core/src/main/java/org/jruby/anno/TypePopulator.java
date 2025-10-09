@@ -69,7 +69,7 @@ public abstract class TypePopulator {
     }
 
     // Still needed for older generated populators.
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static DynamicMethod populateModuleMethod(RubyModule cls, DynamicMethod javaMethod) {
         return populateModuleMethod(cls, cls.singletonClass(cls.getCurrentContext()), javaMethod);
     }
@@ -113,7 +113,7 @@ public abstract class TypePopulator {
                     .ifPresent(classAnno -> AnnotationHelper.addSubclassNames(classAndSubs, classAnno));
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public void populate(RubyModule target, Class clazz) {
             populate(target.getCurrentContext(), target, clazz);
         }

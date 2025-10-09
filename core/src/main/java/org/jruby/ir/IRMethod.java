@@ -194,7 +194,7 @@ public class IRMethod extends IRScope {
      * This method was renamed (due a typo).
      * @see #builtInterpreterContextForJavaConstructor()
      */
-    @Deprecated
+    @Deprecated(since = "9.3.11.0")
     public ExitableInterpreterContext builtInterperterContextForJavaConstructor() {
         return builtInterpreterContextForJavaConstructor();
     }

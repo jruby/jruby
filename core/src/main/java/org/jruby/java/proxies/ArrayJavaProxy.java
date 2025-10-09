@@ -48,7 +48,7 @@ public final class ArrayJavaProxy extends JavaProxy {
                 tap(c -> c.singletonClass(context).addMethod(context, "new", new ArrayNewMethod(c.singletonClass(context), Visibility.PUBLIC)));
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static ArrayJavaProxy newArray(final Ruby runtime, final Class<?> elementType, final int... dimensions) {
         return newArray(runtime.getCurrentContext(), elementType, dimensions);
     }
@@ -64,12 +64,12 @@ public final class ArrayJavaProxy extends JavaProxy {
     }
 
     @Override
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     protected org.jruby.javasupport.JavaArray asJavaObject(final Object array) {
         return new org.jruby.javasupport.JavaArray(getCurrentContext().runtime, array);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     public final org.jruby.javasupport.JavaArray getJavaArray() {
         return asJavaObject(this.object);
     }

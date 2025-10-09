@@ -21,7 +21,7 @@ public interface InternalVariables {
      */
     boolean hasInternalVariable(String name);
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     boolean fastHasInternalVariable(String internedName);
     
     /**
@@ -33,7 +33,7 @@ public interface InternalVariables {
      */
     Object getInternalVariable(String name);
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     Object fastGetInternalVariable(String internedNaem);
     
     /**
@@ -45,7 +45,7 @@ public interface InternalVariables {
      */
     void setInternalVariable(String name, Object value);
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     void fastSetInternalVariable(String internedName, Object value);
     
     /**

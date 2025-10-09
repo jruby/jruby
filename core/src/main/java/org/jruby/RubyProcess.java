@@ -165,7 +165,7 @@ public class RubyProcess {
 
     private static final ObjectMarshal PROCESS_STATUS_MARSHAL = new ObjectMarshal() {
         @Override
-        @Deprecated(since = "10.0", forRemoval = true)
+        @Deprecated(since = "10.0.0.0", forRemoval = true)
         @SuppressWarnings("removal")
         public void marshalTo(Ruby runtime, Object obj, RubyClass type,
                               org.jruby.runtime.marshal.MarshalStream marshalStream) throws IOException {
@@ -196,7 +196,7 @@ public class RubyProcess {
         }
 
         @Override
-        @Deprecated(since = "10.0", forRemoval = true)
+        @Deprecated(since = "10.0.0.0", forRemoval = true)
         @SuppressWarnings("removal")
         public Object unmarshalFrom(Ruby runtime, RubyClass type, org.jruby.runtime.marshal.UnmarshalStream input) throws IOException {
             var context = runtime.getCurrentContext();
@@ -290,7 +290,7 @@ public class RubyProcess {
             return asBoolean(context, PosixShim.WAIT_MACROS.WIFSTOPPED(status));
         }
 
-        @Deprecated
+        @Deprecated(since = "10.0.0.0")
         public IRubyObject stopped_p() {
             return stopped_p(getCurrentContext());
         }
@@ -300,7 +300,7 @@ public class RubyProcess {
             return asBoolean(context, PosixShim.WAIT_MACROS.WIFSIGNALED(status));
         }
 
-        @Deprecated
+        @Deprecated(since = "10.0.0.0")
         public IRubyObject signaled() {
             return signaled(getCurrentContext());
         }
@@ -310,12 +310,12 @@ public class RubyProcess {
             return asBoolean(context, PosixShim.WAIT_MACROS.WIFEXITED(status));
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public IRubyObject exited() {
             return exited(getCurrentContext());
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public IRubyObject stopsig() {
             return stopsig(getCurrentContext());
         }
@@ -326,7 +326,7 @@ public class RubyProcess {
                     asFixnum(context, PosixShim.WAIT_MACROS.WSTOPSIG(status)) : context.nil;
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public IRubyObject termsig() {
             return termsig(getCurrentContext());
         }
@@ -337,7 +337,7 @@ public class RubyProcess {
                 asFixnum(context, PosixShim.WAIT_MACROS.WTERMSIG(status)) : context.nil;
         }
 
-        @Deprecated
+        @Deprecated(since = "10.0.0.0")
         public IRubyObject exitstatus() {
             return exitstatus(getCurrentContext());
         }
@@ -394,7 +394,7 @@ public class RubyProcess {
             return asBoolean(context, PosixShim.WAIT_MACROS.WCOREDUMP(status));
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public IRubyObject coredump_p() {
             return coredump_p(getCurrentContext());
         }
@@ -412,7 +412,7 @@ public class RubyProcess {
             return runtime.newFixnum(status);
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public IRubyObject to_s(Ruby runtime) {
             return to_s(getCurrentContext());
         }
@@ -427,7 +427,7 @@ public class RubyProcess {
             return pid == PROCESS_STATUS_UNINITIALIZED;
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public IRubyObject inspect(Ruby runtime) {
             return inspect(runtime.getCurrentContext());
         }
@@ -463,19 +463,19 @@ public class RubyProcess {
             return sb.toString();
         }
 
-        @Deprecated
+        @Deprecated(since = "9.0.0.0")
         public IRubyObject to_i() {
             return to_i(getCurrentContext().runtime);
         }
 
-        @Deprecated
+        @Deprecated(since = "9.0.0.0")
         public IRubyObject op_rshift(Ruby runtime, IRubyObject other) {
             var context = getCurrentContext();
             long shiftValue = toLong(context, other);
             return asFixnum(context, status >> shiftValue);
         }
 
-        @Deprecated
+        @Deprecated(since = "10.0.0.0")
         public IRubyObject op_and(IRubyObject arg) {
             return op_and(getCurrentContext(), arg);
         }
@@ -483,7 +483,7 @@ public class RubyProcess {
 
     @JRubyModule(name="Process::UID")
     public static class UserID {
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject change_privilege(IRubyObject self, IRubyObject arg) {
             return change_privilege(((RubyBasicObject) self).getCurrentContext(), self, arg);
         }
@@ -493,7 +493,7 @@ public class RubyProcess {
             throw notImplementedError(context, "Process::UID::change_privilege not implemented yet");
         }
 
-        @Deprecated
+        @Deprecated(since = "1.2")
         public static IRubyObject eid(IRubyObject self) {
             return euid(((RubyBasicObject) self).getCurrentContext(), null);
         }
@@ -502,7 +502,7 @@ public class RubyProcess {
             return euid(context, self);
         }
 
-        @Deprecated
+        @Deprecated(since = "1.2")
         public static IRubyObject eid(IRubyObject self, IRubyObject arg) {
             return eid(((RubyBasicObject) self).getCurrentContext(), arg);
         }
@@ -514,7 +514,7 @@ public class RubyProcess {
             return euid_set(runtime, arg);
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject grant_privilege(IRubyObject self, IRubyObject arg) {
             return grant_privilege(((RubyBasicObject) self).getCurrentContext(), self, arg);
         }
@@ -529,7 +529,7 @@ public class RubyProcess {
             return switch_rb(context, self, Block.NULL_BLOCK);
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject re_exchangeable_p(IRubyObject self) {
             return re_exchangeable_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
@@ -539,7 +539,7 @@ public class RubyProcess {
             throw notImplementedError(context, "Process::UID::re_exchangeable? not implemented yet");
         }
 
-        @Deprecated
+        @Deprecated(since = "1.2")
         public static IRubyObject rid(IRubyObject self) {
             return rid(((RubyBasicObject) self).getCurrentContext(), self);
         }
@@ -551,7 +551,7 @@ public class RubyProcess {
             return uid(runtime);
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject sid_available_p(IRubyObject self) {
             return sid_available_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
@@ -588,7 +588,7 @@ public class RubyProcess {
 
     @JRubyModule(name="Process::GID")
     public static class GroupID {
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject change_privilege(IRubyObject self, IRubyObject arg) {
             return change_privilege(((RubyBasicObject) self).getCurrentContext(), self, arg);
         }
@@ -598,7 +598,7 @@ public class RubyProcess {
             throw notImplementedError(context, "Process::GID::change_privilege not implemented yet");
         }
 
-        @Deprecated
+        @Deprecated(since = "1.2")
         public static IRubyObject eid(IRubyObject self) {
             return eid(((RubyBasicObject) self).getCurrentContext(), self);
         }
@@ -610,7 +610,7 @@ public class RubyProcess {
             return egid(runtime.getCurrentContext(), null);
         }
 
-        @Deprecated
+        @Deprecated(since = "1.2")
         public static IRubyObject eid(IRubyObject self, IRubyObject arg) {
             return eid(((RubyBasicObject) self).getCurrentContext(), arg);
         }
@@ -622,7 +622,7 @@ public class RubyProcess {
             return RubyProcess.egid_set(runtime.getCurrentContext(), arg);
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject grant_privilege(IRubyObject self, IRubyObject arg) {
             return grant_privilege(((RubyBasicObject) self).getCurrentContext(), self, arg);
         }
@@ -637,7 +637,7 @@ public class RubyProcess {
             return switch_rb(context, self, Block.NULL_BLOCK);
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject re_exchangeable_p(IRubyObject self) {
             return re_exchangeable_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
@@ -647,7 +647,7 @@ public class RubyProcess {
             throw notImplementedError(context, "Process::GID::re_exchangeable? not implemented yet");
         }
 
-        @Deprecated
+        @Deprecated(since = "1.2")
         public static IRubyObject rid(IRubyObject self) {
             return rid(((RubyBasicObject) self).getCurrentContext(), self);
         }
@@ -659,7 +659,7 @@ public class RubyProcess {
             return gid(runtime);
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject sid_available_p(IRubyObject self) {
             return sid_available_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
@@ -696,7 +696,7 @@ public class RubyProcess {
 
     @JRubyModule(name="Process::Sys")
     public static class Sys {
-        @Deprecated
+        @Deprecated(since = "1.2")
         public static IRubyObject getegid(IRubyObject self) {
             return egid(((RubyBasicObject) self).getCurrentContext(), null);
         }
@@ -705,7 +705,7 @@ public class RubyProcess {
             return egid(context, self);
         }
 
-        @Deprecated
+        @Deprecated(since = "1.2")
         public static IRubyObject geteuid(IRubyObject self) {
             return euid(((RubyBasicObject) self).getCurrentContext(), self);
         }
@@ -714,7 +714,7 @@ public class RubyProcess {
             return euid(context, self);
         }
 
-        @Deprecated
+        @Deprecated(since = "1.2")
         public static IRubyObject getgid(IRubyObject self) {
             return gid(((RubyBasicObject) self).getCurrentContext());
         }
@@ -723,7 +723,7 @@ public class RubyProcess {
             return gid(context, self);
         }
 
-        @Deprecated
+        @Deprecated(since = "1.2")
         public static IRubyObject getuid(IRubyObject self) {
             return uid(((RubyBasicObject) self).getCurrentContext(), self);
         }
@@ -732,7 +732,7 @@ public class RubyProcess {
             return uid(context, self);
         }
 
-        @Deprecated
+        @Deprecated(since = "1.2")
         public static IRubyObject setegid(IRubyObject recv, IRubyObject arg) {
             return egid_set(((RubyBasicObject) recv).getCurrentContext(), arg);
         }
@@ -741,7 +741,7 @@ public class RubyProcess {
             return egid_set(context, recv, arg);
         }
 
-        @Deprecated
+        @Deprecated(since = "1.2")
         public static IRubyObject seteuid(IRubyObject recv, IRubyObject arg) {
             return euid_set(((RubyBasicObject) recv).getCurrentContext(), arg);
         }
@@ -750,7 +750,7 @@ public class RubyProcess {
             return euid_set(context, arg);
         }
 
-        @Deprecated
+        @Deprecated(since = "1.2")
         public static IRubyObject setgid(IRubyObject recv, IRubyObject arg) {
             return gid_set(((RubyBasicObject) recv).getCurrentContext().runtime, arg);
         }
@@ -759,7 +759,7 @@ public class RubyProcess {
             return gid_set(context.runtime, arg);
         }
 
-        @Deprecated
+        @Deprecated(since = "1.2")
         public static IRubyObject setuid(IRubyObject recv, IRubyObject arg) {
             return uid_set(((RubyBasicObject) recv).getCurrentContext(), null, arg);
         }
@@ -774,7 +774,7 @@ public class RubyProcess {
         return RubyKernel.abort(context, recv, args);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject exit_bang(IRubyObject recv, IRubyObject[] args) {
         return exit_bang(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
@@ -784,7 +784,7 @@ public class RubyProcess {
         return RubyKernel.exit_bang(context, recv, args);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject groups(IRubyObject recv) {
         return groups(((RubyBasicObject) recv).getCurrentContext(), recv);
     }
@@ -1057,7 +1057,7 @@ public class RubyProcess {
         return rlimitResourceName2int(name, 0);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.2")
     public static IRubyObject getpgrp(IRubyObject recv) {
         return getpgrp(((RubyBasicObject) recv).getCurrentContext(), recv);
     }
@@ -1067,12 +1067,12 @@ public class RubyProcess {
         return asFixnum(context, context.runtime.getPosix().getpgrp());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject getpgrp(Ruby runtime) {
         return asFixnum(runtime.getCurrentContext(), runtime.getPosix().getpgrp());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject groups_set(IRubyObject recv, IRubyObject arg) {
         return groups_set(((RubyBasicObject) recv).getCurrentContext(), recv, arg);
     }
@@ -1082,7 +1082,7 @@ public class RubyProcess {
         throw notImplementedError(context, "Process#groups not yet implemented");
     }
 
-    @Deprecated
+    @Deprecated(since = "1.2")
     public static IRubyObject waitpid(IRubyObject recv, IRubyObject[] args) {
         return waitpid(((RubyBasicObject) recv).getCurrentContext(), args);
     }
@@ -1098,7 +1098,7 @@ public class RubyProcess {
         return context.tru;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject waitpid(Ruby runtime, IRubyObject[] args) {
         return waitpid(runtime.getCurrentContext(), args);
     }
@@ -1125,7 +1125,7 @@ public class RubyProcess {
         return RubyProcess.RubyStatus.newProcessStatus(runtime, status[0], res);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static long waitpid(Ruby runtime, long pid, int flags) {
         return waitpid(runtime.getCurrentContext(), pid, flags);
     }
@@ -1218,7 +1218,7 @@ public class RubyProcess {
         }
     };
 
-    @Deprecated
+    @Deprecated(since = "1.2")
     public static IRubyObject wait(IRubyObject recv, IRubyObject[] args) {
         return wait(((RubyBasicObject) recv).getCurrentContext(), args);
     }
@@ -1227,7 +1227,7 @@ public class RubyProcess {
         return wait(context, args);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject wait(Ruby runtime, IRubyObject[] args) {
         return wait(((RubyBasicObject) args[0]).getCurrentContext(), args);
     }
@@ -1249,7 +1249,7 @@ public class RubyProcess {
     }
 
 
-    @Deprecated
+    @Deprecated(since = "1.2")
     public static IRubyObject waitall(IRubyObject recv) {
         return waitall(((RubyBasicObject) recv).getCurrentContext());
     }
@@ -1258,7 +1258,7 @@ public class RubyProcess {
         return waitall(context);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject waitall(Ruby runtime) {
         return waitall(runtime.getCurrentContext());
     }
@@ -1279,7 +1279,7 @@ public class RubyProcess {
         return results;
     }
 
-    @Deprecated
+    @Deprecated(since = "1.2")
     public static IRubyObject setsid(IRubyObject recv) {
         return setsid(((RubyBasicObject) recv).getCurrentContext().runtime);
     }
@@ -1288,12 +1288,12 @@ public class RubyProcess {
         return asFixnum(context, checkErrno(context, context.runtime.getPosix().setsid()));
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject setsid(Ruby runtime) {
         return setsid(runtime.getCurrentContext(), null);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.2")
     public static IRubyObject setpgrp(IRubyObject recv) {
         return setpgrp(((RubyBasicObject) recv).getCurrentContext().runtime);
     }
@@ -1302,12 +1302,12 @@ public class RubyProcess {
         return asFixnum(context, checkErrno(context, context.runtime.getPosix().setpgid(0, 0)));
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject setpgrp(Ruby runtime) {
         return setpgrp(runtime.getCurrentContext(), null);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.2")
     public static IRubyObject egid_set(IRubyObject recv, IRubyObject arg) {
         return egid_set(((RubyBasicObject) recv).getCurrentContext(), arg);
     }
@@ -1316,7 +1316,7 @@ public class RubyProcess {
         return egid_set(context, arg);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject egid_set(Ruby runtime, IRubyObject arg) {
         return egid_set(runtime.getCurrentContext(), arg);
     }
@@ -1334,7 +1334,7 @@ public class RubyProcess {
         return asFixnum(context, 0);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.2")
     public static IRubyObject euid(IRubyObject recv) {
         return euid(((RubyBasicObject) recv).getCurrentContext(), recv);
     }
@@ -1343,12 +1343,12 @@ public class RubyProcess {
         return asFixnum(context, checkErrno(context, context.runtime.getPosix().geteuid()));
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject euid(Ruby runtime) {
         return euid(runtime.getCurrentContext(), null);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.2")
     public static IRubyObject uid_set(IRubyObject recv, IRubyObject arg) {
         return uid_set(((RubyBasicObject) recv).getCurrentContext(), null, arg);
     }
@@ -1357,12 +1357,12 @@ public class RubyProcess {
         checkErrno(context, context.runtime.getPosix().setuid(toInt(context, arg)));
         return asFixnum(context, 0);
     }
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject uid_set(Ruby runtime, IRubyObject arg) {
         return uid_set(runtime.getCurrentContext(), null, arg);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.2")
     public static IRubyObject gid(IRubyObject recv) {
         return gid(((RubyBasicObject) recv).getCurrentContext());
     }
@@ -1376,12 +1376,12 @@ public class RubyProcess {
                 asFixnum(context, checkErrno(context, context.runtime.getPosix().getgid()));
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject gid(Ruby runtime) {
         return gid(runtime.getCurrentContext());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject maxgroups(IRubyObject recv) {
         return maxgroups(((RubyBasicObject) recv).getCurrentContext(), recv);
     }
@@ -1391,7 +1391,7 @@ public class RubyProcess {
         throw notImplementedError(context, "Process#maxgroups not yet implemented");
     }
 
-    @Deprecated
+    @Deprecated(since = "1.2")
     public static IRubyObject getpriority(IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
         return getpriority(((RubyBasicObject) recv).getCurrentContext(), recv, arg1, arg2);
     }
@@ -1404,12 +1404,12 @@ public class RubyProcess {
         return asFixnum(context, result);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject getpriority(Ruby runtime, IRubyObject arg1, IRubyObject arg2) {
         return getpriority(runtime.getCurrentContext(), null, arg1, arg2);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.2")
     public static IRubyObject uid(IRubyObject recv) {
         return uid(((RubyBasicObject) recv).getCurrentContext(), recv);
     }
@@ -1417,7 +1417,7 @@ public class RubyProcess {
     public static IRubyObject uid(ThreadContext context, IRubyObject recv) {
         return asFixnum(context, checkErrno(context, context.runtime.getPosix().getuid()));
     }
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject uid(Ruby runtime) {
         return uid(runtime.getCurrentContext(), null);
     }
@@ -1433,7 +1433,7 @@ public class RubyProcess {
         return waitpid2(runtime.getCurrentContext(), runtime.getProcess(), args);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject initgroups(IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
         return initgroups(((RubyBasicObject) recv).getCurrentContext(), recv, arg1, arg2);
     }
@@ -1443,7 +1443,7 @@ public class RubyProcess {
         throw notImplementedError(context, "Process#initgroups not yet implemented");
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject maxgroups_set(IRubyObject recv, IRubyObject arg) {
         return maxgroups_set(((RubyBasicObject) recv).getCurrentContext(), recv, arg);
     }
@@ -1453,7 +1453,7 @@ public class RubyProcess {
         throw notImplementedError(context, "Process#maxgroups_set not yet implemented");
     }
 
-    @Deprecated
+    @Deprecated(since = "1.2")
     public static IRubyObject ppid(IRubyObject recv) {
         return ppid(((RubyBasicObject) recv).getCurrentContext(), recv);
     }
@@ -1467,7 +1467,7 @@ public class RubyProcess {
         return ppid(runtime.getCurrentContext(), null);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.2")
     public static IRubyObject gid_set(IRubyObject recv, IRubyObject arg) {
         return gid_set(((RubyBasicObject) recv).getCurrentContext(), recv, arg);
     }
@@ -1478,12 +1478,12 @@ public class RubyProcess {
         return asFixnum(context, result);
 
     }
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject gid_set(Ruby runtime, IRubyObject arg) {
         return gid_set(runtime.getCurrentContext(), null, arg);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.2")
     public static IRubyObject wait2(IRubyObject recv, IRubyObject[] args) {
         return waitpid2(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
@@ -1492,7 +1492,7 @@ public class RubyProcess {
         return waitpid2(context.runtime, args);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.2")
     public static IRubyObject euid_set(IRubyObject recv, IRubyObject arg) {
         return euid_set(((RubyBasicObject) recv).getCurrentContext(), arg);
     }
@@ -1501,7 +1501,7 @@ public class RubyProcess {
         return euid_set(context, arg);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject euid_set(Ruby runtime, IRubyObject arg) {
         return euid_set(runtime.getCurrentContext(), arg);
     }
@@ -1522,7 +1522,7 @@ public class RubyProcess {
         return asFixnum(context, 0);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.2")
     public static IRubyObject setpriority(IRubyObject recv, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
         return setpriority(((RubyBasicObject) recv).getCurrentContext(), recv, arg1, arg2, arg3);
     }
@@ -1536,12 +1536,12 @@ public class RubyProcess {
         return asFixnum(context, checkErrno(context, posix.setpriority(which, who, prio)));
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject setpriority(Ruby runtime, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
         return setpriority(runtime.getCurrentContext(), null, arg1, arg2, arg3);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.2")
     public static IRubyObject setpgid(IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
         return setpgid(((RubyBasicObject) recv).getCurrentContext(), recv, arg1, arg2);
     }
@@ -1552,12 +1552,12 @@ public class RubyProcess {
         return asFixnum(context, checkErrno(context, context.runtime.getPosix().setpgid(pid, gid)));
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject setpgid(Ruby runtime, IRubyObject arg1, IRubyObject arg2) {
         return setpgid(runtime.getCurrentContext(), null, arg1, arg2);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.2")
     public static IRubyObject getpgid(IRubyObject recv, IRubyObject arg) {
         return getpgid(((RubyBasicObject) recv).getCurrentContext(), recv, arg);
     }
@@ -1567,12 +1567,12 @@ public class RubyProcess {
         return asFixnum(context, checkErrno(context, context.runtime.getPosix().getpgid(pgid)));
 
     }
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject getpgid(Ruby runtime, IRubyObject arg) {
         return getpgid(runtime.getCurrentContext(), null, arg);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.2")
     public static IRubyObject getrlimit(IRubyObject recv, IRubyObject arg) {
         return getrlimit(((RubyBasicObject) recv).getCurrentContext(), arg);
     }
@@ -1581,7 +1581,7 @@ public class RubyProcess {
         return getrlimit(context, arg);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject getrlimit(Ruby runtime, IRubyObject arg) {
         return getrlimit(runtime.getCurrentContext(), arg);
     }
@@ -1602,7 +1602,7 @@ public class RubyProcess {
         return newArray(context, asFixnum(context, rlimit.rlimCur()), asFixnum(context, rlimit.rlimMax()));
     }
 
-    @Deprecated
+    @Deprecated(since = "1.2")
     public static IRubyObject egid(IRubyObject recv) {
         return egid(((RubyBasicObject) recv).getCurrentContext(), recv);
     }
@@ -1612,7 +1612,7 @@ public class RubyProcess {
                 asFixnum(context, checkErrno(context, context.runtime.getPosix().getegid()));
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject egid(Ruby runtime) {
         return egid(runtime.getCurrentContext(), null);
     }
@@ -1632,7 +1632,7 @@ public class RubyProcess {
         return negative ? -signalValue : signalValue;
     }
 
-    @Deprecated
+    @Deprecated(since = "1.2")
     public static IRubyObject kill(IRubyObject recv, IRubyObject[] args) {
         return kill(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
@@ -1727,7 +1727,7 @@ public class RubyProcess {
 
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject kill(Ruby runtime, IRubyObject[] args) {
         return kill(runtime.getCurrentContext(), null, args);
     }
@@ -1751,7 +1751,7 @@ public class RubyProcess {
                 CallBlock.newCallClosure(context, recv, Signature.NO_ARGUMENTS, callback));
     }
 
-    @Deprecated
+    @Deprecated(since = "1.2")
     public static IRubyObject times(IRubyObject recv, Block unusedBlock) {
         return times(((RubyBasicObject) recv).getCurrentContext(), recv, unusedBlock);
     }
@@ -1760,7 +1760,7 @@ public class RubyProcess {
         return times(context);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject times(Ruby runtime) {
         return times(runtime.getCurrentContext());
     }
@@ -1896,7 +1896,7 @@ public class RubyProcess {
                 asFloat(context, 1000000000.0 / nanos) : makeClockResult(context, nanos, unit);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.2")
     public static IRubyObject pid(IRubyObject recv) {
         return pid(((RubyBasicObject) recv).getCurrentContext());
     }
@@ -1904,7 +1904,7 @@ public class RubyProcess {
     public static IRubyObject pid(ThreadContext context, IRubyObject recv) {
         return pid(context);
     }
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject pid(Ruby runtime) {
         return pid(runtime.getCurrentContext());
     }
@@ -1917,7 +1917,7 @@ public class RubyProcess {
         throw notImplementedError(context, "fork is not available on this platform");
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject fork19(ThreadContext context, IRubyObject recv, Block block) {
         return fork(context, recv, block);
     }
@@ -1934,7 +1934,7 @@ public class RubyProcess {
                 asFixnum(context, ShellLauncher.runExternalWithoutWait(context.runtime, args));
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject exit(IRubyObject recv, IRubyObject[] args) {
         return exit(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
@@ -1944,7 +1944,7 @@ public class RubyProcess {
         return RubyKernel.exit(context, recv, args);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject setproctitle(IRubyObject recv, IRubyObject name) {
         return setproctitle(((RubyBasicObject) recv).getCurrentContext(), recv, name);
     }
@@ -1989,7 +1989,7 @@ public class RubyProcess {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.1.0")
     public static IRubyObject waitpid2(IRubyObject recv, IRubyObject[] args) {
         return waitpid2(((RubyBasicObject) recv).getCurrentContext().runtime, args);
     }

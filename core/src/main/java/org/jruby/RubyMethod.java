@@ -309,7 +309,7 @@ public class RubyMethod extends AbstractRubyMethod {
         return receiver;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public IRubyObject curry(ThreadContext context, IRubyObject[] args) {
         IRubyObject proc = to_proc(context);
         return sites(context).curry.call(context, proc, proc, args);

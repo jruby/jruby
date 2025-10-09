@@ -119,9 +119,9 @@ public @interface JRubyMethod {
      */
     Class[] implementers() default {};
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     boolean scope() default false;
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     boolean backtrace() default false;
 }

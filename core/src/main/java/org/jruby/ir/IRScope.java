@@ -386,7 +386,7 @@ public abstract class IRScope implements ParseResult {
         throw new IllegalArgumentException("This is only here because prism requires this in ParseResult");
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.1.0")
     public String getFileName() {
         return getFile();
     }
@@ -395,7 +395,7 @@ public abstract class IRScope implements ParseResult {
         return getRootLexicalScope().getFile();
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.1.0")
     public int getLineNumber() {
         return lineNumber;
     }

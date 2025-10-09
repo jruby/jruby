@@ -2671,30 +2671,30 @@ public class Pack {
         result.append((byte) ((s & 0xff00) >> 8)).append((byte) (s & 0xff));
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public static RubyArray unpack(Ruby runtime, ByteList encodedString, ByteList formatString) {
         return unpackWithBlock(runtime.getCurrentContext(), runtime, encodedString, formatString, Block.NULL_BLOCK);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public static RubyString pack(Ruby runtime, RubyArray list, ByteList formatString) {
         RubyString buffer = runtime.newString();
         return packCommon(runtime.getCurrentContext(), list, formatString, executor(), buffer);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public static RubyString pack(ThreadContext context, Ruby runtime, RubyArray list, RubyString formatString) {
         RubyString buffer = runtime.newString();
         return pack(context, list, formatString, buffer);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public static void decode(ThreadContext context, Ruby runtime, ByteBuffer encode, int occurrences,
                               RubyArray result, Block block, Converter converter) {
         decode(context, encode, occurrences, result, block, converter, block.isGiven() ? UNPACK_BLOCK : UNPACK_ARRAY);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public static RubyArray unpackWithBlock(ThreadContext context, Ruby runtime, ByteList encodedString, ByteList formatString, Block block) {
         return unpackWithBlock(context, RubyString.newStringLight(runtime, encodedString), formatString, block);
     }

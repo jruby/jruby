@@ -45,7 +45,7 @@ public class ArrayUtils {
         return proxy;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static ArrayJavaProxy newProxiedArray(Ruby runtime, Class<?> componentType, int size) {
         return newProxiedArray(runtime.getCurrentContext(), componentType, size);
     }
@@ -54,7 +54,7 @@ public class ArrayUtils {
         return newProxiedArray(context, componentType, JavaUtil.getJavaConverter(componentType), size);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static ArrayJavaProxy newProxiedArray(Ruby runtime, Class<?> componentType, JavaUtil.JavaConverter converter, int size) {
         return newProxiedArray(runtime.getCurrentContext(), componentType, converter, size);
     }
@@ -134,7 +134,7 @@ public class ArrayUtils {
                 array.getClass().getComponentType().getName() + ')');
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.8.0")
     public static void copyDataToJavaArrayDirect(ThreadContext context,
         final RubyArray rubyArray, final Object javaArray) {
         copyDataToJavaArrayDirect(rubyArray, javaArray);

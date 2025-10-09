@@ -182,7 +182,7 @@ public class JRubyLibrary implements Library {
         return asBoolean(context, Ruby.isSecurityRestricted());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static RubyBoolean is_security_restricted(IRubyObject recv) {
         return is_security_restricted(((RubyBasicObject) recv).getCurrentContext(), recv);
     }

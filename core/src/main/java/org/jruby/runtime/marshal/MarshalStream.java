@@ -79,7 +79,7 @@ import static org.jruby.util.RubyStringBuilder.types;
  *
  * @author Anders
  */
-@Deprecated(since = "10.0", forRemoval = true)
+@Deprecated(since = "10.0.0.0", forRemoval = true)
 @SuppressWarnings("removal")
 public class MarshalStream extends FilterOutputStream {
     private final Ruby runtime;
@@ -110,7 +110,7 @@ public class MarshalStream extends FilterOutputStream {
         if (depth == 0) out.flush(); // flush afer whole dump is complete
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public void registerLinkTarget(IRubyObject newObject) {
         registerLinkTarget(((RubyBasicObject) newObject).getCurrentContext(), newObject);
     }
@@ -205,7 +205,7 @@ public class MarshalStream extends FilterOutputStream {
         return ((MarshalEncoding) value).shouldMarshalEncoding();
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public void writeDirectly(IRubyObject value) throws IOException {
         writeDirectly(value.getRuntime().getCurrentContext(), value);
     }
@@ -339,7 +339,7 @@ public class MarshalStream extends FilterOutputStream {
         }
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public void userNewMarshal(IRubyObject value, CacheEntry entry) throws IOException {
         userNewMarshal(((RubyBasicObject) value).getCurrentContext(), value, entry);
     }
@@ -348,7 +348,7 @@ public class MarshalStream extends FilterOutputStream {
         userNewCommon(context, value, entry);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public void userNewMarshal(IRubyObject value) throws IOException {
         userNewMarshal(((RubyBasicObject) value).getCurrentContext(), value);
     }
@@ -375,7 +375,7 @@ public class MarshalStream extends FilterOutputStream {
         dumpObject(marshaled);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public void userMarshal(IRubyObject value, CacheEntry entry) throws IOException {
         userMarshal(((RubyBasicObject) value).getCurrentContext(), value, entry);
     }
@@ -384,7 +384,7 @@ public class MarshalStream extends FilterOutputStream {
         userCommon(context, value, entry);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public void userMarshal(IRubyObject value) throws IOException {
         userMarshal(((RubyBasicObject) value).getCurrentContext(), value);
     }
@@ -505,7 +505,7 @@ public class MarshalStream extends FilterOutputStream {
         return type;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public void dumpDefaultObjectHeader(RubyClass type) throws IOException {
         dumpDefaultObjectHeader(runtime.getCurrentContext(), type);
     }
@@ -514,7 +514,7 @@ public class MarshalStream extends FilterOutputStream {
         dumpDefaultObjectHeader(context, 'o',type);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public void dumpDefaultObjectHeader(char tp, RubyClass type) throws IOException {
         dumpDefaultObjectHeader(type.getRuntime().getCurrentContext(), tp, type);
     }
@@ -572,12 +572,12 @@ public class MarshalStream extends FilterOutputStream {
         out.write(value);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     public boolean isTainted() {
         return false;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public boolean isUntrusted() {
         return false;
     }
