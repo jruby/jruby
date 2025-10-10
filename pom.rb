@@ -3,6 +3,10 @@
 version = ENV['JRUBY_VERSION'] ||
           File.read(File.join(basedir, 'VERSION')).strip
 
+# update version in bin/.jruby.release
+release_file = File.join(basedir, 'bin', '.jruby.release')
+File.write(release_file, File.read(release_file).gsub(/JRUBY_VERSION=.*$/, "JRUBY_VERSION=#{version}"))
+
 project 'JRuby', 'https://github.com/jruby/jruby' do
   model_version '4.0.0'
   inception_year '2001'

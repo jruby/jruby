@@ -189,7 +189,6 @@ echo() {
 
 # ----- Set variable defaults -------------------------------------------------
 
-java_class=org.jruby.main.Main
 JRUBY_SHELL=/bin/sh
 
 # Detect cygwin and mingw environments
@@ -436,6 +435,9 @@ readonly pwd_jruby_java_opts_file="$PWD/.jruby.java_opts"
 # Options from .dev_mode.java_opts for "--dev" mode, to reduce JRuby startup time
 readonly dev_mode_opts_file="$JRUBY_HOME/bin/.dev_mode.java_opts"
 
+# Release file with version-specific values
+readonly jruby_release_file="$JRUBY_HOME/bin/.jruby.release"
+
 # ----- Initialize environment log --------------------------------------------
 
 add_log
@@ -642,6 +644,16 @@ JAVA_OPTS="$JAVA_OPTS_TEMP"
 # ----- Set up the JRuby class/module path ------------------------------------
 
 CP_DELIMITER=":"
+
+# Get main class from .jruby.release or default to old version
+
+# shellcheck source=/dev/null
+if [ -f "$jruby_release_file" ]; then
+    java_class=$(. "$jruby_release_file" && echo "${JRUBY_MAIN-}")
+else
+    # Default to old org.jruby.Main
+    java_class=org.jruby.Main
+fi
 
 # Find main jruby jar and add it to the classpath
 jruby_jar=
@@ -997,6 +1009,7 @@ add_log
 add_log "Java command line:"
 add_log "  $*"
 
+# shellcheck source=/dev/null
 if $print_environment_log; then
     echo "$environment_log"
     exit 0
