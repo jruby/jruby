@@ -93,12 +93,12 @@ public class EncodingUtils {
         return idx;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject[] openArgsToArgs(Ruby runtime, IRubyObject firstElement, RubyHash options) {
         return openArgsToArgs(runtime.getCurrentContext(), firstElement, options);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject[] openArgsToArgs(ThreadContext context, IRubyObject firstElement, RubyHash options) {
         IRubyObject value = hashARef(context, options, "open_args");
 
@@ -117,7 +117,7 @@ public class EncodingUtils {
         return args;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static void extractBinmode(Ruby runtime, IRubyObject optionsArg, int[] fmode_p) {
         extractBinmode(runtime.getCurrentContext(), optionsArg, fmode_p);
     }
@@ -162,27 +162,27 @@ public class EncodingUtils {
         return runtime.getEncodingService().getAscii8bitEncoding();
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static Object vmodeVperm(IRubyObject vmode, IRubyObject vperm) {
         return new API.ModeAndPermission(vmode, vperm);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject vmode(Object vmodeVperm) {
         return ((API.ModeAndPermission) vmodeVperm).mode;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static void vmode(Object vmodeVperm, IRubyObject vmode) {
         ((API.ModeAndPermission) vmodeVperm).mode = vmode;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject vperm(Object vmodeVperm) {
         return ((API.ModeAndPermission) vmodeVperm).permission;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static void vperm(Object vmodeVperm, IRubyObject vperm) {
         ((API.ModeAndPermission) vmodeVperm).permission = vperm;
     }
@@ -219,7 +219,7 @@ public class EncodingUtils {
         return ecflags;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static void extractModeEncoding(ThreadContext context,
                                            IOEncodable ioEncodable, Object vmodeAndVperm_p, IRubyObject options, int[] oflags_p, int[] fmode_p) {
         extractModeEncoding(context, ioEncodable, (API.ModeAndPermission) vmodeAndVperm_p, options, oflags_p, fmode_p);
@@ -1647,7 +1647,7 @@ public class EncodingUtils {
         }
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RaiseException makeEconvException(Ruby runtime, EConv ec) {
         return makeEconvException(runtime.getCurrentContext(), ec);
     }
@@ -2281,7 +2281,7 @@ public class EncodingUtils {
         return StringSupport.codePoint(enc, pBytes, p, e);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static int encCodepointLength(Ruby runtime, byte[] pBytes, int p, int e, int[] len_p, Encoding enc) {
         return encCodepointLength(runtime.getCurrentContext(), pBytes, p, e, len_p, enc);
     }
@@ -2358,7 +2358,7 @@ public class EncodingUtils {
         return getEncoding(str.getByteList());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyString rbStrEscape(Ruby runtime, RubyString str) {
         return (RubyString) RubyString.rbStrEscape(runtime.getCurrentContext(), str);
     }
@@ -2443,12 +2443,12 @@ public class EncodingUtils {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public static Encoding ioStripBOM(RubyIO io) {
         return ioStripBOM(io.getRuntime().getCurrentContext(), io);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public static Encoding strTranscode0(ThreadContext context, int argc, IRubyObject[] args, IRubyObject[] self_p, int ecflags, IRubyObject ecopts) {
         Encoding[] enc_p = {null};
         TranscodeResult result = (ctx, str, enc, newStr) -> {enc_p[0] = enc; self_p[0] = newStr; return newStr;};
@@ -2469,7 +2469,7 @@ public class EncodingUtils {
         };
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public static Encoding strTranscode(ThreadContext context, IRubyObject[] args, IRubyObject[] self_p) {
         Encoding[] enc_p = {null};
         TranscodeResult result = (ctx, str, enc, newStr) -> {enc_p[0] = enc; self_p[0] = newStr; return newStr;};
@@ -2479,22 +2479,22 @@ public class EncodingUtils {
         return enc_p[0];
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public static IRubyObject strEncode(ThreadContext context, IRubyObject str, IRubyObject... args) {
         return strTranscode(context, args, (RubyString) str, EncodingUtils::encodedDup);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public static IRubyObject encodedDup(ThreadContext context, IRubyObject newstr, IRubyObject str, Encoding encindex) {
         return encodedDup(context, (RubyString) newstr, encindex, (RubyString) str);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public static IRubyObject strEncodeAssociate(ThreadContext context, IRubyObject str, Encoding encidx) {
         return strEncodeAssociate((RubyString) str, encidx);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public static IRubyObject strTranscode(ThreadContext context, IRubyObject[] args, RubyString str, TranscodeResult result) {
         return switch (args.length) {
             case 0 -> strTranscode(context, str, result);

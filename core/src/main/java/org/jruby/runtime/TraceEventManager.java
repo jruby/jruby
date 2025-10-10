@@ -67,7 +67,7 @@ public class TraceEventManager {
                     RubyEvent.RETURN
             );
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public synchronized void addEventHook(EventHook hook) {
         addEventHook(runtime.getCurrentContext(), hook);
     }

@@ -182,7 +182,7 @@ public class HashNode extends Node implements ILiteralNode {
         return hasOnlySymbolKeys;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     public boolean isMaybeKwargs() {
         return !isLiteral;
     }

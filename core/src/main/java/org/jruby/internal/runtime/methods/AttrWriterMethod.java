@@ -87,7 +87,7 @@ public class AttrWriterMethod extends JavaMethodOne {
     }
 
     // Used by racc extension, needed for backward-compat with 1.7.
-    @Deprecated
+    @Deprecated(since = "9.0.3.0")
     public AttrWriterMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfiguration, String variableName) {
         this(implementationClass, visibility, variableName);
     }

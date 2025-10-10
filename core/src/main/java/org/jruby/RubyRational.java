@@ -301,7 +301,7 @@ public class RubyRational extends RubyNumeric {
     /** nurat_s_new
      * 
      */
-    @Deprecated
+    @Deprecated(since = "1.1.4")
     public static IRubyObject newInstance(ThreadContext context, IRubyObject clazz, IRubyObject[]args) {
         switch (args.length) {
             case 1: return newInstance(context, (RubyClass) clazz, args[0]);
@@ -327,7 +327,7 @@ public class RubyRational extends RubyNumeric {
         return canonicalizeInternal(context, clazz, maybeInt.convertToInteger(), RubyFixnum.one(context.runtime));
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public static IRubyObject newInstance(ThreadContext context, IRubyObject clazz, IRubyObject num, IRubyObject den) {
         return newInstance(context, (RubyClass) clazz, num, den);
     }
@@ -392,7 +392,7 @@ public class RubyRational extends RubyNumeric {
         return x;
     }
     
-    @Deprecated
+    @Deprecated(since = "1.1.4")
     public static IRubyObject convert(ThreadContext context, IRubyObject clazz, IRubyObject[]args) {
         switch (args.length) {
         case 1: return convert(context, clazz, args[0]);        
@@ -637,7 +637,7 @@ public class RubyRational extends RubyNumeric {
         return signum(context) > 0;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public final int signum() {
         return signum(getCurrentContext());
     }
@@ -715,7 +715,7 @@ public class RubyRational extends RubyNumeric {
         return f_addsub(context, getMetaClass(), num, den, other.num, other.den, true);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public IRubyObject op_add(ThreadContext context, IRubyObject other) { return op_plus(context, other); }
 
     /** nurat_sub */
@@ -737,7 +737,7 @@ public class RubyRational extends RubyNumeric {
         return f_addsub(context, getMetaClass(), num, den, other.num, other.den, false);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public IRubyObject op_sub(ThreadContext context, IRubyObject other) { return op_minus(context, other); }
 
     @Override
@@ -1301,7 +1301,7 @@ public class RubyRational extends RubyNumeric {
      * @return
      * @deprecated USe {@link org.jruby.RubyRational#asDouble(ThreadContext)} instead.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public double getDoubleValue(ThreadContext context) {
         return asDouble(context);
     }
@@ -1416,7 +1416,7 @@ public class RubyRational extends RubyNumeric {
 
     private static final ObjectMarshal RATIONAL_MARSHAL = new ObjectMarshal() {
         @Override
-        @Deprecated(since = "10.0", forRemoval = true)
+        @Deprecated(since = "10.0.0.0", forRemoval = true)
         @SuppressWarnings("removal")
         public void marshalTo(Ruby runtime, Object obj, RubyClass type, org.jruby.runtime.marshal.MarshalStream marshalStream) {
             throw typeError(runtime.getCurrentContext(), "marshal_dump should be used instead for Rational");
@@ -1427,7 +1427,7 @@ public class RubyRational extends RubyNumeric {
         }
 
         @Override
-        @Deprecated(since = "10.0", forRemoval = true)
+        @Deprecated(since = "10.0.0.0", forRemoval = true)
         @SuppressWarnings("removal")
         public Object unmarshalFrom(Ruby runtime, RubyClass type,
                                     org.jruby.runtime.marshal.UnmarshalStream unmarshalStream) throws IOException {
@@ -1573,32 +1573,32 @@ public class RubyRational extends RubyNumeric {
         return ((RubyRational) x).op_div(context, y);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public IRubyObject op_floor(ThreadContext context) {
         return floor(context);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public IRubyObject op_floor(ThreadContext context, IRubyObject n) {
         return floor(context, n);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public IRubyObject op_ceil(ThreadContext context) {
         return ceil(context);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public IRubyObject op_ceil(ThreadContext context, IRubyObject n) {
         return ceil(context, n);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public IRubyObject op_idiv(ThreadContext context, IRubyObject other) {
         return idiv(context, other);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public IRubyObject op_fdiv(ThreadContext context, IRubyObject other) {
         return fdiv(context, other);
     }

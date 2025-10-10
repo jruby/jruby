@@ -101,7 +101,7 @@ import static org.jruby.util.StringSupport.codeRangeScan;
  */
 @JRubyClass(name = "Symbol", include = "Enumerable")
 public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingCapable, Constantizable, Appendable {
-    @Deprecated
+    @Deprecated(since = "9.2.1.0")
     public static final long symbolHashSeedK0 = 5238926673095087190l;
 
     private final String symbol;
@@ -331,7 +331,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     /* Symbol class methods.
      *
      */
-    @Deprecated
+    @Deprecated(since = "9.1.0.0")
     public static RubySymbol newSymbol(Ruby runtime, IRubyObject name) {
         if (name instanceof RubySymbol) {
             return runtime.getSymbolTable().getSymbol(((RubySymbol) name).getBytes(), false);
@@ -418,7 +418,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return newHardSymbol(runtime, bytes, handler);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubySymbol newConstantSymbol(Ruby runtime, IRubyObject fqn, ByteList bytes) {
         return newConstantSymbol(runtime.getCurrentContext(), fqn, bytes);
     }
@@ -478,7 +478,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
                 constant;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     final RubyString inspect(final Ruby runtime) {
         return (RubyString) inspect(runtime.getCurrentContext());
     }
@@ -687,7 +687,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
      * @return ""
      * @deprecated Use {@link RubySymbol#length(ThreadContext)} instead.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject length() {
         return length(getCurrentContext());
     }
@@ -959,13 +959,13 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     public static IRubyObject all_symbols(ThreadContext context, IRubyObject recv) {
         return context.runtime.getSymbolTable().all_symbols(context);
     }
-    @Deprecated
+    @Deprecated(since = "1.2")
     public static IRubyObject all_symbols(IRubyObject recv) {
         var runtime = recv.getRuntime();
         return runtime.getSymbolTable().all_symbols(runtime.getCurrentContext());
     }
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0.0.0", forRemoval = true)
     @SuppressWarnings("removal")
     public static RubySymbol unmarshalFrom(org.jruby.runtime.marshal.UnmarshalStream input, org.jruby.runtime.marshal.UnmarshalStream.MarshalState state) throws java.io.IOException {
         ByteList byteList = input.unmarshalString();
@@ -1423,7 +1423,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
             return null;
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public RubyArray all_symbols() {
             return all_symbols(runtime.getCurrentContext());
         }
@@ -1505,7 +1505,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         }
 
         // backwards-compatibility, but threadsafe now
-        @Deprecated
+        @Deprecated(since = "9.0.0.0")
         public RubySymbol lookup(String name) {
             int hash = name.hashCode();
             SymbolEntry[] table = symbolTable;
@@ -1525,7 +1525,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         // not so backwards-compatible here, but no one should have been
         // calling this anyway.
-        @Deprecated
+        @Deprecated(since = "9.0.0.0")
         public void store(RubySymbol symbol) {
             throw new UnsupportedOperationException();
         }
@@ -1586,7 +1586,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return object.convertToString().getByteList().toString();
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.10.0")
     public static String checkID(IRubyObject object) {
         return idStringFromObject(object.getRuntime().getCurrentContext(), object);
     }
@@ -1716,7 +1716,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return context.sites.Symbol;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     @Override
     public IRubyObject taint(ThreadContext context) {
         return this;

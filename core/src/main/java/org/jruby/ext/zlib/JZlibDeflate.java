@@ -59,7 +59,7 @@ public class JZlibDeflate extends ZStream {
     private com.jcraft.jzlib.Deflater flater = null;
     private int flush = JZlib.Z_NO_FLUSH;
 
-    @Deprecated(since = "9.4")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject s_deflate(IRubyObject recv, IRubyObject[] args) {
         return s_deflate(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
@@ -87,7 +87,7 @@ public class JZlibDeflate extends ZStream {
         super(runtime, type);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject _initialize(IRubyObject[] args) {
         return _initialize(getCurrentContext(), args);
     }
@@ -140,7 +140,7 @@ public class JZlibDeflate extends ZStream {
         return this;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject append(IRubyObject arg) {
         return append(getCurrentContext(), arg);
     }
@@ -190,7 +190,7 @@ public class JZlibDeflate extends ZStream {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject flush(IRubyObject[] args) {
         return flush(getCurrentContext(), args);
     }
@@ -204,7 +204,7 @@ public class JZlibDeflate extends ZStream {
         return flush(context, flush);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject deflate(IRubyObject[] args) {
         return deflate(getCurrentContext(), args);
     }

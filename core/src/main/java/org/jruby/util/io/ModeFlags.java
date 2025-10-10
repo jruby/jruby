@@ -220,7 +220,7 @@ public class ModeFlags implements Cloneable {
      * @param channel the channel to examine for capabilities
      * @return the mode flags
      */
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public static ModeFlags getModesFromChannel(Channel channel) {
         try {
             ModeFlags modes;

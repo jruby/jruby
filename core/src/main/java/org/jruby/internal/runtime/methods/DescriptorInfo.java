@@ -135,7 +135,7 @@ public class DescriptorInfo {
         parameterDesc = descBuilder.toString();
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.5.0")
     public boolean isBacktrace() {
         return false;
     }

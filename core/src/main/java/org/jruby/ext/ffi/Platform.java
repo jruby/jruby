@@ -275,7 +275,7 @@ public class Platform {
         return CPU;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public final int getJavaMajorVersion() {
         return org.jruby.platform.Platform.JAVA_VERSION;
     }

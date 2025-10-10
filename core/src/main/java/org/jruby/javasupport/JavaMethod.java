@@ -493,7 +493,7 @@ public class JavaMethod extends JavaCallable {
         }
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RaiseException newMethodNotFoundError(Ruby runtime, Class target, String prettyName, String simpleName) {
         return newMethodNotFoundError(runtime.getCurrentContext(), target, prettyName, simpleName);
     }

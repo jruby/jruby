@@ -33,7 +33,7 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
                 defineConstants(context, JFFIInvoker.class);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     JFFIInvoker(Ruby runtime, long address, Type returnType, Type[] parameterTypes, CallingConvention convention) {
         this(runtime, Access.getClass(runtime.getCurrentContext(), "FFI", "Invoker"),
                 new CodeMemoryIO(runtime, address),

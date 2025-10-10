@@ -17,7 +17,7 @@ import static org.jruby.api.Convert.asFloat;
 public abstract class CachingCallSite extends CallSite {
 
     protected CacheEntry cache = CacheEntry.NULL_CACHE;
-    @Deprecated
+    @Deprecated(since = "9.2.17.0")
     protected CacheEntry builtinCache = CacheEntry.NULL_CACHE;
 
     public CachingCallSite(String methodName, CallType callType) {
@@ -400,7 +400,7 @@ public abstract class CachingCallSite extends CallSite {
         return cacheAndGet(selfType, methodName);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.8.0")
     public final CacheEntry retrieveCache(RubyClass selfType, String methodName) {
         // This must be retrieved *once* to avoid racing with other threads.
         CacheEntry cache = this.cache;
@@ -425,7 +425,7 @@ public abstract class CachingCallSite extends CallSite {
         return retrieveCache(selfType).method.isBuiltin();
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.8.0")
     private CacheEntry cacheAndGet(RubyClass selfType, String methodName) {
         CacheEntry entry = selfType.searchWithCache(methodName);
         if (!entry.method.isUndefined()) {

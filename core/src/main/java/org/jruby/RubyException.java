@@ -173,7 +173,7 @@ public class RubyException extends RubyObject {
 
     private static final ObjectMarshal<RubyException> EXCEPTION_MARSHAL = new ObjectMarshal<RubyException>() {
         @Override
-        @Deprecated(since = "10.0", forRemoval = true)
+        @Deprecated(since = "10.0.0.0", forRemoval = true)
         @SuppressWarnings("removal")
         public void marshalTo(Ruby runtime, RubyException exc, RubyClass type,
                               org.jruby.runtime.marshal.MarshalStream marshalStream) throws IOException {
@@ -196,7 +196,7 @@ public class RubyException extends RubyObject {
         }
 
         @Override
-        @Deprecated(since = "10.0", forRemoval = true)
+        @Deprecated(since = "10.0.0.0", forRemoval = true)
         @SuppressWarnings("removal")
         public RubyException unmarshalFrom(Ruby runtime, RubyClass type, org.jruby.runtime.marshal.UnmarshalStream input) throws IOException {
             var context = runtime.getCurrentContext();
@@ -318,7 +318,7 @@ public class RubyException extends RubyObject {
         return getBacktrace();
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject set_backtrace(IRubyObject obj) {
         return set_backtrace(getCurrentContext(), obj);
     }
@@ -636,7 +636,7 @@ public class RubyException extends RubyObject {
         return names;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.7.0")
     public void prepareIntegratedBacktrace(ThreadContext context, StackTraceElement[] javaTrace) {
         // if it's null, build a backtrace
         if (backtrace.backtraceData == null) {
@@ -644,7 +644,7 @@ public class RubyException extends RubyObject {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static IRubyObject newException(ThreadContext context, RubyClass exceptionClass, IRubyObject message) {
         return newException(context, exceptionClass, message.convertToString());
     }

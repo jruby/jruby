@@ -50,7 +50,7 @@ import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.typeError;
 
-@Deprecated
+@Deprecated(since = "9.3.0.0")
 // @JRubyClass(name="Java::JavaField")
 public class JavaField {
 

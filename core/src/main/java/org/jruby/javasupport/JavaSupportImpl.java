@@ -65,7 +65,7 @@ public class JavaSupportImpl extends JavaSupport {
         return new HashMap<>(8, 1);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public Map<String, JavaClass> getNameClassMap() {
         return Collections.emptyMap();
     }
@@ -78,7 +78,7 @@ public class JavaSupportImpl extends JavaSupport {
         return instanceAssignedNames;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.0.0")
     public Map<Set<?>, JavaProxyClass> getJavaProxyClassCache() {
         Map<Set<?>, JavaProxyClass> javaProxyClassCache = new HashMap<>(javaProxyClasses.size());
         synchronized (javaProxyClasses) {
@@ -192,10 +192,10 @@ public class JavaSupportImpl extends JavaSupport {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     private volatile Map<Object, Object[]> javaObjectVariables;
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public Object getJavaObjectVariable(Object o, int i) {
         if (i == -1) return null;
 
@@ -209,7 +209,7 @@ public class JavaSupportImpl extends JavaSupport {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public void setJavaObjectVariable(Object o, int i, Object v) {
         if (i == -1) return;
 

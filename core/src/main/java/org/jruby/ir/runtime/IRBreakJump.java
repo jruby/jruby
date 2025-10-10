@@ -15,7 +15,7 @@ public class IRBreakJump extends IRJump implements Unrescuable {
         this.breakInEval = breakInEval;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.9.0")
     public static IRBreakJump create(DynamicScope scopeToReturnTo, IRubyObject rv) {
         return new IRBreakJump(scopeToReturnTo, rv, false);
     }

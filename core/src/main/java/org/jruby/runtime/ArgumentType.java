@@ -68,7 +68,7 @@ public enum ArgumentType {
         };
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyArray toArrayForm(Ruby runtime, RubySymbol name) {
         return toArrayForm(runtime.getCurrentContext(), name);
     }

@@ -218,7 +218,7 @@ public class Java implements Library {
     }
 
     public static class OldStyleExtensionInherited {
-        @Deprecated
+        @Deprecated(since = "9.1.0.0")
         public static IRubyObject inherited(IRubyObject self, IRubyObject subclass) {
             return inherited(((RubyBasicObject) self).getCurrentContext(), self, subclass);
         }
@@ -230,7 +230,7 @@ public class Java implements Library {
     };
 
     public static class NewStyleExtensionInherited {
-        @Deprecated
+        @Deprecated(since = "9.1.0.0")
         public static IRubyObject inherited(IRubyObject self, IRubyObject subclass) {
             return inherited(((RubyBasicObject) self).getCurrentContext(), self, subclass);
         }
@@ -242,7 +242,7 @@ public class Java implements Library {
         }
     }
 
-    @Deprecated(since = "9.4")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject create_proxy_class(IRubyObject self, IRubyObject name, IRubyObject javaClass, IRubyObject mod) {
         var context = ((RubyBasicObject) self).getCurrentContext();
         RubyModule module = castAsModule(context, mod);
@@ -250,7 +250,7 @@ public class Java implements Library {
         return setProxyClass(context, module, name.asJavaString(), resolveJavaClassArgument(context, javaClass));
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyModule setProxyClass(final Ruby runtime, final RubyModule target, final String constName,
                                            final Class<?> javaClass) throws NameError {
         return setProxyClass(runtime.getCurrentContext(), target, constName, javaClass);
@@ -320,7 +320,7 @@ public class Java implements Library {
         return getInterfaceModule(runtime.getCurrentContext(), javaClass.javaClass());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyModule getInterfaceModule(final Ruby runtime, final Class javaClass) {
         return getInterfaceModule(runtime.getCurrentContext(), javaClass);
     }
@@ -329,7 +329,7 @@ public class Java implements Library {
         return Java.getProxyClass(context, javaClass);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyModule get_interface_module(final Ruby runtime, final IRubyObject java_class) {
         return get_interface_module(runtime.getCurrentContext(), java_class);
     }
@@ -338,7 +338,7 @@ public class Java implements Library {
         return getInterfaceModule(context, resolveJavaClassArgument(context, java_class));
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyModule get_proxy_class(final IRubyObject self, final IRubyObject java_class) {
         return get_proxy_class(((RubyBasicObject) self).getCurrentContext(), self, java_class);
     }
@@ -366,7 +366,7 @@ public class Java implements Library {
         return (Class) ((JavaProxy) self).getObject();
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyClass getProxyClassForObject(Ruby runtime, Object object) {
         return getProxyClassForObject(runtime.getCurrentContext(), object);
     }
@@ -381,7 +381,7 @@ public class Java implements Library {
         return JavaUtil.getJavaClass(context, proxyClass);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyModule resolveType(final Ruby runtime, final IRubyObject type) {
         return resolveType(runtime.getCurrentContext(), type);
     }
@@ -453,12 +453,12 @@ public class Java implements Library {
         return null;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     public static RubyModule getProxyClass(Ruby runtime, JavaClass javaClass) {
         return getProxyClass(runtime.getCurrentContext(), javaClass.javaClass());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyModule getProxyClass(final Ruby runtime, final Class<?> clazz) {
         return getProxyClass(runtime.getCurrentContext(), clazz);
     }
@@ -610,7 +610,7 @@ public class Java implements Library {
 
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.0.0")
     public static IRubyObject concrete_proxy_inherited(final IRubyObject clazz, final IRubyObject subclazz) {
         return invokeProxyClassInherited(((RubyBasicObject) clazz).getCurrentContext(), clazz, subclazz);
     }
@@ -895,7 +895,7 @@ public class Java implements Library {
         return getJavaPackageModule(runtime.getCurrentContext(), pkg == null ? "" : pkg.getName());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyModule getJavaPackageModule(final Ruby runtime, final String packageString) {
         return getJavaPackageModule(runtime.getCurrentContext(), packageString);
     }
@@ -956,7 +956,7 @@ public class Java implements Library {
         return createPackageModule(context, javaModule, name, packageName);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyModule get_package_module(final IRubyObject self, final IRubyObject name) {
         return get_package_module(((RubyBasicObject) self).getCurrentContext(), self, name);
     }
@@ -1036,7 +1036,7 @@ public class Java implements Library {
         return JavaUtil.getPrimitiveClass(name) != null;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static Class getJavaClass(final Ruby runtime, final String className) throws RaiseException {
         return getJavaClass(runtime.getCurrentContext(), className);
     }
@@ -1045,7 +1045,7 @@ public class Java implements Library {
         return getJavaClass(context, className, true);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static Class getJavaClass(final Ruby runtime, final String className, boolean initialize) throws RaiseException {
         return getJavaClass(runtime.getCurrentContext(), className, initialize);
     }
@@ -1058,7 +1058,7 @@ public class Java implements Library {
         }
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static Class loadJavaClass(final Ruby runtime, final String className) throws ClassNotFoundException, RaiseException {
         return loadJavaClass(runtime.getCurrentContext(), className);
     }
@@ -1368,7 +1368,7 @@ public class Java implements Library {
         return result != null ? result : context.nil;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     public static IRubyObject wrap(Ruby runtime, IRubyObject java_object) {
         return getInstance(runtime, ((JavaObject) java_object).getValue());
     }
@@ -1376,7 +1376,7 @@ public class Java implements Library {
     /**
      * High-level object conversion utility function 'java_to_primitive' is the low-level version
      */
-    @Deprecated
+    @Deprecated(since = "1.4.0")
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject java_to_ruby(IRubyObject recv, IRubyObject object, Block unusedBlock) {
         var context = ((RubyBasicObject) recv).getCurrentContext();
@@ -1392,19 +1392,19 @@ public class Java implements Library {
     /**
      * High-level object conversion utility.
      */
-    @Deprecated
+    @Deprecated(since = "1.4.0")
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject ruby_to_java(final IRubyObject recv, IRubyObject object, Block unusedBlock) {
         return JavaUtil.ruby_to_java(recv, object, unusedBlock);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.4.0")
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject java_to_primitive(IRubyObject recv, IRubyObject object, Block unusedBlock) {
         return JavaUtil.java_to_primitive(recv, object, unusedBlock);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject new_proxy_instance2(IRubyObject recv, final IRubyObject wrapper,
                                                   final IRubyObject interfaces, Block block) {
         return new_proxy_instance2(((RubyBasicObject) recv).getCurrentContext(), recv, wrapper, interfaces, block);
@@ -1429,7 +1429,7 @@ public class Java implements Library {
         return getInstance(context.runtime, newInterfaceImpl(context, wrapper, unwrapped));
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static Object newInterfaceImpl(final IRubyObject wrapper, Class[] interfaces) {
         return newInterfaceImpl(((RubyBasicObject) wrapper).getCurrentContext(), wrapper, interfaces);
     }
@@ -1702,7 +1702,7 @@ public class Java implements Library {
         return proxy;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject wrapJavaObject(Ruby runtime, Object object) {
         return wrapJavaObject(runtime.getCurrentContext(), object);
     }

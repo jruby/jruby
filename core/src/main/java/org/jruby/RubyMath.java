@@ -355,7 +355,7 @@ public class RubyMath {
         return asFloat(context, Math.cbrt(toDouble(context, x)));
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static RubyFloat hypot19(ThreadContext context, IRubyObject recv, IRubyObject x, IRubyObject y) {
         return hypot(context, recv, x, y);
     }    

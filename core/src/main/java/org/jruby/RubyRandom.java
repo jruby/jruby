@@ -59,7 +59,7 @@ public class RubyRandom extends RubyRandomBase {
 
         // RandomType(Ruby runtime) { this(randomSeed(runtime)); }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         RandomType(IRubyObject seed) {
             this(((RubyBasicObject) seed).getCurrentContext(), seed);
         }
@@ -115,7 +115,7 @@ public class RubyRandom extends RubyRandomBase {
             }
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         RandomType(IRubyObject vseed, RubyBignum state, int left) {
             this(((RubyBasicObject) vseed).getCurrentContext(), vseed, state, left);
         }
@@ -228,7 +228,7 @@ public class RubyRandom extends RubyRandomBase {
         return Random;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyRandom newRandom(Ruby runtime, RubyClass randomClass, IRubyObject seed) {
         return newRandom(runtime.getCurrentContext(), randomClass, seed);
     }
@@ -442,7 +442,7 @@ public class RubyRandom extends RubyRandomBase {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     static IRubyObject randKernel(ThreadContext context, IRubyObject[] args) {
         RandomType random = getDefaultRand(context);
         if (args.length == 0) {
@@ -453,7 +453,7 @@ public class RubyRandom extends RubyRandomBase {
         return randKernel(context, context.runtime.getRandomClass(), arg);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static IRubyObject rand(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return switch (args.length) {
             case 0 -> randDefault(context, recv);
@@ -462,7 +462,7 @@ public class RubyRandom extends RubyRandomBase {
         };
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     public IRubyObject randObj(ThreadContext context, IRubyObject[] args) {
         return (args.length == 0) ? rand(context) : rand(context, args[0]);
     }

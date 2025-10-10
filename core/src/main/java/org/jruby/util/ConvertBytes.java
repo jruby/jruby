@@ -38,7 +38,7 @@ public class ConvertBytes {
         this.base = base;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public ConvertBytes(Ruby runtime, ByteList str, int base, boolean badcheck, boolean is19) {
         this(runtime, str, base, badcheck);
     }

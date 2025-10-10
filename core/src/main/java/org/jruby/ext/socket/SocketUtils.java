@@ -132,17 +132,17 @@ public class SocketUtils {
         return asFixnum(context, port);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.6.0")
     public static IRubyObject pack_sockaddr_in(ThreadContext context, IRubyObject port, IRubyObject host) {
         return Sockaddr.pack_sockaddr_in(context, port, host);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.6.0")
     public static RubyArray unpack_sockaddr_in(ThreadContext context, IRubyObject addr) {
         return Sockaddr.unpack_sockaddr_in(context, addr);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.6.0")
     public static IRubyObject pack_sockaddr_un(ThreadContext context, IRubyObject filename) {
         String path = filename.convertToString().asJavaString();
         return Sockaddr.pack_sockaddr_un(context, path);
@@ -405,7 +405,7 @@ public class SocketUtils {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.10.0")
     public static InetAddress[] getRubyInetAddresses(ByteList address) throws UnknownHostException {
         // switched to String because the ByteLists were not comparing properly in 1.9 mode (encoding?
         // FIXME: Need to properly decode this string (see Helpers.decodeByteList)
@@ -664,7 +664,7 @@ public class SocketUtils {
         }
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static int portToInt(IRubyObject port) {
         return portToInt(((RubyBasicObject) port).getCurrentContext(), port);
     }

@@ -164,7 +164,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return ex;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject create(IRubyObject klass, IRubyObject[] args, Block block) {
         return create(klass.getRuntime().getCurrentContext(), klass, args, block);
     }
@@ -190,13 +190,13 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      * Create array with specific allocated size
      * @deprecated Use {@link Create#allocArray(ThreadContext, int)} instead
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static final RubyArray newArray(final Ruby runtime, final long len) {
         ThreadContext context = runtime.getCurrentContext();
         return Create.allocArray(context, checkLength(context, len));
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static final RubyArray<?> newArrayLight(final Ruby runtime, final long len) {
         return newArrayLight(runtime, checkLength(runtime.getCurrentContext(), len));
     }
@@ -217,7 +217,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return new RubyArray<>(runtime, runtime.getArray(), values, 0, 0, false);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static final RubyArray<?> newArray(final Ruby runtime) {
         return newArray(runtime.getCurrentContext());
     }
@@ -521,7 +521,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         values = reallocated;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     protected static final void checkLength(Ruby runtime, long length) {
         checkLength(runtime.getCurrentContext(), length);
     }
@@ -549,7 +549,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      * @return ""
      * @deprecated Use {@link RubyArray#toJavaArray(ThreadContext)} instead.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject[] toJavaArray() {
         return toJavaArray(getCurrentContext());
     }
@@ -637,7 +637,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return makeShared(context, last ? begin + realLength - n : begin, n, arrayClass(context));
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     protected final void modifyCheck() {
         modifyCheck(getCurrentContext());
     }
@@ -652,7 +652,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         }
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     protected void modify() {
         modify(getCurrentContext());
     }
@@ -818,7 +818,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return dupImpl(runtime, runtime.getArray());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject replace(IRubyObject orig) {
         return replace(getCurrentContext(), orig);
     }
@@ -1092,7 +1092,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return tmp != context.nil ? (RubyArray) tmp : newArray(context.runtime, obj);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.5.0")
     public static RubyArray aryToAry(IRubyObject obj) {
         return aryToAry(obj.getRuntime().getCurrentContext(), obj);
     }
@@ -1214,7 +1214,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         throw argumentError(getRuntime().getCurrentContext(), 0, 1);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject insert(IRubyObject arg) {
         return insert(getCurrentContext(), arg);
     }
@@ -1229,7 +1229,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return this;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject insert(IRubyObject arg1, IRubyObject arg2) {
         return insert(getCurrentContext(), arg1, arg2);
     }
@@ -1252,7 +1252,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         spliceOne(context, pos, val); // rb_ary_new4
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject insert(IRubyObject[] args) {
         return insert(getCurrentContext(), args);
     }
@@ -1291,7 +1291,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return this;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyArray transpose() {
         return transpose(getCurrentContext());
     }
@@ -1324,7 +1324,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return new RubyArray<>(context.runtime, result);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject values_at(IRubyObject[] args) {
         return values_at(getCurrentContext(), args);
     }
@@ -1500,7 +1500,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return asFixnum(context, realLength);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public RubyFixnum length() {
         return length(getCurrentContext());
     }
@@ -1514,7 +1514,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return self.length(context);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyArray<?> append(IRubyObject item) {
         return append(getCurrentContext(), item);
     }
@@ -1553,7 +1553,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return push(items);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyArray push(IRubyObject item) {
         append(item);
 
@@ -1567,7 +1567,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return this;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyArray<?> push(IRubyObject[] items) {
         return push(getCurrentContext(), items);
     }
@@ -1642,7 +1642,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      * @return ""
      * @deprecated Use {@link RubyArray#unshift(ThreadContext)} instead
      */
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject unshift() {
         return unshift(getCurrentContext());
     }
@@ -1653,7 +1653,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return this;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject unshift(IRubyObject item) {
         return unshift(getCurrentContext(), item);
     }
@@ -1685,7 +1685,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return this;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject unshift(IRubyObject[] items) {
         return unshift(getCurrentContext(), items);
     }
@@ -1733,7 +1733,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      * Variable arity version for compatibility. Not bound to a Ruby method.
      * @deprecated Use the versions with zero, one, or two args.
      */
-    @Deprecated(since = "9.4")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject aref(IRubyObject[] args) {
         ThreadContext context = getCurrentContext();
         return switch (args.length) {
@@ -1746,7 +1746,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         };
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     public IRubyObject aref(IRubyObject arg0) {
         return aref(getCurrentContext(), arg0);
     }
@@ -1779,7 +1779,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return entry(toLong(context, arg0));
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject aref(IRubyObject arg0, IRubyObject arg1) {
         return aref(getCurrentContext(), arg0, arg1);
     }
@@ -1804,7 +1804,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         };
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject aset(IRubyObject arg0, IRubyObject arg1) {
         return aset(getCurrentContext(), arg0, arg1);
     }
@@ -1852,7 +1852,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      * @return ""
      * @deprecated Use {@link RubyArray#aset(ThreadContext, IRubyObject, IRubyObject, IRubyObject)} instead.
      */
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject aset(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         return aset(getCurrentContext(), arg0, arg1, arg2);
     }
@@ -1872,7 +1872,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      * @return ""
      * @deprecated Use {@link RubyArray#at(ThreadContext, IRubyObject)} instead.
      */
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject at(IRubyObject pos) {
         return at(getCurrentContext(), pos);
     }
@@ -1900,7 +1900,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         splice(context, realLength, 0, obj, obj.realLength);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyArray aryAppend(RubyArray y) {
         return aryAppend(getCurrentContext(), y);
     }
@@ -1989,7 +1989,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         };
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject first() {
         return first(getCurrentContext());
     }
@@ -2001,7 +2001,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return realLength == 0 ? context.nil : eltOk(0);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject first(IRubyObject arg0) {
         return first(getCurrentContext(), arg0);
     }
@@ -2041,7 +2041,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         };
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject last() {
         return last(getCurrentContext());
     }
@@ -2054,7 +2054,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return realLength == 0 ? context.nil : eltOk(realLength - 1);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject last(IRubyObject arg0) {
         return last(getCurrentContext(), arg0);
     }
@@ -2242,7 +2242,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         context.safeRecurse(JOIN_RECURSIVE, new JoinRecursive.State(ary, outValue, sep, result, first), outValue, "join", true);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject join19(final ThreadContext context, IRubyObject sep) {
         return join(context, sep);
     }
@@ -2284,7 +2284,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return result;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject join19(ThreadContext context) {
         return join(context);
     }
@@ -2313,7 +2313,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
             dupImpl(context.runtime, arrayClass) : this;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject to_ary() {
         return this;
     }
@@ -2323,7 +2323,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     	return this;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public IRubyObject to_h(ThreadContext context) {
         return to_h(context, Block.NULL_BLOCK);
     }
@@ -2421,7 +2421,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      * @return ""
      * @deprecated Use {@link RubyArray#compact_bang(ThreadContext)}
      */
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject compact_bang() {
         return compact_bang(getCurrentContext());
     }
@@ -2458,7 +2458,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return this;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject compact() {
         return compact(getCurrentContext());
     }
@@ -2471,7 +2471,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return ary;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject empty_p() {
         return empty_p(getCurrentContext());
     }
@@ -2484,7 +2484,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return realLength == 0 ? context.tru : context.fals;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject rb_clear() {
         return rb_clear(getCurrentContext());
     }
@@ -2755,12 +2755,12 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return context.nil;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject indexes(IRubyObject[] args) {
         return indexes(getCurrentContext(), args);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject indexes(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 1, -1);
 
@@ -2778,7 +2778,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return ary;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject reverse_bang() {
         return reverse_bang(getCurrentContext());
     }
@@ -2805,7 +2805,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return this;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject reverse() {
         return reverse(getCurrentContext());
     }
@@ -3050,7 +3050,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return value;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject delete_at(int pos) {
         return delete_at(getCurrentContext(), pos);
     }
@@ -3089,7 +3089,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         }
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject delete_at(IRubyObject obj) {
         return delete_at(getCurrentContext(), obj);
     }
@@ -3352,7 +3352,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return result;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject slice_bang(IRubyObject arg0) {
         return slice_bang(getCurrentContext(), arg0);
     }
@@ -3374,7 +3374,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return delete_at(toInt(context, arg0));
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject slice_bang(IRubyObject arg0, IRubyObject arg1) {
         return slice_bang(getCurrentContext(), arg0, arg1);
     }
@@ -3581,12 +3581,12 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return asFixnum(context, n);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject nitems() {
         return nitems(getCurrentContext());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject op_plus(IRubyObject obj) {
         return op_plus(getCurrentContext(), obj);
     }
@@ -3764,7 +3764,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return result;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject op_diff(IRubyObject other) {
         return op_diff(getCurrentContext(), other);
     }
@@ -3874,7 +3874,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return context.fals;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject op_and(IRubyObject other) {
         return op_and(getCurrentContext(), other);
     }
@@ -3918,7 +3918,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return res;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject op_or(IRubyObject other) {
         return op_or(getCurrentContext(), other);
     }
@@ -4031,12 +4031,12 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         return this;
     }
 
-    // @Deprecated
+    // @Deprecated(since = "9.2.0.0")
     protected static int compareFixnums(RubyFixnum o1, RubyFixnum o2) {
         return DefaultComparator.compareInteger(o1, o2);
     }
 
-    // @Deprecated
+    // @Deprecated(since = "9.2.0.0")
     protected static int compareOthers(ThreadContext context, IRubyObject o1, IRubyObject o2) {
         return DefaultComparator.compareGeneric(context, o1, o2);
     }
@@ -5309,13 +5309,13 @@ float_loop:
         return ifnone != null && !ifnone.isNil() ? sites(context).call.call(context, ifnone, ifnone) : context.nil;
     }
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0.0.0", forRemoval = true)
     @SuppressWarnings("removal")
     public static void marshalTo(RubyArray array, org.jruby.runtime.marshal.MarshalStream output) throws IOException {
         marshalTo(((RubyBasicObject) array).getCurrentContext(), array, output);
     }
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0.0.0", forRemoval = true)
     @SuppressWarnings("removal")
     public static void marshalTo(ThreadContext context, RubyArray array, org.jruby.runtime.marshal.MarshalStream output) throws IOException {
         output.registerLinkTarget(context, array);
@@ -5347,7 +5347,7 @@ float_loop:
         }
     }
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0.0.0", forRemoval = true)
     @SuppressWarnings("removal")
     public static RubyArray unmarshalFrom(org.jruby.runtime.marshal.UnmarshalStream input) throws IOException {
         int size = input.unmarshalInt();
@@ -5378,7 +5378,7 @@ float_loop:
         return result;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyArray newBlankArray(Ruby runtime, int size) {
         return newBlankArray(runtime.getCurrentContext(), size);
     }
@@ -5631,7 +5631,7 @@ float_loop:
         return List.class;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public void copyInto(IRubyObject[] target, int start) {
         copyInto(getCurrentContext(), target, start);
     }
@@ -5645,7 +5645,7 @@ float_loop:
         safeArrayCopy(context, values, begin, target, start, realLength);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public void copyInto(IRubyObject[] target, int start, int len) {
         copyInto(getCurrentContext(), target, start, len);
     }
@@ -6018,7 +6018,7 @@ float_loop:
      * Increases the capacity of this <code>Array</code>, if necessary.
      * @param minCapacity the desired minimum capacity of the internal array
      */
-    @Deprecated
+    @Deprecated(since = "9.1.3.0")
     public void ensureCapacity(int minCapacity) {
         unpack(getCurrentContext());
         if ( isShared || (values.length - begin) < minCapacity ) {
@@ -6031,7 +6031,7 @@ float_loop:
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.10.0")
     @Override
     public RubyArray to_a() {
         var context = metaClass.runtime.getCurrentContext();
@@ -6039,7 +6039,7 @@ float_loop:
         return metaClass != arrayClass ? dupImpl(context.runtime, arrayClass) : this;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.15.0")
     public IRubyObject shuffle(ThreadContext context, IRubyObject[] args) {
         switch (args.length) {
             case 0:
@@ -6051,7 +6051,7 @@ float_loop:
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.15.0")
     public IRubyObject shuffle_bang(ThreadContext context, IRubyObject[] args) {
         switch (args.length) {
             case 0:
@@ -6063,7 +6063,7 @@ float_loop:
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.15.0")
     public IRubyObject sample(ThreadContext context, IRubyObject[] args) {
         switch (args.length) {
             case 0:

@@ -137,7 +137,7 @@ public class RubyGlobal {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static void createGlobals(Ruby runtime) {
         var context = runtime.getCurrentContext();
         createGlobalsAndENV(context, globalVariables(context), instanceConfig(context));
@@ -574,7 +574,7 @@ public class RubyGlobal {
             return super.has_value_p(context, expected.convertToString());
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public IRubyObject index(ThreadContext context, IRubyObject expected) {
             warn(context, "ENV#index is deprecated; use ENV#key");
 
@@ -669,7 +669,7 @@ public class RubyGlobal {
             return newSharedString(context, ENV);
         }
 
-        @Deprecated
+        @Deprecated(since = "9.3.0.0")
         public RubyHash to_h() {
             return to_h(getCurrentContext(), Block.NULL_BLOCK);
         }

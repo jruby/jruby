@@ -31,7 +31,7 @@ public abstract class ClassValue<T> {
          *
          * @see Java7ClassValue
          */
-        @Deprecated
+        @Deprecated(since = "9.4.13.0")
         HARD_VALUES(Java7ClassValue::new);
 
         Type(Function<ClassValueCalculator, ClassValue> function) {
@@ -54,7 +54,7 @@ public abstract class ClassValue<T> {
         return Options.JI_CLASS_VALUES.load().function.apply(calculator);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.13.0")
     private static <T> ClassValue<T> newJava7Instance(ClassValueCalculator<T> calculator) {
         return new Java7ClassValue<>(calculator);
     }

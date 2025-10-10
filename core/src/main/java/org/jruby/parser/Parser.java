@@ -139,7 +139,7 @@ public class Parser {
         return (ParseResult) result.getAST();
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public Node parse(String file, ByteList content, DynamicScope blockScope,
             ParserConfiguration configuration) {
         configuration.setDefaultEncoding(content.getEncoding());
@@ -148,7 +148,7 @@ public class Parser {
         return parse(file, lexerSource, blockScope, configuration);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public Node parse(String file, byte[] content, DynamicScope blockScope,
             ParserConfiguration configuration) {
         var list = getLines(configuration.isEvalParse(), file, -1);
@@ -157,7 +157,7 @@ public class Parser {
         return parse(file, lexerSource, blockScope, configuration);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public Node parse(String file, InputStream content, DynamicScope blockScope,
             ParserConfiguration configuration) {
         if (content instanceof LoadServiceResourceInputStream) {
@@ -187,7 +187,7 @@ public class Parser {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public Node parse(String file, LexerSource lexerSource, DynamicScope blockScope,
             ParserConfiguration configuration) {
         // We only need to pass in current scope if we are evaluating as a block (which

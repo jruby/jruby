@@ -125,7 +125,7 @@ import static org.jruby.runtime.ThreadContext.*;
 // this is not a big deal.  Think this through!
 
 public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyNode, Colon3Node, HashNode> {
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public static Node buildAST(boolean isCommandLineScript, String arg) {
         Ruby ruby = Ruby.getGlobalRuntime();
 
@@ -1351,7 +1351,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     protected Operand putConstant(Colon3Node colonNode, Operand value) {
         if (colonNode.getNodeType() == NodeType.COLON2NODE) {
             Colon2Node colon2Node = (Colon2Node) colonNode;

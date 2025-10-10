@@ -852,7 +852,7 @@ public abstract class LexingCommon {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public void validateFormalIdentifier(String identifier) {
         char first = identifier.charAt(0);
 

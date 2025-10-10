@@ -111,7 +111,7 @@ public class RubyKeyError extends RubyIndexError {
         return context.nil;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject receiver() {
         return receiver(getCurrentContext());
     }
@@ -122,7 +122,7 @@ public class RubyKeyError extends RubyIndexError {
         return receiver;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject key() {
         return key(getCurrentContext());
     }

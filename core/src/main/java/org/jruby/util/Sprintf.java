@@ -246,7 +246,7 @@ public class Sprintf {
             positionIndex = -2;
         }
 
-        @Deprecated
+        @Deprecated(since = "9.1.8.0")
         IRubyObject next(ByteList name) {
             // for 1.9 hash args
             if (name != null) {

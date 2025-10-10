@@ -355,7 +355,7 @@ public class RubyDir extends RubyObject implements Closeable {
         return asRubyStringList(runtime, dirs);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyArray entries() {
         return entries(getCurrentContext());
     }
@@ -500,7 +500,7 @@ public class RubyDir extends RubyObject implements Closeable {
         return chdirCommon(context, block, checkEmbeddedNulls(context, RubyFile.get_path(context, path)), false);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject chroot(IRubyObject recv, IRubyObject path) {
         return chroot(((RubyBasicObject) recv).getCurrentContext(), recv, path);
     }
@@ -533,12 +533,12 @@ public class RubyDir extends RubyObject implements Closeable {
         return dir.children(context);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject rmdir(IRubyObject recv, IRubyObject path) {
         return rmdir(recv.getRuntime().getCurrentContext(), recv, path);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject rmdir19(IRubyObject recv, IRubyObject path) {
         return rmdir(((RubyBasicObject) recv).getCurrentContext(), recv, path);
     }
@@ -648,7 +648,7 @@ public class RubyDir extends RubyObject implements Closeable {
                 enumeratorize(context.runtime, recv, "foreach", path, encOpts);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyString getwd(IRubyObject recv) {
         return getwd(((RubyBasicObject) recv).getCurrentContext(), recv);
     }
@@ -691,7 +691,7 @@ public class RubyDir extends RubyObject implements Closeable {
         return mkdirCommon(context, RubyFile.get_path(context, args[0]).asJavaString(), args);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.1.0")
     public static IRubyObject mkdir(IRubyObject recv, IRubyObject[] args) {
         return mkdir(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
@@ -771,7 +771,7 @@ public class RubyDir extends RubyObject implements Closeable {
         return context.nil;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public final void close() {
         close(getCurrentContext());
     }
@@ -857,12 +857,12 @@ public class RubyDir extends RubyObject implements Closeable {
         return asFixnum(context, pos);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public RubyInteger tell() {
         return tell(getCurrentContext());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject seek(IRubyObject newPos) {
         return seek(getCurrentContext(), newPos);
     }
@@ -879,7 +879,7 @@ public class RubyDir extends RubyObject implements Closeable {
         return this;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject set_pos(IRubyObject newPos) {
         return set_pos(getCurrentContext(), newPos);
     }
@@ -905,7 +905,7 @@ public class RubyDir extends RubyObject implements Closeable {
         return path == null ? null : path.asJavaString();
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject read() {
         return read(getCurrentContext());
     }
@@ -923,7 +923,7 @@ public class RubyDir extends RubyObject implements Closeable {
         return result;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject rewind() {
         return rewind(getCurrentContext());
     }
@@ -958,7 +958,7 @@ public class RubyDir extends RubyObject implements Closeable {
         }
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject exists_p(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         if (context.runtime.warningsEnabled()) {
             context.runtime.getWarnings().warnDeprecatedAlternate("Dir.exists?", "Dir.exist?");
@@ -1185,24 +1185,24 @@ public class RubyDir extends RubyObject implements Closeable {
         return super.toJava(target);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static IRubyObject home(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         if (args.length > 0 && args[0] != context.nil) return getHomeDirectoryPath(context, args[0].toString());
 
         return getHomeDirectoryPath(context);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.15.0")
     public static RubyArray entries(IRubyObject recv, IRubyObject path) {
         return entries(((RubyBasicObject) recv).getCurrentContext(), recv, path);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.15.0")
     public static RubyArray entries(IRubyObject recv, IRubyObject path, IRubyObject arg, IRubyObject opts) {
         return entries(((RubyBasicObject) recv).getCurrentContext(), recv, path, opts);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject chdir(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         return switch (args.length) {
             case 0 -> chdir(context, recv, block);

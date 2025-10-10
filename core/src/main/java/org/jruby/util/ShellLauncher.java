@@ -242,7 +242,7 @@ public class ShellLauncher {
         return getModifiedEnv(runtime, mergeEnv == null ? Collections.EMPTY_LIST : mergeEnv.entrySet(), false);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static String[] getModifiedEnv(Ruby runtime, Collection mergeEnv, boolean clearEnv) {
         return getModifiedEnv(runtime.getCurrentContext(), mergeEnv, clearEnv);
     }
@@ -432,7 +432,7 @@ public class ShellLauncher {
         return findPathExecutable(context, fname, pathObject);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static File findPathExecutable(Ruby runtime, String fname, IRubyObject pathObject) {
         return findPathExecutable(runtime.getCurrentContext(), fname, pathObject);
     }
@@ -842,22 +842,22 @@ public class ShellLauncher {
         return new POpenProcess(popenShared(runtime, new IRubyObject[] {string}, env, true), runtime, modes);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.4")
     public static POpenProcess popen(Ruby runtime, IRubyObject string, IOOptions modes) throws IOException {
         return new POpenProcess(popenShared(runtime, new IRubyObject[] {string}, null, true), runtime, modes);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.4")
     public static POpenProcess popen(Ruby runtime, IRubyObject[] strings, Map env, IOOptions modes) throws IOException {
         return new POpenProcess(popenShared(runtime, strings, env), runtime, modes);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public static POpenProcess popen3(Ruby runtime, IRubyObject[] strings) throws IOException {
         return new POpenProcess(popenShared(runtime, strings));
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public static POpenProcess popen3(Ruby runtime, IRubyObject[] strings, boolean addShell) throws IOException {
         return new POpenProcess(popenShared(runtime, strings, null, addShell));
     }
@@ -924,7 +924,7 @@ public class ShellLauncher {
         private Pumper inputPumper;
         private Pumper inerrPumper;
 
-        @Deprecated
+        @Deprecated(since = "1.7.4")
         public POpenProcess(Process child, Ruby runtime, IOOptions modes) {
             this(child, runtime, modes.getModeFlags());
         }
@@ -1735,22 +1735,22 @@ public class ShellLauncher {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.3.0")
     public static OutputStream unwrapBufferedStream(OutputStream filteredStream) {
         return ChannelHelper.unwrapBufferedStream(filteredStream);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.3.0")
     public static InputStream unwrapBufferedStream(InputStream filteredStream) {
         return ChannelHelper.unwrapBufferedStream(filteredStream);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.3.0")
     public static OutputStream unwrapFilterOutputStream(OutputStream filteredStream) {
         return ChannelHelper.unwrapFilterOutputStream(filteredStream);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.3.0")
     public static InputStream unwrapFilterInputStream(InputStream filteredStream) {
         return ChannelHelper.unwrapFilterInputStream(filteredStream);
     }

@@ -47,7 +47,7 @@ import static org.jruby.api.Convert.toInt;
  * @author kares
  */
 public abstract class CoreExt {
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static void loadStringExtensions(Ruby runtime) {
         loadStringExtensions(runtime.getCurrentContext());
     }

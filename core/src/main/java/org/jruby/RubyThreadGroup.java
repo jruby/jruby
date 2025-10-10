@@ -127,12 +127,12 @@ public class RubyThreadGroup extends RubyObject {
         return asBoolean(context, enclosed);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject enclosed_p(Block block) {
         return enclosed_p(getRuntime().getCurrentContext(), block);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject list(Block block) {
         return list(getCurrentContext(), block);
     }
@@ -162,7 +162,7 @@ public class RubyThreadGroup extends RubyObject {
         super(runtime, type);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public IRubyObject add(IRubyObject rubyThread, Block block) {
         if (!(rubyThread instanceof RubyThread)) throw typeError(getRuntime().getCurrentContext(), rubyThread, "Thread");
 

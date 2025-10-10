@@ -44,7 +44,7 @@ public abstract class AbstractScript implements Script {
         return __file__(context, self, new IRubyObject[] {arg1, arg2, arg3}, block);
     }
     
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     public IRubyObject load(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
         return load(context, self, false);
     }

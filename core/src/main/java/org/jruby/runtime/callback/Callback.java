@@ -35,7 +35,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 
-@Deprecated
+@Deprecated(since = "1.7.4")
 public interface Callback {
     IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block);
     Arity getArity();

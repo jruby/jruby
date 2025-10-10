@@ -117,7 +117,7 @@ public class RuntimeCache {
         return regexps[index];
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public final RubyRegexp cacheRegexp(int index, RubyString pattern, int options) {
         RubyRegexp regexp = regexps[index];
         Ruby runtime = pattern.getCurrentContext().runtime;
@@ -128,7 +128,7 @@ public class RuntimeCache {
         return regexp;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public final RubyRegexp cacheRegexp(int index, RubyRegexp regexp) {
         regexps[index] = regexp;
         return regexp;

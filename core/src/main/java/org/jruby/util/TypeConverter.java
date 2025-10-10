@@ -160,7 +160,7 @@ public class TypeConverter {
      * @param obj the object to check
      * @return the converted value
      */
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject checkData(IRubyObject obj) {
         if (obj instanceof org.jruby.runtime.marshal.DataType) return obj;
 
@@ -176,7 +176,7 @@ public class TypeConverter {
         return obj.getMetaClass().getRealClass().rubyName(context);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubySymbol checkID(IRubyObject obj) {
         return Check.checkID(obj.getRuntime().getCurrentContext(), obj);
     }
@@ -189,7 +189,7 @@ public class TypeConverter {
      *
      * For 2.2 compatibility, we also force all incoming identifiers to get anchored as hard-referenced symbols.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubySymbol checkID(Ruby runtime, String name) {
         return RubySymbol.newHardSymbol(runtime, name.intern());
     }
@@ -490,14 +490,14 @@ public class TypeConverter {
         return context.sites.TypeConverter;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public static IRubyObject convertToType(IRubyObject obj, RubyClass target, int convertMethodIndex, String convertMethod, boolean raise) {
         if (!obj.respondsTo(convertMethod)) return handleUncoercibleObject(raise, obj, target);
 
         return obj.callMethod(obj.getRuntime().getCurrentContext(), convertMethod);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public static IRubyObject convertToType(IRubyObject obj, RubyClass target, int convertMethodIndex, String convertMethod) {
         if (target.isInstance(obj)) return obj;
         IRubyObject val = convertToType(obj, target, convertMethod, true);
@@ -509,7 +509,7 @@ public class TypeConverter {
         return val;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public static IRubyObject convertToTypeWithCheck(IRubyObject obj, RubyClass target, int convertMethodIndex, String convertMethod) {
         if (target.isInstance(obj)) return obj;
         IRubyObject val = TypeConverter.convertToType(obj, target, convertMethod, false);
@@ -522,7 +522,7 @@ public class TypeConverter {
         return val;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.3.0")
     public static String convertToIdentifier(IRubyObject obj) {
         // Assume Symbol already returns ISO8859-1/raw bytes from asJavaString()
         // Assume all other objects cannot participate in providing raw bytes since we cannot

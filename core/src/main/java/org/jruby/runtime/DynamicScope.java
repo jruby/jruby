@@ -74,7 +74,7 @@ public abstract class DynamicScope implements Cloneable {
         return parent;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public DynamicScope getNextCapturedScope() {  // Used by ruby-debug-ide
         return getParentScope();
     }
@@ -591,7 +591,7 @@ public abstract class DynamicScope implements Cloneable {
                 scopeType.isBlock() && (staticScope.isArgumentScope() || lambda);  // Contained within define_method closure
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.6.0")
     public DynamicScope cloneScope() {
         try {
             return (DynamicScope) clone();

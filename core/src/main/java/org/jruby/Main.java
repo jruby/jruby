@@ -238,7 +238,7 @@ public class Main {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "1.6.0")
     public Status run() {
         return internalRun();
     }

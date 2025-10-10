@@ -142,7 +142,7 @@ public class Signature {
     public int required() { return pre + post; }
 
     // We calculate this every time but no one should be using this any more
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public Arity arity() {
         // NOTE: Some logic to *assign* variables still uses Arity, which treats Rest.ANON (the
         //       |a,| form) as a rest arg for destructuring purposes. However ANON does *not*
@@ -208,7 +208,7 @@ public class Signature {
     }
 
     // Lossy conversion to half-support older signatures which externally use Arity but needs to be converted.
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static Signature from(Arity arity) {
         switch(arity.required()) {
             case 0:
@@ -372,7 +372,7 @@ public class Signature {
         return "signature(pre=" + pre + ",opt=" + opt + ",post=" + post + ",rest=" + rest + ",kwargs=" + kwargs + ",kwreq=" + requiredKwargs + ",kwrest=" + keyRest + ")";
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public void checkArity(Ruby runtime, IRubyObject[] args) {
         checkArity(runtime.getCurrentContext(), args);
     }

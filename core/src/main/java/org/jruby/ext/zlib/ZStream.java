@@ -55,7 +55,7 @@ public abstract class ZStream extends RubyObject {
 
     protected abstract boolean internalStreamEndP();
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     protected void internalReset() {
         internalReset(getCurrentContext());
     }
@@ -68,7 +68,7 @@ public abstract class ZStream extends RubyObject {
 
     protected abstract long internalAdler();
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     protected IRubyObject internalFinish(Block block) {
         return internalFinish(getCurrentContext(), block);
     }
@@ -94,7 +94,7 @@ public abstract class ZStream extends RubyObject {
         return RubyString.newEmptyBinaryString(context.getRuntime());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject total_out() {
         return total_out(getCurrentContext());
     }
@@ -105,7 +105,7 @@ public abstract class ZStream extends RubyObject {
         return asFixnum(context, internalTotalOut());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject stream_end_p() {
         return stream_end_p(getCurrentContext());
     }
@@ -115,7 +115,7 @@ public abstract class ZStream extends RubyObject {
         return internalStreamEndP() ? context.tru : context.fals;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject data_type() {
         return data_type(getCurrentContext());
     }
@@ -126,7 +126,7 @@ public abstract class ZStream extends RubyObject {
         return getModule(context, "Zlib").getConstant(context, "UNKNOWN");
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject closed_p() {
         return closed_p(getCurrentContext());
     }
@@ -136,7 +136,7 @@ public abstract class ZStream extends RubyObject {
         return closed ? context.tru : context.fals;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject reset() {
         return reset(getCurrentContext());
     }
@@ -149,7 +149,7 @@ public abstract class ZStream extends RubyObject {
         return context.nil;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject avail_out() {
         return avail_out(getCurrentContext());
     }
@@ -159,7 +159,7 @@ public abstract class ZStream extends RubyObject {
         return asFixnum(context, 0);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject set_avail_out(IRubyObject p1) {
         return set_avail_out(getCurrentContext(), p1);
     }
@@ -178,7 +178,7 @@ public abstract class ZStream extends RubyObject {
         return asFixnum(context, internalAdler());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject adler() {
         return adler(getCurrentContext());
     }
@@ -192,7 +192,7 @@ public abstract class ZStream extends RubyObject {
         return result;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject avail_in() {
         return avail_in(getCurrentContext());
     }
@@ -207,7 +207,7 @@ public abstract class ZStream extends RubyObject {
         return RubyString.newEmptyBinaryString(context.getRuntime());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject total_in() {
         return total_in(getCurrentContext());
     }
@@ -224,7 +224,7 @@ public abstract class ZStream extends RubyObject {
         return asBoolean(context, internalFinished());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject close() {
         return close(getCurrentContext());
     }
@@ -237,7 +237,7 @@ public abstract class ZStream extends RubyObject {
         return context.nil;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     void checkClosed() {
         checkClosed(getCurrentContext());
     }
@@ -280,7 +280,7 @@ public abstract class ZStream extends RubyObject {
         return value;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     static void checkStrategy(Ruby runtime, int strategy) {
         checkStrategy(runtime.getCurrentContext(), strategy);
     }

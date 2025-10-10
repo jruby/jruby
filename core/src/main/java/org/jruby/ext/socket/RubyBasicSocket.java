@@ -775,7 +775,7 @@ public class RubyBasicSocket extends RubyIO {
         return null;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     protected InetSocketAddress getInetRemoteSocket() {
         return getInetRemoteSocket(getCurrentContext());
     }
@@ -791,7 +791,7 @@ public class RubyBasicSocket extends RubyIO {
         return null;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     protected UnixSocketAddress getUnixRemoteSocket() {
         return getUnixRemoteSocket(getCurrentContext());
     }
@@ -807,7 +807,7 @@ public class RubyBasicSocket extends RubyIO {
         return SocketType.forChannel(channel).getLocalSocketAddress(channel);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     protected SocketAddress getRemoteSocket() {
         return getRemoteSocket(getCurrentContext());
     }
@@ -966,7 +966,7 @@ public class RubyBasicSocket extends RubyIO {
         return newArray(context, ret0, ret1, ret2, ret3);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     protected static String bindContextMessage(IRubyObject host, int port) {
         return bindContextMessage(((RubyBasicObject) host).getCurrentContext(), host, port);
     }
@@ -975,42 +975,42 @@ public class RubyBasicSocket extends RubyIO {
         return "bind(2) for " + host.inspect(context) + " port " + port;
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     public IRubyObject recv(IRubyObject[] args) {
         return recv(getCurrentContext(), args);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     public IRubyObject getsockopt(IRubyObject lev, IRubyObject optname) {
         return getsockopt(getCurrentContext(), lev, optname);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     public IRubyObject setsockopt(IRubyObject lev, IRubyObject optname, IRubyObject val) {
         return setsockopt(getCurrentContext(), lev, optname, val);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     public IRubyObject getsockname() {
         return getsockname(getCurrentContext());
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     public IRubyObject getpeername() {
         return getpeername(getCurrentContext());
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     public static IRubyObject do_not_reverse_lookup(IRubyObject recv) {
         return do_not_reverse_lookup(((RubyBasicObject) recv).getCurrentContext(), recv);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     public static IRubyObject set_do_not_reverse_lookup(IRubyObject recv, IRubyObject flag) {
         return set_do_not_reverse_lookup(((RubyBasicObject) recv).getCurrentContext(), recv, flag);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     @Override
     public IRubyObject read_nonblock(ThreadContext context, IRubyObject[] args) {
         return switch (args.length) {

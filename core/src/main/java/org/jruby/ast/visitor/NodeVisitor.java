@@ -158,6 +158,6 @@ public interface NodeVisitor<T> {
     T visitZSuperNode(ZSuperNode iVisited);
     T visitOther(Node iVisited);
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     default T visitClassVarDeclNode(ClassVarDeclNode iVisited) { return null; }
 }

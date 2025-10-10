@@ -273,7 +273,7 @@ public class JITCompiler implements JITCompilerMBean {
         return new OneShotClassLoader(runtime.getJRubyClassLoader());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     static void log(Compilable<?> target, String name, String message, Object... reason) {
         log(target.getImplementationClass().getRuntime().getCurrentContext(), target, name, message, reason);
     }
