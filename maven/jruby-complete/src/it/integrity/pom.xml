@@ -38,7 +38,7 @@
               <arguments>
                 <argument>-classpath</argument>
                 <classpath/>
-                <argument>org.jruby.Main</argument>
+                <argument>org.jruby.main.Main</argument>
                 <argument>-S</argument>
                 <argument>gem</argument>
                 <argument>list</argument>
@@ -55,7 +55,7 @@
               <arguments>
                 <argument>-classpath</argument>
                 <classpath/>
-                <argument>org.jruby.Main</argument>
+                <argument>org.jruby.main.Main</argument>
                 <argument>-S</argument>
                 <argument>rake</argument>
                 <argument>--version</argument>
@@ -72,7 +72,7 @@
               <arguments>
                 <argument>-classpath</argument>
                 <classpath/>
-                <argument>org.jruby.Main</argument>
+                <argument>org.jruby.main.Main</argument>
                 <argument>-S</argument>
                 <argument>rdoc</argument>
                 <argument>--version</argument>
@@ -89,7 +89,7 @@
 	      <arguments>
 		<argument>-classpath</argument>
 		<classpath/>
-		<argument>org.jruby.Main</argument>
+		<argument>org.jruby.main.Main</argument>
 		<argument>-e</argument>
 		<argument>p JRuby.runtime.jruby_home</argument>
               </arguments>
@@ -105,7 +105,7 @@
               <arguments>
                 <argument>-classpath</argument>
                 <classpath/>
-                <argument>org.jruby.Main</argument>
+                <argument>org.jruby.main.Main</argument>
                 <argument>-e</argument>
                 <argument>
                   require 'stringio'
@@ -134,7 +134,7 @@
                 <!-- automatically creates the classpath using all project dependencies,
                      also adding the project build directory -->
                 <classpath/>
-                <argument>org.jruby.Main</argument>
+                <argument>org.jruby.main.Main</argument>
                 <argument>-e</argument>
                 <!-- make sure openssl loads -->
                 <argument>
@@ -158,7 +158,7 @@
                 <!-- automatically creates the classpath using all project dependencies,
                      also adding the project build directory -->
                 <classpath/>
-                <argument>org.jruby.Main</argument>
+                <argument>org.jruby.main.Main</argument>
                 <argument>-e</argument>
                 <!-- make sure openssl loads -->
                 <argument>
@@ -185,7 +185,7 @@
                 <!-- automatically creates the classpath using all project dependencies,
                      also adding the project build directory -->
                 <classpath/>
-                <argument>org.jruby.Main</argument>
+                <argument>org.jruby.main.Main</argument>
                 <argument>-S</argument>
                 <argument>gem</argument>
                 <argument>install</argument>
@@ -208,7 +208,7 @@
                 <argument>.</argument>
                 <argument>-classpath</argument>
                 <classpath/>
-                <argument>org.jruby.Main</argument>
+                <argument>org.jruby.main.Main</argument>
                 <argument>-S</argument>
                 <argument>me</argument>
               </arguments>
@@ -226,7 +226,7 @@
               <arguments>
                 <argument>-classpath</argument>
                 <classpath/>
-                <argument>org.jruby.Main</argument>
+                <argument>org.jruby.main.Main</argument>
                 <argument>-S</argument>
                 <argument>generate_dir_info</argument>
                 <argument>bin</argument>
@@ -248,7 +248,7 @@
               <arguments>
                 <argument>-classpath</argument>
                 <classpath/>
-                <argument>org.jruby.Main</argument>
+                <argument>org.jruby.main.Main</argument>
                 <argument>-S</argument>
                 <argument>icecream</argument>
               </arguments>
@@ -266,7 +266,7 @@
               <arguments>
                 <argument>-classpath</argument>
                 <classpath/>
-                <argument>org.jruby.Main</argument>
+                <argument>org.jruby.main.Main</argument>
                 <argument>-e</argument>
                 <argument>
                   puts "jruby home is a file: " +

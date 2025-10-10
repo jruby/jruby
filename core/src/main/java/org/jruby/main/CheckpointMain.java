@@ -6,13 +6,14 @@ import org.crac.Context;
 import org.crac.Core;
 import org.crac.Resource;
 import org.crac.RestoreException;
-import org.jruby.Main;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.util.cli.Options;
 
 import java.io.InputStream;
+
+import static org.jruby.main.Main.handleRaiseException;
 
 public class CheckpointMain extends PrebootMain {
     public static void main(String[] args) {

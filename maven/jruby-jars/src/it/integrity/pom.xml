@@ -47,7 +47,7 @@
 	      <arguments>
 		<argument>-classpath</argument>
 		<argument>${gem.home}/gems/jruby-jars-${ruby.version}/lib/jruby-core-@project.version@-complete.jar${path.separator}${gem.home}/gems/jruby-jars-${ruby.version}/lib/jruby-stdlib-@project.version@.jar</argument>
-		<argument>org.jruby.Main</argument>
+		<argument>org.jruby.main.Main</argument>
 		<argument>-S</argument>
 		<argument>gem</argument>
 		<argument>list</argument>
@@ -64,7 +64,7 @@
 	      <arguments>
 		<argument>-classpath</argument>
 		<argument>${gem.home}/gems/jruby-jars-${ruby.version}/lib/jruby-core-@project.version@-complete.jar${path.separator}${gem.home}/gems/jruby-jars-${ruby.version}/lib/jruby-stdlib-@project.version@.jar</argument>
-		<argument>org.jruby.Main</argument>
+		<argument>org.jruby.main.Main</argument>
 		<argument>-S</argument>
 		<argument>rake</argument>
 		<argument>--version</argument>
@@ -81,7 +81,7 @@
 	      <arguments>
 		<argument>-classpath</argument>
 		<argument>${gem.home}/gems/jruby-jars-${ruby.version}/lib/jruby-core-@project.version@-complete.jar${path.separator}${gem.home}/gems/jruby-jars-${ruby.version}/lib/jruby-stdlib-@project.version@.jar</argument>
-		<argument>org.jruby.Main</argument>
+		<argument>org.jruby.main.Main</argument>
 		<argument>-S</argument>
 		<argument>rdoc</argument>
 		<argument>--version</argument>
@@ -98,7 +98,7 @@
 	      <arguments>
 		<argument>-classpath</argument>
 		<argument>${gem.home}/gems/jruby-jars-${ruby.version}/lib/jruby-core-@project.version@-complete.jar${path.separator}${gem.home}/gems/jruby-jars-${ruby.version}/lib/jruby-stdlib-@project.version@.jar</argument>
-		<argument>org.jruby.Main</argument>
+		<argument>org.jruby.main.Main</argument>
 		<argument>-e</argument>
 		<argument>p JRuby.runtime.jruby_home</argument>
               </arguments>
@@ -114,7 +114,7 @@
 	      <arguments>
 		<argument>-classpath</argument>
 		<argument>${gem.home}/gems/jruby-jars-${ruby.version}/lib/jruby-core-@project.version@-complete.jar${path.separator}${gem.home}/gems/jruby-jars-${ruby.version}/lib/jruby-stdlib-@project.version@.jar</argument>
-		<argument>org.jruby.Main</argument>
+		<argument>org.jruby.main.Main</argument>
 		<argument>-e</argument>
 		<argument>
 		  require 'stringio'
@@ -141,7 +141,7 @@
               <arguments>
 		<argument>-classpath</argument>
 		<argument>${gem.home}/gems/jruby-jars-${ruby.version}/lib/jruby-core-@project.version@-complete.jar${path.separator}${gem.home}/gems/jruby-jars-${ruby.version}/lib/jruby-stdlib-@project.version@.jar</argument>
-		<argument>org.jruby.Main</argument>
+		<argument>org.jruby.main.Main</argument>
 		<argument>-e</argument>
 		<!-- make sure openssl loads -->
 		<argument>
@@ -163,7 +163,7 @@
               <arguments>
 		<argument>-classpath</argument>
 		<argument>${gem.home}/gems/jruby-jars-${ruby.version}/lib/jruby-core-@project.version@-complete.jar${path.separator}${gem.home}/gems/jruby-jars-${ruby.version}/lib/jruby-stdlib-@project.version@.jar</argument>
-		<argument>org.jruby.Main</argument>
+		<argument>org.jruby.main.Main</argument>
 		<argument>-e</argument>
 		<!-- make sure openssl loads -->
 		<argument>

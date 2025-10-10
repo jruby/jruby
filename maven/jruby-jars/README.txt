@@ -35,7 +35,7 @@ Install like any other gem.
 To run an instance of JRuby core without stdlib, you can do the following:
 
   require 'jruby-jars'
-  exec("java", "-cp", JRubyJars.core_jar_path, "org.jruby.Main")
+  exec("java", "-cp", JRubyJars.core_jar_path, "org.jruby.main.Main")
 
 If you need access to the standard library as well, then you can do:
 
@@ -43,12 +43,12 @@ If you need access to the standard library as well, then you can do:
     JRubyJars.core_jar_path,
     JRubyJars.stdlib_jar_path
   ].join(File::PATH_SEPARATOR)
-  exec("java", "-cp", classpath, "org.jruby.Main")
+  exec("java", "-cp", classpath, "org.jruby.main.Main")
 
 Building on this this, then, you could build a cross-platform way to execute
 commands with jruby:
 
-  args = ["-cp", classpath, "org.jruby.Main"] + ARGV
+  args = ["-cp", classpath, "org.jruby.main.Main"] + ARGV
   exec("java", *args)
 
 And call this with:

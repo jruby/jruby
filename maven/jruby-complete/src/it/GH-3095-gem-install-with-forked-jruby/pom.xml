@@ -48,7 +48,7 @@
 	          <arguments>
 		        <argument>-classpath</argument>
 		        <classpath/>
-		        <argument>org.jruby.Main</argument>
+		        <argument>org.jruby.main.Main</argument>
 		        <argument>-S</argument>
 		        <argument>gem</argument>
 		        <argument>install</argument>

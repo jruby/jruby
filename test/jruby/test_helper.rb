@@ -18,7 +18,7 @@ module TestHelper
            # assume the parent CL of jruby-classloader has a getUrls method
            urls = JRuby.runtime.getJRubyClassLoader.parent.getURLs.collect { |u| u.path }
            urls.unshift '.'
-           exe += " -cp #{urls.join(File::PATH_SEPARATOR)} org.jruby.Main"
+           exe += " -cp #{urls.join(File::PATH_SEPARATOR)} org.jruby.main.Main"
            exe
          else
            exe = '"' + File.join(RbConfig::CONFIG['bindir'], RbConfig::CONFIG['RUBY_INSTALL_NAME'])

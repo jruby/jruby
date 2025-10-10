@@ -26,7 +26,7 @@ project 'JRuby Core' do
                     { pattern: 'me.qmx.jitescript', shadedPattern: 'org.jruby.me.qmx.jitescript' }
                   ],
                   transformers: [{ :@implementation => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
-                                   mainClass: 'org.jruby.Main',
+                                   mainClass: 'org.jruby.main.Main',
                                    manifestEntries: { "Automatic-Module-Name": 'org.jruby.dist' } }],
                   createSourcesJar: false,
                   compress: false)
@@ -75,7 +75,7 @@ project 'JRuby Core' do
                         { pattern: 'me.qmx.jitescript', shadedPattern: 'org.jruby.me.qmx.jitescript' }
                       ],
                       transformers: [{ :@implementation => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
-                                       :mainClass => 'org.jruby.Main',
+                                       :mainClass => 'org.jruby.main.Main',
                                        :manifestEntries => { "Automatic-Module-Name": 'org.jruby.dist' } }],
                       filters: [
                         { artifact: 'com.headius:invokebinder', excludes: '**/module-info.class' }

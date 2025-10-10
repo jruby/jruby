@@ -26,7 +26,7 @@ build jruby-complete.jar
 <arg value='-Djruby.home=uri:classloader://META-INF/jruby.home'/>
 <arg value='-cp'/>
 <arg value='core/target/test-classes:test/target/test-classes:lib/jruby.jar:maven/jruby-stdlib/target/jruby-stdlib-9.0.0.0.jar'/>
-<arg value='org.jruby.Main'/>
+<arg value='org.jruby.main.Main'/>
 <arg value='-I.:test/externals/ruby1.9:test/externals/ruby1.9/ruby'/>
 <arg value='-r./test/ruby19_env.rb'/>
 <arg value='-rminitest/excludes'/>
@@ -138,7 +138,7 @@ build jruby-complete.jar
 <arg value='-Djruby.home=uri:classloader://META-INF/jruby.home'/>
 <arg value='-cp'/>
 <arg value='core/target/test-classes:test/target/test-classes:maven/jruby-complete/target/jruby-complete-9.0.0.0.jar'/>
-<arg value='org.jruby.Main'/>
+<arg value='org.jruby.main.Main'/>
 <arg value='-I.:test/externals/ruby1.9:test/externals/ruby1.9/ruby'/>
 <arg value='-r./test/ruby19_env.rb'/>
 <arg value='-rminitest/excludes'/>
@@ -154,7 +154,7 @@ build jruby-complete.jar
 <arg value='-Djruby.home=uri:classloader://META-INF/jruby.home'/>
 <arg value='-cp'/>
 <arg value='core/target/test-classes:test/target/test-classes:lib/jruby.jar:maven/jruby-stdlib/target/jruby-stdlib-9.0.0.0.jar'/>
-<arg value='org.jruby.Main'/>
+<arg value='org.jruby.main.Main'/>
 <arg value='-I.:test/externals/ruby1.9:test/externals/ruby1.9/ruby'/>
 <arg value='-r./test/ruby19_env.rb'/>
 <arg value='-rminitest/excludes'/>
@@ -170,7 +170,7 @@ build jruby-complete.jar
 <arg value='-Djruby.home=uri:classloader://META-INF/jruby.home'/>
 <arg value='-cp'/>
 <arg value='core/target/test-classes:test/target/test-classes:lib/jruby.jar:maven/jruby-stdlib/target/jruby-stdlib-9.0.0.0.jar'/>
-<arg value='org.jruby.Main'/>
+<arg value='org.jruby.main.Main'/>
 <arg value='-I.:test/externals/ruby1.9:test/externals/ruby1.9/ruby'/>
 <arg value='-r./test/ruby19_env.rb'/>
 <arg value='-rminitest/excludes'/>
@@ -461,7 +461,7 @@ build jruby-complete.jar
 <arg value='-Djruby.home=uri:classloader://META-INF/jruby.home'/>
 <arg value='-cp'/>
 <arg value='core/target/test-classes:test/target/test-classes:maven/jruby-complete/target/jruby-complete-9.0.0.0.jar'/>
-<arg value='org.jruby.Main'/>
+<arg value='org.jruby.main.Main'/>
 <arg value='-I.:test/externals/ruby1.9:test/externals/ruby1.9/ruby'/>
 <arg value='-r./test/ruby19_env.rb'/>
 <arg value='-rminitest/excludes'/>

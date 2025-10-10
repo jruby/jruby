@@ -151,7 +151,7 @@ project 'JRuby Integration Tests' do
                                  "<arg value='core/target/test-classes:test/target/test-classes:maven/jruby-complete/target/jruby-complete-${project.version}.jar'/>" \
                                  "<arg value='-Djruby.home=${jruby.home}'/>" \
                                  "<arg value='-Djruby.aot.loadClasses=true'/>" \
-                                 "<arg value='org.jruby.Main'/>" \
+                                 "<arg value='org.jruby.main.Main'/>" \
                                  "<arg value='-I.'/>" \
                                  "<arg value='-Itest'/>" \
                                  "<arg value='lib/ruby/gems/shared/gems/rake-${rake.version}/lib/rake/rake_test_loader.rb'/>" +
