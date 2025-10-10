@@ -247,7 +247,7 @@ fi
 # Gather environment information as we go
 readonly cr='
 '
-environment_log="JRuby Environment$cr================="
+environment_log=""
 add_log() {
     environment_log="${environment_log}${cr}${*-}"
 }
@@ -1011,6 +1011,12 @@ add_log "  $*"
 
 # shellcheck source=/dev/null
 if $print_environment_log; then
+    if [ -f "$jruby_release_file" ]; then
+        jruby_version=$(. "$jruby_release_file" && echo "${JRUBY_VERSION-}")
+    else
+        jruby_version=unspecified
+    fi
+    environment_log="JRuby Environment${cr}=================${cr}${cr}JRuby version: ${jruby_version}${environment_log}"
     echo "$environment_log"
     exit 0
 fi
