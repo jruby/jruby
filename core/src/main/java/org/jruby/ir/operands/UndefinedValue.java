@@ -59,7 +59,7 @@ public class UndefinedValue extends Operand implements IRubyObject {
     }
 
     @Override
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     public IRubyObject callSuper(ThreadContext context, IRubyObject[] args, Block block) { throw undefinedOperation(); }
 
     @Override
@@ -71,9 +71,9 @@ public class UndefinedValue extends Operand implements IRubyObject {
     @Override
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args, Block block) { throw undefinedOperation(); }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     public IRubyObject callMethod(ThreadContext context, int methodIndex, String name) { throw undefinedOperation(); }
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     public IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject arg) { throw undefinedOperation(); }
 
     @Override
@@ -254,7 +254,7 @@ public class UndefinedValue extends Operand implements IRubyObject {
     public int getVariableCount() { throw undefinedOperation(); }
 
     @Override
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     public void syncVariables(List<Variable<Object>> variables) { throw undefinedOperation(); }
 
     @Override
@@ -299,26 +299,26 @@ public class UndefinedValue extends Operand implements IRubyObject {
     }
 
     @Override
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public Object dataGetStructChecked() { throw undefinedOperation(); }
 
     @Override
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     public boolean isTaint() { throw undefinedOperation(); }
 
     @Override
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     public void setTaint(boolean b) { throw undefinedOperation(); }
 
     @Override
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     public IRubyObject infectBy(IRubyObject obj) { throw undefinedOperation(); }
 
     @Override
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     public boolean isUntrusted() { throw undefinedOperation(); }
 
     @Override
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     public void setUntrusted(boolean b) { throw undefinedOperation(); }
 }

@@ -48,14 +48,14 @@ public interface ObjectMarshal<T> {
             throw typeError(context, "no marshal_load is defined for class " + type.getName(context));
         }
 
-        @Deprecated(since = "10.0", forRemoval = true)
+        @Deprecated(since = "10.0.0.0", forRemoval = true)
         @SuppressWarnings("removal")
         public void marshalTo(Ruby runtime, Object obj, RubyClass type, org.jruby.runtime.marshal.MarshalStream marshalStream) {
             var context = runtime.getCurrentContext();
             throw typeError(context, "no marshal_dump is defined for class " + type.getName(context));
         }
 
-        @Deprecated(since = "10.0", forRemoval = true)
+        @Deprecated(since = "10.0.0.0", forRemoval = true)
         @SuppressWarnings("removal")
         public Object unmarshalFrom(Ruby runtime, RubyClass type, org.jruby.runtime.marshal.UnmarshalStream unmarshalStream) {
             var context = runtime.getCurrentContext();
@@ -66,12 +66,12 @@ public interface ObjectMarshal<T> {
     void marshalTo(ThreadContext context, RubyOutputStream out, T obj, RubyClass type, MarshalDumper dumper);
     T unmarshalFrom(ThreadContext context, RubyInputStream in, RubyClass type, MarshalLoader loader);
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0.0.0", forRemoval = true)
     @SuppressWarnings("removal")
     default void marshalTo(Ruby runtime, T obj, RubyClass type, org.jruby.runtime.marshal.MarshalStream marshalStream) throws IOException {
         // no-op to allow implementing only the MarshalDumper version
     }
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0.0.0", forRemoval = true)
     @SuppressWarnings("removal")
     default T unmarshalFrom(Ruby runtime, RubyClass type, org.jruby.runtime.marshal.UnmarshalStream unmarshalStream) throws IOException {
         // no-op to allow implementing only the MarshalLoader version

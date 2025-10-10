@@ -235,7 +235,7 @@ public abstract class JavaLang {
             return RubyArray.newArrayMayCopy(runtime, backtrace);
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject set_backtrace(final IRubyObject self, final IRubyObject backtrace) {
             return set_backtrace(((RubyBasicObject) self).getCurrentContext(), self, backtrace);
         }
@@ -609,7 +609,7 @@ public abstract class JavaLang {
             return asBoolean(context, klass.isAnonymousClass());
         }
 
-        @Deprecated
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject anonymous_p(final IRubyObject self) {
             return anonymous_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
@@ -620,7 +620,7 @@ public abstract class JavaLang {
             return JavaLangReflect.isAbstract(context, self, klass.getModifiers());
         }
 
-        @Deprecated
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject abstract_p(final IRubyObject self) {
             return abstract_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
@@ -633,7 +633,7 @@ public abstract class JavaLang {
             return JavaLangReflect.isPublic(context, self, klass.getModifiers());
         }
 
-        @Deprecated
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject public_p(final IRubyObject self) {
             return public_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
@@ -644,7 +644,7 @@ public abstract class JavaLang {
             return JavaLangReflect.isProtected(context, self, klass.getModifiers());
         }
 
-        @Deprecated
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject protected_p(final IRubyObject self) {
             return protected_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
@@ -655,7 +655,7 @@ public abstract class JavaLang {
             return JavaLangReflect.isPrivate(context, self, klass.getModifiers());
         }
 
-        @Deprecated
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject private_p(final IRubyObject self) {
             return private_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
@@ -666,7 +666,7 @@ public abstract class JavaLang {
             return JavaLangReflect.isFinal(context, self, klass.getModifiers());
         }
 
-        @Deprecated
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject final_p(final IRubyObject self) {
             return final_p(((RubyBasicObject) self).getCurrentContext(), self);
         }
@@ -677,7 +677,7 @@ public abstract class JavaLang {
             return JavaLangReflect.isStatic(context, self, klass.getModifiers());
         }
 
-        @Deprecated
+        @Deprecated(since = "10.0.0.0")
         public static IRubyObject static_p(final IRubyObject self) {
             return static_p(((RubyBasicObject) self).getCurrentContext(), self);
         }

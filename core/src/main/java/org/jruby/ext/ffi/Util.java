@@ -78,7 +78,7 @@ public final class Util {
         return value;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static final float floatValue(IRubyObject parameter) {
         return floatValue(((RubyBasicObject) parameter).getCurrentContext(), parameter);
     }
@@ -87,7 +87,7 @@ public final class Util {
         return (float) toDouble(context, parameter);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static final double doubleValue(IRubyObject parameter) {
         return doubleValue(((RubyBasicObject) parameter).getCurrentContext(), parameter);
     }
@@ -106,7 +106,7 @@ public final class Util {
         return RubyNumeric.num2long(parameter);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static int intValue(IRubyObject obj, RubyHash enums) {
         var context = ((RubyBasicObject) obj).getCurrentContext();
         if (obj instanceof RubyInteger obji) return obji.asInt(context);
@@ -159,7 +159,7 @@ public final class Util {
                     : RubyFixnum.newFixnum(runtime, value);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.4.0")
     public static final <T> T convertParameter(IRubyObject parameter, Class<T> paramClass) {
         return paramClass.cast(parameter.toJava(paramClass));
     }

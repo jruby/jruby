@@ -108,7 +108,7 @@ public class NullMethod extends DynamicMethod {
      * @param callConfig Ignored
      */
     @Override
-    @Deprecated
+    @Deprecated(since = "9.1.6.0")
     public void setCallConfig(CallConfiguration callConfig) {
         throw new UnsupportedOperationException("BUG: NullMethod is immutable: setCallConfig called; report at http://bugs.jruby.org");
         // NullMethod should be immutable

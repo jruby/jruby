@@ -56,7 +56,7 @@ public class JavaProxyReflectionObject extends RubyObject {
         klass.getMetaClass().defineAlias(context, "__j_allocate", "allocate");
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.20")
     public IRubyObject op_equal(IRubyObject other) {
         return op_eqq(getCurrentContext(), other);
     }
@@ -74,7 +74,7 @@ public class JavaProxyReflectionObject extends RubyObject {
         return asBoolean(context, this.equals(obj));
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.20")
     public IRubyObject same(IRubyObject other) {
         return op_equal(getCurrentContext(), other);
     }
@@ -120,7 +120,7 @@ public class JavaProxyReflectionObject extends RubyObject {
         return getClass().getName();
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyString java_type() {
         return java_type(getCurrentContext());
     }
@@ -130,7 +130,7 @@ public class JavaProxyReflectionObject extends RubyObject {
         return newString(context, getJavaClass().getName());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject java_class() {
         return java_class(getCurrentContext());
     }
@@ -140,7 +140,7 @@ public class JavaProxyReflectionObject extends RubyObject {
         return Java.getInstance(context.runtime, getJavaClass());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyFixnum length() {
         return length(getCurrentContext());
     }
@@ -150,7 +150,7 @@ public class JavaProxyReflectionObject extends RubyObject {
         throw typeError(context, "not a java array");
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject aref(IRubyObject index) {
         return aref(getCurrentContext(), index);
     }
@@ -160,7 +160,7 @@ public class JavaProxyReflectionObject extends RubyObject {
         throw typeError(context, "not a java array");
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject aset(IRubyObject index, IRubyObject someValue) {
         return aset(getCurrentContext(), index, someValue);
     }
@@ -170,7 +170,7 @@ public class JavaProxyReflectionObject extends RubyObject {
         throw typeError(context, "not a java array");
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject is_java_proxy() {
         return is_java_proxy(getCurrentContext());
     }

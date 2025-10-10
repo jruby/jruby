@@ -724,7 +724,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      *
      * @param mode a new profiling mode to be set.
      */
-    @Deprecated
+    @Deprecated(since = "1.7.17")
     public void setProfile(ProfilingMode mode) {
         provider.getRubyInstanceConfig().setProfilingMode(mode);
     }
@@ -1048,7 +1048,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      *
      * @return Ruby runtime of a specified local context
      */
-    @Deprecated
+    @Deprecated(since = "1.5.0")
     public Ruby getRuntime() {
         return provider.getRuntime();
     }
@@ -1698,7 +1698,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      *
      * @return an input stream that Ruby runtime has.
      */
-    @Deprecated
+    @Deprecated(since = "1.5.0")
     public InputStream getIn() {
         return getInput();
     }
@@ -1761,7 +1761,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      *
      * @return an output stream that Ruby runtime has
      */
-    @Deprecated
+    @Deprecated(since = "1.5.0")
     public PrintStream getOut() {
         return getOutput();
     }
@@ -1824,7 +1824,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      *
      * @return an error output stream that Ruby runtime has
      */
-    @Deprecated
+    @Deprecated(since = "1.5.0")
     public PrintStream getErr() {
         return getError();
     }
@@ -1901,12 +1901,12 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * add the given classloader to the LOAD_PATH
      * @param classloader
      */
-    @Deprecated
+    @Deprecated(since = "9.0.1.0")
     public void addLoadPath(ClassLoader classloader) {
         addLoadPath(createUri(classloader, "/.jrubydir"));
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.1.0")
     protected void addLoadPath(String uri) {
         runScriptlet( "$LOAD_PATH << '" + uri + "' unless $LOAD_PATH.member?( '" + uri + "' )" );
     }
@@ -1915,7 +1915,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * add the given classloader to the GEM_PATH
      * @param classloader
      */
-    @Deprecated
+    @Deprecated(since = "9.0.1.0")
     public void addGemPath(ClassLoader classloader) {
         addGemPath(createUri(classloader, "/specifications/.jrubydir"));
     }

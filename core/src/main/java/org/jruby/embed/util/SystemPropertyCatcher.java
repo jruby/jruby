@@ -164,7 +164,7 @@ public class SystemPropertyCatcher {
      *
      * @param container ScriptingContainer to be set jruby home.
      */
-    @Deprecated
+    @Deprecated(since = "1.5.0")
     public static void setJRubyHome(ScriptingContainer container) {
         String jrubyhome = findJRubyHome(container);
         if (jrubyhome != null) {
@@ -180,7 +180,7 @@ public class SystemPropertyCatcher {
      * @param instance any instance to get a resource
      * @return JRuby home path if exists, null when failed to find it.
      */
-    @Deprecated
+    @Deprecated(since = "9.0.3.0")
     public static String findJRubyHome(Object instance) {
         String jrubyhome;
         if ((jrubyhome = SafePropertyAccessor.getenv("JRUBY_HOME")) != null) {
@@ -192,7 +192,7 @@ public class SystemPropertyCatcher {
         return "uri:classloader://META-INF/jruby.home";
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.3.0")
     public static String findFromJar(Object instance) {
         URL resource = instance.getClass().getResource("/META-INF/jruby.home");
         if (resource == null) {
@@ -231,7 +231,7 @@ public class SystemPropertyCatcher {
      *
      * @return a list of load paths.
      */
-    @Deprecated
+    @Deprecated(since = "9.0.3.0")
     public static List<String> findLoadPaths() {
         String paths = SafePropertyAccessor.getProperty(PropertyName.CLASSPATH.toString());
         List<String> loadPaths = new ArrayList<String>();

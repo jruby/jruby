@@ -327,7 +327,7 @@ public class Sockaddr {
         return AddressFamily.valueOf((high << 8) + low);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static AddressFamily getAddressFamilyFromSockaddr(Ruby runtime, ByteList val) {
         return getAddressFamilyFromSockaddr(runtime.getCurrentContext(), val);
     }
@@ -336,7 +336,7 @@ public class Sockaddr {
         return RaiseException.from(context.runtime, Access.getClass(context, "SocketError"), msg);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static SocketAddress sockaddrFromBytes(Ruby runtime, byte[] val) throws IOException {
         return sockaddrFromBytes(runtime.getCurrentContext(), val);
     }

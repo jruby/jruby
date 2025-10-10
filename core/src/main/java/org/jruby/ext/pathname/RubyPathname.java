@@ -411,21 +411,21 @@ public class RubyPathname extends RubyObject {
         return context.sites.Pathname;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     @Override
     @JRubyMethod
     public IRubyObject taint(ThreadContext context) {
         return this;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     @Override
     @JRubyMethod
     public IRubyObject untaint(ThreadContext context) {
         return this;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public IRubyObject fnmatch(ThreadContext context, IRubyObject[] args) {
         return switch (args.length) {
             case 1 -> fnmatch_p(context, args[0]);

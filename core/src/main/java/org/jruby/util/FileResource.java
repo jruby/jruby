@@ -62,7 +62,7 @@ public interface FileResource {
     // For transition to file resources only. Implementations should return
     // JRubyFile if this resource is backed by one, and NOT_FOUND JRubyFile
     // otherwise.
-    @Deprecated
+    @Deprecated(since = "9.2.1.0")
     default JRubyFile hackyGetJRubyFile() {
         try {
             return unwrap(JRubyFile.class);

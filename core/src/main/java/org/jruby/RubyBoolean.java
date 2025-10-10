@@ -114,12 +114,12 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
                 tap(c -> c.getMetaClass().undefMethods(context, "new"));
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static RubyBoolean newBoolean(Ruby runtime, boolean value) {
         return value ? runtime.getTrue() : runtime.getFalse();
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static RubyBoolean newBoolean(ThreadContext context, boolean value) {
         return value ? context.tru : context.fals;
     }
@@ -153,12 +153,12 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
             return oth.isTrue() ? context.tru : fals;
         }
 
-        @Deprecated
+        @Deprecated(since = "10.0.0.0")
         public static RubyString false_to_s(ThreadContext context, IRubyObject fals) {
             return context.runtime.getFalseString();
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public RubyString inspect() {
             return getRuntime().getFalseString();
         }
@@ -201,12 +201,12 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
             return oth.isTrue() ? context.fals : tru;
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public static RubyString true_to_s(ThreadContext context, IRubyObject tru) {
             return context.runtime.getTrueString();
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public RubyString inspect() {
             return getRuntime().getTrueString();
         }
@@ -244,13 +244,13 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
         }
     }
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0.0.0", forRemoval = true)
     @SuppressWarnings("removal")
     public void marshalTo(org.jruby.runtime.marshal.MarshalStream output) throws java.io.IOException {
         output.write(isTrue() ? 'T' : 'F');
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     @Override
     public IRubyObject taint(ThreadContext context) {
         return this;

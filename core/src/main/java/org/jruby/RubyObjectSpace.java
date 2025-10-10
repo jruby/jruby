@@ -83,7 +83,7 @@ public class RubyObjectSpace {
         return ObjectSpace;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject define_finalizer(IRubyObject recv, IRubyObject[] args, Block block) {
         return define_finalizer(recv.getRuntime().getCurrentContext(), recv, args, block);
     }
@@ -121,7 +121,7 @@ public class RubyObjectSpace {
         return block.getBinding().getSelf() == object;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject undefine_finalizer(IRubyObject recv, IRubyObject obj, Block block) {
         return undefine_finalizer(((RubyBasicObject) recv).getCurrentContext(), recv, obj, block);
     }
@@ -132,7 +132,7 @@ public class RubyObjectSpace {
         return recv;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject id2ref(IRubyObject recv, IRubyObject id) {
         return id2ref(((RubyBasicObject) recv).getCurrentContext(), recv, id);
     }

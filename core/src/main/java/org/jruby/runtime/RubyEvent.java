@@ -54,7 +54,7 @@ public enum RubyEvent {
         this.requiresDebug = requiresDebug;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.9.0")
     public int getLineNumberOffset(){
         return 0;
     }

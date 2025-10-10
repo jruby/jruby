@@ -426,7 +426,7 @@ public class ConcreteJavaProxy extends JavaProxy {
         if (getObject() == null) setObject(self);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     protected static void initialize(final RubyClass concreteJavaProxy) {
         initialize(concreteJavaProxy.getRuntime().getCurrentContext(), concreteJavaProxy);
     }

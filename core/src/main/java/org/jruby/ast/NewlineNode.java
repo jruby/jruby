@@ -52,7 +52,7 @@ import org.jruby.ast.visitor.NodeVisitor;
 public class NewlineNode extends Node {
     private final Node nextNode;
 
-    @Deprecated
+    @Deprecated(since = "9.0.1.0")
     public NewlineNode(int line, Node nextNode) {
         super(line, nextNode.containsVariableAssignment());
 

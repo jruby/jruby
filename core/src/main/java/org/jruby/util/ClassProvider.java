@@ -33,7 +33,7 @@ import org.jruby.RubyModule;
 import org.jruby.runtime.ThreadContext;
 
 public interface ClassProvider {
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     default RubyClass defineClassUnder(RubyModule module, String name, RubyClass superClazz) {
         return defineClassUnder(module.getCurrentContext(), module, name, superClazz);
     }
@@ -42,7 +42,7 @@ public interface ClassProvider {
         throw new RuntimeException("Missing defineClassUnder implementation");
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     default RubyModule defineModuleUnder(RubyModule module, String name) {
         return defineModuleUnder(module.getCurrentContext(), module, name);
     }

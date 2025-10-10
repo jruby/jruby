@@ -88,7 +88,7 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
         return asFixnum(context, method.getSignature().arityValue());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public RubyFixnum arity() {
         return arity(getCurrentContext());
     }
@@ -139,17 +139,17 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
                 context.nil;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyBoolean public_p(ThreadContext context) {
         return context.runtime.newBoolean(method.getVisibility().isPublic());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyBoolean protected_p(ThreadContext context) {
         return context.runtime.newBoolean(method.getVisibility().isProtected());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyBoolean private_p(ThreadContext context) {
         return context.runtime.newBoolean(method.getVisibility().isPrivate());
     }

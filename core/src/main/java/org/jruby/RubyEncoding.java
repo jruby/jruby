@@ -575,7 +575,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         return str instanceof RubyEncoding ? str : encodingService(context).rubyEncodingFromObject(str);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject replicate(ThreadContext context, IRubyObject arg) {
         return new RubyEncoding(context.runtime, arg.convertToString().getBytes(), getEncoding(), isDummy);
     }
@@ -679,7 +679,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         return encodingService(context).getDefaultInternal();
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public static IRubyObject getDefaultInternal(IRubyObject recv) {
         return getDefaultInternal(recv.getRuntime().getCurrentContext(), recv);
     }
@@ -694,7 +694,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     /**
      * @deprecated use {@link #decodeRaw(byte[], int, int)}
      */
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static String decodeISO(byte[] bytes, int start, int length) {
         return decodeRaw(bytes, start, length);
     }
@@ -702,7 +702,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     /**
      * @deprecated use {@link #decodeRaw(ByteList)}
      */
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static String decodeISO(ByteList byteList) {
         return decodeRaw(byteList);
     }

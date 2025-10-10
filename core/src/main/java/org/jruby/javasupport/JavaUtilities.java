@@ -22,7 +22,7 @@ public class JavaUtilities {
         return java_object;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject get_interface_module(IRubyObject recv, IRubyObject arg0) {
         return get_interface_module(((RubyBasicObject) recv).getCurrentContext(), recv, arg0);
     }
@@ -32,7 +32,7 @@ public class JavaUtilities {
         return Java.get_interface_module(context, arg0);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject get_package_module(IRubyObject recv, IRubyObject arg0) {
         return get_package_module(((RubyBasicObject) recv).getCurrentContext(), recv, arg0);
     }
@@ -42,7 +42,7 @@ public class JavaUtilities {
         return Java.get_package_module(context, recv, arg0);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject get_package_module_dot_format(IRubyObject recv, IRubyObject arg0) {
         return get_package_module_dot_format(((RubyBasicObject) recv).getCurrentContext(), recv, arg0);
     }
@@ -52,7 +52,7 @@ public class JavaUtilities {
         return Java.get_package_module_dot_format(context, recv, arg0);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject get_proxy_class(IRubyObject recv, IRubyObject arg0) {
         return get_proxy_class(((RubyBasicObject) recv).getCurrentContext(), recv, arg0);
     }
@@ -73,7 +73,7 @@ public class JavaUtilities {
         return get_java_class(((RubyBasicObject) recv).getCurrentContext(), recv, arg0);
     }
 
-    @Deprecated(since = "10.0") // no longer used
+    @Deprecated(since = "10.0.0.0") // no longer used
     @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject get_java_class(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
         Class<?> javaClass = Java.getJavaClass(context, arg0.asJavaString());

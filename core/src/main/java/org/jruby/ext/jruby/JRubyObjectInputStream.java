@@ -28,7 +28,7 @@ public class JRubyObjectInputStream extends RubyObject {
                 defineMethods(context, JRubyObjectInputStream.class);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
         return newInstance(((RubyBasicObject) recv).getCurrentContext(), recv, args, block);
     }
@@ -45,7 +45,7 @@ public class JRubyObjectInputStream extends RubyObject {
 	    super(runtime,rubyClass);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject initialize(IRubyObject wrappedStream) {
         return initialize(getCurrentContext(), wrappedStream);
     }
@@ -61,7 +61,7 @@ public class JRubyObjectInputStream extends RubyObject {
         return this;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject readObject() {
         return readObject(getCurrentContext());
     }
@@ -77,7 +77,7 @@ public class JRubyObjectInputStream extends RubyObject {
         }
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject close() {
         return close(getCurrentContext());
     }

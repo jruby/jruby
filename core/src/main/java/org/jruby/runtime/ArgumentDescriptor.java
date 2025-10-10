@@ -40,7 +40,7 @@ public class ArgumentDescriptor {
         this(type, null);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public final RubyArray toArrayForm(Ruby runtime, boolean isLambda) {
         return toArrayForm(runtime.getCurrentContext(), isLambda);
     }

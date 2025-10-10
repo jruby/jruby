@@ -80,7 +80,7 @@ public class IncludedModuleWrapper extends IncludedModule {
      * @see org.jruby.RubyModule#newIncludeClass(RubyClass)
      */
     @Override
-    @Deprecated
+    @Deprecated(since = "1.1.5")
     public IncludedModuleWrapper newIncludeClass(RubyClass superClass) {
         var context = getCurrentContext();
         IncludedModuleWrapper includedModule = new IncludedModuleWrapper(context.runtime, superClass, getOrigin());

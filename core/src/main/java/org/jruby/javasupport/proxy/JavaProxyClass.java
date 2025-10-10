@@ -133,7 +133,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
 
     private transient JavaProxyConstructor[] constructors;
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public JavaProxyConstructor[] getConstructors() {
         return getConstructors(getCurrentContext());
     }
@@ -151,7 +151,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         return this.constructors = constructors.toArray(new JavaProxyConstructor[constructors.size()]);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public JavaProxyConstructor getConstructor(final Class[] args)
         throws SecurityException, NoSuchMethodException {
 
@@ -283,7 +283,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             return method.toString();
         }
 
-        @Deprecated
+        @Deprecated(since = "9.1.6.0")
         public Object defaultResult() {
             final Class returnType = method.getReturnType();
 
@@ -307,7 +307,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             return method.getReturnType();
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public RubyObject name() {
             return newString(getCurrentContext(), getName());
         }
@@ -317,7 +317,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             return proxyClass;
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public RubyArray argument_types() {
             return argument_types(getCurrentContext());
         }
@@ -327,7 +327,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             return toClassArray(context, getParameterTypes());
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public IRubyObject super_p() {
             return super_p(getCurrentContext());
         }
@@ -337,7 +337,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             return hasSuperImplementation() ? context.tru : context.fals;
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public RubyFixnum arity() {
             return arity(getCurrentContext());
         }
@@ -347,7 +347,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             return asFixnum(context, getArity());
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public RubyString inspect() {
             return inspect(getCurrentContext());
         }
@@ -368,7 +368,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
          * @return
          * @deprecated Use {@link ProxyMethodImpl#do_invoke(ThreadContext, IRubyObject[])} instead.
          */
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public IRubyObject do_invoke(final IRubyObject[] args) {
             return do_invoke(getCurrentContext(), args);
         }
@@ -543,7 +543,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         EXCLUDE_MODULES.add("Enumerable");
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyObject get_with_class(final IRubyObject self, IRubyObject obj) {
         return get_with_class(((RubyBasicObject) self).getCurrentContext(), self, obj);
     }
@@ -606,7 +606,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         return objects;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static JavaProxyClass getProxyClass(final Ruby runtime, final RubyClass clazz) {
         return getProxyClass(runtime.getCurrentContext(), clazz);
     }
@@ -616,7 +616,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
     	return (JavaProxyClass) clazz.getInstanceVariable("@java_proxy_class");
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject superclass() {
         return superclass(getCurrentContext());
     }
@@ -626,7 +626,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         return Java.getInstance(context.runtime, getSuperclass());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyArray methods() {
         return methods(getCurrentContext());
     }
@@ -636,7 +636,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         return toRubyArray(context, getMethods());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyArray interfaces() {
         return interfaces(getCurrentContext());
     }
@@ -646,7 +646,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         return toClassArray(context, getInterfaces());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public final RubyArray constructors() {
         return constructors(getCurrentContext());
     }

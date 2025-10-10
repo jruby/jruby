@@ -302,41 +302,41 @@ public class ThreadService extends ThreadLocal<SoftReference<ThreadContext>> {
         return threadCount.incrementAndGet();
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.15.0")
     public Map<Object, RubyThread> getRubyThreadMap() {
         return (Map<Object, RubyThread>) (Map) rubyThreadMap;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public void deliverEvent(RubyThread sender, RubyThread target, Event event) {
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.15.0")
     public ThreadGroup getRubyThreadGroup() {
         return rubyThreadGroup;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.15.0")
     public ThreadContext getThreadContextForThread(RubyThread thread) {
         return thread.getContext();
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.15.0")
     public synchronized void dissociateThread(Object thread) {
         rubyThreadMap.remove(thread);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.15.0")
     public final void setCurrentContext(ThreadContext context) {
         set(new SoftReference<ThreadContext>(context));
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.15.0")
     public boolean getPolling() {
         return rubyThreadMap.size() > 1;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public static class Event {
         public enum Type { KILL, RAISE, WAKEUP }
         public final String description;
@@ -362,23 +362,23 @@ public class ThreadService extends ThreadLocal<SoftReference<ThreadContext>> {
             return ""; // not reached
         }
 
-        @Deprecated
+        @Deprecated(since = "9.0.0.0")
         public static Event kill(RubyThread sender, RubyThread target, Type type) {
             return new Event(sender.toString() + " sent KILL to " + target, type);
         }
 
-        @Deprecated
+        @Deprecated(since = "9.0.0.0")
         public static Event raise(RubyThread sender, RubyThread target, Type type, IRubyObject exception) {
             return new Event(sender.toString() + " sent KILL to " + target, type, exception);
         }
 
-        @Deprecated
+        @Deprecated(since = "9.0.0.0")
         public static Event wakeup(RubyThread sender, RubyThread target, Type type) {
             return new Event(sender.toString() + " sent KILL to " + target, type);
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.1.0")
     public void setCritical(boolean critical) {
         if (critical && !criticalLock.isHeldByCurrentThread()) {
             acquireCritical();
@@ -387,17 +387,17 @@ public class ThreadService extends ThreadLocal<SoftReference<ThreadContext>> {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.1.0")
     private void acquireCritical() {
         criticalLock.lock();
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.1.0")
     private void releaseCritical() {
         criticalLock.unlock();
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.1.0")
     public boolean getCritical() {
         return criticalLock.isHeldByCurrentThread();
     }

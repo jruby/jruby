@@ -197,7 +197,7 @@ public class RubyNil extends RubyObject implements Constantizable {
         return context.tru;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public IRubyObject nil_p() {
         return nil_p(getCurrentContext());
     }
@@ -264,12 +264,12 @@ public class RubyNil extends RubyObject implements Constantizable {
         return null;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     @Override
     public IRubyObject taint(ThreadContext context) {
         return this;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final ObjectAllocator NIL_ALLOCATOR = NOT_ALLOCATABLE_ALLOCATOR;
 }

@@ -92,7 +92,7 @@ public class RubySet extends RubyObject implements Set {
             this.defaultMarshal = defaultMarshal;
         }
 
-        @Deprecated(since = "10.0", forRemoval = true)
+        @Deprecated(since = "10.0.0.0", forRemoval = true)
         @SuppressWarnings("removal")
         public void marshalTo(Ruby runtime, Object obj, RubyClass type, org.jruby.runtime.marshal.MarshalStream marshalStream) throws IOException {
             defaultMarshal.marshalTo(runtime, obj, type, marshalStream);
@@ -102,7 +102,7 @@ public class RubySet extends RubyObject implements Set {
             defaultMarshal.marshalTo(context, out, obj, type, marshalStream);
         }
 
-        @Deprecated(since = "10.0", forRemoval = true)
+        @Deprecated(since = "10.0.0.0", forRemoval = true)
         @SuppressWarnings("removal")
         public Object unmarshalFrom(Ruby runtime, RubyClass type, org.jruby.runtime.marshal.UnmarshalStream unmarshalStream) throws IOException {
             Object result = defaultMarshal.unmarshalFrom(runtime, type, unmarshalStream);
@@ -367,7 +367,7 @@ public class RubySet extends RubyObject implements Set {
         return this;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     protected void clearImpl() {
         clearImpl(getCurrentContext());
     }
@@ -622,7 +622,7 @@ public class RubySet extends RubyObject implements Set {
         return this;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     protected void addImpl(final Ruby runtime, final IRubyObject obj) {
         addImpl(runtime.getCurrentContext(), obj);
     }
@@ -1199,7 +1199,7 @@ public class RubySet extends RubyObject implements Set {
         return elements(); // potentially -> to be re-defined by SortedSet
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     protected final void modifyCheck(final Ruby runtime) {
         modifyCheck(runtime.getCurrentContext());
     }
@@ -1312,14 +1312,14 @@ public class RubySet extends RubyObject implements Set {
         return JavaUtil.convertJavaToUsableRubyObject(getRuntime(), obj);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     @Override
     @JRubyMethod
     public IRubyObject taint(ThreadContext context) {
         return this;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     @Override
     @JRubyMethod
     public IRubyObject untaint(ThreadContext context) {

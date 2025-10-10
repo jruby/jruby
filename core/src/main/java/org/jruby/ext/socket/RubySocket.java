@@ -713,7 +713,7 @@ public class RubySocket extends RubyBasicSocket {
         return SocketType.forChannel(channel).getLocalSocketAddress(channel);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     public static RuntimeException sockerr(Ruby runtime, String msg) {
         return SocketUtils.sockerr(runtime, msg);
     }

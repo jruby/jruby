@@ -45,7 +45,7 @@ public class IncludedModule extends RubyClass implements DelegatedModule {
         return origin;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     @Override
     public RubyModule getNonIncludedClass() {
         return origin;

@@ -122,7 +122,7 @@ public class JavaProxy extends RubyObject {
         setJavaClass(target.getClassRuntime(), target, javaClass);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static void setJavaClass(final IRubyObject target, final Class<?> javaClass) {
         setJavaClass(((RubyBasicObject) target).getCurrentContext(), target, javaClass);
     }
@@ -185,7 +185,7 @@ public class JavaProxy extends RubyObject {
         return Helpers.invokeSuper(context, recv, subclass, Block.NULL_BLOCK);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyClass singleton_class(final IRubyObject self) {
         return singleton_class(self.getRuntime().getCurrentContext(), self);
     }
@@ -458,7 +458,7 @@ public class JavaProxy extends RubyObject {
         return getRubyMethod(context, name, argTypesClasses);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject marshal_dump() {
         return marshal_dump(getCurrentContext());
     }

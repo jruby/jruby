@@ -521,7 +521,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return klass;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyClass makeMetaClass(RubyClass superClass) {
         return makeMetaClass(getCurrentContext(), superClass);
     }
@@ -647,7 +647,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     // IMPORTANT: This method should only be used in deprecated methods.  If you do
     // not have access then you should continue using getRuntime().getCurrentContext()
     // until we can plumb ThreadContext into whatever method needs it.
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public final ThreadContext getCurrentContext() {
         return getRuntime().getCurrentContext();
     }
@@ -1002,12 +1002,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return cloneSetup(context, clone, freeze);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     protected RubyClass getSingletonClassClone() {
         return getSingletonClassCloneAndAttach(null);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     protected RubyClass getSingletonClassCloneAndAttach(RubyBasicObject attach) {
         return getSingletonClassCloneAndAttach(getCurrentContext(), attach);
     }
@@ -1111,7 +1111,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return metaClass.getRealClass().getVariableTableManager().getObjectId(this);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject inspect() {
         return inspect(getCurrentContext());
     }
@@ -1308,7 +1308,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return invokedynamic(metaClass.runtime.getCurrentContext(), this, EQL, other).isTrue();
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.10.0")
     @Override
     public void addFinalizer(IRubyObject f) {
         addFinalizer(getRuntime().getCurrentContext(), f);
@@ -1697,7 +1697,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     @Override
     public final int getNativeTypeIndex() {
         return getNativeClassIndex().ordinal();
@@ -1744,7 +1744,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return RubyKernel.methodMissingDirect(context, recv, sym, lastVis, lastCallType, args);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject send(ThreadContext context, Block block) {
         throw context.runtime.newArgumentError(0, 1);
     }
@@ -1993,7 +1993,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return evalUnder(context, mod, evalStr, file, line, evalType);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     protected RubyModule getInstanceEvalClass() {
         return getInstanceEvalClass(getCurrentContext());
     }
@@ -2042,7 +2042,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             this.finalized = new AtomicBoolean(false);
         }
 
-        @Deprecated
+        @Deprecated(since = "9.4.10.0")
         public void addFinalizer(IRubyObject finalizer) {
             addFinalizer(finalizer.getRuntime().getCurrentContext(), finalizer);
         }
@@ -2124,7 +2124,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return asBoolean(context, this == other);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject eql_p(IRubyObject obj) {
         return eql_p(getCurrentContext(), obj);
     }
@@ -2149,7 +2149,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @return a copy
      * @deprecated Use {@link org.jruby.RubyBasicObject#initialize_copy(ThreadContext, IRubyObject)} instead.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject initialize_copy(IRubyObject original) {
         return initialize_copy(getCurrentContext(), original);
     }
@@ -2232,7 +2232,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @deprecated Use {@link RubyBasicObject#hash(ThreadContext)} instead.
      * @return hash value
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyFixnum hash() {
         return hash(getCurrentContext());
     }
@@ -2429,7 +2429,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return methods;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public final IRubyObject methods(ThreadContext context, IRubyObject[] args, boolean useSymbols) {
         return methodsImpl(context, args.length == 1 ? args[0].isTrue() : true);
     }
@@ -2542,7 +2542,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return RubyArray.newArray(context.runtime, names);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject singleton_method(IRubyObject name) {
         return singleton_method(getCurrentContext(), name);
     }
@@ -2590,14 +2590,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *     m = l.method("hello")
      *     m.call   #=&gt; "Hello, {@literal @}iv = Fred"
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject method(IRubyObject name) {
         var context = getCurrentContext();
         final RubySymbol symbol = checkID(context, name);
         return getMetaClass().newMethod(context, this, symbol.idString(), null, true, null, true, true);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject method(IRubyObject name, StaticScope refinedScope) {
         return method(getCurrentContext(), name, refinedScope);
     }
@@ -2618,7 +2618,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @return ""
      * @deprecated Use {@link RubyBasicObject#to_s(ThreadContext)} instead.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject to_s() {
         return to_s(getCurrentContext());
     }
@@ -3022,7 +3022,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return nonFixnumHashCode(context, hashValue);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     protected static int nonFixnumHashCode(IRubyObject hashValue) {
         return nonFixnumHashCode(hashValue.getRuntime().getCurrentContext(), hashValue);
     }
@@ -3038,14 +3038,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * @param name of instance variable
      * @return name it is valid
      */
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     protected String validateInstanceVariable(String name) {
         if (IdUtil.isValidInstanceVariableName(name)) return name;
 
         throw getRuntime().newNameError("'%1$s' is not allowable as an instance variable name", this, name);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     protected String validateInstanceVariable(IRubyObject name, String _unused_) {
         return validateInstanceVariable(name);
     }
@@ -3124,230 +3124,230 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     // Deprecated methods below this line
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     protected RubyBasicObject(Ruby runtime, RubyClass metaClass, boolean useObjectSpace, boolean canBeTainted) {
         this(runtime, metaClass, useObjectSpace);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     @Override
     public IRubyObject callSuper(ThreadContext context, IRubyObject[] args, Block block) {
         return Helpers.invokeSuper(context, this, args, block);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     @Override
     public final IRubyObject callMethod(ThreadContext context, int methodIndex, String name) {
         return Helpers.invoke(context, this, name);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     @Override
     public final IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject arg) {
         return Helpers.invoke(context, this, name, arg, Block.NULL_BLOCK);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     @Override
     public RubyInteger convertToInteger(int methodIndex, String convertMethod) {
         return convertToInteger(convertMethod);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     @Override
     public int getVariableCount() {
         return getMetaClass().getVariableTableSize();
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     protected boolean variableTableFastContains(String internedName) {
         return variableTableContains(internedName);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     protected Object variableTableFastFetch(String internedName) {
         return variableTableFetch(internedName);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     protected Object variableTableFastStore(String internedName, Object value) {
         return variableTableStore(internedName, value);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     @Override
     public boolean fastHasInternalVariable(String internedName) {
         return hasInternalVariable(internedName);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     @Override
     public Object fastGetInternalVariable(String internedName) {
         return getInternalVariable(internedName);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     @Override
     public void fastSetInternalVariable(String internedName, Object value) {
         setInternalVariable(internedName, value);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     @Override
     public void syncVariables(List<Variable<Object>> variables) {
         variableTableSync(variables);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     @Override
     public boolean fastHasInstanceVariable(String internedName) {
         return hasInstanceVariable(internedName);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     @Override
     public IRubyObject fastGetInstanceVariable(String internedName) {
         return getInstanceVariable(internedName);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     @Override
     public IRubyObject fastSetInstanceVariable(String internedName, IRubyObject value) {
         return setInstanceVariable(internedName, value);
     }
 
     @Override
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public boolean isUntrusted() {
         return false;
     }
 
     @Override
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public void setUntrusted(boolean untrusted) {
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public RubyBoolean untrusted_p(ThreadContext context) {
         return context.fals;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public IRubyObject untrust(ThreadContext context) {
         return this;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public IRubyObject trust(ThreadContext context) {
         return this;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public final Object getNativeHandle() {
         return null;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public final void setNativeHandle(Object value) {
     }
 
     @Override
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public synchronized Object dataGetStructChecked() {
         TypeConverter.checkData(this);
         return getInternalVariable("__wrap_struct__");
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.10.0")
     public RubyArray to_a() {
         return to_a(getRuntime().getCurrentContext());
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     public RubyBoolean tainted_p(ThreadContext context) {
         return context.fals;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     public IRubyObject taint(ThreadContext context) {
         return this;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     IRubyObject tainted() {
         return this;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     protected final void taint(Ruby runtime) {
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     public IRubyObject untaint(ThreadContext context) {
         return this;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     @Override
     public boolean isTaint() {
         return false;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     @Override
     public void setTaint(boolean taint) {
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     @Override
     public IRubyObject infectBy(IRubyObject obj) {
         return this;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     final RubyBasicObject infectBy(RubyBasicObject obj) {
         return this;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     final RubyBasicObject infectBy(int tuFlags) {
         return this;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.3.0")
     public static final int FL_USHIFT = 4;
-    @Deprecated
+    @Deprecated(since = "9.1.3.0")
     public static final int USER0_F = (1<<(FL_USHIFT+0));
-    @Deprecated
+    @Deprecated(since = "9.1.3.0")
     public static final int USER1_F = (1<<(FL_USHIFT+1));
-    @Deprecated
+    @Deprecated(since = "9.1.3.0")
     public static final int USER2_F = (1<<(FL_USHIFT+2));
-    @Deprecated
+    @Deprecated(since = "9.1.3.0")
     public static final int USER3_F = (1<<(FL_USHIFT+3));
-    @Deprecated
+    @Deprecated(since = "9.1.3.0")
     public static final int USER4_F = (1<<(FL_USHIFT+4));
-    @Deprecated
+    @Deprecated(since = "9.1.3.0")
     public static final int USER5_F = (1<<(FL_USHIFT+5));
-    @Deprecated
+    @Deprecated(since = "9.1.3.0")
     public static final int USER6_F = (1<<(FL_USHIFT+6));
-    @Deprecated
+    @Deprecated(since = "9.1.3.0")
     public static final int USER7_F = (1<<(FL_USHIFT+7));
-    @Deprecated
+    @Deprecated(since = "9.1.3.0")
     public static final int USER8_F = (1<<(FL_USHIFT+8));
-    @Deprecated
+    @Deprecated(since = "9.1.3.0")
     public static final int USER9_F = (1<<(FL_USHIFT+9));
-    @Deprecated
+    @Deprecated(since = "9.1.3.0")
     public static final int USERA_F = (1<<(FL_USHIFT+10));
-    @Deprecated
+    @Deprecated(since = "9.1.3.0")
     public static final int REFINED_MODULE_F = USER9_F;
-    @Deprecated
+    @Deprecated(since = "9.1.3.0")
     public static final int IS_OVERLAID_F = USERA_F;
-    @Deprecated
+    @Deprecated(since = "9.1.3.0")
     public static final int COMPARE_BY_IDENTITY_F = USER8_F;
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     public static final int TAINTED_F = 0;
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static final long VAR_TABLE_OFFSET = -1;
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static final long STAMP_OFFSET = -1;
 }

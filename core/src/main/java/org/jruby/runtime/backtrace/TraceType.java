@@ -814,7 +814,7 @@ public class TraceType {
         return TraceType.isInternalFile(filename) || TraceType.hasInternalMarker(filename);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.7.0")
     public RubyStackTraceElement getBacktraceElement(ThreadContext context, int uplevel) {
         // NOTE: could be optimized not to walk the whole stack
         RubyStackTraceElement[] elements = getBacktrace(context).getBacktrace(context.runtime);

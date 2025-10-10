@@ -56,7 +56,7 @@ public class RubySystemExit extends RubyException {
                 defineMethods(context, RubySystemExit.class);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static RubySystemExit newInstance(Ruby runtime, int status, String message) {
         return newInstance(runtime.getCurrentContext(), status, message);
     }
@@ -78,7 +78,7 @@ public class RubySystemExit extends RubyException {
         return new SystemExit(message, this);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     @Override
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         return initialize(getRuntime().getCurrentContext(), args, block);

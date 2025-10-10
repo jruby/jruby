@@ -161,7 +161,7 @@ public class RubyDigest {
         return RubyString.newStringNoCopy(context.runtime, new ByteList(ByteList.plain(toHex(val)), USASCIIEncoding.INSTANCE));
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyString hexencode(IRubyObject self, IRubyObject arg) {
         return hexencode(((RubyBasicObject) self).getCurrentContext(), self, arg);
     }
@@ -171,7 +171,7 @@ public class RubyDigest {
         return toHexString(context, arg.convertToString().getBytes());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyString bubblebabble(IRubyObject recv, IRubyObject arg) {
         return bubblebabble(((RubyBasicObject) recv).getCurrentContext(), recv, arg);
     }
@@ -375,7 +375,7 @@ public class RubyDigest {
             return sites(context).digest_length.call(context, self, self);
         }
 
-        @Deprecated
+        @Deprecated(since = "9.4.6.0")
         public static IRubyObject digest(ThreadContext context, IRubyObject self, IRubyObject[] args) {
             return switch (args.length) {
                 case 0 -> digest(context, self);
@@ -384,12 +384,12 @@ public class RubyDigest {
             };
         }
 
-        @Deprecated
+        @Deprecated(since = "9.4.6.0")
         public static IRubyObject hexdigest(ThreadContext context, IRubyObject self, IRubyObject[] args) {
             return toHexString(context, digest(context, self, args).convertToString().getBytes());
         }
 
-        @Deprecated
+        @Deprecated(since = "9.4.6.0")
         public static IRubyObject bubblebabble(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
             return switch (args.length) {
                 case 1 -> bubblebabble(context, recv, args[0]);
@@ -474,12 +474,12 @@ public class RubyDigest {
             return newString(context, BubbleBabble.bubblebabble(digest, 0, digest.length));
         }
 
-        @Deprecated
+        @Deprecated(since = "9.4.6.0")
         public static RubyString bubblebabble(IRubyObject recv, IRubyObject arg) {
             return bubblebabble(((RubyBasicObject) recv).getCurrentContext(), recv, arg);
         }
 
-        @Deprecated
+        @Deprecated(since = "9.4.6.0")
         public static IRubyObject s_hexdigest(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
             return s_hexdigest(context, recv, args);
         }
@@ -547,7 +547,7 @@ public class RubyDigest {
             return this;
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public IRubyObject finish() {
             return finish(getCurrentContext());
         }
@@ -559,7 +559,7 @@ public class RubyDigest {
             return digest;
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public IRubyObject digest_length() {
             return digest_length(getCurrentContext());
         }
@@ -569,7 +569,7 @@ public class RubyDigest {
             return asFixnum(context, algo.getDigestLength());
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public IRubyObject block_length() {
             return block_length(getCurrentContext());
         }

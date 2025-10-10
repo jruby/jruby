@@ -186,7 +186,7 @@ public class RegexpSupport {
         return 0;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static void raiseRegexpError19(Ruby runtime, ByteList bytes, Encoding enc, RegexpOptions options, String err) {
         raiseRegexpError(runtime, bytes, enc, options, err);
     }
@@ -197,7 +197,7 @@ public class RegexpSupport {
         throw runtime.newRegexpError(err + ": " + regexpDescription(runtime, bytes, options, enc));
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static ByteList regexpDescription19(Ruby runtime, ByteList bytes, RegexpOptions options, Encoding enc) {
         return regexpDescription(runtime, bytes, options, enc);
     }
@@ -224,7 +224,7 @@ public class RegexpSupport {
         return description;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static void appendRegexpString19(Ruby runtime, ByteList to, byte[] bytes, int start, int len, Encoding enc, Encoding resEnc) {
         appendRegexpString(runtime, to, bytes, start, len, enc, resEnc);
     }

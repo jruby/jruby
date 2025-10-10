@@ -113,7 +113,7 @@ public class JavaProxyMethods {
         return stringValue == null ? context.nil : RubyString.newUnicodeString(context.runtime, stringValue);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     static IRubyObject to_s(Ruby runtime, Object javaObject) {
         return to_s(runtime.getCurrentContext(), javaObject);
     }
@@ -123,7 +123,7 @@ public class JavaProxyMethods {
      * @return
      * @deprecated Use {@link JavaProxyMethods#inspect(ThreadContext, IRubyObject)} instead
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject inspect(IRubyObject recv) {
         return inspect(((RubyBasicObject) recv).getCurrentContext(), recv);
     }

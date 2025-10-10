@@ -183,7 +183,7 @@ public final class JITRuntime {
         return asFixnum(context, (byte) value);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject newSigned8(Ruby runtime, int value) {
         return newSigned8(runtime.getCurrentContext(), value);
     }
@@ -192,7 +192,7 @@ public final class JITRuntime {
         return asFixnum(context, (byte) value);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject newSigned8(Ruby runtime, long value) {
         return newSigned8(runtime.getCurrentContext(), value);
     }
@@ -202,7 +202,7 @@ public final class JITRuntime {
         return asFixnum(context, n < 0 ? ((n & 0x7F) + 0x80) : n);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject newUnsigned8(Ruby runtime, int value) {
         return newUnsigned8(runtime.getCurrentContext(), value);
     }
@@ -212,7 +212,7 @@ public final class JITRuntime {
         return asFixnum(context, n < 0 ? ((n & 0x7F) + 0x80) : n);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject newUnsigned8(Ruby runtime, long value) {
         return newUnsigned8(runtime.getCurrentContext(), value);
     }
@@ -221,7 +221,7 @@ public final class JITRuntime {
         return asFixnum(context, (short) value);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject newSigned16(Ruby runtime, int value) {
         return newSigned16(runtime.getCurrentContext(), value);
     }
@@ -230,7 +230,7 @@ public final class JITRuntime {
         return asFixnum(context, (short) value);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject newSigned16(Ruby runtime, long value) {
         return newSigned16(runtime.getCurrentContext(), value);
     }
@@ -240,7 +240,7 @@ public final class JITRuntime {
         return asFixnum(context, n < 0 ? ((n & 0x7FFF) + 0x8000) : n);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject newUnsigned16(Ruby runtime, int value) {
         return newUnsigned16(runtime.getCurrentContext(), value);
     }
@@ -250,7 +250,7 @@ public final class JITRuntime {
         return asFixnum(context, n < 0 ? ((n & 0x7FFF) + 0x8000) : n);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject newUnsigned16(Ruby runtime, long value) {
         return newUnsigned16(runtime.getCurrentContext(), value);
     }
@@ -259,7 +259,7 @@ public final class JITRuntime {
         return asFixnum(context, value);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject newSigned32(Ruby runtime, int value) {
         return newSigned32(runtime.getCurrentContext(), value);
     }
@@ -268,7 +268,7 @@ public final class JITRuntime {
         return asFixnum(context, (int) value);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject newSigned32(Ruby runtime, long value) {
         return newSigned32(runtime.getCurrentContext(), value);
     }
@@ -287,7 +287,7 @@ public final class JITRuntime {
         return asFixnum(context, n < 0 ? ((n & 0x7FFFFFFFL) + 0x80000000L) : n);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject newUnsigned32(Ruby runtime, long value) {
         return newUnsigned32(runtime.getCurrentContext(), value);
     }
@@ -296,7 +296,7 @@ public final class JITRuntime {
         return asFixnum(context, value);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject newSigned64(Ruby runtime, long value) {
         return newSigned64(runtime.getCurrentContext(), value);
     }
@@ -308,7 +308,7 @@ public final class JITRuntime {
                 asFixnum(context, value);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject newUnsigned64(Ruby runtime, long value) {
         return newUnsigned64(runtime.getCurrentContext(), value);
     }
@@ -317,7 +317,7 @@ public final class JITRuntime {
         return context.nil;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject newNil(Ruby runtime, int ignored) {
         return newNil(runtime.getCurrentContext(), ignored);
     }
@@ -326,7 +326,7 @@ public final class JITRuntime {
         return context.nil;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject newNil(Ruby runtime, long ignored) {
         return newNil(runtime.getCurrentContext(), ignored);
     }
@@ -398,7 +398,7 @@ public final class JITRuntime {
         return asFloat(context, Float.intBitsToFloat(value));
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject newFloat32(Ruby runtime, int value) {
         return newFloat32(runtime.getCurrentContext(), value);
     }
@@ -407,7 +407,7 @@ public final class JITRuntime {
         return asFloat(context, Float.intBitsToFloat((int) value));
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject newFloat32(Ruby runtime, long value) {
         return newFloat32(runtime.getCurrentContext(), value);
     }
@@ -416,7 +416,7 @@ public final class JITRuntime {
         return asFloat(context, Double.longBitsToDouble(value));
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject newFloat64(Ruby runtime, long value) {
         return newFloat64(runtime.getCurrentContext(), value);
     }

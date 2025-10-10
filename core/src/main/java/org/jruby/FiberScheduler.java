@@ -203,7 +203,7 @@ public class FiberScheduler {
         }
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject result(Ruby runtime, int result, Errno error) {
         return result(runtime.getCurrentContext(), result, error);
     }

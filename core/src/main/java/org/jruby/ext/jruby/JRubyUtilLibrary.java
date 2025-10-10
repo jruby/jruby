@@ -92,7 +92,7 @@ public class JRubyUtilLibrary implements Library {
         return getObjectSpaceEnabled(((RubyBasicObject) recv).getCurrentContext(), recv);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject setObjectSpaceEnabled(IRubyObject recv, IRubyObject arg) {
         return setObjectSpaceEnabled(((RubyBasicObject) recv).getCurrentContext(), recv, arg);
     }
@@ -112,7 +112,7 @@ public class JRubyUtilLibrary implements Library {
         return asBoolean(context, context.runtime.getPosix().isNative());
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.1.0")
     public static IRubyObject getClassLoaderResources(IRubyObject recv, IRubyObject name) {
         return class_loader_resources(((RubyBasicObject) recv).getCurrentContext(), recv, name);
     }

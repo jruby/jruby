@@ -33,7 +33,7 @@ public abstract class Initializer {
         this.javaClass = javaClass;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyModule setupProxyClass(Ruby runtime, final Class<?> javaClass, RubyClass proxy) {
         return setupProxyClass(runtime.getCurrentContext(), javaClass, proxy);
     }
@@ -61,7 +61,7 @@ public abstract class Initializer {
         flagAsJavaProxy(context, proxy); return proxy;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyModule setupProxyModule(Ruby runtime, final Class<?> javaClass, RubyModule proxy) {
         return setupProxyModule(runtime.getCurrentContext(), javaClass, proxy);
     }
@@ -87,7 +87,7 @@ public abstract class Initializer {
         proxy.dataWrapStruct(javaClass);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyModule initialize(RubyModule proxy) {
         return initialize(proxy.getCurrentContext(), proxy);
     }
@@ -95,7 +95,7 @@ public abstract class Initializer {
 
     public abstract RubyModule initialize(ThreadContext context, RubyModule proxy);
 
-    @Deprecated
+    @Deprecated(since = "9.2.9.0")
     public static final ClassValue<Method[]> DECLARED_METHODS = MethodGatherer.DECLARED_METHODS;
 
 }

@@ -65,7 +65,7 @@ import static org.jruby.api.Create.newString;
  * @deprecated since 9.3
  * @author  jpetersen
  */
-@Deprecated
+@Deprecated(since = "9.4.0.0")
 public class JavaClass extends JavaObject {
 
     public static final Class[] EMPTY_CLASS_ARRAY = ClassUtils.EMPTY_CLASS_ARRAY;
@@ -89,17 +89,17 @@ public class JavaClass extends JavaObject {
         return getValue().hashCode();
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public final RubyModule getProxyModule() {
         return Java.getProxyClass(getRuntime().getCurrentContext(), javaClass());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public final RubyClass getProxyClass() {
         return (RubyClass) getProxyModule();
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static JavaClass get(final Ruby runtime, final Class<?> klass) {
         return runtime.getJavaSupport().getJavaClassFromCache(klass);
     }
@@ -109,7 +109,7 @@ public class JavaClass extends JavaObject {
         return toRubyArray(runtime, classes);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static RubyArray toRubyArray(final Ruby runtime, final Class<?>[] classes) {
         IRubyObject[] javaClasses = new IRubyObject[classes.length];
         for ( int i = classes.length; --i >= 0; ) {
@@ -175,13 +175,13 @@ public class JavaClass extends JavaObject {
      * @param type
      * @return resolved type or null if resolution failed
      */
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static JavaClass resolveType(final ThreadContext context, final IRubyObject type) {
         RubyModule proxyClass = Java.resolveType(context, type);
         return proxyClass == null ? null : get(context.runtime, JavaUtil.getJavaClass(proxyClass, null));
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static JavaClass forNameVerbose(Ruby runtime, String className) {
         Class<?> klass = null;
         synchronized (JavaClass.class) {
@@ -200,18 +200,18 @@ public class JavaClass extends JavaObject {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     @JRubyMethod(name = "for_name", meta = true)
     public static JavaClass for_name(IRubyObject recv, IRubyObject name) {
         return forNameVerbose(((RubyBasicObject) recv).getCurrentContext().getRuntime(), name.asJavaString());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     static JavaClass for_name(IRubyObject recv, String name) {
         return forNameVerbose(((RubyBasicObject) recv).getCurrentContext().getRuntime(), name);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyString inspect() {
         return inspect(getCurrentContext());
     }
@@ -252,7 +252,7 @@ public class JavaClass extends JavaObject {
      * @param additional
      * @return
      */
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     public IRubyObject concatArrays(ThreadContext context, JavaArray original, JavaArray additional) {
         return ArrayUtils.concatArraysDirect(context, original.getValue(), additional.getValue());
     }
@@ -265,7 +265,7 @@ public class JavaClass extends JavaObject {
      * @param additional
      * @return
      */
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     public IRubyObject concatArrays(ThreadContext context, JavaArray original, IRubyObject additional) {
         return ArrayUtils.concatArraysDirect(context, original.getValue(), additional);
     }

@@ -378,7 +378,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
             replaceExternally(context, otherHash);
         }
 
-        @Deprecated
+        @Deprecated(since = "9.4.6.0")
         @Override
         public IRubyObject any_p(ThreadContext context, IRubyObject[] args, Block block) {
             return super.any_p(context, args, block);
@@ -709,7 +709,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         return getOrCreateRubyHashMap(context.runtime).invert(context);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public RubyHash merge_bang(final ThreadContext context, final IRubyObject other, final Block block) {
         return merge_bang(context, new IRubyObject[]{other}, block);
     }
@@ -722,7 +722,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         return getOrCreateRubyHashMap(context.runtime).merge_bang(context, others, block);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public RubyHash merge(ThreadContext context, IRubyObject other, Block block) {
         return merge(context, new IRubyObject[]{other}, block);
     }
@@ -859,12 +859,12 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         return getOrCreateRubyHashMap(getRuntime());
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.6.0")
     public IRubyObject sort(ThreadContext context, Block block) {
         return getOrCreateRubyHashMap(context.runtime).sort(context, block);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public IRubyObject any_p(ThreadContext context, IRubyObject[] args, Block block) {
         return getOrCreateRubyHashMap(context.runtime).any_p(context, args, block);
     }

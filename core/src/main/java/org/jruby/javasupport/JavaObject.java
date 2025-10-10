@@ -168,12 +168,12 @@ public class JavaObject extends RubyObject {
         return JavaProxyMethods.to_s(context, dataGetStruct());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject to_s(Ruby runtime, Object dataStruct) {
         return JavaProxyMethods.to_s(runtime.getCurrentContext(), dataStruct);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject op_equal(final IRubyObject other) {
         return op_equal(getCurrentContext(), other);
     }
@@ -183,7 +183,7 @@ public class JavaObject extends RubyObject {
         return JavaProxyMethods.equals(context.runtime, getValue(), other);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyBoolean op_equal(JavaProxy self, IRubyObject other) {
         return JavaProxyMethods.equals(self.getCurrentContext().runtime, self.getObject(), other);
     }
@@ -199,12 +199,12 @@ public class JavaObject extends RubyObject {
         return asBoolean(context, thisValue == otherValue);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject same(final IRubyObject other) {
         return same(getCurrentContext(), other);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyString java_type() {
         return java_type(getCurrentContext());
     }
@@ -219,7 +219,7 @@ public class JavaObject extends RubyObject {
         return JavaClass.get(getCurrentContext().runtime, getJavaClass());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject get_java_class() {
         return get_java_class(getCurrentContext());
     }
@@ -229,7 +229,7 @@ public class JavaObject extends RubyObject {
         return Java.getInstance(context.runtime, getJavaClass());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyFixnum length() {
         return length(getCurrentContext());
     }
@@ -239,7 +239,7 @@ public class JavaObject extends RubyObject {
         throw typeError(context, "not a java array");
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject is_java_proxy() {
         return is_java_proxy(getCurrentContext());
     }

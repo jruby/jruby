@@ -116,7 +116,7 @@ public class RubyNumeric extends RubyObject {
         super(runtime, metaClass, useObjectSpace);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     public RubyNumeric(Ruby runtime, RubyClass metaClass, boolean useObjectSpace, boolean canBeTainted) {
         super(runtime, metaClass, useObjectSpace, canBeTainted);
     }
@@ -152,7 +152,7 @@ public class RubyNumeric extends RubyObject {
      * fit in 64 bits, it will be truncated.
      * @deprecated Use {@link org.jruby.RubyNumeric#asLong(ThreadContext)} instead.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public long getLongValue() {
         return asLong(getCurrentContext());
     }
@@ -162,7 +162,7 @@ public class RubyNumeric extends RubyObject {
      * fit in 32 bits, it will be truncated.
      * @deprecated Use {@link org.jruby.RubyNumeric#asInt(ThreadContext)} instead.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public int getIntValue() { return asInt(getRuntime().getCurrentContext()); }
 
 
@@ -208,12 +208,12 @@ public class RubyNumeric extends RubyObject {
      * @return
      * @deprecated Use {@link org.jruby.RubyNumeric#asDouble(ThreadContext)} instead.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public double getDoubleValue() {
         return asDouble(getCurrentContext());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public BigInteger getBigIntegerValue() {
         return asBigInteger(getCurrentContext());
     }
@@ -230,7 +230,7 @@ public class RubyNumeric extends RubyObject {
     /** rb_num2int, NUM2INT
      * if you know it is Integer use {@link org.jruby.api.Convert#toInt(ThreadContext, IRubyObject)}.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static int num2int(IRubyObject arg) {
         long num = num2long(arg);
 
@@ -265,7 +265,7 @@ public class RubyNumeric extends RubyObject {
     /**
      * NUM2CHR
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static byte num2chr(IRubyObject arg) {
         if (arg instanceof RubyString) {
             if (((RubyString) arg).size() > 0) {
@@ -283,7 +283,7 @@ public class RubyNumeric extends RubyObject {
         return arg instanceof RubyFixnum ? ((RubyFixnum) arg).value : other2long(arg);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     private static long other2long(IRubyObject arg) throws RaiseException {
         if (arg instanceof RubyFloat flote) return float2long(flote);
         if (arg instanceof RubyBignum bignum) return RubyBignum.big2long(bignum);
@@ -294,7 +294,7 @@ public class RubyNumeric extends RubyObject {
         return ((RubyInteger) TypeConverter.convertToType(arg, integerClass(context), "to_int")).asLong(context);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static long float2long(RubyFloat flt) {
         final double aFloat = flt.value;
         if (aFloat <= (double) Long.MAX_VALUE && aFloat >= (double) Long.MIN_VALUE) {
@@ -354,7 +354,7 @@ public class RubyNumeric extends RubyObject {
     /**
      * @deprecated Use {@link org.jruby.api.Convert#asFloat(ThreadContext, long)} instead.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject dbl2num(Ruby runtime, double val) {
         return RubyFloat.newFloat(runtime, val);
     }
@@ -363,7 +363,7 @@ public class RubyNumeric extends RubyObject {
      *
      * @deprecated Use {@link org.jruby.api.Convert#asInteger(ThreadContext, double)} instead.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyInteger dbl2ival(Ruby runtime, double val) {
         return asInteger(runtime.getCurrentContext(), val);
     }
@@ -371,7 +371,7 @@ public class RubyNumeric extends RubyObject {
     /**
      * @deprecated Use {@link org.jruby.api.Convert#toDouble(ThreadContext, IRubyObject)} instead.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static double num2dbl(IRubyObject arg) {
         return toDouble(arg.getRuntime().getCurrentContext(), arg);
     }
@@ -379,7 +379,7 @@ public class RubyNumeric extends RubyObject {
     /** rb_num2dbl and NUM2DBL
      * @deprecated Use {@link org.jruby.api.Convert#toDouble(ThreadContext, IRubyObject)} instead.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static double num2dbl(ThreadContext context, IRubyObject arg) {
         return toDouble(context, arg);
     }
@@ -397,26 +397,26 @@ public class RubyNumeric extends RubyObject {
      * @return
      * @deprecated Use {@link RubyFixnum#getValue()}
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static long fix2long(IRubyObject arg) {
         return ((RubyFixnum) arg).value;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static int fix2int(IRubyObject arg) {
         long num = arg instanceof RubyFixnum fixnum ? fixnum.getValue() : num2long(arg);
         checkInt(arg, num);
         return (int) num;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static int fix2int(RubyFixnum arg) {
         long num = arg.value;
         checkInt(arg, num);
         return (int) num;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyInteger str2inum(Ruby runtime, RubyString str, int base) {
         return (RubyInteger) str2inum(runtime, str, base, false, true);
     }
@@ -427,17 +427,17 @@ public class RubyNumeric extends RubyObject {
      * @return
      * @deprecated Use {@link org.jruby.api.Convert#asFixnum(ThreadContext, long)} instead.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyNumeric int2fix(Ruby runtime, long val) {
         return RubyFixnum.newFixnum(runtime, val);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject num2fix(IRubyObject val) {
         return num2fix(((RubyBasicObject) val).getCurrentContext(), val);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     // mri: rb_num2fix (appears unused in current MRI source)
     public static IRubyObject num2fix(ThreadContext context, IRubyObject val) {
         return switch(val) {
@@ -485,7 +485,7 @@ public class RubyNumeric extends RubyObject {
         return ConvertBytes.byteListToInum(runtime, s, base, strict, exception);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyInteger str2inum(Ruby runtime, RubyString str, int base, boolean strict) {
         return (RubyInteger) str2inum(runtime, str, base, strict, true);
     }
@@ -628,7 +628,7 @@ public class RubyNumeric extends RubyObject {
     /** rb_num_coerce_bin
      *  coercion taking two arguments
      */
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     protected final IRubyObject coerceBin(ThreadContext context, String method, IRubyObject other) {
         RubyArray ary = doCoerce(context, other, true);
         return (ary.eltInternal(0)).callMethod(context, method, ary.eltInternal(1));
@@ -770,7 +770,7 @@ public class RubyNumeric extends RubyObject {
      * @return
      * @deprecated Use {@link org.jruby.RubyNumeric#coerce(ThreadContext, IRubyObject)} instead.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject coerce(IRubyObject other) {
         return coerce(getCurrentContext(), other);
     }
@@ -785,7 +785,7 @@ public class RubyNumeric extends RubyObject {
                 newArray(context, RubyKernel.new_float(context, other), RubyKernel.new_float(context, this));
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject op_uplus() {
         return op_uplus(getCurrentContext());
     }
@@ -1010,12 +1010,12 @@ public class RubyNumeric extends RubyObject {
 
     public boolean isReal() { return true; } // only RubyComplex isn't real
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public IRubyObject scalar_p() {
         return asBoolean(getCurrentContext(), isReal());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject integer_p() {
         return integer_p(getCurrentContext());
     }
@@ -1040,7 +1040,7 @@ public class RubyNumeric extends RubyObject {
      * @return
      * @deprecated Use {@link org.jruby.RubyNumeric#isZero(ThreadContext)} instead.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public boolean isZero() {
         return isZero(getCurrentContext());
     }
@@ -1464,7 +1464,7 @@ public class RubyNumeric extends RubyObject {
         return sites(context).denominator.call(context, rational, rational);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyRational convertToRational() {
         return convertToRational(getCurrentContext());
     }
@@ -1598,7 +1598,7 @@ public class RubyNumeric extends RubyObject {
      * @return
      * @deprecated Use {@link org.jruby.RubyNumeric#isNegativeNumber(ThreadContext)} instead.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public boolean isNegative() {
         return isNegativeNumber(getCurrentContext());
     }
@@ -1611,7 +1611,7 @@ public class RubyNumeric extends RubyObject {
      * @return
      * @deprecated Use {@link org.jruby.RubyNumeric#isPositiveNumber(ThreadContext)} instead.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public boolean isPositive() {
         return isPositiveNumber(getCurrentContext());
     }
@@ -1637,7 +1637,7 @@ public class RubyNumeric extends RubyObject {
         return context.nil;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.5.0")
     public final IRubyObject rbClone(IRubyObject[] args) {
         ThreadContext context = metaClass.runtime.getCurrentContext();
         switch (args.length) {
@@ -1740,17 +1740,17 @@ public class RubyNumeric extends RubyObject {
         return l >= RubyFixnum.MIN;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public IRubyObject floor() {
         return floor(getCurrentContext());
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public IRubyObject ceil() {
         return ceil(getCurrentContext());
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public IRubyObject round() {
         return round(getCurrentContext());
     }
@@ -1758,7 +1758,7 @@ public class RubyNumeric extends RubyObject {
     /** num_truncate
      *
      */
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public IRubyObject truncate() {
         return truncate(getCurrentContext());
     }

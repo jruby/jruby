@@ -298,7 +298,7 @@ public class ManyVarsDynamicScope extends DynamicScope {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.6.0")
     public DynamicScope cloneScope() {
         // we construct new rather than clone to avoid sharing variableValues
         return new ManyVarsDynamicScope(staticScope, parent);
