@@ -72,10 +72,7 @@ public abstract class AbstractLocalContextProvider implements LocalContextProvid
     boolean isGlobalRuntimeReady() { return Ruby.isGlobalRuntimeReady(); }
 
     Ruby getGlobalRuntime(AbstractLocalContextProvider provider) {
-        if ( isGlobalRuntimeReady() ) {
-            return Ruby.getGlobalRuntime();
-        }
-        return Ruby.newInstance(provider.config);
+        return Ruby.getGlobalRuntime(provider.config);
     }
 
     RubyInstanceConfig getGlobalRuntimeConfig(AbstractLocalContextProvider provider) {

@@ -802,14 +802,36 @@ public final class Ruby implements Constantizable {
     }
 
     /**
-     * Get the global runtime.
+     * Get the global runtime or initialize it if it has not been created.
      *
      * @return the global runtime
      */
     public static synchronized Ruby getGlobalRuntime() {
+        Ruby globalRuntime = Ruby.globalRuntime;
+
         if (globalRuntime == null) {
-            newInstance();
+            globalRuntime = newInstance();
+            globalRuntime.useAsGlobalRuntime();
         }
+
+        return globalRuntime;
+    }
+
+
+    /**
+     * Get the global runtime or initialize it if it has not been created.
+     *
+     * @param config the config for the runtime, if it needs to be created
+     * @return the global runtime
+     */
+    public static synchronized Ruby getGlobalRuntime(RubyInstanceConfig config) {
+        Ruby globalRuntime = Ruby.globalRuntime;
+
+        if (globalRuntime == null) {
+            globalRuntime = newInstance(config);
+            globalRuntime.useAsGlobalRuntime();
+        }
+
         return globalRuntime;
     }
 
