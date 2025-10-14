@@ -2758,6 +2758,7 @@ public class RubyClass extends RubyModule {
         return javaClassConfiguration.classAnnotations;
     }
 
+    // used from Ruby in stdlib/jruby/core_ext.rb
     public synchronized void addClassAnnotation(Class<?> annotation, Map fields) {
         if (getClassConfig().classAnnotations == null) javaClassConfiguration.classAnnotations = new LinkedHashMap<>(4);
 

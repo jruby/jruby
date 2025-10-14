@@ -24,8 +24,6 @@ public class CheckpointMain extends PrebootMain {
 
         ruby.evalScriptlet("1 + 1");
 
-        Ruby.clearGlobalRuntime();
-
         return args;
     }
 

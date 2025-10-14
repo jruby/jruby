@@ -263,7 +263,7 @@ public class Main {
             runtime = PrebootMain.getPrebootMain().getPrebootRuntime();
             runtime.reinitialize(true);
         } else {
-            runtime = Ruby.newInstance(config);
+            runtime = Ruby.newMain(config);
         }
 
         Status status = null;

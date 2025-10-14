@@ -110,10 +110,10 @@ class Class
         self_r.add_parameter_annotation(name, i, _anno_class(cls), params)
       end
     end
-    
+
     nil
   end
-  
+
   ##
   # Add annotations to this class. Annotations are specified as a Hash of
   # annotation classes to Hashes of name/value pairs for their parameters.
