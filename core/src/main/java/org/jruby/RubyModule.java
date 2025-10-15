@@ -3206,6 +3206,7 @@ public class RubyModule extends RubyObject {
 
         // may be null during boot
         if (metaClass == null) return id;
+        if (getJavaProxy()) return id; // do not attempt to dispatch to a `JavaClass.hash()` method
 
         Ruby runtime = metaClass.getClassRuntime();
 

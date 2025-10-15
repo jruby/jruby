@@ -5,6 +5,7 @@ import java.text.SimpleDateFormat;
 
 import org.jruby.*;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.javasupport.test.HashBase;
 import org.jruby.runtime.ThreadContext;
 import org.junit.Test;
 
@@ -136,5 +137,14 @@ public class TestJava extends junit.framework.TestCase {
 
         assertNotNull(runtime.evalScriptlet("FormatImpl.new")); // used to cause an infinite loop
         assertTrue(runtime.evalScriptlet("FormatImpl.new").toJava(Object.class) instanceof SimpleDateFormat);
+    }
+
+    @Test
+    public void testHashMethodOnJavaProxy() {
+        final Ruby runtime = Ruby.newInstance();
+        // we internally shuffle around the subclasses (due interface module includes in the Java class) in a map,
+        // calling hashCode -> HashBase.hash() would: (ArgumentError) wrong number of arguments (given 0, expected 1)
+        var hashBase = Java.getProxyClass(runtime.getCurrentContext(), HashBase.class);
+        assertEquals(hashBase.id, hashBase.hashCode());
     }
 }
