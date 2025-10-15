@@ -648,6 +648,7 @@ CP_DELIMITER=":"
 # Get main class and version from .jruby.release
 
 # shellcheck source=/dev/null
+# shellcheck disable=2153  # Assigned in sourced file
 if [ -f "$jruby_release_file" ] && . "$jruby_release_file"; then
     java_class=$JRUBY_MAIN
     jruby_version=$JRUBY_VERSION
