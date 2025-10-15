@@ -645,7 +645,7 @@ JAVA_OPTS="$JAVA_OPTS_TEMP"
 
 CP_DELIMITER=":"
 
-# Get main class from .jruby.release or default to old version
+# Get main class and version from .jruby.release
 
 # shellcheck source=/dev/null
 if [ -f "$jruby_release_file" ] && . "$jruby_release_file"; then
@@ -655,6 +655,7 @@ else
     java_class=org.jruby.main
     jruby_version=unspecified
 fi
+
 # Find main jruby jar and add it to the classpath
 jruby_jar=
 for j in "$JRUBY_HOME"/lib/jruby.jar "$JRUBY_HOME"/lib/jruby-complete.jar; do
@@ -1011,11 +1012,6 @@ add_log "  $*"
 
 # shellcheck source=/dev/null
 if $print_environment_log; then
-    if [ -f "$jruby_release_file" ]; then
-        jruby_version=$(. "$jruby_release_file" && echo "${JRUBY_VERSION-}")
-    else
-        jruby_version=unspecified
-    fi
     environment_log="JRuby Environment${cr}=================${cr}${cr}JRuby version: ${jruby_version}${environment_log}"
     echo "$environment_log"
     exit 0
