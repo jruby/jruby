@@ -648,13 +648,13 @@ CP_DELIMITER=":"
 # Get main class from .jruby.release or default to old version
 
 # shellcheck source=/dev/null
-if [ -f "$jruby_release_file" ]; then
-    java_class=$(. "$jruby_release_file" && echo "${JRUBY_MAIN-}")
+if [ -f "$jruby_release_file" ] && . "$jruby_release_file"; then
+    java_class=$JRUBY_MAIN
+    jruby_version=$JRUBY_VERSION
 else
-    # Default to old org.jruby.Main
-    java_class=org.jruby.Main
+    java_class=org.jruby.main
+    jruby_version=unspecified
 fi
-
 # Find main jruby jar and add it to the classpath
 jruby_jar=
 for j in "$JRUBY_HOME"/lib/jruby.jar "$JRUBY_HOME"/lib/jruby-complete.jar; do
