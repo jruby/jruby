@@ -38,7 +38,7 @@ project 'JRuby Complete' do
   plugin('org.apache.felix:maven-bundle-plugin',
          archive: {
            manifest: {
-             mainClass: 'org.jruby.Main'
+             mainClass: 'org.jruby.main.Main'
            },
            manifestEntries: {
              "Automatic-Module-Name": 'org.jruby.complete',

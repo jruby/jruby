@@ -1743,7 +1743,7 @@ public class PopenExecutor {
         if (!virtualCWD.equals(runtime.getPosix().getcwd())) {
             String arg = prog.toString();
 
-            // if we're launching org.jruby.Main, adjust args to -C to new dir
+            // if we're launching org.jruby.main.Main, adjust args to -C to new dir
             if ((arg = ShellLauncher.changeDirInsideJar(runtime, arg)) != null) {
                 prog = newString(context, arg);
             } else if (virtualCWD.startsWith("uri:classloader:")) {

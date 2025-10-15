@@ -61,7 +61,7 @@ class TestLoadCompiledRubyClassFromClasspath < Test::Unit::TestCase
       f.puts <<-EOS
 public class #{StarterName} {
   public static void main(String args[]) throws Exception {
-     org.jruby.Main.main(new String[] { "-r#{RubyName}", "-e", "" });
+     org.jruby.main.Main.main(new String[] { "-r#{RubyName}", "-e", "" });
   }
 }
       EOS

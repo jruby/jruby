@@ -10,7 +10,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jruby.Main;
+import org.jruby.main.Main;
 import org.jruby.Ruby;
 
 public class ClasspathLauncher {
@@ -63,7 +63,7 @@ public class ClasspathLauncher {
             }
         }
 
-        return command.append(" org.jruby.Main").toString();
+        return command.append(" org.jruby.main.Main").toString();
     }
 
     // FIXME: Java 8 is capable of building up complete list of jars from classloaders but Java 9+ is not without
