@@ -59,19 +59,9 @@ public class RubyRactor {
                     BiFunction<ThreadContext, IRubyObject, TraverseResult> enter_func,
                     BiFunction<ThreadContext, IRubyObject, TraverseResult> leave_func,
                     BiFunction<ThreadContext, IRubyObject, TraverseResult> final_func) {
-//        struct obj_traverse_data data = {
-//            .enter_func = enter_func,
-//        .leave_func = leave_func,
-//        .rec = NULL,
-//    };
-
         IdentityHashMap[] rec = {null};
-//        if (obj_traverse_i(obj, &data)) return 1;
         if (objectTraverseInner(context, obj, enter_func, leave_func, rec)) return true;
-//        if (final_func && data.rec) {
         if (final_func != null && rec[0] != null) {
-//            struct rb_obj_traverse_final_data f = {final_func, 0};
-//            st_foreach(rec[0], obj_traverse_final_i, (st_data_t)&f);
             boolean[] stopped = {false};
             RuntimeException stop = new RuntimeException();
             try {
@@ -108,21 +98,14 @@ public class RubyRactor {
             case STOP: return true; // stop search
         }
 
-//        if (UNLIKELY(st_insert(obj_traverse_rec(data), obj, 1))) {
         if (traverseRec(rec).containsKey(obj)) {
             // already traversed
-//            return 0;
             return false;
         } else {
             traverseRec(rec).put(obj, obj);
         }
 //        RB_OBJ_WRITTEN(data->rec_hash, Qundef, obj);
 
-//        struct obj_traverse_callback_data d = {
-//                .stop = false,
-//        .data = data,
-//    };
-//        rb_ivar_foreach(obj, obj_traverse_ivar_foreach_i, (st_data_t)&d);
         boolean[] stopped = {false};
         RuntimeException stop = new RuntimeException();
         try {
@@ -135,10 +118,7 @@ public class RubyRactor {
         } catch (RuntimeException re) {
             if (re != stop) throw re;
         }
-//        if (d.stop) return 1;
-        if (stopped[0]) {
-            return true;
-        }
+        if (stopped[0]) return true;
 
         switch (obj.getType().classIndex) {
             // no child node
@@ -168,36 +148,21 @@ public class RubyRactor {
             case HASH:
             {
                 IRubyObject ifNone = ((RubyHash) obj).getIfNone();
-                if (ifNone != RubyBasicObject.UNDEF && objectTraverseInner(context, ifNone, enter_func, leave_func, rec))
+                if (ifNone != RubyBasicObject.UNDEF && objectTraverseInner(context, ifNone, enter_func, leave_func, rec)) {
                     return true;
-//                if (obj_traverse_i(RHASH_IFNONE(obj), data)) return 1;
+                }
 
-//                struct obj_traverse_callback_data d = {
-//                    .stop = false,
-//                .data = data,
-//            };
-//                rb_hash_foreach(obj, obj_hash_traverse_i, (VALUE)&d);
                 try {
                     ((RubyHash) obj).visitAll(context, (c, s, k, v, i) -> {
-//                        struct obj_traverse_callback_data *d = (struct obj_traverse_callback_data *)ptr;
-//                        if (obj_traverse_i(key, d->data)) {
-//                            d->stop = true;
-//                            return ST_STOP;
-//                        }
                         if (objectTraverseInner(context, k, enter_func, leave_func, rec)) {
                             stopped[0] = true;
                             throw stop;
                         }
 
-//                        if (obj_traverse_i(val, d->data)) {
-//                            d->stop = true;
-//                            return ST_STOP;
-//                        }
                         if (objectTraverseInner(context, v, enter_func, leave_func, rec)) {
                             stopped[0] = true;
                             throw stop;
                         }
-//                        return ST_CONTINUE;
                     });
 
                     if (stopped[0]) return true;
@@ -246,7 +211,7 @@ public class RubyRactor {
 //            case MODULE:
 //            case T_ICLASS:
             default:
-                throw new RuntimeException("not yet shareable: " + obj.getClass().getName());
+                throw new RuntimeException("bug: not yet shareable: " + obj.getClass().getName());
 //                rp(obj);
 //                rb_bug("unreachable");
         }
@@ -313,20 +278,14 @@ public class RubyRactor {
 //                break;
 //        }
 
-//        if (!RB_OBJ_FROZEN_RAW(obj)) {
         if (!obj.isFrozen()) {
-//            rb_funcall(obj, idFreeze, 0);
             obj.callMethod(context, "freeze");
 
-//            if (UNLIKELY(!RB_OBJ_FROZEN_RAW(obj))) {
             if (!obj.isFrozen()) {
-//                rb_raise(rb_eRactorError, "#freeze does not freeze object correctly");
                 throw Error.ractorError(context, "#freeze does not freeze object correctly");
             }
 
-//            if (RB_OBJ_SHAREABLE_P(obj)) {
             if (obj.isShareable()) {
-//                return traverse_skip;
                 return TraverseResult.SKIP;
             }
         }
@@ -336,7 +295,6 @@ public class RubyRactor {
 
     private static TraverseResult  markShareable(ThreadContext context, IRubyObject obj) {
         ((RubyBasicObject) obj).setFlag(ObjectFlags.SHAREABLE_F, true);
-//        FL_SET_RAW(obj, RUBY_FL_SHAREABLE);
         return NULL_LEAVE;
     }
 }
