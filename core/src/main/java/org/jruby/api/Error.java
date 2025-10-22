@@ -9,6 +9,7 @@ import org.jruby.exceptions.EOFError;
 import org.jruby.exceptions.IOError;
 import org.jruby.exceptions.NotImplementedError;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.RuntimeError;
 import org.jruby.exceptions.TypeError;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
@@ -275,5 +276,9 @@ public class Error {
 
     public static EOFError eofError(ThreadContext context, String message) {
         return (EOFError) context.runtime.newEOFError(message);
+    }
+
+    public static RaiseException ractorError(ThreadContext context, String s) {
+        return RuntimeError.from(context.runtime, s);
     }
 }

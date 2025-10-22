@@ -446,6 +446,8 @@ public class RubyModule extends RubyObject {
 
         // set up an invalidator for use in new optimization strategies
         methodInvalidator = OptoFactory.newMethodInvalidator(this);
+
+        setFlag(ObjectFlags.SHAREABLE_F, true);
     }
 
     /** used by MODULE_ALLOCATOR and RubyClass constructors

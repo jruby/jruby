@@ -517,6 +517,8 @@ public final class Ruby implements Constantizable {
 
         dataClass = RubyData.createDataClass(context, objectClass);
 
+        ractorClass = RubyRactor.createRactorClass(context, objectClass);
+
         // everything booted, so SizedQueue should be available; set up root fiber
         ThreadFiber.initRootFiber(context, context.getThread());
 
@@ -5253,6 +5255,7 @@ public final class Ruby implements Constantizable {
     private final RubyClass closedQueueError;
     private final RubyClass sizedQueueClass;
     private final RubyClass dataClass;
+    private final RubyClass ractorClass;
 
     private RubyClass tmsStruct;
     private RubyClass passwdStruct;
