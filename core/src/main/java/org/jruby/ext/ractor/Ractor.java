@@ -1,5 +1,12 @@
-package org.jruby;
+package org.jruby.ext.ractor;
 
+import org.jruby.ObjectFlags;
+import org.jruby.RubyArray;
+import org.jruby.RubyBasicObject;
+import org.jruby.RubyClass;
+import org.jruby.RubyData;
+import org.jruby.RubyHash;
+import org.jruby.RubyProc;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Convert;
 import org.jruby.api.Define;
@@ -10,14 +17,14 @@ import org.jruby.runtime.builtin.IRubyObject;
 import java.util.IdentityHashMap;
 import java.util.function.BiFunction;
 
-public class RubyRactor {
+public class Ractor {
 
-    private static final TraverseResult NULL_LEAVE = TraverseResult.CONTINUE;
+    private static final BiFunction<ThreadContext, IRubyObject, TraverseResult> NULL_LEAVE = (c, o) -> TraverseResult.CONTINUE;
 
     public static RubyClass createRactorClass(ThreadContext context, RubyClass Object) {
         return Define
                 .defineClass(context, "Ractor", Object, Object.getAllocator())
-                .defineMethods(context, RubyRactor.class);
+                .defineMethods(context, Ractor.class);
     }
 
     @JRubyMethod(meta = true)
@@ -35,7 +42,7 @@ public class RubyRactor {
     }
 
     private static IRubyObject make_shareable(ThreadContext context, IRubyObject obj) {
-        objectTraverse(context, obj, RubyRactor::checkShareable, (c, o) -> NULL_LEAVE, RubyRactor::markShareable);
+        objectTraverse(context, obj, Ractor::checkShareable, NULL_LEAVE, Ractor::markShareable);
 
         return obj;
     }
@@ -66,7 +73,7 @@ public class RubyRactor {
             RuntimeException stop = new RuntimeException();
             try {
                 rec[0].forEach((k, v) -> {
-                    if (final_func.apply(context, (IRubyObject) k) != NULL_LEAVE) {
+                    if (final_func.apply(context, (IRubyObject) k) != TraverseResult.CONTINUE) {
                         stopped[0] = true;
                         throw stop;
                     }
@@ -120,7 +127,7 @@ public class RubyRactor {
         }
         if (stopped[0]) return true;
 
-        switch (obj.getType().classIndex) {
+        switch (((RubyBasicObject) obj).getNativeClassIndex()) {
             // no child node
             case STRING:
             case FLOAT:
@@ -248,7 +255,7 @@ public class RubyRactor {
 //                rb_proc_ractor_make_shareable(obj);
                 // TODO
 //                obj.makeShareable();
-                return NULL_LEAVE;
+                return TraverseResult.CONTINUE;
             }
             else {
                 throw Error.ractorError(context, "can not make shareable object for " + obj);
@@ -290,11 +297,11 @@ public class RubyRactor {
             }
         }
 
-        return NULL_LEAVE;
+        return TraverseResult.CONTINUE;
     }
 
     private static TraverseResult  markShareable(ThreadContext context, IRubyObject obj) {
         ((RubyBasicObject) obj).setFlag(ObjectFlags.SHAREABLE_F, true);
-        return NULL_LEAVE;
+        return TraverseResult.CONTINUE;
     }
 }

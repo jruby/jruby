@@ -1,3 +1,7 @@
+# frozen_string_literal: true
+
+JRuby::Util.load_ext("org.jruby.ext.ractor.RactorLibrary")
+
 # \Ractor is an Actor-model abstraction for Ruby that provides thread-safe parallel execution.
 #
 # Ractor.new makes a new \Ractor, which can run in parallel.

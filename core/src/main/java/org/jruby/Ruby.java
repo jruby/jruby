@@ -50,6 +50,7 @@ import org.jruby.compiler.NotCompilableException;
 import org.jruby.exceptions.LocalJumpError;
 import org.jruby.exceptions.SystemExit;
 import org.jruby.ext.jruby.JRubyUtilLibrary;
+import org.jruby.ext.ractor.Ractor;
 import org.jruby.ext.thread.ConditionVariable;
 import org.jruby.ext.thread.Mutex;
 import org.jruby.ext.thread.Queue;
@@ -516,8 +517,6 @@ public final class Ruby implements Constantizable {
         fiberClass = new ThreadFiberLibrary().createFiberClass(context, objectClass);
 
         dataClass = RubyData.createDataClass(context, objectClass);
-
-        ractorClass = RubyRactor.createRactorClass(context, objectClass);
 
         // everything booted, so SizedQueue should be available; set up root fiber
         ThreadFiber.initRootFiber(context, context.getThread());
@@ -5255,7 +5254,6 @@ public final class Ruby implements Constantizable {
     private final RubyClass closedQueueError;
     private final RubyClass sizedQueueClass;
     private final RubyClass dataClass;
-    private final RubyClass ractorClass;
 
     private RubyClass tmsStruct;
     private RubyClass passwdStruct;
