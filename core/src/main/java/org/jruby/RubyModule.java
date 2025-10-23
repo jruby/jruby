@@ -4835,7 +4835,7 @@ public class RubyModule extends RubyObject {
     private IRubyObject getConstantSkipAutoload(String name, boolean inherit, boolean searchObject, boolean inheritObject) {
         IRubyObject constant = iterateConstantNoConstMissing(name, this, inherit, false, inheritObject);
 
-        if (constant == null && !isClass() && searchObject) {
+        if (constant == null && searchObject) {
             constant = iterateConstantNoConstMissing(name, getRuntime().getObject(), inherit, false, true);
         }
 
