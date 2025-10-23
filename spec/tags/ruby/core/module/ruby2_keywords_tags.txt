@@ -1,2 +1,1 @@
 fails:Module#ruby2_keywords does NOT copy the Hash when calling a method taking (*args)
-fails(JIT mode only):Module#ruby2_keywords makes a copy and unmark the Hash when calling a method taking (arg)
