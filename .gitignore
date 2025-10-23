@@ -49,7 +49,7 @@ latest_source_cache
 core/src/main/java/META-INF/
 lib/jni
 lib/jruby*.jar
-lib/jruby.jsa*
+lib/*.jsa*
 lib/native
 lib/ruby/cext/
 lib/ruby/gems
