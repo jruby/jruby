@@ -27,7 +27,17 @@ project 'JRuby Core' do
                   ],
                   transformers: [{ :@implementation => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
                                    mainClass: 'org.jruby.main.Main',
-                                   manifestEntries: { "Automatic-Module-Name": 'org.jruby.dist' } }],
+                                   manifestEntries: {
+                                     # Module name for JRuby
+                                     'Automatic-Module-Name' => 'org.jruby.dist',
+
+                                     # Open requested packages when not running as a module (i.e. JRuby is on classpath or -jar main jar)
+                                     'Add-Opens' => 'java.base/java.io java.base/java.nio.channels java.base/sun.nio.ch java.management/sun.management',
+
+                                     # Enable native access for JRuby and classpath classes when run not as a module
+                                     'Enable-Native-Access' => 'ALL-UNNAMED',
+                                   }
+                                 }],
                   createSourcesJar: false,
                   compress: false)
   end

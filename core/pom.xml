@@ -579,7 +579,9 @@ DO NOT MODIFY - GENERATED CODE
         <configuration>
           <archive>
             <manifestEntries>
-              <Automatic-Module-Name>org.jruby</Automatic-Module-Name>
+              <Automatic-Module-Name>org.jruby.base</Automatic-Module-Name>
+              <Add-Opens>java.base/java.io java.base/java.nio.channels java.base/sun.nio.ch java.management/sun.management</Add-Opens>
+              <Enable-Native-Access>ALL-UNNAMED</Enable-Native-Access>
             </manifestEntries>
           </archive>
         </configuration>
