@@ -1333,7 +1333,7 @@ public class EncodingUtils {
             str = obj.convertToString();
             int clen = str.size();
             if (clen >= len) {
-                str.modify();
+                str.modifyAndClearCodeRange();
                 return str;
             }
             str.modifyExpand(len);

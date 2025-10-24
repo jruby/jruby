@@ -173,6 +173,27 @@ class TestIO < Test::Unit::TestCase
      assert_equal " ", f.read(1, nil)
   end
 
+  def test_file_read_into_buffer_code_range
+    buf = String.new
+    buf.concat "¿Cómo estás? Ça va bien?"
+    assert_false buf.ascii_only? # base-line: scan and set the code-range for the buffer
+
+    require 'tempfile'
+    tmpfile = Tempfile.new('file')
+    tmpfile.open
+    tmpfile.write("ascii only")
+    tmpfile.flush
+    tmpfile.close
+
+    File.open(tmpfile.path, encoding: 'binary') do |file|
+      file.read(10, buf) # read less then buf.size
+    end
+    tmpfile.delete
+
+    assert_true buf.ascii_only? # reading into the buffer should have cleared the code-range
+    assert_equal 'ascii only', buf
+  end
+
   def test_open
     ensure_files @file
 
