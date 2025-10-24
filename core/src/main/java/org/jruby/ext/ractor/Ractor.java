@@ -4,9 +4,12 @@ import org.jruby.ObjectFlags;
 import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
+import org.jruby.RubyComplex;
 import org.jruby.RubyData;
 import org.jruby.RubyHash;
 import org.jruby.RubyProc;
+import org.jruby.RubyRational;
+import org.jruby.RubyStruct;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Convert;
 import org.jruby.api.Define;
@@ -179,25 +182,31 @@ public class Ractor {
                 }
             break;
 
-//            case STRUCT:
-//            {
-//                long len = RSTRUCT_LEN(obj);
-//            const VALUE *ptr = RSTRUCT_CONST_PTR(obj);
-//
-//                for (long i=0; i<len; i++) {
-//                    if (obj_traverse_i(ptr[i], data)) return 1;
-//                }
-//            }
-//            break;
-//
-//            case RATIONAL:
-//                if (obj_traverse_i(RRATIONAL(obj)->num, data)) return 1;
-//            if (obj_traverse_i(RRATIONAL(obj)->den, data)) return 1;
-//            break;
-//            case COMPLEX:
-//                if (obj_traverse_i(RCOMPLEX(obj)->real, data)) return 1;
-//            if (obj_traverse_i(RCOMPLEX(obj)->imag, data)) return 1;
-//            break;
+            case STRUCT:
+            {
+                RubyStruct struct = (RubyStruct) obj;
+                try {
+                    struct.visitValues(context, (c, v) -> {
+                        if (objectTraverseInner(context, v, enter_func, leave_func, rec)) {
+                            throw stop;
+                        }
+                        return v;
+                    });
+                } catch (RuntimeException e) {
+                    if (e != stop) throw e;
+                    return true;
+                }
+            }
+            break;
+
+            case RATIONAL:
+                if (objectTraverseInner(context, ((RubyRational) obj).getNumerator(), enter_func, leave_func, rec)) return true;
+                if (objectTraverseInner(context, ((RubyRational) obj).getDenominator(), enter_func, leave_func, rec)) return true;
+                break;
+            case COMPLEX:
+                if (objectTraverseInner(context, ((RubyComplex) obj).real(context), enter_func, leave_func, rec)) return true;
+                if (objectTraverseInner(context, ((RubyComplex) obj).image(context), enter_func, leave_func, rec)) return true;
+                break;
 
 //            case DATA:
 ////            case T_IMEMO:
