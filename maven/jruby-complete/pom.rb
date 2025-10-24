@@ -41,8 +41,14 @@ project 'JRuby Complete' do
              mainClass: 'org.jruby.main.Main'
            },
            manifestEntries: {
-             "Automatic-Module-Name": 'org.jruby.complete',
-             "Add-Opens": 'java.base/java.io java.base/java.nio.channels java.base/sun.nio.ch java.management/sun.management'
+             # Module name for JRuby
+             'Automatic-Module-Name' => 'org.jruby.complete',
+
+             # Open requested packages when not running as a module (i.e. JRuby is on classpath or -jar main jar)
+             'Add-Opens' => 'java.base/java.io java.base/java.nio.channels java.base/sun.nio.ch java.management/sun.management',
+
+             # Enable native access for JRuby and classpath classes when run not as a module
+             'Enable-Native-Access' => 'ALL-UNNAMED',
            }
          },
          instructions: {
