@@ -121,7 +121,7 @@ public class RespondToSite extends MutableCallSite {
                     .invoke(NormalInvokeSite.bootstrap(lookup(), "invoke:" + JavaNameMangler.mangleMethodName("respond_to?"), type().appendParameterTypes(IRubyObject.class), 0, 0, file, line).dynamicInvoker());
         }
 
-        MethodHandle guardedtarget = typeCheck(target, Signature.from(type().returnType(), type().parameterArray(), "context", "self"), self, self.getMetaClass(), getTarget());
+        MethodHandle guardedtarget = typeCheck(target, Signature.from(type().returnType(), type().parameterArray(), "context", "caller", "self"), self, self.getMetaClass(), getTarget());
         guardedtarget = InvokeSite.switchPoint(switchPoint, getTarget(), guardedtarget);
 
         setTarget(guardedtarget);
