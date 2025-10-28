@@ -69,7 +69,7 @@ public class RespondToSite extends MutableCallSite {
         if (!InvokeSite.methodMissing(entry.method)) {
             if (entry.method.isBuiltin()) {
                 // standard respond_to, check if method is naturally defined (not via respond_to_missing?)
-                boolean respondsTo = self.getMetaClass().respondsToMethod(rawValue, false);
+                boolean respondsTo = self.getMetaClass().respondsToMethod(rawValue, true);
                 if (respondsTo) {
                     // cache result; method table changes will invalidate this whole thing
                     target = Binder.from(type())
@@ -103,7 +103,7 @@ public class RespondToSite extends MutableCallSite {
         if (!InvokeSite.methodMissing(entry.method, "respond_to?", CallType.NORMAL, caller)) {
             if (entry.method.isBuiltin()) {
                 // standard respond_to, check if method is naturally defined (not via respond_to_missing?)
-                boolean respondsTo = self.getMetaClass().respondsToMethod(rawValue, false);
+                boolean respondsTo = self.getMetaClass().respondsToMethod(rawValue, true);
                 if (respondsTo) {
                     // cache result; method table changes will invalidate this whole thing
                     target = Binder.from(type())
