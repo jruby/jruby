@@ -1,3 +1,4 @@
+# GH-3155
 describe "Array#map with delete inside the loop" do
   it "must not produce invalid array contents" do
     array = [1, 2, 3]
