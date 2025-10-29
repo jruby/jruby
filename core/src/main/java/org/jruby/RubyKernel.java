@@ -540,7 +540,7 @@ public class RubyKernel {
                 throw runtime.newArgumentError("invalid value for Float(): " + object.inspect());
             }
 
-            if (bytes.startsWith(ZEROx)) { // startsWith("0x")
+            if (isHexValue(bytes)) {
                 if (bytes.indexOf('p') != -1 || bytes.indexOf('P') != -1) {
                     return runtime.newFloat(parseHexidecimalExponentString2(runtime, bytes));
                 }
@@ -565,6 +565,12 @@ public class RubyKernel {
         if (!exception) return runtime.getNil();
 
         return TypeConverter.handleUncoercibleObject(runtime, object, runtime.getFloat(), true);
+    }
+
+    static boolean isHexValue(ByteList bytes) {
+        int length = bytes.getRealSize();
+        int index = length >= 1 && bytes.get(0) == '-' ? 1 : 0;
+        return length >= index + 2 && bytes.get(index) == '0' && bytes.get(index + 1) == 'x' || bytes.get(index + 1) == 'X';
     }
 
     static RubyFloat new_float(final Ruby runtime, RubyInteger num) {
