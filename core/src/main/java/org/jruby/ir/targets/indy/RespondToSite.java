@@ -111,27 +111,26 @@ public class RespondToSite extends MutableCallSite {
         * respond_to? is undefined and respond_to_missing? is defined
          */
         CacheEntry entry = selfClass.searchWithCache("respond_to?");
-        boolean respondToDefined = respondToDefined(caller, entry);
-        if (respondToDefined) {
+        if (respondToDefined(caller, entry)) {
             if (respondToBuiltin(entry)) {
-                if (isRespondsToMethod(selfClass)) {
+                if (respondsToMethod(selfClass)) {
                     // defined, built-in, and returns true = true result
                     return trueResult(context);
-                } else {
-                    // defined, built-in, and returns false = check respond_to_missing?
-                    return rsmOrDefault(context, caller, selfClass);
                 }
-            } else {
-                // defined but not built-in = false result
-                return defaultRespondTo(context);
+
+                // defined, built-in, and returns false = check respond_to_missing?
+                return rsmOrFalse(context, caller, selfClass);
             }
-        } else {
-            // undefined = check respond_to_missing?
-            return rsmOrDefault(context, caller, selfClass);
+
+            // defined but not built-in = false result
+            return defaultRespondTo(context);
         }
+
+        // respond_to? undefined = check respond_to_missing?
+        return rsmOrFalse(context, caller, selfClass);
     }
 
-    private boolean isRespondsToMethod(RubyClass selfClass) {
+    private boolean respondsToMethod(RubyClass selfClass) {
         return selfClass.respondsToMethod(rawValue, true);
     }
 
@@ -139,14 +138,13 @@ public class RespondToSite extends MutableCallSite {
         return entry.method.isBuiltin();
     }
 
-    private MethodHandle rsmOrDefault(ThreadContext context, IRubyObject caller, RubyClass selfClass) {
-        MethodHandle target;
-        if (!respondToMissingDefined(caller, selfClass)) {
-            target = falseResult(context);
-        } else {
-            target = defaultRespondTo(context);
+    private MethodHandle rsmOrFalse(ThreadContext context, IRubyObject caller, RubyClass selfClass) {
+        if (respondToMissingDefined(caller, selfClass)) {
+            return defaultRespondTo(context);
         }
-        return target;
+
+        return falseResult(context);
+
     }
 
     private MethodHandle falseResult(ThreadContext context) {
@@ -179,13 +177,21 @@ public class RespondToSite extends MutableCallSite {
     }
 
     private static boolean respondToDefined(IRubyObject caller, CacheEntry entry) {
-        return InvokeSite.methodMissing(entry.method, "respond_to?", CallType.NORMAL, caller);
+        if (InvokeSite.methodMissing(entry.method, "respond_to?", CallType.NORMAL, caller)) {
+            return false;
+        }
+
+        return true;
     }
 
     private static boolean respondToMissingDefined(IRubyObject caller, RubyClass selfClass) {
         CacheEntry entry = selfClass.searchWithCache("respond_to_missing?");
 
-        return InvokeSite.methodMissing(entry.method, "respond_to_missing?", CallType.NORMAL, caller);
+        if (InvokeSite.methodMissing(entry.method, "respond_to_missing?", CallType.NORMAL, caller)) {
+            return false;
+        }
+
+        return true;
     }
 
     public static MethodHandle typeCheck(MethodHandle target, Signature signature, IRubyObject self, RubyModule testClass, MethodHandle fallback) {
