@@ -420,8 +420,6 @@ public class RubyKernel {
         return (RubyFloat) new_float(recv.getRuntime().getCurrentContext(), object, true);
     }
 
-    private static final ByteList ZEROx = new ByteList(new byte[] { '0','x' }, false);
-
     public static RubyFloat new_float(final Ruby runtime, IRubyObject object) {
         return (RubyFloat) new_float(runtime.getCurrentContext(), object, true);
     }
