@@ -455,9 +455,6 @@ public class RubyKernel {
         return (RubyFloat) new_float(((RubyBasicObject) recv).getCurrentContext(), object, true);
     }
 
-    private static final ByteList ZEROx = new ByteList(new byte[] { '0','x' }, false);
-
-    @Deprecated(since = "10.0.0.0")
     public static RubyFloat new_float(final Ruby runtime, IRubyObject object) {
         return (RubyFloat) new_float(runtime.getCurrentContext(), object, true);
     }
@@ -580,7 +577,7 @@ public class RubyKernel {
                 throw argumentError(context, "invalid value for Float(): " + object.inspect(context));
             }
 
-            if (bytes.startsWith(ZEROx)) { // startsWith("0x")
+            if (isHexValue(bytes)) {
                 if (bytes.indexOf('p') != -1 || bytes.indexOf('P') != -1) {
                     return asFloat(context, parseHexidecimalExponentString2(context, bytes));
                 }
@@ -610,6 +607,19 @@ public class RubyKernel {
     static RubyFloat new_float(ThreadContext context, RubyInteger num) {
         return asFloat(context, num instanceof RubyBignum big ?
                 RubyBignum.big2dbl(big) : num.asDouble(context));
+    }
+
+    static RubyFloat new_float(final Ruby runtime, RubyInteger num) {
+        if (num instanceof RubyBignum) {
+            return RubyFloat.newFloat(runtime, RubyBignum.big2dbl((RubyBignum) num));
+        }
+        return RubyFloat.newFloat(runtime, num.getDoubleValue());
+    }
+
+    static boolean isHexValue(ByteList bytes) {
+        int length = bytes.getRealSize();
+        int index = length >= 1 && bytes.get(0) == '-' ? 1 : 0;
+        return length >= index + 2 && bytes.get(index) == '0' && (bytes.get(index + 1) == 'x' || bytes.get(index + 1) == 'X');
     }
 
     @JRubyMethod(name = "Hash", required = 1, module = true, visibility = PRIVATE)

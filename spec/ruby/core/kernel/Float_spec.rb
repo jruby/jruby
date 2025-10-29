@@ -227,6 +227,9 @@ describe :kernel_float, shared: true do
   context "for hexadecimal literals" do
     it "interprets the 0x prefix as hexadecimal" do
       @object.send(:Float, "0x10").should == 16.0
+      @object.send(:Float, "0X10").should == 16.0
+      @object.send(:Float, "-0x10").should == -16.0
+      @object.send(:Float, "-0X10").should == -16.0
       @object.send(:Float, "0x0F").should == 15.0
       @object.send(:Float, "0x0f").should == 15.0
     end
