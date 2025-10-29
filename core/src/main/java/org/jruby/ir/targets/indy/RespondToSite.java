@@ -3,9 +3,9 @@ package org.jruby.ir.targets.indy;
 import com.headius.invokebinder.Binder;
 import com.headius.invokebinder.Signature;
 import com.headius.invokebinder.SmartHandle;
+import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
-import org.jruby.api.Convert;
 import org.jruby.ir.targets.simple.NormalInvokeSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
@@ -40,7 +40,7 @@ public class RespondToSite extends MutableCallSite {
     private final String encoding;
     private final String file;
     private final int line;
-    private RubySymbol methodCached;
+    private final Signature signature;
 
     public RespondToSite(MethodType type, String rawValue, String encoding, String file, int line) {
         super(type);
@@ -49,6 +49,12 @@ public class RespondToSite extends MutableCallSite {
         this.encoding = encoding;
         this.file = file;
         this.line = line;
+
+        signature = switch (type.parameterCount()) {
+            case 2 -> Signature.from(type().returnType(), type().parameterArray(), "context", "self");
+            case 3 -> Signature.from(type().returnType(), type().parameterArray(), "context", "caller", "self");
+            default -> throw new IllegalArgumentException("invalid respond_to site: " + type);
+        };
     }
 
     public static final Handle RESPOND_TO_BOOTSTRAP = Bootstrap.getBootstrapHandle("respondToBootstrap", RespondToSite.class, sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, String.class, String.class, int.class));
@@ -62,78 +68,129 @@ public class RespondToSite extends MutableCallSite {
     }
 
     public IRubyObject respondToFallback(ThreadContext context, IRubyObject self) throws Throwable {
-        SwitchPoint switchPoint = (SwitchPoint) self.getMetaClass().getInvalidator().getData();
-        CacheEntry entry = self.getMetaClass().searchWithCache("respond_to?");
-        MethodHandle target = null;
+        RubyClass selfClass = self.getMetaClass();
+        SwitchPoint switchPoint = (SwitchPoint) selfClass.getInvalidator().getData();
 
-        if (!InvokeSite.methodMissing(entry.method)) {
-            if (entry.method.isBuiltin()) {
-                // standard respond_to, check if method is naturally defined (not via respond_to_missing?)
-                boolean respondsTo = self.getMetaClass().respondsToMethod(rawValue, true);
-                if (respondsTo) {
-                    // cache result; method table changes will invalidate this whole thing
-                    target = Binder.from(type())
-                            .dropAll()
-                            .append(context.tru)
-                            .identity();
-                }
-            }
-        }
+        MethodHandle target = respondToTarget(context, self, selfClass);
 
-        if (target == null) {
-            RubySymbol id = SymbolObjectSite.constructSymbolFromRaw(context, rawValue, encoding);
-            target = Binder.from(type())
-                    .append(IRubyObject.class, id)
-                    .invoke(SelfInvokeSite.bootstrap(lookup(), "invokeFunctional:" + JavaNameMangler.mangleMethodName("respond_to?"), type().appendParameterTypes(IRubyObject.class), 0, 0, file, line).dynamicInvoker());
-        }
-
-        MethodHandle guardedtarget = typeCheck(target, Signature.from(type().returnType(), type().parameterArray(), "context", "self"), self, self.getMetaClass(), getTarget());
-        guardedtarget = InvokeSite.switchPoint(switchPoint, getTarget(), guardedtarget);
-
-        setTarget(guardedtarget);
+        guardAndSetTarget(self, target, selfClass, switchPoint);
 
         return (IRubyObject) target.invokeExact(context, self);
     }
 
     public IRubyObject respondToFallback(ThreadContext context, IRubyObject caller, IRubyObject self) throws Throwable {
-        SwitchPoint switchPoint = (SwitchPoint) self.getMetaClass().getInvalidator().getData();
-        CacheEntry entry = self.getMetaClass().searchWithCache("respond_to?");
-        MethodHandle target = null;
+        RubyClass selfClass = self.getMetaClass();
+        SwitchPoint switchPoint = (SwitchPoint) selfClass.getInvalidator().getData();
 
-        if (!InvokeSite.methodMissing(entry.method, "respond_to?", CallType.NORMAL, caller)) {
-            if (entry.method.isBuiltin()) {
-                // standard respond_to, check if method is naturally defined (not via respond_to_missing?)
-                boolean respondsTo = self.getMetaClass().respondsToMethod(rawValue, true);
-                if (respondsTo) {
-                    // cache result; method table changes will invalidate this whole thing
-                    target = Binder.from(type())
-                            .dropAll()
-                            .append(context.tru)
-                            .identity();
-                }
-            }
-        }
+        MethodHandle target = respondToTarget(context, caller, selfClass);
 
-        if (target == null) {
-            RubySymbol id = SymbolObjectSite.constructSymbolFromRaw(context, rawValue, encoding);
-            target = Binder.from(type())
-                    .append(IRubyObject.class, id)
-                    .invoke(NormalInvokeSite.bootstrap(lookup(), "invoke:" + JavaNameMangler.mangleMethodName("respond_to?"), type().appendParameterTypes(IRubyObject.class), 0, 0, file, line).dynamicInvoker());
-        }
-
-        MethodHandle guardedtarget = typeCheck(target, Signature.from(type().returnType(), type().parameterArray(), "context", "caller", "self"), self, self.getMetaClass(), getTarget());
-        guardedtarget = InvokeSite.switchPoint(switchPoint, getTarget(), guardedtarget);
-
-        setTarget(guardedtarget);
+        guardAndSetTarget(self, target, selfClass, switchPoint);
 
         return (IRubyObject) target.invokeExact(context, caller, self);
     }
 
+    private void guardAndSetTarget(IRubyObject self, MethodHandle target, RubyClass selfClass, SwitchPoint switchPoint) {
+        MethodHandle guardedtarget = typeCheck(target, signature, self, selfClass, getTarget());
+        guardedtarget = InvokeSite.switchPoint(switchPoint, getTarget(), guardedtarget);
+
+        setTarget(guardedtarget);
+    }
+
+    private MethodHandle respondToTarget(ThreadContext context, IRubyObject caller, RubyClass selfClass) {
+        /*
+        We can cache the respond_to? result iff:
+
+        * it is a literal method name (determined at compile time)
+        * AND respond_to? is defined AND builtin AND returns true for the method (true result cached)
+        * OR respond_to? is undefined and respond_to_missing? is undefined (false result cached)
+
+        We cannot cache a result if:
+
+        * respond_to? is not the built-in version
+        * respond_to? is the built-in version but returns false and respond_to_missing? is defined
+        * respond_to? is undefined and respond_to_missing? is defined
+         */
+        CacheEntry entry = selfClass.searchWithCache("respond_to?");
+        boolean respondToDefined = respondToDefined(caller, entry);
+        if (respondToDefined) {
+            if (respondToBuiltin(entry)) {
+                if (isRespondsToMethod(selfClass)) {
+                    // defined, built-in, and returns true = true result
+                    return trueResult(context);
+                } else {
+                    // defined, built-in, and returns false = check respond_to_missing?
+                    return rsmOrDefault(context, caller, selfClass);
+                }
+            } else {
+                // defined but not built-in = false result
+                return defaultRespondTo(context);
+            }
+        } else {
+            // undefined = check respond_to_missing?
+            return rsmOrDefault(context, caller, selfClass);
+        }
+    }
+
+    private boolean isRespondsToMethod(RubyClass selfClass) {
+        return selfClass.respondsToMethod(rawValue, true);
+    }
+
+    private static boolean respondToBuiltin(CacheEntry entry) {
+        return entry.method.isBuiltin();
+    }
+
+    private MethodHandle rsmOrDefault(ThreadContext context, IRubyObject caller, RubyClass selfClass) {
+        MethodHandle target;
+        if (!respondToMissingDefined(caller, selfClass)) {
+            target = falseResult(context);
+        } else {
+            target = defaultRespondTo(context);
+        }
+        return target;
+    }
+
+    private MethodHandle falseResult(ThreadContext context) {
+        Binder binder = Binder.from(type());
+        MethodHandle target;
+        target = binder
+                .dropAll()
+                .append(context.fals)
+                .identity();
+        return target;
+    }
+
+    private MethodHandle trueResult(ThreadContext context) {
+        MethodHandle target;
+        target = Binder.from(type())
+                .dropAll()
+                .append(context.tru)
+                .identity();
+        return target;
+    }
+
+    private MethodHandle defaultRespondTo(ThreadContext context) {
+        Binder binder = Binder.from(type());
+        MethodHandle target;
+        RubySymbol id = SymbolObjectSite.constructSymbolFromRaw(context, rawValue, encoding);
+        target = binder
+                .append(IRubyObject.class, id)
+                .invoke(NormalInvokeSite.bootstrap(lookup(), "invoke:" + JavaNameMangler.mangleMethodName("respond_to?"), type().appendParameterTypes(IRubyObject.class), 0, 0, file, line).dynamicInvoker());
+        return target;
+    }
+
+    private static boolean respondToDefined(IRubyObject caller, CacheEntry entry) {
+        return InvokeSite.methodMissing(entry.method, "respond_to?", CallType.NORMAL, caller);
+    }
+
+    private static boolean respondToMissingDefined(IRubyObject caller, RubyClass selfClass) {
+        CacheEntry entry = selfClass.searchWithCache("respond_to_missing?");
+
+        return InvokeSite.methodMissing(entry.method, "respond_to_missing?", CallType.NORMAL, caller);
+    }
+
     public static MethodHandle typeCheck(MethodHandle target, Signature signature, IRubyObject self, RubyModule testClass, MethodHandle fallback) {
-        MethodHandle result;
         SmartHandle test = InvokeSite.testTarget(signature, self, testClass);
 
-        result = MethodHandles.guardWithTest(test.handle(), target, fallback);
-        return result;
+        return MethodHandles.guardWithTest(test.handle(), target, fallback);
     }
 }
