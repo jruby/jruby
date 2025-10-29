@@ -222,6 +222,18 @@ describe :kernel_float, shared: true do
     end
   end
 
+  describe "for hexidecimal literals" do
+    it "interprets positive hex value" do
+      @object.send(:Float, "0x10").should == 16.0
+      @object.send(:Float, "0X10").should == 16.0
+    end
+
+    it "interprets negative hex value" do
+      @object.send(:Float, "-0x10").should == -16.0
+      @object.send(:Float, "-0X10").should == -16.0
+    end
+  end
+
   describe "for hexadecimal literals with binary exponent" do
     %w(p P).each do |p|
       it "interprets the fractional part (on the left side of '#{p}') in hexadecimal" do
