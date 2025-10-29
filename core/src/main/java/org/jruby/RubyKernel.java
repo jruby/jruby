@@ -568,7 +568,7 @@ public class RubyKernel {
     static boolean isHexValue(ByteList bytes) {
         int length = bytes.getRealSize();
         int index = length >= 1 && bytes.get(0) == '-' ? 1 : 0;
-        return length >= index + 2 && bytes.get(index) == '0' && bytes.get(index + 1) == 'x' || bytes.get(index + 1) == 'X';
+        return length >= index + 2 && bytes.get(index) == '0' && (bytes.get(index + 1) == 'x' || bytes.get(index + 1) == 'X');
     }
 
     static RubyFloat new_float(final Ruby runtime, RubyInteger num) {
