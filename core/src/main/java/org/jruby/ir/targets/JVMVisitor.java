@@ -1272,6 +1272,20 @@ public class JVMVisitor extends IRVisitor {
         } else if (callInstr instanceof OneFloatArgNoBlockCallInstr) {
             oneFloatArgNoBlockCallInstr((OneFloatArgNoBlockCallInstr) callInstr);
             return;
+        } else if (!callInstr.getCallType().isSuper()
+                && !callInstr.isPotentiallyRefined()
+                && callInstr.getId().equals("respond_to?")
+                && callInstr.getArgsCount() == 1
+                && callInstr.getArg1() instanceof Symbol symName) {
+            // we do not check for super calls here because super calls will not have a "respond_to?" name
+            jvmMethod().loadContext();
+            if (!callInstr.getCallType().isSelfCall()) {
+                jvmMethod().loadSelf();
+            }
+            visit(callInstr.getReceiver());
+            jvmMethod().getInvocationCompiler().respondTo(callInstr, symName.getSymbol(), jvm.methodData().scopeField, file);
+            handleCallResult(jvmMethod(), callInstr.getResult());
+            return;
         }
 
         compileCallCommon(jvmMethod(), callInstr);
