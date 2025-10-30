@@ -21,6 +21,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
 import java.lang.invoke.SwitchPoint;
+import java.util.function.Predicate;
 
 import static java.lang.invoke.MethodHandles.lookup;
 import static java.lang.invoke.MethodType.methodType;
@@ -37,31 +38,45 @@ import static org.jruby.util.CodegenUtils.sig;
  * fall back on the invocation logic. No further checking is done and the site is optimized as a normal call from there.
  */
 public class RespondToSite extends MutableCallSite {
+    private static final String RESPOND_TO_MANGLED = JavaNameMangler.mangleMethodName("respond_to?");
+    private static final String SELF_RESPOND_TO_NAME = "callFunctional:" + RESPOND_TO_MANGLED;
+    private static final String NORMAL_RESPOND_TO_NAME = "invoke:" + RESPOND_TO_MANGLED;
+    private static final Predicate<DynamicMethod> METHOD_DEFINED = Predicate.not(DynamicMethod::isUndefined);
+    private final MethodHandles.Lookup lookup;
     private final String rawValue;
     private final String encoding;
     private final String file;
     private final int line;
+    private final boolean hasCaller;
     private final Signature signature;
 
-    public RespondToSite(MethodType type, String rawValue, String encoding, String file, int line) {
+    public RespondToSite(MethodType type, MethodHandles.Lookup lookup, String rawValue, String encoding, String file, int line) {
         super(type);
 
+        this.lookup = lookup;
         this.rawValue = rawValue;
         this.encoding = encoding;
         this.file = file;
         this.line = line;
 
-        signature = switch (type.parameterCount()) {
-            case 2 -> Signature.from(type().returnType(), type().parameterArray(), "context", "self");
-            case 3 -> Signature.from(type().returnType(), type().parameterArray(), "context", "caller", "self");
-            default -> throw new IllegalArgumentException("invalid respond_to site: " + type);
+        switch (type.parameterCount()) {
+            case 2:
+                hasCaller = false;
+                signature = Signature.from(type().returnType(), type().parameterArray(), "context", "self");
+                break;
+            case 3:
+                hasCaller = true;
+                signature = Signature.from(type().returnType(), type().parameterArray(), "context", "caller", "self");
+                break;
+            default:
+                throw new IllegalArgumentException("invalid respond_to site: " + type);
         };
     }
 
     public static final Handle RESPOND_TO_BOOTSTRAP = Bootstrap.getBootstrapHandle("respondToBootstrap", RespondToSite.class, sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, String.class, String.class, int.class));
 
     public static CallSite respondToBootstrap(MethodHandles.Lookup lookup, String name, MethodType methodType, String rawValue, String encoding, String file, int line) {
-        RespondToSite respondToSite = new RespondToSite(methodType, rawValue, encoding, file, line);
+        RespondToSite respondToSite = new RespondToSite(methodType, lookup, rawValue, encoding, file, line);
 
         respondToSite.setTarget(Binder.from(methodType).prepend(respondToSite).invokeVirtualQuiet("respondToFallback"));
 
@@ -72,7 +87,7 @@ public class RespondToSite extends MutableCallSite {
         RubyClass selfClass = self.getMetaClass();
         SwitchPoint switchPoint = (SwitchPoint) selfClass.getInvalidator().getData();
 
-        MethodHandle target = respondToTarget(context, self, selfClass);
+        MethodHandle target = respondToTarget(context, selfClass, METHOD_DEFINED);
 
         guardAndSetTarget(self, target, selfClass, switchPoint);
 
@@ -83,11 +98,16 @@ public class RespondToSite extends MutableCallSite {
         RubyClass selfClass = self.getMetaClass();
         SwitchPoint switchPoint = (SwitchPoint) selfClass.getInvalidator().getData();
 
-        MethodHandle target = respondToTarget(context, caller, selfClass);
+        MethodHandle target =
+                respondToTarget(context, selfClass, (method) -> definedAndVisible(caller, method));
 
         guardAndSetTarget(self, target, selfClass, switchPoint);
 
         return (IRubyObject) target.invokeExact(context, caller, self);
+    }
+
+    private static boolean definedAndVisible(IRubyObject caller, DynamicMethod method) {
+        return !InvokeSite.methodMissing(method, "respond_to?", CallType.NORMAL, caller);
     }
 
     private void guardAndSetTarget(IRubyObject self, MethodHandle target, RubyClass selfClass, SwitchPoint switchPoint) {
@@ -97,7 +117,7 @@ public class RespondToSite extends MutableCallSite {
         setTarget(guardedtarget);
     }
 
-    private MethodHandle respondToTarget(ThreadContext context, IRubyObject caller, RubyClass selfClass) {
+    private MethodHandle respondToTarget(ThreadContext context, RubyClass selfClass, Predicate<DynamicMethod> respondToDefined) {
         /*
         We can cache the respond_to? result iff:
 
@@ -112,7 +132,7 @@ public class RespondToSite extends MutableCallSite {
         * respond_to? is undefined and respond_to_missing? is defined
          */
         CacheEntry entry = selfClass.searchWithCache("respond_to?");
-        if (respondToDefined(caller, entry)) {
+        if (respondToDefined.test(entry.method)) {
             if (respondToBuiltin(entry)) {
                 if (respondsToMethod(selfClass)) {
                     // defined, built-in, and returns true = true result
@@ -120,15 +140,16 @@ public class RespondToSite extends MutableCallSite {
                 }
 
                 // defined, built-in, and returns false = check respond_to_missing?
-                return rsmOrFalse(context, caller, selfClass);
+                return rsmOrFalse(context, selfClass);
             }
 
-            // defined but not built-in = false result
-            return defaultRespondTo(context);
+            // defined but not built-in = fall through to full dispatch
         }
 
-        // respond_to? undefined = check respond_to_missing?
-        return rsmOrFalse(context, caller, selfClass);
+        // all other cases = full dispatch
+        // * defined but not built-in
+        // * not defined
+        return defaultRespondTo(context);
     }
 
     private boolean respondsToMethod(RubyClass selfClass) {
@@ -139,13 +160,12 @@ public class RespondToSite extends MutableCallSite {
         return entry.method.isBuiltin();
     }
 
-    private MethodHandle rsmOrFalse(ThreadContext context, IRubyObject caller, RubyClass selfClass) {
-        if (respondToMissingDefined(caller, selfClass)) {
+    private MethodHandle rsmOrFalse(ThreadContext context, RubyClass selfClass) {
+        if (needsRespondToMissing(selfClass)) {
             return defaultRespondTo(context);
         }
 
         return falseResult(context);
-
     }
 
     private MethodHandle falseResult(ThreadContext context) {
@@ -169,29 +189,27 @@ public class RespondToSite extends MutableCallSite {
 
     private MethodHandle defaultRespondTo(ThreadContext context) {
         Binder binder = Binder.from(type());
-        MethodHandle target;
+        MethodType respondToType = type().appendParameterTypes(IRubyObject.class);
+
         RubySymbol id = SymbolObjectSite.constructSymbolFromRaw(context, rawValue, encoding);
-        target = binder
-                .append(IRubyObject.class, id)
-                .invoke(NormalInvokeSite.bootstrap(lookup(), "invoke:" + JavaNameMangler.mangleMethodName("respond_to?"), type().appendParameterTypes(IRubyObject.class), 0, 0, file, line).dynamicInvoker());
-        return target;
-    }
 
-    private static boolean respondToDefined(IRubyObject caller, CacheEntry entry) {
-        DynamicMethod method = entry.method;
+        binder = binder.append(IRubyObject.class, id);
 
-        if (method.isUndefined() || InvokeSite.methodMissing(method, "respond_to?", CallType.NORMAL, caller)) {
-            return false;
+        CallSite siteInvoker;
+        if (hasCaller) {
+            siteInvoker = NormalInvokeSite.bootstrap(lookup, NORMAL_RESPOND_TO_NAME, respondToType, 0, 0, file, line);
+        } else {
+            siteInvoker = SelfInvokeSite.bootstrap(lookup, SELF_RESPOND_TO_NAME, respondToType, 0, 0, file, line);
         }
 
-        return true;
+        return binder.invoke(siteInvoker.dynamicInvoker());
     }
 
-    private static boolean respondToMissingDefined(IRubyObject caller, RubyClass selfClass) {
+    private static boolean needsRespondToMissing(RubyClass selfClass) {
         CacheEntry entry = selfClass.searchWithCache("respond_to_missing?");
         DynamicMethod method = entry.method;
 
-        if (method.isUndefined() || InvokeSite.methodMissing(method, "respond_to_missing?", CallType.FUNCTIONAL, caller)) {
+        if (method.isUndefined() || method.isBuiltin()) {
             return false;
         }
 
