@@ -23,7 +23,6 @@ import java.lang.invoke.MutableCallSite;
 import java.lang.invoke.SwitchPoint;
 import java.util.function.Predicate;
 
-import static java.lang.invoke.MethodHandles.lookup;
 import static java.lang.invoke.MethodType.methodType;
 import static org.jruby.util.CodegenUtils.sig;
 
@@ -41,7 +40,7 @@ public class RespondToSite extends MutableCallSite {
     private static final String RESPOND_TO_MANGLED = JavaNameMangler.mangleMethodName("respond_to?");
     private static final String SELF_RESPOND_TO_NAME = "callFunctional:" + RESPOND_TO_MANGLED;
     private static final String NORMAL_RESPOND_TO_NAME = "invoke:" + RESPOND_TO_MANGLED;
-    private static final Predicate<DynamicMethod> METHOD_DEFINED = Predicate.not(DynamicMethod::isUndefined);
+    private static final Predicate<DynamicMethod> METHOD_DEFINED_AND_BUILTIN = Predicate.not(DynamicMethod::isUndefined).and(DynamicMethod::isBuiltin);
     private final MethodHandles.Lookup lookup;
     private final String rawValue;
     private final String encoding;
@@ -62,11 +61,11 @@ public class RespondToSite extends MutableCallSite {
         switch (type.parameterCount()) {
             case 2:
                 hasCaller = false;
-                signature = Signature.from(type().returnType(), type().parameterArray(), "context", "self");
+                signature = Signature.from(type(), "context", "self");
                 break;
             case 3:
                 hasCaller = true;
-                signature = Signature.from(type().returnType(), type().parameterArray(), "context", "caller", "self");
+                signature = Signature.from(type(), "context", "caller", "self");
                 break;
             default:
                 throw new IllegalArgumentException("invalid respond_to site: " + type);
@@ -87,7 +86,7 @@ public class RespondToSite extends MutableCallSite {
         RubyClass selfClass = self.getMetaClass();
         SwitchPoint switchPoint = (SwitchPoint) selfClass.getInvalidator().getData();
 
-        MethodHandle target = respondToTarget(context, selfClass, METHOD_DEFINED);
+        MethodHandle target = respondToTarget(context, selfClass, METHOD_DEFINED_AND_BUILTIN);
 
         guardAndSetTarget(self, target, selfClass, switchPoint);
 
@@ -99,15 +98,15 @@ public class RespondToSite extends MutableCallSite {
         SwitchPoint switchPoint = (SwitchPoint) selfClass.getInvalidator().getData();
 
         MethodHandle target =
-                respondToTarget(context, selfClass, (method) -> definedAndVisible(caller, method));
+                respondToTarget(context, selfClass, (method) -> definedAndVisibleAndBuiltin(caller, method));
 
         guardAndSetTarget(self, target, selfClass, switchPoint);
 
         return (IRubyObject) target.invokeExact(context, caller, self);
     }
 
-    private static boolean definedAndVisible(IRubyObject caller, DynamicMethod method) {
-        return !InvokeSite.methodMissing(method, "respond_to?", CallType.NORMAL, caller);
+    private static boolean definedAndVisibleAndBuiltin(IRubyObject caller, DynamicMethod method) {
+        return !InvokeSite.methodMissing(method, "respond_to?", CallType.NORMAL, caller) && method.isBuiltin();
     }
 
     private void guardAndSetTarget(IRubyObject self, MethodHandle target, RubyClass selfClass, SwitchPoint switchPoint) {
@@ -117,55 +116,38 @@ public class RespondToSite extends MutableCallSite {
         setTarget(guardedtarget);
     }
 
-    private MethodHandle respondToTarget(ThreadContext context, RubyClass selfClass, Predicate<DynamicMethod> respondToDefined) {
+    private MethodHandle respondToTarget(ThreadContext context, RubyClass selfClass, Predicate<DynamicMethod> respondToBuiltin) {
         /*
         We can cache the respond_to? result iff:
 
         * it is a literal method name (determined at compile time)
         * AND respond_to? is defined AND builtin AND returns true for the method (true result cached)
-        * OR respond_to? is undefined and respond_to_missing? is undefined (false result cached)
+        * OR respond_to? is defined AND builtin AND false AND respond_to_missing? is undefined (false result cached)
 
         We cannot cache a result if:
 
-        * respond_to? is not the built-in version
-        * respond_to? is the built-in version but returns false and respond_to_missing? is defined
-        * respond_to? is undefined and respond_to_missing? is defined
+        * respond_to? is not defined (call proceeds to method_missing)
+        * respond_to? is not the built-in version (can't predict behavior)
+        * respond_to? is the built-in version but returns false and respond_to_missing? is defined (fall back on r_t_m?)
          */
         CacheEntry entry = selfClass.searchWithCache("respond_to?");
-        if (respondToDefined.test(entry.method)) {
-            if (respondToBuiltin(entry)) {
-                if (respondsToMethod(selfClass)) {
-                    // defined, built-in, and returns true = true result
-                    return trueResult(context);
-                }
+        DynamicMethod method = entry.method;
 
-                // defined, built-in, and returns false = check respond_to_missing?
-                return rsmOrFalse(context, selfClass);
+        if (respondToBuiltin.test(method)) {
+            if (respondsToMethod(selfClass)) {
+                return trueResult(context);
             }
 
-            // defined but not built-in = fall through to full dispatch
+            if (!needsRespondToMissing(selfClass)) {
+                return falseResult(context);
+            }
         }
 
-        // all other cases = full dispatch
-        // * defined but not built-in
-        // * not defined
         return defaultRespondTo(context);
     }
 
     private boolean respondsToMethod(RubyClass selfClass) {
         return selfClass.respondsToMethod(rawValue, true);
-    }
-
-    private static boolean respondToBuiltin(CacheEntry entry) {
-        return entry.method.isBuiltin();
-    }
-
-    private MethodHandle rsmOrFalse(ThreadContext context, RubyClass selfClass) {
-        if (needsRespondToMissing(selfClass)) {
-            return defaultRespondTo(context);
-        }
-
-        return falseResult(context);
     }
 
     private MethodHandle falseResult(ThreadContext context) {
