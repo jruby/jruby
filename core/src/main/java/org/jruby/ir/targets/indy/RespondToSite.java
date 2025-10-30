@@ -6,6 +6,7 @@ import com.headius.invokebinder.SmartHandle;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.ir.targets.simple.NormalInvokeSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
@@ -177,7 +178,9 @@ public class RespondToSite extends MutableCallSite {
     }
 
     private static boolean respondToDefined(IRubyObject caller, CacheEntry entry) {
-        if (InvokeSite.methodMissing(entry.method, "respond_to?", CallType.NORMAL, caller)) {
+        DynamicMethod method = entry.method;
+
+        if (method.isUndefined() || InvokeSite.methodMissing(method, "respond_to?", CallType.NORMAL, caller)) {
             return false;
         }
 
@@ -186,8 +189,9 @@ public class RespondToSite extends MutableCallSite {
 
     private static boolean respondToMissingDefined(IRubyObject caller, RubyClass selfClass) {
         CacheEntry entry = selfClass.searchWithCache("respond_to_missing?");
+        DynamicMethod method = entry.method;
 
-        if (InvokeSite.methodMissing(entry.method, "respond_to_missing?", CallType.NORMAL, caller)) {
+        if (method.isUndefined() || InvokeSite.methodMissing(method, "respond_to_missing?", CallType.FUNCTIONAL, caller)) {
             return false;
         }
 
