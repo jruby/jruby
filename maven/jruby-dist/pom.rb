@@ -28,24 +28,33 @@ project 'JRuby Dist' do
       execute_goals('run',
                     id: 'unpack-ri-docs',
                     configuration: [xml('<target>
+
           <!-- Create download directory -->
           <mkdir dir="${project.build.directory}/rdoc/downloads"/>
 
           <!-- Download the .deb file -->
-          <get src="http://ftp.us.debian.org/debian/pool/main/r/ruby3.4/ruby3.4-doc_3.4.5-1~exp1_all.deb"
-               dest="${project.build.directory}/rdoc/downloads/ruby3.4-doc.deb"
-               skipexisting="true"/>
+          <ftp action="get" server="rsync.osuosl.org" passive="yes" userid="anonymous" password=""
+               remotedir="/debian/pool/main/r/ruby3.4" depends="yes">
+            <fileset dir="${project.build.directory}/rdoc/downloads">
+              <include name="ruby3.4-doc*.deb"/>
+            </fileset>
+          </ftp>
 
-          <!-- Extract .deb (which is an ar archive) -->
+          <!-- Move the .deb file to a simple name (should be only one or this will fail) -->
+          <move tofile="${project.build.directory}/rdoc/downloads/rubydoc.deb">
+            <fileset dir="${project.build.directory}/rdoc/downloads" includes="ruby3.4-doc*.deb"/>
+          </move>
+
+          <!-- Extract .deb using ar -->
           <exec executable="ar" dir="${project.build.directory}/rdoc/downloads">
             <arg value="x"/>
-            <arg value="ruby3.4-doc.deb"/>
+            <arg value="rubydoc.deb"/>
           </exec>
 
           <!-- Create output directory -->
           <mkdir dir="${project.build.directory}/rdoc/unpacked"/>
 
-          <!-- Unpack data.tar.gz or data.tar.xz -->
+          <!-- Unpack data.tar.xz -->
           <exec executable="tar" dir="${project.build.directory}/rdoc/downloads">
             <arg value="-xf"/>
             <arg value="data.tar.xz"/>
