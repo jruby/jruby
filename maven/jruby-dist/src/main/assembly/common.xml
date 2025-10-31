@@ -45,6 +45,13 @@
       </includes>
     </fileSet>
     <fileSet>
+      <directory>${project.build.directory}/rdoc/unpacked/usr</directory>
+      <outputDirectory>/</outputDirectory>
+      <includes>
+        <include>share/ri/3.4.0/system/**/*</include>
+      </includes>
+    </fileSet>
+    <fileSet>
       <directory>${project.parent.parent.basedir}</directory>
       <outputDirectory>/</outputDirectory>
       <includes>
