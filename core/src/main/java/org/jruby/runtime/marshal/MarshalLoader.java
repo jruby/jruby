@@ -177,8 +177,10 @@ public class MarshalLoader {
             if (encoding != null) {
                 if (object instanceof EncodingCapable) {
                     ((EncodingCapable) object).setEncoding(encoding);
+                } else if (object instanceof RubyEncoding) {
+                    // CRuby marshals Encoding with an encoding instance variable (https://bugs.ruby-lang.org/issues/21658)
                 } else {
-                    throw argumentError(context, str(context.runtime, object, "is not enc_capable"));
+                    throw argumentError(context, str(context.runtime, object, " is not enc_capable"));
                 }
                 if (hasEncoding != null) hasEncoding[0] = true;
             } else if (id.equals(SYMBOL_RUBY2_KEYWORDS_HASH_SPECIAL)) {
