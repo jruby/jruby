@@ -103,7 +103,9 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     plugin(:site, '3.9.1', skipDeploy: 'true')
     plugin 'org.codehaus.mojo:build-helper-maven-plugin:3.2.0'
     plugin 'org.codehaus.mojo:exec-maven-plugin:3.0.0'
-    plugin :antrun, '3.0.0'
+    plugin :antrun, '3.0.0' do
+      dependency groupId: "org.apache.ant", artifactId: "ant-commons-net", version: "1.10.15"
+    end
     plugin :source, '3.2.1'
     plugin :assembly, '3.3.0'
     plugin :install, '3.0.0-M1'
