@@ -585,14 +585,16 @@ public final class Ruby implements Constantizable {
         // init Ruby-based kernel
         initRubyKernel();
 
+        if (this.config.isRactorEnabled()) loadService(context).load("jruby/kernel/ractor.rb", false);
+
         // Define blank modules for feature detection in preludes
-        if (!this.config.isDisableGems()) {
+        if (this.config.isGemsEnabled()) {
             Define.defineModule(context, "Gem");
-            if (!this.config.isDisableErrorHighlight()) {
+            if (this.config.isErrorHighlightEnabled()) {
                 warnings.warn("ErrorHighlight does not currently support JRuby and will not be loaded");
             }
-            if (!this.config.isDisableDidYouMean()) Define.defineModule(context, "DidYouMean");
-            if (!this.config.isDisableSyntaxSuggest()) Define.defineModule(context, "SyntaxSuggest");
+            if (this.config.isDidYouMeanEnabled()) Define.defineModule(context, "DidYouMean");
+            if (this.config.isSyntaxSuggestEnabled()) Define.defineModule(context, "SyntaxSuggest");
         }
 
         // Provide some legacy libraries
