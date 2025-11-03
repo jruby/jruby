@@ -50,6 +50,42 @@
       <includes>
         <include>share/ri/3.4.0/system/**/*</include>
       </includes>
+      <excludes>
+        <exclude>share/ri/3.4.0/system/contributing/**/*</exclude>
+        <exclude>share/ri/3.4.0/system/contributing</exclude>
+        <exclude>share/ri/3.4.0/system/CoreExtensions/**/*</exclude>
+        <exclude>share/ri/3.4.0/system/CoreExtensions</exclude>
+        <exclude>share/ri/3.4.0/system/fatal/**/*</exclude>
+        <exclude>share/ri/3.4.0/system/fatal</exclude>
+        <exclude>share/ri/3.4.0/system/NEWS/**/*</exclude>
+        <exclude>share/ri/3.4.0/system/NEWS</exclude>
+        <exclude>share/ri/3.4.0/system/Prism/**/*</exclude>
+        <exclude>share/ri/3.4.0/system/Prism</exclude>
+        <exclude>share/ri/3.4.0/system/Ractor/**/*</exclude>
+        <exclude>share/ri/3.4.0/system/Ractor</exclude>
+        <exclude>share/ri/3.4.0/system/RactorLocalSingleton/**/*</exclude>
+        <exclude>share/ri/3.4.0/system/RactorLocalSingleton</exclude>
+        <exclude>share/ri/3.4.0/system/rjit/**/*</exclude>
+        <exclude>share/ri/3.4.0/system/rjit</exclude>
+        <exclude>share/ri/3.4.0/system/ruby/**/*</exclude>
+        <exclude>share/ri/3.4.0/system/ruby</exclude>
+        <exclude>share/ri/3.4.0/system/RubyVM/**/*</exclude>
+        <exclude>share/ri/3.4.0/system/RubyVM</exclude>
+        <exclude>share/ri/3.4.0/system/yjit/**/*</exclude>
+        <exclude>share/ri/3.4.0/system/yjit</exclude>
+        <exclude>share/ri/3.4.0/system/page-contributing*</exclude>
+        <exclude>share/ri/3.4.0/system/page-COPYING*</exclude>
+        <exclude>share/ri/3.4.0/system/page-dtrace*</exclude>
+        <exclude>share/ri/3.4.0/system/page-extension*</exclude>
+        <exclude>share/ri/3.4.0/system/page-LEGAL*</exclude>
+        <exclude>share/ri/3.4.0/system/page-maintainers*</exclude>
+        <exclude>share/ri/3.4.0/system/page-memory_view*</exclude>
+        <exclude>share/ri/3.4.0/system/page-NEWS*</exclude>
+        <exclude>share/ri/3.4.0/system/page-ractor*</exclude>
+        <exclude>share/ri/3.4.0/system/page-README*</exclude>
+        <exclude>share/ri/3.4.0/system/page-security*</exclude>
+        <exclude>share/ri/3.4.0/system/page-signals*</exclude>
+      </excludes>
     </fileSet>
     <fileSet>
       <directory>${project.parent.parent.basedir}</directory>
