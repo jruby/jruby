@@ -24,6 +24,46 @@ project 'JRuby Dist' do
                                       outputDirectory: '${project.build.directory}' }])
     end
 
+    plugin :antrun do
+      execute_goals('run',
+                    id: 'unpack-ri-docs',
+                    configuration: [xml('<target>
+
+          <!-- Create download directory -->
+          <mkdir dir="${project.build.directory}/rdoc/downloads"/>
+
+          <!-- Download the .deb file -->
+          <ftp action="get" server="rsync.osuosl.org" passive="yes" userid="anonymous" password=""
+               remotedir="/debian/pool/main/r/ruby3.4" depends="yes">
+            <fileset dir="${project.build.directory}/rdoc/downloads">
+              <include name="ruby3.4-doc*.deb"/>
+            </fileset>
+          </ftp>
+
+          <!-- Move the .deb file to a simple name (should be only one or this will fail) -->
+          <move tofile="${project.build.directory}/rdoc/downloads/rubydoc.deb">
+            <fileset dir="${project.build.directory}/rdoc/downloads" includes="ruby3.4-doc*.deb"/>
+          </move>
+
+          <!-- Extract .deb using ar -->
+          <exec executable="ar" dir="${project.build.directory}/rdoc/downloads">
+            <arg value="x"/>
+            <arg value="rubydoc.deb"/>
+          </exec>
+
+          <!-- Create output directory -->
+          <mkdir dir="${project.build.directory}/rdoc/unpacked"/>
+
+          <!-- Unpack data.tar.xz -->
+          <exec executable="tar" dir="${project.build.directory}/rdoc/downloads">
+            <arg value="-xf"/>
+            <arg value="data.tar.xz"/>
+            <arg value="-C"/>
+            <arg value="${project.build.directory}/rdoc/unpacked"/>
+          </exec>
+        </target>')])
+    end
+
     execute :fix_executable_bits do |ctx|
       Dir[ File.join(ctx.project.build.directory.to_pathname,
                      'META-INF/jruby.home/bin/*') ].each do |f|
