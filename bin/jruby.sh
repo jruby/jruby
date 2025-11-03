@@ -555,16 +555,24 @@ if [ -f "$JAVA_HOME/release" ]; then
     esac
 fi
 
+# Get main class and version from .jruby.release
+
+# shellcheck source=/dev/null
+# shellcheck disable=2153  # Assigned in sourced file
+if [ -f "$jruby_release_file" ] && . "$jruby_release_file"; then
+    java_class=$JRUBY_MAIN
+    jruby_version=$JRUBY_VERSION
+    minimum_java_version=$JRUBY_MINIMUM_JAVA_VERSION
+else
+    # Only 9.4.14.0 and earlier will have shipped without a .jruby.release file, so fall back on 9.4 defaults
+    java_class=org.jruby.Main
+    jruby_version=unspecified
+    minimum_java_version=8
+fi
+
 # Default java_runtime_version to $java_version
 : "${java_runtime_version:=$java_version}"
 
-# shellcheck source=/dev/null
-if [ -f "$JRUBY_HOME/bin/.java-version" ] && . "$JRUBY_HOME/bin/.java-version" && [ "${JRUBY_MINIMUM_JAVA_VERSION-}" ]; then
-    minimum_java_version=$JRUBY_MINIMUM_JAVA_VERSION
-else
-    # Only 9.4.12.0 and earlier will have shipped without a .java-version file, so fall back on minimum of 8
-    minimum_java_version=8
-fi
 add_log "Detected Java version: $java_version"
 add_log "Detected Java runtime version: $java_runtime_version"
 
@@ -644,18 +652,6 @@ JAVA_OPTS="$JAVA_OPTS_TEMP"
 # ----- Set up the JRuby class/module path ------------------------------------
 
 CP_DELIMITER=":"
-
-# Get main class and version from .jruby.release
-
-# shellcheck source=/dev/null
-# shellcheck disable=2153  # Assigned in sourced file
-if [ -f "$jruby_release_file" ] && . "$jruby_release_file"; then
-    java_class=$JRUBY_MAIN
-    jruby_version=$JRUBY_VERSION
-else
-    java_class=org.jruby.main
-    jruby_version=unspecified
-fi
 
 # Find main jruby jar and add it to the classpath
 jruby_jar=
