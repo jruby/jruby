@@ -3,6 +3,7 @@ package org.jruby.specialized;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyArrayNative;
 import org.jruby.RubyClass;
 import org.jruby.RubyString;
 import org.jruby.javasupport.JavaUtil;
@@ -61,7 +62,7 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
     }
 
     @Override
-    public RubyArray<?> aryDup() {
+    public RubyArrayNative<?> aryDup() {
         if (!packed()) return super.aryDup();
         return new RubyArrayOneObject(getRuntime().getArray(), this);
     }
@@ -104,7 +105,7 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
     }
 
     @Override
-    protected RubyArray<?> dupImpl(Ruby runtime, RubyClass metaClass) {
+    protected RubyArrayNative<?> dupImpl(Ruby runtime, RubyClass metaClass) {
         if (!packed()) return super.dupImpl(runtime, metaClass);
         return new RubyArrayOneObject(metaClass, this);
     }
@@ -268,7 +269,7 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
     }
 
     @Override
-    protected RubyArray<?> makeShared() {
+    protected RubyArrayNative<?> makeShared() {
         if (!packed()) return super.makeShared();
 
         return new RubyArrayOneObject(this);

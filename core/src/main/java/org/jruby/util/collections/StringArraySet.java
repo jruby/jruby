@@ -33,6 +33,7 @@ import java.util.HashSet;
 import java.util.Set;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyArrayNative;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyString;
 import org.jruby.runtime.Block;
@@ -45,7 +46,7 @@ import static org.jruby.api.Create.newString;
 /**
  * An RubyArray that maintains an O(1) Set for fast include? operations.
  */
-public class StringArraySet extends RubyArray {
+public class StringArraySet extends RubyArrayNative {
 
     private final Set<String> set;
 

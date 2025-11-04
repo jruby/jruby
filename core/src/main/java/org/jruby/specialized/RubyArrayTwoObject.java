@@ -3,6 +3,7 @@ package org.jruby.specialized;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyArrayNative;
 import org.jruby.RubyClass;
 import org.jruby.RubyComparable;
 import org.jruby.RubyFixnum;
@@ -73,7 +74,7 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
     }
 
     @Override
-    public RubyArray<?> aryDup() {
+    public RubyArrayNative<?> aryDup() {
         if (!packed()) return super.aryDup();
         return new RubyArrayTwoObject(getRuntime().getArray(), this);
     }
@@ -118,7 +119,7 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
     }
 
     @Override
-    protected RubyArray<?> dupImpl(Ruby runtime, RubyClass metaClass) {
+    protected RubyArrayNative<?> dupImpl(Ruby runtime, RubyClass metaClass) {
         if (!packed()) return super.dupImpl(runtime, metaClass);
         return new RubyArrayTwoObject(metaClass, this);
     }
@@ -313,7 +314,7 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
 
         if (beg > 2 || beg < 0 || len < 0) return runtime.getNil();
 
-        if (len == 0 || beg == 2) return new RubyArray<>(runtime, metaClass, IRubyObject.NULL_ARRAY);
+        if (len == 0 || beg == 2) return RubyArray.newEmptyArray(runtime, metaClass);
 
         if (beg == 0) {
             if (len == 1) return new RubyArrayOneObject(metaClass, car);
@@ -379,7 +380,7 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
     }
 
     @Override
-    protected RubyArray<?> makeShared() {
+    protected RubyArrayNative<?> makeShared() {
         if (!packed()) return super.makeShared();
 
         return new RubyArrayTwoObject(this);

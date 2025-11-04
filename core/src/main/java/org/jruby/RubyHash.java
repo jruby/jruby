@@ -1086,7 +1086,7 @@ public class RubyHash extends RubyObject implements Map {
     public RubyArray to_a(ThreadContext context) {
         final Ruby runtime = context.runtime;
         try {
-            final RubyArray result = RubyArray.newBlankArrayInternal(runtime, size);
+            final RubyArray result = RubyArrayNative.newBlankArrayInternal(runtime, size);
 
             visitAll(context, RubyHash.StoreKeyValueVisitor, result);
 
@@ -1924,7 +1924,7 @@ public class RubyHash extends RubyObject implements Map {
     @JRubyMethod(name = "keys")
     public RubyArray keys(final ThreadContext context) {
         try {
-            RubyArray keys = RubyArray.newBlankArrayInternal(context.runtime, size());
+            RubyArray keys = RubyArrayNative.newBlankArrayInternal(context.runtime, size());
 
             visitAll(context, StoreKeyVisitor, keys);
 
@@ -1952,7 +1952,7 @@ public class RubyHash extends RubyObject implements Map {
     @JRubyMethod(name = "values")
     public RubyArray values(final ThreadContext context) {
         try {
-            RubyArray values = RubyArray.newBlankArrayInternal(context.runtime, size());
+            RubyArray values = RubyArrayNative.newBlankArrayInternal(context.runtime, size());
 
             visitAll(context, StoreValueVisitor, values);
 
@@ -2280,7 +2280,7 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = "values_at", rest = true)
     public RubyArray values_at(ThreadContext context, IRubyObject[] args) {
-        RubyArray result = RubyArray.newBlankArrayInternal(context.runtime, args.length);
+        RubyArray result = RubyArrayNative.newBlankArrayInternal(context.runtime, args.length);
         for (int i = 0; i < args.length; i++) {
             result.storeInternal(context, i, op_aref(context, args[i]));
         }
@@ -2289,7 +2289,7 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod(name = "fetch_values", rest = true)
     public RubyArray fetch_values(ThreadContext context, IRubyObject[] args, Block block) {
-        RubyArray result = RubyArray.newBlankArrayInternal(context.runtime, args.length);
+        RubyArray result = RubyArrayNative.newBlankArrayInternal(context.runtime, args.length);
         for (int i = 0; i < args.length; i++) {
             result.storeInternal(context, i, fetch(context, args[i], block));
         }

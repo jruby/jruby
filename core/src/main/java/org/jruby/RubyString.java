@@ -5215,7 +5215,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 return RubyRegexp.nth_match(context, 0, match);
             }
             int size = match.numRegs();
-            RubyArray result = RubyArray.newBlankArrayInternal(context.runtime, size - 1);
+            RubyArrayNative result = RubyArrayNative.newBlankArrayInternal(context.runtime, size - 1);
             for (int i = 1; i < size; i++) {
                 result.eltInternalSet(i - 1, RubyRegexp.nth_match(context, i, match));
             }
