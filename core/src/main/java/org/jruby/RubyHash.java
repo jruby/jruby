@@ -2618,8 +2618,10 @@ public class RubyHash extends RubyObject implements Map {
         return result;
     }
 
-    public static RubyHash unmarshalFrom(ThreadContext context, RubyInputStream in, MarshalLoader input, boolean defaultValue) {
-        RubyHash result = (RubyHash) input.entry(Create.newHash(context));
+    public static RubyHash unmarshalFrom(ThreadContext context, RubyInputStream in, MarshalLoader input, boolean defaultValue, boolean identity) {
+        RubyHash result = Create.newHash(context);
+        if (identity) result.setComparedByIdentity(true);
+        result = (RubyHash) input.entry(result);
         int size = input.unmarshalInt(context, in);
 
         for (int i = 0; i < size; i++) {

@@ -8,8 +8,6 @@ fails:Marshal.restore when called with freeze: true returns frozen object having
 fails:Marshal.restore when called with freeze: true returns frozen object responding to #marshal_dump and #marshal_load
 fails:Marshal.restore when called with freeze: true returns frozen object extended by a module
 fails:Marshal.restore when called on objects with custom _dump methods loads the String in multibyte encoding
-fails:Marshal.restore for a Hash preserves compare_by_identity behaviour
-fails:Marshal.restore for a Hash preserves compare_by_identity behaviour for a Hash subclass
 fails:Marshal.restore for a Rational loads
 fails:Marshal.restore for a Complex loads
 fails:Marshal.restore raises an ArgumentError when the dumped data is truncated

@@ -12,8 +12,6 @@ fails:Marshal.dump with an object responding to #_dump dumps the String in multi
 fails:Marshal.dump with an object responding to #_dump raises TypeError if an Object is an instance of an anonymous class
 fails:Marshal.dump with a Class dumps a class with multibyte characters in name
 fails:Marshal.dump with a Module dumps a module with multibyte characters in name
-fails:Marshal.dump with a Hash dumps a Hash with compare_by_identity
-fails:Marshal.dump with a Hash dumps a Hash subclass with compare_by_identity
 fails:Marshal.dump with an Object raises TypeError if an Object extends an anonymous module
 fails:Marshal.dump with a Time dumps a Time subclass with multibyte characters in name
 fails:Marshal.dump with a Time raises TypeError with an anonymous Time subclass
