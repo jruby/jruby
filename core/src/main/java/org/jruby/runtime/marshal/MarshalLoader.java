@@ -250,8 +250,8 @@ public class MarshalLoader {
             case TYPE_STRING -> objectForString(context, in, partial);
             case TYPE_REGEXP -> objectForRegexp(context, in, state, partial);
             case TYPE_ARRAY -> objectForArray(context, in, partial);
-            case TYPE_HASH -> objectForHash(context, in, partial);
-            case TYPE_HASH_DEF -> objectForHashDefault(context, in, partial);
+            case TYPE_HASH -> objectForHash(context, in, partial, false);
+            case TYPE_HASH_DEF -> objectForHashDefault(context, in, partial, false);
             case TYPE_STRUCT -> objectForStruct(context, in, partial);
             case TYPE_USERDEF -> objectForUserDef(context, in, state, partial);
             case TYPE_USRMARSHAL -> objectForUsrMarshal(context, in, extendedModules);
@@ -337,12 +337,12 @@ public class MarshalLoader {
         return leave(context, RubyStruct.unmarshalFrom(context, in, this), partial);
     }
 
-    private IRubyObject objectForHashDefault(ThreadContext context, RubyInputStream in, boolean partial) {
-        return leave(context, RubyHash.unmarshalFrom(context, in, this, true), partial);
+    private IRubyObject objectForHashDefault(ThreadContext context, RubyInputStream in, boolean partial, boolean identity) {
+        return leave(context, RubyHash.unmarshalFrom(context, in, this, true, identity), partial);
     }
 
-    private IRubyObject objectForHash(ThreadContext context, RubyInputStream in, boolean partial) {
-        return leave(context, RubyHash.unmarshalFrom(context, in, this, false), partial);
+    private IRubyObject objectForHash(ThreadContext context, RubyInputStream in, boolean partial, boolean identity) {
+        return leave(context, RubyHash.unmarshalFrom(context, in, this, false, identity), partial);
     }
 
     private IRubyObject objectForArray(ThreadContext context, RubyInputStream in, boolean partial) {
@@ -388,8 +388,9 @@ public class MarshalLoader {
 
         int type = r_byte(context, in);
         if (c == hashClass(context) && (type == TYPE_HASH || type == TYPE_HASH_DEF)) {
-            // FIXME: Missing logic to make the following methods use compare_by_identity (and construction of that)
-            return type == TYPE_HASH ? objectForHash(context, in, partial) : objectForHashDefault(context, in, partial);
+            return type == TYPE_HASH ?
+                    objectForHash(context, in, partial, true) :
+                    objectForHashDefault(context, in, partial, true);
         }
 
         IRubyObject obj = objectFor(context, in, type, null, partial, extendedModules);

@@ -66,6 +66,7 @@ import org.jruby.util.collections.HashMapInt;
 import org.jruby.util.io.RubyOutputStream;
 
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
@@ -84,6 +85,7 @@ import static org.jruby.util.RubyStringBuilder.types;
  * Marshals objects into Ruby's binary marshal format.
  */
 public class MarshalDumper {
+    private static final ByteList HASH_BYTELIST = new ByteList("Hash".getBytes(StandardCharsets.US_ASCII), false);
     private final int depthLimit;
     private int depth = 0;
     private final HashMapInt<IRubyObject> linkCache = new HashMapInt<>(true);
@@ -315,6 +317,10 @@ public class MarshalDumper {
                 case HASH: {
                     RubyHash hash = (RubyHash) value;
 
+                    if (hash.isComparedByIdentity()) {
+                        out.write(TYPE_UCLASS);
+                        dumpSymbol(out, HASH_BYTELIST);
+                    }
                     if (hash.getIfNone() == RubyBasicObject.UNDEF) {
                         out.write('{');
                     } else if (hash.hasDefaultProc()) {
