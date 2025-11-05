@@ -34,6 +34,7 @@ import org.jruby.*;
 import org.jruby.RubyEnumerator.SizeFn;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Access;
+import org.jruby.api.Error;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -44,6 +45,7 @@ import org.jruby.util.io.RubyInputStream;
 import org.jruby.util.io.RubyOutputStream;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Array;
 import java.util.Collection;
 import java.util.IdentityHashMap;
@@ -70,15 +72,24 @@ import static org.jruby.api.Warn.warning;
  */
 @org.jruby.anno.JRubyClass(name="Set", include = { "Enumerable" })
 public class RubySet extends RubyObject implements Set {
+    private RubyHash hash;
 
-    static RubyClass createSetClass(ThreadContext context, RubyClass Object, RubyModule Enumerable) {
+    public static RubyClass createSetClass(ThreadContext context, RubyClass Object, RubyModule Enumerable) {
         RubyClass Set = defineClass(context, "Set", Object, RubySet::new).
                 reifiedClass(RubySet.class).
                 include(context, Enumerable).
                 defineMethods(context, RubySet.class).
                 tap(c -> c.marshalWith(new SetMarshal(c.getMarshal())));
 
-        loadService(context).require("jruby/set.rb");
+        MethodHandles.Lookup lookup = MethodHandles.lookup();
+        try {
+            Set.getVariableTableManager().getVariableAccessorForRubyVar("@hash", lookup.findGetter(RubySet.class, "hash", RubyHash.class), lookup.findSetter(RubySet.class, "hash", RubyHash.class));
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            // should not happen
+            throw new RuntimeException(e);
+        }
+
+        Enumerable.defineMethods(context, EnumerableExt.class);
 
         return Set;
     }
@@ -106,23 +117,15 @@ public class RubySet extends RubyObject implements Set {
         @SuppressWarnings("removal")
         public Object unmarshalFrom(Ruby runtime, RubyClass type, org.jruby.runtime.marshal.UnmarshalStream unmarshalStream) throws IOException {
             Object result = defaultMarshal.unmarshalFrom(runtime, type, unmarshalStream);
-            ((RubySet) result).unmarshal();
             return result;
         }
 
         public Object unmarshalFrom(ThreadContext context, RubyInputStream in, RubyClass type, MarshalLoader loader) {
             Object result = defaultMarshal.unmarshalFrom(context, in, type, loader);
-            ((RubySet) result).unmarshal();
             return result;
         }
 
     }
-
-    void unmarshal() {
-        this.hash = (RubyHash) getInstanceVariable("@hash");
-    }
-
-    RubyHash hash; // @hash
 
     protected RubySet(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
@@ -138,20 +141,15 @@ public class RubySet extends RubyObject implements Set {
     // ... this is important with Rails using Sprockets at its marshalling Set instances
 
     final void allocHash(final ThreadContext context) {
-        setHash(new RubyHash(context.runtime, context.fals));
+        this.hash = new RubyHash(context.runtime, context.fals);
     }
 
     final void allocHash(final Ruby runtime) {
-        setHash(new RubyHash(runtime, runtime.getFalse()));
+        this.hash = new RubyHash(runtime, runtime.getFalse());
     }
 
     final void allocHash(final ThreadContext context, final int size) {
-        setHash(new RubyHash(context.runtime, context.fals, size));
-    }
-
-    final void setHash(final RubyHash hash) {
-        this.hash = hash;
-        setInstanceVariable("@hash", hash); // MRI compat with set.rb
+        this.hash = new RubyHash(context.runtime, context.fals, size);
     }
 
     /**
@@ -226,11 +224,40 @@ public class RubySet extends RubyObject implements Set {
      * initialize(enum = nil, &amp;block)
      */
     @JRubyMethod(visibility = Visibility.PRIVATE)
-    public IRubyObject initialize(ThreadContext context, IRubyObject enume, Block block) {
+    public IRubyObject initialize(final ThreadContext context, IRubyObject enume, final Block block) {
         if ( enume.isNil() ) return initialize(context, block);
 
-        if ( block.isGiven() ) {
-            return initWithEnum(context, enume, block);
+        if (enume instanceof RubyArray ary) {
+            allocHash(context, ary.size());
+            for ( int i = 0; i < ary.size(); i++ ) {
+                IRubyObject key = ary.eltInternal(i);
+                if (block.isGiven()) key = block.yield(context, key);
+                invokeAdd(context, key);
+            }
+            return ary; // done
+        } else if (enume instanceof RubySet set) {
+            allocHash(context, set.size());
+            for ( IRubyObject elem : set.elementsOrdered() ) {
+                invokeAdd(context, block.yield(context, elem));
+            }
+            return set; // done
+        } else {
+            if (enume.getType().isKindOfModule(context.runtime.getEnumerable()) && enume.respondsTo("size")) {
+                IRubyObject size = enume.callMethod(context, "size");
+                if (size instanceof RubyFloat flote && flote.isInfinite()) {
+                    throw Error.argumentError(context, "cannot initialize Set from an object with infinite size");
+                }
+            }
+            allocHash(context);
+
+            // set.rb do_with_enum :
+            if (block.isGiven()) {
+                return doWithEnum(context, enume, new EachBody(context) {
+                    IRubyObject yieldImpl(ThreadContext context2, IRubyObject val) {
+                        return invokeAdd(context2, block.yield(context2, val));
+                    }
+                });
+            }
         }
 
         allocHash(context);
@@ -243,31 +270,6 @@ public class RubySet extends RubyObject implements Set {
             case 1 -> initialize(context, args[0], block);
             default -> throw argumentError(context, args.length, 1);
         };
-    }
-
-    private IRubyObject initWithEnum(final ThreadContext context, final IRubyObject enume, final Block block) {
-        if (enume instanceof RubyArray ary) {
-            allocHash(context, ary.size());
-            for ( int i = 0; i < ary.size(); i++ ) {
-                invokeAdd(context, block.yield(context, ary.eltInternal(i)));
-            }
-            return ary; // done
-        } else if (enume instanceof RubySet set) {
-            allocHash(context, set.size());
-            for ( IRubyObject elem : set.elementsOrdered() ) {
-                invokeAdd(context, block.yield(context, elem));
-            }
-            return set; // done
-        } else {
-            allocHash(context);
-
-            // set.rb do_with_enum :
-            return doWithEnum(context, enume, new EachBody(context) {
-                IRubyObject yieldImpl(ThreadContext context, IRubyObject val) {
-                    return invokeAdd(context, block.yield(context, val));
-                }
-            });
-        }
     }
 
     // set.rb do_with_enum (block is required)
@@ -289,7 +291,8 @@ public class RubySet extends RubyObject implements Set {
     public IRubyObject instance_variable_set(IRubyObject name, IRubyObject value) {
         if (getRuntime().newSymbol("@hash").equals(name)) {
             if (value instanceof RubyHash) {
-                setHash((RubyHash) value); return value;
+                this.hash = (RubyHash) value;
+                return value;
             }
         }
         return super.instance_variable_set(name, value);
@@ -327,7 +330,7 @@ public class RubySet extends RubyObject implements Set {
     @JRubyMethod(frame = true)
     public IRubyObject initialize_dup(ThreadContext context, IRubyObject orig) {
         sites(context).initialize_dup_super.call(context, this, this, orig);
-        setHash((RubyHash) (((RubySet) orig).hash).dup(context));
+        this.hash = (RubyHash) (((RubySet) orig).hash).dup(context);
         return this;
     }
 
@@ -337,7 +340,7 @@ public class RubySet extends RubyObject implements Set {
 
         sites(context).initialize_clone_super.call(context, this, this, args);
         IRubyObject orig = args[0];
-        setHash((RubyHash) (((RubySet) orig).hash).rbClone(context));
+        this.hash = (RubyHash) (((RubySet) orig).hash).rbClone(context);
         return this;
     }
 
@@ -564,9 +567,13 @@ public class RubySet extends RubyObject implements Set {
      */
     @JRubyMethod(name = "intersect?")
     public IRubyObject intersect_p(final ThreadContext context, IRubyObject setArg) {
-        if (!(setArg instanceof RubySet set)) throw argumentError(context, "value must be a set");
-
-        return asBoolean(context, intersect(set));
+        return asBoolean(context,
+                intersect(
+                        switch (setArg) {
+                            case RubySet set -> set;
+                            case RubyArray ary -> newSet(context, context.runtime.getSet(), ary);
+                            default -> throw argumentError(context, "value must be a set or array");
+                        }));
     }
 
     public boolean intersect(final RubySet set) {
@@ -590,9 +597,7 @@ public class RubySet extends RubyObject implements Set {
      */
     @JRubyMethod(name = "disjoint?")
     public IRubyObject disjoint_p(final ThreadContext context, IRubyObject setArg) {
-        if (!(setArg instanceof RubySet set)) throw argumentError(context, "value must be a set");
-
-        return asBoolean(context,  !intersect(set));
+        return asBoolean(context,  !intersect_p(context, setArg).isTrue());
     }
 
     @JRubyMethod
@@ -747,8 +752,12 @@ public class RubySet extends RubyObject implements Set {
     /**
      * Merges the elements of the given enumerable object to the set and returns self.
      */
-    @JRubyMethod(name = "merge", required=1, rest=true)
+    @JRubyMethod(name = "merge", required=0, rest=true)
     public RubySet rb_merge(final ThreadContext context, IRubyObject... args) {
+        if (args.length > 0 && args[args.length - 1] instanceof RubyHash) {
+            throw argumentError(context, "no keywords accepted");
+        }
+
         var length = args.length;
         for (int i = 0; i < length; i++) {
             var arg = args[i];
@@ -851,7 +860,7 @@ public class RubySet extends RubyObject implements Set {
      */
     @JRubyMethod(name = "^")
     public IRubyObject op_xor(final ThreadContext context, IRubyObject enume) {
-        RubySet newSet = new RubySet(context.runtime, Access.getClass(context, "Set"));
+        RubySet newSet = new RubySet(context.runtime, getMetaClass());
         newSet.initialize(context, enume, Block.NULL_BLOCK); // Set.new(enum)
         for (IRubyObject o : elementsOrdered()) {
             if (newSet.containsImpl(o)) {
@@ -1140,7 +1149,7 @@ public class RubySet extends RubyObject implements Set {
         try {
             context.runtime.registerInspecting(this);
             inspectSet(context, str);
-            return str.cat('>');
+            return str;
         } finally {
             context.runtime.unregisterInspecting(this);
         }
@@ -1149,26 +1158,24 @@ public class RubySet extends RubyObject implements Set {
     private RubyString inspectEmpty(ThreadContext context) {
         RubyString str = RubyString.newStringLight(context.runtime, 16, USASCIIEncoding.INSTANCE);
         inspectPrefix(context, str, getMetaClass());
-        str.cat('{').cat('}').cat('>'); // "#<Set: {}>"
+        str.cat('[').cat(']'); // "#<Set: {}>"
         return str;
     }
 
     private RubyString inspectRecurse(ThreadContext context) {
         RubyString str = RubyString.newStringLight(context.runtime, 20, USASCIIEncoding.INSTANCE);
         inspectPrefix(context, str, getMetaClass());
-        str.cat('{').cat(RECURSIVE_BYTES).cat('}').cat('>'); // "#<Set: {...}>"
+        str.cat('[').cat(RECURSIVE_BYTES).cat(']'); // "#<Set: {...}>"
         return str;
     }
 
     private static RubyString inspectPrefix(ThreadContext context, final RubyString str, final RubyClass metaClass) {
-        str.cat('#').cat('<').cat(metaClass.getRealClass().getName(context).getBytes(RubyEncoding.UTF8));
-        str.cat(':').cat(' ');
-        return str;
+        return str.catString(metaClass.getRealClass().getName(context));
     }
 
     private void inspectSet(final ThreadContext context, final RubyString str) {
 
-        str.cat((byte) '{');
+        str.cat((byte) '[');
 
         boolean notFirst = false;
 
@@ -1179,7 +1186,7 @@ public class RubySet extends RubyObject implements Set {
             str.catWithCodeRange(s);
         }
 
-        str.cat((byte) '}');
+        str.cat((byte) ']');
     }
 
     // pp (in __jruby/set.rb__)
@@ -1196,7 +1203,7 @@ public class RubySet extends RubyObject implements Set {
 
     // NOTE: implementation does not expect to be used for altering contents using iterator
     protected Set<IRubyObject> elementsOrdered() {
-        return elements(); // potentially -> to be re-defined by SortedSet
+        return elements();
     }
 
     @Deprecated(since = "10.0.0.0")
