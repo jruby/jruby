@@ -49,7 +49,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
-import java.util.function.BiFunction;
+import java.util.function.BiConsumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -691,12 +691,12 @@ public class ArgumentProcessor {
     }
 
     private void enableDisableFeature(String name, boolean enable) {
-        BiFunction<ArgumentProcessor, Boolean, Void> feature = FEATURES.get(name);
+        Feature feature = FEATURES.get(name);
 
         if (feature == null) {
             config.getError().println("warning: unknown argument for --" + (enable ? "enable" : "disable") + ": '" + name + "'");
         } else {
-            feature.apply(this, enable);
+            feature.enabler.accept(this.config, enable);
         }
     }
 
@@ -889,40 +889,32 @@ public class ArgumentProcessor {
         return false;
     }
 
-    private static final Map<String, BiFunction<ArgumentProcessor, Boolean, Void>> FEATURES;
+    public enum Feature {
+        ALL(RubyInstanceConfig::setAllFeaturesEnabled, "all"),
+        GEMS(RubyInstanceConfig::setGemsEnabled, "gems", "gem"),
+        DID_YOU_MEAN(RubyInstanceConfig::setDidYouMeanEnabled, "did-you-mean", "did_you_mean"),
+        RUBYOPT(RubyInstanceConfig::setRUBYOPTEnabled, "rubyopt"),
+        FROZEN_STRING_LITERAL(RubyInstanceConfig::setFrozenStringLiteral, "frozen-string-literal", "frozen_string_literal"),
+        SYNTAX_SUGGEST(RubyInstanceConfig::setSyntaxSuggestEnabled, "syntax-suggest", "syntax_suggest"),
+        ERROR_HIGHLIGHT(RubyInstanceConfig::setErrorHighlightEnabled, "error-highlight", "error_highlight"),
+        RACTOR(RubyInstanceConfig::setRactorEnabled, "ractor");
 
+        public final BiConsumer<RubyInstanceConfig, Boolean> enabler;
+        final String[] names;
+
+        Feature(BiConsumer<RubyInstanceConfig, Boolean> enabler, String... names) {
+            assert names.length > 0;
+            this.enabler = enabler;
+            this.names = names;
+        }
+    }
+
+    private static final Map<String, Feature> FEATURES = new HashMap<>(12, 1);
     static {
-        Map<String, BiFunction<ArgumentProcessor, Boolean, Void>> features = new HashMap<>(12, 1);
-        BiFunction<ArgumentProcessor, Boolean, Void> function;
-
-        features.put("all", new BiFunction<ArgumentProcessor, Boolean, Void>() {
-            public Void apply(ArgumentProcessor processor, Boolean enable) {
-                // disable all features
-                for (Map.Entry<String, BiFunction<ArgumentProcessor, Boolean, Void>> entry : FEATURES.entrySet()) {
-                    if (entry.getKey().equals("all")) continue; // skip self
-                    entry.getValue().apply(processor, enable);
-                }
-                return null;
+        for (Feature feature : Feature.values()) {
+            for (String name : feature.names) {
+                FEATURES.put(name, feature);
             }
-        });
-        features.put("gem", (ArgumentProcessor processor, Boolean enable) -> {
-            processor.config.setDisableGems(!enable); return null;
-        });
-        features.put("gems", (ArgumentProcessor processor, Boolean enable) -> {
-            processor.config.setDisableGems(!enable); return null;
-        });
-        features.put("did-you-mean", function = (ArgumentProcessor processor, Boolean enable) -> {
-            processor.config.setDisableDidYouMean(!enable); return null;
-        });
-        features.put("did_you_mean", function); // alias
-        features.put("rubyopt", (ArgumentProcessor processor, Boolean enable) -> {
-            processor.config.setDisableRUBYOPT(!enable); return null;
-        });
-        features.put("frozen-string-literal", function = (ArgumentProcessor processor, Boolean enable) -> {
-            processor.config.setFrozenStringLiteral(enable); return null;
-        });
-        features.put("frozen_string_literal", function); // alias
-
-        FEATURES = features;
+        }
     }
 }
