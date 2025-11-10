@@ -303,8 +303,40 @@ jobs:
         run: bin/jruby --dev -S bundle install
       - name: language specs interpreted
         run: bin/jruby spec/mspec/bin/mspec ci :language
-      - name: language specs interpreted
+      - name: language specs compiled
         run: bin/jruby spec/mspec/bin/mspec ci :language
+        env:
+          JRUBY_OPTS: -Xjit.threshold=0
+
+  spec-ruby-core-windows:
+    runs-on: windows-latest
+
+    strategy:
+      fail-fast: false
+
+    name: core specs (Windows, Java 21)
+
+    env:
+      JAVA_OPTS: "-Djdk.io.File.enableADS=true"
+      JDK_JAVA_OPTS: "-Djdk.io.File.enableADS=true"
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: set up java 21
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: 21
+          cache: 'maven'
+      - name: bootstrap
+        run: mvn -ntp -Pbootstrap clean package
+      - name: bundle install
+        run: bin/jruby --dev -S bundle install
+      - name: core specs interpreted
+        run: bin/jruby spec/mspec/bin/mspec ci :core
+      - name: core specs compiled
+        run: bin/jruby spec/mspec/bin/mspec ci :core
         env:
           JRUBY_OPTS: -Xjit.threshold=0
 
