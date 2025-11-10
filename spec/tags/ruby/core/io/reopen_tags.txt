@@ -10,3 +10,12 @@ windows:IO#reopen with an IO reads from the current position of the other IO's s
 windows:IO#reopen with an IO associates the IO instance with the other IO's stream
 fails:IO#reopen with a String affects exec/system/fork performed after it
 fails:IO#reopen with an IO does not call #to_io
+windows:IO#reopen changes the class of the instance to the class of the object returned by #to_io
+windows:IO#reopen with a String does not raise an exception when called on a closed stream with a path
+windows:IO#reopen with a String positions a newly created instance at the beginning of the new stream
+windows:IO#reopen with a String positions an instance that has been read from at the beginning of the new stream
+windows:IO#reopen with a String always resets the close-on-exec flag to true on non-STDIO objects
+windows:IO#reopen with an IO at EOF resets the EOF status to false
+windows:IO#reopen with an IO always resets the close-on-exec flag to true on non-STDIO objects
+windows:IO#reopen with an IO may change the class of the instance
+windows:IO#reopen with an IO sets path equals to the other IO's path if other IO is File

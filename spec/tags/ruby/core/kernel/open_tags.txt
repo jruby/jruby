@@ -1,0 +1,3 @@
+windows:Kernel#open opens an io when path starts with a pipe
+windows:Kernel#open opens an io when called with a block
+windows:Kernel#open warns about deprecation given a path with a pipe

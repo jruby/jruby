@@ -1,3 +1,8 @@
 fails:Dir.glob matches directory with special characters in their name in complex patterns
 fails:Dir.glob handles **/ with base keyword argument
 
+windows:Dir.glob matches regexp special ]
+windows:Dir.glob recursively matches any nondot subdirectories with '**/'
+windows:Dir.glob recursively matches any subdirectories except './' or '../' with '**/' from the current directory and option File::FNM_DOTMATCH
+windows:Dir.glob recursively matches any subdirectories except './' or '../' with '**/' and option File::FNM_DOTMATCH
+windows:Dir.glob matches a list of paths by concatenating their individual results

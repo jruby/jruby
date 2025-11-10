@@ -1,1 +1,18 @@
 hangs:IO#each_line with limit when limit is 0 raises an ArgumentError
+windows:IO#each_line with no separator yields each line to the passed block
+windows:IO#each_line with no separator yields each line starting from the current position
+windows:IO#each_line with no separator when no block is given returns an Enumerator
+windows:IO#each_line when passed a String containing one space as a separator uses the passed argument as the line separator
+windows:IO#each_line when passed a String containing one space as a separator tries to convert the passed separator to a String using #to_str
+windows:IO#each_line when passed nil as a separator yields self's content starting from the current position when the passed separator is nil
+windows:IO#each_line when passed an empty String as a separator yields each paragraph
+windows:IO#each_line when passed an empty String as a separator discards leading newlines
+windows:IO#each_line with both separator and limit when no block is given returns an Enumerator
+windows:IO#each_line with both separator and limit when a block is given when passed nil as a separator yields self's content starting from the current position when the passed separator is nil
+windows:IO#each_line with both separator and limit when a block is given when passed an empty String as a separator yields each paragraph
+windows:IO#each_line with both separator and limit when a block is given when passed an empty String as a separator discards leading newlines
+windows:IO#each_line when passed chomp and a separator yields each line without separator to the passed block
+windows:IO#each_line when passed chomp and empty line as a separator yields each paragraph without trailing new line characters
+windows:IO#each_line when passed chomp and nil as a separator yields self's content
+windows:IO#each_line when passed chomp, nil as a separator, and a limit yields each line of limit size without truncating trailing new line character
+windows:IO#each_line uses $/ as the default line separator

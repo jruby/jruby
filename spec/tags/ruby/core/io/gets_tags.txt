@@ -1,3 +1,9 @@
 windows:IO#gets ignores the internal encoding if the default external encoding is ASCII-8BIT
 windows:IO#gets transcodes to internal encoding if the IO object's external encoding is ASCII-8BIT
 fails:IO#gets sets $_ to nil after the last line has been read
+windows:IO#gets assigns the returned line to $_
+windows:IO#gets with no separator returns the next line of string that is separated by $/
+windows:IO#gets with nil separator returns the entire contents
+windows:IO#gets with an empty String separator returns the next paragraph
+windows:IO#gets with an empty String separator reads until the beginning of the next paragraph
+windows:IO#gets with an arbitrary String separator reads up to and including the separator

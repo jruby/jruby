@@ -11,3 +11,4 @@ fails:Time.new with a timezone argument returned value by #utc_to_local and #loc
 fails(https://github.com/jruby/jruby/issues/8736):Time.new with a timezone argument Time.new with a String argument accepts precision keyword argument and truncates specified digits of sub-second part
 fails(https://github.com/jruby/jruby/issues/8736):Time.new with a timezone argument Time.new with a String argument raises ArgumentError if date/time parts values are not valid
 fails(https://github.com/jruby/jruby/issues/8736):Time.new with a timezone argument Time.new with a String argument raises ArgumentError if utc offset parts are not valid
+windows:Time.new has at least microsecond precision

@@ -1,1 +1,2 @@
 fails:Errno::EINVAL.new accepts an optional custom message and location
+windows:Errno::ENOENT lets subclasses inherit the default error message

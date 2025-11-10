@@ -1,1 +1,2 @@
 fails:Process::Status.wait doesn't block if no child is available when WNOHANG is used
+windows:Process::Status.wait returns a status with pid -1 if there are no child processes

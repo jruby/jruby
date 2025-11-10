@@ -15,3 +15,7 @@ windows:IO.popen with a leading Array argument accepts [env, command, arg1, arg2
 windows:IO.popen with a leading Array argument accepts '[env, command, arg1, arg2, ..., exec options], mode'
 windows:IO.popen with a leading Array argument accepts '[env, command, arg1, arg2, ..., exec options], mode, IO options'
 windows:IO.popen with a leading Array argument accepts '[env, command, arg1, arg2, ...], mode, IO + exec options'
+windows(hangs):IO.popen does not throw an exception if child exited and has been waited for
+windows:IO.popen raises IOError when writing a read-only pipe
+windows:IO.popen accepts a path using the chdir: keyword argument
+windows:IO.popen accepts a path using the chdir: keyword argument and a coercible path

@@ -1,1 +1,3 @@
 fails:Dir.[] matches directory with special characters in their name in complex patterns
+windows:Dir.[] matches regexp special ]
+windows:Dir.[] recursively matches any nondot subdirectories with '**/'

@@ -1,2 +1,6 @@
 fails:IO#readline when passed separator and limit reads limit bytes till the separator
 fails:IO#readline when passed chomp raises exception when options passed as Hash
+windows:IO#readline returns the next line on the stream
+windows:IO#readline goes back to first position after a rewind
+windows:IO#readline returns characters after the position set by #seek
+windows:IO#readline assigns the returned line to $_

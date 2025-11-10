@@ -1,0 +1,1 @@
+windows:IO.binread warns about deprecation given a path with a pipe

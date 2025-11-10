@@ -16,3 +16,7 @@ fails:Process.exec (environment variables) unsets environment variables whose va
 fails:Process.exec (environment variables) coerces environment argument using to_hash
 fails:Process.exec with an options Hash with Integer option keys lets the process after exec have specified file descriptor despite close_on_exec
 fails:Process.exec with an options Hash with Integer option keys sets close_on_exec to false on specified fd even when it fails
+windows:Process.exec flushes STDERR upon exit when it's not set to sync
+windows:Process.exec with a single argument does not subject the specified command to shell expansion on Windows
+windows:Process.exec with a single argument does not create an argument array with shell parsing semantics for whitespace on Windows
+windows:Process.exec with multiple arguments does not subject the arguments to shell expansion

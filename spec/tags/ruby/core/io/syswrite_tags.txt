@@ -1,0 +1,1 @@
+windows:IO#syswrite on a pipe raises Errno::EPIPE if the read end is closed and does not die from SIGPIPE
