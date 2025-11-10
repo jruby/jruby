@@ -1,0 +1,4 @@
+windows:The END keyword both exceptions in a handler and in the main script are printed
+windows:The END keyword runs all handlers even if some raise exceptions
+windows:The END keyword runs handlers even if the main script fails to parse
+windows:The END keyword warns when END is used in a method

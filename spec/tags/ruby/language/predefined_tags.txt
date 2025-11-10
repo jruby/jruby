@@ -11,3 +11,4 @@ fails:$LOAD_PATH.resolve_feature_path returns what will be loaded without actual
 fails:Predefined global $` is read-only when aliased
 fails:Predefined global $' is read-only when aliased
 fails:Predefined global $-0 raises a TypeError if assigned a boolean
+windows:Global variable $0 is the path given as the main script and the same as __FILE__

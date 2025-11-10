@@ -1,0 +1,3 @@
+windows:The DATA constant returns a File object with the right offset
+windows:The DATA constant is set even if there is no data after __END__
+windows:The DATA constant is set even if there is no newline after __END__
