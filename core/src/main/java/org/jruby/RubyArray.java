@@ -1202,12 +1202,17 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         if (newLength < ARRAY_DEFAULT_SIZE) newLength = ARRAY_DEFAULT_SIZE;
 
         newLength = addBufferLength(context, valuesLength, newLength);
-
         IRubyObject[] vals = IRubyObject.array(newLength);
-        safeArrayCopy(context, values, begin, vals, 1, valuesLength);
-        Helpers.fillNil(context, vals, valuesLength + 1, newLength);
+
+        int shiftedBegin = newLength - valuesLength;
+        int unshiftedBegin = shiftedBegin - 1;
+
+        // copy existing elements to the end of the new array, to leave room for future unshifts
+        safeArrayCopy(context, values, begin, vals, shiftedBegin, valuesLength);
+        Helpers.fillNil(context, vals, 0, unshiftedBegin);
+
         values = vals;
-        begin = 0;
+        begin = unshiftedBegin;
     }
 
     public IRubyObject insert() {
