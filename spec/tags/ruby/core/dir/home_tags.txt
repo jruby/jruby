@@ -1,0 +1,2 @@
+windows:Dir.home when called without arguments returns the home directory with forward slashs and as UTF-8
+windows:Dir.home when called without arguments retrieves the directory from HOME, USERPROFILE, HOMEDRIVE/HOMEPATH and the WinAPI in that order

@@ -1,0 +1,4 @@
+windows:Exception#full_message supports :highlight option and adds escape sequences to highlight some strings
+windows:Exception#full_message shows the exception class at the end of the first line of the message when the message contains multiple lines
+windows:Exception#full_message highlights the entire message when the message contains multiple lines
+windows:Exception#full_message includes details about whether an exception was handled RuntimeError adds escape sequences to highlight some strings if the message is not specified and :highlight option is specified

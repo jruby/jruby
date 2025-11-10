@@ -1,0 +1,2 @@
+windows:File.absolute_path? returns false if it's a tricky relative path
+windows:File.absolute_path? takes into consideration the platform path separator(s)

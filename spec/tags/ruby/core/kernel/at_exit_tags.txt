@@ -1,0 +1,3 @@
+windows:Kernel.at_exit both exceptions in a handler and in the main script are printed
+windows:Kernel.at_exit runs all handlers even if some raise exceptions
+windows:Kernel.at_exit runs handlers even if the main script fails to parse

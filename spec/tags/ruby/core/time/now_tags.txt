@@ -6,3 +6,4 @@ fails:Time.now Timezone object returned value by #utc_to_local and #local_to_utc
 fails:Time.now Timezone object returned value by #utc_to_local and #local_to_utc methods could be Integer
 fails:Time.now Timezone object returned value by #utc_to_local and #local_to_utc methods could have any #zone and #utc_offset because they are ignored
 fails:Time.now Timezone object returned value by #utc_to_local and #local_to_utc methods raises ArgumentError if difference between argument and result is too large
+windows:Time.now has at least microsecond precision

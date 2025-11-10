@@ -3,3 +3,4 @@ windows:IO.write doesn't truncate and writes at the given offset after passing e
 windows:IO#write on Windows normalizes line endings in text mode
 fails:IO#write on STDOUT raises SignalException SIGPIPE if the stream is closed instead of Errno::EPIPE like other IOs
 
+windows:IO#write on a pipe raises Errno::EPIPE if the read end is closed and does not die from SIGPIPE

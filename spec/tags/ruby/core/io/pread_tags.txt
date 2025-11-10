@@ -1,2 +1,3 @@
 fails:IO#pread converts maxlen to Integer using #to_int
 fails:IO#pread raises ArgumentError for negative values of maxlen
+windows:IO#pread raised Errno::EINVAL for negative values of offset

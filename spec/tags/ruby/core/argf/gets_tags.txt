@@ -1,2 +1,4 @@
 slow:ARGF.gets reads all lines of stdin
 fails(only in full ARGF run):ARGF.gets reads the contents of the file with default encoding
+windows:ARGF.gets reads all lines of stdin
+windows:ARGF.gets modifies and backups two files when in place edit mode is on

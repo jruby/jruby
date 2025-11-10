@@ -1,1 +1,2 @@
 windows(hangs):IO#write_nonblock writes to the current position after IO#read
+windows:IO#write_nonblock raises an exception extending IO::WaitWritable when the write would block

@@ -1,1 +1,2 @@
 windows:IO#ungetc adjusts the stream position
+windows:IO#ungetc pushes back one character onto stream

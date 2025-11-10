@@ -5,3 +5,10 @@ windows:IO#read expands the buffer when too small
 windows:IO#read overwrites the buffer
 windows:IO#read truncates the buffer when too big
 windows:IO#read on Windows normalizes line endings in text mode
+windows:IO.read reads the file in text mode
+windows:IO.read from a pipe warns about deprecation given a path with a pipe
+windows:IO#read clears the output buffer if there is nothing to read
+windows:IO#read ignores unicode encoding
+windows:IO.read with BOM reads a file without a bom
+windows:IO.read with BOM reads a file with a utf-8 bom
+windows:IO#read with internal encoding not specified does not transcode the String

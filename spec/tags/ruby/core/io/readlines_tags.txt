@@ -12,3 +12,25 @@ fails:IO.readlines when passed name, separator, limit, keyword arguments calls #
 fails:IO.readlines when passed name, separator, limit, keyword arguments calls #to_str to convert the separator object
 fails:IO.readlines when passed name, separator, limit, keyword arguments calls #to_int to convert the limit argument
 fails:IO.readlines when passed name, separator, limit, keyword arguments when passed chomp, nil as a separator, and a limit yields each line of limit size without truncating trailing new line character
+windows:IO#readlines when passed no arguments returns an Array containing lines based on $/
+windows:IO#readlines when passed no arguments returns an empty Array when self is at the end
+windows:IO#readlines when passed nil returns the remaining content as one line starting at the current position
+windows:IO#readlines when passed an empty String returns an Array containing all paragraphs
+windows:IO#readlines when passed a separator returns an Array containing lines based on the separator
+windows:IO#readlines when passed a separator tries to convert the passed separator to a String using #to_str
+windows:IO.readlines warns about deprecation given a path with a pipe
+windows:IO.readlines yields a sequence of paragraphs when the separator is an empty string
+windows:IO.readlines when passed a string that starts with a | gets data from the standard out of the subprocess
+windows:IO.readlines when passed name defaults to $/ as the separator
+windows:IO.readlines when passed name, object calls #to_str to convert the object to a separator
+windows:IO.readlines when passed name, object when the object is an Integer defaults to $/ as the separator
+windows:IO.readlines when passed name, object when the object is an Integer uses the object as a limit if it is an Integer
+windows:IO.readlines when passed name, object when the object is an Integer ignores the object as a limit if it is negative
+windows:IO.readlines when passed name, object when the object is a String uses the value as the separator
+windows:IO.readlines when passed name, object when the object is a String accepts non-ASCII data as separator
+windows:IO.readlines when passed name, keyword arguments uses the keyword arguments as options
+windows:IO.readlines when passed name, object, object when the first object is a String uses the second object as a limit if it is an Integer
+windows:IO.readlines when passed name, object, object when the first object is a String calls #to_int to convert the second object
+windows:IO.readlines when passed name, object, object when the first object is not a String or Integer calls #to_str to convert the object to a String
+windows:IO.readlines when passed name, object, object when the first object is not a String or Integer uses the second object as a limit if it is an Integer
+windows:IO.readlines when passed name, object, object when the first object is not a String or Integer calls #to_int to convert the second object

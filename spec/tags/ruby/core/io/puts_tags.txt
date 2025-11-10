@@ -1,3 +1,4 @@
 fails:IO#puts calls :to_ary before writing non-string objects, regardless of it being implemented in the receiver
 fails:IO#puts calls :to_ary before writing non-string objects
 windows:IO#puts writes just a newline when given just a newline
+windows:IO#puts writes crlf when IO is opened with newline: :crlf

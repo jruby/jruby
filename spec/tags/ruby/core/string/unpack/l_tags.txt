@@ -1,0 +1,80 @@
+windows:String#unpack with format 'L' with modifier '<' and '_' decodes one int for a single format character
+windows:String#unpack with format 'L' with modifier '<' and '_' decodes two ints for two format characters
+windows:String#unpack with format 'L' with modifier '<' and '_' decodes the number of ints requested by the count modifier
+windows:String#unpack with format 'L' with modifier '<' and '_' decodes the remaining ints when passed the '*' modifier
+windows:String#unpack with format 'L' with modifier '<' and '_' decodes the remaining ints when passed the '*' modifier after another directive
+windows:String#unpack with format 'L' with modifier '<' and '_' adds nil for each element requested beyond the end of the String
+windows:String#unpack with format 'L' with modifier '<' and '_' ignores spaces between directives
+windows:String#unpack with format 'L' with modifier '<' and '_' decodes an int with most significant bit set as a positive number
+windows:String#unpack with format 'L' with modifier '<' and '!' decodes one int for a single format character
+windows:String#unpack with format 'L' with modifier '<' and '!' decodes two ints for two format characters
+windows:String#unpack with format 'L' with modifier '<' and '!' decodes the number of ints requested by the count modifier
+windows:String#unpack with format 'L' with modifier '<' and '!' decodes the remaining ints when passed the '*' modifier
+windows:String#unpack with format 'L' with modifier '<' and '!' decodes the remaining ints when passed the '*' modifier after another directive
+windows:String#unpack with format 'L' with modifier '<' and '!' adds nil for each element requested beyond the end of the String
+windows:String#unpack with format 'L' with modifier '<' and '!' ignores spaces between directives
+windows:String#unpack with format 'L' with modifier '<' and '!' decodes an int with most significant bit set as a positive number
+windows:String#unpack with format 'L' with modifier '>' and '_' decodes one int for a single format character
+windows:String#unpack with format 'L' with modifier '>' and '_' decodes two ints for two format characters
+windows:String#unpack with format 'L' with modifier '>' and '_' decodes the number of ints requested by the count modifier
+windows:String#unpack with format 'L' with modifier '>' and '_' decodes the remaining ints when passed the '*' modifier
+windows:String#unpack with format 'L' with modifier '>' and '_' decodes the remaining ints when passed the '*' modifier after another directive
+windows:String#unpack with format 'L' with modifier '>' and '_' adds nil for each element requested beyond the end of the String
+windows:String#unpack with format 'L' with modifier '>' and '_' ignores spaces between directives
+windows:String#unpack with format 'L' with modifier '>' and '_' decodes an int with most significant bit set as a positive number
+windows:String#unpack with format 'L' with modifier '>' and '!' decodes one int for a single format character
+windows:String#unpack with format 'L' with modifier '>' and '!' decodes two ints for two format characters
+windows:String#unpack with format 'L' with modifier '>' and '!' decodes the number of ints requested by the count modifier
+windows:String#unpack with format 'L' with modifier '>' and '!' decodes the remaining ints when passed the '*' modifier
+windows:String#unpack with format 'L' with modifier '>' and '!' decodes the remaining ints when passed the '*' modifier after another directive
+windows:String#unpack with format 'L' with modifier '>' and '!' adds nil for each element requested beyond the end of the String
+windows:String#unpack with format 'L' with modifier '>' and '!' ignores spaces between directives
+windows:String#unpack with format 'L' with modifier '>' and '!' decodes an int with most significant bit set as a positive number
+windows:String#unpack with format 'l' with modifier '<' and '_' decodes one int for a single format character
+windows:String#unpack with format 'l' with modifier '<' and '_' decodes two ints for two format characters
+windows:String#unpack with format 'l' with modifier '<' and '_' decodes the number of ints requested by the count modifier
+windows:String#unpack with format 'l' with modifier '<' and '_' decodes the remaining ints when passed the '*' modifier
+windows:String#unpack with format 'l' with modifier '<' and '_' decodes the remaining ints when passed the '*' modifier after another directive
+windows:String#unpack with format 'l' with modifier '<' and '_' adds nil for each element requested beyond the end of the String
+windows:String#unpack with format 'l' with modifier '<' and '_' ignores spaces between directives
+windows:String#unpack with format 'l' with modifier '<' and '_' decodes an int with most significant bit set as a negative number
+windows:String#unpack with format 'l' with modifier '<' and '!' decodes one int for a single format character
+windows:String#unpack with format 'l' with modifier '<' and '!' decodes two ints for two format characters
+windows:String#unpack with format 'l' with modifier '<' and '!' decodes the number of ints requested by the count modifier
+windows:String#unpack with format 'l' with modifier '<' and '!' decodes the remaining ints when passed the '*' modifier
+windows:String#unpack with format 'l' with modifier '<' and '!' decodes the remaining ints when passed the '*' modifier after another directive
+windows:String#unpack with format 'l' with modifier '<' and '!' adds nil for each element requested beyond the end of the String
+windows:String#unpack with format 'l' with modifier '<' and '!' ignores spaces between directives
+windows:String#unpack with format 'l' with modifier '<' and '!' decodes an int with most significant bit set as a negative number
+windows:String#unpack with format 'l' with modifier '>' and '_' decodes one int for a single format character
+windows:String#unpack with format 'l' with modifier '>' and '_' decodes two ints for two format characters
+windows:String#unpack with format 'l' with modifier '>' and '_' decodes the number of ints requested by the count modifier
+windows:String#unpack with format 'l' with modifier '>' and '_' decodes the remaining ints when passed the '*' modifier
+windows:String#unpack with format 'l' with modifier '>' and '_' decodes the remaining ints when passed the '*' modifier after another directive
+windows:String#unpack with format 'l' with modifier '>' and '_' adds nil for each element requested beyond the end of the String
+windows:String#unpack with format 'l' with modifier '>' and '_' ignores spaces between directives
+windows:String#unpack with format 'l' with modifier '>' and '_' decodes an int with most significant bit set as a negative number
+windows:String#unpack with format 'l' with modifier '>' and '!' decodes one int for a single format character
+windows:String#unpack with format 'l' with modifier '>' and '!' decodes two ints for two format characters
+windows:String#unpack with format 'l' with modifier '>' and '!' decodes the number of ints requested by the count modifier
+windows:String#unpack with format 'l' with modifier '>' and '!' decodes the remaining ints when passed the '*' modifier
+windows:String#unpack with format 'l' with modifier '>' and '!' decodes the remaining ints when passed the '*' modifier after another directive
+windows:String#unpack with format 'l' with modifier '>' and '!' adds nil for each element requested beyond the end of the String
+windows:String#unpack with format 'l' with modifier '>' and '!' ignores spaces between directives
+windows:String#unpack with format 'l' with modifier '>' and '!' decodes an int with most significant bit set as a negative number
+windows:String#unpack with format 'L' with modifier '_' decodes one int for a single format character
+windows:String#unpack with format 'L' with modifier '_' decodes two ints for two format characters
+windows:String#unpack with format 'L' with modifier '_' decodes the number of ints requested by the count modifier
+windows:String#unpack with format 'L' with modifier '_' decodes the remaining ints when passed the '*' modifier
+windows:String#unpack with format 'L' with modifier '_' decodes the remaining ints when passed the '*' modifier after another directive
+windows:String#unpack with format 'L' with modifier '_' adds nil for each element requested beyond the end of the String
+windows:String#unpack with format 'L' with modifier '_' ignores spaces between directives
+windows:String#unpack with format 'L' with modifier '_' decodes an int with most significant bit set as a positive number
+windows:String#unpack with format 'L' with modifier '!' decodes one int for a single format character
+windows:String#unpack with format 'L' with modifier '!' decodes two ints for two format characters
+windows:String#unpack with format 'L' with modifier '!' decodes the number of ints requested by the count modifier
+windows:String#unpack with format 'L' with modifier '!' decodes the remaining ints when passed the '*' modifier
+windows:String#unpack with format 'L' with modifier '!' decodes the remaining ints when passed the '*' modifier after another directive
+windows:String#unpack with format 'L' with modifier '!' adds nil for each element requested beyond the end of the String
+windows:String#unpack with format 'L' with modifier '!' ignores spaces between directives
+windows:String#unpack with format 'L' with modifier '!' decodes an int with most significant bit set as a positive number

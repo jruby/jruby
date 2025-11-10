@@ -1,2 +1,5 @@
 fails:An Exception reaching the top level kills all threads and fibers, ensure clauses are only run for threads current fibers, not for suspended fibers with ensure on non-root fiber
 fails:An Exception reaching the top level the Exception#cause is printed to STDERR with backtraces
+windows:An Exception reaching the top level is printed on STDERR
+windows:An Exception reaching the top level with a custom backtrace is printed on STDERR
+windows:An Exception reaching the top level kills all threads and fibers, ensure clauses are only run for threads current fibers, not for suspended fibers with ensure on the root fiber

@@ -52,3 +52,17 @@ windows:Process.spawn when passed close_others: false does not close STDIN
 windows:Process.spawn when passed close_others: false does not close STDOUT
 windows:Process.spawn when passed close_others: false does not close STDERR
 windows:Process.spawn with Integer option keys maps the key to a file descriptor in the child that inherits the file descriptor from the parent specified by the value
+windows:Process.spawn calls #to_str to convert the environment keys
+windows:Process.spawn does not unset other environment variables when given a false :unsetenv_others option
+windows:Process.spawn redirects to the wrapped IO using wrapped_io.to_io if out: wrapped_io
+windows:Process.spawn redirects STDOUT to the given file descriptor if out: Integer
+windows:Process.spawn redirects STDOUT to the given file if out: String
+windows:Process.spawn redirects STDERR to the given file descriptor if err: Integer
+windows:Process.spawn redirects STDERR to the given file if err: String
+windows:Process.spawn redirects both STDERR and STDOUT to the given file descriptor
+windows:Process.spawn redirects both STDERR and STDOUT at the time to the given name
+windows:Process.spawn redirects default file descriptor to itself
+windows:Process.spawn with a single argument does not subject the specified command to shell expansion on Windows
+windows:Process.spawn with a single argument does not create an argument array with shell parsing semantics for whitespace on Windows
+windows:Process.spawn with a command array uses the first element as the command name and the second as the argv[0] value
+windows:Process.spawn with a command array calls #to_ary to convert the argument to an Array

@@ -1,0 +1,5 @@
+windows:Kernel#warn does not call Warning.warn if self is the Warning module
+windows:Kernel#warn avoids recursion if Warning#warn is redefined and calls super
+windows:Kernel#warn :uplevel keyword argument shows the caller of #require and not #require itself without RubyGems
+windows:Kernel#warn :uplevel keyword argument shows the caller of #require and not #require itself with RubyGems loaded
+windows:Kernel#warn :uplevel keyword argument skips <internal: core library methods defined in Ruby
