@@ -44,7 +44,6 @@ public class JavaSites {
     public final ArgfSites Argf = new ArgfSites();
     public final TracePointSites TracePoint = new TracePointSites();
     public final MarshalSites Marshal = new MarshalSites();
-    public final PathnameSites Pathname = new PathnameSites();
     public final DateSites Date = new DateSites();
     public final TempfileSites Tempfile = new TempfileSites();
     public final RaiseExceptionSites RaiseException = new RaiseExceptionSites();
