@@ -57,6 +57,14 @@ end
 
 ## JAR FILES: Allow gem path entries to contain jar files
 class Gem::Specification
+  ##
+  # Ignore missing extensions on JRuby
+  #
+  # See https://github.com/ruby/rubygems/issues/3520
+  def missing_extensions?
+    false
+  end
+
   class << self
     # Replace existing dirs
     def dirs
