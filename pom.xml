@@ -117,7 +117,7 @@ DO NOT MODIFY - GENERATED CODE
     <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
     <polyglot.dump.readonly>true</polyglot.dump.readonly>
     <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
-    <rake.version>13.2.1</rake.version>
+    <rake.version>13.3.1</rake.version>
     <version.jruby>${project.version}</version.jruby>
   </properties>
   <dependencyManagement>

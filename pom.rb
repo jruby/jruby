@@ -71,7 +71,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
 
              # versions for default gems with bin executables
              # used in ./lib/pom.rb and ./maven/jruby-stdlib/pom.rb
-             "rake.version": '13.2.1',
+             "rake.version": '13.3.1',
              "jruby-launcher.version": '1.1.6',
              "ant.version": '1.9.8',
              "asm.version": '9.7.1',
