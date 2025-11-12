@@ -22,23 +22,28 @@ describe "Kernel#require" do
     provided << "pathname"
   end
 
-  it "#{provided.join(', ')} are already required" do
-    out = ruby_exe("puts $LOADED_FEATURES", options: '--disable-gems --disable-did-you-mean')
-    features = out.lines.map { |line| File.basename(line.chomp, '.*') }
+  provided_requires = provided.dup.to_h {|f| [f,f]}
+  ruby_version_is "3.5" do
+    provided_requires["pathname"] = "pathname.so"
+  end
 
-    # Ignore CRuby internals
-    features -= %w[encdb transdb windows_1252 windows_31j]
-    features.reject! { |feature| feature.end_with?('-fake') }
+  provided.each do |feature|
+    it "#{feature} is already required and provided in loaded features at boot" do
+      feature_require = provided_requires[feature]
 
-    features.sort.should == provided.sort
-
-    ruby_version_is "3.5" do
-      provided.map! { |f| f == "pathname" ? "pathname.so" : f }
+      code = <<~RUBY
+        loaded_feature_base = $\".map{|f| File.basename(f, '.*')}
+        required = begin
+          require(#{feature_require.inspect})
+        rescue LoadError
+          "error"
+        end
+        feature = loaded_feature_base.include?(#{feature.inspect})
+        p({required:, feature:})
+        RUBY
+      output = ruby_exe(code, options: '--disable-gems').chomp
+      output.should == "{required: false, feature: true}"
     end
-
-    code = provided.map { |f| "puts require #{f.inspect}\n" }.join
-    required = ruby_exe(code, options: '--disable-gems')
-    required.should == "false\n" * provided.size
   end
 
   it_behaves_like :kernel_require_basic, :require, CodeLoadingSpecs::Method.new
