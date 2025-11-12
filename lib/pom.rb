@@ -58,8 +58,6 @@ default_gems = [
   # https://github.com/ruby/openssl/issues/20#issuecomment-1022872855
   # ['openssl', '4.0.0.pre'],
   ['optparse', '0.8.0'],
-  # https://github.com/ruby/pathname/issues/17
-  # ['pathname', '0.4.0'],
   ['pp', '0.6.3'],
   ['prettyprint', '0.2.0'],
   # Not ready to ship in the box yet (native dependencies)

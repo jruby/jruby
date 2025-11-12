@@ -50,6 +50,7 @@ import org.jruby.compiler.NotCompilableException;
 import org.jruby.exceptions.LocalJumpError;
 import org.jruby.exceptions.SystemExit;
 import org.jruby.ext.jruby.JRubyUtilLibrary;
+import org.jruby.ext.pathname.RubyPathname;
 import org.jruby.ext.thread.ConditionVariable;
 import org.jruby.ext.thread.Mutex;
 import org.jruby.ext.thread.Queue;
@@ -477,6 +478,7 @@ public final class Ruby implements Constantizable {
         processModule = profile.allowModule("Process") ? RubyProcess.createProcessModule(context, objectClass, structClass) : null;
         timeClass = profile.allowClass("Time") ? RubyTime.createTimeClass(context, objectClass, comparableModule) : null;
         unboundMethodClass = profile.allowClass("UnboundMethod") ? RubyUnboundMethod.defineUnboundMethodClass(context, objectClass) : null;
+        pathnameClass = RubyPathname.createPathnameClass(context);
 
         if (profile.allowModule("Signal")) RubySignal.createSignal(context);
 
@@ -601,6 +603,7 @@ public final class Ruby implements Constantizable {
         loadService.provide("thread.rb");
         loadService.provide("fiber.rb");
         loadService.provide("ruby2_keywords.rb");
+        loadService.provide("pathname.so");
 
         // Load preludes
         initRubyPreludes();
@@ -5253,6 +5256,7 @@ public final class Ruby implements Constantizable {
     private final RubyClass closedQueueError;
     private final RubyClass sizedQueueClass;
     private final RubyClass dataClass;
+    private final RubyClass pathnameClass;
 
     private RubyClass tmsStruct;
     private RubyClass passwdStruct;
