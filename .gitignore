@@ -125,6 +125,7 @@ lib/ruby/stdlib/un*
 lib/ruby/stdlib/uri*
 lib/ruby/stdlib/yaml*
 lib/ruby/stdlib/weakref*
+lib/ruby/stdlib/win32/registry.rb
 
 release.properties
 share
