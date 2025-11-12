@@ -988,7 +988,11 @@ public class LoadService {
     }
 
     public void tearDown() {
-        loadedFeatures.clear();
+        if (loadedFeatures.isFrozen()) {
+            loadedFeatures = new StringArraySet(runtime);
+        } else {
+            loadedFeatures.clear();
+        }
         librarySearcher.tearDown();
     }
 }
