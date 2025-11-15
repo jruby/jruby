@@ -6,6 +6,32 @@ class TC_Set < Test::Unit::TestCase
   class Set2 < Set
   end
 
+  def test_marshal
+    set = Set[1, 2, 3]
+    mset = Marshal.load(Marshal.dump(set))
+    assert_equal(set, mset)
+    assert_equal(set.compare_by_identity?, mset.compare_by_identity?)
+
+    set.compare_by_identity
+    mset = Marshal.load(Marshal.dump(set))
+    assert_equal(set, mset)
+    assert_equal(set.compare_by_identity?, mset.compare_by_identity?)
+
+    set.instance_variable_set(:@a, 1)
+    mset = Marshal.load(Marshal.dump(set))
+    assert_equal(set, mset)
+    assert_equal(set.compare_by_identity?, mset.compare_by_identity?)
+    assert_equal(1, mset.instance_variable_get(:@a))
+
+    old_stdlib_set_data = "\x04\bo:\bSet\x06:\n@hash}\bi\x06Ti\aTi\bTF".b
+    set = Marshal.load(old_stdlib_set_data)
+    assert_equal(Set[1, 2, 3], set)
+
+    old_stdlib_set_cbi_data = "\x04\bo:\bSet\x06:\n@hashC:\tHash}\ai\x06Ti\aTF".b
+    set = Marshal.load(old_stdlib_set_cbi_data)
+    assert_equal(Set[1, 2].compare_by_identity, set)
+  end
+
   def test_aref
     assert_nothing_raised {
       Set[]
@@ -55,6 +81,20 @@ class TC_Set < Test::Unit::TestCase
 
     s = Set.new(ary) { |o| o * 2 }
     assert_equal([2,4,6], s.sort)
+
+    assert_raise(ArgumentError) {
+      Set.new((1..))
+    }
+    assert_raise(ArgumentError) {
+      Set.new((1..), &:succ)
+    }
+    assert_raise(ArgumentError) {
+      Set.new(1.upto(Float::INFINITY))
+    }
+
+    assert_raise(ArgumentError) {
+      Set.new(Object.new)
+    }
   end
 
   def test_clone
@@ -99,6 +139,12 @@ class TC_Set < Test::Unit::TestCase
   def test_replace
     set = Set[1,2]
     ret = set.replace('a'..'c')
+
+    assert_same(set, ret)
+    assert_equal(Set['a','b','c'], set)
+
+    set = Set[1,2]
+    ret = set.replace(Set.new('a'..'c'))
 
     assert_same(set, ret)
     assert_equal(Set['a','b','c'], set)
@@ -606,6 +652,22 @@ class TC_Set < Test::Unit::TestCase
     }
   end
 
+  def test_merge_mutating_hash_bug_21305
+    a = (1..100).to_a
+    o = Object.new
+    o.define_singleton_method(:hash) do
+      a.clear
+      0
+    end
+    a.unshift o
+    assert_equal([o], Set.new.merge(a).to_a)
+  end
+
+  def test_initialize_mutating_array_bug_21306
+    a = (1..100).to_a
+    assert_equal(Set[0], Set.new(a){a.clear; 0})
+  end
+
   def test_subtract
     set = Set[1,2,3]
 
@@ -733,6 +795,10 @@ class TC_Set < Test::Unit::TestCase
     ret.each { |s| n += s.size }
     assert_equal(set.size, n)
     assert_equal(set, ret.flatten)
+
+    set = Set[2,12,9,11,13,4,10,15,3,8,5,0,1,7,14]
+    ret = set.divide { |a,b| (a - b).abs == 1 }
+    assert_equal(2, ret.size)
   end
 
   def test_freeze
@@ -787,24 +853,28 @@ class TC_Set < Test::Unit::TestCase
 
   def test_inspect
     set1 = Set[1, 2]
-    assert_equal('#<Set: {1, 2}>', set1.inspect)
+    assert_equal('Set[1, 2]', set1.inspect)
 
     set2 = Set[Set[0], 1, 2, set1]
-    assert_equal('#<Set: {#<Set: {0}>, 1, 2, #<Set: {1, 2}>}>', set2.inspect)
+    assert_equal('Set[Set[0], 1, 2, Set[1, 2]]', set2.inspect)
 
     set1.add(set2)
-    assert_equal('#<Set: {#<Set: {0}>, 1, 2, #<Set: {1, 2, #<Set: {...}>}>}>', set2.inspect)
+    assert_equal('Set[Set[0], 1, 2, Set[1, 2, Set[...]]]', set2.inspect)
+
+    c = Class.new(Set)
+    c.set_temporary_name("_MySet")
+    assert_equal('_MySet[1, 2]', c[1, 2].inspect)
   end
 
   def test_to_s
     set1 = Set[1, 2]
-    assert_equal('#<Set: {1, 2}>', set1.to_s)
+    assert_equal('Set[1, 2]', set1.to_s)
 
     set2 = Set[Set[0], 1, 2, set1]
-    assert_equal('#<Set: {#<Set: {0}>, 1, 2, #<Set: {1, 2}>}>', set2.to_s)
+    assert_equal('Set[Set[0], 1, 2, Set[1, 2]]', set2.to_s)
 
     set1.add(set2)
-    assert_equal('#<Set: {#<Set: {0}>, 1, 2, #<Set: {1, 2, #<Set: {...}>}>}>', set2.to_s)
+    assert_equal('Set[Set[0], 1, 2, Set[1, 2, Set[...]]]', set2.to_s)
   end
 
   def test_compare_by_identity
@@ -837,6 +907,34 @@ class TC_Set < Test::Unit::TestCase
 
       assert_equal(klass.new([a]), set, klass.name)
     }
+  end
+
+  def test_set_gc_compact_does_not_allocate
+    assert_in_out_err([], <<-"end;", [], [])
+    def x
+      s = Set.new
+      s << Object.new
+      s
+    end
+
+    x
+    begin
+      GC.compact
+    rescue NotImplementedError
+    end
+    end;
+  end
+
+  def test_larger_sets
+    set = Set.new
+    10_000.times do |i|
+      set << i
+    end
+    set = set.dup
+
+    10_000.times do |i|
+      assert_includes set, i
+    end
   end
 end
 

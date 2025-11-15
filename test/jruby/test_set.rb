@@ -11,10 +11,7 @@ class TestSet < Test::Unit::TestCase
     assert_same SubSet, set.class
     assert set.is_a?(SubSet)
     assert set.is_a?(Set)
-    assert hash = set.instance_variable_get(:@hash)
-    assert hash.is_a?(Hash)
-    assert_equal Hash.new, hash
-    assert_equal '#<TestSet::SubSet: {}>', set.inspect
+    assert_equal 'SubSet[]', set.inspect
 
     assert_false Set.new.equal?(SubSet.new)
     assert_true Set.new.eql?(SubSet.new)
@@ -83,13 +80,17 @@ class TestSet < Test::Unit::TestCase
 
   def test_to_java
     assert set = Set.new.to_java
-    assert_equal "#<Set: {}>", set.toString
+    assert_equal "Set[]", set.toString
     assert_equal org.jruby.ext.set.RubySet, set.class
     assert set.is_a?(java.util.Set)
     assert_equal java.util.HashSet.new, set
+  end if defined? JRUBY_VERSION
+
+  def test_to_java_sorted_set
+    require "sorted_set" rescue skip "sorted_set not available"
 
     assert set = SortedSet.new([2, 1]).to_java
-    assert set.toString.start_with?('#<SortedSet: {')
+    assert set.toString.start_with?('SortedSet[]')
     assert_equal org.jruby.ext.set.RubySortedSet, set.class
     assert set.is_a?(java.util.Set)
     assert set.is_a?(java.util.SortedSet)
