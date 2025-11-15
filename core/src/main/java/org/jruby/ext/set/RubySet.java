@@ -81,14 +81,6 @@ public class RubySet extends RubyObject implements Set {
                 defineMethods(context, RubySet.class).
                 tap(c -> c.marshalWith(new SetMarshal(c.getMarshal())));
 
-        MethodHandles.Lookup lookup = MethodHandles.lookup();
-        try {
-            Set.getVariableTableManager().getVariableAccessorForRubyVar("@hash", lookup.findGetter(RubySet.class, "hash", RubyHash.class), lookup.findSetter(RubySet.class, "hash", RubyHash.class));
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            // should not happen
-            throw new RuntimeException(e);
-        }
-
         Enumerable.defineMethods(context, EnumerableExt.class);
 
         return Set;
@@ -283,19 +275,6 @@ public class RubySet extends RubyObject implements Set {
         }
 
         throw argumentError(context, "value must be enumerable");
-    }
-
-    // YAML doesn't have proper treatment for Set serialization, it dumps it just like
-    // any Ruby object, meaning on YAML.load will allocate an "initialize" all i-vars!
-    @Override
-    public IRubyObject instance_variable_set(IRubyObject name, IRubyObject value) {
-        if (getRuntime().newSymbol("@hash").equals(name)) {
-            if (value instanceof RubyHash) {
-                this.hash = (RubyHash) value;
-                return value;
-            }
-        }
-        return super.instance_variable_set(name, value);
     }
 
     IRubyObject invokeAdd(final ThreadContext context, final IRubyObject val) {
@@ -633,7 +612,7 @@ public class RubySet extends RubyObject implements Set {
     }
 
     protected void addImpl(final ThreadContext context, final IRubyObject obj) {
-        hash.fastASetCheckString(context.runtime, obj, context.tru); // @hash[obj] = true
+        hash.fastASetCheckString(context.runtime, obj, context.tru);
     }
 
     protected void addImplSet(final ThreadContext context, final RubySet set) {
@@ -878,7 +857,7 @@ public class RubySet extends RubyObject implements Set {
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         if (this == other) return context.tru;
         if (getMetaClass().isInstance(other)) {
-            return hash.op_equal(context, ((RubySet) other).hash); // @hash == ...
+            return hash.op_equal(context, ((RubySet) other).hash);
         }
         if (other instanceof RubySet that) {
             if (size() == that.size()) { // && includes all of our elements :
@@ -915,7 +894,7 @@ public class RubySet extends RubyObject implements Set {
     }
 
     @JRubyMethod
-    public RubyFixnum hash(ThreadContext context) { // @hash.hash
+    public RubyFixnum hash(ThreadContext context) {
         RubyHash hash = this.hash;
 
         return hash == null ?
