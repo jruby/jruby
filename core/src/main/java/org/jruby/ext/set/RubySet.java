@@ -841,8 +841,13 @@ public class RubySet extends RubyObject implements Set {
      */
     @JRubyMethod(name = "^")
     public IRubyObject op_xor(final ThreadContext context, IRubyObject enume) {
-        RubySet newSet = new RubySet(context.runtime, getMetaClass());
-        newSet.initialize(context, enume, Block.NULL_BLOCK); // Set.new(enum)
+        RubySet newSet;
+        if (enume instanceof RubySet set) {
+            newSet = set;
+        } else {
+            newSet = new RubySet(context.runtime, getMetaClass());
+            newSet.initialize(context, enume, Block.NULL_BLOCK); // Set.new(enum)
+        }
         for (IRubyObject o : elementsOrdered()) {
             if (newSet.containsImpl(o)) {
                 newSet.deleteImpl(o); // exclusive or
