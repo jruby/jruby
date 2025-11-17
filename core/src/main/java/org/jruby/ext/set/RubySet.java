@@ -548,13 +548,12 @@ public class RubySet extends RubyObject implements Set {
      */
     @JRubyMethod(name = "intersect?")
     public IRubyObject intersect_p(final ThreadContext context, IRubyObject setArg) {
-        return asBoolean(context,
-                intersect(
-                        switch (setArg) {
-                            case RubySet set -> set;
-                            case RubyArray ary -> newSet(context, context.runtime.getSet(), ary);
-                            default -> throw argumentError(context, "value must be a set or array");
-                        }));
+        if (setArg instanceof RubySet other) {
+            return asBoolean(context, intersect(other));
+        } else if (setArg.getType().isKindOfModule(enumerableModule(context))) {
+            return setArg.callMethod(context, "any?", this);
+        }
+        throw argumentError(context, "value must be a set or array");
     }
 
     public boolean intersect(final RubySet set) {
