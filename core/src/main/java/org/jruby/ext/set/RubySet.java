@@ -120,7 +120,7 @@ public class RubySet extends RubyObject implements Set {
         }
 
         public Object unmarshalFrom(ThreadContext context, RubyInputStream in, RubyClass type, MarshalLoader loader) {
-            RubySet set = new RubySet(context.runtime, type);
+            RubySet set = new RubySet(context.runtime, type, false);
 
             // unmarshal as dummy object and extra @hash ivar
             RubyObject dummy = (RubyObject) loader.entry(new RubyObject(context.runtime, type));
@@ -136,14 +136,18 @@ public class RubySet extends RubyObject implements Set {
     }
 
     protected RubySet(Ruby runtime, RubyClass klass) {
-        super(runtime, klass);
+        this(runtime, klass, true);
     }
 
-    /*
-    private RubySet(Ruby runtime, RubyHash hash) {
-        super(runtime, runtime.getClass("Set"));
-        allocHash(hash);
-    } */
+    protected RubySet(Ruby runtime, RubyClass klass, boolean alloc) {
+        super(runtime, klass);
+        if (alloc) allocHash(runtime);
+    }
+
+    private RubySet(Ruby runtime, RubyClass klass, RubyHash hash) {
+        super(runtime, klass);
+        this.hash = hash;
+    }
 
     // since MRI uses Hash.new(false) we'll (initially) strive for maximum compatibility
     // ... this is important with Rails using Sprockets at its marshalling Set instances
@@ -188,13 +192,11 @@ public class RubySet extends RubyObject implements Set {
      * @return a new Set
      */
     public static RubySet newSet(final Ruby runtime, final RubyClass metaclass) {
-        RubySet set = new RubySet(runtime, metaclass);
-        set.allocHash(runtime);
-        return set;
+        return new RubySet(runtime, metaclass);
     }
 
     private static RubySet newSet(final ThreadContext context, final RubyClass metaClass, final RubyArray elements) {
-        final RubySet set = new RubySet(context.runtime, metaClass);
+        final RubySet set = new RubySet(context.runtime, metaClass, false);
         return set.initSet(context, elements.toJavaArrayMaybeUnsafe(), 0, elements.size());
     }
 
@@ -213,7 +215,7 @@ public class RubySet extends RubyObject implements Set {
     public static RubySet create(final ThreadContext context, IRubyObject self, IRubyObject... ary) {
         final Ruby runtime = context.runtime;
 
-        RubySet set = new RubySet(runtime, (RubyClass) self);
+        RubySet set = new RubySet(runtime, (RubyClass) self, false);
         return set.initSet(context, ary, 0, ary.length);
     }
 
@@ -411,7 +413,7 @@ public class RubySet extends RubyObject implements Set {
     @JRubyMethod
     public RubySet to_set(final ThreadContext context, final Block block) {
         if ( block.isGiven() ) {
-            RubySet set = new RubySet(context.runtime, getMetaClass());
+            RubySet set = new RubySet(context.runtime, getMetaClass(), false);
             set.initialize(context, this, block);
             return set;
         }
@@ -436,7 +438,7 @@ public class RubySet extends RubyObject implements Set {
             rest = args;
         }
 
-        RubySet set = new RubySet(context.runtime, (RubyClass) klass);
+        RubySet set = new RubySet(context.runtime, (RubyClass) klass, false);
         set.initialize(context, rest, block);
         return set;
     }
@@ -826,7 +828,7 @@ public class RubySet extends RubyObject implements Set {
      */
     @JRubyMethod(name = "&", alias = { "intersection" })
     public IRubyObject op_and(final ThreadContext context, IRubyObject enume) {
-        final RubySet newSet = new RubySet(context.runtime, getMetaClass());
+        final RubySet newSet = new RubySet(context.runtime, getMetaClass(), false);
         if (enume instanceof RubySet set) {
             newSet.allocHash(context, set.size());
             for ( IRubyObject obj : set.elementsOrdered() ) {
@@ -862,7 +864,7 @@ public class RubySet extends RubyObject implements Set {
         if (enume instanceof RubySet set) {
             newSet = set;
         } else {
-            newSet = new RubySet(context.runtime, getMetaClass());
+            newSet = new RubySet(context.runtime, getMetaClass(), false);
             newSet.initialize(context, enume, Block.NULL_BLOCK); // Set.new(enum)
         }
         for (IRubyObject o : elementsOrdered()) {
@@ -970,7 +972,7 @@ public class RubySet extends RubyObject implements Set {
         if (block.getSignature().arityValue() == 2) return setDivideArity2(context, block);
 
         RubyHash vals = (RubyHash) classify(context, block);
-        final RubySet set = new RubySet(context.runtime, Access.getClass(context, "Set"));
+        final RubySet set = new RubySet(context.runtime, Access.getClass(context, "Set"), false);
         set.allocHash(context, vals.size());
         for ( IRubyObject val : (Collection<IRubyObject>) vals.directValues() ) {
             set.invokeAdd(context, val);
