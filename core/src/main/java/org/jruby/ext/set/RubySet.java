@@ -425,6 +425,8 @@ public class RubySet extends RubyObject implements Set {
 
     @JRubyMethod
     public IRubyObject compare_by_identity(ThreadContext context) {
+        if (hash.isComparedByIdentity()) return this;
+        if (isFrozen()) throw context.runtime.newFrozenError("Set", this);
         this.hash.compare_by_identity(context);
         return this;
     }
