@@ -101,7 +101,15 @@ public class RubySet extends RubyObject implements Set {
         }
 
         public void marshalTo(ThreadContext context, RubyOutputStream out, Object obj, RubyClass type, MarshalDumper marshalStream) {
-            defaultMarshal.marshalTo(context, out, obj, type, marshalStream);
+            RubySet set = (RubySet) obj;
+
+            // create dummy object with extra @hash ivar and dump variables from that
+            RubyObject dummy = new RubyObject(context.runtime, type);
+            dummy.setInstanceVariable("@hash", set.hash);
+
+            set.copyInstanceVariablesInto(dummy);
+
+            marshalStream.dumpVariables(context, out, dummy);
         }
 
         @Deprecated(since = "10.0.0.0", forRemoval = true)
@@ -112,8 +120,17 @@ public class RubySet extends RubyObject implements Set {
         }
 
         public Object unmarshalFrom(ThreadContext context, RubyInputStream in, RubyClass type, MarshalLoader loader) {
-            Object result = defaultMarshal.unmarshalFrom(context, in, type, loader);
-            return result;
+            RubySet set = new RubySet(context.runtime, type);
+
+            // unmarshal as dummy object and extra @hash ivar
+            RubyObject dummy = (RubyObject) loader.entry(new RubyObject(context.runtime, type));
+            loader.ivar(context, in, null, dummy, null);
+
+            set.hash = (RubyHash) dummy.getInstanceVariables().removeInstanceVariable("@hash");
+
+            dummy.copyInstanceVariablesInto(set);
+
+            return set;
         }
 
     }
