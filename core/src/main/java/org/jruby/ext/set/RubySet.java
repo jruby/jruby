@@ -34,6 +34,7 @@ import org.jruby.*;
 import org.jruby.RubyEnumerator.SizeFn;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Access;
+import org.jruby.api.Create;
 import org.jruby.api.Error;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.*;
@@ -45,7 +46,6 @@ import org.jruby.util.io.RubyInputStream;
 import org.jruby.util.io.RubyOutputStream;
 
 import java.io.IOException;
-import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Array;
 import java.util.Collection;
 import java.util.IdentityHashMap;
@@ -55,7 +55,6 @@ import java.util.Set;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.api.Access.enumerableModule;
 import static org.jruby.api.Access.getModule;
-import static org.jruby.api.Access.hashClass;
 import static org.jruby.api.Access.loadService;
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.asBoolean;
@@ -944,7 +943,7 @@ public class RubySet extends RubyObject implements Set {
     public IRubyObject divide(ThreadContext context, final Block block) {
         if (!block.isGiven()) return enumeratorizeWithSize(context, this, "divide", RubySet::size);
 
-        if (block.getSignature().arityValue() == 2) return divideTSort(context, block);
+        if (block.getSignature().arityValue() == 2) return setDivideArity2(context, block);
 
         RubyHash vals = (RubyHash) classify(context, block);
         final RubySet set = new RubySet(context.runtime, Access.getClass(context, "Set"));
@@ -955,106 +954,77 @@ public class RubySet extends RubyObject implements Set {
         return set;
     }
 
-    private IRubyObject divideTSort(ThreadContext context, final Block block) {
-        final RubyHash dig = DivideTSortHash.newInstance(context);
+    // MRI: set_divide_arity2
+    IRubyObject setDivideArity2(ThreadContext context, Block block) {
+        RubyClass setClass = getMetaClass();
 
-        /*
-          each { |u|
-            dig[u] = a = []
-            each{ |v| func.call(u, v) and a << v }
-          }
-         */
-        for ( IRubyObject u : elementsOrdered() ) {
-            var a = newArray(context);
-            dig.fastASet(u, a);
-            for ( IRubyObject v : elementsOrdered() ) {
-                IRubyObject ret = block.call(context, u, v);
-                if ( ret.isTrue() ) a.append(context, v);
+        RubyArray items = to_a(context);
+        items.setFrozen(true);
+        int size = items.size();
+
+        int[] tmp_array = new int[size];
+        int[] uf_parents = new int[size];
+
+        for (int i = 0; i < size; i++) {
+            uf_parents[i] = i;
+        }
+
+        for (int i = 0; i < size - 1; i++) {
+            IRubyObject item1 = items.eltOk(i);
+
+            for (int j = i + 1; j < size; j++) {
+                IRubyObject item2 = items.eltOk(j);
+
+                if (block.yieldSpecific(context, item1, item2).isTrue() &&
+                        block.yieldSpecific(context, item2, item1).isTrue()) {
+                    setDivideUnionFindMerge(context, uf_parents, i, j, tmp_array);
+                }
             }
         }
 
-        /*
-          set = Set.new()
-          dig.each_strongly_connected_component { |css|
-            set.add(self.class.new(css))
-          }
-          set
-         */
-        final RubyClass Set = Access.getClass(context, "Set");
-        final RubySet set = new RubySet(context.runtime, Set);
-        set.allocHash(context, dig.size());
-        sites(context).each_strongly_connected_component.call(context, this, dig, new Block(
-            new JavaInternalBlockBody(context.runtime, Signature.ONE_REQUIRED) {
-                @Override
-                public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
-                    return doYield(context, null, args[0]);
-                }
+        RubySet finalSet = newSet(context.runtime, setClass);
+        RubyHash hash = Create.newHash(context);
 
-                @Override
-                protected IRubyObject doYield(ThreadContext context, Block block, IRubyObject css) {
-                    // set.add( self.class.new(css) ) :
-                    set.addImpl(context, newSet(context, Set, (RubyArray) css));
-                    return context.nil;
-                }
-            })
-        );
+        for (int i = 0; i < size; i++) {
+            IRubyObject v = items.eltOk(i);
 
-        return set;
+            int root = setDivideUnionFindRoot(context, uf_parents, i, tmp_array);
+
+            IRubyObject set = hash.op_aref(context, asFixnum(context, root));
+
+            if (set.isNil()) {
+                set = newSet(context.runtime, setClass);
+                hash.op_aset(context, asFixnum(context, root), set);
+                finalSet.add(context, set);
+            }
+
+            ((RubySet) set).add(context, v);
+        }
+
+        return finalSet;
     }
 
-    // NOTE: a replacement for set.rb's eval in Set#divide : `class << dig = {} ...`
-    public static final class DivideTSortHash extends RubyHash {
+    // MRI: set_divide_union_find_merge
+    static void setDivideUnionFindMerge(ThreadContext context, int[] uf_parents, int i, int j, int[] tmp_array) {
+        int root_i = setDivideUnionFindRoot(context, uf_parents, i, tmp_array);
+        int root_j = setDivideUnionFindRoot(context, uf_parents, j, tmp_array);
+        if (root_i != root_j) uf_parents[root_j] = root_i;
+    }
 
-        private static final String NAME = "DivideTSortHash"; // private constant under Set::
-
-        static DivideTSortHash newInstance(final ThreadContext context) {
-            RubyClass Set = Access.getClass(context, "Set");
-            RubyClass klass = (RubyClass) Set.getConstantAt(context, NAME, true);
-            if (klass == null) { // initialize on-demand when Set#divide is first called
-                synchronized (DivideTSortHash.class) {
-                    klass = (RubyClass) Set.getConstantAt(context, NAME, true);
-                    if (klass == null) {
-                        var Hash = hashClass(context);
-                        klass = Set.defineClassUnder(context, NAME, Hash, Hash.getAllocator()).
-                                include(context, getTSort(context)).
-                                defineMethods(context, DivideTSortHash.class);
-                        Set.setConstantVisibility(context, NAME, true); // private
-                    }
-                }
-            }
-            return new DivideTSortHash(context.runtime, klass);
+    // MRI: set_divide_union_find_root
+    static int setDivideUnionFindRoot(ThreadContext context, int[] uf_parents, int index, int[] tmp_array) {
+        int root = uf_parents[index];
+        int update_size = 0;
+        while (root != index) {
+            tmp_array[update_size++] = index;
+            index = root;
+            root = uf_parents[index];
         }
-
-        DivideTSortHash(final Ruby runtime, final RubyClass metaClass) {
-            super(runtime, metaClass);
+        for (int j = 0; j < update_size; j++) {
+            int idx = tmp_array[j];
+            uf_parents[idx] = root;
         }
-
-        /*
-         class << dig = {}         # :nodoc:
-           include TSort
-
-           alias tsort_each_node each_key
-           def tsort_each_child(node, &block)
-             fetch(node).each(&block)
-           end
-         end
-         */
-
-        @JRubyMethod
-        public IRubyObject tsort_each_node(ThreadContext context, Block block) {
-            return each_key(context, block);
-        }
-
-        @JRubyMethod
-        public IRubyObject tsort_each_child(ThreadContext context, IRubyObject node, Block block) {
-            IRubyObject set = fetch(context, node, Block.NULL_BLOCK);
-            if ( set instanceof RubySet ) {
-                return ((RubySet) set).each(context, block);
-            }
-            // some Enumerable (we do not expect this to happen)
-            return sites(context).each.call(context, this, set, block);
-        }
-
+        return root;
     }
 
     @JRubyMethod(name = "<=>")
