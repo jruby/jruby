@@ -1393,7 +1393,37 @@ public class RubyHash extends RubyObject implements Map {
     @Override
     @JRubyMethod(name = "==")
     public IRubyObject op_equal(final ThreadContext context, IRubyObject other) {
-        return RecursiveComparator.compare(context, FindMismatchUsingEqualVisitor, this, other, false);
+        return hashEqual(context, this, other, false);
+    }
+
+    static IRubyObject hashEqual(final ThreadContext context, RubyHash hash1, IRubyObject _hash2, boolean eql) {
+        if (hash1 == _hash2) return context.tru;
+        if (!(_hash2 instanceof RubyHash hash2)) {
+            if (!_hash2.respondsTo("to_hash")) {
+                return context.fals;
+            }
+            if (eql) {
+                if (Helpers.rbEql(context, _hash2, hash1).isTrue()) {
+                    return context.tru;
+                } else {
+                    return context.fals;
+                }
+            } else {
+                return Helpers.rbEqual(context, _hash2, hash1);
+            }
+        }
+        if (hash1.size() != hash2.size()) return context.fals;
+        if (!hash1.isEmpty() && !hash2.isEmpty()) {
+            if (hash1.isComparedByIdentity() != hash2.isComparedByIdentity()) {
+                return context.fals;
+            } else {
+                return RecursiveComparator.compare(
+                        context,
+                        eql ? FindMismatchUsingEqlVisitor : FindMismatchUsingEqualVisitor,
+                        hash1, hash2, eql);
+            }
+        }
+        return context.tru;
     }
 
     /** rb_hash_eql
@@ -1401,7 +1431,7 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = "eql?")
     public IRubyObject op_eql(final ThreadContext context, IRubyObject other) {
-        return RecursiveComparator.compare(context, FindMismatchUsingEqlVisitor, this, other, true);
+        return hashEqual(context, this, other, true);
     }
 
     /** rb_hash_aref
