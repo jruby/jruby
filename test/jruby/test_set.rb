@@ -4,20 +4,6 @@ require 'set.rb'
 # JRuby's Set impl specific or low-level details.
 class TestSet < Test::Unit::TestCase
 
-  class SubSet < Set ; end
-
-  def test_sub_set
-    set = SubSet.new
-    assert_same SubSet, set.class
-    assert set.is_a?(SubSet)
-    assert set.is_a?(Set)
-    assert_equal 'SubSet[]', set.inspect
-
-    assert_false Set.new.equal?(SubSet.new)
-    assert_true Set.new.eql?(SubSet.new)
-    assert_true ( SubSet.new == Set.new )
-  end
-
   def test_allocate
     set = Set.allocate
     assert_same Set, set.class
@@ -84,17 +70,6 @@ class TestSet < Test::Unit::TestCase
     assert_equal org.jruby.ext.set.RubySet, set.class
     assert set.is_a?(java.util.Set)
     assert_equal java.util.HashSet.new, set
-  end if defined? JRUBY_VERSION
-
-  def test_to_java_sorted_set
-    require "sorted_set" rescue skip "sorted_set not available"
-
-    assert set = SortedSet.new([2, 1]).to_java
-    assert set.toString.start_with?('SortedSet[]')
-    assert_equal org.jruby.ext.set.RubySortedSet, set.class
-    assert set.is_a?(java.util.Set)
-    assert set.is_a?(java.util.SortedSet)
-    assert_equal java.util.TreeSet.new([1, 2]), set
   end if defined? JRUBY_VERSION
 
   def test_cmp_0_but_not_eql
