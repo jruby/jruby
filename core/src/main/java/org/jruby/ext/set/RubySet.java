@@ -241,18 +241,20 @@ public class RubySet extends RubyObject implements Set {
             }
             allocHash(context);
 
-            // set.rb do_with_enum :
             if (block.isGiven()) {
                 return doWithEnum(context, enume, new EachBody(context) {
                     IRubyObject yieldImpl(ThreadContext context2, IRubyObject val) {
                         return invokeAdd(context2, block.yield(context2, val));
                     }
                 });
+            } else {
+                return doWithEnum(context, enume, new EachBody(context) {
+                    IRubyObject yieldImpl(ThreadContext context2, IRubyObject val) {
+                        return invokeAdd(context2, val);
+                    }
+                });
             }
         }
-
-        allocHash(context);
-        return sites(context).merge.call(context, this, this, enume); // TODO site-cache
     }
 
     protected IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
