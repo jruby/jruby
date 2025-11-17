@@ -854,17 +854,18 @@ if $use_modules; then
     process_java_opts "$jruby_module_opts_file"
 fi
 
-# Default JVM Class Data Sharing Archive (jsa) file for JVMs that support it
-readonly jruby_jsa_file="$JRUBY_HOME/lib/jruby-java$java_runtime_version.jsa"
+if [ -n "${JRUBY_JSA-}" ]; then
+    # Allow overriding default JSA file location
+    jruby_jsa_file="$JRUBY_JSA"
+else
+    # Default JVM Class Data Sharing Archive (jsa) file for JVMs that support it
+    jruby_jsa_file="$JRUBY_HOME/lib/jruby-java$java_runtime_version.jsa"
+fi
+readonly jruby_jsa_file
 
 # Find JSAs for all Java versions
 assign jruby_jsa_files "$JRUBY_HOME"/lib/jruby-java*.jsa
 readonly jruby_jsa_files
-
-# Allow overriding default JSA file location
-if [ -n "${JRUBY_JSA-}" ]; then
-    jruby_jsa_file="$JRUBY_JSA"
-fi
 
 # Ensure the AppCDS parent directory is actually writable
 if dir_name "$jruby_jsa_file" && ! [ -w "$REPLY" ]; then
