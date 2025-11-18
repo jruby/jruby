@@ -32,7 +32,7 @@ default_gems = [
   ['digest', '3.2.1'],
   ['english', '0.8.1'],
   # Ongoing discussion about the -java gem, since it just omits the ext: https://github.com/ruby/erb/issues/52
-  ['erb', '5.1.3'],
+  ['erb', '6.0.0'],
   ['error_highlight', '0.7.0'],
   # https://github.com/ruby/etc/issues/19
   # ['etc', '1.4.6'],
@@ -50,7 +50,7 @@ default_gems = [
   ['jar-dependencies', '0.5.4'],
   ['jruby-readline', '1.3.7'],
   ['jruby-openssl', '0.15.4'],
-  ['json', '2.15.2'],
+  ['json', '2.16.0'],
   ['net-http', '0.7.0'],
   ['net-protocol', '0.2.2'],
   ['open-uri', '0.5.0'],
@@ -112,7 +112,7 @@ bundled_gems = [
   ['irb', '1.15.3'],
   ['logger', '1.7.0'],
   ['matrix', '0.4.3'],
-  ['minitest', '5.26.0'],
+  ['minitest', '5.26.1'],
   ['mutex_m', '0.3.0'],
   ['net-ftp', '0.3.9'],
   ['net-imap', '0.5.12'],
@@ -121,7 +121,7 @@ bundled_gems = [
   ['nkf', '0.2.0'],
   ['observer', '0.1.2'],
   ['ostruct', '0.6.3'],
-  ['power_assert', '3.0.0'],
+  ['power_assert', '3.0.1'],
   ['prime', '0.1.4'],
   ['pstore', '0.2.0'],
   ['racc', '1.8.1'],
@@ -136,7 +136,7 @@ bundled_gems = [
   # ['readline', '0.0.4'],
   # Will be solved with readline
   # ['readline-ext', '0.2.0'],
-  ['reline', '0.6.2'],
+  ['reline', '0.6.3'],
   # Depends on prism gem with native ext
   # ['repl_type_completer', '0.1.12'],
   ['resolv-replace', '0.1.1'],
@@ -145,9 +145,9 @@ bundled_gems = [
   ['rss', '0.3.1'],
   # https://github.com/ruby/syslog/issues/1
   # ['syslog', '0.3.0'],
-  ['test-unit', '3.7.0']
+  ['test-unit', '3.7.1']
   # Depends on many CRuby internals
-  # ['typeprof', '0.30.1'],
+  # ['typeprof', '0.31.0'],
 ]
 
 project 'JRuby Lib Setup' do
