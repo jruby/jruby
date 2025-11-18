@@ -4372,15 +4372,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     private static RubyIO ioOpenGeneric(ThreadContext context, IRubyObject recv, IRubyObject filename, int oflags, int fmode, IOEncodable convconfig, int perm) {
         if ((filename instanceof RubyString name) && name.isEmpty()) throw context.runtime.newErrnoENOENTError();
 
-        IRubyObject cmd;
-        if ((recv == ioClass(context)) && (cmd = PopenExecutor.checkPipeCommand(context, filename)) != context.nil) {
-            warnDeprecated(context, "IO process creation with a leading '|' is deprecated and will be removed in Ruby 4.0; use IO.popen instead");
-            if (PopenExecutor.nativePopenAvailable(context.runtime)) {
-                return (RubyIO) PopenExecutor.pipeOpen(context, cmd, OpenFile.ioOflagsModestr(context, oflags), fmode, convconfig);
-            } else {
-                throw argumentError(context, "pipe open is not supported without native subprocess logic");
-            }
-        }
         return (RubyIO) ((RubyFile) fileClass(context).allocate(context)).
                 fileOpenGeneric(context, filename, oflags, fmode, convconfig, perm);
     }

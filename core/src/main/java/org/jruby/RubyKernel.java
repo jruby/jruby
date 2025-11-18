@@ -304,17 +304,6 @@ public class RubyKernel {
                 tmp = RubyFile.get_path(context, tmp);
                 if (tmp == context.nil) {
                     redirect = true;
-                } else {
-                    IRubyObject cmd = PopenExecutor.checkPipeCommand(context, tmp);
-                    if (cmd != context.nil) {
-                        warnDeprecatedForRemovalAlternate(context, "Calling Kernel#open with a leading '|'", "4.0", "IO.popen");
-                        if (PopenExecutor.nativePopenAvailable(context.runtime)) {
-                            args[0] = cmd;
-                            return PopenExecutor.popen(context, args, ioClass(context), block);
-                        }
-
-                        throw argumentError(context, "pipe open is not supported without native subprocess logic");
-                    }
                 }
             }
         }
