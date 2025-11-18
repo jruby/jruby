@@ -77,6 +77,7 @@ public class JavaSites {
         public final CallSite match = new FunctionalCachingCallSite("=~");
         public final CallSite call = new FunctionalCachingCallSite("call");
         public final CallSite op_equal = new FunctionalCachingCallSite("==");
+        public final CheckedSites instance_variables_to_inspect_checked = new CheckedSites("instance_variables_to_inspect");
     }
 
     public static class ObjectSites {
