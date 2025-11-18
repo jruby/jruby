@@ -334,8 +334,8 @@ public class JavaSites {
         public final CachingCallSite to_r = new FunctionalCachingCallSite("to_r");
         public final CheckedSites checked_to_r = new CheckedSites("to_r");
 
-        public final RespondToCallSite respond_to_divmod = new RespondToCallSite("divmod");
-        public final CachingCallSite divmod = new FunctionalCachingCallSite("divmod");
+        public final CheckedSites divmod_checked = new CheckedSites("divmod");
+        public final CheckedSites to_a_checked = new CheckedSites("to_a");
     }
 
     public static class EnumerableSites {
