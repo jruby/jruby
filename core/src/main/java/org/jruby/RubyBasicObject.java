@@ -1127,13 +1127,20 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     // MRI: rb_obj_inspect
     public IRubyObject inspect(ThreadContext context) {
         return !isImmediate() && !(this instanceof RubyModule) && hasVariables() ?
-                hashyInspect() : to_s(context);
+                hashyInspect(context) : to_s(context);
     }
 
+    @Deprecated(since = "10.1.0.0")
     public final IRubyObject hashyInspect() {
-        final Ruby runtime = getRuntime();
+        return hashyInspect(getRuntime().getCurrentContext());
+    }
 
-        RubyString part = inspectPrefix(runtime.getCurrentContext(), metaClass.getRealClass(), inspectHashCode());
+    public final IRubyObject hashyInspect(ThreadContext context) {
+        IRubyObject ivars = Helpers.invokeChecked(context, this, sites(context).instance_variables_to_inspect_checked);
+
+        RubyString part = inspectPrefix(context, metaClass.getRealClass(), inspectHashCode());
+
+        Ruby runtime = context.runtime;
 
         if (runtime.isInspecting(this)) {
             encStrBufCat(runtime, part, SPACE_DOT_DOT_DOT_GT);
@@ -1141,7 +1148,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         }
         try {
             runtime.registerInspecting(this);
-            return inspectObj(runtime, part);
+            return inspectObj(context, part, ivars);
         } finally {
             runtime.unregisterInspecting(this);
         }
@@ -1182,29 +1189,56 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * The internal helper method that takes care of the part of the
      * inspection that inspects instance variables.
      */
-    private RubyString inspectObj(final Ruby runtime, RubyString part) {
-        final ThreadContext context = runtime.getCurrentContext();
+    private RubyString inspectObj(final ThreadContext context, RubyString part, IRubyObject ivars) {
+        Ruby runtime = context.runtime;
 
-        boolean first = true;
-        for (Map.Entry<String, VariableAccessor> entry : metaClass.getVariableTableManager().getVariableAccessorsForRead().entrySet()) {
-            Object value = entry.getValue().get(this);
-            if (!(value instanceof IRubyObject)) continue;
-            RubySymbol symbol = asSymbol(context, entry.getKey());
-            if (!symbol.validInstanceVariableName()) continue;
+        if (ivars == null) {
+            // no ivars specified, do all of them
+            boolean first = true;
+            for (Map.Entry<String, VariableAccessor> entry : metaClass.getVariableTableManager().getVariableAccessorsForRead().entrySet()) {
+                VariableAccessor accessor = entry.getValue();
+                String name = entry.getKey();
 
-            IRubyObject obj = (IRubyObject) value;
+                if (appendInstanceVariable(context, part, accessor, name, first, runtime)) continue;
 
-            if (!first) encStrBufCat(runtime, part, COMMA);
-            encStrBufCat(runtime, part, SPACE);
-            // FIXME: bytelist_love: EPICLY wrong but something in MRI gets around identifiers of arbitrary encoding.
-            encStrBufCat(runtime, part, symbol.asString().encode(context, encodingService(context).convertEncodingToRubyEncoding(part.getEncoding())).asString().getByteList());
-            encStrBufCat(runtime, part, EQUALS);
-            encStrBufCat(runtime, part, sites(context).inspect.call(context, obj, obj).convertToString().getByteList());
+                first = false;
+            }
+        } else if (!ivars.isNil()) {
+            // ivars specified, do only those
+            RubyArray ivarsAry = Convert.castAsArray(context, ivars);
 
-            first = false;
-        }
+            boolean first = true;
+            Map<String, VariableAccessor> accessors = metaClass.getVariableTableManager().getVariableAccessorsForRead();
+            for (int i = 0; i < ivarsAry.size(); i++) {
+                String name = ivarsAry.eltOk(i).toString();
+                VariableAccessor accessor = accessors.get(name);
+                if (accessor == null) continue;
+
+                if (appendInstanceVariable(context, part, accessor, name, first, runtime)) continue;
+
+                first = false;
+            }
+        } // else ivars was provided and is nil, so do none
+
         encStrBufCat(runtime, part, GT);
         return part;
+    }
+
+    private boolean appendInstanceVariable(ThreadContext context, RubyString part, VariableAccessor accessor, String name, boolean first, Ruby runtime) {
+        Object value = accessor.get(this);
+        if (!(value instanceof IRubyObject)) return true;
+        RubySymbol symbol = asSymbol(context, name);
+        if (!symbol.validInstanceVariableName()) return true;
+
+        IRubyObject obj = (IRubyObject) value;
+
+        if (!first) encStrBufCat(runtime, part, COMMA);
+        encStrBufCat(runtime, part, SPACE);
+        // FIXME: bytelist_love: EPICLY wrong but something in MRI gets around identifiers of arbitrary encoding.
+        encStrBufCat(runtime, part, symbol.asString().encode(context, encodingService(context).convertEncodingToRubyEncoding(part.getEncoding())).asString().getByteList());
+        encStrBufCat(runtime, part, EQUALS);
+        encStrBufCat(runtime, part, sites(context).inspect.call(context, obj, obj).convertToString().getByteList());
+        return false;
     }
 
     // Methods of the Object class (rb_obj_*):
