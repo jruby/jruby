@@ -322,7 +322,9 @@ public class VariableTableManager {
      * @return the write accessor for object_id
      */
     public VariableAccessor getObjectIdAccessorForWrite() {
+        // set-only so no synchronization required
         if (hasObjectID == 0) hasObjectID = 1;
+
         return objectIdVariableAccessorField.getVariableAccessorForWrite(this);
     }
 
