@@ -154,13 +154,13 @@ public class VariableTableManager {
      */
     public long getObjectId(RubyBasicObject self) {
         VariableAccessor objectIdAccessor = getObjectIdAccessorForRead();
-        Long id = (Long)objectIdAccessor.get(self);
-        if (id != null) return id;
+        Number id = (Number)objectIdAccessor.get(self);
+        if (id != null) return id.longValue();
 
         synchronized (self) {
             objectIdAccessor = getObjectIdAccessorForRead();
-            id = (Long)objectIdAccessor.get(self);
-            if (id != null) return id;
+            id = (Number)objectIdAccessor.get(self);
+            if (id != null) return id.longValue();
 
             objectIdAccessor = getObjectIdAccessorForWrite();
             return initObjectId(self, objectIdAccessor);
@@ -596,7 +596,25 @@ public class VariableTableManager {
      */
     private static void setObjectId(RubyClass realClass, RubyBasicObject self, int index, long value) {
         if (index < 0) return;
-        setVariableInternal(realClass, self, index, value);
+        setVariableInternal(realClass, self, index, smallestBox(value));
+    }
+
+    /**
+     * Return the smallest boxed Number that can hold the given value.
+     *
+     * @param value the value to box
+     * @return the smallest Number box for that value
+     */
+    private static Number smallestBox(long value) {
+        if (value >= Byte.MIN_VALUE && value <= Byte.MAX_VALUE) {
+            return Byte.valueOf((byte) value);
+        } else if (value >= Short.MIN_VALUE && value <= Short.MAX_VALUE) {
+            return Short.valueOf((short) value);
+        } else if (value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE) {
+            return Integer.valueOf((int) value);
+        } else {
+            return Long.valueOf(value);
+        }
     }
 
     /**
