@@ -227,6 +227,9 @@ public class UndefinedValue extends Operand implements IRubyObject {
     public IRubyObject id() { throw undefinedOperation(); }
 
     @Override
+    public RubyInteger __id__(ThreadContext context) { throw undefinedOperation(); }
+
+    @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) { throw undefinedOperation(); }
     @Override
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) { throw undefinedOperation(); }

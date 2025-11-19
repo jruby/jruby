@@ -143,13 +143,19 @@ public class PrependedModule extends RubyClass implements DelegatedModule {
         return origin;
     }
 
+    @Deprecated(since = "10.0.3.0")
+    @Override
+    public IRubyObject id() {
+        return origin.id();
+    }
+
     /**
      * We don't want to reveal ourselves to Ruby code, so origin this
      * operation.
      */
     @Override
-    public IRubyObject id() {
-        return origin.id();
+    public RubyInteger __id__(ThreadContext context) {
+        return origin.__id__(context);
     }
 
     @Override
@@ -157,7 +163,6 @@ public class PrependedModule extends RubyClass implements DelegatedModule {
         super.addMethod(context, id, method);
         method.setDefinedClass(origin);
     }
-
 
     @Override
     protected synchronized Map<String, IRubyObject> getClassVariables() {

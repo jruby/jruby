@@ -73,7 +73,7 @@ public class MRIRecursionGuard {
         var context = runtime.getCurrentContext();
         ExecRecursiveParams p = new ExecRecursiveParams();
         p.list = recursiveListAccess(context);
-        p.objid = obj.id();
+        p.objid = obj.__id__(context);
         boolean outermost = outer && !recursiveCheck(p.list, recursiveKey, null);
         if(recursiveCheck(p.list, p.objid, pairid)) {
             if(outer && !outermost) {
