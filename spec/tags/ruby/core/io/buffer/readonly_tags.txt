@@ -1,0 +1,6 @@
+fails:IO::Buffer#readonly? with a file-backed buffer created with .map is false for a writable mapping
+fails:IO::Buffer#readonly? with a file-backed buffer created with .map is true for a readonly mapping
+fails:IO::Buffer#readonly? with a file-backed buffer created with .map is false for a private mapping
+fails:IO::Buffer#readonly? with a slice of a buffer created with .map is false when slicing a read-write file-backed buffer
+fails:IO::Buffer#readonly? with a slice of a buffer created with .map is true when slicing a readonly file-backed buffer
+fails:IO::Buffer#readonly? with a slice of a buffer created with .map is false when slicing a private file-backed buffer

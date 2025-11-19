@@ -1,0 +1,6 @@
+fails:IO::Buffer#external? with a file-backed buffer created with .map is true for a regular mapping
+fails:IO::Buffer#external? with a file-backed buffer created with .map is false for a private mapping
+fails:IO::Buffer#external? with a String-backed buffer created with .for is true for a buffer created without a block
+fails:IO::Buffer#external? with a String-backed buffer created with .for is true for a buffer created with a block
+fails:IO::Buffer#external? with a String-backed buffer created with .string is true
+fails:IO::Buffer#external? with a slice of a buffer created with .map is false
