@@ -227,7 +227,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         throw runtime.newFiberError("fiber called across threads");
     }
 
-    @JRubyMethod(rest = true)
+    @JRubyMethod(optional = 4)
     public IRubyObject raise(ThreadContext context, IRubyObject[] args) {
         return raise(context, RubyThread.prepareRaiseException(context, args));
     }
