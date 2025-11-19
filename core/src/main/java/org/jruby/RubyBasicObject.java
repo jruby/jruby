@@ -1101,7 +1101,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     @JRubyMethod(name = "__id__")
     @Override
     public RubyInteger __id__(ThreadContext context) {
-        return context.runtime.newFixnum(getObjectId());
+        return asFixnum(context, getObjectId());
     }
 
     /**

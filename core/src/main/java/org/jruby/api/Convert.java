@@ -409,11 +409,12 @@ public class Convert {
 
     /**
      * Create a Ruby Fixnum from a java long.
+     *
+     * MRI: RB_INT2FIX
      * @param context the current thread context
      * @param value the long value
      * @return the Ruby Fixnum
      */
-    // mri: fix2int
     public static RubyFixnum asFixnum(ThreadContext context, long value) {
         return RubyFixnum.newFixnum(context.runtime, value);
     }
