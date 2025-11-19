@@ -27,3 +27,5 @@ windows:IO.foreach when passed name, object, object when the first object is a S
 windows:IO.foreach when passed name, object, object when the first object is not a String or Integer calls #to_str to convert the object to a String
 windows:IO.foreach when passed name, object, object when the first object is not a String or Integer uses the second object as a limit if it is an Integer
 windows:IO.foreach when passed name, object, object when the first object is not a String or Integer calls #to_int to convert the second object
+windows:IO.foreach warns about deprecation given a path with a pipe
+
