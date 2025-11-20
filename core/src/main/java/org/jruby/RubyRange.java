@@ -605,14 +605,14 @@ public class RubyRange extends RubyObject {
 
     private void fixnumEach(ThreadContext context, Block block) {
         // We must avoid integer overflows.
-        long to = ((RubyFixnum) end).value;
+        long to = ((RubyFixnum) end).getValue();
         if (isExclusive) {
             if (to == Long.MIN_VALUE) {
                 return;
             }
             to--;
         }
-        RubyInteger.fixnumUpto(context, ((RubyFixnum) begin).value, to, block);
+        RubyInteger.fixnumUpto(context, ((RubyFixnum) begin).getValue(), to, block);
     }
 
     // MRI: range_reverse_each
