@@ -241,7 +241,7 @@ public abstract class RubyInteger extends RubyNumeric {
     public IRubyObject upto(ThreadContext context, IRubyObject to, Block block) {
         if (block.isGiven()) {
             if (this instanceof RubyFixnum && to instanceof RubyFixnum) {
-                fixnumUpto(context, ((RubyFixnum) this).value, ((RubyFixnum) to).value, block);
+                fixnumUpto(context, ((RubyFixnum) this).getValue(), ((RubyFixnum) to).getValue(), block);
             } else {
                 duckUpto(context, this, to, block);
             }
@@ -296,7 +296,7 @@ public abstract class RubyInteger extends RubyNumeric {
     public IRubyObject downto(ThreadContext context, IRubyObject to, Block block) {
         if (block.isGiven()) {
             if (this instanceof RubyFixnum && to instanceof RubyFixnum) {
-                fixnumDownto(context, ((RubyFixnum) this).value, ((RubyFixnum) to).value, block);
+                fixnumDownto(context, ((RubyFixnum) this).getValue(), ((RubyFixnum) to).getValue(), block);
             } else {
                 duckDownto(context, this, to, block);
             }
@@ -956,7 +956,7 @@ public abstract class RubyInteger extends RubyNumeric {
         if (!pow.isPositiveNumber(context)) throw context.runtime.newZeroDivisionError();
 
         if (pow instanceof RubyFixnum fixpow) {
-            long mm = fixpow.value;
+            long mm = fixpow.getValue();
             if (mm == 1) return asFixnum(context, 0);
             RubyFixnum modulo = (RubyFixnum) modulo(context, fixpow);
             return mm <= HALF_LONG_MSB ?

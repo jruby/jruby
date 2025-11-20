@@ -2912,9 +2912,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             return append(otherStr);
         }
         if (other instanceof RubyFixnum fixnum) {
-            if (fixnum.value < 0) throw rangeError(context, fixnum.value + " out of char range");
+            if (fixnum.getValue() < 0) throw rangeError(context, fixnum.getValue() + " out of char range");
 
-            return concatNumeric(context, (int)(fixnum.value & 0xFFFFFFFF));
+            return concatNumeric(context, (int)(fixnum.getValue() & 0xFFFFFFFF));
         }
         if (other instanceof RubyBignum bignum) {
             if (bignum.signum(context) < 0) throw rangeError(context, "negative string size (or size too big)");
@@ -3816,7 +3816,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             int[] begLen = range.begLenInt(context, getByteList().length(), 0);
             return begLen == null ? context.nil : byteSubstr(context, begLen[0], begLen[1]);
         } else if (idx instanceof RubyFixnum fixnum) {
-            long i = fixnum.value;
+            long i = fixnum.getValue();
             if (i > RubyFixnum.MAX || i < RubyFixnum.MIN) return context.nil;
             index = (int) i;
         } else {

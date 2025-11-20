@@ -430,6 +430,26 @@ public class Convert {
     }
 
     /**
+     * Create a Ruby Fixnum from a java short.
+     * @param context the current thread context
+     * @param value the short value
+     * @return the Ruby Fixnum
+     */
+    public static RubyFixnum asFixnum(ThreadContext context, short value) {
+        return RubyFixnum.newFixnum(context.runtime, value);
+    }
+
+    /**
+     * Create a Ruby Fixnum from a java byte.
+     * @param context the current thread context
+     * @param value the byte value
+     * @return the Ruby Fixnum
+     */
+    public static RubyFixnum asFixnum(ThreadContext context, byte value) {
+        return RubyFixnum.newFixnum(context.runtime, value);
+    }
+
+    /**
      * Create a Ruby Float from a java double.
      * @param context the current thread context
      * @param value the double value

@@ -975,7 +975,7 @@ public class RubyDate extends RubyObject {
             return getMetaClass().getConstant(context, "JULIAN"); // Date::JULIAN (+Date::Infinity)
         }
         long cutover = DateTimeUtils.toJulianDayNumber(((GJChronology) chrono).getGregorianCutover().getMillis());
-        return new RubyFixnum(context.runtime, cutover);
+        return asFixnum(context, cutover);
     }
 
     final int adjustJodaYear(int year) {
