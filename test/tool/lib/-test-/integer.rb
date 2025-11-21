@@ -20,7 +20,7 @@ module Bug
     end
 
     def self.fixnum?(i)
-      JRuby.ref(i).getClass == org.jruby.RubyFixnum.java_class
+      org.jruby.RubyFixnum.java_class.isAssignableFrom JRuby.ref(i).getClass
     end
 
     def self.bignum?(i)

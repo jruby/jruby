@@ -248,6 +248,6 @@ public class RubyTimeParser {
 
         if (ndigits == 0) return context.nil;
 
-        return new RubyFixnum(context.runtime, sign * total);
+        return asFixnum(context, sign * total);
     }
 }

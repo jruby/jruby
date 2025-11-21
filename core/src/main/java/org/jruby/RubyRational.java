@@ -34,7 +34,6 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.api.Convert;
 import org.jruby.api.JRubyAPI;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
@@ -934,7 +933,7 @@ public class RubyRational extends RubyNumeric {
     @Override
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum || other instanceof RubyBignum) {
-            if (den instanceof RubyFixnum && ((RubyFixnum) den).value == 1) return f_cmp(context, num, other);
+            if (den instanceof RubyFixnum && ((RubyFixnum) den).getValue() == 1) return f_cmp(context, num, other);
             return f_cmp(context, this, RubyRational.newRationalBang(context, getMetaClass(), other));
         }
         if (other instanceof RubyFloat) {
@@ -945,8 +944,8 @@ public class RubyRational extends RubyNumeric {
             final RubyInteger num1, num2;
             if (num instanceof RubyFixnum && den instanceof RubyFixnum &&
                 otherRational.num instanceof RubyFixnum && otherRational.den instanceof RubyFixnum) {
-                num1 = f_imul(context, ((RubyFixnum) num).value, ((RubyFixnum) otherRational.den).value);
-                num2 = f_imul(context, ((RubyFixnum) otherRational.num).value, ((RubyFixnum) den).value);
+                num1 = f_imul(context, ((RubyFixnum) num).getValue(), ((RubyFixnum) otherRational.den).getValue());
+                num2 = f_imul(context, ((RubyFixnum) otherRational.num).getValue(), ((RubyFixnum) den).getValue());
             } else {
                 num1 = f_mul(context, num, otherRational.den);
                 num2 = f_mul(context, otherRational.num, den);
@@ -1170,7 +1169,7 @@ public class RubyRational extends RubyNumeric {
         var sr = s instanceof RubyRational rat ? rat : newRationalBang(context, getMetaClass(), s);
         var si = newRationalBang(context, getMetaClass(), sr.doRound(context, mode)).op_div(context, b);
 
-        return si instanceof RubyRational r && f_cmp(context, nint, 1).value < 0 ? r.truncate(context) : si;
+        return si instanceof RubyRational r && f_cmp(context, nint, 1).getValue() < 0 ? r.truncate(context) : si;
     }
 
     private IRubyObject doRound(ThreadContext context, RoundingMode mode) {

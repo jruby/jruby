@@ -336,7 +336,7 @@ public class RubyRandomBase extends RubyObject {
         if ((v = checkMaxInt(context, vmax)) != null) {
             do {
                 if (v instanceof RubyFixnum) {
-                    long max = ((RubyFixnum) v).value;
+                    long max = ((RubyFixnum) v).getValue();
                     if (excl) {
                         max -= 1;
                     }

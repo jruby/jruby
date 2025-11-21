@@ -10,8 +10,8 @@ public class TestRubyFixnum extends junit.framework.TestCase {
     final private ThreadContext context = Ruby.newInstance().getCurrentContext();
 
     public void testZero() {
-        RubyFixnum num = asFixnum(context, 0);
-        assertEquals(new RubyFixnum(context.runtime, 0), num);
+        RubyFixnum num = RubyFixnum.zero(context.runtime);
+        assertEquals(asFixnum(context, 0), num);
 
         num = RubyFixnum.zero(context.runtime);
         assertEquals(asFixnum(context, 0), num);
