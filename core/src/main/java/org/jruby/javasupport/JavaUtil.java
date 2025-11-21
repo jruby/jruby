@@ -319,7 +319,7 @@ public class JavaUtil {
         return (T) object; // assume correct instance
     }
 
-    @Deprecated // no longer used
+    @Deprecated(since = "9.0.0.0") // no longer used
     public static Object unwrapJavaValue(final Ruby runtime, final IRubyObject object, final String errorMessage) {
         if (object instanceof JavaProxy jp) return jp.getObject();
         if (object instanceof JavaObject jo) return jo.getValue();

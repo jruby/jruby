@@ -2520,12 +2520,12 @@ public class RubyBigDecimal extends RubyNumeric {
         return false;
     }
 
-    @Deprecated // no longer used
+    @Deprecated(since = "9.3.0.0") // no longer used
     public RubyBigDecimal(Ruby runtime, RubyBigDecimal rbd) {
         this(runtime, Access.getClass(runtime.getCurrentContext(), "BigDecimal"), rbd);
     }
 
-    @Deprecated // no longer used
+    @Deprecated(since = "9.3.0.0") // no longer used
     public RubyBigDecimal(Ruby runtime, RubyClass klass, RubyBigDecimal rbd) {
         super(runtime, klass);
         this.isNaN = rbd.isNaN;

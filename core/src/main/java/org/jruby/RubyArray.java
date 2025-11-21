@@ -1553,7 +1553,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     /** rb_ary_push_m - instance method push
      *
      */
-    @Deprecated // not-used
+    @Deprecated(since = "9.2.0.0") // not-used
     public RubyArray<?> push_m(IRubyObject[] items) {
         return push(items);
     }

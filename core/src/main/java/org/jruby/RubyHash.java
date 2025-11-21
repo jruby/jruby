@@ -578,7 +578,7 @@ public class RubyHash extends RubyObject implements Map {
         return false;
     }
 
-    @Deprecated // no longer used
+    @Deprecated(since = "9.2.9.0") // no longer used
     protected final IRubyObject internalJavaPut(final IRubyObject key, final IRubyObject value) {
         checkResize();
 

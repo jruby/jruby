@@ -257,12 +257,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
     }
 
-    @Deprecated // not-used
+    @Deprecated(since = "9.2.0.0") // not-used
     public static int matcherSearch(Ruby runtime, Matcher matcher, int start, int range, int option) {
         return matcherSearch(runtime.getCurrentContext(), matcher, start, range, option);
     }
 
-    @Deprecated // not-used
+    @Deprecated(since = "9.2.0.0") // not-used
     public static int matcherMatch(Ruby runtime, Matcher matcher, int start, int range, int option) {
         return matcherMatch(runtime.getCurrentContext(), matcher, start, range, option);
     }
@@ -477,7 +477,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         RegexpSupport.preprocess(runtime, bytes, bytes.getEncoding(), new Encoding[]{null}, RegexpSupport.ErrorMode.RAISE);
     }
 
-    @Deprecated // not used
+    @Deprecated(since = "9.2.10.0") // not used
     public static RubyString preprocessDRegexp(Ruby runtime, RubyString[] strings, int embeddedOptions) {
         return preprocessDRegexp(runtime, strings, RegexpOptions.fromEmbeddedOptions(embeddedOptions));
     }
@@ -507,7 +507,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return processElementIntoResult(context, null, arg0, options, null, context.encodingHolder());
     }
 
-    @Deprecated // not used
+    @Deprecated(since = "9.2.10.0") // not used
     public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject arg0, RegexpOptions options) {
         var context = runtime.getCurrentContext();
         return processElementIntoResult(context, null, arg0, options, null, context.encodingHolder());

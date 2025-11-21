@@ -39,9 +39,9 @@ public class JavaMethodDescriptor extends MethodDescriptor<Method> {
     public final Class[] parameters;
     public final Class returnClass;
     public final Class declaringClass;
-    @Deprecated // no longer used
+    @Deprecated(since = "9.2.0.0") // no longer used
     public String signature;
-    @Deprecated // initialized on demand
+    @Deprecated(since = "9.2.0.0") // initialized on demand
     public Class[] argumentTypes;
 
     public JavaMethodDescriptor(Method method) {

@@ -1966,7 +1966,7 @@ public class RubyInstanceConfig {
         return false;
     }
 
-    @Deprecated public static final String JIT_CODE_CACHE = "";
+    @Deprecated(since = "1.7.22") public static final String JIT_CODE_CACHE = "";
 
     @Deprecated(since = "9.3.0.0")
     public boolean isJitDumping() {

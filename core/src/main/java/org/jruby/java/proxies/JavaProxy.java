@@ -88,7 +88,7 @@ public class JavaProxy extends RubyObject {
                 include(context, JavaProxyMethods);
     }
 
-    @Deprecated // Java::JavaObject compatibility
+    @Deprecated(since = "9.4.0.0") // Java::JavaObject compatibility
     @JRubyMethod(meta = true)
     public static IRubyObject wrap(final ThreadContext context, final IRubyObject self, final IRubyObject object) {
         final Object value = JavaUtil.unwrapJava(object, null);
@@ -166,7 +166,7 @@ public class JavaProxy extends RubyObject {
 
     public Object unwrap() { return getObject(); }
 
-    @Deprecated // not used
+    @Deprecated(since = "9.4.0.0") // not used
     @SuppressWarnings("deprecation")
     protected org.jruby.javasupport.JavaObject asJavaObject(final Object object) {
         return org.jruby.javasupport.JavaObject.wrap(getRuntime(), object);

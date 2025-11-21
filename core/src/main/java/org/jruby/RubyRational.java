@@ -311,7 +311,7 @@ public class RubyRational extends RubyNumeric {
         return null;
     }
 
-    @Deprecated // confusing parameters
+    @Deprecated(since = "9.2.0.0") // confusing parameters
     public static IRubyObject newInstance(ThreadContext context, IRubyObject clazz, IRubyObject num) {
         return newInstance(context, (RubyClass) clazz, num);
     }

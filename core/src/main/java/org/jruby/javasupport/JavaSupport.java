@@ -228,7 +228,7 @@ public abstract class JavaSupport {
         return javaProxyConstructorClass = getJavaModule(context).getClass(context, "JavaProxyConstructor");
     }
 
-    @Deprecated // no longer used
+    @Deprecated(since = "9.4.0.0") // no longer used
     public JavaClass getObjectJavaClass() {
         Object clazz;
         if ((clazz = objectJavaClass) != null) return (JavaClass) clazz;
@@ -310,7 +310,7 @@ public abstract class JavaSupport {
         return arrayProxyClass = Access.getClass(runtime.getCurrentContext(), "ArrayJavaProxy");
     }
 
-    @Deprecated // not used
+    @Deprecated(since = "9.4.0.0") // not used
     public RubyClass getJavaFieldClass() {
         RubyClass clazz;
         if ((clazz = javaFieldClass) != null) return clazz;
@@ -319,7 +319,7 @@ public abstract class JavaSupport {
         return javaFieldClass = getJavaModule(context).getClass(context, "JavaField");
     }
 
-    @Deprecated // not used
+    @Deprecated(since = "9.4.0.0") // not used
     public RubyClass getJavaMethodClass() {
         RubyClass clazz;
         if ((clazz = javaMethodClass) != null) return clazz;
@@ -328,7 +328,7 @@ public abstract class JavaSupport {
         return javaMethodClass = getJavaModule(context).getClass(context, "JavaMethod");
     }
 
-    @Deprecated // not used
+    @Deprecated(since = "9.4.0.0") // not used
     public RubyClass getJavaConstructorClass() {
         RubyClass clazz;
         if ((clazz = javaConstructorClass) != null) return clazz;
@@ -370,10 +370,10 @@ public abstract class JavaSupport {
     @Deprecated(since = "9.4.3.0")
     public abstract Map<String, JavaClass> getNameClassMap();
 
-    @Deprecated // internal API - no longer used
+    @Deprecated(since = "9.1.0.0") // internal API - no longer used
     public abstract Map<Set<?>, JavaProxyClass> getJavaProxyClassCache();
 
-    @Deprecated // internal API - no longer used (kept functional due deprecated JavaClass.get API)
+    @Deprecated(since = "9.4.0.0") // internal API - no longer used (kept functional due deprecated JavaClass.get API)
     public JavaClass getJavaClassFromCache(Class clazz) {
         return javaClassCache.get(clazz);
     }

@@ -269,7 +269,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
         return runtime.fixnumCache[(int) (value + CACHE_OFFSET)];
     }
 
-    @Deprecated // not used
+    @Deprecated(since = "9.2.1.0") // not used
     public final RubyFixnum newFixnum(long newValue) {
         return newFixnum(getCurrentContext().runtime, newValue);
     }
@@ -1311,7 +1311,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
         return asFixnum(context, value << width);
     }
 
-    @Deprecated // no longer used
+    @Deprecated(since = "9.2.0.0") // no longer used
     public IRubyObject op_lshift(long width) {
         return op_lshift(getCurrentContext(), width);
     }

@@ -885,7 +885,7 @@ public class OpenFile implements Finalizable {
         }
     }
 
-    @Deprecated // no longer used
+    @Deprecated(since = "9.2.1.0") // no longer used
     public static final Finalizer PIPE_FINALIZE = new Finalizer() {
         @Override
         public void finalize(Ruby runtime, OpenFile fptr, boolean noraise) {

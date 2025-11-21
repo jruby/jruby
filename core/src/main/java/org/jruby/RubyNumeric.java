@@ -683,7 +683,7 @@ public class RubyNumeric extends RubyObject {
      *  coercion used for comparisons
      */
 
-    @Deprecated // no longer used
+    @Deprecated(since = "9.2.0.0") // no longer used
     protected final IRubyObject coerceCmp(ThreadContext context, String method, IRubyObject other) {
         RubyArray ary = doCoerce(context, other, false);
         if (ary == null) {
@@ -705,7 +705,7 @@ public class RubyNumeric extends RubyObject {
      *  coercion used for relative operators
      */
 
-    @Deprecated // no longer used
+    @Deprecated(since = "9.2.0.0") // no longer used
     protected final IRubyObject coerceRelOp(ThreadContext context, String method, IRubyObject other) {
         RubyArray ary = doCoerce(context, other, false);
 
@@ -1547,7 +1547,7 @@ public class RubyNumeric extends RubyObject {
         return JavaUtil.getNumericConverter(target).coerce(getRuntime().getCurrentContext(), this, target);
     }
 
-    @Deprecated // not-used
+    @Deprecated(since = "9.2.0.0") // not-used
     public static class InvalidIntegerException extends NumberFormatException {
         private static final long serialVersionUID = 55019452543252148L;
 
@@ -1563,7 +1563,7 @@ public class RubyNumeric extends RubyObject {
         }
     }
 
-    @Deprecated // not-used
+    @Deprecated(since = "9.2.0.0") // not-used
     public static class NumberTooLargeException extends NumberFormatException {
         private static final long serialVersionUID = -1835120694982699449L;
         public NumberTooLargeException() {

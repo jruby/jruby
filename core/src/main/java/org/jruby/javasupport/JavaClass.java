@@ -104,7 +104,7 @@ public class JavaClass extends JavaObject {
         return runtime.getJavaSupport().getJavaClassFromCache(klass);
     }
 
-    @Deprecated // only been used package internally - a bit poorly named
+    @Deprecated(since = "9.0.0.0") // only been used package internally - a bit poorly named
     public static RubyArray getRubyArray(Ruby runtime, Class<?>[] classes) {
         return toRubyArray(runtime, classes);
     }
@@ -125,7 +125,7 @@ public class JavaClass extends JavaObject {
     /**
      * @see JavaUtil#getJavaClass(ThreadContext, RubyModule)
      */
-    @Deprecated // no longer used
+    @Deprecated(since = "9.4.0.0") // no longer used
     public static Class<?> getJavaClass(final ThreadContext context, final RubyModule proxy) {
         return JavaUtil.getJavaClass(proxy, null);
     }
@@ -133,7 +133,7 @@ public class JavaClass extends JavaObject {
     /**
      * @see JavaUtil#getJavaClass(RubyModule, Supplier)
      */
-    @Deprecated // no longer used
+    @Deprecated(since = "9.4.0.0") // no longer used
     public static Class<?> getJavaClassIfProxy(final ThreadContext context, final RubyModule type) {
         return JavaUtil.getJavaClass(type, null);
     }
@@ -152,7 +152,7 @@ public class JavaClass extends JavaObject {
      * @param type
      * @return Java proxy class, Java reified class or nil
      */
-    @Deprecated // not used
+    @Deprecated(since = "9.4.0.0") // not used
     public static IRubyObject java_class(final ThreadContext context, final RubyModule type) {
         IRubyObject java_class = type.getInstanceVariable("@java_class");
         if (java_class == null) {
@@ -192,7 +192,7 @@ public class JavaClass extends JavaObject {
         }
     }
 
-    @Deprecated // no longer used
+    @Deprecated(since = "9.3.0.0") // no longer used
     public static JavaClass forNameQuiet(Ruby runtime, String className) {
         synchronized (JavaClass.class) {
             Class<?> klass = runtime.getJavaSupport().loadJavaClassQuiet(className);

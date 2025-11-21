@@ -1219,7 +1219,7 @@ public class Java implements Library {
             return this.packageOrClass;
         }
 
-        @Deprecated @Override
+        @Deprecated(since = "9.4.3.0") @Override
         public Arity getArity() { return Arity.noArguments(); }
 
     }

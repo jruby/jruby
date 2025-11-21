@@ -1441,7 +1441,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return decodedPath;
     }
 
-    @Deprecated // Use fileResource instead
+    @Deprecated(since = "1.7.11") // Use fileResource instead
     public static JRubyFile file(IRubyObject pathOrFile) {
         return fileResource(((RubyBasicObject) pathOrFile).getCurrentContext(), pathOrFile).unwrap(JRubyFile.class);
     }
@@ -1461,12 +1461,12 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return entry;
     }
 
-    @Deprecated // not-used
+    @Deprecated(since = "9.1.11.0") // not-used
     public static ZipEntry getDirOrFileEntry(String jar, String path) throws IOException {
         return getDirOrFileEntry(new JarFile(jar), path);
     }
 
-    @Deprecated // not-used
+    @Deprecated(since = "9.2.0.0") // not-used
     public static ZipEntry getDirOrFileEntry(ZipFile jar, String path) throws IOException {
         String dirPath = path + '/';
         ZipEntry entry = jar.getEntry(dirPath); // first try as directory

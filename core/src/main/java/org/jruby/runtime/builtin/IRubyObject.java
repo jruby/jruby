@@ -332,7 +332,7 @@ public interface IRubyObject {
      */
     Object dataGetStruct();
 
-    @Deprecated // not used at all
+    @Deprecated(since = "9.2.0.0") // not used at all
     Object dataGetStructChecked();
     
     /**

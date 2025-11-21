@@ -1522,7 +1522,7 @@ public class RubyModule extends RubyObject {
             }
         }
 
-        @Deprecated // no-longer used
+        @Deprecated(since = "9.1.0.0") // no-longer used
         public Map<String, List<JavaMethodDescriptor>> getAllAnnotatedMethods() {
             return null; // return allAnnotatedMethods;
         }

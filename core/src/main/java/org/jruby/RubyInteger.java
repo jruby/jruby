@@ -1156,12 +1156,12 @@ public abstract class RubyInteger extends RubyNumeric {
         return op_aref(getCurrentContext(), other);
     }
 
-    @Deprecated // no longer used
+    @Deprecated(since = "9.2.0.0") // no longer used
     public IRubyObject op_lshift(IRubyObject other) {
         return op_lshift(getCurrentContext(), other);
     }
 
-    @Deprecated // no longer used
+    @Deprecated(since = "9.2.0.0") // no longer used
     public IRubyObject op_rshift(IRubyObject other) {
         return op_rshift(getCurrentContext(), other);
     }

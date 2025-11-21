@@ -6336,7 +6336,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return StringSupport.rbStrEnumerateLines(this, context, "each_line", arg, opts, block, false);
     }
 
-    @Deprecated // no longer used
+    @Deprecated(since = "9.2.1.0") // no longer used
     public IRubyObject each_lineCommon(ThreadContext context, IRubyObject sep, Block block) {
         if (sep == context.nil) {
             block.yield(context, this);
@@ -7385,7 +7385,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return strDup(getRuntime(), getMetaClass().getRealClass());
     }
 
-    @Deprecated // not used
+    @Deprecated(since = "9.4.6.0") // not used
     public RubyArray unpack(IRubyObject obj) {
         return Pack.unpack(getRuntime(), this.value, stringValue(obj).value);
     }

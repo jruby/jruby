@@ -293,7 +293,7 @@ public class ThreadService extends ThreadLocal<SoftReference<ThreadContext>> {
         remove();
     }
 
-    @Deprecated // use unregisterCurrentThread
+    @Deprecated(since = "9.2.6.0") // use unregisterCurrentThread
     public void disposeCurrentThread() {
         unregisterCurrentThread(getCurrentContext());
     }

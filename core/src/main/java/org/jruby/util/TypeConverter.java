@@ -267,7 +267,7 @@ public class TypeConverter {
     }
 
     // rb_check_to_integer
-    @Deprecated // Use Convert.checkToInteger
+    @Deprecated(since = "10.0.0.0") // Use Convert.checkToInteger
     public static IRubyObject checkToInteger(ThreadContext context, IRubyObject obj) {
         if (obj instanceof RubyFixnum) return obj;
 
@@ -279,7 +279,7 @@ public class TypeConverter {
     }
 
     // rb_check_to_integer
-    @Deprecated // Use Convert.checkToInteger (and MRI uses not to_i so I do not think this signature is needed).
+    @Deprecated(since = "10.0.0.0") // Use Convert.checkToInteger (and MRI uses not to_i so I do not think this signature is needed).
     public static IRubyObject checkToInteger(Ruby runtime, IRubyObject obj, String method) {
         if (method.equals("to_int")) return Convert.checkToInteger(runtime.getCurrentContext(), obj);
 
@@ -374,7 +374,7 @@ public class TypeConverter {
         return TypeConverter.convertToTypeWithCheck(context, obj, arrayClass(context), sites(context).to_ary_checked);
     }
 
-    @Deprecated // no longer used
+    @Deprecated(since = "9.2.5.0") // no longer used
     public static IRubyObject checkArrayType(IRubyObject obj) {
         return checkArrayType(obj.getRuntime().getCurrentContext(), obj);
     }
@@ -388,7 +388,7 @@ public class TypeConverter {
         return runtime.getNil();
     }
 
-    @Deprecated // not-used
+    @Deprecated(since = "9.2.0.0") // not-used
     public static IRubyObject handleImplicitlyUncoercibleObject(boolean raise, IRubyObject obj, RubyClass target) {
         return handleUncoercibleObject(obj.getRuntime(), obj, target, raise);
     }
@@ -542,7 +542,7 @@ public class TypeConverter {
      * @param convertMethod is the method to be called to try and convert to targeType
      * @return the converted value
      */
-    @Deprecated // no longer used
+    @Deprecated(since = "9.1.3.0") // no longer used
     public static IRubyObject convertToTypeOrRaise(IRubyObject obj, RubyClass target, String convertMethod) {
         if (target.isInstance(obj)) return obj;
         IRubyObject val = TypeConverter.convertToType(obj, target, convertMethod, true);

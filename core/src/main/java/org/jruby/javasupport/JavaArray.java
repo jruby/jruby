@@ -51,7 +51,7 @@ import static org.jruby.javasupport.Java.castToJavaObject;
  *
  * @deprecated since 9.4
  */
-@Deprecated // @JRubyClass(name="Java::JavaArray", parent="Java::JavaObject")
+@Deprecated(since = "9.4.0.0") // @JRubyClass(name="Java::JavaArray", parent="Java::JavaObject")
 public class JavaArray extends JavaObject {
 
     private final JavaUtil.JavaConverter javaConverter;

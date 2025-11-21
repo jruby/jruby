@@ -250,7 +250,7 @@ public abstract class RubyToJavaInvoker<T extends JavaCallable> extends JavaMeth
 
     protected abstract Class[] getMemberParameterTypes(Member member);
 
-    @Deprecated // no longer used!
+    @Deprecated(since = "9.0.3.0") // no longer used!
     protected abstract boolean isMemberVarArgs(Member member);
 
     final int getMemberArity(Member member) {
