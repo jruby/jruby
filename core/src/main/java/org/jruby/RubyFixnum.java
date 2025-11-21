@@ -82,7 +82,7 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
     public static RubyClass createFixnumClass(ThreadContext context, RubyClass fixnum) {
         var cache = context.runtime.fixnumCache;
         for (int i = 0; i < cache.length; i++) {
-            cache[i] = newFixnumForCache(fixnum, (short) (i - CACHE_OFFSET));
+            cache[i] = newFixnumForCache(fixnum, i - CACHE_OFFSET);
         }
 
         return fixnum;
@@ -297,48 +297,39 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
     }
 
     public static RubyFixnum newFixnum(Ruby runtime, long value) {
-        if (value <= Byte.MAX_VALUE && value >= Byte.MIN_VALUE) {
-            // byte is always in cache range
-            return USE_CACHE ? cachedFixnum(runtime, (int) value) : new ByteFixnum(runtime.getInteger(), (byte) value);
-        } else if (value <= Short.MAX_VALUE && value >= Short.MIN_VALUE) {
-            return USE_CACHE && isInCacheRange((int) value) ? cachedFixnum(runtime, (int) value) : new ShortFixnum(runtime.getInteger(), (short) value);
-        } else if (value <= Integer.MAX_VALUE && value >= Integer.MIN_VALUE) {
-            // integer is never in cache range
-            return new IntFixnum(runtime.getInteger(), (int) value);
+        if (value > Integer.MAX_VALUE || value < Integer.MIN_VALUE) {
+            // long is never in cache range
+            return new LongFixnum(runtime.getInteger(), value);
         }
-        // long is never in cache range
-        return new LongFixnum(runtime.getInteger(), value);
+        return newFixnum(runtime, (int) value);
     }
 
     public static RubyFixnum newFixnum(Ruby runtime, int value) {
-        if (value <= Byte.MAX_VALUE && value >= Byte.MIN_VALUE) {
-            // byte is always in cache range
-            return USE_CACHE ? cachedFixnum(runtime, value) : new ByteFixnum(runtime.getInteger(), (byte) value);
-        } else if (value <= Short.MAX_VALUE && value >= Short.MIN_VALUE) {
-            return USE_CACHE && isInCacheRange(value) ? cachedFixnum(runtime, value) : new ShortFixnum(runtime.getInteger(), (short) value);
+        if (value > Short.MAX_VALUE || value < Short.MIN_VALUE) {
+            // integer is never in cache range
+            return new IntFixnum(runtime.getInteger(), value);
         }
-        // integer is never in cache range
-        return new IntFixnum(runtime.getInteger(), value);
+        return newFixnum(runtime, (short) value);
     }
 
     public static RubyFixnum newFixnum(Ruby runtime, short value) {
-        if (value <= Byte.MAX_VALUE && value >= Byte.MIN_VALUE) {
-            // byte is always in cache range
-            return USE_CACHE ? cachedFixnum(runtime, value) : new ByteFixnum(runtime.getInteger(), (byte) value);
+        if (value > Byte.MAX_VALUE || value < Byte.MIN_VALUE) {
+            return USE_CACHE && isInCacheRange(value) ? cachedFixnum(runtime, value) : new ShortFixnum(runtime.getInteger(), value);
         }
-        return USE_CACHE && isInCacheRange(value) ? cachedFixnum(runtime, value) : new ShortFixnum(runtime.getInteger(), value);
+        return newFixnum(runtime, (byte) value);
     }
 
     public static RubyFixnum newFixnum(Ruby runtime, byte value) {
-        // byte is always in cache range
-        return USE_CACHE ? cachedFixnum(runtime, value) : new ByteFixnum(runtime.getInteger(), value);
+        return USE_CACHE && isInCacheRange(value) ? cachedFixnum(runtime, value) : new ByteFixnum(runtime.getInteger(), value);
     }
 
-    private static RubyFixnum newFixnumForCache(RubyClass fixnum, short value) {
-        if (value <= Byte.MAX_VALUE && value >= Byte.MIN_VALUE) {
-            return new ByteFixnum(fixnum, (byte) value);
+    private static RubyFixnum newFixnumForCache(RubyClass fixnum, int value) {
+        if (value > Short.MAX_VALUE || value < Short.MIN_VALUE) {
+            return new IntFixnum(fixnum, value);
+        } else if (value > Byte.MAX_VALUE || value < Byte.MIN_VALUE) {
+            return new ShortFixnum(fixnum, (short) value);
         }
-        return new ShortFixnum(fixnum, value);
+        return new ByteFixnum(fixnum, (byte) value);
     }
 
     private static boolean isInCacheRange(int value) {
