@@ -1,0 +1,16 @@
+name: spec_sync.yml
+on:
+  [push, pull_request, workflow_dispatch]
+
+jobs:
+  sync_specs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+      - name: Checkout mspec repo
+        uses: actions/checkout@v3
+        with: [repository: 'ruby/mspec', path: 'mspec']
+      - name: Sync JRuby specs
+        working-directory: 'mspec/tool/sync'
+        run: ruby sync-rubyspec.rb jruby
