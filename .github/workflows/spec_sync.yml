@@ -7,6 +7,7 @@ jobs:
     steps:
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
+        with: {ruby-version: '3.4.7'}
       - name: Checkout mspec repo
         uses: actions/checkout@v3
         with: {repository: 'ruby/mspec', path: 'mspec'}
