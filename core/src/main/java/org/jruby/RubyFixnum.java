@@ -112,27 +112,14 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         }
     }
 
-    private static class ShortFixnum extends RubyFixnum {
-        final short value;
-        public ShortFixnum(RubyClass fixnum, short value) {
+    private static class CompactFixnum extends RubyFixnum {
+        public CompactFixnum(RubyClass fixnum, short value) {
             super(fixnum);
-            this.value = value;
+            this.flags |= value << 16;
         }
         @Override
         public long getValue() {
-            return value;
-        }
-    }
-
-    private static class ByteFixnum extends RubyFixnum {
-        final byte value;
-        public ByteFixnum(RubyClass fixnum, byte value) {
-            super(fixnum);
-            this.value = value;
-        }
-        @Override
-        public long getValue() {
-            return value;
+            return flags >> 16;
         }
     }
 
@@ -306,30 +293,20 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
 
     public static RubyFixnum newFixnum(Ruby runtime, int value) {
         if (value > Short.MAX_VALUE || value < Short.MIN_VALUE) {
-            // integer is never in cache range
             return new IntFixnum(runtime.getInteger(), value);
         }
         return newFixnum(runtime, (short) value);
     }
 
     public static RubyFixnum newFixnum(Ruby runtime, short value) {
-        if (value > Byte.MAX_VALUE || value < Byte.MIN_VALUE) {
-            return USE_CACHE && isInCacheRange(value) ? cachedFixnum(runtime, value) : new ShortFixnum(runtime.getInteger(), value);
-        }
-        return newFixnum(runtime, (byte) value);
-    }
-
-    public static RubyFixnum newFixnum(Ruby runtime, byte value) {
-        return USE_CACHE && isInCacheRange(value) ? cachedFixnum(runtime, value) : new ByteFixnum(runtime.getInteger(), value);
+        return USE_CACHE && isInCacheRange(value) ? cachedFixnum(runtime, value) : new CompactFixnum(runtime.getInteger(), value);
     }
 
     private static RubyFixnum newFixnumForCache(RubyClass fixnum, int value) {
         if (value > Short.MAX_VALUE || value < Short.MIN_VALUE) {
             return new IntFixnum(fixnum, value);
-        } else if (value > Byte.MAX_VALUE || value < Byte.MIN_VALUE) {
-            return new ShortFixnum(fixnum, (short) value);
         }
-        return new ByteFixnum(fixnum, (byte) value);
+        return new CompactFixnum(fixnum, (short) value);
     }
 
     private static boolean isInCacheRange(int value) {
@@ -347,31 +324,31 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
     }
 
     public static RubyFixnum zero(Ruby runtime) {
-        return CACHE_OFFSET > 0 ? runtime.fixnumCache[CACHE_OFFSET] : new ByteFixnum(runtime.getInteger(), (byte) 0);
+        return CACHE_OFFSET > 0 ? runtime.fixnumCache[CACHE_OFFSET] : new CompactFixnum(runtime.getInteger(), (byte) 0);
     }
 
     public static RubyFixnum one(Ruby runtime) {
-        return CACHE_OFFSET > 1 ? runtime.fixnumCache[CACHE_OFFSET + 1] : new ByteFixnum(runtime.getInteger(), (byte) 1);
+        return CACHE_OFFSET > 1 ? runtime.fixnumCache[CACHE_OFFSET + 1] : new CompactFixnum(runtime.getInteger(), (byte) 1);
     }
 
     public static RubyFixnum two(Ruby runtime) {
-        return CACHE_OFFSET > 2 ? runtime.fixnumCache[CACHE_OFFSET + 2] : new ByteFixnum(runtime.getInteger(), (byte) 2);
+        return CACHE_OFFSET > 2 ? runtime.fixnumCache[CACHE_OFFSET + 2] : new CompactFixnum(runtime.getInteger(), (byte) 2);
     }
 
     public static RubyFixnum three(Ruby runtime) {
-        return CACHE_OFFSET > 3 ? runtime.fixnumCache[CACHE_OFFSET + 3] : new ByteFixnum(runtime.getInteger(), (byte) 3);
+        return CACHE_OFFSET > 3 ? runtime.fixnumCache[CACHE_OFFSET + 3] : new CompactFixnum(runtime.getInteger(), (byte) 3);
     }
 
     public static RubyFixnum four(Ruby runtime) {
-        return CACHE_OFFSET > 4 ? runtime.fixnumCache[CACHE_OFFSET + 4] : new ByteFixnum(runtime.getInteger(), (byte) 4);
+        return CACHE_OFFSET > 4 ? runtime.fixnumCache[CACHE_OFFSET + 4] : new CompactFixnum(runtime.getInteger(), (byte) 4);
     }
 
     public static RubyFixnum five(Ruby runtime) {
-        return CACHE_OFFSET > 5 ? runtime.fixnumCache[CACHE_OFFSET + 5] : new ByteFixnum(runtime.getInteger(), (byte) 5);
+        return CACHE_OFFSET > 5 ? runtime.fixnumCache[CACHE_OFFSET + 5] : new CompactFixnum(runtime.getInteger(), (byte) 5);
     }
 
     public static RubyFixnum minus_one(Ruby runtime) {
-        return -CACHE_OFFSET <= -1 ? runtime.fixnumCache[CACHE_OFFSET - 1] : new ByteFixnum(runtime.getInteger(), (byte) -1);
+        return -CACHE_OFFSET <= -1 ? runtime.fixnumCache[CACHE_OFFSET - 1] : new CompactFixnum(runtime.getInteger(), (byte) -1);
     }
 
     public RubyFixnum hash(ThreadContext context) {
