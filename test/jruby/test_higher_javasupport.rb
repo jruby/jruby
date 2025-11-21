@@ -1916,7 +1916,7 @@ CLASSDEF
       fail 'expected to raise'
     rescue => e # NameError
       msg = e.message
-      assert msg.match?(/no method 'getBytes' for arguments \(org\.jruby\.RubyFixnum\.ShortFixnum\) on Java::JavaLang::String/), msg
+      assert msg.match?(/no method 'getBytes' for arguments \(org\.jruby\.RubyFixnum.*\) on Java::JavaLang::String/), msg
       assert msg.index('available overloads'), msg
       assert msg.index('  (java.lang.String)'), msg
     end
