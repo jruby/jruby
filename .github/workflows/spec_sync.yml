@@ -11,6 +11,9 @@ jobs:
       - name: Checkout mspec repo
         uses: actions/checkout@v3
         with: {repository: 'ruby/mspec', path: 'mspec'}
+      - name: Checkout rubyspec repo
+        uses: actions/checkout@v3
+        with: {repository: 'ruby/spec', path: 'rubyspec'}
       - name: Sync JRuby specs
         working-directory: 'mspec/tool/sync'
         run: ruby sync-rubyspec.rb jruby
