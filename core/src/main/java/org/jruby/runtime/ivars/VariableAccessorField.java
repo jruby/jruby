@@ -63,6 +63,7 @@ public final class VariableAccessorField {
      * @return the variable accessor appropriate for writes.
      */
     public VariableAccessor getVariableAccessorForWrite(VariableTableManager tableMgr) {
+        VariableAccessor variableAccessor = this.variableAccessor;
         return variableAccessor != VariableAccessor.DUMMY_ACCESSOR ? variableAccessor : allocateVariableAccessor(tableMgr);
     }
 
@@ -77,8 +78,9 @@ public final class VariableAccessorField {
      * @return the variable accessor appropriate for writes
      */
     private synchronized VariableAccessor allocateVariableAccessor(VariableTableManager tableMgr) {
+        VariableAccessor variableAccessor = this.variableAccessor;
         if (variableAccessor == VariableAccessor.DUMMY_ACCESSOR) {
-            variableAccessor = tableMgr.allocateVariableAccessor(name);
+            variableAccessor = this.variableAccessor = tableMgr.allocateVariableAccessor(name);
         }
         return variableAccessor;
     }

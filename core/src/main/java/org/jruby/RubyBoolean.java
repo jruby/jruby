@@ -235,12 +235,22 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
         return hashCode;
     }
 
+    @Deprecated(since = "10.0.3.0")
     @Override
     public RubyFixnum id() {
         if ((flags & FALSE_F) == 0) {
             return RubyFixnum.newFixnum(metaClass.runtime, 20);
         } else {
             return RubyFixnum.zero(metaClass.runtime);
+        }
+    }
+
+    @Override
+    public RubyInteger __id__(ThreadContext context) {
+        if ((flags & FALSE_F) == 0) {
+            return asFixnum(context, 20);
+        } else {
+            return RubyFixnum.zero(context.runtime);
         }
     }
 

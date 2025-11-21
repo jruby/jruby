@@ -212,9 +212,15 @@ public class RubyNil extends RubyObject implements Constantizable {
         return hashCode;
     }
 
+    @Deprecated(since = "10.0.3.0")
     @Override
     public RubyFixnum id() {
         return RubyFixnum.newFixnum(metaClass.runtime, 8);
+    }
+
+    @Override
+    public RubyInteger __id__(ThreadContext context) {
+        return asFixnum(context, 8);
     }
 
     /** nilclass_to_c
