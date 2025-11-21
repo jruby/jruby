@@ -65,7 +65,7 @@ public abstract class VariableAccessor {
 
         VarHandle sh;
         try {
-            sh = MethodHandles.lookup().findVarHandle(RubyBasicObject.class, "varTableStamp", int.class);
+            sh = MethodHandles.lookup().findVarHandle(RubyBasicObject.class, "varTableStamp", byte.class);
         } catch (Throwable throwable) {
             throw new ExceptionInInitializerError(throwable);
         }
