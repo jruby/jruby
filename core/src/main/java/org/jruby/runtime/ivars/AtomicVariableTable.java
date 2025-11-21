@@ -23,7 +23,7 @@ public class AtomicVariableTable {
      */
     public static void setVariableAtomic(RubyBasicObject self, RubyClass realClass, boolean fullFence, int index, Object value) {
         while (true) {
-            int currentStamp = self.varTableStamp;
+            byte currentStamp = self.varTableStamp;
             // spin-wait if odd
             if((currentStamp & 0x01) != 0)
                 continue;
@@ -51,7 +51,7 @@ public class AtomicVariableTable {
      * @param value the variable's value
      * @return whether the update was successful, for CAS retrying
      */
-    private static boolean createTableAtomic(RubyBasicObject self, int currentStamp, RubyClass realClass, Object[] currentTable, int index, Object value) {
+    private static boolean createTableAtomic(RubyBasicObject self, byte currentStamp, RubyClass realClass, Object[] currentTable, int index, Object value) {
         // try to acquire exclusive access to the varTable field
         if (!VariableAccessor.STAMP_HANDLE.compareAndSet(self, currentStamp, ++currentStamp)) {
             return false;
@@ -73,7 +73,7 @@ public class AtomicVariableTable {
         VariableAccessor.VAR_TABLE_HANDLE.setRelease(self, newTable);
 
         // release exclusive access
-        self.varTableStamp = currentStamp + 1;
+        self.varTableStamp = (byte) (currentStamp + 1);
 
         return true;
     }
@@ -88,7 +88,7 @@ public class AtomicVariableTable {
      * @param value the variable's value
      * @return whether the update was successful, for CAS retrying
      */
-    private static boolean updateTableAtomic(RubyBasicObject self, int currentStamp, Object[] currentTable, int index, Object value) {
+    private static boolean updateTableAtomic(RubyBasicObject self, byte currentStamp, Object[] currentTable, int index, Object value) {
         // shared access to varTable field.
         currentTable[index] = value;
         VarHandle.fullFence();
