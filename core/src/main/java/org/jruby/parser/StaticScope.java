@@ -86,6 +86,8 @@ public class StaticScope implements Serializable, Cloneable {
     public static final int MAX_SPECIALIZED_SIZE = 50;
     private static final long serialVersionUID = 3423852552352498148L;
 
+    public static final int IMPLICIT = -2;
+
     // Next immediate scope.  Variable and constant scoping rules make use of this variable
     // in different ways.
     protected StaticScope enclosingScope;
@@ -99,6 +101,8 @@ public class StaticScope implements Serializable, Cloneable {
     // Our name holder (offsets are assigned as variables are added) [these are symbol strings.  Use
     // as key to Symbol table for actual encoded versions].
     private String[] variableNames;
+
+    private BitSet implicitVariables;
 
     private int variableNamesLength;
 
@@ -261,6 +265,36 @@ public class StaticScope implements Serializable, Cloneable {
         if (slot >= 0) return slot;
 
         // Clear constructor since we are adding a name
+        return addVariableName(name);
+    }
+
+    /**
+     * Add an implicit variable ("it", "_1") to this (current) scope unless it is already defined in the
+     * current scope. The variable will be marked as implicit to omit it from local variable lists and functions.
+     *
+     * @param name of new variable
+     * @return index of variable
+     */
+    public int addImplicitVariableThisScope(String name) {
+        int slot = exists(name);
+
+        if (slot >= 0) return slot;
+
+        slot = addVariableName(name);
+
+        markImplicitVariable(slot);
+
+        return slot;
+    }
+
+    public void markImplicitVariable(int slot) {
+        if (implicitVariables == null) implicitVariables = new BitSet();
+
+        implicitVariables.set(slot);
+    }
+
+    private int addVariableName(String name) {
+        // Clear constructor since we are adding a name
         constructor = null;
 
         // This is perhaps innefficient timewise?  Optimal spacewise
@@ -283,13 +317,7 @@ public class StaticScope implements Serializable, Cloneable {
         if (slot >= 0) return slot;
 
         // Clear constructor since we are adding a name
-        constructor = null;
-
-        // This is perhaps innefficient timewise?  Optimal spacewise
-        growVariableNames(name);
-
-        // Returns slot of variable
-        return variableNames.length - 1;
+        return addVariableName(name);
     }
 
     public String[] getVariables() {
@@ -396,6 +424,18 @@ public class StaticScope implements Serializable, Cloneable {
         return findVariableName(name);
     }
 
+    /**
+     * Does the variable exist and not implicit?
+     *
+     * @param name of the variable to find
+     * @return index of variable; -1 if it does not exist; -2 if is implicit.
+     */
+    public int existsAndNotImplicit(String name) {
+        int slot = findVariableName(name);
+        if (slot >= 0 && isImplicitVariable(slot)) return IMPLICIT;
+        return slot;
+    }
+
     private int findVariableName(String name) {
         for (int i = 0; i < variableNames.length; i++) {
             if (name.equals(variableNames[i])) return i;
@@ -412,6 +452,24 @@ public class StaticScope implements Serializable, Cloneable {
      */
     public int isDefined(String name) {
         return isDefined(name, 0);
+    }
+
+    /**
+     * Is this name visible to the current scope and not an implicit variable ("it", "_1", etc).
+     *
+     * @param name to be looked for
+     * @return -1 if it is not defined; -2 if it is implicit; or a location where the left-most 16 bits of number of scopes down it is and the
+     * right-most 16 bits represents its index in that scope.
+     */
+    public int isDefinedNotImplicit(String name) {
+        return isDefinedNotImplicit(name, 0);
+    }
+
+    /**
+     * @return whether the given slot contains an implicit variable ("it", "_1", etc).
+     */
+    public boolean isImplicitVariable(int slot) {
+        return implicitVariables != null && implicitVariables.get(slot);
     }
 
     /**
@@ -496,18 +554,25 @@ public class StaticScope implements Serializable, Cloneable {
         HashMap<String, Object> dedup = new HashMap<>();
 
         while (current.isBlockOrEval) {
-            for (String name : current.variableNames) {
-                dedup.computeIfAbsent(name, key -> {collectionPopulator.accept(collection, key); return key;});
-            }
+            addVariableNamesToCollection(current, collectionPopulator, dedup, collection);
             current = current.enclosingScope;
         }
 
         // once more for method scope
-        for (String name : current.variableNames) {
-            dedup.computeIfAbsent(name, key -> {collectionPopulator.accept(collection, key); return key;});
-        }
+        addVariableNamesToCollection(current, collectionPopulator, dedup, collection);
 
         return collection;
+    }
+
+    private static <T> void addVariableNamesToCollection(StaticScope current, BiConsumer<T, String> collectionPopulator, HashMap<String, Object> dedup, T collection) {
+        BitSet implicitVariables = current.implicitVariables;
+        for (int i = 0; i < current.variableNamesLength; i++) {
+            if (implicitVariables != null && implicitVariables.get(i)) continue;
+
+            String name = current.variableNames[i];
+            dedup.computeIfAbsent(name, key -> {
+                collectionPopulator.accept(collection, key); return key;});
+        }
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -539,6 +604,19 @@ public class StaticScope implements Serializable, Cloneable {
             return enclosingScope.isDefined(name, depth + 1);
         } else {
             return (depth << 16) | exists(name);
+        }
+    }
+
+    public int isDefinedNotImplicit(String name, int depth) {
+        int slot = existsAndNotImplicit(name);
+        if (slot == IMPLICIT) return slot;
+
+        if (isBlockOrEval) {
+            if (slot >= 0) return (depth << 16) | slot;
+
+            return enclosingScope.isDefinedNotImplicit(name, depth + 1);
+        } else {
+            return (depth << 16) | slot;
         }
     }
 
