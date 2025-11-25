@@ -122,13 +122,13 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
     public RubyFixnum(Ruby runtime, long value) {
         super(runtime.getFixnum());
         this.value = value;
-        this.flags |= FROZEN_F;
+        this.frozen = true;
     }
 
     private RubyFixnum(RubyClass klazz, long value) {
         super(klazz);
         this.value = value;
-        this.flags |= FROZEN_F;
+        this.frozen = true;
     }
 
     @Override

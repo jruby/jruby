@@ -170,6 +170,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     /** object flags */
     protected int flags;
 
+    /** whether the object has been frozen */
+    protected boolean frozen;
+
     /** variable table, lazily allocated as needed (if needed) */
     public transient Object[] varTable;
 
@@ -195,6 +198,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * better performance than having a polymorphic {@link #isNil()} method.
      */
     public static final int NIL_F = ObjectFlags.NIL_F;
+    @Deprecated(since = "10.0.3.0")
     public static final int FROZEN_F = ObjectFlags.FROZEN_F;
 
     /**
@@ -316,14 +320,15 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * <ul>
      *  <li>{@link #FALSE_F}</li>
      *  <li>{@link #NIL_F}</li>
-     *  <li>{@link #FROZEN_F}</li>
      * </ul>
      *
      * @param flag the actual flag to set or unset.
      * @param set if true, the flag will be set, if false, the flag will be unset.
      */
     public final void setFlag(int flag, boolean set) {
-        if (set) {
+        if (flag == FROZEN_F) {
+            setFrozen(set);
+        } else if (set) {
             flags |= flag;
         } else {
             flags &= ~flag;
@@ -337,13 +342,16 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * <ul>
      *  <li>{@link #FALSE_F}</li>
      *  <li>{@link #NIL_F}</li>
-     *  <li>{@link #FROZEN_F}</li>
      * </ul>
      *
      * @param flag the flag to get
      * @return true if the flag is set, false otherwise
      */
     public final boolean getFlag(int flag) {
+        if (flag == FROZEN_F) {
+            return isFrozen();
+        }
+
         return (flags & flag) != 0;
     }
 
@@ -446,7 +454,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public boolean isFrozen() {
-        return (flags & FROZEN_F) != 0;
+        return frozen;
     }
 
     /**
@@ -457,11 +465,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public void setFrozen(boolean frozen) {
-        if (frozen) {
-            flags |= FROZEN_F;
-        } else {
-            flags &= ~FROZEN_F;
-        }
+        this.frozen = frozen;
     }
 
     /**

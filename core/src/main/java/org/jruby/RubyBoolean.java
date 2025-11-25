@@ -136,7 +136,8 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
         False(Ruby runtime) {
             super(runtime, false);
 
-            flags = FALSE_F | FROZEN_F;
+            flags = FALSE_F;
+            frozen = true;
         }
         
         @JRubyMethod(name = "&")
@@ -184,7 +185,7 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
         True(Ruby runtime) {
             super(runtime, true);
 
-            flags |= FROZEN_F;
+            frozen = true;
         }
         
         @JRubyMethod(name = "&")

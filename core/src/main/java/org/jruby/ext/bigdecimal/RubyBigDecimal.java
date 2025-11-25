@@ -182,7 +182,7 @@ public class RubyBigDecimal extends RubyNumeric {
         this.infinitySign = 0;
         this.zeroSign = 0;
         this.value = BigDecimal.ZERO;
-        this.flags |= FROZEN_F;
+        this.frozen = true;
     }
 
     public RubyBigDecimal(Ruby runtime, BigDecimal value) {
@@ -191,7 +191,7 @@ public class RubyBigDecimal extends RubyNumeric {
         this.infinitySign = 0;
         this.zeroSign = 0;
         this.value = value;
-        this.flags |= FROZEN_F;
+        this.frozen = true;
     }
 
     public RubyBigDecimal(Ruby runtime, RubyClass klass, BigDecimal value) {
@@ -200,7 +200,7 @@ public class RubyBigDecimal extends RubyNumeric {
         this.infinitySign = 0;
         this.zeroSign = 0;
         this.value = value;
-        this.flags |= FROZEN_F;
+        this.frozen = true;
     }
 
     public RubyBigDecimal(Ruby runtime, BigDecimal value, int infinitySign) {
@@ -213,7 +213,7 @@ public class RubyBigDecimal extends RubyNumeric {
         this.infinitySign = infinitySign;
         this.zeroSign = zeroSign;
         this.value = value;
-        this.flags |= FROZEN_F;
+        this.frozen = true;
     }
 
     public RubyBigDecimal(Ruby runtime, BigDecimal value, boolean isNan) {
@@ -222,7 +222,7 @@ public class RubyBigDecimal extends RubyNumeric {
         this.infinitySign = 0;
         this.zeroSign = 0;
         this.value = value;
-        this.flags |= FROZEN_F;
+        this.frozen = true;
     }
 
     RubyBigDecimal(Ruby runtime, RubyClass klass, BigDecimal value, int zeroSign, int infinitySign, boolean isNaN) {
@@ -231,7 +231,7 @@ public class RubyBigDecimal extends RubyNumeric {
         this.infinitySign = infinitySign;
         this.zeroSign = zeroSign;
         this.value = value;
-        this.flags |= FROZEN_F;
+        this.frozen = true;
     }
 
     @Override
@@ -2532,7 +2532,7 @@ public class RubyBigDecimal extends RubyNumeric {
         this.infinitySign = rbd.infinitySign;
         this.zeroSign = rbd.zeroSign;
         this.value = rbd.value;
-        this.flags |= FROZEN_F;
+        this.frozen = true;
     }
 
     private static JavaSites.BigDecimalSites sites(ThreadContext context) {

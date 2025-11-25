@@ -10,6 +10,7 @@ public interface ObjectFlags {
     // TODO: Replace these during the build with their calculated values.
     int FALSE_F = registry.newFlag(RubyBasicObject.class);
     int NIL_F = registry.newFlag(RubyBasicObject.class);
+    @Deprecated(since = "10.0.3.0")
     int FROZEN_F = registry.newFlag(RubyBasicObject.class);
 
     int CACHEPROXY_F = registry.newFlag(RubyModule.class);
