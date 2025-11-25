@@ -8,7 +8,9 @@ public interface ObjectFlags {
 
     // These flags must be registered from top of hierarchy down to maintain order.
     // TODO: Replace these during the build with their calculated values.
+    @Deprecated(since = "10.0.3.0")
     int FALSE_F = registry.newFlag(RubyBasicObject.class);
+    @Deprecated(since = "10.0.3.0")
     int NIL_F = registry.newFlag(RubyBasicObject.class);
     @Deprecated(since = "10.0.3.0")
     int FROZEN_F = registry.newFlag(RubyBasicObject.class);
