@@ -22,11 +22,17 @@ public interface ObjectFlags {
     int TEMPORARY_NAME = registry.newFlag(RubyModule.class);
 
     // order is important here; CR_7BIT_f needs to be 16 and CR_VALID_F needs to be 32 to match values in Prism parser
+    @Deprecated(since = "10.0.3.0")
     int FSTRING      = registry.newFlag(RubyString.class);
+    @Deprecated(since = "10.0.3.0")
     int CR_7BIT_F    = registry.newFlag(RubyString.class);
+    @Deprecated(since = "10.0.3.0")
     int CR_VALID_F   = registry.newFlag(RubyString.class);
+    @Deprecated(since = "10.0.3.0")
     int CHILLED_LITERAL_F = registry.newFlag(RubyString.class);
+    @Deprecated(since = "10.0.3.0")
     int CHILLED_SYMBOL_TO_S_F = registry.newFlag(RubyString.class);
+    @Deprecated(since = "10.0.3.0")
 
     int MATCH_BUSY = registry.newFlag(RubyMatchData.class);
 
