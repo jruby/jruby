@@ -15,12 +15,18 @@ public interface ObjectFlags {
     @Deprecated(since = "10.0.3.0")
     int FROZEN_F = registry.newFlag(RubyBasicObject.class);
 
+    @Deprecated(since = "10.0.3.0")
     int CACHEPROXY_F = registry.newFlag(RubyModule.class);
+    @Deprecated(since = "10.0.3.0")
     int NEEDSIMPL_F = registry.newFlag(RubyModule.class);
+    @Deprecated(since = "10.0.3.0")
     int REFINED_MODULE_F = registry.newFlag(RubyModule.class);
+    @Deprecated(since = "10.0.3.0")
     int IS_OVERLAID_F = registry.newFlag(RubyModule.class);
     int OMOD_SHARED = registry.newFlag(RubyModule.class);
+    @Deprecated(since = "10.0.3.0")
     int INCLUDED_INTO_REFINEMENT = registry.newFlag(RubyModule.class);
+    @Deprecated(since = "10.0.3.0")
     int TEMPORARY_NAME = registry.newFlag(RubyModule.class);
 
     // order is important here; CR_7BIT_f needs to be 16 and CR_VALID_F needs to be 32 to match values in Prism parser

@@ -2737,8 +2737,7 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     /**
-     * Is this object compared by identity or not? Shortcut for doing
-     * getFlag(COMPARE_BY_IDENTITY_F).
+     * Is this object compared by identity or not?
      *
      * @return true if this object is compared by identity, false otherwise
      */
@@ -2747,8 +2746,7 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     /**
-     * Sets whether this object is compared by identity or not. Shortcut for doing
-     * setFlag(COMPARE_BY_IDENTITY_F, frozen).
+     * Sets whether this object is compared by identity or not.
      *
      * @param comparedByIdentity should this object be compared by identity?
      */
@@ -2761,7 +2759,23 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     public void setRuby2KeywordHash(boolean value) {
+<<<<<<< Updated upstream
         setFlag(RUBY2_KEYWORD_F, value);
+=======
+        set(RUBY2_KEYWORD, value);
+    }
+
+    public final void set(int flag, boolean set) {
+        if (set) {
+            hashFlags |= flag;
+        } else {
+            hashFlags &= ~flag;
+        }
+    }
+
+    public final boolean get(int flag) {
+        return (hashFlags & flag) != 0;
+>>>>>>> Stashed changes
     }
 
     private class BaseSet extends AbstractSet {
