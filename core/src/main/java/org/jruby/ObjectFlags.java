@@ -40,13 +40,18 @@ public interface ObjectFlags {
     int CHILLED_LITERAL_F = registry.newFlag(RubyString.class);
     @Deprecated(since = "10.0.3.0")
     int CHILLED_SYMBOL_TO_S_F = registry.newFlag(RubyString.class);
-    @Deprecated(since = "10.0.3.0")
 
+    @Deprecated(since = "10.0.3.0")
     int MATCH_BUSY = registry.newFlag(RubyMatchData.class);
 
+    @Deprecated(since = "10.0.3.0")
     int COMPARE_BY_IDENTITY_F = registry.newFlag(RubyHash.class);
+    @Deprecated(since = "10.0.3.0")
     int KEYWORD_REST_ARGUMENTS_F = registry.newFlag(RubyHash.class);
+    @Deprecated(since = "10.0.3.0")
     int PROCDEFAULT_HASH_F = registry.newFlag(RubyHash.class);
+    @Deprecated(since = "10.0.3.0")
     int KEYWORD_ARGUMENTS_F = registry.newFlag(RubyHash.class);
+    @Deprecated(since = "10.0.3.0")
     int RUBY2_KEYWORD_F = registry.newFlag(RubyHash.class);
 }
