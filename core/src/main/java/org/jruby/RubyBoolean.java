@@ -59,7 +59,7 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
                 false); // Don't put in object space
 
         if (!value) flags = FALSE;
-        frozen = true;
+        setFrozen(true);
 
         if (RubyInstanceConfig.CONSISTENT_HASHING_ENABLED) {
             // default to a fixed value
@@ -183,7 +183,7 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
         True(Ruby runtime) {
             super(runtime, true);
 
-            frozen = true;
+            setFrozen(true);
         }
         
         @JRubyMethod(name = "&")

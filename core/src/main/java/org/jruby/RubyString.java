@@ -957,7 +957,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         FString dup = new FString(runtime, value, getCodeRange());
         dup.shareLevel = SHARE_LEVEL_BYTELIST;
         dup.flags |= (flags & CR_MASK);
-        dup.frozen = true;
+        dup.setFrozen(true);
 
         return dup;
     }
@@ -1260,14 +1260,14 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             super(runtime, runtime.getString(), value, cr, false);
 
             this.shareLevel = SHARE_LEVEL_BYTELIST;
-            this.frozen = true;
+            this.setFrozen(true);
         }
 
         protected FString(Ruby runtime, String string) {
             super(runtime, runtime.getString(), string, UTF8, false);
 
             this.shareLevel = SHARE_LEVEL_BYTELIST;
-            this.frozen = true;
+            this.setFrozen(true);
         }
 
         @Override

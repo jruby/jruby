@@ -167,10 +167,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     protected transient RubyClass metaClass;
 
     /** object flags */
-    protected int flags;
-
-    /** whether the object has been frozen */
-    protected boolean frozen;
+    protected byte flags;
 
     /** variable table, lazily allocated as needed (if needed) */
     public transient Object[] varTable;
@@ -184,9 +181,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     public static final String ERR_INSECURE_SET_INST_VAR  = "Insecure: can't modify instance variable";
 
-    static final int FALSE =  0b00000001;
-    static final int NIL =    0b00000010;
-    static final int FROZEN = 0b00000100;
+    static final byte FALSE =  0b00000001;
+    static final byte NIL =    0b00000010;
+    static final byte FROZEN = 0b00000100;
 
     @Deprecated(since = "10.0.3.0")
     public static final int ALL_F = -1;
@@ -442,14 +439,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return (flags & FALSE) != 0;
     }
 
-    /**
+    /** whether the object has been frozen */ /**
      * Is this value frozen or not?
      *
      * @return true if this object is frozen, false otherwise
      */
     @Override
     public boolean isFrozen() {
-        return frozen;
+        return (flags & FROZEN) != 0;
     }
 
     /**
@@ -459,7 +456,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     @Override
     public void setFrozen(boolean frozen) {
-        this.frozen = frozen;
+        if (frozen) {
+            flags |= FROZEN;
+        } else {
+            flags &= ~FROZEN;
+        }
     }
 
     /**

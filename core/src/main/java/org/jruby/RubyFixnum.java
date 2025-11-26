@@ -63,7 +63,6 @@ import org.jruby.util.io.RubyInputStream;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asFloat;
-import static org.jruby.api.Convert.asInteger;
 import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Create.newArray;
@@ -122,13 +121,13 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
     public RubyFixnum(Ruby runtime, long value) {
         super(runtime.getFixnum());
         this.value = value;
-        this.frozen = true;
+        this.setFrozen(true);
     }
 
     private RubyFixnum(RubyClass klazz, long value) {
         super(klazz);
         this.value = value;
-        this.frozen = true;
+        this.setFrozen(true);
     }
 
     @Override
