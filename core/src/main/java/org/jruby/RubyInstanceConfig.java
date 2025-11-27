@@ -167,7 +167,7 @@ public class RubyInstanceConfig {
     }
 
     public void processArgumentsWithRubyopts() {
-        if (disableRUBYOPT) return;
+        if (!enableRUBYOPT) return;
         
         // environment defaults to System.getenv normally
         Object rubyoptObj = environment.get("RUBYOPT");
@@ -1203,67 +1203,89 @@ public class RubyInstanceConfig {
         this.hasShebangLine = hasShebangLine;
     }
 
+    public void setAllFeaturesEnabled(boolean ea) {
+        // disable all features
+        for (ArgumentProcessor.Feature feature: ArgumentProcessor.Feature.values()) {
+            if (feature == ArgumentProcessor.Feature.ALL) continue; // skip self
+            feature.enabler.accept(this, ea);
+        }
+    }
+
     /**
      * @see Options#CLI_RUBYGEMS_ENABLE
      */
-    public boolean isDisableGems() {
-        return disableGems;
+    public boolean isGemsEnabled() {
+        return enableGems;
+    }
+
+    /**
+     * @see Options#CLI_RUBYGEMS_ENABLE
+     */
+    public void setGemsEnabled(boolean eg) {
+        this.enableGems = eg;
     }
 
     /**
      * @see Options#CLI_DID_YOU_MEAN_ENABLE
      */
-    public boolean isDisableDidYouMean() {
-        return disableDidYouMean;
+    public boolean isDidYouMeanEnabled() {
+        return enableDidYouMean;
+    }
+
+    /**
+     * @see Options#CLI_DID_YOU_MEAN_ENABLE
+     */
+    public void setDidYouMeanEnabled(boolean edym) {
+        this.enableDidYouMean = edym;
     }
 
     /**
      * @see Options#CLI_ERROR_HIGHLIGHT_ENABLE
      */
-    public boolean isDisableErrorHighlight() {
-        return disableErrorHighlight;
+    public boolean isErrorHighlightEnabled() {
+        return enableErrorHighlight;
+    }
+
+    /**
+     * @see Options#CLI_ERROR_HIGHLIGHT_ENABLE
+     */
+    public void setErrorHighlightEnabled(boolean eeh) {
+        this.enableErrorHighlight = eeh;
     }
 
     /**
      * @see Options#CLI_SYNTAX_SUGGEST_ENABLE
      */
-    public boolean isDisableSyntaxSuggest() {
-        return disableSyntaxSuggest;
+    public boolean isSyntaxSuggestEnabled() {
+        return enableSyntaxSuggest;
+    }
+
+    /**
+     * @see Options#CLI_SYNTAX_SUGGEST_ENABLE
+     */
+    public void setSyntaxSuggestEnabled(boolean ess) {
+        this.enableSyntaxSuggest = ess;
     }
 
     /**
      * @see Options#CLI_RUBYOPT_ENABLE
      */
-    public void setDisableRUBYOPT(boolean dr) {
-        this.disableRUBYOPT = dr;
+    public void setRUBYOPTEnabled(boolean er) {
+        this.enableRUBYOPT = er;
     }
 
     /**
-     * @see Options#CLI_RUBYGEMS_ENABLE
+     * @see Options#CLI_RACTOR_ENABLE
      */
-    public void setDisableGems(boolean dg) {
-        this.disableGems = dg;
+    public boolean isRactorEnabled() {
+        return enableRactor;
     }
 
     /**
-     * @see Options#CLI_DID_YOU_MEAN_ENABLE
+     * @see Options#CLI_RACTOR_ENABLE
      */
-    public void setDisableDidYouMean(boolean ddym) {
-        this.disableDidYouMean = ddym;
-    }
-
-    /**
-     * @see Options#CLI_ERROR_HIGHLIGHT_ENABLE
-     */
-    public void setDisableErrorHighlight(boolean eh) {
-        this.disableErrorHighlight = eh;
-    }
-
-    /**
-     * @see Options#CLI_SYNTAX_SUGGEST_ENABLE
-     */
-    public void setDisableSyntaxSuggest(boolean ss) {
-        this.disableSyntaxSuggest = ss;
+    public void setRactorEnabled(boolean er) {
+        this.enableRactor = er;
     }
 
     /**
@@ -1592,11 +1614,12 @@ public class RubyInstanceConfig {
     private String inPlaceBackupExtension = Options.CLI_BACKUP_EXTENSION.load();
     private boolean parserDebug = false;
     private boolean hardExit = false;
-    private boolean disableGems = !Options.CLI_RUBYGEMS_ENABLE.load();
-    private boolean disableDidYouMean = !Options.CLI_DID_YOU_MEAN_ENABLE.load();
-    private boolean disableErrorHighlight = !Options.CLI_ERROR_HIGHLIGHT_ENABLE.load();
-    private boolean disableSyntaxSuggest = !Options.CLI_SYNTAX_SUGGEST_ENABLE.load();
-    private boolean disableRUBYOPT = !Options.CLI_RUBYOPT_ENABLE.load();
+    private boolean enableGems = Options.CLI_RUBYGEMS_ENABLE.load();
+    private boolean enableDidYouMean = Options.CLI_DID_YOU_MEAN_ENABLE.load();
+    private boolean enableErrorHighlight = Options.CLI_ERROR_HIGHLIGHT_ENABLE.load();
+    private boolean enableSyntaxSuggest = Options.CLI_SYNTAX_SUGGEST_ENABLE.load();
+    private boolean enableRUBYOPT = Options.CLI_RUBYOPT_ENABLE.load();
+    private boolean enableRactor = Options.CLI_RACTOR_ENABLE.load();
     private boolean updateNativeENVEnabled = true;
     private boolean kernelGsubDefined;
     private boolean hasScriptArgv = false;
@@ -2044,4 +2067,49 @@ public class RubyInstanceConfig {
 
     @Deprecated(since = "9.4.3.0")
     public static final boolean FASTOPS_COMPILE_ENABLED = Options.COMPILE_FASTOPS.load();
+
+    @Deprecated
+    public boolean isDisableGems() {
+        return !enableGems;
+    }
+
+    @Deprecated(since = "10.0.3.0")
+    public void setDisableGems(boolean dg) {
+        this.enableGems = !dg;
+    }
+
+    @Deprecated(since = "10.0.3.0")
+    public boolean isDisableDidYouMean() {
+        return !enableDidYouMean;
+    }
+
+    @Deprecated(since = "10.0.3.0")
+    public void setDisableDidYouMean(boolean ddym) {
+        this.enableDidYouMean = !ddym;
+    }
+
+    @Deprecated(since = "10.0.3.0")
+    public boolean isDisableErrorHighlight() {
+        return !enableErrorHighlight;
+    }
+
+    @Deprecated(since = "10.0.3.0")
+    public void setDisableErrorHighlight(boolean deh) {
+        this.enableErrorHighlight = !deh;
+    }
+
+    @Deprecated(since = "10.0.3.0")
+    public boolean isDisableSyntaxSuggest() {
+        return !enableSyntaxSuggest;
+    }
+
+    @Deprecated(since = "10.0.3.0")
+    public void setDisableSyntaxSuggest(boolean dss) {
+        this.enableSyntaxSuggest = !dss;
+    }
+
+    @Deprecated(since = "10.0.3.0")
+    public void setDisableRUBYOPT(boolean dr) {
+        this.enableRUBYOPT = !dr;
+    }
 }
