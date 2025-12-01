@@ -1407,6 +1407,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
         return asFixnum(context, 64 - Long.numberOfLeadingZeros(tmpValue));
     }
 
+    @Deprecated(since = "10.0.3.0")
     @Override
     public IRubyObject id() {
         long value = this.value;
@@ -1416,6 +1417,17 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
         }
 
         return super.id();
+    }
+
+    @Override
+    public RubyInteger __id__(ThreadContext context) {
+        long value = this.value;
+
+        if (fixnumable(value)) {
+            return asFixnum(context, 2 * value + 1);
+        }
+
+        return super.__id__(context);
     }
 
     // Piece of mri rb_to_id

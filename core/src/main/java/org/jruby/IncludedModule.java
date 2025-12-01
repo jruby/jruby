@@ -51,13 +51,19 @@ public class IncludedModule extends RubyClass implements DelegatedModule {
         return origin;
     }
 
-   /**
-    * We don't want to reveal ourselves to Ruby code, so origin this
-    * operation.
-    */
+    @Deprecated(since = "10.0.3.0")
     @Override
     public IRubyObject id() {
         return origin.id();
+    }
+
+    /**
+     * We don't want to reveal ourselves to Ruby code, so origin this
+     * operation.
+     */
+    @Override
+    public RubyInteger __id__(ThreadContext context) {
+        return origin.__id__(context);
     }
 
     @Override

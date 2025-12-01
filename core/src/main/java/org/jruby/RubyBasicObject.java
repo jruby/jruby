@@ -900,7 +900,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         if (original.hasVariables()) {
             clone.syncVariables(original);
-            ((RubyBasicObject) clone).dupFinalizer();
+            ((RubyBasicObject) clone).dupFinalizer(context);
         }
         if (original instanceof RubyModule) {
             RubyModule cloneMod = (RubyModule)clone;
@@ -1088,14 +1088,20 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return getInternalVariable("__wrap_struct__");
     }
 
+    @Deprecated
+    @Override
+    public IRubyObject id() {
+        return getRuntime().newFixnum(getObjectId());
+    }
+
     /** rb_obj_id
      *
      * Return the internal id of an object.
      */
     @JRubyMethod(name = "__id__")
     @Override
-    public IRubyObject id() {
-        return getRuntime().newFixnum(getObjectId());
+    public RubyInteger __id__(ThreadContext context) {
+        return asFixnum(context, getObjectId());
     }
 
     /**
@@ -1321,7 +1327,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public IRubyObject addFinalizer(ThreadContext context, IRubyObject f) {
         Finalizer finalizer = (Finalizer) getInternalVariable("__finalizer__");
         if (finalizer == null) {
-            IRubyObject fixnumId = registerWithObjectSpace();
+            IRubyObject fixnumId = registerWithObjectSpace(context);
 
             finalizer = new Finalizer(fixnumId);
             setInternalVariable("__finalizer__", finalizer);
@@ -1330,13 +1336,13 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return finalizer.addFinalizer(context, f);
     }
 
-    private IRubyObject registerWithObjectSpace() {
+    private IRubyObject registerWithObjectSpace(ThreadContext context) {
         // since this is the first time we're registering a finalizer, we
         // must also register this object in ObjectSpace, so that future
         // calls to undefine_finalizer, which takes an object symbol, can
         // locate the object properly. See JRUBY-4839.
         long id = getObjectId();
-        IRubyObject fixnumId = id();
+        IRubyObject fixnumId = __id__(context);
 
         getRuntime().getObjectSpace().registerObjectId(id, this);
         return fixnumId;
@@ -1346,11 +1352,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * Stange method.  We will dup the __finalizer__ variable in a freshly dup'd object,
      * but it needs to be set to this objects __finalizer__.
      */
-    protected void dupFinalizer() {
+    protected void dupFinalizer(ThreadContext context) {
         Finalizer finalizer = (Finalizer) getInternalVariable("__finalizer__");
         if (finalizer != null) {
             // We need ObjectSpace to make this object reachable for the finalization
-            IRubyObject fixnumId = registerWithObjectSpace();
+            IRubyObject fixnumId = registerWithObjectSpace(context);
 
             finalizer = new Finalizer(fixnumId, finalizer);
             setInternalVariable("__finalizer__", finalizer);
