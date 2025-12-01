@@ -402,15 +402,16 @@ public final class Ruby implements Constantizable {
         stringClass = RubyString.createStringClass(context, objectClass, comparableModule);
         emptyFrozenString = freezeAndDedupString(newEmptyString(context));
 
-        falseString = Create.newString(context, FALSE_BYTES);
-        falseString.setFrozen(true);
-
         nilString = newEmptyString(context);
         nilString.setFrozen(true);
         nilInspectString = newString(RubyNil.nil);
         nilInspectString.setFrozen(true);
+
         trueString = newString(TRUE_BYTES);
         trueString.setFrozen(true);
+
+        falseString = Create.newString(context, FALSE_BYTES);
+        falseString.setFrozen(true);
 
         encodingService = new EncodingService(this);
 
@@ -427,6 +428,12 @@ public final class Ruby implements Constantizable {
         numericClass = profile.allowClass("Numeric") ? RubyNumeric.createNumericClass(context, objectClass, comparableModule) : null;
         integerClass = profile.allowClass("Integer") ? RubyInteger.createIntegerClass(context, numericClass) : null;
         fixnumClass = profile.allowClass("Fixnum") ? RubyFixnum.createFixnumClass(context, integerClass) : null;
+
+        nilHash = asFixnum(context, nilObject.hashCode());
+        nilID = asFixnum(context, RubyNil.ID);
+        trueHash = asFixnum(context, trueObject.hashCode());
+        trueID = asFixnum(context, RubyBoolean.TRUE_ID);
+        falseHash = asFixnum(context, falseObject.hashCode());
 
         encodingClass = RubyEncoding.createEncodingClass(context, objectClass);
         converterClass = RubyConverter.createConverterClass(context, objectClass, encodingClass);
@@ -2039,6 +2046,26 @@ public final class Ruby implements Constantizable {
 
     public RubyString getNilInspectString() {
         return nilInspectString;
+    }
+
+    RubyFixnum getNilID() {
+        return nilID;
+    }
+
+    RubyFixnum getNilHash() {
+        return nilHash;
+    }
+
+    RubyFixnum getTrueID() {
+        return trueID;
+    }
+
+    RubyFixnum getTrueHash() {
+        return trueHash;
+    }
+
+    RubyFixnum getFalseHash() {
+        return falseHash;
     }
 
     /** Returns the "false" instance from the instance pool.
@@ -5180,6 +5207,11 @@ public final class Ruby implements Constantizable {
     private final RubyString falseString;
     private final RubyString nilString;
     private final RubyString nilInspectString;
+    private final RubyFixnum nilHash;
+    private final RubyFixnum nilID;
+    private final RubyFixnum trueHash;
+    private final RubyFixnum trueID;
+    private final RubyFixnum falseHash;
     final RubyFixnum[] fixnumCache = new RubyFixnum[2 * RubyFixnum.CACHE_OFFSET];
     final Object[] fixnumConstants = new Object[fixnumCache.length];
 

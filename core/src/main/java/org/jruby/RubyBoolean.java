@@ -47,6 +47,7 @@ import static org.jruby.api.Convert.asFixnum;
 
 @JRubyClass(name={"TrueClass", "FalseClass"})
 public class RubyBoolean extends RubyObject implements Constantizable, Appendable {
+    public static final int TRUE_ID = 20;
 
     private final int hashCode;
     private final transient Object constant;
@@ -227,7 +228,11 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
     
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
-        return asFixnum(context, hashCode());
+        if ((flags & FALSE_F) == 0) {
+            return context.runtime.getTrueHash();
+        } else {
+            return context.runtime.getFalseHash();
+        }
     }
 
     @Override
@@ -239,7 +244,7 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
     @Override
     public RubyFixnum id() {
         if ((flags & FALSE_F) == 0) {
-            return RubyFixnum.newFixnum(metaClass.runtime, 20);
+            return metaClass.runtime.getTrueID();
         } else {
             return RubyFixnum.zero(metaClass.runtime);
         }
@@ -248,7 +253,7 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
     @Override
     public RubyInteger __id__(ThreadContext context) {
         if ((flags & FALSE_F) == 0) {
-            return asFixnum(context, 20);
+            return context.runtime.getTrueID();
         } else {
             return RubyFixnum.zero(context.runtime);
         }

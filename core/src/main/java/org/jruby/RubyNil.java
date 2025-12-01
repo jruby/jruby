@@ -46,13 +46,13 @@ import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
 
 import static org.jruby.api.Convert.asBoolean;
-import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Create.newSmallHash;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
 @JRubyClass(name="NilClass")
 public class RubyNil extends RubyObject implements Constantizable {
+    public static final int ID = 8;
 
     private final int hashCode;
     private final transient Object constant;
@@ -204,7 +204,7 @@ public class RubyNil extends RubyObject implements Constantizable {
 
     @JRubyMethod
     public RubyFixnum hash(ThreadContext context) {
-        return asFixnum(context, hashCode());
+        return context.runtime.getNilHash();
     }
 
     @Override
@@ -215,12 +215,12 @@ public class RubyNil extends RubyObject implements Constantizable {
     @Deprecated(since = "10.0.3.0")
     @Override
     public RubyFixnum id() {
-        return RubyFixnum.newFixnum(metaClass.runtime, 8);
+        return metaClass.runtime.getNilID();
     }
 
     @Override
     public RubyInteger __id__(ThreadContext context) {
-        return asFixnum(context, 8);
+        return context.runtime.getNilID();
     }
 
     /** nilclass_to_c
