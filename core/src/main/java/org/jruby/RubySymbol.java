@@ -114,6 +114,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     private static final AtomicReferenceFieldUpdater<RubySymbol, RubyString> RUBY_STRING_UPDATER = AtomicReferenceFieldUpdater.newUpdater(RubySymbol.class, RubyString.class, "rubyString");
     private transient Object constant;
     private final SymbolNameType type;
+    private RubyFixnum hash;
 
     /**
      *
@@ -585,7 +586,9 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @JRubyMethod
     public RubyFixnum hash(ThreadContext context) {
-        return asFixnum(context, hashCode());
+        RubyFixnum hash = this.hash;
+        if (hash == null) this.hash = hash = asFixnum(context, hashCode());
+        return hash;
     }
 
     @Override
