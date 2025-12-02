@@ -103,13 +103,14 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     @Deprecated(since = "9.2.1.0")
     public static final long symbolHashSeedK0 = 5238926673095087190l;
 
-    private final String symbol;
     private final int id;
-    private final RubyString fstring;
     private final int hashCode;
-    private String decodedString;
-    private transient Object constant;
+    private final String symbol;
+    private final RubyString fstring;
     private final SymbolNameType type;
+
+    private String decodedString;
+    private Object constant;
     private RubyFixnum hash;
 
     /**
