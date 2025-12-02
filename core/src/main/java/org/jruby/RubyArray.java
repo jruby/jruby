@@ -884,7 +884,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         for (int i = 0; i < realLength; i++) {
             IRubyObject value = eltOk(i);
             RubyFixnum n = Helpers.safeHash(context, value);
-            h = murmurCombine(h, n.value);
+            h = murmurCombine(h, n.getValue());
         }
 
         return hashEnd(h);
@@ -1803,7 +1803,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     public IRubyObject aset(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         modifyCheck(context);
         if (arg0 instanceof RubyFixnum) {
-            store(((RubyFixnum) arg0).value, arg1);
+            store(((RubyFixnum) arg0).getValue(), arg1);
         } else if (arg0 instanceof RubyRange range) {
             int beg0 = checkLongForInt(context, range.begLen0(context, realLength));
             int beg1 = checkLongForInt(context, range.begLen1(context, realLength, beg0));
@@ -5096,7 +5096,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         IRubyObject value = null;
 
         if (is_fixnum) {
-            long sum = ((RubyFixnum) result).value;
+            long sum = ((RubyFixnum) result).getValue();
 fixnum_loop:
             for (; i < realLength; value=null, i++) {
                 if (value == null) {
@@ -5109,7 +5109,7 @@ fixnum_loop:
                 if (value instanceof RubyFixnum) {
                     /* should not overflow long type */
                     try {
-                        sum = Math.addExact(sum, ((RubyFixnum) value).value);
+                        sum = Math.addExact(sum, ((RubyFixnum) value).getValue());
                     } catch (ArithmeticException ae) {
                         is_bignum = true;
                         break fixnum_loop;
@@ -5148,7 +5148,7 @@ bignum_loop:
                 }
 
                 if (value instanceof RubyFixnum) {
-                    final long val = ((RubyFixnum) value).value;
+                    final long val = ((RubyFixnum) value).getValue();
                     sum = sum.add(BigInteger.valueOf(val));
                 } else if (value instanceof RubyBignum) {
                     sum = sum.add(((RubyBignum) value).value);
