@@ -72,7 +72,7 @@ class EnsureBlockInfo {
         start       = s.getNewLabel("RESC_START");
         end         = s.getNewLabel("AFTER_RESC");
         dummyRescueBlockLabel = s.getNewLabel("RESC_DUMMY");
-        instrs = new ArrayList<>();
+        instrs = new ArrayList<>(4);
         savedGlobalException = null;
         innermostLoop = l;
         this.bodyRescuer = bodyRescuer;

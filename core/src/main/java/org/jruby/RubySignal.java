@@ -81,8 +81,8 @@ public class RubySignal {
     private static final Map<Integer, String> SIGNUM_MAP;
 
     static {
-        HashMap<String, Integer> signals = new HashMap<>();
-        HashMap<Integer, String> signums = new HashMap<>();
+        HashMap<String, Integer> signals = new HashMap<>(Signal.values().length);
+        HashMap<Integer, String> signums = new HashMap<>(Signal.values().length);
 
         Signal[] values = Signal.values();
         for (Signal s : values) {

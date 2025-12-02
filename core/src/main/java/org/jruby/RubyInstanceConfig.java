@@ -1563,16 +1563,16 @@ public class RubyInstanceConfig {
     }
 
     // from CommandlineParser
-    private List<String> loadPaths = new ArrayList<String>();
-    private Set<String> excludedMethods = new HashSet<String>();
-    private final StringBuffer inlineScript = new StringBuffer();
+    private List<String> loadPaths = new ArrayList<String>(0);
+    private Set<String> excludedMethods = new HashSet<String>(0);
+    private final StringBuffer inlineScript = new StringBuffer(0);
     private boolean hasInlineScript = false;
     private String scriptFileName = null;
-    private final Collection<String> requiredLibraries = new LinkedHashSet<String>();
+    private final Collection<String> requiredLibraries = new LinkedHashSet<String>(0);
     private boolean argvGlobalsOn = false;
     private boolean assumeLoop = Options.CLI_ASSUME_LOOP.load();
     private boolean assumePrinting = Options.CLI_ASSUME_PRINT.load();
-    private final Map<String, String> optionGlobals = new HashMap<String, String>();
+    private final Map<String, String> optionGlobals = new HashMap<String, String>(0);
     private boolean processLineEnds = Options.CLI_PROCESS_LINE_ENDS.load();
     private boolean split = Options.CLI_AUTOSPLIT.load();
     private Verbosity verbosity = Options.CLI_WARNING_LEVEL.load();

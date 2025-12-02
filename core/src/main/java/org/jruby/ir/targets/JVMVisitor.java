@@ -1184,8 +1184,9 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void BuildCompoundStringInstr(BuildCompoundStringInstr compoundstring) {
-        List<DStringElement> dstringElements = new ArrayList<>();
-        for (Operand p : compoundstring.getPieces()) {
+        Operand[] pieces = compoundstring.getPieces();
+        List<DStringElement> dstringElements = new ArrayList<>(pieces.length);
+        for (Operand p : pieces) {
             if (p instanceof StringLiteral str) {
                 dstringElements.add(new DStringElement(DStringElementType.STRING, p));
             } else {

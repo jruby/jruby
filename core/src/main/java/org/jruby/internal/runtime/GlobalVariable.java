@@ -74,7 +74,7 @@ public final class GlobalVariable {
 
     public void addTrace(RubyProc command) {
         if (traces == null) {
-            traces = new ArrayList<IRubyObject>();
+            traces = new ArrayList<IRubyObject>(1);
         }
         traces.add(command);
     }
