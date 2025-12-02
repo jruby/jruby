@@ -320,7 +320,8 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
     }
 
     public static RubyFixnum newFixnum(Ruby runtime, byte value) {
-        return USE_CACHE && isInCacheRange(value) ? cachedFixnum(runtime, value) : new ByteFixnum(runtime.getInteger(), value);
+        // using ShortFixnum until there's value in using ByteFixnum
+        return USE_CACHE && isInCacheRange(value) ? cachedFixnum(runtime, value) : new ShortFixnum(runtime.getInteger(), value);
     }
 
     private static RubyFixnum newFixnumForCache(RubyClass fixnum, int value) {
@@ -329,7 +330,8 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         } else if (value > Byte.MAX_VALUE || value < Byte.MIN_VALUE) {
             return new ShortFixnum(fixnum, (short) value);
         }
-        return new ByteFixnum(fixnum, (byte) value);
+        // using ShortFixnum until there's value in using ByteFixnum
+        return new ShortFixnum(fixnum, (byte) value);
     }
 
     private static boolean isInCacheRange(int value) {
@@ -347,31 +349,38 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
     }
 
     public static RubyFixnum zero(Ruby runtime) {
-        return CACHE_OFFSET > 0 ? runtime.fixnumCache[CACHE_OFFSET] : new ByteFixnum(runtime.getInteger(), (byte) 0);
+        // using ShortFixnum until there's value in using ByteFixnum
+        return CACHE_OFFSET > 0 ? runtime.fixnumCache[CACHE_OFFSET] : new ShortFixnum(runtime.getInteger(), (byte) 0);
     }
 
     public static RubyFixnum one(Ruby runtime) {
-        return CACHE_OFFSET > 1 ? runtime.fixnumCache[CACHE_OFFSET + 1] : new ByteFixnum(runtime.getInteger(), (byte) 1);
+        // using ShortFixnum until there's value in using ByteFixnum
+        return CACHE_OFFSET > 1 ? runtime.fixnumCache[CACHE_OFFSET + 1] : new ShortFixnum(runtime.getInteger(), (byte) 1);
     }
 
     public static RubyFixnum two(Ruby runtime) {
-        return CACHE_OFFSET > 2 ? runtime.fixnumCache[CACHE_OFFSET + 2] : new ByteFixnum(runtime.getInteger(), (byte) 2);
+        // using ShortFixnum until there's value in using ByteFixnum
+        return CACHE_OFFSET > 2 ? runtime.fixnumCache[CACHE_OFFSET + 2] : new ShortFixnum(runtime.getInteger(), (byte) 2);
     }
 
     public static RubyFixnum three(Ruby runtime) {
-        return CACHE_OFFSET > 3 ? runtime.fixnumCache[CACHE_OFFSET + 3] : new ByteFixnum(runtime.getInteger(), (byte) 3);
+        // using ShortFixnum until there's value in using ByteFixnum
+        return CACHE_OFFSET > 3 ? runtime.fixnumCache[CACHE_OFFSET + 3] : new ShortFixnum(runtime.getInteger(), (byte) 3);
     }
 
     public static RubyFixnum four(Ruby runtime) {
-        return CACHE_OFFSET > 4 ? runtime.fixnumCache[CACHE_OFFSET + 4] : new ByteFixnum(runtime.getInteger(), (byte) 4);
+        // using ShortFixnum until there's value in using ByteFixnum
+        return CACHE_OFFSET > 4 ? runtime.fixnumCache[CACHE_OFFSET + 4] : new ShortFixnum(runtime.getInteger(), (byte) 4);
     }
 
     public static RubyFixnum five(Ruby runtime) {
-        return CACHE_OFFSET > 5 ? runtime.fixnumCache[CACHE_OFFSET + 5] : new ByteFixnum(runtime.getInteger(), (byte) 5);
+        // using ShortFixnum until there's value in using ByteFixnum
+        return CACHE_OFFSET > 5 ? runtime.fixnumCache[CACHE_OFFSET + 5] : new ShortFixnum(runtime.getInteger(), (byte) 5);
     }
 
     public static RubyFixnum minus_one(Ruby runtime) {
-        return -CACHE_OFFSET <= -1 ? runtime.fixnumCache[CACHE_OFFSET - 1] : new ByteFixnum(runtime.getInteger(), (byte) -1);
+        // using ShortFixnum until there's value in using ByteFixnum
+        return -CACHE_OFFSET <= -1 ? runtime.fixnumCache[CACHE_OFFSET - 1] : new ShortFixnum(runtime.getInteger(), (byte) -1);
     }
 
     public RubyFixnum hash(ThreadContext context) {
