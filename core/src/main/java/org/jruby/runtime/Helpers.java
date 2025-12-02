@@ -3123,8 +3123,8 @@ public class Helpers {
 
     // MRI: rb_hash but fast path for simple hashable objects
     public static long safeHashLong(final ThreadContext context, IRubyObject obj) {
-        if (obj instanceof SimpleHash) {
-            return safeHashLong((SimpleHash) obj);
+        if (obj instanceof SimpleHash simpleHash) {
+            return safeHashLong(simpleHash);
         }
 
         return safeHash(context, obj).getLongValue();
