@@ -1247,7 +1247,7 @@ public class RubyClass extends RubyModule {
 
     private static RubyClassSet getOrCreateSubclasses(RubyClassSet subclasses) {
         if (subclasses != null && subclasses != EMPTY_RUBYCLASS_SET) return subclasses;
-        return new WeakRubyClassSet();
+        return new WeakRubyClassSet(4);
     }
 
     interface RubyClassSet {
@@ -1281,10 +1281,6 @@ public class RubyClass extends RubyModule {
 
     static class WeakRubyClassSet extends WeakHashMap<RubyClass, Object> implements RubyClassSet {
         final ReentrantLock lock = new ReentrantLock();
-
-        public WeakRubyClassSet() {
-            super();
-        }
 
         public WeakRubyClassSet(int size) {
             super(size);

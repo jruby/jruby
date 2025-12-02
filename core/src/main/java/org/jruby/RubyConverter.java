@@ -99,7 +99,7 @@ public class RubyConverter extends RubyObject {
     public static final int XML_ATTR_QUOTE_DECORATOR = EConvFlags.XML_ATTR_QUOTE_DECORATOR;
     
     // TODO: This is a little ugly...we should have a table of these in jcodings.
-    public static final Map<Encoding, Encoding> NONASCII_TO_ASCII = new HashMap<Encoding, Encoding>();
+    public static final Map<Encoding, Encoding> NONASCII_TO_ASCII = new HashMap<>();
     static {
         NONASCII_TO_ASCII.put(UTF16BEEncoding.INSTANCE, UTF8Encoding.INSTANCE);
         NONASCII_TO_ASCII.put(UTF16LEEncoding.INSTANCE, UTF8Encoding.INSTANCE);

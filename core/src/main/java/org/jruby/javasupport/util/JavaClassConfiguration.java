@@ -56,14 +56,14 @@ public class JavaClassConfiguration implements Cloneable {
     public boolean allMethods = true;
     public boolean allClassMethods = true; // TODO: ensure defaults are sane
     public boolean javaConstructable = true;
-    public List<Class<?>[]> extraCtors = new ArrayList<>();
+    public List<Class<?>[]> extraCtors = new ArrayList<>(4);
 
     // for java proxies
     public boolean allCtors = false;
     public boolean rubyConstructable = true; //
     public boolean IroCtors = true;
 
-    public Map<String, String> renamedMethods = new HashMap<>();
+    public Map<String, String> renamedMethods = new HashMap<>(4);
     public String javaCtorMethodName = "initialize";
     private Set<String> excluded = null;
     private Set<String> included = null;

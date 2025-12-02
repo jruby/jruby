@@ -559,7 +559,7 @@ public class MethodGatherer {
 
     Map<String, NamedInstaller> getStaticInstallersForWrite() {
         Map<String, NamedInstaller> staticInstallers = this.staticInstallers;
-        return staticInstallers == Collections.EMPTY_MAP ? this.staticInstallers = new HashMap() : staticInstallers;
+        return staticInstallers == Collections.EMPTY_MAP ? this.staticInstallers = new HashMap(4) : staticInstallers;
     }
 
     Map<String, NamedInstaller> getInstanceInstallers() {
@@ -568,7 +568,7 @@ public class MethodGatherer {
 
     Map<String, NamedInstaller> getInstanceInstallersForWrite() {
         Map<String, NamedInstaller> instanceInstallers = this.instanceInstallers;
-        return instanceInstallers == Collections.EMPTY_MAP ? this.instanceInstallers = new HashMap() : instanceInstallers;
+        return instanceInstallers == Collections.EMPTY_MAP ? this.instanceInstallers = new HashMap(4) : instanceInstallers;
     }
 
     @SuppressWarnings("deprecation")
@@ -720,8 +720,8 @@ public class MethodGatherer {
                 }
             }
 
-            this.instanceMethods = instanceMethods.toArray(new Method[instanceMethods.size()]);
-            this.staticMethods = staticMethods.toArray(new Method[staticMethods.size()]);
+            this.instanceMethods = instanceMethods.toArray(Method[]::new);
+            this.staticMethods = staticMethods.toArray(Method[]::new);
         }
 
         private static boolean filterAccessible(Method method, int mod) {

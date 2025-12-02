@@ -2144,7 +2144,7 @@ public class RubyModule extends RubyObject {
         Map<String, Invalidator> invalidators = null;
         for (RubyModule mod : gatherModules(module)) {
             for (String name : mod.getConstantMap().keySet()) {
-                if (invalidators == null) invalidators = new HashMap<>();
+                if (invalidators == null) invalidators = new HashMap<>(4);
                 invalidators.put(name, context.runtime.getConstantInvalidator(name));
             }
         }
@@ -3156,7 +3156,7 @@ public class RubyModule extends RubyObject {
     }
 
     public List<IRubyObject> getAncestorList() {
-        ArrayList<IRubyObject> list = new ArrayList<>();
+        ArrayList<IRubyObject> list = new ArrayList<>(4);
 
         for (RubyModule module = this; module != null; module = module.getSuperClass()) {
             // FIXME this is silly. figure out how to delegate the getNonIncludedClass()
@@ -4430,7 +4430,7 @@ public class RubyModule extends RubyObject {
      * @return A list of all modules that would be included by including the given module
      */
     private List<RubyModule> gatherModules(RubyModule baseModule) {
-        List<RubyModule> modulesToInclude = new ArrayList<>();
+        List<RubyModule> modulesToInclude = new ArrayList<>(4);
 
         for (; baseModule != null; baseModule = baseModule.superClass) {
             // skip prepended roots

@@ -186,7 +186,7 @@ public class RubyDir extends RubyObject implements Closeable {
 // ----- Ruby Class Methods ----------------------------------------------------
 
     private static ArrayList<ByteList> dirGlobs(ThreadContext context, String cwd, IRubyObject[] args, int flags, boolean sort) {
-        ArrayList<ByteList> dirs = new ArrayList<>();
+        ArrayList<ByteList> dirs = new ArrayList<>(args.length);
 
         for ( int i = 0; i < args.length; i++ ) {
             dirs.addAll(Dir.push_glob(context.runtime, cwd, globArgumentAsByteList(context, RubyFile.get_path(context, args[i])), flags, sort));
@@ -332,7 +332,7 @@ public class RubyDir extends RubyObject implements Closeable {
         String base = options.base;
 
         if (base != null && !base.isEmpty() && !(JRubyFile.createResource(context, base).exists())){
-            dirs = new ArrayList<>();
+            dirs = Collections.EMPTY_LIST;
         } else {
             IRubyObject tmp = args[0].checkArrayType();
             String dir = base == null || base.isEmpty() ? runtime.getCurrentDirectory() : base;

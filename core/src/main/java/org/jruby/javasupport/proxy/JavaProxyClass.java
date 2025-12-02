@@ -94,8 +94,8 @@ import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 public class JavaProxyClass extends JavaProxyReflectionObject {
 
     private final Class proxyClass;
-    private final ArrayList<JavaProxyMethod> methods = new ArrayList<>();
-    private final HashMap<String, ArrayList<JavaProxyMethod>> methodMap = new HashMap<>();
+    private final ArrayList<JavaProxyMethod> methods = new ArrayList<>(4);
+    private final HashMap<String, ArrayList<JavaProxyMethod>> methodMap = new HashMap<>(4);
 
     private JavaProxyClass(ThreadContext context, final Class<?> proxyClass) {
         super(context.runtime, Access.getClass(context, "Java", "JavaProxyClass"));

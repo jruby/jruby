@@ -35,7 +35,7 @@ class MethodData extends InvocationSet {
     final int serialNumber;
 
     MethodData(int serial) {
-        super(new ArrayList<Invocation>());
+        super(new ArrayList<Invocation>(4));
         this.serialNumber = serial;
     }
 
@@ -65,7 +65,7 @@ class MethodData extends InvocationSet {
     }
 
     public InvocationSet invocationsForParent(int parentSerial) {
-        ArrayList<Invocation> p = new ArrayList<Invocation>();
+        ArrayList<Invocation> p = new ArrayList<Invocation>(4);
         for (Invocation inv : invocations) {
             int serial = inv.getParent().getMethodSerialNumber();
             if (serial == parentSerial) {
@@ -76,7 +76,7 @@ class MethodData extends InvocationSet {
     }
 
     public InvocationSet rootInvocationsFromParent(int parentSerial) {
-        ArrayList<Invocation> p = new ArrayList<Invocation>();
+        ArrayList<Invocation> p = new ArrayList<Invocation>(4);
         for (Invocation inv : invocations) {
             int serial = inv.getParent().getMethodSerialNumber();
             if (serial == parentSerial && inv.getRecursiveDepth() == 1) {
@@ -87,7 +87,7 @@ class MethodData extends InvocationSet {
     }
 
     public InvocationSet invocationsFromParent(int parentSerial) {
-        ArrayList<Invocation> p = new ArrayList<Invocation>();
+        ArrayList<Invocation> p = new ArrayList<Invocation>(4);
         for (Invocation inv : invocations) {
             int serial = inv.getParent().getMethodSerialNumber();
             if (serial == parentSerial) {
@@ -98,7 +98,7 @@ class MethodData extends InvocationSet {
     }
 
     public InvocationSet rootInvocationsOfChild(int childSerial) {
-        ArrayList<Invocation> p = new ArrayList<Invocation>();
+        ArrayList<Invocation> p = new ArrayList<Invocation>(4);
         for (Invocation inv : invocations) {
             Invocation childInv = inv.getChildren().get(childSerial);
             if (childInv != null && childInv.getRecursiveDepth() == 1) {
@@ -109,7 +109,7 @@ class MethodData extends InvocationSet {
     }
 
     public InvocationSet invocationsOfChild(int childSerial) {
-        ArrayList<Invocation> p = new ArrayList<Invocation>();
+        ArrayList<Invocation> p = new ArrayList<Invocation>(4);
         for (Invocation inv : invocations) {
             Invocation childInv = inv.getChildren().get(childSerial);
             if (childInv != null) {

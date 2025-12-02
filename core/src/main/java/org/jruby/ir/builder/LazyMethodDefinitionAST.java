@@ -29,7 +29,7 @@ public class LazyMethodDefinitionAST implements LazyMethodDefinition<Node, DefNo
 
     @Override
     public List<String> getMethodData() {
-        List<String> ivarNames = new ArrayList<>();
+        List<String> ivarNames = new ArrayList<>(1);
 
         node.getBodyNode().accept(new AbstractNodeVisitor<Object>() {
             @Override
