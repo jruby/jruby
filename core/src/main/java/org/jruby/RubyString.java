@@ -75,6 +75,7 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.JavaSites.StringSites;
 import org.jruby.runtime.Signature;
+import org.jruby.runtime.SimpleHash;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -145,7 +146,7 @@ import static org.jruby.util.StringSupport.*;
  *
  */
 @JRubyClass(name="String", include={"Enumerable", "Comparable"})
-public class RubyString extends RubyObject implements CharSequence, EncodingCapable, MarshalEncoding, CodeRangeable, Appendable {
+public class RubyString extends RubyObject implements CharSequence, EncodingCapable, MarshalEncoding, CodeRangeable, Appendable, SimpleHash {
     static final ASCIIEncoding ASCII = ASCIIEncoding.INSTANCE;
     static final UTF8Encoding UTF8 = UTF8Encoding.INSTANCE;
 
@@ -1255,12 +1256,14 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      */
     public static class FString extends RubyString {
         private IRubyObject converted;
+        private final long hash;
 
         protected FString(Ruby runtime, ByteList value, int cr) {
             super(runtime, runtime.getString(), value, cr, false);
 
             this.shareLevel = SHARE_LEVEL_BYTELIST;
             this.setFrozen(true);
+            this.hash = strHashCode(runtime);
         }
 
         protected FString(Ruby runtime, String string) {
@@ -1268,6 +1271,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
             this.shareLevel = SHARE_LEVEL_BYTELIST;
             this.setFrozen(true);
+            this.hash = strHashCode(runtime);
         }
 
         @Override
@@ -1313,6 +1317,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         @Override
         public FString dupAsFString(Ruby runtime) {
             return this;
+        }
+
+        @Override
+        public long longHashCode() {
+            return hash;
         }
     }
 
@@ -1542,6 +1551,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return strHashCode(getRuntime());
     }
 
+    @Override
+    public long longHashCode() {
+        return strHashCode(getRuntime());
+    }
+
     /**
      * Generate a hash for the String, using its associated Ruby instance's hash seed.
      *
@@ -1551,10 +1565,15 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     public int strHashCode(Ruby runtime) {
         final ByteList value = this.value;
         final Encoding enc = value.getEncoding();
-        long hash = runtime.isSiphashEnabled() ? SipHashInline.hash24(runtime.getHashSeedK0(),
-                runtime.getHashSeedK1(), value.getUnsafeBytes(), value.getBegin(),
-                value.getRealSize()) : PerlHash.hash(runtime.getHashSeedK0(),
-                value.getUnsafeBytes(), value.getBegin(), value.getRealSize());
+        long hash;
+        if (runtime.isSiphashEnabled()) {
+            hash = SipHashInline.hash24(Ruby.getHashSeed0(),
+                    Ruby.getHashSeed1(), value.getUnsafeBytes(), value.getBegin(),
+                    value.getRealSize());
+        } else {
+            hash = PerlHash.hash(Ruby.getHashSeed0(),
+            value.getUnsafeBytes(), value.getBegin(), value.getRealSize());
+        }
         hash ^= (enc.isAsciiCompatible() && scanForCodeRange() == CR_7BIT ? 0 : enc.getIndex());
         return (int) hash;
     }

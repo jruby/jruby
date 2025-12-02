@@ -275,14 +275,6 @@ public final class Ruby implements Constantizable {
 
         this.random = initRandom();
 
-        if (RubyInstanceConfig.CONSISTENT_HASHING_ENABLED) {
-            this.hashSeedK0 = -561135208506705104l;
-            this.hashSeedK1 = 7114160726623585955l;
-        } else {
-            this.hashSeedK0 = this.random.nextLong();
-            this.hashSeedK1 = this.random.nextLong();
-        }
-
         this.configBean = new Config(this);
         this.runtimeBean = new org.jruby.management.Runtime(this);
 
@@ -4887,11 +4879,21 @@ public final class Ruby implements Constantizable {
         return coverageData != null && coverageData.isCoverageEnabled();
     }
 
+    @Deprecated
     public long getHashSeedK0() {
+        return getHashSeed0();
+    }
+
+    @Deprecated
+    public long getHashSeedK1() {
+        return getHashSeed1();
+    }
+
+    public static long getHashSeed0() {
         return hashSeedK0;
     }
 
-    public long getHashSeedK1() {
+    public static long getHashSeed1() {
         return hashSeedK1;
     }
 
@@ -5549,6 +5551,15 @@ public final class Ruby implements Constantizable {
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
+
+        if (RubyInstanceConfig.CONSISTENT_HASHING_ENABLED) {
+            hashSeedK0 = -561135208506705104l;
+            hashSeedK1 = 7114160726623585955l;
+        } else {
+            SecureRandom random = new SecureRandom();
+            hashSeedK0 = random.nextLong();
+            hashSeedK1 = random.nextLong();
+        }
     }
 
     private final boolean coreIsBooted;
@@ -5569,9 +5580,9 @@ public final class Ruby implements Constantizable {
     /** The runtime-local random number generator. Uses SecureRandom if permissions allow. */
     final Random random;
 
-    /** The runtime-local seed for hash randomization */
-    private final long hashSeedK0;
-    private final long hashSeedK1;
+    /** The global seed for hash randomization */
+    private static final long hashSeedK0;
+    private static final long hashSeedK1;
 
     private final StaticScopeFactory staticScopeFactory;
 

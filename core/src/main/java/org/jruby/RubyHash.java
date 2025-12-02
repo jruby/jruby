@@ -1480,13 +1480,13 @@ public class RubyHash extends RubyObject implements Map {
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, long[] hval) {
             // perform hashing of key and value before populating shared buffer
-            long keyHash = Helpers.safeHash(context, key).getValue();
-            long valueHash = Helpers.safeHash(context, value).getValue();
+            long keyHash = Helpers.safeHashLong(context, key);
+            long valueHash = Helpers.safeHashLong(context, value);
 
             ByteBuffer buffer = HASH_16_BYTE.get();
             Buffers.clearBuffer(buffer).putLong(keyHash).putLong(valueHash);
 
-            hval[0] ^= Helpers.multAndMix(context.runtime.getHashSeedK0(), Arrays.hashCode(buffer.array()));
+            hval[0] ^= Helpers.multAndMix(Ruby.getHashSeed0(), Arrays.hashCode(buffer.array()));
         }
     };
 

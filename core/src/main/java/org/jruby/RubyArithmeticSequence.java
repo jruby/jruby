@@ -68,7 +68,7 @@ import static org.jruby.api.Error.rangeError;
 import static org.jruby.runtime.Helpers.hashEnd;
 import static org.jruby.runtime.Helpers.hashStart;
 import static org.jruby.runtime.Helpers.murmurCombine;
-import static org.jruby.runtime.Helpers.safeHash;
+import static org.jruby.runtime.Helpers.safeHashLong;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
 /**
@@ -312,11 +312,11 @@ public class RubyArithmeticSequence extends RubyObject {
 
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
-        long hash = hashStart(context.runtime, safeHash(context, excludeEnd).getValue());
+        long hash = hashStart(context.runtime, safeHashLong(context, excludeEnd));
 
-        hash = murmurCombine(hash, safeHash(context, begin).getValue());
-        hash = murmurCombine(hash, safeHash(context, end).getValue());
-        hash = murmurCombine(hash, safeHash(context, step).getValue());
+        hash = murmurCombine(hash, safeHashLong(context, begin));
+        hash = murmurCombine(hash, safeHashLong(context, end));
+        hash = murmurCombine(hash, safeHashLong(context, step));
         hash = hashEnd(hash);
 
         return asFixnum(context, hash);

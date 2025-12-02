@@ -883,8 +883,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
 
         for (int i = 0; i < realLength; i++) {
             IRubyObject value = eltOk(i);
-            RubyFixnum n = Helpers.safeHash(context, value);
-            h = murmurCombine(h, n.getValue());
+            long n = Helpers.safeHashLong(context, value);
+            h = murmurCombine(h, n);
         }
 
         return hashEnd(h);
