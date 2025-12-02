@@ -67,6 +67,30 @@ public class RubyGC {
         return defineModule(context, "GC").defineMethods(context, RubyGC.class);
     }
 
+    @JRubyMethod(module = true, visibility = PRIVATE)
+    public static IRubyObject config(ThreadContext context, IRubyObject recv) {
+        return RubyHash.newHash(
+            context.runtime,
+            RubySymbol.newSymbol(context.runtime, "implementation"),
+            RubyString.newString(context.runtime, "java")
+        );
+    }
+
+    @JRubyMethod(module = true, visibility = PRIVATE)
+    public static IRubyObject config(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        if (arg.isNil()) {
+            return config(context, recv);
+        } else if (arg instanceof RubyHash) {
+            if (((RubyHash) arg).hasKey(RubySymbol.newSymbol(context.runtime, "implementation"))) {
+                throw context.runtime.newArgumentError("Attempting to set read-only key \"Implementation\"");
+            }
+            return config(context, recv);
+        } else {
+            throw context.runtime.newArgumentError("ArgumentError");
+        }
+    }
+    
+
     @JRubyMethod(module = true, visibility = PRIVATE, optional = 1, checkArity = false)
     public static IRubyObject start(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 1);
