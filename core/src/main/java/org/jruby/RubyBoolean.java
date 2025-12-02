@@ -58,7 +58,8 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
                 (value ? runtime.getTrueClass() : runtime.getFalseClass()),
                 false); // Don't put in object space
 
-        if (!value) flags = FALSE_F;
+        if (!value) flags = FALSE;
+        setFrozen(true);
 
         if (RubyInstanceConfig.CONSISTENT_HASHING_ENABLED) {
             // default to a fixed value
@@ -76,7 +77,7 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
     
     @Override
     public ClassIndex getNativeClassIndex() {
-        return (flags & FALSE_F) == 0 ? ClassIndex.TRUE : ClassIndex.FALSE;
+        return (flags & FALSE) == 0 ? ClassIndex.TRUE : ClassIndex.FALSE;
     }
     
     @Override
@@ -135,8 +136,6 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
     public static class False extends RubyBoolean {
         False(Ruby runtime) {
             super(runtime, false);
-
-            flags = FALSE_F | FROZEN_F;
         }
         
         @JRubyMethod(name = "&")
@@ -184,7 +183,7 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
         True(Ruby runtime) {
             super(runtime, true);
 
-            flags |= FROZEN_F;
+            setFrozen(true);
         }
         
         @JRubyMethod(name = "&")
@@ -243,7 +242,7 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
     @Deprecated(since = "10.0.3.0")
     @Override
     public RubyFixnum id() {
-        if ((flags & FALSE_F) == 0) {
+        if ((flags & FALSE) == 0) {
             return metaClass.runtime.getTrueID();
         } else {
             return RubyFixnum.zero(metaClass.runtime);

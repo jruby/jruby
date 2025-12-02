@@ -141,13 +141,13 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     public RubyFloat(Ruby runtime, double value) {
         super(runtime.getFloat());
         this.value = value;
-        this.flags |= FROZEN_F;
+        this.setFrozen(true);
     }
 
     private RubyFloat(RubyClass klass, double value) {
         super(klass);
         this.value = value;
-        this.flags |= FROZEN_F;
+        this.setFrozen(true);
     }
 
     public RubyClass singletonClass(ThreadContext context) {

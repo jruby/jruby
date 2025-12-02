@@ -403,9 +403,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     public static final int ARRAY_DEFAULT_SIZE = 16;
     private static final int SMALL_ARRAY_LEN = 16;
 
-    private static final int TMPLOCK_ARR_F = 1 << 9;
-    private static final int TMPLOCK_OR_FROZEN_ARR_F = TMPLOCK_ARR_F | FROZEN_F;
-
     private volatile boolean isShared = false;
 
     protected IRubyObject[] values;
@@ -646,10 +643,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
      *
      */
     protected final void modifyCheck(ThreadContext context) {
-        if ((flags & TMPLOCK_OR_FROZEN_ARR_F) != 0) {
-            if ((flags & FROZEN_F) != 0) throw context.runtime.newFrozenError(this);
-            if ((flags & TMPLOCK_ARR_F) != 0) throw typeError(context, "can't modify array during iteration");
-        }
+        if (isFrozen()) throw context.runtime.newFrozenError(this);
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -1723,15 +1717,6 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     @JRubyMethod(name = "include?")
     public RubyBoolean include_p(ThreadContext context, IRubyObject item) {
         return asBoolean(context, includes(context, item));
-    }
-
-    /** rb_ary_frozen_p
-     *
-     */
-    @JRubyMethod(name = "frozen?")
-    @Override
-    public RubyBoolean frozen_p(ThreadContext context) {
-        return asBoolean(context, isFrozen() || (flags & TMPLOCK_ARR_F) != 0);
     }
 
     /**
