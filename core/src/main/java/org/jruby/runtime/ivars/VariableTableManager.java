@@ -446,7 +446,7 @@ public class VariableTableManager {
             Object[] otherVars = ((RubyBasicObject) other).varTable;
 
             for(;;) {
-                int oldStamp = self.varTableStamp;
+                byte oldStamp = self.varTableStamp;
                 // wait for read mode
                 if((oldStamp & 0x01) == 1)
                     continue;
@@ -460,7 +460,7 @@ public class VariableTableManager {
                 VariableAccessor.VAR_TABLE_HANDLE.setRelease(self, newTable);
 
                 // release write mode
-                self.varTableStamp = oldStamp+1;
+                self.varTableStamp = (byte) (oldStamp+1);
                 break;
             }
 

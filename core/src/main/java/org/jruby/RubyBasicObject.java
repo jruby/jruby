@@ -174,7 +174,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public transient Object[] varTable;
 
     /** locking stamp for Unsafe ops updating the vartable */
-    public transient volatile int varTableStamp;
+    public transient volatile byte varTableStamp;
 
     /**
      * The error message used when some one tries to modify an
