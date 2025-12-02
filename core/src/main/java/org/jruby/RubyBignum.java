@@ -46,6 +46,7 @@ import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
+import org.jruby.runtime.SimpleHash;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
@@ -66,7 +67,7 @@ import static org.jruby.api.Warn.warning;
 import static org.jruby.util.Numeric.int_pow;
 
 @JRubyClass(name="Bignum", parent="Integer")
-public class RubyBignum extends RubyInteger {
+public class RubyBignum extends RubyInteger implements SimpleHash {
     private static final int BIT_SIZE = 64;
     private static final long MAX = (1L << (BIT_SIZE - 1)) - 1;
     public static final BigInteger LONG_MAX = BigInteger.valueOf(MAX);
@@ -1086,16 +1087,17 @@ public class RubyBignum extends RubyInteger {
 
     // MRI: rb_big_hash
     public RubyFixnum hash(ThreadContext context) {
-        return asFixnum(context, bigHash(context.runtime, value));
+        return asFixnum(context, longHashCode());
     }
 
     @Override
     public int hashCode() {
-        return (int) bigHash(getRuntime(), value);
+        return (int) longHashCode();
     }
 
-    private static long bigHash(Ruby runtime, BigInteger value) {
-        return Helpers.multAndMix(runtime.getHashSeedK0(), value.hashCode());
+    @Override
+    public long longHashCode() {
+        return Helpers.multAndMix(Ruby.getHashSeed0(), value.hashCode());
     }
 
     /** rb_big_to_f

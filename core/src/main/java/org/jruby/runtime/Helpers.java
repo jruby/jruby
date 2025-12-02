@@ -3097,8 +3097,8 @@ public class Helpers {
     public static long hashStart(Ruby runtime, long value) {
         long hash = value +
                 (runtime.isSiphashEnabled() ?
-                        runtime.getHashSeedK1() :
-                        runtime.getHashSeedK0());
+                        Ruby.getHashSeed1() :
+                        Ruby.getHashSeed0());
         return hash;
     }
 
@@ -3119,6 +3119,20 @@ public class Helpers {
         }
 
         return fixnum;
+    }
+
+    // MRI: rb_hash but fast path for simple hashable objects
+    public static long safeHashLong(final ThreadContext context, IRubyObject obj) {
+        if (obj instanceof SimpleHash) {
+            return safeHashLong((SimpleHash) obj);
+        }
+
+        return safeHash(context, obj).getLongValue();
+    }
+
+    // MRI: rb_hash but only for simple hashable objects
+    public static long safeHashLong(SimpleHash obj) {
+        return obj.longHashCode();
     }
 
     // MRI: mult_and_mix, roughly since we have no uint64 type

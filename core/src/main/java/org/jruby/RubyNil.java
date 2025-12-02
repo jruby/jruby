@@ -40,6 +40,7 @@ import org.jruby.compiler.Constantizable;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.SimpleHash;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.opto.OptoFactory;
@@ -51,7 +52,7 @@ import static org.jruby.api.Create.newSmallHash;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
 @JRubyClass(name="NilClass")
-public class RubyNil extends RubyObject implements Constantizable {
+public class RubyNil extends RubyObject implements Constantizable, SimpleHash {
     public static final int ID = 8;
 
     private final int hashCode;

@@ -50,6 +50,7 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.Signature;
+import org.jruby.runtime.SimpleHash;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CachingCallSite;
@@ -77,7 +78,7 @@ import static org.jruby.util.Numeric.int_pow;
 /**
  * Implementation of the Integer (Fixnum internal) class.
  */
-public abstract class RubyFixnum extends RubyInteger implements Constantizable, Appendable {
+public abstract class RubyFixnum extends RubyInteger implements Constantizable, Appendable, SimpleHash {
 
     public static RubyClass createFixnumClass(ThreadContext context, RubyClass fixnum) {
         var cache = context.runtime.fixnumCache;
@@ -384,16 +385,21 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
     }
 
     public RubyFixnum hash(ThreadContext context) {
-        return asFixnum(context, fixHash(context.runtime, getValue()));
+        return asFixnum(context, longHashCode());
     }
 
     @Override
     public final int hashCode() {
-        return (int) fixHash(getRuntime(), getValue());
+        return (int) longHashCode();
+    }
+
+    @Override
+    public long longHashCode() {
+        return fixHash(getRuntime(), getValue());
     }
 
     private static long fixHash(Ruby runtime, long value) {
-        return Helpers.multAndMix(runtime.getHashSeedK0(), value);
+        return Helpers.multAndMix(Ruby.getHashSeed0(), value);
     }
 
     /*  ================

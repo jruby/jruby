@@ -38,6 +38,7 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.compiler.Constantizable;
 import org.jruby.runtime.ClassIndex;
+import org.jruby.runtime.SimpleHash;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.opto.OptoFactory;
@@ -46,7 +47,7 @@ import org.jruby.util.ByteList;
 import static org.jruby.api.Convert.asFixnum;
 
 @JRubyClass(name={"TrueClass", "FalseClass"})
-public class RubyBoolean extends RubyObject implements Constantizable, Appendable {
+public class RubyBoolean extends RubyObject implements Constantizable, Appendable, SimpleHash {
     public static final int TRUE_ID = 20;
 
     private final int hashCode;

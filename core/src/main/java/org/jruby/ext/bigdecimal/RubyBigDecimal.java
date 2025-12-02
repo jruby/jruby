@@ -51,6 +51,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.JavaSites;
+import org.jruby.runtime.SimpleHash;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -68,7 +69,7 @@ import static org.jruby.api.Error.typeError;
 import static org.jruby.api.Warn.warnDeprecated;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
-public class RubyBigDecimal extends RubyNumeric {
+public class RubyBigDecimal extends RubyNumeric implements SimpleHash {
 
     @JRubyConstant
     public final static int ROUND_DOWN = 2;
@@ -942,7 +943,17 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod
     public RubyFixnum hash(ThreadContext context) {
-        return asFixnum(context, absStripTrailingZeros().hashCode() * value.signum());
+        return asFixnum(context, hashCode());
+    }
+
+    @Override
+    public int hashCode() {
+        return absStripTrailingZeros().hashCode() * value.signum();
+    }
+
+    @Override
+    public long longHashCode() {
+        return hashCode();
     }
 
     @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)

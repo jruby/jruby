@@ -1551,10 +1551,15 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     public int strHashCode(Ruby runtime) {
         final ByteList value = this.value;
         final Encoding enc = value.getEncoding();
-        long hash = runtime.isSiphashEnabled() ? SipHashInline.hash24(runtime.getHashSeedK0(),
-                runtime.getHashSeedK1(), value.getUnsafeBytes(), value.getBegin(),
-                value.getRealSize()) : PerlHash.hash(runtime.getHashSeedK0(),
-                value.getUnsafeBytes(), value.getBegin(), value.getRealSize());
+        long hash;
+        if (runtime.isSiphashEnabled()) {
+            hash = SipHashInline.hash24(Ruby.getHashSeed0(),
+                    Ruby.getHashSeed1(), value.getUnsafeBytes(), value.getBegin(),
+                    value.getRealSize());
+        } else {
+            hash = PerlHash.hash(Ruby.getHashSeed0(),
+            value.getUnsafeBytes(), value.getBegin(), value.getRealSize());
+        }
         hash ^= (enc.isAsciiCompatible() && scanForCodeRange() == CR_7BIT ? 0 : enc.getIndex());
         return (int) hash;
     }
