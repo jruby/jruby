@@ -77,8 +77,6 @@ default_gems = [
   ['resolv', '0.6.3'],
   ['ruby2_keywords', '0.0.5'],
   ['securerandom', '0.4.1'],
-  # https://github.com/ruby/set/issues/21
-  # ['set', '1.1.1'],
   ['shellwords', '0.2.2'],
   ['singleton', '0.3.0'],
   ['stringio', '3.1.5'],
