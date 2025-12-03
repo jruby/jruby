@@ -1,7 +1,5 @@
 #  Created by Ari Brown on 2008-02-23.
 #  For rubinius. All pwnage reserved.
-#  
-#  Used in pwning teh nubs with FFI instead of C
 
 # ** Syslog(Module)
 
@@ -14,12 +12,18 @@
 # architecture and constants, see the syslog(3) manual page of your
 # platform.
 require 'ffi'
-JRuby::Util.load_ext("org.jruby.ext.syslog.SyslogLibrary")
+
 if FFI::Platform::IS_WINDOWS
   raise LoadError, "Syslog not supported on this platform"
 end
 
 module Syslog
+  module Constants
+    Java::jnr.constants.platform.Syslog.values.each do |const|
+      next if const.name == '__UNKNOWN_CONSTANT__'
+      const_set const.name, const.value
+    end
+  end
   include Constants
 
   module Level
