@@ -53,7 +53,7 @@ default_gems = [
   ['jar-dependencies', '0.5.4'],
   ['jruby-readline', '1.3.7'],
   ['jruby-openssl', '0.15.5'],
-  ['json', '2.9.1'],
+  ['json', '2.16.0'],
   ['logger', '1.6.4'],
   ['net-http', '0.6.0'],
   ['net-protocol', '0.2.2'],
