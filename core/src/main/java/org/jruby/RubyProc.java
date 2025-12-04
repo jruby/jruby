@@ -242,7 +242,7 @@ public class RubyProc extends RubyObject implements DataType {
         boolean isSymbolProc = block.getBody() instanceof RubySymbol.SymbolProcBody;
         if (isSymbolProc) {
             string.catStringUnsafe("(&:" + ((RubySymbol.SymbolProcBody) block.getBody()).getId() + ")");
-        } else if ((file = block.getBody().getFile()) != null) {
+        } else if (block.getBody().getFile() instanceof String file) {
             string.catStringUnsafe(" " + file + ":" + (block.getBody().getLine() + 1));
         }
 
