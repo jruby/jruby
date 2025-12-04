@@ -3030,9 +3030,7 @@ public class RubyModule extends RubyObject {
         block.getBinding().getFrame().setName(name);
 
         // a normal block passed to define_method changes to do arity checking; make it a lambda
-        RubyProc proc = runtime.newProc(Block.Type.LAMBDA, block);
-
-        proc.setFromMethod();
+        RubyProc proc = RubyProc.newMethodProc(runtime, block);
 
         // various instructions can tell this scope is not an ordinary block but a block representing
         // a method definition.
