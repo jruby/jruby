@@ -70,14 +70,12 @@ import static org.jruby.util.RubyStringBuilder.types;
 public class RubyProc extends RubyObject implements DataType {
     private Block block = Block.NULL_BLOCK;
     private final Block.Type type;
-    private String file = null;
-    private int line = -1;
+    private final String file;
+    private final int line;
     private boolean fromMethod;
 
     protected RubyProc(Ruby runtime, RubyClass rubyClass, Block.Type type) {
-        super(runtime, rubyClass);
-
-        this.type = type;
+        this(runtime, rubyClass, type, null, -1);
     }
 
     @Deprecated(since = "9.0.0.0")
@@ -86,8 +84,9 @@ public class RubyProc extends RubyObject implements DataType {
     }
 
     protected RubyProc(Ruby runtime, RubyClass rubyClass, Block.Type type, String file, int line) {
-        this(runtime, rubyClass, type);
+        super(runtime, rubyClass);
 
+        this.type = type;
         this.file = file;
         this.line = line;
     }
