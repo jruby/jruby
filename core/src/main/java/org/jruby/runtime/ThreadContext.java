@@ -115,6 +115,8 @@ public final class ThreadContext {
 
     public final TraceEventManager traceEvents;
 
+    public final short[] builtinBits;
+
     // FIXME: This should get stuffed into call path OR call site should be passed through callpath and have
     //     this in it.
 
@@ -244,6 +246,7 @@ public final class ThreadContext {
         this.runtimeCache = runtime.getRuntimeCache();
         this.sites = runtime.sites;
         this.traceEvents = runtime.getTraceEvents();
+        this.builtinBits = runtime.getBuiltinBits();
 
         // TOPLEVEL self and a few others want a top-level scope.  We create this one right
         // away and then pass it into top-level parse so it ends up being the top level.

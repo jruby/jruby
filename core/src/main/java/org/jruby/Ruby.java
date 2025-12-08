@@ -66,6 +66,7 @@ import org.jruby.management.Caches;
 import org.jruby.management.InlineStats;
 import org.jruby.parser.ParserManager;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Builtins;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.TraceEventManager;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
@@ -4790,6 +4791,18 @@ public final class Ruby implements Constantizable {
         if (!config.isProfiling() || method.isUndefined()) return;
 
         getProfilingService().addProfiledMethod(id, method);
+    }
+
+    void invalidateBuiltin(RubyModule module, String method) {
+        if (!isBootingCore()) {
+            Builtins.invalidateBuiltin(builtinBits, module.classIndex, method);
+        }
+    }
+
+    private final short[] builtinBits = Builtins.allocate();
+
+    public short[] getBuiltinBits() {
+        return builtinBits;
     }
 
     /**
