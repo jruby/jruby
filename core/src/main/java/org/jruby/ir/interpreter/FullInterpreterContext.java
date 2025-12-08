@@ -51,7 +51,7 @@ public class FullInterpreterContext extends InterpreterContext {
     private Map<String, DataFlowProblem> dataFlowProblems;
 
     /** What passes have been run on this scope? */
-    private final List<CompilerPass> executedPasses = new ArrayList<>();
+    private final List<CompilerPass> executedPasses = new ArrayList<>(4);
 
 
     /** Local variables defined in this scope */
@@ -107,7 +107,7 @@ public class FullInterpreterContext extends InterpreterContext {
         linearizeBasicBlocks();
 
         // Pass 1. Set up IPCs for labels and instructions and build linear instr list
-        List<Instr> newInstrs = new ArrayList<>();
+        List<Instr> newInstrs = new ArrayList<>(4);
         int ipc = 0;
         for (BasicBlock b: getLinearizedBBList()) {
             // All same-named labels must be same Java instance for this to work or we would need
@@ -176,7 +176,7 @@ public class FullInterpreterContext extends InterpreterContext {
     }
 
     public Map<String, DataFlowProblem> getDataFlowProblems() {
-        if (dataFlowProblems == null) dataFlowProblems = new HashMap<>();
+        if (dataFlowProblems == null) dataFlowProblems = new HashMap<>(1);
         return dataFlowProblems;
     }
 

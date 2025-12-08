@@ -54,6 +54,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.BiConsumer;
 
@@ -1342,13 +1343,12 @@ public class EncodingUtils {
     }
 
     public static List<String> encodingNames(byte[] name, int p, int end) {
-        final List<String> names = new ArrayList<String>();
 
         Encoding enc = ASCIIEncoding.INSTANCE;
         int s = p;
 
         int code = name[s] & 0xff;
-        if (enc.isDigit(code)) return names;
+        if (enc.isDigit(code)) return Collections.EMPTY_LIST;
 
         boolean hasUpper = false;
         boolean hasLower = false;
@@ -1359,6 +1359,7 @@ public class EncodingUtils {
             }
         }
 
+        final List<String> names = new ArrayList<String>(4);
         boolean isValid = false;
         if (s >= end) {
             isValid = true;

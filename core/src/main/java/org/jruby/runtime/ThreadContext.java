@@ -1469,12 +1469,12 @@ public final class ThreadContext {
     private Map<IRubyObject, IRubyObject> safeRecurseGetGuards(String name) {
         Map<String, IdentityHashMap<IRubyObject, IRubyObject>> symToGuards = this.symToGuards;
         if (symToGuards == null) {
-            this.symToGuards = symToGuards = new HashMap<>();
+            this.symToGuards = symToGuards = new HashMap<>(4);
         }
 
         IdentityHashMap<IRubyObject, IRubyObject> guards = symToGuards.get(name);
         if (guards == null) {;
-            symToGuards.put(name, guards = new IdentityHashMap<>());
+            symToGuards.put(name, guards = new IdentityHashMap<>(4));
         }
 
         return guards;

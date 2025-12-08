@@ -1016,7 +1016,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if (locals == null) {
             synchronized (this) {
                 locals = fiberLocalVariables;
-                if (locals == null) locals = fiberLocalVariables = new HashMap<>();
+                if (locals == null) locals = fiberLocalVariables = new HashMap<>(4);
             }
         }
         return locals;
@@ -1032,7 +1032,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if (locals == null) {
             synchronized (this) {
                 locals = threadLocalVariables;
-                if (locals == null) locals = threadLocalVariables = new HashMap<>();
+                if (locals == null) locals = threadLocalVariables = new HashMap<>(4);
             }
         }
         return locals;

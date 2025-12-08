@@ -58,6 +58,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 import org.jruby.util.StringSupport;
+import org.jruby.util.collections.IntList;
 
 import static org.jruby.api.Access.kernelModule;
 import static org.jruby.api.Access.getModule;
@@ -2483,7 +2484,7 @@ public class RubyBigDecimal extends RubyNumeric implements SimpleHash {
       BigDecimal v = BigDecimal.ONE.divide(TWO.multiply(x), nMC);        // v0 = 1/(2*x)
 
       // Collect iteration precisions beforehand
-      ArrayList<Integer> nPrecs = new ArrayList<>();
+      IntList nPrecs = new IntList();
 
       assert nInit > 3 : "Never ending loop!";                // assume nInit = 16 <= prec
 

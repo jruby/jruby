@@ -76,6 +76,7 @@ import org.jruby.util.StrptimeParser;
 import org.jruby.util.StrptimeToken;
 import org.jruby.util.WeakIdentityHashMap;
 import org.jruby.util.collections.ConcurrentWeakHashMap;
+import org.jruby.util.collections.IntHashMap;
 import org.jruby.util.io.EncodingUtils;
 import org.objectweb.asm.util.TraceClassVisitor;
 
@@ -1699,7 +1700,7 @@ public final class Ruby implements Constantizable {
         }
     }
 
-    private final Map<Integer, RubyClass> errnos = new HashMap<>();
+    private final IntHashMap<RubyClass> errnos = new IntHashMap<>(Errno.values().length);
 
     public RubyClass getErrno(int n) {
         return errnos.get(n);
@@ -5463,7 +5464,7 @@ public final class Ruby implements Constantizable {
     // NOTE: module instances are unique and we only addModule from <init> - could use a ConcurrentLinkedQueue
     private final ConcurrentWeakHashMap<RubyModule, Object> allModules = new ConcurrentWeakHashMap<>(128);
 
-    private final Map<String, DateTimeZone> timeZoneCache = new HashMap<>();
+    private final Map<String, DateTimeZone> timeZoneCache = new HashMap<>(1);
 
     /**
      * A list of "external" finalizers (the ones, registered via ObjectSpace),

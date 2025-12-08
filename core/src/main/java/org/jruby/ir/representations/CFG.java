@@ -44,7 +44,7 @@ public class CFG {
     private BasicBlock exitBB;
 
     /** List of bbs that have a 'return' instruction */
-    List<BasicBlock> returnBBs = new ArrayList<>();
+    List<BasicBlock> returnBBs = new ArrayList<>(1);
 
     /** BB that traps all exception-edges out of the cfg where we could add any cleanup/ensure code (ex: pop frames, etc.) */
     private BasicBlock globalEnsureBB;
@@ -59,8 +59,8 @@ public class CFG {
     public CFG(IRScope scope) {
         this.scope = scope;
         this.graph = new DirectedGraph<>();
-        this.bbMap = new HashMap<>();
-        this.rescuerMap = new HashMap<>();
+        this.bbMap = new HashMap<>(4);
+        this.rescuerMap = new HashMap<>(4);
         this.nextBBId = 0;
         this.entryBB = this.exitBB = null;
         this.globalEnsureBB = null;
@@ -211,13 +211,13 @@ public class CFG {
         Map<Label, List<BasicBlock>> forwardRefs = new HashMap<>();
 
         // List of bbs that have a 'throw' instruction
-        List<BasicBlock> exceptionBBs = new ArrayList<>();
+        List<BasicBlock> exceptionBBs = new ArrayList<>(1);
 
         // Stack of nested rescue regions
         Stack<ExceptionRegion> nestedExceptionRegions = new Stack<>();
 
         // List of all rescued regions
-        List<ExceptionRegion> allExceptionRegions = new ArrayList<>();
+        List<ExceptionRegion> allExceptionRegions = new ArrayList<>(1);
 
         // Dummy entry basic block (see note at end to see why)
         entryBB = createBB(nestedExceptionRegions);
@@ -357,7 +357,7 @@ public class CFG {
         }
 
         // Add a forward reference from target -> source
-        List<BasicBlock> forwardReferences = forwardRefs.computeIfAbsent(targetLabel, k -> new ArrayList<>());
+        List<BasicBlock> forwardReferences = forwardRefs.computeIfAbsent(targetLabel, k -> new ArrayList<>(1));
 
         forwardReferences.add(src);
     }

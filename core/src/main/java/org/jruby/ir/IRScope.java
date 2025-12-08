@@ -103,7 +103,7 @@ public abstract class IRScope implements ParseResult {
 
     // List of all scopes this scope contains lexically.  This is not used
     // for execution, but is used during dry-runs for debugging.
-    private final List<IRScope> lexicalChildren = Collections.synchronizedList(new ArrayList<>());
+    private final List<IRScope> lexicalChildren = Collections.synchronizedList(new ArrayList<>(1));
 
     /** Startup interpretation depends on this */
     protected InterpreterContext interpreterContext;

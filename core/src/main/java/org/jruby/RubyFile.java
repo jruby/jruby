@@ -893,11 +893,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             String spattern = _path.asJavaString();
             ArrayList<String> patterns = Dir.braces(spattern, flags, new ArrayList<>());
 
-            ArrayList<Boolean> matches = new ArrayList<>();
+            boolean matches = false;
             for(int i = 0; i < patterns.size(); i++) {
-                matches.add(dir_fnmatch(new ByteList(patterns.get(i).getBytes()), path, flags));
+                matches |= dir_fnmatch(new ByteList(patterns.get(i).getBytes()), path, flags);
             }
-            braces_match = matches.contains(true);
+            braces_match = matches;
         }
 
         return braces_match || dir_fnmatch(pattern, path, flags) ? context.tru : context.fals;
