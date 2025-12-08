@@ -395,11 +395,7 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
 
     @Override
     public long longHashCode() {
-        return fixHash(getRuntime(), getValue());
-    }
-
-    private static long fixHash(Ruby runtime, long value) {
-        return Helpers.multAndMix(Ruby.getHashSeed0(), value);
+        return Helpers.multAndMix(Ruby.getHashSeed0(), getValue());
     }
 
     /*  ================
