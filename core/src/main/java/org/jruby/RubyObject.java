@@ -48,6 +48,7 @@ import java.util.function.BiConsumer;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Builtins;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.JavaSites.ObjectSites;
 import org.jruby.runtime.ObjectAllocator;
@@ -410,12 +411,12 @@ public class RubyObject extends RubyBasicObject {
     }
 
     private static boolean fastNumEqualInternal(final ThreadContext context, final IRubyObject a, final IRubyObject b) {
-        if (a instanceof RubyFixnum) {
-            if (b instanceof RubyFixnum) {
-                if (!context.sites.Fixnum.op_eqq.isBuiltin(a)) {
+        if (a instanceof RubyFixnum fixnumA) {
+            if (b instanceof RubyFixnum fixnumB) {
+                if (!Builtins.checkIntegerEquals(context)) {
                     return context.sites.Fixnum.op_eqq.call(context, a, a, b).isTrue();
                 }
-                return ((RubyFixnum) a).fastEqual((RubyFixnum) b);
+                return fixnumA.fastEqual(fixnumB);
             }
         } else if (a instanceof RubyFloat) {
             if (b instanceof RubyFloat) {
