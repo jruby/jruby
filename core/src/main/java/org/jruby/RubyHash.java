@@ -526,7 +526,7 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     private static final int MIN_CAPA = 8;
-    private static final int ST_DEFAULT_MAX_DENSITY = 5;
+    private static final int ST_DEFAULT_MAX_DENSITY = 2;
     private final void MRICheckResize() {
         if (size / table.length > ST_DEFAULT_MAX_DENSITY) {
             int forSize = table.length + 1; // size + 1;
