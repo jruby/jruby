@@ -1,6 +1,5 @@
 #!/bin/sh
-# shellcheck shell=dash   # local variable support
-# shellcheck disable=1007 # spurious warnings when initializing multiple vars
+# shellcheck disable=3043 # assume local variable support in shell
 
 # -----------------------------------------------------------------------------
 # jruby.sh - Start Script for the JRuby interpreter
@@ -59,6 +58,7 @@ fi
 # https://github.com/mentalisttraceur/esceval
 esceval()
 {
+    # shellcheck disable=1007 # multiple empty var initialization intentional here
     local escaped= unescaped= output=
     REPLY=
 
