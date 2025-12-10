@@ -1144,7 +1144,7 @@ public class RubyClass extends RubyModule {
         return new SubclassArray(context.runtime, this.concreteSubclassesEstimate);
     }
 
-    private static class SubclassArray extends RubyArray<RubyClass> implements BiConsumer<ThreadContext, RubyClass> {
+    private static class SubclassArray extends RubyArrayNative<RubyClass> implements BiConsumer<ThreadContext, RubyClass> {
         public SubclassArray(Ruby runtime, int length) {
             super(runtime, length);
         }
