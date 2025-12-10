@@ -1,6 +1,5 @@
 #!/bin/sh
-# shellcheck shell=dash   # local variable support
-# shellcheck disable=1007 # spurious warnings when initializing multiple vars
+# shellcheck disable=3043 # assume local variable support in shell
 
 # -----------------------------------------------------------------------------
 # jruby.sh - Start Script for the JRuby interpreter
@@ -59,6 +58,7 @@ fi
 # https://github.com/mentalisttraceur/esceval
 esceval()
 {
+    # shellcheck disable=1007 # multiple empty var initialization intentional here
     local escaped= unescaped= output=
     REPLY=
 
@@ -244,12 +244,13 @@ if [ -r "/dev/urandom" ]; then
     JAVA_SECURITY_EGD="file:/dev/urandom"
 fi
 
-# Gather environment information as we go
-readonly cr='
+cr="$(printf '\r')" && readonly cr
+readonly nl='
 '
+# Gather environment information as we go
 environment_log=""
 add_log() {
-    environment_log="${environment_log}${cr}${*-}"
+    environment_log="${environment_log}${nl}${*-}"
 }
 
 # Logic to process "arguments files" on both Java 8 and Java 9+
@@ -265,7 +266,7 @@ process_java_opts() {
             append java_opts_from_files "@$java_opts_file"
         else
             local line=
-            while read -r line; do
+            while IFS="$cr" read -r line; do
                 if [ "$line" ]; then
                     # shellcheck disable=2086  # Split options on whitespace
                     append java_opts_from_files $line
@@ -533,7 +534,7 @@ java_major=8
 # shellcheck source=/dev/null
 if [ -f "$JAVA_HOME/release" ]; then
     # Get java version from JAVA_HOME/release file
-    while IFS= read -r line; do
+    while IFS="$cr" read -r line; do
         case $line in
             (\#*) continue ;;
         esac
@@ -543,7 +544,7 @@ if [ -f "$JAVA_HOME/release" ]; then
 
         case $name in
             (JAVA_VERSION) unquote "$value" && java_version=$REPLY ;;
-            (JAVA_RELEASE_VERSION) unquote "$value" && java_runtime_version=$REPLY ;;
+            (JAVA_RUNTIME_VERSION) unquote "$value" && java_runtime_version=$REPLY ;;
         esac
     done < "$JAVA_HOME"/release
     unset line name value
@@ -573,8 +574,9 @@ fi
 # Default java_runtime_version to $java_version
 : "${java_runtime_version:=$java_version}"
 
-add_log "Detected Java version: $java_version"
+add_log "Detected Java version: $java_version (major: $java_major)"
 add_log "Detected Java runtime version: $java_runtime_version"
+add_log "Detected JRuby minimum java version: $minimum_java_version"
 
 # Present a useful error if running a Java version lower than bin/.java-version
 if [ "$java_major" -lt "$minimum_java_version" ]; then
@@ -1009,7 +1011,7 @@ add_log "  $*"
 
 # shellcheck source=/dev/null
 if $print_environment_log; then
-    environment_log="JRuby Environment${cr}=================${cr}${cr}JRuby version: ${jruby_version}${environment_log}"
+    environment_log="JRuby Environment${nl}=================${nl}${nl}JRuby version: ${jruby_version}${environment_log}"
     echo "$environment_log"
     exit 0
 fi
