@@ -543,7 +543,7 @@ if [ -f "$JAVA_HOME/release" ]; then
 
         case $name in
             (JAVA_VERSION) unquote "$value" && java_version=$REPLY ;;
-            (JAVA_RELEASE_VERSION) unquote "$value" && java_runtime_version=$REPLY ;;
+            (JAVA_RUNTIME_VERSION) unquote "$value" && java_runtime_version=$REPLY ;;
         esac
     done < "$JAVA_HOME"/release
     unset line name value
