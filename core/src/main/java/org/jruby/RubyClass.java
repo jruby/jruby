@@ -2614,6 +2614,7 @@ public class RubyClass extends RubyModule {
     /**
      * Gets a reified Ruby class. Throws if this is a Java class
      */
+    @SuppressWarnings("BoxedPrimitiveEquality")
     public Class<? extends IRubyObject> getReifiedRubyClass() {
         if (reifiedClassJava == Boolean.TRUE) throw typeError(runtime.getCurrentContext(), "Attempted to get a Ruby class for a Java class");
 
@@ -2623,6 +2624,7 @@ public class RubyClass extends RubyModule {
     /**
      * Gets a reified Java class. Throws if this is a Ruby class
      */
+    @SuppressWarnings("BoxedPrimitiveEquality")
     public Class<? extends ReifiedJavaProxy> getReifiedJavaClass() {
         // TODO: error type
         if (reifiedClassJava == Boolean.FALSE) throw typeError(runtime.getCurrentContext(), "Attempted to get a Java class for a Ruby class");
