@@ -39,6 +39,7 @@ package org.jruby.util;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
@@ -65,8 +66,8 @@ import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.TypeConverter.toFloat;
 
 public class Pack {
-    private static final byte[] sSp10 = "          ".getBytes();
-    private static final byte[] sNil10 = "\000\000\000\000\000\000\000\000\000\000".getBytes();
+    private static final byte[] sSp10 = "          ".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] sNil10 = "\000\000\000\000\000\000\000\000\000\000".getBytes(StandardCharsets.UTF_8);
     private static final int IS_STAR = -1;
     private static final ASCIIEncoding ASCII = ASCIIEncoding.INSTANCE;
     private static final USASCIIEncoding USASCII = USASCIIEncoding.INSTANCE;
