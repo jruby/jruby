@@ -1288,7 +1288,7 @@ public class Pack {
     private static IRubyObject unpack_m(ThreadContext context, Block block, RubyArray result, ByteBuffer encode, int occurrences, int mode) {
         int length = unpackUMMaxOutputBytes(encode.remaining());
         byte[] lElem = new byte[length];
-        int a = -1, b = -1, c = 0, d;
+        int a = -1, b = -1, c = 0;
         int index = 0;
         int s = -1;
 
@@ -1831,17 +1831,11 @@ public class Pack {
             this.converter = converter;
         }
 
-        public abstract IRubyObject decode(ThreadContext context, ByteBuffer format);
         public abstract void encode(ThreadContext context, IRubyObject from, ByteList result);
     }
 
     private static ConverterExecutor executor() {
         return new ConverterExecutor() {
-            @Override
-            public IRubyObject decode(ThreadContext context, ByteBuffer format) {
-                return converter.decode(context, format);
-            }
-
             @Override
             public void encode(ThreadContext context, IRubyObject from, ByteList result) {
                 if (from == context.nil && converter.getType() != null) {
@@ -1991,7 +1985,6 @@ public class Pack {
                 if (index == -1) {
                     throw argumentError(context, "'" + next + "' allowed only after types " + NATIVE_CODES);
                 }
-                int typeBeforeMap = type;
                 type = MAPPED_CODES.charAt(index);
 
                 next = getDirective(context, "pack", formatString, format);
