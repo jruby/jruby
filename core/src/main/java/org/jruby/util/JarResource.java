@@ -3,8 +3,8 @@ package org.jruby.util;
 import jnr.posix.FileStat;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.attribute.FileTime;
 import java.util.jar.JarEntry;
 
@@ -51,16 +51,13 @@ abstract class JarResource implements FileResource, DummyResourceStat.FileResour
 
         if (index == null) { // Jar doesn't exist
             try {
-                jarPath = URLDecoder.decode(jarPath, "UTF-8");
-                entryPath = URLDecoder.decode(entryPath, "UTF-8");
+                jarPath = URLDecoder.decode(jarPath, StandardCharsets.UTF_8);
+                entryPath = URLDecoder.decode(entryPath, StandardCharsets.UTF_8);
             }
             catch (IllegalArgumentException e) {
                 // something in the path did not decode, so it's probably not a URI
                 // See jruby/jruby#2264.
                 return null;
-            }
-            catch (UnsupportedEncodingException e) {
-                throw new AssertionError(e);
             }
             index = jarCache.getIndex(jarPath);
 

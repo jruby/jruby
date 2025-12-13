@@ -492,19 +492,6 @@ DO NOT MODIFY - GENERATED CODE
               </includes>
             </configuration>
           </execution>
-          <execution>
-            <id>eclipse-hack</id>
-            <phase>process-classes</phase>
-            <goals>
-              <goal>compile</goal>
-            </goals>
-            <configuration>
-              <skipMain>true</skipMain>
-              <includes>
-                <include>**/*.java</include>
-              </includes>
-            </configuration>
-          </execution>
         </executions>
         <configuration>
           <encoding>utf-8</encoding>
@@ -651,7 +638,7 @@ DO NOT MODIFY - GENERATED CODE
     <profile>
       <id>error-prone</id>
       <activation>
-        <jdk>11</jdk>
+        <jdk>21</jdk>
         <property>
           <name>env.CI</name>
         </property>
@@ -686,20 +673,30 @@ DO NOT MODIFY - GENERATED CODE
                     <compilerArg>-J-Dfile.encoding=UTF-8</compilerArg>
                     <compilerArg>-J-Xmx${jruby.compile.memory}</compilerArg>
                   </compilerArgs>
-                  <fork>true</fork>
                   <compilerArgs>
                     <compilerArg>-XDignore.symbol.file=true</compilerArg>
                     <compilerArg>-J-Duser.language=en</compilerArg>
                     <compilerArg>-J-Dfile.encoding=UTF-8</compilerArg>
                     <compilerArg>-J-Xmx${jruby.compile.memory}</compilerArg>
                     <compilerArg>-XDcompilePolicy=simple</compilerArg>
+                    <compilerArg>--should-stop=ifError=FLOW</compilerArg>
                     <compilerArg>-Xplugin:ErrorProne</compilerArg>
+                    <compilerArg>-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</compilerArg>
+                    <compilerArg>-J--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</compilerArg>
+                    <compilerArg>-J--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED</compilerArg>
+                    <compilerArg>-J--add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED</compilerArg>
+                    <compilerArg>-J--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED</compilerArg>
+                    <compilerArg>-J--add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED</compilerArg>
+                    <compilerArg>-J--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED</compilerArg>
+                    <compilerArg>-J--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</compilerArg>
+                    <compilerArg>-J--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED</compilerArg>
+                    <compilerArg>-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED</compilerArg>
                   </compilerArgs>
                   <annotationProcessorPaths>
                     <path>
                       <groupId>com.google.errorprone</groupId>
                       <artifactId>error_prone_core</artifactId>
-                      <version>2.18.0</version>
+                      <version>2.39.0</version>
                     </path>
                     <path>
                       <groupId>org.jruby</groupId>
