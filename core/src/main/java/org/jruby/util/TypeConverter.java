@@ -450,7 +450,7 @@ public class TypeConverter {
                 IRubyObject ret = TypeConverter.convertToType(context, val, integerClass(context), sites(context).to_i_checked, false);
                 if (ret instanceof RubyInteger) return ret;
             } catch (RaiseException re) {
-                if (exception) throw re;
+                /* exception == false */
             }
 
             return context.nil;
