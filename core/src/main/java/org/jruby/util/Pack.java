@@ -1012,7 +1012,7 @@ public class Pack {
         int next = getDirective(context, "unpack", formatString, format);
         IRubyObject value = null; // UNPACK_1
 
-        mainLoop: while (next != 0) {
+        while (next != 0) {
             int type = next;
             next = getDirective(context, "unpack", formatString, format);
 
