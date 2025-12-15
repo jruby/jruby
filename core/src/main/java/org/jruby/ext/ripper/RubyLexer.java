@@ -984,20 +984,6 @@ public class RubyLexer extends LexingCommon {
                 return "on_CHAR";
         }
     }
-    
-    // DEBUGGING HELP 
-    private int yylex2() throws IOException {
-        try {
-        int currentToken = yylex2();
-
-            printToken(currentToken);
-        
-        return currentToken;
-        } catch (Exception e) {
-            System.out.println("FFUFUFUFUFUFUFUF: " + e);
-            return EOF;
-        }
-    }
 
     /**
      *  Returns the next token. Also sets yyVal as needed.

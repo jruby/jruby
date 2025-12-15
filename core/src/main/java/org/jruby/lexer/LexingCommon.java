@@ -1402,9 +1402,10 @@ public abstract class LexingCommon {
      * exception will be thrown.  This will also return the codepoint as a value so codepoint
      * ranges can be checked.
      */
-    protected char scanHexLiteral(ByteList buffer, int count, boolean strict, String errorMessage) {
+    protected int scanHexLiteral(ByteList buffer, int count, boolean strict, String errorMessage) {
+        assert count >= 1 && count <= 8 : "unexpected count: " + count;
         int i = 0;
-        char hexValue = '\0';
+        int hexValue = '\0';
 
         for (; i < count; i++) {
             int h1 = nextc();

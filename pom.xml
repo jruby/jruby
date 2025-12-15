@@ -282,7 +282,7 @@ DO NOT MODIFY - GENERATED CODE
         </plugin>
         <plugin>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.8.1</version>
+          <version>3.14.1</version>
         </plugin>
         <plugin>
           <artifactId>maven-shade-plugin</artifactId>
@@ -290,7 +290,7 @@ DO NOT MODIFY - GENERATED CODE
         </plugin>
         <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>3.0.0</version>
+          <version>3.5.4</version>
         </plugin>
         <plugin>
           <artifactId>maven-plugin-plugin</artifactId>

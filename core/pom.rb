@@ -222,12 +222,6 @@ project 'JRuby Base' do
                   fork: 'true',
                   compilerArgs: fork_compiler_args,
                   includes: ['org/jruby/gen/**/*.java'])
-
-    execute_goals('compile',
-                  id: 'eclipse-hack',
-                  phase: 'process-classes',
-                  skipMain: 'true',
-                  includes: ['**/*.java'])
   end
 
   plugin :clean do
@@ -312,7 +306,7 @@ project 'JRuby Base' do
 
   profile 'error-prone' do
     activation do
-      jdk('11') # even an older (2.10.0) version of error-prone would need an adjusted setup on Java 8
+      jdk('21')
       property(name: 'env.CI') # for keeping fast development cycle, by default only run on CI
     end
 
@@ -321,24 +315,38 @@ project 'JRuby Base' do
                     id: 'default-compile',
                     phase: 'none') # do not execute default-compile, we have a replacement bellow
 
+      extra_compiler_args = %w(
+        -J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED
+        -J--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED
+        -J--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED
+        -J--add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED
+        -J--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED
+        -J--add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED
+        -J--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED
+        -J--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED
+        -J--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED
+        -J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED
+      )
+
       execute_goals('compile',
                     default_compile_configuration.merge(
-                      :id => 'default-compile_with_error_prone',
-                      :phase => 'compile',
-                      'fork' => 'true',
+                      id: 'default-compile_with_error_prone',
+                      phase: 'compile',
                       'compilerArgs' => default_compile_configuration[:compilerArgs] + [
-                        '-XDcompilePolicy=simple', '-Xplugin:ErrorProne'
-                      ],
-                      'annotationProcessorPaths' => { 'path' => [{
-                        'groupId' => 'com.google.errorprone',
-                        'artifactId' => 'error_prone_core',
-                        'version' => '2.18.0'
-                      },
-                                                                 {
-                                                                   'groupId' => 'org.jruby',
-                                                                   'artifactId' => 'jruby-base',
-                                                                   'version' => version
-                                                                 }] }
+                        '-XDcompilePolicy=simple', '--should-stop=ifError=FLOW', '-Xplugin:ErrorProne'
+                      ] + extra_compiler_args,
+                      'annotationProcessorPaths' => {
+                        'path' => [{
+                                     'groupId' => 'com.google.errorprone',
+                                     'artifactId' => 'error_prone_core',
+                                     'version' => '2.39.0'
+                                   },
+                                   {
+                                     'groupId' => 'org.jruby',
+                                     'artifactId' => 'jruby-base',
+                                     'version' => version
+                                    }]
+                      }
                     ))
     end
   end

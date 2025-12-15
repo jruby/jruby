@@ -194,11 +194,11 @@ public class CallableSelector {
 
                     final boolean lastArgProc = procArity != Integer.MIN_VALUE;
                     final Boolean moreSpecific = moreSpecificTypes(msTypes, cTypes, lastArgProc);
-                    if ( moreSpecific == Boolean.TRUE ) {
+                    if (Boolean.TRUE.equals(moreSpecific)) {
                         mostSpecific = candidate; msTypes = cTypes;
                         ambiguous = false; continue /* OUTER */;
                     }
-                    else { // if ( (Object) moreSpecific == Boolean.FALSE ) {
+                    else {
                         // none more specific; check for ambiguities
                         for ( int i = 0; i < msTypes.length; i++ ) {
                             // TODO if lastArgProc (and we're not dealing with RubyProc.class)
