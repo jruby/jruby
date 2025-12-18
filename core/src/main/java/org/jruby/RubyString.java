@@ -972,7 +972,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     public FString dupAsFString(Ruby runtime) {
         shareLevel = SHARE_LEVEL_BYTELIST;
-        FString dup = new FString(runtime, value, getCodeRange());
+        FString dup = new FString(runtime, value.dup(), getCodeRange());
         dup.shareLevel = SHARE_LEVEL_BYTELIST;
         dup.flags |= FSTRING | FROZEN_F | (flags & CR_MASK);
 
