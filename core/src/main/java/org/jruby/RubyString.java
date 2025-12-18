@@ -1256,7 +1256,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      */
     public static class FString extends RubyString {
         private IRubyObject converted;
-        private final long hash;
+        private final int hash;
+        private final RubyFixnum fixHash;
 
         protected FString(Ruby runtime, ByteList value, int cr) {
             super(runtime, runtime.getString(), value, cr, false);
@@ -1264,6 +1265,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             this.shareLevel = SHARE_LEVEL_BYTELIST;
             this.setFrozen(true);
             this.hash = strHashCode(runtime);
+            this.fixHash = runtime.newFixnum(hash);
         }
 
         protected FString(Ruby runtime, String string) {
@@ -1272,6 +1274,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             this.shareLevel = SHARE_LEVEL_BYTELIST;
             this.setFrozen(true);
             this.hash = strHashCode(runtime);
+            this.fixHash = runtime.newFixnum(hash);
         }
 
         @Override
@@ -1317,6 +1320,15 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         @Override
         public FString dupAsFString(Ruby runtime) {
             return this;
+        }
+
+        public RubyFixnum hash(ThreadContext context) {
+            return fixHash;
+        }
+
+        @Override
+        public int hashCode() {
+            return hash;
         }
 
         @Override
