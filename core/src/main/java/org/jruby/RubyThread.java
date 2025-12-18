@@ -2560,7 +2560,11 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
             @Override
             public void wakeup(RubyThread thread, Condition condition) {
-                thread.getNativeThread().interrupt();
+                try {
+                    condition.signal();
+                } catch (IllegalMonitorStateException imse) {
+                    thread.getNativeThread().interrupt();
+                }
             }
         });
     }
