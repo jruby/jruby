@@ -42,7 +42,6 @@ import org.jruby.runtime.ThreadContext;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Define.defineModule;
-import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -67,7 +66,7 @@ public class RubyGC {
         return defineModule(context, "GC").defineMethods(context, RubyGC.class);
     }
 
-    @JRubyMethod(module = true, visibility = PRIVATE)
+    @JRubyMethod(meta = true)
     public static IRubyObject config(ThreadContext context, IRubyObject recv) {
         return RubyHash.newHash(
             context.runtime,
@@ -76,7 +75,7 @@ public class RubyGC {
         );
     }
 
-    @JRubyMethod(module = true, visibility = PRIVATE)
+    @JRubyMethod(meta = true)
     public static IRubyObject config(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         if (arg.isNil()) {
             return config(context, recv);
@@ -89,9 +88,8 @@ public class RubyGC {
             throw context.runtime.newArgumentError("ArgumentError");
         }
     }
-    
 
-    @JRubyMethod(module = true, visibility = PRIVATE, optional = 1, checkArity = false)
+    @JRubyMethod(meta = true, optional = 1, checkArity = false)
     public static IRubyObject start(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 1);
 
@@ -104,14 +102,14 @@ public class RubyGC {
         return context.nil;
     }
 
-    @JRubyMethod(module = true, visibility = PRIVATE)
+    @JRubyMethod(meta = true)
     public static IRubyObject measure_total_time(ThreadContext context, IRubyObject self) {
         // JVM just keeps track of this so we do not have a toggle here.  If we need to show incremental time
         // from a particular point we will need to record time and do some extra math.
         return asBoolean(context, measureTotalTime);
     }
 
-    @JRubyMethod(module = true, name = "measure_total_time=", visibility = PRIVATE)
+    @JRubyMethod(meta = true, name = "measure_total_time=")
     public static IRubyObject measure_total_time_set(ThreadContext context, IRubyObject self, IRubyObject value) {
         // JVM just keeps track of this so we do not have a toggle here.  If we need to show incremental time
         // from a particular point we will need to record time and do some extra math.
@@ -119,12 +117,12 @@ public class RubyGC {
         return context.nil;
     }
 
-    @JRubyMethod(module = true, visibility = PRIVATE)
+    @JRubyMethod(meta = true)
     public static IRubyObject total_time(ThreadContext context, IRubyObject self) {
         return asFixnum(context, getCollectionTime());
     }
 
-    @JRubyMethod(module = true, visibility = PRIVATE)
+    @JRubyMethod(meta = true)
     public static IRubyObject enable(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.runtime;
         emptyImplementationWarning(runtime, ID.GC_ENABLE_UNIMPLEMENTED, "GC.enable");
@@ -133,7 +131,7 @@ public class RubyGC {
         return asBoolean(context, old);
     }
 
-    @JRubyMethod(module = true, visibility = PRIVATE)
+    @JRubyMethod(meta = true)
     public static IRubyObject disable(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.runtime;
         emptyImplementationWarning(runtime, ID.GC_DISABLE_UNIMPLEMENTED, "GC.disable");
@@ -142,19 +140,19 @@ public class RubyGC {
         return asBoolean(context, old);
     }
 
-    @JRubyMethod(module = true, visibility = PRIVATE)
+    @JRubyMethod(meta = true)
     public static IRubyObject stress(ThreadContext context, IRubyObject recv) {
         return asBoolean(context, stress);
     }
 
-    @JRubyMethod(name = "stress=", module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "stress=", meta = true)
     public static IRubyObject stress_set(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         emptyImplementationWarning(context.runtime, ID.GC_STRESS_UNIMPLEMENTED, "GC.stress=");
         stress = arg.isTrue();
         return asBoolean(context, stress);
     }
     
-    @JRubyMethod(module = true, visibility = PRIVATE)
+    @JRubyMethod(meta = true)
     public static IRubyObject count(ThreadContext context, IRubyObject recv) {
         try {
             return asFixnum(context, getCollectionCount());
@@ -163,14 +161,14 @@ public class RubyGC {
         }
     }
 
-    @JRubyMethod(module = true, visibility = PRIVATE)
+    @JRubyMethod(meta = true)
     public static IRubyObject auto_compact(ThreadContext context, IRubyObject recv) {
         emptyImplementationWarning(context.runtime, ID.GC_ENABLE_UNIMPLEMENTED, "GC.auto_compact");
 
         return asBoolean(context, autoCompact);
     }
 
-    @JRubyMethod(name = "auto_compact=", module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "auto_compact=", meta = true)
     public static IRubyObject auto_compact_set(ThreadContext context, IRubyObject recv, IRubyObject autoCompact) {
         emptyImplementationWarning(context.runtime, ID.GC_ENABLE_UNIMPLEMENTED, "GC.auto_compact=");
 
@@ -179,7 +177,7 @@ public class RubyGC {
         return autoCompact;
     }
 
-    @JRubyMethod(module = true, visibility = PRIVATE)
+    @JRubyMethod(meta = true)
     public static IRubyObject compact(ThreadContext context, IRubyObject recv) {
         emptyImplementationWarning(context.runtime, ID.GC_ENABLE_UNIMPLEMENTED, "GC.compact");
 
