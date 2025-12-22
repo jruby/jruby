@@ -1005,6 +1005,7 @@ public class RubyLexer extends LexingCommon {
                         !IS_lex_state(lex_state, EXPR_LABELED);
                 if (normalArg || IS_lex_state_all(lex_state, EXPR_ARG | EXPR_LABELED)) {
                     if (!normalArg && getLexContext().in_kwarg) {
+                        // normal_newline
                         commandStart = true;
                         setState(EXPR_BEG);
                         return '\n';
@@ -1023,7 +1024,44 @@ public class RubyLexer extends LexingCommon {
                     case '#':
                         pushback(c);
                         continue loop;
-                    case '&':
+                    case 'a': {
+                        if (peek('n') && peek('d', 1) && !isIdentifierChar(peekAt(2))) {
+                            // leading_logical
+                            pushback(c);
+                            commandState = false;
+                            continue loop;
+                        }
+                        done = true;
+                        break;
+                    }
+                    case 'o': {
+                        if (peek('r') && !isIdentifierChar(peekAt(1))) {
+                            // leading_logical
+                            pushback(c);
+                            commandState = false;
+                            continue loop;
+                        }
+                        done = true;
+                        break;
+                    }
+                    case '|': {
+                        if (peek('|')) {
+                            // leading_logical
+                            pushback(c);
+                            commandState = false;
+                            continue loop;
+                        }
+                        done = true;
+                        break;
+                    }
+                    case '&': {
+                        if (peek('&')) {
+                            // leading_logical
+                            pushback(c);
+                            commandState = false;
+                            continue loop;
+                        }
+                    }
                     case '.': {
                         if (peek('.') == (c == '&')) {
                             pushback(c);

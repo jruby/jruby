@@ -1088,12 +1088,53 @@ public class RubyLexer extends LexingCommon {
                             pushback(c);
                             if (spaceSeen) dispatchScanEvent(tSP);
                             continue loop;
+                        case 'a': {
+                            if (peek('n') && peek('d', 1) && !isIdentifierChar(peekAt(2))) {
+                                // leading_logical
+                                pushback(c);
+                                commandState = false;
+                                continue loop;
+                            }
+                            //bol = true;
+                            done = true;
+                            break;
+                        }
+                        case 'o': {
+                            if (peek('r') && !isIdentifierChar(peekAt(1))) {
+                                // leading_logical
+                                pushback(c);
+                                dispatchDelayedToken(tIGNORED_NL);
+                                commandState = false;
+                                continue loop;
+                            }
+                            //bol = true;
+                            done = true;
+                            break;
+                        }
+                        case '|': {
+                            if (peek('|')) {
+                                // leading_logical
+                                pushback(c);
+                                dispatchDelayedToken(tIGNORED_NL);
+                                commandState = false;
+                                continue loop;
+                            }
+                            //bol = true;
+                            done = true;
+                            break;
+                        }
                         case '&':
+                            if (peek('&')) {
+                                // leading_logical
+                                pushback(c);
+                                dispatchDelayedToken(tIGNORED_NL);
+                                commandState = false;
+                                continue loop;
+                            }
                         case '.': {
                             dispatchDelayedToken(tIGNORED_NL);
                             if (peek('.') == (c == '&')) {
                                 pushback(c);
-
                                 dispatchScanEvent(tSP);
                                 continue loop;
                             }
@@ -1107,6 +1148,12 @@ public class RubyLexer extends LexingCommon {
                             done = true;
                     }
                 }
+
+                /*
+                if (bol) {
+                    ruby_sourceline--;
+                    lex_nextline = lex_lastline;
+                }*/
 
                 commandStart = true;
                 setState(EXPR_BEG);
