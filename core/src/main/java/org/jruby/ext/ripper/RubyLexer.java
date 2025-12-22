@@ -1075,6 +1075,7 @@ public class RubyLexer extends LexingCommon {
                     continue loop;
                 }
 
+                boolean bol = false;
                 boolean done = false;
                 while (!done) {
                     c = nextc();
@@ -1095,7 +1096,7 @@ public class RubyLexer extends LexingCommon {
                                 commandState = false;
                                 continue loop;
                             }
-                            //bol = true;
+                            bol = true;
                             done = true;
                             break;
                         }
@@ -1107,7 +1108,7 @@ public class RubyLexer extends LexingCommon {
                                 commandState = false;
                                 continue loop;
                             }
-                            //bol = true;
+                            bol = true;
                             done = true;
                             break;
                         }
@@ -1119,7 +1120,7 @@ public class RubyLexer extends LexingCommon {
                                 commandState = false;
                                 continue loop;
                             }
-                            //bol = true;
+                            bol = true;
                             done = true;
                             break;
                         }
@@ -1149,11 +1150,12 @@ public class RubyLexer extends LexingCommon {
                     }
                 }
 
-                /*
                 if (bol) {
                     ruby_sourceline--;
                     lex_nextline = lex_lastline;
-                }*/
+                    lex_goto_eol();
+                    if (c != -1) tokp = lex_p;
+                }
 
                 commandStart = true;
                 setState(EXPR_BEG);
