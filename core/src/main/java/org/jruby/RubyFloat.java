@@ -1166,7 +1166,7 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
         } else if (value.equals(INFINITY_BYTELIST)) {
             return RubyFloat.newFloat(input.getRuntime(), Double.POSITIVE_INFINITY);
         } else {
-            return RubyFloat.newFloat(input.getRuntime(), ConvertDouble.byteListToDouble(value, false));
+            return RubyFloat.newFloat(input.getRuntime(), ConvertDouble.fastByteListToDouble(value));
         }
     }
 
@@ -1180,7 +1180,7 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
         } else if (value.equals(INFINITY_BYTELIST)) {
             return RubyFloat.newFloat(context.runtime, Double.POSITIVE_INFINITY);
         } else {
-            return RubyFloat.newFloat(context.runtime, ConvertDouble.byteListToDouble(value, false));
+            return RubyFloat.newFloat(context.runtime, ConvertDouble.fastByteListToDouble(value));
         }
     }
 
