@@ -704,7 +704,7 @@ public class RubyBignum extends RubyInteger {
         }
         // number of words, not number of bits
         final int xbits = value.bitLength() / 8;
-        if ((xbits > BIGLEN_LIMIT) || (xbits * other > BIGLEN_LIMIT)) {
+        if (xbits * other > BIGLEN_LIMIT) {
             throw argumentError(context, "exponent is too large");
         } else {
             return newBignum(context.runtime, value.pow((int) other));
