@@ -1690,15 +1690,14 @@ public class Pack {
             to[p + 4] = (byte)((code & 0x3f) | 0x80);
             return 5;
         }
-        //if (code <= 0x7fffffff) { // since 0x7fffffff == Integer.MAX_VALUE
-            to[p + 0] = (byte)(((code >>> 30) & 0xff) | 0xfc);
-            to[p + 1] = (byte)(((code >>> 24) & 0x3f) | 0x80);
-            to[p + 2] = (byte)(((code >>> 18) & 0x3f) | 0x80);
-            to[p + 3] = (byte)(((code >>> 12) & 0x3f) | 0x80);
-            to[p + 4] = (byte)(((code >>> 6) & 0x3f) | 0x80);
-            to[p + 5] = (byte)((code & 0x3f) | 0x80);
-            return 6;
-        //}
+        // else code is high int range
+        to[p + 0] = (byte)(((code >>> 30) & 0xff) | 0xfc);
+        to[p + 1] = (byte)(((code >>> 24) & 0x3f) | 0x80);
+        to[p + 2] = (byte)(((code >>> 18) & 0x3f) | 0x80);
+        to[p + 3] = (byte)(((code >>> 12) & 0x3f) | 0x80);
+        to[p + 4] = (byte)(((code >>> 6) & 0x3f) | 0x80);
+        to[p + 5] = (byte)((code & 0x3f) | 0x80);
+        return 6;
     }
 
     /** utf8_to_uv
