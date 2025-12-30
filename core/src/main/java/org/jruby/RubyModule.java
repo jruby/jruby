@@ -191,13 +191,37 @@ public class RubyModule extends RubyObject {
     private static final Logger LOG = LoggerFactory.getLogger(RubyModule.class);
     // static { LOG.setDebugEnable(true); } // enable DEBUG output
 
-    public static final int CACHEPROXY_F = ObjectFlags.CACHEPROXY_F;
-    public static final int NEEDSIMPL_F = ObjectFlags.NEEDSIMPL_F;
-    public static final int REFINED_MODULE_F = ObjectFlags.REFINED_MODULE_F;
-    public static final int IS_OVERLAID_F = ObjectFlags.IS_OVERLAID_F;
-    public static final int OMOD_SHARED = ObjectFlags.OMOD_SHARED;
-    public static final int INCLUDED_INTO_REFINEMENT = ObjectFlags.INCLUDED_INTO_REFINEMENT;
-    public static final int TEMPORARY_NAME = ObjectFlags.TEMPORARY_NAME;
+    private byte moduleFlags;
+
+    static final byte CACHEPROXY = 0b00000001;
+    static final byte NEEDSIMPL = 0b00000010;
+    static final byte REFINED_MODULE = 0b00000100;
+    static final byte IS_OVERLAID = 0b00001000;
+    static final byte SHARED_MODULE = 0b00010000;
+    static final byte INCLUDED_IN_REFINEMENT = 0b00100000;
+    static final byte TEMP_NAME = 0b01000000;
+
+    /** @deprecated external access to global object flags is going away */
+    @Deprecated(since = "10.0.3.0")
+    public static final int CACHEPROXY_F = CACHEPROXY;
+    /** @deprecated external access to global object flags is going away */
+    @Deprecated(since = "10.0.3.0")
+    public static final int NEEDSIMPL_F = NEEDSIMPL;
+    /** @deprecated external access to global object flags is going away */
+    @Deprecated(since = "10.0.3.0")
+    public static final int REFINED_MODULE_F = REFINED_MODULE;
+    /** @deprecated external access to global object flags is going away */
+    @Deprecated(since = "10.0.3.0")
+    public static final int IS_OVERLAID_F = IS_OVERLAID;
+    /** @deprecated external access to global object flags is going away */
+    @Deprecated(since = "10.0.3.0")
+    public static final int OMOD_SHARED = SHARED_MODULE;
+    /** @deprecated external access to global object flags is going away */
+    @Deprecated(since = "10.0.3.0")
+    public static final int INCLUDED_INTO_REFINEMENT = INCLUDED_IN_REFINEMENT;
+    /** @deprecated external access to global object flags is going away */
+    @Deprecated(since = "10.0.3.0")
+    public static final int TEMPORARY_NAME = TEMP_NAME;
 
     public static final String BUILTIN_CONSTANT = "";
 
@@ -230,6 +254,18 @@ public class RubyModule extends RubyObject {
      */
     public ClassIndex getClassIndex() {
         return classIndex;
+    }
+
+    void set(int flag, boolean set) {
+        if (set) {
+            moduleFlags |= flag;
+        } else {
+            moduleFlags &= ~flag;
+        }
+    }
+
+    private boolean get(int flag) {
+        return (moduleFlags & flag) != 0;
     }
 
     /**
@@ -435,7 +471,7 @@ public class RubyModule extends RubyObject {
         }
 
         // if (parent == null) parent = runtime.getObject();
-        setFlag(NEEDSIMPL_F, !isClass());
+        set(NEEDSIMPL, !isClass());
         updateGeneration(runtime);
 
         if (runtime.getInstanceConfig().isProfiling()) {
@@ -463,7 +499,7 @@ public class RubyModule extends RubyObject {
     }
 
     public boolean needsImplementer() {
-        return getFlag(NEEDSIMPL_F);
+        return get(NEEDSIMPL);
     }
 
     /** rb_module_new
@@ -975,7 +1011,7 @@ public class RubyModule extends RubyObject {
             if (name.length() == 0) throw argumentError(context, "empty class/module name");
             if (isValidConstantPath(name)) throw argumentError(context, "the temporary name must not be a constant path to avoid confusion");
 
-            setFlag(TEMPORARY_NAME, true);
+            set(TEMP_NAME, true);
 
             // We make sure we generate ISO_8859_1 String and also guarantee when we want to print this name
             // later it does not lose track of the orignal encoding.
@@ -1027,8 +1063,9 @@ public class RubyModule extends RubyObject {
 
         RubyModule newRefinement = new RubyModule(runtime, runtime.getRefinement()).
                 superClass(refinementSuperclass(context, klass));
-        newRefinement.setFlag(REFINED_MODULE_F, true);
-        newRefinement.setFlag(NEEDSIMPL_F, false); // Refinement modules should not do implementer check
+        newRefinement.set(REFINED_MODULE, true);
+        // Refinement modules should not do implementer check
+        newRefinement.set(NEEDSIMPL, false);
         RefinementStore newRefinementStore = newRefinement.getRefinementStoreForWrite();
         newRefinementStore.refinedClass = klass;
         newRefinementStore.definedAt = this;
@@ -1079,13 +1116,13 @@ public class RubyModule extends RubyObject {
                 c = c.getSuperClass();
             }
         }
-        refinement.setFlag(IS_OVERLAID_F, true);
+        refinement.set(IS_OVERLAID, true);
         IncludedModuleWrapper iclass = new IncludedModuleWrapper(context.runtime, superClass, refinement);
         c = iclass;
         RefinementStore otherRefinementStore = c.getRefinementStoreForWrite();
         otherRefinementStore.refinedClass = moduleToRefine;
         for (refinement = refinement.getSuperClass(); refinement != null; refinement = refinement.getSuperClass()) {
-            refinement.setFlag(IS_OVERLAID_F, true);
+            refinement.set(IS_OVERLAID, true);
             c.superClass(new IncludedModuleWrapper(context.runtime, c.getSuperClass(), refinement));
             c = c.getSuperClass();
             otherRefinementStore.refinedClass = moduleToRefine;
@@ -1147,9 +1184,9 @@ public class RubyModule extends RubyObject {
         RubyModule iclass, c, superclass = klass;
 
         RefinementStore crefRefinementStore = cref.getRefinementStoreForWrite();
-        if (cref.getFlag(OMOD_SHARED)) {
+        if (cref.get(SHARED_MODULE)) {
             crefRefinementStore.refinements = newRefinementsMap(crefRefinementStore.refinements);
-            cref.setFlag(OMOD_SHARED, false);
+            cref.set(SHARED_MODULE, false);
         }
         if ((c = crefRefinementStore.refinements.get(klass)) != null) {
             superclass = c;
@@ -1162,7 +1199,7 @@ public class RubyModule extends RubyObject {
             }
         }
 
-        module.setFlag(IS_OVERLAID_F, true);
+        module.set(IS_OVERLAID, true);
         superclass = refinementSuperclass(context, superclass);
         c = iclass = new IncludedModuleWrapper(context.runtime, (RubyClass) superclass, module);
         c.getRefinementStoreForWrite().refinedClass = klass;
@@ -1172,7 +1209,7 @@ public class RubyModule extends RubyObject {
 
         module = module.getSuperClass();
         while (module != null && module != klass) {
-            module.setFlag(IS_OVERLAID_F, true);
+            module.set(IS_OVERLAID, true);
             c.superClass(new IncludedModuleWrapper(context.runtime, c.getSuperClass(), module));
             c = c.getSuperClass();
             c.getRefinementStoreForWrite().refinedClass = klass;
@@ -1522,7 +1559,7 @@ public class RubyModule extends RubyObject {
             }
         }
 
-        @Deprecated // no-longer used
+        @Deprecated(since = "9.1.0.0") // no-longer used
         public Map<String, List<JavaMethodDescriptor>> getAllAnnotatedMethods() {
             return null; // return allAnnotatedMethods;
         }
@@ -2144,7 +2181,7 @@ public class RubyModule extends RubyObject {
         Map<String, Invalidator> invalidators = null;
         for (RubyModule mod : gatherModules(module)) {
             for (String name : mod.getConstantMap().keySet()) {
-                if (invalidators == null) invalidators = new HashMap<>();
+                if (invalidators == null) invalidators = new HashMap<>(4);
                 invalidators.put(name, context.runtime.getConstantInvalidator(name));
             }
         }
@@ -3030,9 +3067,7 @@ public class RubyModule extends RubyObject {
         block.getBinding().getFrame().setName(name);
 
         // a normal block passed to define_method changes to do arity checking; make it a lambda
-        RubyProc proc = runtime.newProc(Block.Type.LAMBDA, block);
-
-        proc.setFromMethod();
+        RubyProc proc = RubyProc.newMethodProc(runtime, block);
 
         // various instructions can tell this scope is not an ordinary block but a block representing
         // a method definition.
@@ -3156,7 +3191,7 @@ public class RubyModule extends RubyObject {
     }
 
     public List<IRubyObject> getAncestorList() {
-        ArrayList<IRubyObject> list = new ArrayList<>();
+        ArrayList<IRubyObject> list = new ArrayList<>(4);
 
         for (RubyModule module = this; module != null; module = module.getSuperClass()) {
             // FIXME this is silly. figure out how to delegate the getNonIncludedClass()
@@ -4430,7 +4465,7 @@ public class RubyModule extends RubyObject {
      * @return A list of all modules that would be included by including the given module
      */
     private List<RubyModule> gatherModules(RubyModule baseModule) {
-        List<RubyModule> modulesToInclude = new ArrayList<>();
+        List<RubyModule> modulesToInclude = new ArrayList<>(4);
 
         for (; baseModule != null; baseModule = baseModule.superClass) {
             // skip prepended roots
@@ -4473,7 +4508,7 @@ public class RubyModule extends RubyObject {
 
         if (isRefinement()) {
             wrapper.getMethods().forEach((name, method) -> addRefinedMethodEntry(context, name, method));
-            wrapper.setFlag(INCLUDED_INTO_REFINEMENT, true);
+            wrapper.set(INCLUDED_IN_REFINEMENT, true);
         }
 
         return insertAbove;
@@ -6751,7 +6786,7 @@ public class RubyModule extends RubyObject {
      * and alive using the ObjectProxyCache.
      */
     public boolean getCacheProxy() {
-        return getFlag(CACHEPROXY_F);
+        return get(CACHEPROXY);
     }
 
     /**
@@ -6759,7 +6794,7 @@ public class RubyModule extends RubyObject {
      * and alive using the ObjectProxyCache.
      */
     public void setCacheProxy(boolean cacheProxy) {
-        setFlag(CACHEPROXY_F, cacheProxy);
+        set(CACHEPROXY, cacheProxy);
     }
 
     @Override
@@ -6786,15 +6821,15 @@ public class RubyModule extends RubyObject {
     }
 
     public boolean isRefinement() {
-        return getFlag(REFINED_MODULE_F);
+        return get(REFINED_MODULE);
     }
 
     public boolean usingTemporaryName() {
-        return getFlag(TEMPORARY_NAME);
+        return get(TEMP_NAME);
     }
 
     public boolean isIncludedIntoRefinement() {
-        return getFlag(INCLUDED_INTO_REFINEMENT);
+        return get(INCLUDED_IN_REFINEMENT);
     }
 
     /**

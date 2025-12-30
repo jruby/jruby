@@ -38,7 +38,7 @@ public enum RubyEvent {
     private final String event_name;
     private final boolean requiresDebug;
 
-    private static final Map<String, RubyEvent> fromName = new HashMap<>();
+    private static final Map<String, RubyEvent> fromName = new HashMap<>(RubyEvent.values().length);
     static {
         for (RubyEvent event : RubyEvent.values()) {
             fromName.put(event.getName(), event);

@@ -173,7 +173,8 @@ public class RubyKernel {
 
     public static RubyModule finishKernelModule(ThreadContext context, RubyModule Kernel, RubyInstanceConfig config) {
         Kernel.defineMethods(context, RubyKernel.class);
-        Kernel.setFlag(RubyModule.NEEDSIMPL_F, false); //Kernel is the only normal Module that doesn't need an implementor
+        // Kernel is the only normal Module that doesn't need an implementor
+        Kernel.set(RubyModule.NEEDSIMPL, false);
 
         var runtime = context.runtime;
         runtime.setPrivateMethodMissing(new MethodMissingMethod(Kernel, PRIVATE, CallType.NORMAL));
@@ -2323,9 +2324,14 @@ public class RubyKernel {
         return ((RubyBasicObject)self).methods(context, args);
     }
 
-    @JRubyMethod(name = "object_id")
+    @Deprecated(since = "10.0.3.0")
     public static IRubyObject object_id(IRubyObject self) {
         return self.id();
+    }
+
+    @JRubyMethod(name = "object_id")
+    public static IRubyObject object_id(ThreadContext context, IRubyObject self) {
+        return self.__id__(context);
     }
 
     @JRubyMethod(name = "public_methods", optional = 1, checkArity = false)

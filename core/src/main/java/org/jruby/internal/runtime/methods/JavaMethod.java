@@ -205,7 +205,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         this.signature = signature;
     }
 
-    @Deprecated @Override
+    @Deprecated(since = "9.3.0.0") @Override
     public Arity getArity() {
         return getSignature().arity();
     }
@@ -660,7 +660,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             return call(context, self, clazz, name, args[0], block);
         }
 
-        @Deprecated @Override
+        @Deprecated(since = "9.3.0.0") @Override
         public Arity getArity() {
             return Arity.ONE_ARGUMENT;
         }
@@ -1107,7 +1107,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             if (args.length != 0) return raiseArgumentError(this, context, name, args.length, 0, 0);
             return call(context, self, clazz, name);
         }
-        @Deprecated @Override
+        @Deprecated(since = "9.3.0.0") @Override
         public Arity getArity() {
             return Arity.NO_ARGUMENTS;
         }
@@ -1228,7 +1228,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             return call(context, self, clazz, name, args[0]);
         }
 
-        @Deprecated @Override
+        @Deprecated(since = "9.3.0.0") @Override
         public Arity getArity() {
             return Arity.ONE_ARGUMENT;
         }
@@ -1313,7 +1313,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             return call(context, self, clazz, name, args[0], args[1]);
         }
 
-        @Deprecated @Override
+        @Deprecated(since = "9.3.0.0") @Override
         public Arity getArity() {
             return Arity.TWO_ARGUMENTS;
         }
@@ -1369,7 +1369,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             return call(context, self, clazz, name, args[0], args[1], args[2]);
         }
 
-        @Deprecated @Override
+        @Deprecated(since = "9.3.0.0") @Override
         public Arity getArity() {
             return Arity.THREE_ARGUMENTS;
         }

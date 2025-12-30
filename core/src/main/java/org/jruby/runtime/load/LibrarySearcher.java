@@ -471,7 +471,7 @@ public class LibrarySearcher {
     class Feature {
         Feature(StringWrapper key, IRubyObject featurePath) {
             this.key = key;
-            this.featurePaths = new ArrayList<>();
+            this.featurePaths = new ArrayList<>(1);
 
             featurePaths.add(featurePath);
         }

@@ -48,6 +48,7 @@ import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
+import org.jruby.runtime.SimpleHash;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -280,7 +281,7 @@ public class RubyNumeric extends RubyObject {
      *
      */
     public static long num2long(IRubyObject arg) {
-        return arg instanceof RubyFixnum ? ((RubyFixnum) arg).value : other2long(arg);
+        return arg instanceof RubyFixnum ? ((RubyFixnum) arg).getValue() : other2long(arg);
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -317,7 +318,7 @@ public class RubyNumeric extends RubyObject {
         // loop until we have a Numeric
         while (true) {
             if (arg instanceof RubyFixnum) {
-                return ((RubyFixnum) arg).value;
+                return ((RubyFixnum) arg).getValue();
             } else if (arg instanceof RubyBignum) {
                 return RubyBignum.big2ulong((RubyBignum) arg);
             } else if (arg instanceof RubyFloat) {
@@ -399,7 +400,7 @@ public class RubyNumeric extends RubyObject {
      */
     @Deprecated(since = "10.0.0.0")
     public static long fix2long(IRubyObject arg) {
-        return ((RubyFixnum) arg).value;
+        return ((RubyFixnum) arg).getValue();
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -411,7 +412,7 @@ public class RubyNumeric extends RubyObject {
 
     @Deprecated(since = "10.0.0.0")
     public static int fix2int(RubyFixnum arg) {
-        long num = arg.value;
+        long num = arg.getValue();
         checkInt(arg, num);
         return (int) num;
     }
@@ -683,7 +684,7 @@ public class RubyNumeric extends RubyObject {
      *  coercion used for comparisons
      */
 
-    @Deprecated // no longer used
+    @Deprecated(since = "9.2.0.0") // no longer used
     protected final IRubyObject coerceCmp(ThreadContext context, String method, IRubyObject other) {
         RubyArray ary = doCoerce(context, other, false);
         if (ary == null) {
@@ -705,7 +706,7 @@ public class RubyNumeric extends RubyObject {
      *  coercion used for relative operators
      */
 
-    @Deprecated // no longer used
+    @Deprecated(since = "9.2.0.0") // no longer used
     protected final IRubyObject coerceRelOp(ThreadContext context, String method, IRubyObject other) {
         RubyArray ary = doCoerce(context, other, false);
 
@@ -1223,8 +1224,8 @@ public class RubyNumeric extends RubyObject {
 
     private static void fixnumStep(ThreadContext context, RubyFixnum from, IRubyObject to, RubyFixnum step,
                                    boolean inf, boolean desc, Block block) {
-        long i = from.value;
-        long diff = step.value;
+        long i = from.getValue();
+        long diff = step.getValue();
 
         if (inf) {
             for (;; i += diff) {
@@ -1279,12 +1280,12 @@ public class RubyNumeric extends RubyObject {
         if (from instanceof RubyFixnum && to instanceof RubyFixnum && step instanceof RubyFixnum) {
             long delta, diff;
 
-            diff = ((RubyFixnum) step).value;
+            diff = ((RubyFixnum) step).getValue();
             if (diff == 0) return asFloat(context, Double.POSITIVE_INFINITY);
 
             // overflow checking
-            long toLong = ((RubyFixnum) to).value;
-            long fromLong = ((RubyFixnum) from).value;
+            long toLong = ((RubyFixnum) to).getValue();
+            long fromLong = ((RubyFixnum) from).getValue();
             delta = toLong - fromLong;
             if (!Helpers.subtractionOverflowed(toLong, fromLong, delta)) {
                 if (diff < 0) {
@@ -1547,7 +1548,7 @@ public class RubyNumeric extends RubyObject {
         return JavaUtil.getNumericConverter(target).coerce(getRuntime().getCurrentContext(), this, target);
     }
 
-    @Deprecated // not-used
+    @Deprecated(since = "9.2.0.0") // not-used
     public static class InvalidIntegerException extends NumberFormatException {
         private static final long serialVersionUID = 55019452543252148L;
 
@@ -1563,7 +1564,7 @@ public class RubyNumeric extends RubyObject {
         }
     }
 
-    @Deprecated // not-used
+    @Deprecated(since = "9.2.0.0") // not-used
     public static class NumberTooLargeException extends NumberFormatException {
         private static final long serialVersionUID = -1835120694982699449L;
         public NumberTooLargeException() {

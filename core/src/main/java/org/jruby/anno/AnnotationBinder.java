@@ -495,7 +495,6 @@ public class AnnotationBinder extends AbstractProcessor {
         }
     }
 
-    // @Deprecated // internal API
     public void generateMethodAddCalls(ExecutableElement md, JRubyMethod anno) {
         generateMethodAddCalls(md, anno.meta(), anno.module(), anno.name(), anno.alias());
     }

@@ -136,8 +136,18 @@ import static org.jruby.util.Inspector.*;
 public class RubyHash extends RubyObject implements Map {
     public static final int DEFAULT_INSPECT_STR_SIZE = 20;
 
-    public static final int COMPARE_BY_IDENTITY_F = ObjectFlags.COMPARE_BY_IDENTITY_F;
-    public static final int RUBY2_KEYWORD_F = ObjectFlags.RUBY2_KEYWORD_F;
+    private byte hashFlags;
+
+    private static final byte COMPARE_BY_IDENTITY = 0b00000001;
+    private static final byte RUBY2_KEYWORD = 0b00000010;
+    private static final byte PROCDEFAULT_HASH = 0b00000100;
+
+    @Deprecated(since = "10.0.3.0")
+    public static final int COMPARE_BY_IDENTITY_F = COMPARE_BY_IDENTITY;
+    @Deprecated(since = "10.0.3.0")
+    public static final int RUBY2_KEYWORD_F = RUBY2_KEYWORD;
+    @Deprecated(since = "10.0.3.0")
+    private static final int PROCDEFAULT_HASH_F = PROCDEFAULT_HASH;
 
     public static RubyClass createHashClass(ThreadContext context, RubyClass Object, RubyModule Enumerable) {
         return defineClass(context, "Hash", Object, RubyHash::new).
@@ -239,8 +249,6 @@ public class RubyHash extends RubyObject implements Map {
     private RubyHashEntry[] table;
     protected int size = 0;
     private int threshold;
-
-    private static final int PROCDEFAULT_HASH_F = ObjectFlags.PROCDEFAULT_HASH_F;
 
     private IRubyObject ifNone;
 
@@ -518,7 +526,7 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     private static final int MIN_CAPA = 8;
-    private static final int ST_DEFAULT_MAX_DENSITY = 5;
+    private static final int ST_DEFAULT_MAX_DENSITY = 2;
     private final void MRICheckResize() {
         if (size / table.length > ST_DEFAULT_MAX_DENSITY) {
             int forSize = table.length + 1; // size + 1;
@@ -578,7 +586,7 @@ public class RubyHash extends RubyObject implements Map {
         return false;
     }
 
-    @Deprecated // no longer used
+    @Deprecated(since = "9.2.9.0") // no longer used
     protected final IRubyObject internalJavaPut(final IRubyObject key, final IRubyObject value) {
         checkResize();
 
@@ -806,7 +814,7 @@ public class RubyHash extends RubyObject implements Map {
 
         if (block.isGiven()) {
             ifNone = context.runtime.newProc(Block.Type.PROC, block);
-            flags |= PROCDEFAULT_HASH_F;
+            hashFlags |= PROCDEFAULT_HASH;
         } else {
             ifNone = UNDEF;
         }
@@ -825,7 +833,7 @@ public class RubyHash extends RubyObject implements Map {
 
             if (block.isGiven()) {
                 ifNone = context.runtime.newProc(Block.Type.PROC, block);
-                flags |= PROCDEFAULT_HASH_F;
+                hashFlags |= PROCDEFAULT_HASH;
             } else {
                 ifNone = UNDEF;
             }
@@ -858,7 +866,7 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod(name = "default")
     public IRubyObject default_value_get(ThreadContext context) {
-        if ((flags & PROCDEFAULT_HASH_F) != 0) {
+        if ((hashFlags & PROCDEFAULT_HASH) != 0) {
             return context.nil;
         }
         return ifNone == UNDEF ? context.nil : ifNone;
@@ -866,7 +874,7 @@ public class RubyHash extends RubyObject implements Map {
 
     @JRubyMethod(name = "default")
     public IRubyObject default_value_get(ThreadContext context, IRubyObject arg) {
-        if ((flags & PROCDEFAULT_HASH_F) != 0) {
+        if ((hashFlags & PROCDEFAULT_HASH) != 0) {
             return sites(context).call.call(context, ifNone, ifNone, this, arg);
         }
         return ifNone == UNDEF ? context.nil : ifNone;
@@ -880,7 +888,7 @@ public class RubyHash extends RubyObject implements Map {
         modify();
 
         ifNone = defaultValue;
-        flags &= ~PROCDEFAULT_HASH_F;
+        hashFlags &= ~PROCDEFAULT_HASH;
 
         return ifNone;
     }
@@ -890,7 +898,7 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod
     public IRubyObject default_proc(ThreadContext context) {
-        return (flags & PROCDEFAULT_HASH_F) != 0 ? ifNone : context.nil;
+        return (hashFlags & PROCDEFAULT_HASH) != 0 ? ifNone : context.nil;
     }
 
     /** default_proc_arity_check
@@ -914,7 +922,7 @@ public class RubyHash extends RubyObject implements Map {
 
         if (proc.isNil()) {
             ifNone = proc;
-            flags &= ~PROCDEFAULT_HASH_F;
+            hashFlags &= ~PROCDEFAULT_HASH;
             return proc;
         }
 
@@ -924,7 +932,7 @@ public class RubyHash extends RubyObject implements Map {
         proc = b;
         checkDefaultProcArity(context, ((RubyProc) proc).getBlock());
         ifNone = proc;
-        flags |= PROCDEFAULT_HASH_F;
+        hashFlags |= PROCDEFAULT_HASH;
         return proc;
     }
 
@@ -1502,13 +1510,13 @@ public class RubyHash extends RubyObject implements Map {
         @Override
         public void visit(ThreadContext context, RubyHash self, IRubyObject key, IRubyObject value, int index, long[] hval) {
             // perform hashing of key and value before populating shared buffer
-            long keyHash = Helpers.safeHash(context, key).value;
-            long valueHash = Helpers.safeHash(context, value).value;
+            long keyHash = Helpers.safeHashLong(context, key);
+            long valueHash = Helpers.safeHashLong(context, value);
 
             ByteBuffer buffer = HASH_16_BYTE.get();
             Buffers.clearBuffer(buffer).putLong(keyHash).putLong(valueHash);
 
-            hval[0] ^= Helpers.multAndMix(context.runtime.getHashSeedK0(), Arrays.hashCode(buffer.array()));
+            hval[0] ^= Helpers.multAndMix(Ruby.getHashSeed0(), Arrays.hashCode(buffer.array()));
         }
     };
 
@@ -2262,10 +2270,10 @@ public class RubyHash extends RubyObject implements Map {
 
         ifNone = otherHash.ifNone;
 
-        if ((otherHash.flags & PROCDEFAULT_HASH_F) != 0) {
-            flags |= PROCDEFAULT_HASH_F;
+        if ((otherHash.hashFlags & PROCDEFAULT_HASH) != 0) {
+            hashFlags |= PROCDEFAULT_HASH;
         } else {
-            flags &= ~PROCDEFAULT_HASH_F;
+            hashFlags &= ~PROCDEFAULT_HASH;
         }
 
         return this;
@@ -2498,17 +2506,17 @@ public class RubyHash extends RubyObject implements Map {
 
         dup.ifNone = this.ifNone;
 
-        if ((this.flags & PROCDEFAULT_HASH_F) != 0) {
-            dup.flags |= PROCDEFAULT_HASH_F;
+        if ((this.hashFlags & PROCDEFAULT_HASH) != 0) {
+            dup.hashFlags |= PROCDEFAULT_HASH;
         } else {
-            dup.flags &= ~PROCDEFAULT_HASH_F;
+            dup.hashFlags &= ~PROCDEFAULT_HASH;
         }
 
         return dup;
     }
 
     public boolean hasDefaultProc() {
-        return (flags & PROCDEFAULT_HASH_F) != 0;
+        return (hashFlags & PROCDEFAULT_HASH) != 0;
     }
 
     public IRubyObject getIfNone(){
@@ -2767,31 +2775,41 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     /**
-     * Is this object compared by identity or not? Shortcut for doing
-     * getFlag(COMPARE_BY_IDENTITY_F).
+     * Is this object compared by identity or not?
      *
      * @return true if this object is compared by identity, false otherwise
      */
     public boolean isComparedByIdentity() {
-        return (flags & COMPARE_BY_IDENTITY_F) != 0;
+        return (hashFlags & COMPARE_BY_IDENTITY) != 0;
     }
 
     /**
-     * Sets whether this object is compared by identity or not. Shortcut for doing
-     * setFlag(COMPARE_BY_IDENTITY_F, frozen).
+     * Sets whether this object is compared by identity or not.
      *
      * @param comparedByIdentity should this object be compared by identity?
      */
     public void setComparedByIdentity(boolean comparedByIdentity) {
-        setFlag(COMPARE_BY_IDENTITY_F, comparedByIdentity);
+        set(COMPARE_BY_IDENTITY, comparedByIdentity);
     }
 
     public boolean isRuby2KeywordHash() {
-        return (flags & RUBY2_KEYWORD_F) != 0;
+        return (hashFlags & RUBY2_KEYWORD) != 0;
     }
 
     public void setRuby2KeywordHash(boolean value) {
-        setFlag(RUBY2_KEYWORD_F, value);
+        set(RUBY2_KEYWORD, value);
+    }
+
+    public final void set(int flag, boolean set) {
+        if (set) {
+            hashFlags |= flag;
+        } else {
+            hashFlags &= ~flag;
+        }
+    }
+
+    public final boolean get(int flag) {
+        return (hashFlags & flag) != 0;
     }
 
     private class BaseSet extends AbstractSet {
@@ -3141,7 +3159,7 @@ public class RubyHash extends RubyObject implements Map {
 
     @Deprecated(since = "9.2.10.0")
     public IRubyObject default_proc() {
-        return (flags & PROCDEFAULT_HASH_F) != 0 ? ifNone : metaClass.runtime.getNil();
+        return (hashFlags & PROCDEFAULT_HASH) != 0 ? ifNone : metaClass.runtime.getNil();
     }
 
     @Deprecated(since = "9.2.10.0")

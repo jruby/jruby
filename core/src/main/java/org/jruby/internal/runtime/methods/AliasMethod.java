@@ -151,7 +151,7 @@ public class AliasMethod extends DynamicMethod {
     }
 
 
-    @Deprecated @Override
+    @Deprecated(since = "9.3.0.0") @Override
     public Arity getArity(){
         return entry.method.getArity();
     }

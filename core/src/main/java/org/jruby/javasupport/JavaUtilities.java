@@ -106,7 +106,7 @@ public class JavaUtilities {
         return true;
     }
     
-    @Deprecated // no longer used
+    @Deprecated(since = "9.2.1.0") // no longer used
     @JRubyMethod(meta = true,
             reads = { LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE },
             writes = { LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE })

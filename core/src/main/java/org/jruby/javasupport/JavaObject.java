@@ -71,7 +71,7 @@ import static org.jruby.javasupport.JavaUtil.unwrapJava;
  * @deprecated since 9.4
  * @author  jpetersen
  */
-@Deprecated // @JRubyClass(name="Java::JavaObject")
+@Deprecated(since = "9.4.0.0") // @JRubyClass(name="Java::JavaObject")
 public class JavaObject extends RubyObject {
 
     private static final Object NULL_LOCK = new Object();

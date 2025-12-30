@@ -220,7 +220,7 @@ public class ArrayUtils {
         }
     }
 
-    @Deprecated // not used
+    @Deprecated(since = "9.4.0.0") // not used
     public static void copyDataToJavaArray(
             ThreadContext context, RubyArray rubyArray, int src, org.jruby.javasupport.JavaArray javaArray, int dest, int length) {
         Class targetType = javaArray.getComponentType();

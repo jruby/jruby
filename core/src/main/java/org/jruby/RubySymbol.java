@@ -57,6 +57,7 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.Signature;
+import org.jruby.runtime.SimpleHash;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.RefinedCachingCallSite;
@@ -74,7 +75,6 @@ import org.jruby.util.TypeConverter;
 import java.lang.ref.WeakReference;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.ReentrantLock;
 
 import static org.jruby.api.Access.encodingService;
@@ -100,20 +100,19 @@ import static org.jruby.util.StringSupport.codeRangeScan;
  * Represents a Ruby symbol (e.g. :bar)
  */
 @JRubyClass(name = "Symbol", include = "Enumerable")
-public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingCapable, Constantizable, Appendable {
+public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingCapable, Constantizable, Appendable, SimpleHash {
     @Deprecated(since = "9.2.1.0")
     public static final long symbolHashSeedK0 = 5238926673095087190l;
 
-    private final String symbol;
     private final int id;
-    private final ByteList symbolBytes;
-    private final RubyString fstring;
     private final int hashCode;
-    private String decodedString;
-    private volatile RubyString rubyString;
-    private static final AtomicReferenceFieldUpdater<RubySymbol, RubyString> RUBY_STRING_UPDATER = AtomicReferenceFieldUpdater.newUpdater(RubySymbol.class, RubyString.class, "rubyString");
-    private transient Object constant;
+    private final String symbol;
+    private final RubyString fstring;
     private final SymbolNameType type;
+
+    private String decodedString;
+    private Object constant;
+    private RubyFixnum hash;
 
     /**
      *
@@ -133,7 +132,6 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
             symbolBytes = symbolBytes.dup();
             symbolBytes.setEncoding(USASCIIEncoding.INSTANCE);
         }
-        this.symbolBytes = symbolBytes;
         this.fstring = runtime.freezeAndDedupString(symbolBytes);
         this.id = runtime.allocSymbolId();
 
@@ -199,7 +197,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     }
 
     public final ByteList getBytes() {
-        return symbolBytes;
+        return fstring.getByteList();
     }
 
     /**
@@ -266,12 +264,12 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     }
 
     /**
-     * RubySymbol is created by passing in a String and bytes are extracted from that.  We will
-     * pass in encoding of that string after construction but before use so it does not forget
-     * what it is.
+     * Symbols must be created immutable to start, so associating a new encoding is no longer allowed.
+     *
+     * @deprecated This method is deprecated and does nothing.
      */
+    @Deprecated(since = "10.0.3.0")
     public void associateEncoding(Encoding encoding) {
-        symbolBytes.setEncoding(encoding);
     }
 
     /** short circuit for Symbol key comparison
@@ -520,7 +518,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     @Override
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s(ThreadContext context) {
-        return getNameString(context).strDup(context.runtime).chill_symbol_string();
+        return fstring.strDup(context.runtime).chill_symbol_string();
     }
 
     final RubyString to_s(Ruby runtime) {
@@ -529,32 +527,12 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @JRubyMethod(name = "name")
     public IRubyObject name(ThreadContext context) {
-        return getNameString(context);
+        return fstring;
     }
 
     @Deprecated(since = "9.4-")
     public IRubyObject id2name() {
         return to_s(getCurrentContext());
-    }
-
-    private RubyString getNameString(ThreadContext context) {
-        RubyString currentString = rubyString;
-
-        if (currentString != null) {
-            return currentString;
-        }
-
-        return cacheNameString(context);
-    }
-
-    private RubyString cacheNameString(ThreadContext context) {
-        // atomically create and store an fstring for this symbol
-        RubyString nameString = newSharedString(context, getBytes());
-        nameString.scanForCodeRange();
-        nameString = context.runtime.freezeAndDedupString(nameString);
-        RUBY_STRING_UPDATER.compareAndSet(this, null, nameString);
-
-        return rubyString;
     }
 
     @JRubyMethod
@@ -585,11 +563,18 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @JRubyMethod
     public RubyFixnum hash(ThreadContext context) {
-        return asFixnum(context, hashCode());
+        RubyFixnum hash = this.hash;
+        if (hash == null) this.hash = hash = asFixnum(context, hashCode());
+        return hash;
     }
 
     @Override
     public int hashCode() {
+        return hashCode;
+    }
+
+    @Override
+    public long longHashCode() {
         return hashCode;
     }
 
@@ -617,70 +602,66 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     @JRubyMethod(name = { "to_sym", "intern" })
     public IRubyObject to_sym() { return this; }
 
-    private RubyString newShared(ThreadContext context) {
-        return newSharedString(context, symbolBytes);
-    }
-
     @JRubyMethod(name = {"succ", "next"})
     public IRubyObject succ(ThreadContext context) {
-        return asSymbol(context, newShared(context).succ(context).asString());
+        return asSymbol(context, fstring.succ(context).asString());
     }
 
     @JRubyMethod(name = "<=>")
     @Override
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
-        return other instanceof RubySymbol sym ? newShared(context).op_cmp(context, sym.newShared(context)) : context.nil;
+        return other instanceof RubySymbol sym ? fstring.op_cmp(context, sym.fstring) : context.nil;
     }
 
     @JRubyMethod
     public IRubyObject casecmp(ThreadContext context, IRubyObject other) {
-        return other instanceof RubySymbol sym ? newShared(context).casecmp(context, sym.newShared(context)) : context.nil;
+        return other instanceof RubySymbol sym ? fstring.casecmp(context, sym.fstring) : context.nil;
     }
 
     @JRubyMethod(name = "casecmp?")
     public IRubyObject casecmp_p(ThreadContext context, IRubyObject other) {
-        return other instanceof RubySymbol sym ? newShared(context).casecmp_p(context, sym.newShared(context)) : context.nil;
+        return other instanceof RubySymbol sym ? fstring.casecmp_p(context, sym.fstring) : context.nil;
     }
 
     @JRubyMethod(name = "=~")
     @Override
     public IRubyObject op_match(ThreadContext context, IRubyObject other) {
-        return newShared(context).op_match(context, other);
+        return fstring.op_match(context, other);
     }
 
     @JRubyMethod(name = "match")
     public IRubyObject match_m(ThreadContext context, IRubyObject other, Block block) {
-        return newShared(context).match(context, other, block);
+        return fstring.match(context, other, block);
     }
 
     @JRubyMethod(name = "match")
     public IRubyObject match_m(ThreadContext context, IRubyObject other, IRubyObject pos, Block block) {
-        return newShared(context).match(context, other, pos, block);
+        return fstring.match(context, other, pos, block);
     }
 
     @JRubyMethod(name = "match", required = 1, rest = true, checkArity = false)
     public IRubyObject match_m(ThreadContext context, IRubyObject[] args, Block block) {
-        return newShared(context).match(context, args, block);
+        return fstring.match(context, args, block);
     }
 
     @JRubyMethod(name = "match?")
     public IRubyObject match_p(ThreadContext context, IRubyObject other) {
-        return newShared(context).match_p(context, other);
+        return fstring.match_p(context, other);
     }
 
     @JRubyMethod(name = "match?")
     public IRubyObject match_p(ThreadContext context, IRubyObject other, IRubyObject pos) {
-        return newShared(context).match_p(context, other, pos);
+        return fstring.match_p(context, other, pos);
     }
 
     @JRubyMethod(name = {"[]", "slice"})
     public IRubyObject op_aref(ThreadContext context, IRubyObject arg) {
-        return newShared(context).op_aref(context, arg);
+        return fstring.op_aref(context, arg);
     }
 
     @JRubyMethod(name = {"[]", "slice"})
     public IRubyObject op_aref(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
-        return newShared(context).op_aref(context, arg1, arg2);
+        return fstring.op_aref(context, arg1, arg2);
     }
 
     /**
@@ -694,12 +675,12 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @JRubyMethod(name = {"length", "size"})
     public IRubyObject length(ThreadContext context) {
-        return asFixnum(context, newShared(context).strLength());
+        return fstring.rubyLength(context);
     }
 
     @JRubyMethod(name = "empty?")
     public IRubyObject empty_p(ThreadContext context) {
-        return newShared(context).empty_p(context);
+        return fstring.empty_p(context);
     }
 
     @JRubyMethod(name = "start_with?")
@@ -744,62 +725,62 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
     @JRubyMethod
     public IRubyObject upcase(ThreadContext context) {
-        return asSymbol(context, newShared(context).upcase(context));
+        return asSymbol(context, fstring.upcase(context));
     }
 
     @JRubyMethod
     public IRubyObject upcase(ThreadContext context, IRubyObject arg) {
-        return asSymbol(context, newShared(context).upcase(context, arg));
+        return asSymbol(context, fstring.upcase(context, arg));
     }
 
     @JRubyMethod
     public IRubyObject upcase(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        return asSymbol(context, newShared(context).upcase(context, arg0, arg1));
+        return asSymbol(context, fstring.upcase(context, arg0, arg1));
     }
 
     @JRubyMethod
     public IRubyObject downcase(ThreadContext context) {
-        return asSymbol(context, newShared(context).downcase(context));
+        return asSymbol(context, fstring.downcase(context));
     }
 
     @JRubyMethod
     public IRubyObject downcase(ThreadContext context, IRubyObject arg) {
-        return asSymbol(context, newShared(context).downcase(context, arg));
+        return asSymbol(context, fstring.downcase(context, arg));
     }
 
     @JRubyMethod
     public IRubyObject downcase(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        return asSymbol(context, newShared(context).downcase(context, arg0, arg1));
+        return asSymbol(context, fstring.downcase(context, arg0, arg1));
     }
 
     @JRubyMethod
     public IRubyObject swapcase(ThreadContext context) {
-        return asSymbol(context, newShared(context).swapcase(context));
+        return asSymbol(context, fstring.swapcase(context));
     }
 
     @JRubyMethod
     public IRubyObject swapcase(ThreadContext context, IRubyObject arg) {
-        return asSymbol(context, newShared(context).swapcase(context, arg));
+        return asSymbol(context, fstring.swapcase(context, arg));
     }
 
     @JRubyMethod
     public IRubyObject swapcase(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        return asSymbol(context, newShared(context).swapcase(context, arg0, arg1));
+        return asSymbol(context, fstring.swapcase(context, arg0, arg1));
     }
 
     @JRubyMethod
     public IRubyObject capitalize(ThreadContext context) {
-        return asSymbol(context, newShared(context).capitalize(context));
+        return asSymbol(context, fstring.capitalize(context));
     }
 
     @JRubyMethod
     public IRubyObject capitalize(ThreadContext context, IRubyObject arg) {
-        return asSymbol(context, newShared(context).capitalize(context, arg));
+        return asSymbol(context, fstring.capitalize(context, arg));
     }
 
     @JRubyMethod
     public IRubyObject capitalize(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        return asSymbol(context, newShared(context).capitalize(context, arg0, arg1));
+        return asSymbol(context, fstring.capitalize(context, arg0, arg1));
     }
 
     @JRubyMethod

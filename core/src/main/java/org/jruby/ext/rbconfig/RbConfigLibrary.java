@@ -256,8 +256,10 @@ public class RbConfigLibrary implements Library {
         String javaSpecVersion = System.getProperty("java.specification.version");
         if (javaSpecVersion.equals("1.8")) javaSpecVersion = "8";
 
-        // Rubygems is too specific on host cpu so until we have real need lets default to universal
-        setConfig(context, CONFIG, "arch", "universal-java-" + javaSpecVersion);
+        // Rubygems uses this to indicate extensions have been built, so we separate the Java version.
+        // See https://github.com/ruby/rubygems/issues/3520
+        setConfig(context, CONFIG, "arch", "universal-java");
+        setConfig(context, CONFIG, "arch_version", javaSpecVersion);
 
         // Use property for binDir if available, otherwise fall back to common bin default
         String binDir = SafePropertyAccessor.getProperty("jruby.bindir");

@@ -134,7 +134,7 @@ public class NativeException extends RubyException {
         return RubyArray.newArrayMayCopy(runtime, trace);
     }
 
-    @Deprecated // not used
+    @Deprecated(since = "9.1.0.0") // not used
     public void trimStackTrace(Member target) {
         Throwable t = new Throwable();
         StackTraceElement[] origStackTrace = cause.getStackTrace();

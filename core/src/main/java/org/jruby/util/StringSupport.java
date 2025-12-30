@@ -77,18 +77,19 @@ import static org.jruby.api.Error.indexError;
 import static org.jruby.api.Warn.warn;
 
 public final class StringSupport {
+    @Deprecated(since = "10.0.3.0", forRemoval = true)
     public static final int CR_7BIT_F    = ObjectFlags.CR_7BIT_F;
+    @Deprecated(since = "10.0.3.0", forRemoval = true)
     public static final int CR_VALID_F   = ObjectFlags.CR_VALID_F;
-    public static final int CR_UNKNOWN   = 0;
 
     // We hardcode these so they can be used in a switch.
     // These values also must continue to match the same values in the Prism parser so we perform a hard check.
-    public static final int CR_7BIT      = 16;
-    public static final int CR_VALID     = 32;
-    static {
-        if (CR_7BIT != CR_7BIT_F) throw new RuntimeException("BUG: CR_7BIT_F = " + CR_7BIT_F + " but should be " + CR_7BIT);
-        if (CR_VALID != CR_VALID_F) throw new RuntimeException("BUG: CR_VALID_F = " + CR_VALID_F + " but should be " + CR_VALID);
-    }
+    public static final int CR_UNKNOWN   = 0;
+    public static final int CR_7BIT      = 0b00010000;
+    public static final int CR_VALID     = 0b00100000;
+
+    public static final int CHILLED_LITERAL = 0b00000001;
+    public static final int CHILLED_SYMBOL_TO_S = 0b00000010;
 
     public static final int CR_BROKEN    = CR_7BIT | CR_VALID;
     public static final int CR_MASK      = CR_7BIT | CR_VALID;

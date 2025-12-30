@@ -63,7 +63,7 @@ public class SingletonLocalContextProvider extends AbstractLocalContextProvider 
         return localContext;
     }
 
-    @Deprecated // no longer used
+    @Deprecated(since = "9.0.0.0") // no longer used
     public static LocalContext getLocalContextInstance(RubyInstanceConfig config, LocalVariableBehavior behavior, boolean lazy) {
         if (localContext == null) {
             synchronized( SingletonLocalContextProvider.class ) {
@@ -75,7 +75,7 @@ public class SingletonLocalContextProvider extends AbstractLocalContextProvider 
         return localContext;
     }
 
-    @Deprecated // no longer used
+    @Deprecated(since = "9.0.0.0") // no longer used
     public static LocalVariableBehavior getLocalVariableBehaviorOrNull() {
         if (localContext == null) return null;
         return localContext.getLocalVariableBehavior();

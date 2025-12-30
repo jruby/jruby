@@ -86,6 +86,7 @@ public class RubyMatchData extends RubyObject {
     transient RubyRegexp regexp;
     private boolean charOffsetUpdated;
     private Region charOffsets;
+    private boolean busy;
 
     public static RubyClass createMatchDataClass(ThreadContext context, RubyClass Object) {
         return defineClass(context, "MatchData", Object, RubyMatchData::new).
@@ -276,15 +277,13 @@ public class RubyMatchData extends RubyObject {
         charOffsetUpdated = true;
     }
 
-    private static final int MATCH_BUSY = ObjectFlags.MATCH_BUSY;
-
     // rb_match_busy
     public final void use() {
-        flags |= MATCH_BUSY;
+        busy = true;
     }
 
     public final boolean used() {
-        return (flags & MATCH_BUSY) != 0;
+        return busy;
     }
 
     final void check(ThreadContext context) {

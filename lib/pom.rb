@@ -49,7 +49,7 @@ default_gems = [
   ['ipaddr', '1.2.7'],
   ['jar-dependencies', '0.5.4'],
   ['jruby-readline', '1.3.7'],
-  ['jruby-openssl', '0.15.4'],
+  ['jruby-openssl', '0.15.5'],
   ['json', '2.16.0'],
   ['net-http', '0.7.0'],
   ['net-protocol', '0.2.2'],
@@ -72,7 +72,7 @@ default_gems = [
   ['securerandom', '0.4.1'],
   ['shellwords', '0.2.2'],
   ['singleton', '0.3.0'],
-  ['stringio', '3.1.5'],
+  ['stringio', '3.1.9'],
   ['strscan', '3.1.5'],
   ['subspawn', '0.1.1'], # has 3 transitive deps:
   ['subspawn-posix', '0.1.1'],

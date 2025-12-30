@@ -239,8 +239,7 @@ public class RubyMethod extends AbstractRubyMethod {
                 receiver, originModule, originName, getFilename(), line == -1 ? -1 : line - 1);
         Block b = MethodBlockBody.createMethodBlock(body);
 
-        RubyProc proc = RubyProc.newProc(context.runtime, b, Block.Type.LAMBDA);
-        proc.setFromMethod();
+        RubyProc proc = RubyProc.newMethodProc(context.runtime, b);
         return proc;
     }
 

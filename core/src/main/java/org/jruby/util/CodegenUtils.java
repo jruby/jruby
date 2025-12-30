@@ -123,12 +123,12 @@ public class CodegenUtils {
         return sig(type.returnType(), type.parameterArray());
     }
 
-    @Deprecated // not used
+    @Deprecated(since = "9.0.0.0") // not used
     public static String sigParams(Class... params) {
         return sigParams(new StringBuilder(), null, params).toString();
     }
 
-    @Deprecated // not used
+    @Deprecated(since = "9.0.0.0") // not used
     public static String sigParams(String descriptor, Class... params) {
         return sigParams(new StringBuilder(), descriptor, params).toString();
     }

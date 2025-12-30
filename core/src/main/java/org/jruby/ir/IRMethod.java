@@ -47,6 +47,7 @@ import org.jruby.runtime.ivars.MethodData;
 import org.jruby.util.ByteList;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -86,16 +87,18 @@ public class IRMethod extends IRScope {
         if (def != null) { // walk AST
             ivarNames = def.getMethodData();
         } else {
-            ivarNames = new ArrayList<>();
+            ivarNames = Collections.EMPTY_LIST;
             InterpreterContext context = lazilyAcquireInterpreterContext();
 
             // walk instructions
             for (Instr i : context.getInstructions()) {
                 switch (i.getOperation()) {
                     case GET_FIELD:
+                        if (ivarNames == Collections.EMPTY_LIST) ivarNames = new ArrayList<>(4);
                         ivarNames.add(((GetFieldInstr) i).getId());
                         break;
                     case PUT_FIELD:
+                        if (ivarNames == Collections.EMPTY_LIST) ivarNames = new ArrayList<>(4);
                         ivarNames.add(((PutFieldInstr) i).getId());
                         break;
                 }
@@ -145,8 +148,8 @@ public class IRMethod extends IRScope {
             int ipc = 0;
             int superIPC = -1;
             CallBase superCall = null;
-            Map<Label, Integer> labels = new HashMap<>();
-            List<Label> earlyJumps = new ArrayList<>();
+            Map<Label, Integer> labels = new HashMap<>(1);
+            List<Label> earlyJumps = new ArrayList<>(1);
             var context = getManager().getRuntime().getCurrentContext();
 
             for (Instr instr: interpreterContext.getInstructions()) {

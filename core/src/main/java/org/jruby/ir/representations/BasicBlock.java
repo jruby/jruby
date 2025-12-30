@@ -42,7 +42,7 @@ public class BasicBlock implements ExplicitVertexID, Comparable<BasicBlock> {
     }
 
     private void initInstrs() {
-        instrs = new ArrayList<>();
+        instrs = new ArrayList<>(1);
         if (RubyInstanceConfig.IR_COMPILER_DEBUG || RubyInstanceConfig.IR_DEBUG_IGV != null) {
             IRManager irManager = cfg.getManager();
             InstructionsListener listener = irManager.getInstructionsListener();

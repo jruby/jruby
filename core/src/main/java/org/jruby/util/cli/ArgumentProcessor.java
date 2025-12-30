@@ -289,7 +289,7 @@ public class ArgumentProcessor {
                         grabValue(getArgumentError(" -J-cp must be followed by a path expression"));
                     }
                     break FOR;
-                case 'K': // @Deprecated TODO no longer relevant in Ruby 2.x
+                case 'K': // @Deprecated(since = "9.1.3.0") TODO no longer relevant in Ruby 2.x
                     String eArg = grabValue(getArgumentError("provide a value for -K"));
 
                     KCode kcode = KCode.create(eArg);

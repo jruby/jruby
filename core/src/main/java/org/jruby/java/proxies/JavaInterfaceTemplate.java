@@ -79,7 +79,7 @@ public class JavaInterfaceTemplate {
         return JavaProxy.getJavaClass((RubyModule) self);
     }
 
-    @Deprecated // not used - should go away in >= 9.2
+    @Deprecated(since = "9.1.0.0") // not used - should go away in >= 9.2
     // not intended to be called directly by users (private)
     // OLD TODO from Ruby code:
     // This should be implemented in JavaClass.java, where we can

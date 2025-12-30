@@ -199,11 +199,12 @@ public class CoverageData {
         if (existingSize < startingLinesLength) {
             int[] newLines = new int[startingLinesLength];
             System.arraycopy(existing.toIntArray(), 0, newLines, 0, existingSize);
+            java.util.Arrays.fill(newLines, existingSize, startingLinesLength, -1);
             result = new IntList(newLines);
         }
 
         for (int i = 0; i < startingLinesLength; i++) {
-            int existingValue = existing.get(i);
+            int existingValue = result.get(i);
             int newValue = startingLines[i];
 
             if (newValue == -1) continue;

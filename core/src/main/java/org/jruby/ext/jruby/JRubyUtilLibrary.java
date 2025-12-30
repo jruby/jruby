@@ -404,7 +404,7 @@ public class JRubyUtilLibrary implements Library {
         return obj;
     }
 
-    @Deprecated // since 9.2 only loaded with require 'core_ext/string.rb'
+    @Deprecated(since = "9.2.0.0") // since 9.2 only loaded with require 'core_ext/string.rb'
     public static class StringUtils {
         public static IRubyObject unseeded_hash(ThreadContext context, IRubyObject recv) {
             return CoreExt.String.unseeded_hash(context, recv);

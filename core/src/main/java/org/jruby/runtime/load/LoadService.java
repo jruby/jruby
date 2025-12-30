@@ -174,13 +174,16 @@ public class LoadService {
         public static final String[] extensionSuffixes = LibrarySearcher.Suffix.EXTENSIONS.stream().map((suffix) -> suffix.name()).toArray(String[]::new);
     }
 
+    @Deprecated(since = "10.0.3.0")
     protected static final Pattern sourcePattern = Pattern.compile("\\.(?:rb)$");
+    @Deprecated(since = "10.0.3.0")
     protected static final Pattern extensionPattern = Pattern.compile("\\.(?:so|o|jar)$");
 
     protected RubyArray loadPath;
     protected StringArraySet loadedFeatures;
 
-    protected final Map<String, JarFile> jarFiles = new HashMap<>();
+    @Deprecated(since = "10.0.3.0")
+    protected final Map<String, JarFile> jarFiles = new HashMap<>(0);
 
     protected final Ruby runtime;
     protected LibrarySearcher librarySearcher;

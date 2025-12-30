@@ -51,12 +51,14 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.JavaSites;
+import org.jruby.runtime.SimpleHash;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 import org.jruby.util.StringSupport;
+import org.jruby.util.collections.IntList;
 
 import static org.jruby.api.Access.kernelModule;
 import static org.jruby.api.Access.getModule;
@@ -68,7 +70,7 @@ import static org.jruby.api.Error.typeError;
 import static org.jruby.api.Warn.warnDeprecated;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 
-public class RubyBigDecimal extends RubyNumeric {
+public class RubyBigDecimal extends RubyNumeric implements SimpleHash {
 
     @JRubyConstant
     public final static int ROUND_DOWN = 2;
@@ -182,7 +184,7 @@ public class RubyBigDecimal extends RubyNumeric {
         this.infinitySign = 0;
         this.zeroSign = 0;
         this.value = BigDecimal.ZERO;
-        this.flags |= FROZEN_F;
+        this.setFrozen(true);
     }
 
     public RubyBigDecimal(Ruby runtime, BigDecimal value) {
@@ -191,7 +193,7 @@ public class RubyBigDecimal extends RubyNumeric {
         this.infinitySign = 0;
         this.zeroSign = 0;
         this.value = value;
-        this.flags |= FROZEN_F;
+        this.setFrozen(true);
     }
 
     public RubyBigDecimal(Ruby runtime, RubyClass klass, BigDecimal value) {
@@ -200,7 +202,7 @@ public class RubyBigDecimal extends RubyNumeric {
         this.infinitySign = 0;
         this.zeroSign = 0;
         this.value = value;
-        this.flags |= FROZEN_F;
+        this.setFrozen(true);
     }
 
     public RubyBigDecimal(Ruby runtime, BigDecimal value, int infinitySign) {
@@ -213,7 +215,7 @@ public class RubyBigDecimal extends RubyNumeric {
         this.infinitySign = infinitySign;
         this.zeroSign = zeroSign;
         this.value = value;
-        this.flags |= FROZEN_F;
+        this.setFrozen(true);
     }
 
     public RubyBigDecimal(Ruby runtime, BigDecimal value, boolean isNan) {
@@ -222,7 +224,7 @@ public class RubyBigDecimal extends RubyNumeric {
         this.infinitySign = 0;
         this.zeroSign = 0;
         this.value = value;
-        this.flags |= FROZEN_F;
+        this.setFrozen(true);
     }
 
     RubyBigDecimal(Ruby runtime, RubyClass klass, BigDecimal value, int zeroSign, int infinitySign, boolean isNaN) {
@@ -231,7 +233,7 @@ public class RubyBigDecimal extends RubyNumeric {
         this.infinitySign = infinitySign;
         this.zeroSign = zeroSign;
         this.value = value;
-        this.flags |= FROZEN_F;
+        this.setFrozen(true);
     }
 
     @Override
@@ -942,7 +944,17 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod
     public RubyFixnum hash(ThreadContext context) {
-        return asFixnum(context, absStripTrailingZeros().hashCode() * value.signum());
+        return asFixnum(context, hashCode());
+    }
+
+    @Override
+    public int hashCode() {
+        return absStripTrailingZeros().hashCode() * value.signum();
+    }
+
+    @Override
+    public long longHashCode() {
+        return hashCode();
     }
 
     @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
@@ -2472,7 +2484,7 @@ public class RubyBigDecimal extends RubyNumeric {
       BigDecimal v = BigDecimal.ONE.divide(TWO.multiply(x), nMC);        // v0 = 1/(2*x)
 
       // Collect iteration precisions beforehand
-      ArrayList<Integer> nPrecs = new ArrayList<>();
+      IntList nPrecs = new IntList();
 
       assert nInit > 3 : "Never ending loop!";                // assume nInit = 16 <= prec
 
@@ -2520,19 +2532,19 @@ public class RubyBigDecimal extends RubyNumeric {
         return false;
     }
 
-    @Deprecated // no longer used
+    @Deprecated(since = "9.3.0.0") // no longer used
     public RubyBigDecimal(Ruby runtime, RubyBigDecimal rbd) {
         this(runtime, Access.getClass(runtime.getCurrentContext(), "BigDecimal"), rbd);
     }
 
-    @Deprecated // no longer used
+    @Deprecated(since = "9.3.0.0") // no longer used
     public RubyBigDecimal(Ruby runtime, RubyClass klass, RubyBigDecimal rbd) {
         super(runtime, klass);
         this.isNaN = rbd.isNaN;
         this.infinitySign = rbd.infinitySign;
         this.zeroSign = rbd.zeroSign;
         this.value = rbd.value;
-        this.flags |= FROZEN_F;
+        this.setFrozen(true);
     }
 
     private static JavaSites.BigDecimalSites sites(ThreadContext context) {

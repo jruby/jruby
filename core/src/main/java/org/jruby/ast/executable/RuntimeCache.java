@@ -53,13 +53,16 @@ public class RuntimeCache {
         return callSites[index];
     }
 
+    /**
+     * Symbols must be created immutable to start, so associating a new encoding is no longer allowed.
+     *
+     * @deprecated This method is deprecated and only used by the deprecated AbstractScript cache logic.
+     */
+    @Deprecated(since = "10.0.3.0")
     public final RubySymbol getSymbol(ThreadContext context, int index, String name, String encodingName) {
         RubySymbol symbol = symbols[index];
         if (symbol == null) {
             symbol = asSymbol(context, name);
-            if (encodingName != null) {
-                symbol.associateEncoding(EncodingDB.getEncodings().get(encodingName.getBytes()).getEncoding());
-            }
             symbols[index] = symbol;
         }
         return symbol;

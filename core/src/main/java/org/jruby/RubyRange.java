@@ -69,7 +69,7 @@ import static org.jruby.runtime.Helpers.hashEnd;
 import static org.jruby.runtime.Helpers.hashStart;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.Helpers.murmurCombine;
-import static org.jruby.runtime.Helpers.safeHash;
+import static org.jruby.runtime.Helpers.safeHashLong;
 
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.Variable;
@@ -323,8 +323,8 @@ public class RubyRange extends RubyObject {
         long hash = exclusiveBit;
 
         hash = hashStart(context.runtime, hash);
-        hash = murmurCombine(hash, safeHash(context, begin).getValue());
-        hash = murmurCombine(hash, safeHash(context, end).getValue());
+        hash = murmurCombine(hash, safeHashLong(context, begin));
+        hash = murmurCombine(hash, safeHashLong(context, end));
         hash = murmurCombine(hash, exclusiveBit << 24);
         hash = hashEnd(hash);
 
@@ -605,14 +605,14 @@ public class RubyRange extends RubyObject {
 
     private void fixnumEach(ThreadContext context, Block block) {
         // We must avoid integer overflows.
-        long to = ((RubyFixnum) end).value;
+        long to = ((RubyFixnum) end).getValue();
         if (isExclusive) {
             if (to == Long.MIN_VALUE) {
                 return;
             }
             to--;
         }
-        RubyInteger.fixnumUpto(context, ((RubyFixnum) begin).value, to, block);
+        RubyInteger.fixnumUpto(context, ((RubyFixnum) begin).getValue(), to, block);
     }
 
     // MRI: range_reverse_each

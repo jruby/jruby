@@ -292,7 +292,7 @@ public class RaiseException extends JumpException {
         return newTrace;
     }
 
-    @Deprecated // used by JRuby-Rack
+    @Deprecated(since = "9.2.10.0") // used by JRuby-Rack
     public static RaiseException createNativeRaiseException(Ruby runtime, Throwable cause) {
         return createNativeRaiseException(runtime, cause, null);
     }

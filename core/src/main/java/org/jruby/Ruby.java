@@ -77,6 +77,7 @@ import org.jruby.util.StrptimeParser;
 import org.jruby.util.StrptimeToken;
 import org.jruby.util.WeakIdentityHashMap;
 import org.jruby.util.collections.ConcurrentWeakHashMap;
+import org.jruby.util.collections.IntHashMap;
 import org.jruby.util.io.EncodingUtils;
 import org.objectweb.asm.util.TraceClassVisitor;
 
@@ -276,14 +277,6 @@ public final class Ruby implements Constantizable {
 
         this.random = initRandom();
 
-        if (RubyInstanceConfig.CONSISTENT_HASHING_ENABLED) {
-            this.hashSeedK0 = -561135208506705104l;
-            this.hashSeedK1 = 7114160726623585955l;
-        } else {
-            this.hashSeedK0 = this.random.nextLong();
-            this.hashSeedK1 = this.random.nextLong();
-        }
-
         this.configBean = new Config(this);
         this.runtimeBean = new org.jruby.management.Runtime(this);
 
@@ -403,15 +396,16 @@ public final class Ruby implements Constantizable {
         stringClass = RubyString.createStringClass(context, objectClass, comparableModule);
         emptyFrozenString = freezeAndDedupString(newEmptyString(context));
 
-        falseString = Create.newString(context, FALSE_BYTES);
-        falseString.setFrozen(true);
-
         nilString = newEmptyString(context);
         nilString.setFrozen(true);
         nilInspectString = newString(RubyNil.nil);
         nilInspectString.setFrozen(true);
+
         trueString = newString(TRUE_BYTES);
         trueString.setFrozen(true);
+
+        falseString = Create.newString(context, FALSE_BYTES);
+        falseString.setFrozen(true);
 
         encodingService = new EncodingService(this);
 
@@ -428,6 +422,12 @@ public final class Ruby implements Constantizable {
         numericClass = profile.allowClass("Numeric") ? RubyNumeric.createNumericClass(context, objectClass, comparableModule) : null;
         integerClass = profile.allowClass("Integer") ? RubyInteger.createIntegerClass(context, numericClass) : null;
         fixnumClass = profile.allowClass("Fixnum") ? RubyFixnum.createFixnumClass(context, integerClass) : null;
+
+        nilHash = asFixnum(context, nilObject.hashCode());
+        nilID = asFixnum(context, RubyNil.ID);
+        trueHash = asFixnum(context, trueObject.hashCode());
+        trueID = asFixnum(context, RubyBoolean.TRUE_ID);
+        falseHash = asFixnum(context, falseObject.hashCode());
 
         encodingClass = RubyEncoding.createEncodingClass(context, objectClass);
         converterClass = RubyConverter.createConverterClass(context, objectClass, encodingClass);
@@ -1704,7 +1704,7 @@ public final class Ruby implements Constantizable {
         }
     }
 
-    private final Map<Integer, RubyClass> errnos = new HashMap<>();
+    private final IntHashMap<RubyClass> errnos = new IntHashMap<>(Errno.values().length);
 
     public RubyClass getErrno(int n) {
         return errnos.get(n);
@@ -2043,6 +2043,26 @@ public final class Ruby implements Constantizable {
 
     public RubyString getNilInspectString() {
         return nilInspectString;
+    }
+
+    RubyFixnum getNilID() {
+        return nilID;
+    }
+
+    RubyFixnum getNilHash() {
+        return nilHash;
+    }
+
+    RubyFixnum getTrueID() {
+        return trueID;
+    }
+
+    RubyFixnum getTrueHash() {
+        return trueHash;
+    }
+
+    RubyFixnum getFalseHash() {
+        return falseHash;
     }
 
     /** Returns the "false" instance from the instance pool.
@@ -4868,11 +4888,21 @@ public final class Ruby implements Constantizable {
         return coverageData != null && coverageData.isCoverageEnabled();
     }
 
+    @Deprecated
     public long getHashSeedK0() {
+        return getHashSeed0();
+    }
+
+    @Deprecated
+    public long getHashSeedK1() {
+        return getHashSeed1();
+    }
+
+    public static long getHashSeed0() {
         return hashSeedK0;
     }
 
-    public long getHashSeedK1() {
+    public static long getHashSeed1() {
         return hashSeedK1;
     }
 
@@ -5187,6 +5217,11 @@ public final class Ruby implements Constantizable {
     private final RubyString falseString;
     private final RubyString nilString;
     private final RubyString nilInspectString;
+    private final RubyFixnum nilHash;
+    private final RubyFixnum nilID;
+    private final RubyFixnum trueHash;
+    private final RubyFixnum trueID;
+    private final RubyFixnum falseHash;
     final RubyFixnum[] fixnumCache = new RubyFixnum[2 * RubyFixnum.CACHE_OFFSET];
     final Object[] fixnumConstants = new Object[fixnumCache.length];
 
@@ -5437,7 +5472,7 @@ public final class Ruby implements Constantizable {
     // NOTE: module instances are unique and we only addModule from <init> - could use a ConcurrentLinkedQueue
     private final ConcurrentWeakHashMap<RubyModule, Object> allModules = new ConcurrentWeakHashMap<>(128);
 
-    private final Map<String, DateTimeZone> timeZoneCache = new HashMap<>();
+    private final Map<String, DateTimeZone> timeZoneCache = new HashMap<>(1);
 
     /**
      * A list of "external" finalizers (the ones, registered via ObjectSpace),
@@ -5525,6 +5560,15 @@ public final class Ruby implements Constantizable {
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
+
+        if (RubyInstanceConfig.CONSISTENT_HASHING_ENABLED) {
+            hashSeedK0 = -561135208506705104l;
+            hashSeedK1 = 7114160726623585955l;
+        } else {
+            SecureRandom random = new SecureRandom();
+            hashSeedK0 = random.nextLong();
+            hashSeedK1 = random.nextLong();
+        }
     }
 
     private final boolean coreIsBooted;
@@ -5545,9 +5589,9 @@ public final class Ruby implements Constantizable {
     /** The runtime-local random number generator. Uses SecureRandom if permissions allow. */
     final Random random;
 
-    /** The runtime-local seed for hash randomization */
-    private final long hashSeedK0;
-    private final long hashSeedK1;
+    /** The global seed for hash randomization */
+    private static final long hashSeedK0;
+    private static final long hashSeedK1;
 
     private final StaticScopeFactory staticScopeFactory;
 

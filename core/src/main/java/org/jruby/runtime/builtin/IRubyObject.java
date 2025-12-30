@@ -332,15 +332,17 @@ public interface IRubyObject {
      */
     Object dataGetStruct();
 
-    @Deprecated // not used at all
+    @Deprecated(since = "9.2.0.0") // not used at all
     Object dataGetStructChecked();
-    
+
+    @Deprecated
+    IRubyObject id();
+
     /**
      * The id of the object
      * @return the object id
      */
-    IRubyObject id();
-    
+    RubyInteger __id__(ThreadContext context);
     
     public IRubyObject op_equal(ThreadContext context, IRubyObject other);
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other);

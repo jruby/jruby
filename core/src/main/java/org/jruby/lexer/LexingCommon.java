@@ -556,6 +556,10 @@ public abstract class LexingCommon {
         return peek(c, 0);
     }
 
+    public int peekAt(int n) {
+        return lex_p+n < lex_pend ?  p(lex_p+n) : EOF;
+    }
+
     protected boolean peek(int c, int n) {
         return lex_p+n < lex_pend && p(lex_p+n) == c;
     }

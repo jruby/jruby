@@ -39,6 +39,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Error;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ArraySupport;
+import org.jruby.util.collections.IntHashMap;
 
 import static org.jruby.api.Error.argumentError;
 
@@ -47,7 +48,7 @@ import static org.jruby.api.Error.argumentError;
  */
 public final class Arity implements Serializable {
     private static final long serialVersionUID = 1L;
-    private static final Map<Integer, Arity> arities = new HashMap<>();
+    private static final IntHashMap<Arity> arities = new IntHashMap<>();
     private final int value;
     
     public final static Arity NO_ARGUMENTS = newArity(0);

@@ -61,7 +61,6 @@ import org.jruby.runtime.ivars.VariableAccessor;
 import org.jruby.runtime.ivars.VariableTableManager;
 import org.jruby.runtime.marshal.CoreObjectType;
 import org.jruby.util.ArraySupport;
-import org.jruby.util.ByteList;
 import org.jruby.util.IdUtil;
 import org.jruby.util.TypeConverter;
 
@@ -168,13 +167,13 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     protected transient RubyClass metaClass;
 
     /** object flags */
-    protected int flags;
+    protected byte flags;
 
     /** variable table, lazily allocated as needed (if needed) */
     public transient Object[] varTable;
 
     /** locking stamp for Unsafe ops updating the vartable */
-    public transient volatile int varTableStamp;
+    public transient volatile byte varTableStamp;
 
     /**
      * The error message used when some one tries to modify an
@@ -182,8 +181,15 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     public static final String ERR_INSECURE_SET_INST_VAR  = "Insecure: can't modify instance variable";
 
+    static final byte FALSE =  0b00000001;
+    static final byte NIL =    0b00000010;
+    static final byte FROZEN = 0b00000100;
+
+    @Deprecated(since = "10.0.3.0")
     public static final int ALL_F = -1;
-    public static final int FALSE_F = ObjectFlags.FALSE_F;
+    /** @deprecated external access to global object flags is going away */
+    @Deprecated(since = "10.0.3.0")
+    public static final int FALSE_F = FALSE;
     /**
      * This flag is a bit funny. It's used to denote that this value
      * is nil. It's a bit counterintuitive for a Java programmer to
@@ -193,8 +199,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * that it gives a good speed boost to make it monomorphic and
      * final. It turns out using a flag for this actually gives us
      * better performance than having a polymorphic {@link #isNil()} method.
+     *
+     * @deprecated external access to global object flags is going away
      */
-    public static final int NIL_F = ObjectFlags.NIL_F;
+    @Deprecated(since = "10.0.3.0")
+    public static final int NIL_F = NIL;
+    @Deprecated(since = "10.0.3.0")
     public static final int FROZEN_F = ObjectFlags.FROZEN_F;
 
     /**
@@ -310,20 +320,13 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
    }
 
     /**
-     * Sets or unsets a flag on this object. The only flags that are
-     * guaranteed to be valid to use as the first argument is:
-     *
-     * <ul>
-     *  <li>{@link #FALSE_F}</li>
-     *  <li>{@link #NIL_F}</li>
-     *  <li>{@link #FROZEN_F}</li>
-     * </ul>
-     *
-     * @param flag the actual flag to set or unset.
-     * @param set if true, the flag will be set, if false, the flag will be unset.
+     * @deprecated external access to global object flags is going away
      */
+    @Deprecated(since = "10.0.3.0")
     public final void setFlag(int flag, boolean set) {
-        if (set) {
+        if (flag == FROZEN) {
+            setFrozen(set);
+        } else if (set) {
             flags |= flag;
         } else {
             flags &= ~flag;
@@ -331,19 +334,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     /**
-     * Get the value of a custom flag on this object. The only
-     * guaranteed flags that can be sent in to this method is:
-     *
-     * <ul>
-     *  <li>{@link #FALSE_F}</li>
-     *  <li>{@link #NIL_F}</li>
-     *  <li>{@link #FROZEN_F}</li>
-     * </ul>
-     *
-     * @param flag the flag to get
-     * @return true if the flag is set, false otherwise
+     * @deprecated external access to global object flags is going away
      */
+    @Deprecated(since = "10.0.3.0")
     public final boolean getFlag(int flag) {
+        if (flag == FROZEN) {
+            return isFrozen();
+        }
+
         return (flags & flag) != 0;
     }
 
@@ -413,54 +411,55 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     /**
-     * Does this object represent nil? See the docs for the {@link
-     * #NIL_F} flag for more information.
+     * Does this object represent nil?
+     *
+     * @return true if nil
      */
     @Override
     public final boolean isNil() {
-        return (flags & NIL_F) != 0;
+        return (flags & NIL) != 0;
     }
 
     /**
-     * Is this value a truthy value or not? Based on the {@link #FALSE_F} flag.
-     * @return true it truthy
+     * Is this value a truthy value or not?
+     *
+     * @return true if truthy
      */
     @Override
     public final boolean isTrue() {
-        return (flags & FALSE_F) == 0;
+        return (flags & FALSE) == 0;
     }
 
     /**
-     * Is this value a falsey value or not? Based on the {@link #FALSE_F} flag.
-     * @return true is false
+     * Is this value a falsey value or not?
+     *
+     * @return true if falsey
      */
     public final boolean isFalse() {
-        return (flags & FALSE_F) != 0;
+        return (flags & FALSE) != 0;
     }
 
-    /**
-     * Is this value frozen or not? Shortcut for doing
-     * getFlag(FROZEN_F).
+    /** whether the object has been frozen */ /**
+     * Is this value frozen or not?
      *
      * @return true if this object is frozen, false otherwise
      */
     @Override
     public boolean isFrozen() {
-        return (flags & FROZEN_F) != 0;
+        return (flags & FROZEN) != 0;
     }
 
     /**
-     * Sets whether this object is frozen or not. Shortcut for doing
-     * setFlag(FROZEN_F, frozen).
+     * Sets whether this object is frozen or not.
      *
      * @param frozen should this object be frozen?
      */
     @Override
     public void setFrozen(boolean frozen) {
         if (frozen) {
-            flags |= FROZEN_F;
+            flags |= FROZEN;
         } else {
-            flags &= ~FROZEN_F;
+            flags &= ~FROZEN;
         }
     }
 
@@ -900,7 +899,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         if (original.hasVariables()) {
             clone.syncVariables(original);
-            ((RubyBasicObject) clone).dupFinalizer();
+            ((RubyBasicObject) clone).dupFinalizer(context);
         }
         if (original instanceof RubyModule) {
             RubyModule cloneMod = (RubyModule)clone;
@@ -1088,14 +1087,20 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return getInternalVariable("__wrap_struct__");
     }
 
+    @Deprecated
+    @Override
+    public IRubyObject id() {
+        return getRuntime().newFixnum(getObjectId());
+    }
+
     /** rb_obj_id
      *
      * Return the internal id of an object.
      */
     @JRubyMethod(name = "__id__")
     @Override
-    public IRubyObject id() {
-        return getRuntime().newFixnum(getObjectId());
+    public RubyInteger __id__(ThreadContext context) {
+        return asFixnum(context, getObjectId());
     }
 
     /**
@@ -1355,7 +1360,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public IRubyObject addFinalizer(ThreadContext context, IRubyObject f) {
         Finalizer finalizer = (Finalizer) getInternalVariable("__finalizer__");
         if (finalizer == null) {
-            IRubyObject fixnumId = registerWithObjectSpace();
+            IRubyObject fixnumId = registerWithObjectSpace(context);
 
             finalizer = new Finalizer(fixnumId);
             setInternalVariable("__finalizer__", finalizer);
@@ -1364,13 +1369,13 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return finalizer.addFinalizer(context, f);
     }
 
-    private IRubyObject registerWithObjectSpace() {
+    private IRubyObject registerWithObjectSpace(ThreadContext context) {
         // since this is the first time we're registering a finalizer, we
         // must also register this object in ObjectSpace, so that future
         // calls to undefine_finalizer, which takes an object symbol, can
         // locate the object properly. See JRUBY-4839.
         long id = getObjectId();
-        IRubyObject fixnumId = id();
+        IRubyObject fixnumId = __id__(context);
 
         getRuntime().getObjectSpace().registerObjectId(id, this);
         return fixnumId;
@@ -1380,11 +1385,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * Stange method.  We will dup the __finalizer__ variable in a freshly dup'd object,
      * but it needs to be set to this objects __finalizer__.
      */
-    protected void dupFinalizer() {
+    protected void dupFinalizer(ThreadContext context) {
         Finalizer finalizer = (Finalizer) getInternalVariable("__finalizer__");
         if (finalizer != null) {
             // We need ObjectSpace to make this object reachable for the finalization
-            IRubyObject fixnumId = registerWithObjectSpace();
+            IRubyObject fixnumId = registerWithObjectSpace(context);
 
             finalizer = new Finalizer(fixnumId, finalizer);
             setInternalVariable("__finalizer__", finalizer);
@@ -2237,12 +2242,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * in both the compiler and the interpreter, the performance
      * benefit is important for this method.
      */
-    @Deprecated // NOTE: does not match Ruby 2.x rules (does method bound check only)
+    @Deprecated(since = "9.2.0.0") // NOTE: does not match Ruby 2.x rules (does method bound check only)
     public final RubyBoolean respond_to_p(IRubyObject mname) {
         return getRuntime().newBoolean(getMetaClass().respondsToMethod(mname.asJavaString(), true));
     }
 
-    @Deprecated // NOTE: does not match Ruby 2.x rules (does method bound check only)
+    @Deprecated(since = "9.2.0.0") // NOTE: does not match Ruby 2.x rules (does method bound check only)
     public final RubyBoolean respond_to_p(IRubyObject mname, IRubyObject includePrivate) {
         String name = mname.asJavaString();
         return getRuntime().newBoolean(getMetaClass().isMethodBound(name, !includePrivate.isTrue()));
