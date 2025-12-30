@@ -234,8 +234,6 @@ class TestGemSafeMarshal < Gem::TestCase
   end
 
   def test_link_after_float
-    pend "Marshal.load of links and floats is broken on truffleruby, see https://github.com/oracle/truffleruby/issues/3747" if RUBY_ENGINE == "truffleruby"
-
     a = []
     a << a
     assert_safe_load_as [0.0, a, 1.0, a]
@@ -353,7 +351,19 @@ class TestGemSafeMarshal < Gem::TestCase
 
     unmarshalled_spec = Gem::SafeMarshal.safe_load(Marshal.dump(spec))
 
-    assert_equal ["MIT"], unmarshalled_spec.license
+    assert_equal ["MIT"], unmarshalled_spec.licenses
+    assert_equal "MIT", unmarshalled_spec.license
+
+    spec = Gem::Specification.new do |s|
+      s.name = "hi"
+      s.version = "1.2.3"
+      s.licenses = ["MIT", "GPL2"]
+    end
+
+    unmarshalled_spec = Gem::SafeMarshal.safe_load(Marshal.dump(spec))
+
+    assert_equal ["MIT", "GPL2"], unmarshalled_spec.licenses
+    assert_equal "MIT", unmarshalled_spec.license
   end
 
   def test_gem_spec_unmarshall_required_ruby_rubygems_version

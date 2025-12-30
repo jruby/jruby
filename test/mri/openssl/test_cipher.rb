@@ -112,6 +112,9 @@ class OpenSSL::TestCipher < OpenSSL::TestCase
     cipher = OpenSSL::Cipher.new("DES-EDE3-CBC")
     assert_raise(RuntimeError) { cipher.__send__(:initialize, "DES-EDE3-CBC") }
     assert_raise(RuntimeError) { OpenSSL::Cipher.allocate.final }
+    assert_raise(OpenSSL::Cipher::CipherError) {
+      OpenSSL::Cipher.new("no such algorithm")
+    }
   end
 
   def test_ctr_if_exists
@@ -182,6 +185,10 @@ class OpenSSL::TestCipher < OpenSSL::TestCase
     end
   end
 
+  def test_auth_tag_error_inheritance
+    assert_equal OpenSSL::Cipher::CipherError, OpenSSL::Cipher::AuthTagError.superclass
+  end
+
   def test_authenticated
     cipher = OpenSSL::Cipher.new('aes-128-gcm')
     assert_predicate(cipher, :authenticated?)
@@ -212,7 +219,8 @@ class OpenSSL::TestCipher < OpenSSL::TestCase
     cipher = new_decryptor("aes-128-ccm", **kwargs, ccm_data_len: ct.length, auth_tag: tag[0, 8], auth_data: aad)
     assert_equal pt, cipher.update(ct) << cipher.final
 
-    # wrong tag is rejected
+    # wrong tag is rejected - in CCM, authentication happens during update, but
+    # we consider this a general CipherError since update failures can have various causes
     tag2 = tag.dup
     tag2.setbyte(-1, (tag2.getbyte(-1) + 1) & 0xff)
     cipher = new_decryptor("aes-128-ccm", **kwargs, ccm_data_len: ct.length, auth_tag: tag2, auth_data: aad)
@@ -265,19 +273,19 @@ class OpenSSL::TestCipher < OpenSSL::TestCase
     tag2.setbyte(-1, (tag2.getbyte(-1) + 1) & 0xff)
     cipher = new_decryptor("aes-128-gcm", key: key, iv: iv, auth_tag: tag2, auth_data: aad)
     cipher.update(ct)
-    assert_raise(OpenSSL::Cipher::CipherError) { cipher.final }
+    assert_raise(OpenSSL::Cipher::AuthTagError) { cipher.final }
 
     # wrong aad is rejected
     aad2 = aad[0..-2] << aad[-1].succ
     cipher = new_decryptor("aes-128-gcm", key: key, iv: iv, auth_tag: tag, auth_data: aad2)
     cipher.update(ct)
-    assert_raise(OpenSSL::Cipher::CipherError) { cipher.final }
+    assert_raise(OpenSSL::Cipher::AuthTagError) { cipher.final }
 
     # wrong ciphertext is rejected
     ct2 = ct[0..-2] << ct[-1].succ
     cipher = new_decryptor("aes-128-gcm", key: key, iv: iv, auth_tag: tag, auth_data: aad)
     cipher.update(ct2)
-    assert_raise(OpenSSL::Cipher::CipherError) { cipher.final }
+    assert_raise(OpenSSL::Cipher::AuthTagError) { cipher.final }
   end
 
   def test_aes_gcm_variable_iv_len
@@ -337,6 +345,24 @@ class OpenSSL::TestCipher < OpenSSL::TestCase
 
   end if has_cipher?("aes-128-ocb")
 
+  def test_aes_gcm_siv
+    # RFC 8452 Appendix C.1., 8th example
+    key = ["01000000000000000000000000000000"].pack("H*")
+    iv  = ["030000000000000000000000"].pack("H*")
+    aad = ["01"].pack("H*")
+    pt =  ["0200000000000000"].pack("H*")
+    ct =  ["1e6daba35669f4273b0a1a2560969cdf790d99759abd1508"].pack("H*")
+    tag = ["3b0a1a2560969cdf790d99759abd1508"].pack("H*")
+    ct_without_tag = ct.byteslice(0, ct.bytesize - tag.bytesize)
+
+    cipher = new_encryptor("aes-128-gcm-siv", key: key, iv: iv, auth_data: aad)
+    assert_equal ct_without_tag, cipher.update(pt) << cipher.final
+    assert_equal tag, cipher.auth_tag
+    cipher = new_decryptor("aes-128-gcm-siv", key: key, iv: iv, auth_tag: tag,
+                           auth_data: aad)
+    assert_equal pt, cipher.update(ct_without_tag) << cipher.final
+  end if openssl?(3, 2, 0)
+
   def test_aes_gcm_key_iv_order_issue
     pt = "[ruby/openssl#49]"
     cipher = OpenSSL::Cipher.new("aes-128-gcm").encrypt
@@ -363,7 +389,7 @@ class OpenSSL::TestCipher < OpenSSL::TestCase
 
     begin
       cipher = OpenSSL::Cipher.new("id-aes192-wrap-pad").encrypt
-    rescue OpenSSL::Cipher::CipherError, RuntimeError
+    rescue OpenSSL::Cipher::CipherError
       omit "id-aes192-wrap-pad is not supported: #$!"
     end
     cipher.key = kek
