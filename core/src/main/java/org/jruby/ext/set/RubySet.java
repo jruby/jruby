@@ -77,8 +77,12 @@ public class RubySet extends RubyObject implements Set {
         RubyClass Set = defineClass(context, "Set", Object, RubySet::new).
                 reifiedClass(RubySet.class).
                 include(context, Enumerable).
-                defineMethods(context, RubySet.class).
-                tap(c -> c.marshalWith(new SetMarshal(c.getMarshal())));
+                tap((RubyClass c) -> c.marshalWith(new SetMarshal(c.getMarshal())));
+
+        // Define CoreSet before defining inherited (and other methods) on Set
+        Set.defineClassUnder(context, "CoreSet", Set, RubySet::new);
+
+        Set.defineMethods(context, RubySet.class);
 
         Enumerable.defineMethods(context, EnumerableExt.class);
 
@@ -1172,6 +1176,20 @@ public class RubySet extends RubyObject implements Set {
     //    RubyString str = isEmpty() ? inspectEmpty(context.runtime) : inspectRecurse(context.runtime);
     //    return pp.callMethod(context, "text", str); // pp.text ...
     //}
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject inherited(ThreadContext context, IRubyObject klass, IRubyObject subclass) {
+        Ruby runtime = context.runtime;
+        if (klass == runtime.getSet()) {
+            // When subclassing directly from Set, include the compatibility layer
+            runtime.getLoadService().require("set/subclass_compatible.rb");
+            RubyModule SubclassCompatible = (RubyModule) ((RubyClass) klass).getConstant(context, "SubclassCompatible");
+            RubyModule subklass = (RubyModule) subclass;
+            subklass.includeModule(SubclassCompatible);
+            ((RubyModule) SubclassCompatible.getConstant(context, "ClassMethods")).extend_object(context, subklass);
+        }
+        return context.nil;
+    }
 
     protected final Set<IRubyObject> elements() {
         return hash.directKeySet(); // Hash view -> no copying
