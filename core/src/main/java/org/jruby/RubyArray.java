@@ -5260,6 +5260,12 @@ float_loop:
         return result;
     }
 
+    @JRubyMethod(name = {"detect", "find"})
+    public IRubyObject find(ThreadContext context, Block block) {
+        return find(context, context.nil, block);
+    }
+
+    @JRubyMethod(name = {"detect", "find"})
     public IRubyObject find(ThreadContext context, IRubyObject ifnone, Block block) {
         CachingCallSite self_each = sites(context).self_each;
         if (!self_each.isBuiltin(this)) return RubyEnumerable.detectCommon(context, self_each, this, block);
@@ -5291,6 +5297,25 @@ float_loop:
 
     public IRubyObject detectCommon(ThreadContext context, IRubyObject ifnone, Block block) {
         for (int i = 0; i < realLength; i++) {
+            IRubyObject value = eltOk(i);
+
+            if (block.yield(context, value).isTrue()) return value;
+        }
+
+        return ifnone != null && !ifnone.isNil() ? sites(context).call.call(context, ifnone, ifnone) : context.nil;
+    }
+
+    @JRubyMethod
+    public IRubyObject rfind(ThreadContext context, Block block) {
+        return rfind(context, context.nil, block);
+    }
+
+    @JRubyMethod
+    public IRubyObject rfind(ThreadContext context, IRubyObject ifnone, Block block) {
+        CachingCallSite self_each = sites(context).self_each;
+        if (!self_each.isBuiltin(this)) return RubyEnumerable.detectCommon(context, self_each, this, block);
+
+        for (int i = realLength - 1; i >= 0; i--) {
             IRubyObject value = eltOk(i);
 
             if (block.yield(context, value).isTrue()) return value;
