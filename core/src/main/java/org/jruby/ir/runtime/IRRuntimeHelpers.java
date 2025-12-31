@@ -739,9 +739,10 @@ public class IRRuntimeHelpers {
     }
 
     private static IRubyObject receiverSpecificArityKwargsCommon(ThreadContext context, RubyHash last, boolean isKwarg) {
-        return isKwarg || last.isRuby2KeywordHash() ?
-                last.dupFast(context) :
-                last;
+        if (!isKwarg) return last;
+
+        // dup ruby2 kwargs for modern kwarg method
+        return last.dupFast(context);
     }
 
     /**
