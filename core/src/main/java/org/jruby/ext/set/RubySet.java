@@ -259,7 +259,7 @@ public class RubySet extends RubyObject implements Set {
             if (enume.getType().isKindOfModule(context.runtime.getEnumerable()) && enume.respondsTo("size")) {
                 IRubyObject size = enume.callMethod(context, "size");
                 if (size instanceof RubyFloat flote && flote.isInfinite()) {
-                    throw Error.argumentError(context, "cannot initialize Set from an object with infinite size");
+                    throw Error.rangeError(context, "cannot initialize Set from an object with infinite size");
                 }
             }
             allocHash(context);
