@@ -21,19 +21,19 @@ end
 default_gems = [
   # treat RGs update special:
   # - we do not want bin/update_rubygems or bin/gem overrides
-  ['rubygems-update', '3.6.9', { bin: false, require_paths: ['lib'] }],
-  ['bundler', '2.6.9'],
+  ['rubygems-update', '4.0.3', { bin: false, require_paths: ['lib'] }],
+  ['bundler', '4.0.3'],
   ['cgi', '0.4.2'],
   # Currently using a stub gem for JRuby until we can incorporate our code.
   # https://github.com/ruby/date/issues/48
-  ['date', '3.5.0'],
-  ['delegate', '0.4.0'],
+  ['date', '3.5.1'],
+  ['delegate', '0.6.1'],
   ['did_you_mean', '2.0.0'],
   ['digest', '3.2.1'],
   ['english', '0.8.1'],
   # Ongoing discussion about the -java gem, since it just omits the ext: https://github.com/ruby/erb/issues/52
-  ['erb', '6.0.0'],
-  ['error_highlight', '0.7.0'],
+  ['erb', '6.0.1'],
+  ['error_highlight', '0.7.1'],
   # https://github.com/ruby/etc/issues/19
   # ['etc', '1.4.6'],
   # https://github.com/ruby/fcntl/issues/9
@@ -41,47 +41,47 @@ default_gems = [
   ['ffi', '1.17.0'],
   ['fileutils', '1.8.0'],
   ['find', '0.2.0'],
-  ['forwardable', '1.3.3'],
-  ['io-console', '0.8.1'],
+  ['forwardable', '1.4.0'],
+  ['io-console', '0.8.2'],
   # https://github.com/ruby/io-nonblock/issues/4
   # ['io-nonblock', '0.3.2'],
-  ['io-wait', '0.3.3'],
-  ['ipaddr', '1.2.7'],
+  ['io-wait', '0.4.0'],
+  ['ipaddr', '1.2.8'],
   ['jar-dependencies', '0.5.4'],
   ['jruby-readline', '1.3.7'],
   ['jruby-openssl', '0.15.5'],
-  ['json', '2.16.0'],
-  ['net-http', '0.7.0'],
+  ['json', '2.18.0'],
+  ['net-http', '0.9.1'],
   ['net-protocol', '0.2.2'],
   ['open-uri', '0.5.0'],
   ['open3', '0.2.1'],
   # https://github.com/ruby/openssl/issues/20#issuecomment-1022872855
-  # ['openssl', '4.0.0.pre'],
-  ['optparse', '0.8.0'],
+  # ['openssl', '4.0.0'],
+  ['optparse', '0.8.1'],
   # https://github.com/ruby/pathname/issues/17
   # ['pathname', '0.4.0'],
   ['pp', '0.6.3'],
   ['prettyprint', '0.2.0'],
   # Not ready to ship in the box yet (native dependencies)
   # ['prism', '1.6.0'],
-  ['psych', '5.2.6'],
+  ['psych', '5.3.1'],
   ['rake-ant', '1.0.6'],
   # https://github.com/ruby/resolv/issues/19
-  # ['resolv', '0.6.3'],
+  # ['resolv', '0.7.0'],
   ['ruby2_keywords', '0.0.5'],
   ['securerandom', '0.4.1'],
   ['shellwords', '0.2.2'],
   ['singleton', '0.3.0'],
-  ['stringio', '3.1.9'],
-  ['strscan', '3.1.5'],
+  ['stringio', '3.2.0'],
+  ['strscan', '3.1.6'],
   ['subspawn', '0.1.1'], # has 3 transitive deps:
   ['subspawn-posix', '0.1.1'],
   ['ffi-binary-libfixposix', '0.5.1.1'],
   ['ffi-bindings-libfixposix', '0.5.1.0'],
   ['syntax_suggest', '2.0.2'],
   ['tempfile', '0.3.1'],
-  ['time', '0.4.1'],
-  ['timeout', '0.4.4'],
+  ['time', '0.4.2'],
+  ['timeout', '0.6.0'],
   # https://github.com/ruby/tmpdir/issues/13
   # ['tmpdir', '0.3.1'],
   ['tsort', '0.2.0'],
@@ -101,21 +101,21 @@ bundled_gems = [
   ['base64', '0.3.0'],
   ['benchmark', '0.5.0'],
   # Extension still lives in JRuby. See https://github.com/ruby/bigdecimal/issues/268
-  ['bigdecimal', '3.3.1'],
+  ['bigdecimal', '4.0.1'],
   ['csv', '3.3.5'],
   # Newer versions require deep control over CRuby internals, needs work to support JRuby.
-  # ['debug', '1.11.0'],
+  # ['debug', '1.11.1'],
   ['debug', '0.2.1'],
   ['drb', '2.2.3'],
   ['fiddle', '1.1.8'],
   ['getoptlong', '0.2.1'],
-  ['irb', '1.15.3'],
+  ['irb', '1.16.0'],
   ['logger', '1.7.0'],
   ['matrix', '0.4.3'],
-  ['minitest', '5.26.1'],
+  ['minitest', '6.0.0'],
   ['mutex_m', '0.3.0'],
   ['net-ftp', '0.3.9'],
-  ['net-imap', '0.5.12'],
+  ['net-imap', '0.6.2'],
   ['net-pop', '0.1.2'],
   ['net-smtp', '0.5.1'],
   ['nkf', '0.2.0'],
@@ -127,8 +127,8 @@ bundled_gems = [
   ['racc', '1.8.1'],
   ['rake', '${rake.version}'],
   # Depends on many CRuby internals
-  # ['rbs', '3.9.5'],
-  ['rdoc', '6.15.1'],
+  # ['rbs', '3.10.0'],
+  ['rdoc', '7.0.3'],
   # Ext removed from CRuby in 3.3, equivalent for us would be to remove jruby-readline but unknown implications.
   # The gem below just attempts to load the extension, and failing that loads reline. Our current readline.rb in
   # jruby-readline does largely the same, but it finds the extension and does not load reline.
@@ -142,12 +142,12 @@ bundled_gems = [
   ['resolv-replace', '0.1.1'],
   ['rexml', '3.4.4'],
   ['rinda', '0.2.0'],
-  ['rss', '0.3.1'],
+  ['rss', '0.3.2'],
   # https://github.com/ruby/syslog/issues/1
   # ['syslog', '0.3.0'],
-  ['test-unit', '3.7.1']
+  ['test-unit', '3.7.5']
   # Depends on many CRuby internals
-  # ['typeprof', '0.31.0'],
+  # ['typeprof', '0.31.1'],
 ]
 
 project 'JRuby Lib Setup' do
