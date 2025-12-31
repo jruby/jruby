@@ -58,6 +58,7 @@ public class JavaSites {
     public final SymbolSites Symbol = new SymbolSites();
     public final ProcSites Proc = new ProcSites();
     public final ModuleSites Module = new ModuleSites();
+    public final ProducerSites Producer = new ProducerSites();
 
     public static class BasicObjectSites {
         public final CallSite respond_to = new FunctionalCachingCallSite("respond_to?");
@@ -571,6 +572,10 @@ public class JavaSites {
 
     public static class ModuleSites {
         public final CachingCallSite hash = new FunctionalCachingCallSite("hash");
+    }
+
+    public static class ProducerSites {
+        public final CachingCallSite call = new FunctionalCachingCallSite("call");
     }
 
     public static class CheckedSites {

@@ -30,6 +30,7 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.StopIteration;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -52,6 +53,8 @@ import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
+import static org.jruby.runtime.ThreadContext.hasKeywords;
+import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 /**
@@ -556,15 +559,42 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
     /** MRI: enumerator_s_produce
      *
      */
-    @JRubyMethod(meta = true, optional = 1, checkArity = false)
+    @JRubyMethod(meta = true, optional = 2, checkArity = false, keywords = true)
     public static IRubyObject produce(ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
-        int argc = Arity.checkArgumentCount(context, args, 0, 1);
+        IRubyObject size = UNDEF;
+        int argc = args.length;
+
+        if (hasKeywords(resetCallInfo(context))) {
+            argc--;
+            IRubyObject maybeSize = ArgsUtil.extractKeywordArg(context, (RubyHash) args[args.length - 1], "size");
+            if (maybeSize != null) {
+                size = maybeSize;
+            }
+        }
+
+        size = size == UNDEF ?
+                context.runtime.getFloat().getConstant("INFINITY") :
+                convertToFeasibleSizeValue(context, size);
+
+        Arity.checkArgumentCount(context, argc, 0, 1);
 
         if (!block.isGiven()) throw argumentError(context, "no block given");
 
         IRubyObject init = argc == 0 ? null : args[0];
-        RubyProducer producer = RubyProducer.newProducer(context, init, block);
+        RubyProducer producer = RubyProducer.newProducer(context, init, block, size);
         return enumeratorizeWithSize(context, producer, "each", RubyProducer::size);
+    }
+
+    private static IRubyObject convertToFeasibleSizeValue(ThreadContext context, IRubyObject obj) {
+        if (obj.isNil()) {
+            return obj;
+        } else if (obj.respondsTo("call")) {
+            return obj;
+        } else if (obj instanceof RubyFloat flote && flote.value == Double.POSITIVE_INFINITY) {
+            return obj;
+        } else {
+            return toInteger(context, obj);
+        }
     }
 
     @Deprecated(since = "9.4.3.0")
