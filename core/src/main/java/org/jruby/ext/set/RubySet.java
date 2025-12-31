@@ -36,6 +36,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Access;
 import org.jruby.api.Create;
 import org.jruby.api.Error;
+import org.jruby.api.Warn;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -428,6 +429,8 @@ public class RubySet extends RubyObject implements Set {
     @JRubyMethod(rest = true)
     public RubySet to_set(final ThreadContext context, final IRubyObject[] args, final Block block) {
         if ( args.length == 0 ) return to_set(context, block);
+
+        Warn.warnDeprecated(context, "passing arguments to Set#to_set");
 
         IRubyObject klass = args[0];
         final RubyClass Set = Access.getClass(context, "Set");
