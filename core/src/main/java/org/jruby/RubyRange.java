@@ -46,10 +46,12 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.api.API;
 import org.jruby.api.JRubyAPI;
 import org.jruby.exceptions.JumpException;
+import org.jruby.exceptions.RuntimeError;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock;
+import org.jruby.runtime.CallBlock19;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
@@ -1154,7 +1156,7 @@ public class RubyRange extends RubyObject {
 
             if (cmp == 0) return context.nil;
 
-            if (!(begin instanceof RubyInteger)) throw typeError(context, "cannot exclude end value with non Integer begin value");
+            if (!begin.isNil() && !(begin instanceof RubyInteger)) throw typeError(context, "cannot exclude end value with non Integer begin value");
 
             return end instanceof RubyFixnum fixnum ?
                     asFixnum(context, fixnum.getValue() - 1) :
@@ -1166,9 +1168,45 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(frame = true)
     public IRubyObject max(ThreadContext context, IRubyObject arg, Block block) {
-        if (isEndless) throw rangeError(context, "cannot get the maximum element of endless range");
-        return Helpers.invokeSuper(context, this, arg, block);
+        IRubyObject e = end;
+        boolean nm = e instanceof RubyNumeric;
+
+        if (isEndless) throw rangeError(context, "cannot get the maximum of endless range");
+
+        IRubyObject b = begin;
+
+        if (block.isGiven() || (isExclusive && !nm)) {
+            if (b.isNil()) {
+                throw rangeError(context, "cannot get the maximum of beginless range with custom comparison method");
+            }
+            return Helpers.invokeSuper(context, this, arg, block);
+        }
+
+        Break[] pBreak = {null};
+        int[] data = {toInt(context, arg)};
+        RubyArray ary = RubyArray.newArray(context.runtime, toInt(context, arg));
+        try {
+            sites(context).reverse_each.call(context, this, this, CallBlock19.newCallClosure(this, this.getMetaClass(), Signature.TWO_ARGUMENTS, (ctx, args, block1) -> {
+                int n = data[0];
+
+                if (n <= 0) {
+                    throw pBreak[0] = new Break();
+                }
+                ary.push(ctx, args[0]);
+                n--;
+                data[0] = n;
+                return ctx.nil;
+            }, context));
+        } catch (Break brk) {
+            if (pBreak[0] != brk) throw brk;
+        }
+        return ary;
     }
+
+    private static class Break extends RuntimeException {
+        @Override
+        public Throwable fillInStackTrace() {return this;}
+    };
 
     @JRubyMethod
     public IRubyObject first(ThreadContext context) {
@@ -1255,29 +1293,44 @@ public class RubyRange extends RubyObject {
     public IRubyObject last(ThreadContext context, IRubyObject arg) {
         if (isEndless) throw rangeError(context, "cannot get the last element of endless range");
 
-        if (begin instanceof RubyInteger && end instanceof RubyInteger
-            && getMetaClass().checkMethodBasicDefinition("each")) {
-                return intRangeLast(context, arg);
+        if (integerEndOptimizable(context)) {
+            return intRangeLast(context, arg);
         }
 
         return ((RubyArray) RubyKernel.new_array(context, this, this)).last(context, arg);
+    }
+
+    private boolean integerEndOptimizable(ThreadContext context) {
+        IRubyObject b = begin;
+        if (!b.isNil() && !(b instanceof RubyInteger)) return false;
+        IRubyObject e = end;
+        if (!(e instanceof RubyInteger)) return false;
+        if (sites(context).each.isBuiltin(this)) return true;
+        return false;
     }
 
     // MRI rb_int_range_last
     private RubyArray intRangeLast(ThreadContext context, IRubyObject arg) {
         RubyFixnum one = asFixnum(context, 1);
         RubyInteger e = (RubyInteger) end;
-        RubyInteger len;
-        RubyInteger len1 = (RubyInteger) e.op_minus(context, begin);
+        RubyInteger len = null;
 
-        if (isExclusive) {
-            e = (RubyInteger) e.op_minus(context, one);
-            len = len1;
+        if (!begin.isNil()) {
+            RubyInteger len1 = (RubyInteger) e.op_minus(context, begin);
+
+            if (isExclusive) {
+                e = (RubyInteger) e.op_minus(context, one);
+                len = len1;
+            } else {
+                len = (RubyInteger) len1.op_plus(context, one);
+            }
         } else {
-            len = (RubyInteger) len1.op_plus(context, one);
+            if (isExclusive) {
+                e = (RubyInteger) e.op_minus(context, one);
+            }
         }
 
-        if (len.isZero(context) || Numeric.f_negative_p(context, len)) {
+        if (len != null && (len.isZero(context) || Numeric.f_negative_p(context, len))) {
             return newEmptyArray(context);
         }
 
@@ -1285,7 +1338,7 @@ public class RubyRange extends RubyObject {
         if (n < 0) throw argumentError(context, "negative array size");
 
         RubyInteger nv = asFixnum(context, n);
-        if (Numeric.f_gt_p(context, nv, len)) {
+        if (!begin.isNil() && Numeric.f_gt_p(context, nv, len)) {
              nv = len;
              n = toLong(context, nv);
         }
