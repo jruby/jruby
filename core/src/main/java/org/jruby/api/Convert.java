@@ -539,6 +539,15 @@ public class Convert {
         };
     }
 
+    public static BigInteger toLongLong(ThreadContext context, IRubyObject arg) {
+        return switch (arg) {
+            case RubyFixnum fixnum -> BigInteger.valueOf(fixnum.getValue());
+            case RubyFloat flote -> BigInteger.valueOf(toLong(context, flote));
+            case RubyBignum bignum -> bignum.getValue();
+            default -> toLongLongOther(context, arg);
+        };
+    }
+
     public static long toLong(ThreadContext context, RubyBignum value) {
         BigInteger big = value.getValue();
 
@@ -564,6 +573,12 @@ public class Convert {
         if (arg.isNil()) throw typeError(context, "no implicit conversion from nil to integer");
 
         return toLong(context, TypeConverter.convertToType(arg, integerClass(context), "to_int"));
+    }
+
+    private static BigInteger toLongLongOther(ThreadContext context, IRubyObject arg) {
+        if (arg.isNil()) throw typeError(context, "no implicit conversion from nil to integer");
+
+        return toLongLong(context, TypeConverter.convertToType(arg, integerClass(context), "to_int"));
     }
 
     /**
