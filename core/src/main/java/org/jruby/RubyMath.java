@@ -720,4 +720,20 @@ public class RubyMath {
         }
 
     }
+
+    @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject expm1(ThreadContext context, IRubyObject unused, IRubyObject x) {
+        return asFloat(context, Math.expm1(toDouble(context, x)));
+    }
+
+    @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
+    public static IRubyObject log1p(ThreadContext context, IRubyObject unused, IRubyObject x) {
+        double xDouble = toDouble(context, x);
+
+        if (xDouble < -1.0) {
+            throw context.runtime.newMathDomainError("Numerical argument is out of domain - log1p");
+        }
+
+        return asFloat(context, Math.log1p(xDouble));
+    }
 }

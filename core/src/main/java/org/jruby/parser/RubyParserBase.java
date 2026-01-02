@@ -216,7 +216,7 @@ public abstract class RubyParserBase {
 
         for (int i = 1; i <= paramCount; i++) {
             RubySymbol name = symbolID(new ByteList(("_" + i).getBytes()));
-            list.add(new ArgumentNode(lexer.getRubySourceline(), name, getCurrentScope().addVariableThisScope(name.idString())));
+            list.add(new ArgumentNode(lexer.getRubySourceline(), name, getCurrentScope().addImplicitVariableThisScope(name.idString())));
         }
 
         return list;
@@ -2465,6 +2465,9 @@ public abstract class RubyParserBase {
     }
 
     protected void set_it_id(Node node) {
+        if (node != null) {
+            currentScope.markImplicitVariable(((DVarNode) node).getIndex());
+        }
         this.itId = node;
     }
 
