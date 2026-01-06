@@ -43,6 +43,35 @@ public class RubyOutputStream {
         }
     }
 
+    /**
+     * Write an int using marshal logic (masking specific ranges of values to avoid collisions)
+     * @param value
+     */
+    public void writeMarshalInt(int value) {
+        if (value == 0) {
+            write(0);
+        } else if (0 < value && value < 123) {
+            write(value + 5);
+        } else if (-124 < value && value < 0) {
+            write((value - 5) & 0xff);
+        } else {
+            byte[] buf = new byte[4];
+            int i = 0;
+            for (; i < buf.length; i++) {
+                buf[i] = (byte) (value & 0xff);
+
+                value = value >> 8;
+                if (value == 0 || value == -1) {
+                    break;
+                }
+            }
+            int len = i + 1;
+            int b = value < 0 ? -len : len;
+            write(b);
+            write(buf, 0, i + 1);
+        }
+    }
+
     public void flush() {
         try {
             wrap.flush();
