@@ -104,6 +104,14 @@ class JSONParserTest < Test::Unit::TestCase
     assert_raise(JSON::ParserError) { parse('+23') }
     assert_raise(JSON::ParserError) { parse('.23') }
     assert_raise(JSON::ParserError) { parse('023') }
+    assert_raise(JSON::ParserError) { parse('-023') }
+    assert_raise(JSON::ParserError) { parse('023.12') }
+    assert_raise(JSON::ParserError) { parse('-023.12') }
+    assert_raise(JSON::ParserError) { parse('023e12') }
+    assert_raise(JSON::ParserError) { parse('-023e12') }
+    assert_raise(JSON::ParserError) { parse('-') }
+    assert_raise(JSON::ParserError) { parse('-.1') }
+    assert_raise(JSON::ParserError) { parse('-e0') }
     assert_equal(23, parse('23'))
     assert_equal(-23, parse('-23'))
     assert_equal_float(3.141, parse('3.141'))
@@ -120,6 +128,13 @@ class JSONParserTest < Test::Unit::TestCase
     assert_equal(1.0/0, parse('Infinity', :allow_nan => true))
     assert_raise(ParserError) { parse('-Infinity') }
     assert_equal(-1.0/0, parse('-Infinity', :allow_nan => true))
+    capture_output { assert_equal(Float::INFINITY, parse("23456789012E666")) }
+  end
+
+  def test_parse_bignum
+    bignum = Integer('1234567890' * 10)
+    assert_equal(bignum, JSON.parse(bignum.to_s))
+    assert_equal(bignum.to_f, JSON.parse(bignum.to_s + ".0"))
   end
 
   def test_parse_bigdecimals
@@ -297,6 +312,25 @@ class JSONParserTest < Test::Unit::TestCase
     end
   end
 
+  def test_invalid_unicode_escape
+    assert_raise(JSON::ParserError) { parse('"\u"') }
+    assert_raise(JSON::ParserError) { parse('"\ua"') }
+    assert_raise(JSON::ParserError) { parse('"\uaa"') }
+    assert_raise(JSON::ParserError) { parse('"\uaaa"') }
+    assert_equal "\uaaaa", parse('"\uaaaa"')
+
+    assert_raise(JSON::ParserError) { parse('"\u______"') }
+    assert_raise(JSON::ParserError) { parse('"\u1_____"') }
+    assert_raise(JSON::ParserError) { parse('"\u11____"') }
+    assert_raise(JSON::ParserError) { parse('"\u111___"') }
+  end
+
+  def test_invalid_surogates
+    assert_raise(JSON::ParserError) { parse('"\\uD800"') }
+    assert_raise(JSON::ParserError) { parse('"\\uD800_________________"') }
+    assert_raise(JSON::ParserError) { parse('"\\uD800\\u0041"') }
+  end
+
   def test_parse_big_integers
     json1 = JSON(orig = (1 << 31) - 1)
     assert_equal orig, parse(json1)
@@ -308,6 +342,52 @@ class JSONParserTest < Test::Unit::TestCase
     assert_equal orig, parse(json4)
     json5 = JSON(orig = 1 << 64)
     assert_equal orig, parse(json5)
+  end
+
+  def test_parse_escaped_key
+    doc = {
+      "test\r1" => 1,
+      "entries" => [
+        "test\t2" => 2,
+        "test\n3" => 3,
+      ]
+    }
+
+    assert_equal doc, parse(JSON.generate(doc))
+  end
+
+  def test_parse_duplicate_key
+    expected = {"a" => 2}
+    expected_sym = {a: 2}
+
+    assert_equal expected, parse('{"a": 1, "a": 2}', allow_duplicate_key: true)
+    assert_raise(ParserError) { parse('{"a": 1, "a": 2}', allow_duplicate_key: false) }
+    assert_raise(ParserError) { parse('{"a": 1, "a": 2}', allow_duplicate_key: false, symbolize_names: true) }
+
+    assert_deprecated_warning(/duplicate key "a"/) do
+      assert_equal expected, parse('{"a": 1, "a": 2}')
+    end
+    assert_deprecated_warning(/duplicate key "a"/) do
+      assert_equal expected_sym, parse('{"a": 1, "a": 2}', symbolize_names: true)
+    end
+
+    if RUBY_ENGINE == 'ruby'
+      assert_deprecated_warning(/#{File.basename(__FILE__)}\:#{__LINE__ + 1}/) do
+        assert_equal expected, parse('{"a": 1, "a": 2}')
+      end
+    end
+
+    unless RUBY_ENGINE == 'jruby'
+      assert_raise(ParserError) do
+        fake_key = Object.new
+        JSON.load('{"a": 1, "a": 2}', -> (obj) { obj == "a" ? fake_key : obj }, allow_duplicate_key: false)
+      end
+
+      assert_deprecated_warning(/duplicate key #<Object:0x/) do
+        fake_key = Object.new
+        JSON.load('{"a": 1, "a": 2}', -> (obj) { obj == "a" ? fake_key : obj })
+      end
+    end
   end
 
   def test_some_wrong_inputs
@@ -341,10 +421,8 @@ class JSONParserTest < Test::Unit::TestCase
     assert_predicate parse('[]', :freeze => true), :frozen?
     assert_predicate parse('"foo"', :freeze => true), :frozen?
 
-    if string_deduplication_available?
-      assert_same(-'foo', parse('"foo"', :freeze => true))
-      assert_same(-'foo', parse('{"foo": 1}', :freeze => true).keys.first)
-    end
+    assert_same(-'foo', parse('"foo"', :freeze => true))
+    assert_same(-'foo', parse('{"foo": 1}', :freeze => true).keys.first)
   end
 
   def test_parse_comments
@@ -393,6 +471,11 @@ class JSONParserTest < Test::Unit::TestCase
       }
     JSON
     assert_equal({ "key1" => "value1" }, parse(json))
+    assert_equal({}, parse('{} /**/'))
+    assert_raise(ParserError) { parse('{} /* comment not closed') }
+    assert_raise(ParserError) { parse('{} /*/') }
+    assert_raise(ParserError) { parse('{} /x wrong comment') }
+    assert_raise(ParserError) { parse('{} /') }
   end
 
   def test_nesting
@@ -433,6 +516,90 @@ class JSONParserTest < Test::Unit::TestCase
 
     json = '["\/"]'
     data = [ '/' ]
+    assert_equal data, parse(json)
+
+    data = ['"""""""""""""""""""""""""']
+    json = '["\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\"\""]'
+    assert_equal data, parse(json)
+
+    data = '["This is a "test" of the emergency broadcast system."]'
+    json = "\"[\\\"This is a \\\"test\\\" of the emergency broadcast system.\\\"]\""
+    assert_equal data, parse(json)
+
+    data = '\tThis is a test of the emergency broadcast system.'
+    json = "\"\\\\tThis is a test of the emergency broadcast system.\""
+    assert_equal data, parse(json)
+
+    data = 'This\tis a test of the emergency broadcast system.'
+    json = "\"This\\\\tis a test of the emergency broadcast system.\""
+    assert_equal data, parse(json)
+
+    data = 'This is\ta test of the emergency broadcast system.'
+    json = "\"This is\\\\ta test of the emergency broadcast system.\""
+    assert_equal data, parse(json)
+
+    data = 'This is a test of the emergency broadcast\tsystem.'
+    json = "\"This is a test of the emergency broadcast\\\\tsystem.\""
+    assert_equal data, parse(json)
+
+    data = 'This is a test of the emergency broadcast\tsystem.\n'
+    json = "\"This is a test of the emergency broadcast\\\\tsystem.\\\\n\""
+    assert_equal data, parse(json)
+
+    data = '"' * 15
+    json = "\"\\\"\\\"\\\"\\\"\\\"\\\"\\\"\\\"\\\"\\\"\\\"\\\"\\\"\\\"\\\"\""
+    assert_equal data, parse(json)
+
+    data = "\"\"\"\"\"\"\"\"\"\"\"\"\"\"a"
+    json = "\"\\\"\\\"\\\"\\\"\\\"\\\"\\\"\\\"\\\"\\\"\\\"\\\"\\\"\\\"a\""
+    assert_equal data, parse(json)
+
+    data = "\u0001\u0001\u0001\u0001"
+    json = "\"\\u0001\\u0001\\u0001\\u0001\""
+    assert_equal data, parse(json)
+
+    data = "\u0001a\u0001a\u0001a\u0001a"
+    json = "\"\\u0001a\\u0001a\\u0001a\\u0001a\""
+    assert_equal data, parse(json)
+
+    data = "\u0001aa\u0001aa"
+    json = "\"\\u0001aa\\u0001aa\""
+    assert_equal data, parse(json)
+
+    data = "\u0001aa\u0001aa\u0001aa"
+    json = "\"\\u0001aa\\u0001aa\\u0001aa\""
+    assert_equal data, parse(json)
+
+    data = "\u0001aa\u0001aa\u0001aa\u0001aa\u0001aa\u0001aa"
+    json = "\"\\u0001aa\\u0001aa\\u0001aa\\u0001aa\\u0001aa\\u0001aa\""
+    assert_equal data, parse(json)
+
+    data = "\u0001a\u0002\u0001a\u0002\u0001a\u0002\u0001a\u0002\u0001a\u0002\u0001a\u0002\u0001a\u0002\u0001a\u0002"
+    json = "\"\\u0001a\\u0002\\u0001a\\u0002\\u0001a\\u0002\\u0001a\\u0002\\u0001a\\u0002\\u0001a\\u0002\\u0001a\\u0002\\u0001a\\u0002\""
+    assert_equal data, parse(json)
+
+    data = "ab\u0002c"
+    json = "\"ab\\u0002c\""
+    assert_equal data, parse(json)
+
+    data = "ab\u0002cab\u0002cab\u0002cab\u0002c"
+    json = "\"ab\\u0002cab\\u0002cab\\u0002cab\\u0002c\""
+    assert_equal data, parse(json)
+
+    data = "ab\u0002cab\u0002cab\u0002cab\u0002cab\u0002cab\u0002c"
+    json = "\"ab\\u0002cab\\u0002cab\\u0002cab\\u0002cab\\u0002cab\\u0002c\""
+    assert_equal data, parse(json)
+
+    data = "\n\t\f\b\n\t\f\b\n\t\f\b\n\t\f"
+    json = "\"\\n\\t\\f\\b\\n\\t\\f\\b\\n\\t\\f\\b\\n\\t\\f\""
+    assert_equal data, parse(json)
+
+    data = "\n\t\f\b\n\t\f\b\n\t\f\b\n\t\f\b"
+    json = "\"\\n\\t\\f\\b\\n\\t\\f\\b\\n\\t\\f\\b\\n\\t\\f\\b\""
+    assert_equal data, parse(json)
+
+    data = "a\n\t\f\b\n\t\f\b\n\t\f\b\n\t"
+    json = "\"a\\n\\t\\f\\b\\n\\t\\f\\b\\n\\t\\f\\b\\n\\t\""
     assert_equal data, parse(json)
   end
 
@@ -492,6 +659,7 @@ class JSONParserTest < Test::Unit::TestCase
   def test_parse_array_custom_non_array_derived_class
     res = parse('[1,2]', :array_class => SubArrayWrapper)
     assert_equal([1,2], res.data)
+    assert_equal(1, res[0])
     assert_equal(SubArrayWrapper, res.class)
     assert res.shifted?
   end
@@ -553,6 +721,7 @@ class JSONParserTest < Test::Unit::TestCase
     def test_parse_object_custom_non_hash_derived_class
       res = parse('{"foo":"bar"}', :object_class => SubOpenStruct)
       assert_equal "bar", res.foo
+      assert_equal "bar", res[:foo]
       assert_equal(SubOpenStruct, res.class)
       assert res.item_set?
     end
@@ -612,7 +781,7 @@ class JSONParserTest < Test::Unit::TestCase
     error = assert_raise(JSON::ParserError) do
       JSON.parse('{"foo": ' + ('A' * 500) + '}')
     end
-    assert_operator 60, :>, error.message.bytesize
+    assert_operator 80, :>, error.message.bytesize
   end
 
   def test_parse_error_incomplete_hash
@@ -620,21 +789,38 @@ class JSONParserTest < Test::Unit::TestCase
       JSON.parse('{"input":{"firstName":"Bob","lastName":"Mob","email":"bob@example.com"}')
     end
     if RUBY_ENGINE == "ruby"
-      assert_equal %(unexpected token at '{"input":{"firstName":"Bob","las'), error.message
+      assert_equal %(expected ',' or '}' after object value, got: EOF at line 1 column 72), error.message
     end
+  end
+
+  def test_parse_error_snippet
+    omit "C ext only test" unless RUBY_ENGINE == "ruby"
+
+    error = assert_raise(JSON::ParserError) { JSON.parse("あああああああああああああああああああああああ") }
+    assert_equal "unexpected character: 'ああああああああああ' at line 1 column 1", error.message
+
+    error = assert_raise(JSON::ParserError) { JSON.parse("aあああああああああああああああああああああああ") }
+    assert_equal "unexpected character: 'aああああああああああ' at line 1 column 1", error.message
+
+    error = assert_raise(JSON::ParserError) { JSON.parse("abあああああああああああああああああああああああ") }
+    assert_equal "unexpected character: 'abあああああああああ' at line 1 column 1", error.message
+
+    error = assert_raise(JSON::ParserError) { JSON.parse("abcあああああああああああああああああああああああ") }
+    assert_equal "unexpected character: 'abcあああああああああ' at line 1 column 1", error.message
+  end
+
+  def test_parse_leading_slash
+    # ref: https://github.com/ruby/ruby/pull/12598
+    assert_raise(JSON::ParserError) do
+      JSON.parse("/foo/bar")
+    end
+  end
+
+  def test_parse_whitespace_after_newline
+    assert_equal [], JSON.parse("[\n#{' ' * (8 + 8 + 4 + 3)}]")
   end
 
   private
-
-  def string_deduplication_available?
-    r1 = rand.to_s
-    r2 = r1.dup
-    begin
-      (-r1).equal?(-r2)
-    rescue NoMethodError
-      false # No String#-@
-    end
-  end
 
   def assert_equal_float(expected, actual, delta = 1e-2)
     Array === expected and expected = expected.first
