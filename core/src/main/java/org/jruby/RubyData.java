@@ -356,7 +356,7 @@ public class RubyData {
 
     // TODO: Mostly copied from RubyStruct; unify.
     public static void marshalTo(ThreadContext context, RubyOutputStream out, IRubyObject data, MarshalDumper output) {
-        output.registerLinkTarget(data);
+        output.registerObject(data);
         output.dumpDefaultObjectHeader(context, out, 'S', data.getMetaClass());
 
         RubyArray<RubySymbol> members = getStructMembers(data);

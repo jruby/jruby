@@ -111,10 +111,23 @@ public class MarshalDumper {
         depth--;
     }
 
+    @Deprecated
     public void registerLinkTarget(IRubyObject newObject) {
         if (shouldBeRegistered(newObject)) {
             register(newObject);
         }
+    }
+
+    /**
+     * Register the given object.
+     *
+     * Should not be called with nil, Boolean, or marshalable fixnum objects.
+     *
+     * @param newObject the object to be registered
+     */
+    public void registerObject(IRubyObject newObject) {
+        assert shouldBeRegistered(newObject);
+        register(newObject);
     }
 
     private static boolean shouldBeRegistered(IRubyObject value) {
@@ -358,7 +371,7 @@ public class MarshalDumper {
                     RubyRegexp.marshalTo(context, (RubyRegexp) value, this, out);
                     return;
                 case STRING:
-                    registerLinkTarget(value);
+                    registerObject(value);
                     out.write('"');
                     writeString(out, value.convertToString().getByteList());
                     return;
@@ -391,7 +404,7 @@ public class MarshalDumper {
     }
 
     private void userNewCommon(ThreadContext context, RubyOutputStream out, IRubyObject value, CacheEntry entry) {
-        registerLinkTarget(value);
+        registerObject(value);
         out.write(TYPE_USRMARSHAL);
         final RubyClass klass = getMetaClass(value);
         writeAndRegisterSymbol(out, asSymbol(context, klass.getRealClass().getName(context)));
@@ -444,7 +457,7 @@ public class MarshalDumper {
             dumpUserdefBase(context, out, klass, marshaled);
         }
 
-        registerLinkTarget(value);
+        registerObject(value);
     }
 
     private void dumpUserdefBase(ThreadContext context, RubyOutputStream out, RubyClass klass, RubyString marshaled) {

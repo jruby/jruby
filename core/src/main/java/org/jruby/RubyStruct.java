@@ -980,7 +980,7 @@ public class RubyStruct extends RubyObject {
     }
 
     public static void marshalTo(ThreadContext context, RubyOutputStream out, RubyStruct struct, MarshalDumper output) {
-        output.registerLinkTarget(struct);
+        output.registerObject(struct);
         output.dumpDefaultObjectHeader(context, out, 'S', struct.getMetaClass());
 
         RubyArray member = __member__(context, struct.classOf());

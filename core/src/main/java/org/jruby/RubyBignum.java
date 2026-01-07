@@ -1174,7 +1174,7 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
     }
 
     public static void marshalTo(ThreadContext context, RubyOutputStream out, RubyBignum bignum, MarshalDumper output) {
-        output.registerLinkTarget(bignum);
+        output.registerObject(bignum);
 
         int b = bignum.value.signum() >= 0 ? '+' : '-';
         out.write(b);
