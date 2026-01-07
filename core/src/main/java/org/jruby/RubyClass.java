@@ -1538,7 +1538,7 @@ public class RubyClass extends RubyModule {
     }
 
     public static void marshalTo(ThreadContext context, RubyOutputStream out, RubyClass clazz, MarshalDumper output) {
-        output.registerLinkTarget(clazz);
+        output.registerObject(clazz);
         output.writeString(out, MarshalDumper.getPathFromClass(context, clazz).idString());
     }
 
@@ -1570,7 +1570,7 @@ public class RubyClass extends RubyModule {
         public void marshalTo(ThreadContext context, RubyOutputStream out, Object obj, RubyClass type, MarshalDumper marshalStream) {
             IRubyObject object = (IRubyObject) obj;
 
-            marshalStream.registerLinkTarget(object);
+            marshalStream.registerObject(object);
             marshalStream.dumpVariables(context, out, object);
         }
 

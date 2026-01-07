@@ -88,7 +88,7 @@ public class MarshalDumper {
     private static final ByteList HASH_BYTELIST = new ByteList("Hash".getBytes(StandardCharsets.US_ASCII), false);
     private final int depthLimit;
     private int depth = 0;
-    private final HashMapInt<IRubyObject> linkCache = new HashMapInt<>(true);
+    private final HashMapInt<IRubyObject> linkCache = new HashMapInt<>(4, true);
     // lazy for simple cases that encounter no symbols
     private HashMapInt<RubySymbol> symbolCache;
 
@@ -111,10 +111,23 @@ public class MarshalDumper {
         depth--;
     }
 
+    @Deprecated
     public void registerLinkTarget(IRubyObject newObject) {
         if (shouldBeRegistered(newObject)) {
             register(newObject);
         }
+    }
+
+    /**
+     * Register the given object.
+     *
+     * Should not be called with nil, Boolean, or marshalable fixnum objects.
+     *
+     * @param newObject the object to be registered
+     */
+    public void registerObject(IRubyObject newObject) {
+        assert shouldBeRegistered(newObject);
+        register(newObject);
     }
 
     private static boolean shouldBeRegistered(IRubyObject value) {
@@ -127,18 +140,15 @@ public class MarshalDumper {
     }
 
     private void writeAndRegisterSymbol(RubyOutputStream out, RubySymbol sym) {
-        if (isSymbolRegistered(sym)) {
-            writeSymbolLink(out, this, sym);
-        } else {
+        if (!getSymbolCache().ifPresent(out, sym, MarshalDumper::writeSymbolLink)) {
             registerSymbol(sym);
             dumpSymbol(out, sym.getBytes());
         }
     }
 
     private void writeAndRegister(ThreadContext context, RubyOutputStream out, IRubyObject value) {
-        if (!(value instanceof RubySymbol) && isRegistered(value)) {
-            writeLink(out, this, value);
-        } else {
+        if (value instanceof RubySymbol ||
+                !linkCache.ifPresent(out, value, MarshalDumper::writeLink)) {
             getMetaClass(value).smartDump(context, out, this, value);
         }
     }
@@ -295,12 +305,11 @@ public class MarshalDumper {
                     if (isMarshalFixnum(fixnum)) {
                         out.write('i');
                         writeInt(out, fixnum.asInt(context));
-                        return;
+                    } else {
+                        out.write('l');
+                        RubyBignum.marshalAsBignumTo(context, out, fixnum, this);
                     }
-                    // FIXME: inefficient; constructing a bignum just for dumping?
-                    value = RubyBignum.newBignum(context.runtime, fixnum.getValue());
-
-                    // fall through
+                    return;
                 case BIGNUM:
                     out.write('l');
                     RubyBignum.marshalTo(context, out, (RubyBignum) value, this);
@@ -361,7 +370,7 @@ public class MarshalDumper {
                     RubyRegexp.marshalTo(context, (RubyRegexp) value, this, out);
                     return;
                 case STRING:
-                    registerLinkTarget(value);
+                    registerObject(value);
                     out.write('"');
                     writeString(out, value.convertToString().getByteList());
                     return;
@@ -394,7 +403,7 @@ public class MarshalDumper {
     }
 
     private void userNewCommon(ThreadContext context, RubyOutputStream out, IRubyObject value, CacheEntry entry) {
-        registerLinkTarget(value);
+        registerObject(value);
         out.write(TYPE_USRMARSHAL);
         final RubyClass klass = getMetaClass(value);
         writeAndRegisterSymbol(out, asSymbol(context, klass.getRealClass().getName(context)));
@@ -447,7 +456,7 @@ public class MarshalDumper {
             dumpUserdefBase(context, out, klass, marshaled);
         }
 
-        registerLinkTarget(value);
+        registerObject(value);
     }
 
     private void dumpUserdefBase(ThreadContext context, RubyOutputStream out, RubyClass klass, RubyString marshaled) {
@@ -590,28 +599,7 @@ public class MarshalDumper {
     }
 
     public void writeInt(RubyOutputStream out, int value) {
-        if (value == 0) {
-            out.write(0);
-        } else if (0 < value && value < 123) {
-            out.write(value + 5);
-        } else if (-124 < value && value < 0) {
-            out.write((value - 5) & 0xff);
-        } else {
-            byte[] buf = new byte[4];
-            int i = 0;
-            for (; i < buf.length; i++) {
-                buf[i] = (byte) (value & 0xff);
-
-                value = value >> 8;
-                if (value == 0 || value == -1) {
-                    break;
-                }
-            }
-            int len = i + 1;
-            int b = value < 0 ? -len : len;
-            out.write(b);
-            out.write(buf, 0, i + 1);
-        }
+        out.writeMarshalInt(value);
     }
 
     public void writeByte(RubyOutputStream out, int value) {
@@ -639,16 +627,6 @@ public class MarshalDumper {
         return symbolCache;
     }
 
-    private boolean isRegistered(IRubyObject value) {
-        assert !(value instanceof RubySymbol) : "Use isSymbolRegistered for symbol links";
-
-        return linkCache.containsKey(value);
-    }
-
-    private boolean isSymbolRegistered(RubySymbol sym) {
-        return getSymbolCache().containsKey(sym);
-    }
-
     private void register(IRubyObject value) {
         assert !(value instanceof RubySymbol) : "Use registeredSymbolIndex for symbols";
 
@@ -659,24 +637,14 @@ public class MarshalDumper {
         getSymbolCache().put(sym, getSymbolCache().size());
     }
 
-    private void writeLink(RubyOutputStream out, MarshalDumper output, IRubyObject value) {
-        assert !(value instanceof RubySymbol) : "Use writeSymbolLink for symbols";
-
+    private static void writeLink(RubyOutputStream out, int link) {
         out.write('@');
-        output.writeInt(out, registeredIndex(value));
+        out.writeMarshalInt(link);
     }
 
-    private void writeSymbolLink(RubyOutputStream out, MarshalDumper output, RubySymbol sym) {
+    private static void writeSymbolLink(RubyOutputStream out, int link) {
         out.write(';');
-        output.writeInt(out, registeredSymbolIndex(sym));
-    }
-
-    private int registeredIndex(IRubyObject value) {
-        return linkCache.get(value);
-    }
-
-    private int registeredSymbolIndex(RubySymbol sym) {
-        return getSymbolCache().get(sym);
+        out.writeMarshalInt(link);
     }
 
     private class VariableDumper implements BiConsumer<String, VariableAccessor> {

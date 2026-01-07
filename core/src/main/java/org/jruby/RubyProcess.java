@@ -186,7 +186,7 @@ public class RubyProcess {
                               MarshalDumper marshalStream) {
             RubyStatus status = (RubyStatus) obj;
 
-            marshalStream.registerLinkTarget(status);
+            marshalStream.registerObject(status);
 
             marshalStream.dumpVariables(context, out, status, 2, (marshal, c, o, v, receiver) -> {
                 // TODO: marshal these values directly

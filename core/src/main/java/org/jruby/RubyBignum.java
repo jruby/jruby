@@ -1174,12 +1174,20 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
     }
 
     public static void marshalTo(ThreadContext context, RubyOutputStream out, RubyBignum bignum, MarshalDumper output) {
-        output.registerLinkTarget(bignum);
+        output.registerObject(bignum);
+        marshalBigInteger(out, output, bignum.value);
+    }
 
-        int b = bignum.value.signum() >= 0 ? '+' : '-';
+    public static void marshalAsBignumTo(ThreadContext context, RubyOutputStream out, RubyFixnum fixnum, MarshalDumper output) {
+        output.registerObject(fixnum);
+        marshalBigInteger(out, output, BigInteger.valueOf(fixnum.getValue()));
+    }
+
+    private static void marshalBigInteger(RubyOutputStream out, MarshalDumper output, BigInteger value) {
+        int b = value.signum() >= 0 ? '+' : '-';
         out.write(b);
 
-        BigInteger absValue = bignum.value.abs();
+        BigInteger absValue = value.abs();
 
         byte[] digits = absValue.toByteArray();
 

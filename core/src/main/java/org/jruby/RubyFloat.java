@@ -1150,7 +1150,7 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
     }
 
     public static void marshalTo(ThreadContext context, RubyOutputStream out, RubyFloat aFloat, MarshalDumper output) {
-        output.registerLinkTarget(aFloat);
+        output.registerObject(aFloat);
         output.writeString(out, aFloat.marshalDump(context));
     }
 
