@@ -1210,7 +1210,7 @@ public final class StringSupport {
         final int srcLen = source.getRealSize();
         final int subLen = subString.getRealSize();
 
-        if (srcLen < subLen || srcLen < subLen) return -1;
+        if (srcLen < subLen) return -1;
         if (srcLen == 0) return pos;
 
         byte[] srcBytes = source.getUnsafeBytes();

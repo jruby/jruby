@@ -1213,9 +1213,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         var cwd = context.runtime.getCurrentDirectory();
         for (int i = 0; i < args.length; i++) {
-            var toUnlink = JRubyFile.create(cwd, get_path(context, args[i]).toString()).getAbsolutePath();
+            var path = get_path(context, args[i]).toString();
+            var toUnlink = JRubyFile.create(cwd, path).getAbsolutePath();
 
-            if (posix.unlink(toUnlink) < 0) throw context.runtime.newErrnoFromInt(posix.errno());
+            if (posix.unlink(toUnlink) < 0) throw context.runtime.newErrnoFromInt(posix.errno(), path);
         }
 
         return asFixnum(context, args.length);

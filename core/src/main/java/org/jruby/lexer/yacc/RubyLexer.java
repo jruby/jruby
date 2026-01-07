@@ -946,15 +946,6 @@ public class RubyLexer extends LexingCommon {
             default: System.err.print("'" + (char)token + "',"); break;
         }
     }
-
-    // DEBUGGING HELP 
-    private int yylex2() throws IOException {
-        int currentToken = yylex2();
-        
-        printToken(currentToken);
-        
-        return currentToken;
-    }
     
     /**
      *  Returns the next token. Also sets yyVal is needed.

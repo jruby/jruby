@@ -368,7 +368,7 @@ public class IRRuntimeHelpers {
         return (excObj instanceof RaiseException) ? ((RaiseException) excObj).getException() : excObj;
     }
 
-    private static boolean isJavaExceptionHandled(ThreadContext context, IRubyObject excType, Object excObj, boolean arrayCheck) {
+    private static boolean isJavaExceptionHandled(ThreadContext context, IRubyObject excType, Object excObj) {
         if (!(excObj instanceof Throwable)) {
             return false;
         }
@@ -376,11 +376,10 @@ public class IRRuntimeHelpers {
         final Ruby runtime = context.runtime;
         final Throwable ex = (Throwable) excObj;
 
-        if (excType instanceof RubyArray) {
-            RubyArray testTypes = (RubyArray)excType;
+        if (excType instanceof RubyArray testTypes) {
             for (int i = 0, n = testTypes.getLength(); i < n; i++) {
                 IRubyObject testType = testTypes.eltInternal(i);
-                if (IRRuntimeHelpers.isJavaExceptionHandled(context, testType, ex, true)) {
+                if (IRRuntimeHelpers.isJavaExceptionHandled(context, testType, ex)) {
                     IRubyObject exception;
                     if (n == 1) {
                         exception = wrapJavaException(context, testType, ex);
@@ -453,7 +452,7 @@ public class IRRuntimeHelpers {
         excObj = unwrapRubyException(excObj);
 
         boolean ret = IRRuntimeHelpers.isRubyExceptionHandled(context, excType, excObj)
-            || IRRuntimeHelpers.isJavaExceptionHandled(context, excType, excObj, false);
+            || IRRuntimeHelpers.isJavaExceptionHandled(context, excType, excObj);
 
         return asBoolean(context, ret);
     }
