@@ -88,7 +88,7 @@ public class MarshalDumper {
     private static final ByteList HASH_BYTELIST = new ByteList("Hash".getBytes(StandardCharsets.US_ASCII), false);
     private final int depthLimit;
     private int depth = 0;
-    private final HashMapInt<IRubyObject> linkCache = new HashMapInt<>(true);
+    private final HashMapInt<IRubyObject> linkCache = new HashMapInt<>(4, true);
     // lazy for simple cases that encounter no symbols
     private HashMapInt<RubySymbol> symbolCache;
 
