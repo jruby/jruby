@@ -28,13 +28,38 @@
 
 package org.jruby.util;
 
+import ch.randelshofer.fastdoubleparser.ConfigurableDoubleParser;
+import ch.randelshofer.fastdoubleparser.NumberFormatSymbols;
+
+import java.util.Collections;
+import java.util.Set;
+
 public class ConvertDouble {
+
+    private static final NumberFormatSymbols FORMAT_SYMBOLS =
+            NumberFormatSymbols.fromDefault()
+                    .withGroupingSeparator(Set.<Character>of('_'))
+                    .withInfinity(Collections.EMPTY_SET)
+                    .withNaN(Collections.EMPTY_SET);
+
     /**
      * Converts supplied ByteList into a double.  strict-mode will not like
      * extra text non-numeric text or multiple sequention underscores.
      */
     public static double byteListToDouble(ByteList bytes, boolean strict) {
         return new DoubleConverter().parse(bytes, strict, true);
+    }
+
+    /**
+     * Converts supplied ByteList into a double using FastDoubleParser. String must be 7-bit ASCII and contain no
+     * underscores.
+     *
+     * @param bytes the bytelist to parse
+     * @return the resulting double value
+     */
+    public static double fastByteListToDouble(ByteList bytes) {
+        var parser = new ConfigurableDoubleParser(FORMAT_SYMBOLS);
+        return parser.parseDouble(bytes);
     }
 
     public static class DoubleConverter {

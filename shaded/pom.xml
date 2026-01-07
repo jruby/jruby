@@ -63,6 +63,20 @@ DO NOT MODIFY - GENERATED CODE
                   </manifestEntries>
                 </transformer>
               </transformers>
+              <filters>
+                <filter>
+                  <artifact>ch.randelshofer:fastdoubleparser</artifact>
+                  <excludes>**/23/**</excludes>
+                </filter>
+                <filter>
+                  <artifact>ch.randelshofer:fastdoubleparser</artifact>
+                  <excludes>**/17/**</excludes>
+                </filter>
+                <filter>
+                  <artifact>ch.randelshofer:fastdoubleparser</artifact>
+                  <excludes>**/11/**</excludes>
+                </filter>
+              </filters>
               <createSourcesJar>false</createSourcesJar>
               <compress>false</compress>
             </configuration>

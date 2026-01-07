@@ -80,6 +80,8 @@ project 'JRuby Base' do
 
   jar 'org.crac:crac:1.5.0'
 
+  jar 'ch.randelshofer:fastdoubleparser:2.0.1'
+
   plugin_management do
     plugin('org.eclipse.m2e:lifecycle-mapping:1.0.0',
            lifecycleMappingMetadata: {

@@ -38,6 +38,11 @@ project 'JRuby Core' do
                                      'Enable-Native-Access' => 'ALL-UNNAMED',
                                    }
                                  }],
+                  filters: [
+                    { artifact: 'ch.randelshofer:fastdoubleparser', excludes: '**/23/**' },
+                    { artifact: 'ch.randelshofer:fastdoubleparser', excludes: '**/17/**' },
+                    { artifact: 'ch.randelshofer:fastdoubleparser', excludes: '**/11/**' },
+                  ],
                   createSourcesJar: false,
                   compress: false)
   end
