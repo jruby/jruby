@@ -95,12 +95,12 @@ public class HashMapInt<V> {
         return contains(value);
     }
 
-    public boolean containsKey(Object key) {
+    public boolean containsKey(V key) {
         Entry<V>[] tab = table;
         int hash = getHash(key);
         int index = (hash & 0x7FFFFFFF) % tab.length;
         for (Entry<V> e = tab[index]; e != null; e = e.next) {
-            if (e.hash == hash && e.key.equals(key)) {
+            if (e.hash == hash && keyMatches(key, e)) {
                 return true;
             }
         }
@@ -307,10 +307,7 @@ public class HashMapInt<V> {
 
         @Override
 		public boolean contains(Object o) {
-			if(o instanceof Number) {
-				return containsKey(((Number)o).intValue());
-			}
-			return false;
+			return containsKey((V) o);
 		}
 
         @Override
