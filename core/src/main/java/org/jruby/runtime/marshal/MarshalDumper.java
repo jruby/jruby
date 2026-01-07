@@ -305,12 +305,11 @@ public class MarshalDumper {
                     if (isMarshalFixnum(fixnum)) {
                         out.write('i');
                         writeInt(out, fixnum.asInt(context));
-                        return;
+                    } else {
+                        out.write('l');
+                        RubyBignum.marshalAsBignumTo(context, out, fixnum, this);
                     }
-                    // FIXME: inefficient; constructing a bignum just for dumping?
-                    value = RubyBignum.newBignum(context.runtime, fixnum.getValue());
-
-                    // fall through
+                    return;
                 case BIGNUM:
                     out.write('l');
                     RubyBignum.marshalTo(context, out, (RubyBignum) value, this);
