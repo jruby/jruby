@@ -255,7 +255,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>io-wait</artifactId>
-      <version>0.3.1</version>
+      <version>0.3.2</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -333,7 +333,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>json</artifactId>
-      <version>2.9.1</version>
+      <version>2.16.0</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -527,6 +527,19 @@ DO NOT MODIFY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
+      <artifactId>resolv</artifactId>
+      <version>0.6.3</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>rubygems</groupId>
+          <artifactId>jar-dependencies</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
       <artifactId>ruby2_keywords</artifactId>
       <version>0.0.5</version>
       <type>gem</type>
@@ -580,7 +593,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>stringio</artifactId>
-      <version>3.1.5</version>
+      <version>3.1.9</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -1135,13 +1148,13 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/find-0.2.0*</include>
           <include>specifications/forwardable-1.3.3*</include>
           <include>specifications/io-console-0.8.1*</include>
-          <include>specifications/io-wait-0.3.1*</include>
+          <include>specifications/io-wait-0.3.2*</include>
           <include>specifications/ipaddr-1.2.7*</include>
           <include>specifications/irb-1.14.3*</include>
           <include>specifications/jar-dependencies-0.5.4*</include>
           <include>specifications/jruby-readline-1.3.7*</include>
           <include>specifications/jruby-openssl-0.15.5*</include>
-          <include>specifications/json-2.9.1*</include>
+          <include>specifications/json-2.16.0*</include>
           <include>specifications/logger-1.6.4*</include>
           <include>specifications/net-http-0.6.0*</include>
           <include>specifications/net-protocol-0.2.2*</include>
@@ -1156,11 +1169,12 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/rake-ant-1.0.6*</include>
           <include>specifications/rdoc-6.14.0*</include>
           <include>specifications/reline-0.6.0*</include>
+          <include>specifications/resolv-0.6.3*</include>
           <include>specifications/ruby2_keywords-0.0.5*</include>
           <include>specifications/securerandom-0.4.1*</include>
           <include>specifications/shellwords-0.2.2*</include>
           <include>specifications/singleton-0.3.0*</include>
-          <include>specifications/stringio-3.1.5*</include>
+          <include>specifications/stringio-3.1.9*</include>
           <include>specifications/strscan-3.1.7*</include>
           <include>specifications/subspawn-0.1.1*</include>
           <include>specifications/subspawn-posix-0.1.1*</include>
@@ -1217,13 +1231,13 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/find-0.2.0*/**/*</include>
           <include>gems/forwardable-1.3.3*/**/*</include>
           <include>gems/io-console-0.8.1*/**/*</include>
-          <include>gems/io-wait-0.3.1*/**/*</include>
+          <include>gems/io-wait-0.3.2*/**/*</include>
           <include>gems/ipaddr-1.2.7*/**/*</include>
           <include>gems/irb-1.14.3*/**/*</include>
           <include>gems/jar-dependencies-0.5.4*/**/*</include>
           <include>gems/jruby-readline-1.3.7*/**/*</include>
           <include>gems/jruby-openssl-0.15.5*/**/*</include>
-          <include>gems/json-2.9.1*/**/*</include>
+          <include>gems/json-2.16.0*/**/*</include>
           <include>gems/logger-1.6.4*/**/*</include>
           <include>gems/net-http-0.6.0*/**/*</include>
           <include>gems/net-protocol-0.2.2*/**/*</include>
@@ -1238,11 +1252,12 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/rake-ant-1.0.6*/**/*</include>
           <include>gems/rdoc-6.14.0*/**/*</include>
           <include>gems/reline-0.6.0*/**/*</include>
+          <include>gems/resolv-0.6.3*/**/*</include>
           <include>gems/ruby2_keywords-0.0.5*/**/*</include>
           <include>gems/securerandom-0.4.1*/**/*</include>
           <include>gems/shellwords-0.2.2*/**/*</include>
           <include>gems/singleton-0.3.0*/**/*</include>
-          <include>gems/stringio-3.1.5*/**/*</include>
+          <include>gems/stringio-3.1.9*/**/*</include>
           <include>gems/strscan-3.1.7*/**/*</include>
           <include>gems/subspawn-0.1.1*/**/*</include>
           <include>gems/subspawn-posix-0.1.1*/**/*</include>
@@ -1299,13 +1314,13 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/find-0.2.0*</include>
           <include>cache/forwardable-1.3.3*</include>
           <include>cache/io-console-0.8.1*</include>
-          <include>cache/io-wait-0.3.1*</include>
+          <include>cache/io-wait-0.3.2*</include>
           <include>cache/ipaddr-1.2.7*</include>
           <include>cache/irb-1.14.3*</include>
           <include>cache/jar-dependencies-0.5.4*</include>
           <include>cache/jruby-readline-1.3.7*</include>
           <include>cache/jruby-openssl-0.15.5*</include>
-          <include>cache/json-2.9.1*</include>
+          <include>cache/json-2.16.0*</include>
           <include>cache/logger-1.6.4*</include>
           <include>cache/net-http-0.6.0*</include>
           <include>cache/net-protocol-0.2.2*</include>
@@ -1320,11 +1335,12 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/rake-ant-1.0.6*</include>
           <include>cache/rdoc-6.14.0*</include>
           <include>cache/reline-0.6.0*</include>
+          <include>cache/resolv-0.6.3*</include>
           <include>cache/ruby2_keywords-0.0.5*</include>
           <include>cache/securerandom-0.4.1*</include>
           <include>cache/shellwords-0.2.2*</include>
           <include>cache/singleton-0.3.0*</include>
-          <include>cache/stringio-3.1.5*</include>
+          <include>cache/stringio-3.1.9*</include>
           <include>cache/strscan-3.1.7*</include>
           <include>cache/subspawn-0.1.1*</include>
           <include>cache/subspawn-posix-0.1.1*</include>
