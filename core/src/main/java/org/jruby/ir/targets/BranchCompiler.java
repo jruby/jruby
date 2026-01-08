@@ -21,4 +21,6 @@ public interface BranchCompiler {
     void checkArity(int required, int opt, boolean rest, int restKey);
 
     void checkAritySpecificArgs(int required, int opt, boolean rest, int restKey);
+
+    void raiseTypeError(String message);
 }
