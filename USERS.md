@@ -109,3 +109,8 @@ and interoperate with the rest of the Java-based server.
 * **Links:** [gocd.org](https://www.gocd.org/), [source](https://github.com/gocd/gocd), [docs](https://docs.gocd.org/current/)
 * **Contact:** [@chadlwilson](https://github.com/chadlwilson)
 
+### Zendesk
+
+* **Desc**: Zendesk is a leading customer support SaaS solution.
+* **Usage**: We use JRuby for the search indexer of our core support product to fetch data from different data stores and push it to our search engine. JRuby was chosen due to its multithreading capabilities and the Java library ecosystem. 
+* **Link**: [Presentation slides with more context](https://www.slideshare.net/slideshow/50-000-processed-records-per-second-a-cruby-jruby-story/278760878)
