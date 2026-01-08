@@ -44,6 +44,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Builtins;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
@@ -936,15 +937,8 @@ public class RubyNumeric extends RubyObject {
     public static boolean positiveInt(ThreadContext context, IRubyObject num) {
         JavaSites.CheckedSites gt = sites(context).op_gt_checked;
 
-        if (num instanceof RubyFixnum) {
-            if (gt.site.retrieveCache(num).method.isBuiltin()) {
-                return ((RubyFixnum) num).signum(context) == 1;
-            }
-        }
-        else if (num instanceof RubyBignum) {
-            if (gt.site.retrieveCache(num).method.isBuiltin()) {
-                return ((RubyBignum) num).signum() == 1;
-            }
+        if (num instanceof RubyInteger integer && Builtins.checkIntegerGt(context)) {
+            return integer.signum(context) == 1;
         }
         return compareNumberWithZero(context, num, gt).isTrue();
     }
@@ -953,15 +947,8 @@ public class RubyNumeric extends RubyObject {
     public static boolean negativeInt(ThreadContext context, IRubyObject num) {
         JavaSites.CheckedSites lt = sites(context).op_lt_checked;
 
-        if (num instanceof RubyFixnum) {
-            if (lt.site.retrieveCache(num).method.isBuiltin()) {
-                return ((RubyFixnum) num).signum(context) == -1;
-            }
-        }
-        else if (num instanceof RubyBignum) {
-            if (lt.site.retrieveCache(num).method.isBuiltin()) {
-                return ((RubyBignum) num).signum() == -1;
-            }
+        if (num instanceof RubyInteger integer && Builtins.checkIntegerLt(context)) {
+            return integer.signum(context) == -1;
         }
         return compareNumberWithZero(context, num, lt).isTrue();
     }
@@ -1192,7 +1179,7 @@ public class RubyNumeric extends RubyObject {
 
     // MRI: num_step_negative_p
     private static boolean numStepNegative(ThreadContext context, IRubyObject num) {
-        if (num instanceof RubyInteger in && context.sites.Integer.op_lt.isBuiltin(num)) return in.isNegativeNumber(context);
+        if (num instanceof RubyInteger in && Builtins.checkIntegerLt(context)) return in.isNegativeNumber(context);
 
         RubyFixnum zero = asFixnum(context, 0);
         IRubyObject r = getMetaClass(num).finvokeChecked(context, num, sites(context).op_gt_checked, zero);
