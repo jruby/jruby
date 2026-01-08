@@ -39,6 +39,7 @@ import org.jruby.RubyFloat;
 import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyRational;
+import org.jruby.runtime.Builtins;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -56,9 +57,7 @@ public class Numeric {
      *
      */
     public static IRubyObject f_add(ThreadContext context, IRubyObject x, IRubyObject y) {
-        CachingCallSite op_plus = sites(context).op_plus;
-
-        if (op_plus.isBuiltin(x)) {
+        if (Builtins.checkIntegerPlus(context)) {
             if (x instanceof RubyInteger rint) {
                 if (fixnumZero(context, x)) return y;
                 if (fixnumZero(context, y)) return x;
@@ -72,7 +71,7 @@ public class Numeric {
             }
         }
 
-        return op_plus.call(context, x, x, y);
+        return sites(context).op_plus.call(context, x, x, y);
     }
 
     private static boolean fixnumZero(ThreadContext context, IRubyObject y) {
@@ -162,9 +161,7 @@ public class Numeric {
      *
      */
     public static IRubyObject f_mul(ThreadContext context, IRubyObject x, IRubyObject y) {
-        CachingCallSite op_times = sites(context).op_times;
-
-        if (op_times.isBuiltin(x)) {
+        if (Builtins.checkIntegerMult(context)) {
             if (x instanceof RubyInteger) {
                 if (fixnumZero(context, y)) return y;
                 if (fixnumZero(context, x) && y instanceof RubyInteger) return x;
@@ -182,7 +179,7 @@ public class Numeric {
             }
         }
 
-        return op_times.call(context, x, x, y);
+        return sites(context).op_times.call(context, x, x, y);
     }
 
     public static RubyInteger f_mul(ThreadContext context, RubyInteger x, RubyInteger y) {
@@ -205,13 +202,11 @@ public class Numeric {
      *
      */
     public static IRubyObject f_sub(ThreadContext context, IRubyObject x, IRubyObject y) {
-        CachingCallSite op_minus = sites(context).op_minus;
-
-        if (op_minus.isBuiltin(x) && fixnumZero(context, y)) {
+        if (Builtins.checkIntegerMinus(context) && fixnumZero(context, y)) {
             return x;
         }
 
-        return op_minus.call(context, x, x, y);
+        return sites(context).op_minus.call(context, x, x, y);
     }
 
     public static RubyInteger f_sub(ThreadContext context, RubyInteger x, RubyInteger y) {

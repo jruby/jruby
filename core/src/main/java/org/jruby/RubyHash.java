@@ -51,6 +51,7 @@ import org.jruby.ir.runtime.IRBreakJump;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Builtins;
 import org.jruby.runtime.CallBlock19;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
@@ -2009,7 +2010,9 @@ public class RubyHash extends RubyObject implements Map {
 
 
         CachingCallSite self_default = sites(context).self_default;
-        if (self_default.isBuiltin(this)) return default_value_get(context, context.nil);
+        if (metaClass == context.runtime.getHash() && Builtins.checkHashDefault(context)) {
+            return default_value_get(context, context.nil);
+        }
 
         return self_default.call(context, this, this, context.nil);
     }

@@ -21,6 +21,7 @@ import org.jruby.RubyRange;
 import org.jruby.RubyRational;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.runtime.Builtins;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -513,9 +514,8 @@ public class Convert {
         var sites = context.sites;
         return switch (arg) {
             case RubyFloat flote -> flote.getValue();
-            case RubyFixnum fixnum when sites.Fixnum.to_f.isBuiltin(fixnum) -> fixnum.asDouble(context);
-            case RubyBignum bignum when sites.Bignum.to_f.isBuiltin(bignum) -> bignum.asDouble(context);
-            case RubyRational rational when sites.Rational.to_f.isBuiltin(rational) -> rational.asDouble(context);
+            case RubyInteger integer when Builtins.checkIntegerToF(context) -> integer.asDouble(context);
+            case RubyRational rational when Builtins.checkRationalToF(context) -> rational.asDouble(context);
             case RubyString a -> throw typeError(context, "no implicit conversion to float from string");
             case RubyNil a -> throw typeError(context, "no implicit conversion to float from nil");
             case RubyBoolean a -> throw typeError(context, "no implicit conversion to float from " + (arg.isTrue() ? "true" : "false"));

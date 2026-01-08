@@ -68,6 +68,7 @@ import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
+import org.jruby.runtime.Builtins;
 import org.jruby.runtime.CallBlock19;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
@@ -2089,7 +2090,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     private boolean cmpIsBuiltin(ThreadContext context) {
-        return sites(context).cmp.isBuiltin(this);
+        return metaClass == context.runtime.getString() && Builtins.checkStringHash(context);
     }
 
     @Deprecated(since = "10.0.0.0")

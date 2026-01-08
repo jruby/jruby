@@ -42,6 +42,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Convert;
 import org.jruby.api.Create;
 import org.jruby.api.JRubyAPI;
+import org.jruby.runtime.Builtins;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
@@ -1281,20 +1282,18 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
 
     @Override
     public IRubyObject isNegative(ThreadContext context) {
-        CachingCallSite op_lt_site = sites(context).basic_op_lt;
-        if (op_lt_site.isBuiltin(metaClass)) {
+        if (Builtins.checkIntegerLt(context)) {
             return asBoolean(context, value.signum() < 0);
         }
-        return op_lt_site.call(context, this, this, zero(context.runtime));
+        return sites(context).basic_op_lt.call(context, this, this, zero(context.runtime));
     }
 
     @Override
     public IRubyObject isPositive(ThreadContext context) {
-        CachingCallSite op_gt_site = sites(context).basic_op_gt;
-        if (op_gt_site.isBuiltin(metaClass)) {
+        if (Builtins.checkIntegerGt(context)) {
             return asBoolean(context, value.signum() > 0);
         }
-        return op_gt_site.call(context, this, this, zero(context.runtime));
+        return sites(context).basic_op_gt.call(context, this, this, zero(context.runtime));
     }
 
     @Override
