@@ -1581,7 +1581,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
             NameEntry e = i.next();
             int[] backrefs = e.getBackRefs();
-            RubyArray ary = RubyArray.newBlankArrayInternal(context.runtime, backrefs.length);
+            RubyArray ary = RubyArrayNative.newBlankArrayInternal(context.runtime, backrefs.length);
 
             for (int idx = 0; idx<backrefs.length; idx++) {
                 ary.storeInternal(context, idx, asFixnum(context, backrefs[idx]));

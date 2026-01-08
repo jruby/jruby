@@ -4918,7 +4918,7 @@ public class RubyModule extends RubyObject {
 
     private RubyArray<?> constantsCommon(ThreadContext context, boolean replaceModule, boolean allConstants) {
         Collection<String> constantNames = constantsCommon(context.runtime, replaceModule, allConstants, false);
-        var array = RubyArray.newBlankArrayInternal(context.runtime, constantNames.size());
+        var array = RubyArrayNative.newBlankArrayInternal(context.runtime, constantNames.size());
 
         int i = 0;
         for (String name : constantNames) {

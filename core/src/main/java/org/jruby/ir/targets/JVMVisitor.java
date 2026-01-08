@@ -1290,7 +1290,8 @@ public class JVMVisitor extends IRVisitor {
 
         if (args.length == 1 && args[0] instanceof Splat) {
             visit(args[0]);
-            m.adapter.invokevirtual(p(RubyArray.class), "toJavaArray", sig(IRubyObject[].class));
+            m.loadContext();
+            m.adapter.invokevirtual(p(RubyArray.class), "toJavaArray", sig(IRubyObject[].class, ThreadContext.class));
             arity = -1;
         } else if (CallBase.containsArgSplat(args)) {
             throw new NotCompilableException("splat in non-initial argument for normal call is unsupported in JIT");
