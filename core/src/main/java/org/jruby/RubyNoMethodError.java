@@ -26,14 +26,18 @@
 
 package org.jruby;
 
+import org.jruby.anno.JRubyField;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.NoMethodError;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.java.codegen.Reified;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.lang.invoke.MethodHandles;
 
 import static org.jruby.api.Define.defineClass;
 
@@ -43,14 +47,19 @@ import static org.jruby.api.Define.defineClass;
  * @see NoMethodError
  */
 @JRubyClass(name="NoMethodError", parent="NameError")
-public class RubyNoMethodError extends RubyNameError {
+public class RubyNoMethodError extends RubyNameError implements Reified {
+    @JRubyField
     private IRubyObject args;
 
     private static final ObjectAllocator ALLOCATOR = RubyNoMethodError::new;
 
     static RubyClass define(ThreadContext context, RubyClass NameError) {
-        return defineClass(context, "NoMethodError", NameError, ALLOCATOR).
-                defineMethods(context, RubyNoMethodError.class);
+        RubyClass noMethodError = defineClass(context, "NoMethodError", NameError, ALLOCATOR).
+                reifiedClass(RubyNoMethodError.class).
+                defineMethods(context, RubyNoMethodError.class).
+                defineFields(context, RubyNoMethodError.class, MethodHandles.lookup());
+
+        return noMethodError;
     }
 
     protected RubyNoMethodError(Ruby runtime, RubyClass exceptionClass) {

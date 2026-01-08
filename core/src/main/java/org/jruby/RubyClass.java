@@ -54,7 +54,9 @@ import static org.objectweb.asm.Opcodes.ACC_SYNTHETIC;
 import static org.objectweb.asm.Opcodes.ACC_VARARGS;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -65,6 +67,7 @@ import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyField;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.JRubyAPI;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
@@ -2649,6 +2652,46 @@ public class RubyClass extends RubyModule {
         }
         while ( current != null );
         return null;
+    }
+
+    @Override
+    public RubyClass defineMethods(ThreadContext context, Class... methodSources) {
+        return super.defineMethods(context, methodSources);
+    }
+
+    /**
+     * Define instance and internal variables based on Java fields annotated with {@link JRubyField}.
+     *
+     * @param context
+     * @param constantSource class containing the field annotations
+     * @return itself for composable API
+     */
+    @JRubyAPI
+    public <T extends RubyModule> T defineFields(ThreadContext context, Class constantSource, MethodHandles.Lookup lookup) {
+        for (Field field : constantSource.getDeclaredFields()) {
+            if (Modifier.isStatic(field.getModifiers())) continue;
+            defineAnnotatedField(context, field, lookup);
+        }
+        return (T) this;
+    }
+
+    private boolean defineAnnotatedField(ThreadContext context, Field field, MethodHandles.Lookup lookup) {
+        JRubyField jrubyField = field.getAnnotation(JRubyField.class);
+        if (jrubyField == null) return false;
+
+        Class tp = field.getType();
+        Class reifiedType = getReifiedRubyClass();
+        if (reifiedType == null) {
+            throw new RuntimeException("Class does not have a reified form: " + this);
+        }
+
+        String javaName = field.getName();
+        String rubyName = jrubyField.value();
+        if (rubyName.isBlank()) rubyName = javaName;
+
+        getVariableTableManager().addDirectField(javaName, rubyName, tp, false, null, lookup);
+
+        return true;
     }
 
     public Map<String, List<Map<Class<?>, Map<String,Object>>>> getParameterAnnotations() {
