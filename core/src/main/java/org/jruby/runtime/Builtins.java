@@ -43,60 +43,53 @@ public class Builtins {
     // These are bitmasks - each class gets one bit position
     // =========================================================================
 
-    /** Fixnum (small integers) - CRuby: FIXNUM_REDEFINED_OP_FLAG */
-    public static final int FIXNUM  = 1 << 0;
+    /** Integer - CRuby: INTEGER_REDEFINED_OP_FLAG */
+    public static final int INTEGER     = 1 << 0;
 
     /** Float - CRuby: FLOAT_REDEFINED_OP_FLAG */
-    public static final int FLOAT   = 1 << 1;
+    public static final int FLOAT       = 1 << 1;
 
     /** String - CRuby: STRING_REDEFINED_OP_FLAG */
-    public static final int STRING  = 1 << 2;
+    public static final int STRING      = 1 << 2;
 
     /** Array - CRuby: ARRAY_REDEFINED_OP_FLAG */
-    public static final int ARRAY   = 1 << 3;
+    public static final int ARRAY       = 1 << 3;
 
     /** Hash - CRuby: HASH_REDEFINED_OP_FLAG */
-    public static final int HASH    = 1 << 4;
+    public static final int HASH        = 1 << 4;
 
     /** Bignum (large integers) - CRuby: BIGNUM_REDEFINED_OP_FLAG */
-    public static final int BIGNUM  = 1 << 5;
+    public static final int BIGNUM      = 1 << 5;
 
     /** Symbol - CRuby: SYMBOL_REDEFINED_OP_FLAG */
-    public static final int SYMBOL  = 1 << 6;
+    public static final int SYMBOL      = 1 << 6;
 
     /** Time - CRuby: TIME_REDEFINED_OP_FLAG */
-    public static final int TIME    = 1 << 7;
+    public static final int TIME        = 1 << 7;
 
     /** Regexp - CRuby: REGEXP_REDEFINED_OP_FLAG */
-    public static final int REGEXP  = 1 << 8;
+    public static final int REGEXP      = 1 << 8;
 
     /** NilClass - CRuby: NIL_REDEFINED_OP_FLAG */
-    public static final int NIL     = 1 << 9;
+    public static final int NIL         = 1 << 9;
 
     /** TrueClass - CRuby: TRUE_REDEFINED_OP_FLAG */
-    public static final int TRUE    = 1 << 10;
+    public static final int TRUE        = 1 << 10;
 
     /** FalseClass - CRuby: FALSE_REDEFINED_OP_FLAG */
-    public static final int FALSE   = 1 << 11;
+    public static final int FALSE       = 1 << 11;
 
     /** Proc - CRuby: PROC_REDEFINED_OP_FLAG */
-    public static final int PROC    = 1 << 12;
+    public static final int PROC        = 1 << 12;
 
     /** Range - CRuby: RANGE_REDEFINED_OP_FLAG (added Ruby 3.1.2+) */
-    public static final int RANGE   = 1 << 13;
+    public static final int RANGE       = 1 << 13;
 
-    // -------------------------------------------------------------------------
-    // JRuby Convenience Masks (not in CRuby, but useful for unified Integer)
-    // -------------------------------------------------------------------------
+    /** Struct - New in JRuby */
+    public static final int STRUCT      = 1 << 14;
 
-    /** JRuby unified Integer = Fixnum | Bignum */
-    public static final int INTEGER = FIXNUM | BIGNUM;
-
-    /** All numeric types */
-    public static final int NUMERIC = INTEGER | FLOAT;
-
-    /** All boolean-ish types */
-    public static final int BOOLEAN = NIL | TRUE | FALSE;
+    /** Rational - New in JRuby */
+    public static final int RATIONAL    = 1 << 15;
 
     // =========================================================================
     // METHOD OFFSETS (array indices)
@@ -105,104 +98,122 @@ public class Builtins {
     // =========================================================================
 
     /** + operator */
-    public static final int BOP_PLUS    = 0;
+    public static final int BOP_PLUS        = 0;
 
     /** - operator */
-    public static final int BOP_MINUS   = 1;
+    public static final int BOP_MINUS       = 1;
 
     /** * operator */
-    public static final int BOP_MULT    = 2;
+    public static final int BOP_MULT        = 2;
 
     /** / operator */
-    public static final int BOP_DIV     = 3;
+    public static final int BOP_DIV         = 3;
 
     /** % operator (modulo) */
-    public static final int BOP_MOD     = 4;
+    public static final int BOP_MOD         = 4;
 
     /** == operator */
-    public static final int BOP_EQ      = 5;
+    public static final int BOP_EQ          = 5;
 
     /** === operator (case equality) */
-    public static final int BOP_EQQ     = 6;
+    public static final int BOP_EQQ         = 6;
 
     /** < operator */
-    public static final int BOP_LT      = 7;
+    public static final int BOP_LT          = 7;
 
     /** <= operator */
-    public static final int BOP_LE      = 8;
+    public static final int BOP_LE          = 8;
 
     /** << operator (left shift / append) */
-    public static final int BOP_LTLT    = 9;
+    public static final int BOP_LTLT        = 9;
 
     /** [] operator (element reference) */
-    public static final int BOP_AREF    = 10;
+    public static final int BOP_AREF        = 10;
 
     /** []= operator (element assignment) */
-    public static final int BOP_ASET    = 11;
+    public static final int BOP_ASET        = 11;
 
     /** length method */
-    public static final int BOP_LENGTH  = 12;
+    public static final int BOP_LENGTH      = 12;
 
     /** size method */
-    public static final int BOP_SIZE    = 13;
+    public static final int BOP_SIZE        = 13;
 
     /** empty? method */
-    public static final int BOP_EMPTY_P = 14;
+    public static final int BOP_EMPTY_P     = 14;
+
+    /** nil? method */
+    public static final int BOP_NIL_P       = 15;
 
     /** succ method */
-    public static final int BOP_SUCC    = 15;
+    public static final int BOP_SUCC        = 16;
 
     /** > operator */
-    public static final int BOP_GT      = 16;
+    public static final int BOP_GT          = 17;
 
     /** >= operator */
-    public static final int BOP_GE      = 17;
+    public static final int BOP_GE          = 18;
+
+    /** >> operator */
+    public static final int BOP_GTGT        = 19;
 
     /** ! operator (logical not) */
-    public static final int BOP_NOT     = 18;
+    public static final int BOP_NOT         = 20;
 
     /** != operator */
-    public static final int BOP_NEQ     = 19;
+    public static final int BOP_NEQ         = 21;
 
     /** =~ operator (pattern match) */
-    public static final int BOP_MATCH   = 20;
+    public static final int BOP_MATCH       = 22;
 
     /** freeze method */
-    public static final int BOP_FREEZE  = 21;
+    public static final int BOP_FREEZE      = 23;
 
     /** -@ operator (unary minus) */
-    public static final int BOP_UMINUS  = 22;
+    public static final int BOP_UMINUS      = 24;
 
     /** max method */
-    public static final int BOP_MAX     = 23;
+    public static final int BOP_MAX         = 25;
 
     /** min method */
-    public static final int BOP_MIN     = 24;
+    public static final int BOP_MIN         = 26;
 
     /** hash method */
-    public static final int BOP_HASH    = 25;
+    public static final int BOP_HASH        = 27;
 
     /** call method (Proc#call) */
-    public static final int BOP_CALL    = 26;
+    public static final int BOP_CALL        = 28;
 
     /** & operator (bitwise and / to_proc) */
-    public static final int BOP_AND     = 27;
+    public static final int BOP_AND         = 29;
 
     /** | operator (bitwise or) */
-    public static final int BOP_OR      = 28;
+    public static final int BOP_OR          = 30;
+
+    /** | operator (bitwise or) */
+    public static final int BOP_CMP         = 31;
+
+    /** | operator (bitwise or) */
+    public static final int BOP_DEFAULT     = 32;
 
     /** pack method (Array#pack) */
-    public static final int BOP_PACK    = 29;
+    public static final int BOP_PACK        = 33;
+
+    /** include? method */
+    public static final int BOP_INCLUDE_P   = 34;
 
     // -------------------------------------------------------------------------
     // JRuby Extensions (not in CRuby BOP enum)
     // -------------------------------------------------------------------------
 
-    /** include?/cover? method - JRuby extension for Range optimization (#9116) */
-    public static final int BOP_INCLUDE = 30;
+    /** to_f method - JRuby extension for float conversion */
+    public static final int BOP_TO_F        = 35;
+
+    /** dig method - JRuby extension for Array/Hash/etc #dig optimization */
+    public static final int BOP_DIG         = 36;
 
     /** Sentinel value - array size. Matches CRuby's BOP_LAST_ naming convention */
-    public static final int BOP_LAST_   = 31;
+    public static final int BOP_LAST_       = 37;
 
     // =========================================================================
     // CLASS INDEX TO FLAG MAPPING
@@ -226,7 +237,7 @@ public class Builtins {
         // ---------------------------------------------------------------------
         // Class mappings - map ClassIndex to bit flags
         // ---------------------------------------------------------------------
-        CLASS_FLAGS.put(ClassIndex.FIXNUM, FIXNUM);
+        CLASS_FLAGS.put(ClassIndex.INTEGER, INTEGER);
         CLASS_FLAGS.put(ClassIndex.BIGNUM, BIGNUM);
         CLASS_FLAGS.put(ClassIndex.FLOAT, FLOAT);
         CLASS_FLAGS.put(ClassIndex.STRING, STRING);
@@ -240,6 +251,7 @@ public class Builtins {
         CLASS_FLAGS.put(ClassIndex.FALSE, FALSE);
         CLASS_FLAGS.put(ClassIndex.PROC, PROC);
         CLASS_FLAGS.put(ClassIndex.RANGE, RANGE);
+        CLASS_FLAGS.put(ClassIndex.STRUCT, STRUCT);
 
         // ---------------------------------------------------------------------
         // Method mappings - map method names to BOP indices
@@ -275,10 +287,10 @@ public class Builtins {
         METHOD_IDS.put("&", BOP_AND);
         METHOD_IDS.put("|", BOP_OR);
         METHOD_IDS.put("pack", BOP_PACK);
-
-        // JRuby extensions
-        METHOD_IDS.put("include?", BOP_INCLUDE);
-        METHOD_IDS.put("cover?", BOP_INCLUDE);  // Same optimization as include?
+        METHOD_IDS.put("include?", BOP_INCLUDE_P);
+        METHOD_IDS.put("cover?", BOP_INCLUDE_P);  // Same optimization as include?
+        METHOD_IDS.put("to_f", BOP_TO_F);
+        METHOD_IDS.put("dig", BOP_DIG);
 
         // Aliases that map to existing BOPs
         METHOD_IDS.put("eql?", BOP_EQ);         // Often same optimization as ==
@@ -423,6 +435,16 @@ public class Builtins {
         return (ctx.builtinBits[BOP_UMINUS] & INTEGER) == 0;
     }
 
+    /** Check if Integer#&lt;=&gt; is still builtin */
+    public static boolean checkIntegerCmp(ThreadContext ctx) {
+        return (ctx.builtinBits[BOP_CMP] & INTEGER) == 0;
+    }
+
+    /** Check if Integer#to_f is still builtin */
+    public static boolean checkIntegerToF(ThreadContext ctx) {
+        return (ctx.builtinBits[BOP_TO_F] & INTEGER) == 0;
+    }
+
     // -------------------------------------------------------------------------
     // Float Operations
     // -------------------------------------------------------------------------
@@ -507,6 +529,16 @@ public class Builtins {
         return (ctx.builtinBits[BOP_MATCH] & STRING) == 0;
     }
 
+    /** Check if String#hash is still builtin */
+    public static boolean checkStringHash(ThreadContext ctx) {
+        return (ctx.builtinBits[BOP_HASH] & STRING) == 0;
+    }
+
+    /** Check if String#&lt;=&gt; is still builtin */
+    public static boolean checkStringCmp(ThreadContext ctx) {
+        return (ctx.builtinBits[BOP_CMP] & STRING) == 0;
+    }
+
     // -------------------------------------------------------------------------
     // Array Operations
     // -------------------------------------------------------------------------
@@ -558,6 +590,11 @@ public class Builtins {
         return (ctx.builtinBits[BOP_PACK] & ARRAY) == 0;
     }
 
+    /** Check if Array#dig is still builtin */
+    public static boolean checkArrayDig(ThreadContext ctx) {
+        return (ctx.builtinBits[BOP_DIG] & ARRAY) == 0;
+    }
+
     // -------------------------------------------------------------------------
     // Hash Operations
     // -------------------------------------------------------------------------
@@ -584,18 +621,28 @@ public class Builtins {
         return (ctx.builtinBits[BOP_EMPTY_P] & HASH) == 0;
     }
 
+    /** Check if Hash#default is still builtin */
+    public static boolean checkHashDefault(ThreadContext ctx) {
+        return (ctx.builtinBits[BOP_DEFAULT] & HASH) == 0;
+    }
+
+    /** Check if Hash#dig is still builtin */
+    public static boolean checkHashDig(ThreadContext ctx) {
+        return (ctx.builtinBits[BOP_DIG] & HASH) == 0;
+    }
+
     // -------------------------------------------------------------------------
     // Range Operations (Key for #9116!)
     // -------------------------------------------------------------------------
 
     /** Check if Range#include? is still builtin */
     public static boolean checkRangeInclude(ThreadContext ctx) {
-        return (ctx.builtinBits[BOP_INCLUDE] & RANGE) == 0;
+        return (ctx.builtinBits[BOP_INCLUDE_P] & RANGE) == 0;
     }
 
     /** Check if Range#cover? is still builtin (same as include? check) */
     public static boolean checkRangeCover(ThreadContext ctx) {
-        return (ctx.builtinBits[BOP_INCLUDE] & RANGE) == 0;
+        return (ctx.builtinBits[BOP_INCLUDE_P] & RANGE) == 0;
     }
 
     /** Check if Range#=== is still builtin */
@@ -685,5 +732,28 @@ public class Builtins {
                (bits[BOP_LE] & TIME) == 0 &&
                (bits[BOP_GT] & TIME) == 0 &&
                (bits[BOP_GE] & TIME) == 0;
+    }
+
+    /** Check if Time#&lt;=&gt; is still builtin */
+    public static boolean checkTimeCmp(ThreadContext ctx) {
+        return (ctx.builtinBits[BOP_CMP] & TIME) == 0;
+    }
+
+    // -------------------------------------------------------------------------
+    // Struct Operations
+    // -------------------------------------------------------------------------
+
+    /** Check if Struct#dig is still builtin */
+    public static boolean checkStructDig(ThreadContext ctx) {
+        return (ctx.builtinBits[BOP_DIG] & STRUCT) == 0;
+    }
+
+    // -------------------------------------------------------------------------
+    // Rational Operations
+    // -------------------------------------------------------------------------
+
+    /** Check if Rational#to_f is still builtin */
+    public static boolean checkRationalToF(ThreadContext ctx) {
+        return (ctx.builtinBits[BOP_TO_F] & RATIONAL) == 0;
     }
 }

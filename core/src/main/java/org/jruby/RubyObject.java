@@ -48,6 +48,7 @@ import java.util.function.BiConsumer;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Builtins;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.JavaSites.ObjectSites;
 import org.jruby.runtime.ObjectAllocator;
@@ -419,7 +420,7 @@ public class RubyObject extends RubyBasicObject {
             }
         } else if (a instanceof RubyFloat) {
             if (b instanceof RubyFloat) {
-                if (!context.sites.Float.op_equal.isBuiltin(a)) {
+                if (!Builtins.checkFloatEquals(context)) {
                     return context.sites.Float.op_equal.call(context, a, a, b).isTrue();
                 }
                 return ((RubyFloat) a).fastEqual((RubyFloat) b);
@@ -484,11 +485,12 @@ public class RubyObject extends RubyBasicObject {
         for (; idx < args.length; idx++) {
             if ( obj.isNil() ) break;
             IRubyObject arg = args[idx];
-            if (isArrayDig(obj, sites)) {
+            RubyClass metaClass = obj.getMetaClass();
+            if (isArrayDig(context, metaClass)) {
                 obj = ((RubyArray) obj).dig(context, arg);
-            } else if (isHashDig(obj, sites)) {
+            } else if (isHashDig(context, metaClass)) {
                 obj =  ((RubyHash) obj).dig(context, arg);
-            } else if (isStructDig(obj, sites)) {
+            } else if (isStructDig(context, metaClass)) {
                 obj =  ((RubyStruct) obj).dig(context, arg);
             } else if (sites.respond_to_dig.respondsTo(context, obj, obj, true) ) {
                 final int len = args.length - idx;
@@ -517,10 +519,11 @@ public class RubyObject extends RubyBasicObject {
         if ( obj.isNil() ) return context.nil;
 
         ObjectSites sites = sites(context);
+        RubyClass metaClass = obj.getMetaClass();
 
-        if (isArrayDig(obj, sites)) return ((RubyArray) obj).dig(context, arg1);
-        if (isHashDig(obj, sites)) return ((RubyHash) obj).dig(context, arg1);
-        if (isStructDig(obj, sites)) return ((RubyStruct) obj).dig(context, arg1);
+        if (isArrayDig(context, metaClass)) return ((RubyArray) obj).dig(context, arg1);
+        if (isHashDig(context, metaClass)) return ((RubyHash) obj).dig(context, arg1);
+        if (isStructDig(context, metaClass)) return ((RubyStruct) obj).dig(context, arg1);
 
         if (!sites.respond_to_dig.respondsTo(context, obj, obj, true)) throw typeError(context, "", obj," does not have #dig method");
         return sites.dig_misc.call(context, obj, obj, arg1);
@@ -529,26 +532,27 @@ public class RubyObject extends RubyBasicObject {
     public static IRubyObject dig2(ThreadContext context, IRubyObject obj, IRubyObject arg1, IRubyObject arg2) {
         if ( obj.isNil() ) return context.nil;
 
+        RubyClass metaClass = obj.getMetaClass();
         ObjectSites sites = sites(context);
 
-        if (isArrayDig(obj, sites)) return ((RubyArray) obj).dig(context, arg1, arg2);
-        if (isHashDig(obj, sites)) return ((RubyHash) obj).dig(context, arg1, arg2);
-        if (isStructDig(obj, sites)) return ((RubyStruct) obj).dig(context, arg1, arg2);
+        if (isArrayDig(context, metaClass)) return ((RubyArray) obj).dig(context, arg1, arg2);
+        if (isHashDig(context, metaClass)) return ((RubyHash) obj).dig(context, arg1, arg2);
+        if (isStructDig(context, metaClass)) return ((RubyStruct) obj).dig(context, arg1, arg2);
 
         if (!sites.respond_to_dig.respondsTo(context, obj, obj, true)) throw typeError(context, "", obj," does not have #dig method");
         return sites.dig_misc.call(context, obj, obj, arg1, arg2);
     }
 
-    private static boolean isStructDig(IRubyObject obj, ObjectSites sites) {
-        return obj instanceof RubyStruct && sites.dig_struct.isBuiltin(obj.getMetaClass());
+    private static boolean isStructDig(ThreadContext context, RubyClass metaClass) {
+        return metaClass == context.runtime.getStructClass() && Builtins.checkStructDig(context);
     }
 
-    private static boolean isHashDig(IRubyObject obj, ObjectSites sites) {
-        return obj instanceof RubyHash && sites.dig_hash.isBuiltin(obj.getMetaClass());
+    private static boolean isHashDig(ThreadContext context, RubyClass metaClass) {
+        return metaClass == context.runtime.getHash() && Builtins.checkHashDig(context);
     }
 
-    private static boolean isArrayDig(IRubyObject obj, ObjectSites sites) {
-        return obj instanceof RubyArray && sites.dig_array.isBuiltin(obj.getMetaClass());
+    private static boolean isArrayDig(ThreadContext context, RubyClass metaClass) {
+        return metaClass == context.runtime.getArray() && Builtins.checkArrayDig(context);
     }
 
     /**
