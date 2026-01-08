@@ -39,11 +39,13 @@ describe FFI::Function do
   end
 
   it 'can be used as callback from C passing to it a block' do
+    skip 'this does not work on Apple Silicon' if FFI::Platform.mac? && FFI::Platform::ARCH == 'aarch64'
     function_add = FFI::Function.new(:int, [:int, :int]) { |a, b| a + b }
     expect(LibTest.testFunctionAdd(10, 10, function_add)).to eq(20)
   end
 
   it 'can be used as callback from C passing to it a Proc object' do
+    skip 'this does not work on Apple Silicon' if FFI::Platform.mac? && FFI::Platform::ARCH == 'aarch64'
     function_add = FFI::Function.new(:int, [:int, :int], Proc.new { |a, b| a + b })
     expect(LibTest.testFunctionAdd(10, 10, function_add)).to eq(20)
   end
