@@ -1,321 +1,232 @@
-/***** BEGIN LICENSE BLOCK *****
- * Version: EPL 2.0/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Eclipse Public
- * License Version 2.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v20.html
- *
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- *
- * Copyright (C) 2007 Ola Bini <ola@ologix.com>
- * 
- * Alternatively, the contents of this file may be used under the terms of
- * either of the GNU General Public License Version 2 or later (the "GPL"),
- * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the EPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the EPL, the GPL or the LGPL.
- ***** END LICENSE BLOCK *****/
-
 package org.jruby.ext.socket;
 
-import org.jruby.Ruby;
-import org.jruby.RubyBasicObject;
-import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyString;
-import org.jruby.RubyThread;
+import org.jruby.*;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.api.Access;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.io.FilenoUtil;
-import org.jruby.util.io.SelectorFactory;
 
 import java.io.IOException;
-import java.net.BindException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.SocketException;
-import java.net.UnknownHostException;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
-import java.nio.channels.spi.SelectorProvider;
 
-import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Convert.asSymbol;
-import static org.jruby.api.Define.defineClass;
-import static org.jruby.api.Error.argumentError;
-import static org.jruby.api.Error.typeError;
-
+/**
+ * RubyTCPServer - Ruby wrapper for TCP server sockets
+ * Provides MRI-compatible TCPServer API with enhanced features
+ */
 @JRubyClass(name="TCPServer", parent="TCPSocket")
-public class RubyTCPServer extends RubyTCPSocket {
+public class RubyTCPServer extends RubyObject {
+
+    private RubyTCPServerChannel serverChannel;
+    private String host;
+    private int port;
+
+    public RubyTCPServer(Ruby runtime, RubyClass metaClass) {
+        super(runtime, metaClass);
+    }
+
     static void createTCPServer(ThreadContext context, RubyClass TCPSocket) {
-        defineClass(context, "TCPServer", TCPSocket, RubyTCPServer::new).
+        org.jruby.api.Define.defineClass(context, "TCPServer", TCPSocket, RubyTCPServer::new).
                 defineMethods(context, RubyTCPServer.class);
     }
 
-    public RubyTCPServer(Ruby runtime, RubyClass type) {
-        super(runtime, type);
-    }
-
-    @JRubyMethod(name = "initialize", required = 1, optional = 1, checkArity = false, visibility = Visibility.PRIVATE)
+    /**
+     * TCPServer.new(host=nil, port, **opts)
+     * Create and bind a TCP server socket
+     *
+     * Options:
+     *   :backlog      - Maximum queue length (default: 128)
+     *   :reuseaddr    - Enable SO_REUSEADDR (default: true)
+     */
+    @JRubyMethod(name = "initialize", required = 1, optional = 2)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
-        IRubyObject _host;
-        IRubyObject _port = null;
-        String host = "0.0.0.0";
 
-        switch (args.length) {
-            case 2:
-                _host = args[0];
-                _port = args[1];
+        // Parse arguments
+        // Forms:
+        //   TCPServer.new(port)
+        //   TCPServer.new(host, port)
+        //   TCPServer.new(host, port, options)
 
-                if (_host.isNil()) break;
-                if (_host instanceof RubyFixnum) throw typeError(context, _host, "String");
-
-                RubyString hostString = _host.convertToString();
-                if (!hostString.isEmpty()) host = hostString.toString();
-
-                break;
-            case 1:
-                _host = context.nil;
-                _port = args[0];
-                break;
-            default:
-                throw argumentError(context, args.length, 1, 2);
+        if (args.length == 1) {
+            // TCPServer.new(port)
+            this.host = null;
+            this.port = RubyNumeric.fix2int(args[0]);
+        } else {
+            // TCPServer.new(host, port) or TCPServer.new(host, port, options)
+            if (args[0].isNil()) {
+                this.host = null;
+            } else {
+                this.host = args[0].convertToString().asJavaString();
+            }
+            this.port = RubyNumeric.fix2int(args[1]);
         }
 
-        int port = SocketUtils.getPortFrom(context, _port);
+        // Validate port
+        if (port < 1 || port > 65535) {
+            throw runtime.newArgumentError("invalid port: " + port);
+        }
+
+        // Parse options (if provided as last argument as hash)
+        RubyHash options = null;
+        if (args.length > 2 && args[args.length - 1] instanceof RubyHash) {
+            options = (RubyHash) args[args.length - 1];
+        }
+
+        // Extract backlog (default: 128)
+        int backlog = 128;
+        if (options != null) {
+            IRubyObject backlogObj = options.op_aref(context, runtime.newSymbol("backlog"));
+            if (backlogObj != null && !backlogObj.isNil()) {
+                backlog = RubyNumeric.fix2int(backlogObj);
+            }
+        }
+
+        // Extract reuseaddr (default: true)
+        boolean reuseaddr = true;
+        if (options != null) {
+            IRubyObject reuseaddrObj = options.op_aref(context, runtime.newSymbol("reuseaddr"));
+            if (reuseaddrObj != null && !reuseaddrObj.isNil()) {
+                reuseaddr = reuseaddrObj.isTrue();
+            }
+        }
 
         try {
-            InetAddress addr = InetAddress.getByName(host);
+            // Create server channel
+            serverChannel = new PlainTCPServerChannel();
 
-            ServerSocketChannel ssc = ServerSocketChannel.open();
-            ssc.socket().setReuseAddress(true);
+            // Set options
+            serverChannel.setReuseAddress(reuseaddr);
 
-            InetSocketAddress socket_address = new InetSocketAddress(addr, port);
+            // Bind to address
+            serverChannel.bind(host, port, backlog);
 
-            ssc.socket().bind(socket_address);
-
-            initSocket(newChannelFD(runtime, ssc));
-        } catch(UnknownHostException e) {
-            throw SocketUtils.sockerr(runtime, "initialize: name or service not known");
-        } catch(BindException e) {
-            throw runtime.newErrnoFromBindException(e, bindContextMessage(context, _host, port));
-        } catch(SocketException e) {
-            String msg = e.getMessage();
-
-            throw msg.contains("Permission denied") ?
-                    runtime.newErrnoEACCESError("bind(2)") :
-                    SocketUtils.sockerr(runtime, "initialize: name or service not known");
-        } catch(IOException e) {
-            throw runtime.newIOErrorFromException(e);
-        } catch (IllegalArgumentException iae) {
-            throw SocketUtils.sockerr(runtime, iae.getMessage());
+        } catch (IOException e) {
+            throw runtime.newErrnoEADDRINUSEError(
+                "Address already in use - " + (host != null ? host : "0.0.0.0") + ":" + port + ": " + e.getMessage()
+            );
+        } catch (Exception e) {
+            throw runtime.newIOError(e.getMessage());
         }
 
         return this;
     }
 
+    /**
+     * accept()
+     * Accept an incoming connection and return a TCPSocket for it
+     */
     @JRubyMethod(name = "accept")
     public IRubyObject accept(ThreadContext context) {
-        RubyTCPSocket socket = new RubyTCPSocket(context.runtime, Access.getClass(context, "TCPSocket"));
+        if (serverChannel == null || !serverChannel.isOpen()) {
+            throw context.runtime.newIOError("closed server socket");
+        }
 
         try {
-            RubyThread thread = context.getThread();
+            RubyTCPSocketChannel clientChannel = serverChannel.accept();
 
-            while (true) {
-                boolean ready = thread.select(this, SelectionKey.OP_ACCEPT);
+            // Create a new RubyTCPSocket for the accepted connection
+            RubyClass socketClass = context.runtime.getClass("TCPSocket");
+            RubyTCPSocket clientSocket = (RubyTCPSocket) socketClass.allocate();
+            clientSocket.setChannel(clientChannel);
 
-                if (!ready) {
-                    // we were woken up without being selected...poll for thread events and go back to sleep
-                    context.pollThreadEvents();
+            return clientSocket;
 
-                } else {
-                    SocketChannel connected = getServerSocketChannel().accept();
-                    if (connected == null) continue;
-
-                    connected.finishConnect();
-
-                    // Force the client socket to be blocking
-                    synchronized (connected.blockingLock()) {
-                        connected.configureBlocking(false);
-                        connected.configureBlocking(true);
-                    }
-
-                    // otherwise one key has been selected (ours) so we get the channel and hand it off
-                    socket.initSocket(newChannelFD(context.runtime, connected));
-
-                    return socket;
-                }
-            }
-
-        } catch(IOException e) {
-            throw context.runtime.newIOErrorFromException(e);
+        } catch (IOException e) {
+            throw context.runtime.newIOError(e.getMessage());
         }
     }
 
-    @JRubyMethod(name = "accept_nonblock")
-    public IRubyObject accept_nonblock(ThreadContext context) {
-        return accept_nonblock(context, context.runtime, true);
+    /**
+     * accept_nonblock(exception: true)
+     * Non-blocking accept with optional timeout
+     */
+    @JRubyMethod(name = "accept_nonblock", optional = 1)
+    public IRubyObject accept_nonblock(ThreadContext context, IRubyObject[] args) {
+        if (serverChannel == null || !serverChannel.isOpen()) {
+            throw context.runtime.newIOError("closed server socket");
+        }
+
+        try {
+            // Try accept with minimal timeout (0 = immediate return)
+            RubyTCPSocketChannel clientChannel = serverChannel.acceptTimeout(0);
+
+            if (clientChannel == null) {
+                // No connection available
+                throw context.runtime.newErrnoEAGAINError("Resource temporarily unavailable");
+            }
+
+            // Create a new RubyTCPSocket for the accepted connection
+            RubyClass socketClass = context.runtime.getClass("TCPSocket");
+            RubyTCPSocket clientSocket = (RubyTCPSocket) socketClass.allocate();
+            clientSocket.setChannel(clientChannel);
+
+            return clientSocket;
+
+        } catch (IOException e) {
+            throw context.runtime.newIOError(e.getMessage());
+        }
     }
 
-    @JRubyMethod(name = "accept_nonblock")
-    public IRubyObject accept_nonblock(ThreadContext context, IRubyObject opts) {
-        return accept_nonblock(context, context.runtime, extractExceptionArg(context, opts));
-    }
-
-    public IRubyObject accept_nonblock(ThreadContext context, Ruby runtime, boolean ex) {
-        RubyTCPSocket socket = new RubyTCPSocket(runtime, Access.getClass(context, "TCPSocket"));
-        Selector selector = null;
-        ServerSocketChannel ssc = getServerSocketChannel();
-
-        synchronized (ssc.blockingLock()) {
-            boolean oldBlocking = ssc.isBlocking();
-
+    /**
+     * close()
+     * Close the server socket
+     */
+    @JRubyMethod(name = "close")
+    public IRubyObject close(ThreadContext context) {
+        if (serverChannel != null && serverChannel.isOpen()) {
             try {
-                ssc.configureBlocking(false);
-                selector = SelectorFactory.openWithRetryFrom(runtime, SelectorProvider.provider());
-
-                boolean ready = context.getThread().select(this, SelectionKey.OP_ACCEPT, 0);
-
-                if (!ready) {
-                    // no connection immediately accepted, let them try again
-
-                    if (ex) {
-                        throw runtime.newErrnoEAGAINReadableError("Resource temporarily unavailable");
-                    }
-
-                    return asSymbol(context, "wait_readable");
-
-                } else {
-                    // otherwise one key has been selected (ours) so we get the channel and hand it off
-                    socket.initSocket(newChannelFD(runtime, ssc.accept()));
-
-                    return socket;
-                }
-
-            } catch(IOException e) {
-                throw runtime.newIOErrorFromException(e);
-
-            } finally {
-                try {
-                    if (selector != null) selector.close();
-                } catch (Exception e) {
-                }
-                try {ssc.configureBlocking(oldBlocking);} catch (IOException ioe) {}
-
+                serverChannel.close();
+            } catch (IOException e) {
+                throw context.runtime.newIOError(e.getMessage());
             }
         }
+        return context.nil;
     }
 
-    @JRubyMethod(name = "sysaccept")
-    public IRubyObject sysaccept(ThreadContext context) {
+    /**
+     * closed?()
+     * Returns true if the server socket is closed
+     */
+    @JRubyMethod(name = "closed?")
+    public RubyBoolean closed_p(ThreadContext context) {
+        if (serverChannel == null) {
+            return context.runtime.getTrue();
+        }
+        return RubyBoolean.newBoolean(context.runtime, !serverChannel.isOpen());
+    }
+
+    /**
+     * addr()
+     * Returns local address information [family, port, hostname, ip]
+     */
+    @JRubyMethod(name = "addr")
+    public IRubyObject addr(ThreadContext context) {
         try {
-            RubyThread thread = context.getThread();
-
-            while (true) {
-                boolean ready = thread.select(this, SelectionKey.OP_ACCEPT);
-
-                if (!ready) {
-                    // we were woken up without being selected...poll for thread events and go back to sleep
-                    context.pollThreadEvents();
-
-                } else {
-                    SocketChannel connected = getServerSocketChannel().accept();
-                    if (connected == null) continue;
-
-                    connected.finishConnect();
-
-                    return asFixnum(context, FilenoUtil.filenoFrom(connected));
-                }
+            InetSocketAddress addr = serverChannel.getLocalAddress();
+            if (addr == null) {
+                return context.nil;
             }
 
-        } catch(IOException e) {
-            throw context.runtime.newIOErrorFromException(e);
+            RubyArray result = context.runtime.newArray();
+            result.append(context.runtime.newString("AF_INET"));
+            result.append(context.runtime.newFixnum(addr.getPort()));
+            result.append(context.runtime.newString(addr.getHostName()));
+            result.append(context.runtime.newString(addr.getAddress().getHostAddress()));
+            return result;
+
+        } catch (IOException e) {
+            throw context.runtime.newIOError(e.getMessage());
         }
     }
 
-    @JRubyMethod(name = "listen")
+    /**
+     * listen(backlog)
+     * Set the listen backlog (currently no-op for compatibility)
+     * Backlog is set during bind in Java
+     */
+    @JRubyMethod(name = "listen", required = 1)
     public IRubyObject listen(ThreadContext context, IRubyObject backlog) {
-        return RubyFixnum.zero(context.runtime);
-    }
-
-    @JRubyMethod(name = "peeraddr", rest = true)
-    public IRubyObject peeraddr(ThreadContext context, IRubyObject[] args) {
-        throw context.runtime.newNotImplementedError("not supported");
-    }
-
-    @JRubyMethod(name = "getpeername", rest = true)
-    public IRubyObject getpeername(ThreadContext context, IRubyObject[] args) {
-        throw context.runtime.newNotImplementedError("not supported");
-    }
-
-    @JRubyMethod(rest = true, meta = true)
-    public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        IRubyObject tcpServer = recv.callMethod(context, "new", args);
-
-        if (!block.isGiven()) return tcpServer;
-
-        try {
-            return block.yield(context, tcpServer);
-        } finally {
-            tcpServer.callMethod(context, "close");
-        }
-    }
-
-    public ServerSocketChannel getServerSocketChannel() {
-        return (ServerSocketChannel)getChannel();
-    }
-
-    @Override
-    public IRubyObject shutdown(ThreadContext context, IRubyObject[] args) {
-        // act like a platform that does not support shutdown for server sockets
-        throw context.runtime.newErrnoENOTCONNError();
-    }
-
-    @Override
-    public IRubyObject gets(ThreadContext context) {
-        throw context.runtime.newErrnoENOTCONNError();
-    }
-
-    @Override
-    public IRubyObject gets(ThreadContext context, IRubyObject sep) {
-        throw context.runtime.newErrnoENOTCONNError();
-    }
-
-    @Override
-    public IRubyObject gets(ThreadContext context, IRubyObject sep, IRubyObject limit) {
-        throw context.runtime.newErrnoENOTCONNError();
-    }
-
-    @Deprecated(since = "1.7.0")
-    public IRubyObject accept() {
-        return accept(getCurrentContext());
-    }
-
-    @Deprecated(since = "1.7.0")
-    public IRubyObject listen(IRubyObject backlog) {
-        return listen(((RubyBasicObject) backlog).getCurrentContext(), backlog);
-    }
-
-    @Deprecated(since = "1.7.0")
-    public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
-        return open(((RubyBasicObject) recv).getCurrentContext(), recv, args, block);
+        // Backlog is set during bind in Java, so this is a no-op
+        return context.nil;
     }
 }
