@@ -106,6 +106,14 @@ public final class ThreadContext {
     public final RubyBoolean fals;
     public final RuntimeCache runtimeCache;
 
+    /**
+     * Thread-local reference to runtime's builtin bits.
+     * Public final for direct field access (fastest possible).
+     *
+     * Usage: Builtins.checkIntegerPlus(context) reads context.builtinBits[0]
+     */
+    public final short[] builtinBits;
+
     // Thread#set_trace_func for specific threads events.  We need this because successive
     // Thread.set_trace_funcs will end up replacing the current one (as opposed to add_trace_func).
     private TraceEventManager.CallTraceFuncHook traceFuncHook = null;
@@ -242,6 +250,7 @@ public final class ThreadContext {
         if (instanceConfig(this).isProfilingEntireRun()) startProfiling();
 
         this.runtimeCache = runtime.getRuntimeCache();
+        this.builtinBits = runtime.getBuiltinBits();
         this.sites = runtime.sites;
         this.traceEvents = runtime.getTraceEvents();
 

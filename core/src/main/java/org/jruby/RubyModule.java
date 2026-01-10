@@ -653,6 +653,7 @@ public class RubyModule extends RubyObject {
         }
 
         context.runtime.addProfiledMethod(id, method);
+        context.runtime.invalidateBuiltin(methodLocation, id);
         return method;
     }
 
