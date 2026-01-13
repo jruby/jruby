@@ -40,33 +40,7 @@ import org.jruby.embed.LocalVariableBehavior;
  * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class ThreadSafeLocalContextProvider extends AbstractLocalContextProvider {
-    private volatile ConcurrentLinkedQueue<AtomicReference<LocalContext>> contextRefs =
-        new ConcurrentLinkedQueue<AtomicReference<LocalContext>>();
-
-    private final ThreadLocal<AtomicReference<LocalContext>> contextHolder =
-            new ThreadLocal<AtomicReference<LocalContext>>() {
-                @Override
-                public AtomicReference<LocalContext> initialValue() {
-                    AtomicReference<LocalContext> contextRef = null;
-
-                    try {
-                        contextRef = new AtomicReference<LocalContext>(getInstance());
-                        contextRefs.add(contextRef);
-                        return contextRef;
-                    } catch (NullPointerException npe) {
-                        if (contextRefs == null) {
-                            // contextRefs became null, we've been terminated
-                            if (contextRef != null) {
-                                contextRef.get().remove();
-                            }
-
-                            return null;
-                        } else {
-                            throw npe;
-                        }
-                    }
-                }
-            };
+    private final ThreadLocalContext contextHolder = new ThreadLocalContext(this::getInstance);
 
     public ThreadSafeLocalContextProvider(LocalVariableBehavior behavior) {
         super(behavior);
@@ -79,40 +53,27 @@ public class ThreadSafeLocalContextProvider extends AbstractLocalContextProvider
 
     @Override
     public Ruby getRuntime() {
-        return contextHolder.get().get().getRuntime();
+        return contextHolder.get().getRuntime();
     }
 
     @Override
     public BiVariableMap getVarMap() {
-        return contextHolder.get().get().getVarMap(this);
+        return contextHolder.get().getVarMap(this);
     }
 
     @Override
     public Map getAttributeMap() {
-        return contextHolder.get().get().getAttributeMap();
+        return contextHolder.get().getAttributeMap();
     }
 
     @Override
     public boolean isRuntimeInitialized() {
-        return contextHolder.get().get().isInitialized();
+        return contextHolder.get().isInitialized();
     }
 
     @Override
     public void terminate() {
-        ConcurrentLinkedQueue<AtomicReference<LocalContext>> terminated = contextRefs;
-        contextRefs = null;
-
-        if (terminated != null) {
-            for (AtomicReference<LocalContext> contextRef : terminated) {
-                contextRef.get().remove();
-                contextRef.lazySet(null);
-            }
-
-            terminated.clear();
-        }
-
-        contextHolder.remove();
-        contextHolder.set(null);
+    	contextHolder.terminate();
     }
 
 }
