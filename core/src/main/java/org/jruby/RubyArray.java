@@ -1032,13 +1032,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         var result = Create.allocArray(context, length);
         for (int i = 0; i < length; i++) {
             int index = toInt(context, args[i]);
-            // FIXME: lookup the bounds part of this in error message??
-            if (index >= arraySize) {
-                if (!block.isGiven()) throw indexError(context, "index " + index + " outside of array bounds: 0...0");
-                result.append(context, block.yield(context, asFixnum(context, index)));
-            } else {
-                result.append(context, eltOk(index));
-            }
+            result.append(context, fetch(context, args[i], block));
         }
 
         return result;
