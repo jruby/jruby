@@ -827,7 +827,7 @@ public class RubyModule extends RubyObject {
         anonBase.append(metaClass.getRealClass().rubyName(context)).append(newString(context, ":0x"));
         anonBase.append(newString(context, Integer.toHexString(System.identityHashCode(this)))).append(newString(context, ">"));
 
-        return anonBase;
+        return (RubyString) anonBase.freeze(context);
     }
 
     private RubyString calculateRubyName(ThreadContext context) {
@@ -836,7 +836,7 @@ public class RubyModule extends RubyObject {
         if (getBaseName() == null) return calculateAnonymousRubyName(context); // no name...anonymous!
 
         if (usingTemporaryName()) { // temporary name
-            cachedRubyName = asSymbol(context, baseName).toRubyString(context);
+            cachedRubyName = (RubyString) asSymbol(context, baseName).toRubyString(context).freeze(context);
             return cachedRubyName;
         }
         
@@ -863,7 +863,7 @@ public class RubyModule extends RubyObject {
 
         RubyString fullName = buildPathString(context, parents);
 
-        if (cache) cachedRubyName = fullName;
+        if (cache) cachedRubyName = (RubyString) fullName.freeze(context);
 
         return fullName;
     }
