@@ -999,6 +999,8 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(required = 1)
     public IRubyObject set_temporary_name(ThreadContext context, IRubyObject arg) {
+        checkFrozen();
+
         if (baseName != null && IdUtil.isValidConstantName(baseName) && (parent == null || parent.baseName != null)) {
             throw runtimeError(context, "can't change permanent name");
         }
