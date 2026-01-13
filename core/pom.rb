@@ -80,6 +80,8 @@ project 'JRuby Base' do
 
   jar 'org.crac:crac:1.5.0'
 
+  jar 'com.dynatrace.hash4j:hash4j:0.29.0'
+
   plugin_management do
     plugin('org.eclipse.m2e:lifecycle-mapping:1.0.0',
            lifecycleMappingMetadata: {
