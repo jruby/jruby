@@ -199,7 +199,7 @@ public class RubyGlobal {
         runtime.defineVariable(rs, GLOBAL);
         runtime.setRecordSeparatorVar(rs);
         globals.setDefaultSeparator(defaultRS);
-        runtime.defineVariable(new StringGlobalVariable(runtime, "$\\", context.nil), GLOBAL);
+        runtime.defineVariable(new DeprecatedStringGlobalVariable(runtime, "$\\", context.nil), GLOBAL);
         runtime.defineVariable(new DeprecatedStringGlobalVariable(runtime, "$,", context.nil), GLOBAL);
 
         runtime.defineVariable(new LineNumberGlobalVariable(runtime, "$."), GLOBAL);
@@ -1073,7 +1073,7 @@ public class RubyGlobal {
         public IRubyObject set(IRubyObject value) {
             IRubyObject result = super.set(value);
 
-            if (!value.isNil()) warnDeprecatedGlobal(runtime.getCurrentContext(), name);
+            if (!value.isNil()) warnDeprecatedGlobal(runtime.getCurrentContext(), "non-nil '" + name + "'");
 
             return result;
         }
