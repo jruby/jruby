@@ -69,6 +69,7 @@ import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.*;
 import static org.jruby.runtime.Helpers.hashEnd;
 import static org.jruby.runtime.Helpers.hashStart;
+import static org.jruby.runtime.Helpers.invokeSuper;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.Helpers.murmurCombine;
 import static org.jruby.runtime.Helpers.safeHashLong;
@@ -1368,6 +1369,17 @@ public class RubyRange extends RubyObject {
         }
 
         return context.nil;
+    }
+
+    @JRubyMethod(name = "to_set", rest = true, frame = true)
+    public IRubyObject to_set(ThreadContext context, IRubyObject[] args) {
+        IRubyObject size = sites(context).size.call(context, this, this);
+
+        if (size instanceof RubyFloat flote && flote.isInfinite()) {
+            throw context.runtime.newRangeError("cannot convert an infinite range to a set");
+        }
+
+        return invokeSuper(context, this, context.getFrameKlazz(), context.getFrameName(), args, Block.NULL_BLOCK);
     }
 
     private boolean discreteObject(IRubyObject object) {

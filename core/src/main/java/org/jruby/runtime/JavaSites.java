@@ -473,6 +473,7 @@ public class JavaSites {
         public final CallSite op_lt = new FunctionalCachingCallSite("<");
         public final CachingCallSite each = new FunctionalCachingCallSite("each");
         public final CallSite reverse_each = new FunctionalCachingCallSite("reverse_each");
+        public final CallSite size = new FunctionalCachingCallSite("size");
     }
 
     public static class WarningSites {
