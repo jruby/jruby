@@ -23,7 +23,6 @@ default_gems = [
   # - we do not want bin/update_rubygems or bin/gem overrides
   ['rubygems-update', '4.0.3', { bin: false, require_paths: ['lib'] }],
   ['bundler', '4.0.3'],
-  ['cgi', '0.4.2'],
   # Currently using a stub gem for JRuby until we can incorporate our code.
   # https://github.com/ruby/date/issues/48
   ['date', '3.5.1'],

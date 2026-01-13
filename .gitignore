@@ -59,7 +59,6 @@ lib/ruby/stdlib/*.jar
 lib/ruby/stdlib/ant*
 lib/ruby/stdlib/benchmark*
 lib/ruby/stdlib/bundler*
-lib/ruby/stdlib/cgi*
 lib/ruby/stdlib/debug*
 lib/ruby/stdlib/delegate*
 lib/ruby/stdlib/did_you_mean*
