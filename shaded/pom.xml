@@ -63,6 +63,12 @@ DO NOT MODIFY - GENERATED CODE
                   </manifestEntries>
                 </transformer>
               </transformers>
+              <filters>
+                <filter>
+                  <artifact>com.dynatrace.hash4j:hash4j</artifact>
+                  <excludes>**/25/**</excludes>
+                </filter>
+              </filters>
               <createSourcesJar>false</createSourcesJar>
               <compress>false</compress>
             </configuration>
