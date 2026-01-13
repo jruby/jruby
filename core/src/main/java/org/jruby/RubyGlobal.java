@@ -195,7 +195,7 @@ public class RubyGlobal {
         runtime.defineVariable(new WarningGlobalVariable(context, "$-W", verbosity), GLOBAL);
 
         IRubyObject defaultRS = RubyString.newFString(runtime, instanceConfig.getRecordSeparator());
-        GlobalVariable rs = new StringGlobalVariable(runtime, "$/", defaultRS);
+        GlobalVariable rs = new DeprecatedStringGlobalVariable(runtime, "$/", defaultRS);
         runtime.defineVariable(rs, GLOBAL);
         runtime.setRecordSeparatorVar(rs);
         globals.setDefaultSeparator(defaultRS);
@@ -1088,7 +1088,7 @@ public class RubyGlobal {
         public IRubyObject set(IRubyObject value) {
             IRubyObject result = super.set(value);
 
-            if (!result.isNil()) warnDeprecatedGlobal(runtime.getCurrentContext(), name);
+            if (!value.isNil()) warnDeprecatedGlobal(runtime.getCurrentContext(), "non-nil '" + name + "'");
 
             return result;
         }
