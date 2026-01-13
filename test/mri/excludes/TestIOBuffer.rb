@@ -1,3 +1,4 @@
+exclude :test_bug_21210, "depends on CRuby GC APIs"
 exclude :test_copy_null_destination, "no support for null buffer"
 exclude :test_copy_null_source, "no support for null buffer"
 exclude :test_copy_overlapped_bwd, "needs investigation"
