@@ -547,6 +547,25 @@ public class StaticScope implements Serializable, Cloneable {
      * @return populated collection
      */
     public <T> T collectVariables(ThreadContext context, BiFunction<ThreadContext, Integer, T> collectionFactory, BiConsumer<T, String> collectionPopulator) {
+        return collectVariables(context, collectionFactory, collectionPopulator, false);
+    }
+
+    /**
+     * Populate a deduplicated collection of implicit variable names("it", "_1", etc) in scope using the given functions.
+     *
+     * This may include variables that are not strictly Ruby local variable names, so the consumer should validate
+     * names as appropriate.
+     *
+     * @param collectionFactory used to construct the collection
+     * @param collectionPopulator used to pass values into the collection
+     * @param <T> resulting collection type
+     * @return populated collection
+     */
+    public <T> T collectImplicitVariables(ThreadContext context, BiFunction<ThreadContext, Integer, T> collectionFactory, BiConsumer<T, String> collectionPopulator) {
+        return collectVariables(context, collectionFactory, collectionPopulator, true);
+    }
+
+    public <T> T collectVariables(ThreadContext context, BiFunction<ThreadContext, Integer, T> collectionFactory, BiConsumer<T, String> collectionPopulator, boolean implicit) {
         StaticScope current = this;
 
         T collection = collectionFactory.apply(context, current.variableNamesLength);
@@ -554,24 +573,34 @@ public class StaticScope implements Serializable, Cloneable {
         HashMap<String, Object> dedup = new HashMap<>();
 
         while (current.isBlockOrEval) {
-            addVariableNamesToCollection(current, collectionPopulator, dedup, collection);
+            addVariableNamesToCollection(current, collectionPopulator, dedup, collection, implicit);
             current = current.enclosingScope;
         }
 
         // once more for method scope
-        addVariableNamesToCollection(current, collectionPopulator, dedup, collection);
+        addVariableNamesToCollection(current, collectionPopulator, dedup, collection, implicit);
 
         return collection;
     }
 
-    private static <T> void addVariableNamesToCollection(StaticScope current, BiConsumer<T, String> collectionPopulator, HashMap<String, Object> dedup, T collection) {
+    private static <T> void addVariableNamesToCollection(StaticScope current, BiConsumer<T, String> collectionPopulator, HashMap<String, Object> dedup, T collection, boolean implicit) {
         BitSet implicitVariables = current.implicitVariables;
-        for (int i = 0; i < current.variableNamesLength; i++) {
-            if (implicitVariables != null && implicitVariables.get(i)) continue;
 
-            String name = current.variableNames[i];
+        boolean hasImplicits = implicitVariables != null;
+        if (implicit && !hasImplicits) return;
+
+        int variableNamesLength = current.variableNamesLength;
+        String[] variableNames = current.variableNames;
+
+        for (int i = 0; i < variableNamesLength; i++) {
+            if (hasImplicits && implicitVariables.get(i)) {
+                if (!implicit) continue;
+            } else if (implicit) continue;
+
+            String name = variableNames[i];
             dedup.computeIfAbsent(name, key -> {
-                collectionPopulator.accept(collection, key); return key;});
+                collectionPopulator.accept(collection, key);
+                return key;});
         }
     }
 
@@ -589,11 +618,26 @@ public class StaticScope implements Serializable, Cloneable {
     public RubyArray getLocalVariables(ThreadContext context) {
         return collectVariables(
                 context,
-                (ctxt, length) -> allocArray(ctxt, length),
-                (array, id) -> {
-                    RubySymbol symbol = Convert.asSymbol(context, id);
-                    if (symbol.validLocalVariableName()) array.append(context, symbol);
-                });
+                Create::allocArray,
+                (array, id) -> appendVariableIfValid(context, array, id));
+    }
+
+    /**
+     * Get a Ruby Array of all implicit local variables.
+     *
+     * @param context the current context
+     * @return populated RubyArray
+     */
+    public RubyArray getImplicitLocalVariables(ThreadContext context) {
+        return collectImplicitVariables(
+                context,
+                Create::allocArray,
+                (array, id) -> appendVariableIfValid(context, array, id));
+    }
+
+    private static void appendVariableIfValid(ThreadContext context, RubyArray<?> array, String id) {
+        RubySymbol symbol = Convert.asSymbol(context, id);
+        if (symbol.validLocalVariableName()) array.append(context, symbol);
     }
 
     public int isDefined(String name, int depth) {
