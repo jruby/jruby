@@ -613,4 +613,21 @@ class Reline::Config::Test < Reline::TestCase
     @config.reload
     assert_equal '@', @config.emacs_mode_string
   end
+
+  def test_invalid_byte_sequence_inputrc
+    lines = [
+      "set vi-cmd-mode-string\n",
+      "$if Ruby\n",
+      "  \"\C-a\": \"Ruby\"\n",
+      "$else \"\xFF\"\n".dup.force_encoding(Reline.encoding_system_needs), # Invalid byte sequence
+      "  \"\C-b\": \"NotRuby\"\n",
+      "$endif\n"
+    ]
+
+    e = assert_raise(Reline::Config::InvalidInputrc) do
+      @config.read_lines(lines, "INPUTRC")
+    end
+
+    assert_equal "INPUTRC:4: can't be converted to the locale #{Reline.encoding_system_needs}", e.message
+  end
 end

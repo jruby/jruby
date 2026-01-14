@@ -52,6 +52,14 @@ begin
       ENV.delete('RELINE_TEST_PROMPT') if ENV['RELINE_TEST_PROMPT']
     end
 
+    # Yamatanooroti::TestCase#write converts 0x80-0xff bytes to "\e"+(byte&0x7f).chr
+    # This method avoids the conversion and writes the string as is.
+    def write_without_meta_conversion(str)
+      sync
+      @pty_input.write(str)
+      try_sync
+    end
+
     def test_history_back
       start_terminal(5, 30, %W{ruby -I#{@pwd}/lib #{@pwd}/test/reline/yamatanooroti/multiline_repl}, startup_message: 'Multiline REPL.')
       write(":a\n")
@@ -550,7 +558,36 @@ begin
         prompt>   3
         prompt> end
       EOC
+      write("\e[200~.tap do\r\t4\r\t5\rend\e[201~")
+      assert_screen(<<~EOC)
+        prompt>   3
+        prompt> end.tap do
+        prompt>   4
+        prompt>   5
+        prompt> end
+      EOC
       close
+    end
+
+    def test_ctrl_v_escaped_input
+      omit if Reline.core.io_gate.win?
+
+      start_terminal(5, 30, %W{ruby -I#{@pwd}/lib #{@pwd}/test/reline/yamatanooroti/multiline_repl}, startup_message: 'Multiline REPL.')
+
+      # When a configuration "Escape non-ASCII Input with Control-V" is enabled
+      # in macOS Termina.app, all non-ascii characters are escaped with ^V.
+      write_without_meta_conversion "\C-v\xE3\C-v\x81\C-v\x82"
+      assert_screen(/prompt> あ/)
+
+      # Bracketed pasted content is also escaped
+      write_without_meta_conversion "\e[200~\C-a\C-v\xE3\C-v\x81\C-v\x84\C-b\e[201~"
+      assert_screen(/prompt> あ\^Aい\^B/)
+
+      # Invalid bytes should be ignored with timeout
+      write_without_meta_conversion "\C-v\x82\C-v\xA4"
+      sleep 1
+      write 'C'
+      assert_screen(/prompt> あ\^Aい\^BC/)
     end
 
     def test_bracketed_paste_with_undo_redo
@@ -563,7 +600,7 @@ begin
         Multiline REPL.
         prompt> abc
       EOC
-      write("\M-\C-_")
+      write("\e\C-_")
       assert_screen(<<~EOC)
         Multiline REPL.
         prompt> abcdef hoge
@@ -805,13 +842,30 @@ begin
       close
     end
 
-    def test_terminate_in_the_middle_of_lines
+    def test_newline_in_the_middle_of_lines
       start_terminal(5, 20, %W{ruby -I#{@pwd}/lib #{@pwd}/test/reline/yamatanooroti/multiline_repl}, startup_message: 'Multiline REPL.')
       write("def hoge\n  1\n  2\n  3\n  4\nend\n")
       write("\C-p\C-p\C-p\C-e\n")
       assert_screen(<<~EOC)
+        prompt> def hoge
+        prompt>   1
+        prompt>   2
         prompt>   3
-        prompt>   4
+        prompt>
+      EOC
+      close
+    end
+
+    def test_ed_force_submit_in_the_middle_of_lines
+      write_inputrc <<~LINES
+        "\\C-a": ed_force_submit
+      LINES
+      start_terminal(5, 20, %W{ruby -I#{@pwd}/lib #{@pwd}/test/reline/yamatanooroti/multiline_repl}, startup_message: 'Multiline REPL.')
+      write("def hoge\nend")
+      write("\C-p\C-a")
+      assert_screen(<<~EOC)
+        Multiline REPL.
+        prompt> def hoge
         prompt> end
         => :hoge
         prompt>
@@ -845,7 +899,7 @@ begin
 
     def test_meta_key
       start_terminal(30, 20, %W{ruby -I#{@pwd}/lib #{@pwd}/test/reline/yamatanooroti/multiline_repl}, startup_message: 'Multiline REPL.')
-      write("def ge\M-bho")
+      write("def ge\ebho")
       assert_screen(<<~EOC)
         Multiline REPL.
         prompt> def hoge
@@ -866,7 +920,7 @@ begin
     def test_force_enter
       start_terminal(30, 120, %W{ruby -I#{@pwd}/lib #{@pwd}/test/reline/yamatanooroti/multiline_repl}, startup_message: 'Multiline REPL.')
       write("def hoge\nend\C-p\C-e")
-      write("\M-\x0D")
+      write("\e\x0D")
       assert_screen(<<~EOC)
         Multiline REPL.
         prompt> def hoge
@@ -911,7 +965,7 @@ begin
 
     def test_em_set_mark_and_em_exchange_mark
       start_terminal(10, 50, %W{ruby -I#{@pwd}/lib #{@pwd}/test/reline/yamatanooroti/multiline_repl}, startup_message: 'Multiline REPL.')
-      write("aaa bbb ccc ddd\M-b\M-b\M-\x20\M-b\C-x\C-xX\C-x\C-xY")
+      write("aaa bbb ccc ddd\eb\eb\e\x20\eb\C-x\C-xX\C-x\C-xY")
       assert_screen(<<~'EOC')
         Multiline REPL.
         prompt> aaa Ybbb Xccc ddd
@@ -1511,7 +1565,7 @@ begin
     def test_rerender_argument_prompt_after_pasting
       start_terminal(20, 30, %W{ruby -I#{@pwd}/lib #{@pwd}/test/reline/yamatanooroti/multiline_repl}, startup_message: 'Multiline REPL.')
       write('abcdef')
-      write("\M-3\C-h")
+      write("\e3\C-h")
       assert_screen(<<~'EOC')
         Multiline REPL.
         prompt> abc
@@ -1647,7 +1701,7 @@ begin
       write("class A\n  def a\n    3\n  end\nend")
       write("\n")
       write("\C-p\C-p\C-p\C-p\C-p\C-e\C-hS")
-      write("\M-\x0D")
+      write("\e\x0D")
       write("  3")
       assert_screen(<<~'EOC')
         prompt>     3
@@ -1722,6 +1776,41 @@ begin
         prompt>
       EOC
       close
+    end
+
+    def test_quoted_insert_intr_keys
+      omit if Reline.core.io_gate.win?
+      start_terminal(5, 30, %W{ruby -I#{@pwd}/lib #{@pwd}/test/reline/yamatanooroti/multiline_repl}, startup_message: 'Multiline REPL.')
+      write '"'
+      write "\C-v"
+      write "\C-c"
+      write "\C-v"
+      write "\C-z"
+      write "\C-v"
+      write "\C-\\"
+      write "\".bytes\n"
+      assert_screen(<<~EOC)
+        Multiline REPL.
+        prompt> "^C^Z^\\\".bytes
+        => [3, 26, 28]
+        prompt>
+      EOC
+      close
+    end
+
+    def test_quoted_insert_timeout
+      omit if Reline.core.io_gate.win?
+
+      start_terminal(5, 30, %W{ruby -I#{@pwd}/lib #{@pwd}/test/reline/yamatanooroti/multiline_repl}, startup_message: 'Multiline REPL.')
+      write "\C-v"
+      write "\C-a"
+      write "\C-v"
+      # broken bytes should be ignored with timeout
+      write_without_meta_conversion "\xE3\xE4\xE5"
+      sleep 1
+      write "\C-v"
+      write "\C-b"
+      assert_screen(/prompt> \^A\^B/)
     end
 
     def test_print_before_readline

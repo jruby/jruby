@@ -382,18 +382,6 @@ class Reline::Test < Reline::TestCase
     assert_match(/#<Reline::Dumb/, out.chomp)
   end
 
-  def test_print_prompt_before_everything_else
-    pend if win?
-    lib = File.expand_path("../../lib", __dir__)
-    code = "p Reline::IOGate.class; p Reline.readline 'prompt> '"
-    out = IO.popen([Reline.test_rubybin, "-I#{lib}", "-rreline", "-e", code], "r+") do |io|
-      io.write "abc\n"
-      io.close_write
-      io.read
-    end
-    assert_match(/\AReline::ANSI\nprompt> /, out)
-  end
-
   def test_read_eof_returns_input
     pend if win?
     lib = File.expand_path("../../lib", __dir__)
@@ -436,24 +424,25 @@ class Reline::Test < Reline::TestCase
     /mswin|mingw/.match?(RUBY_PLATFORM)
   end
 
-  def test_tty_amibuous_width
+  def test_tty_ambiguous_width
     omit unless defined?(PTY)
     ruby_file = Tempfile.create('rubyfile')
     ruby_file.write(<<~RUBY)
       require 'reline'
       Thread.new { sleep 2; puts 'timeout'; exit }
-      p [Reline.ambiguous_width, gets.chomp]
+      line = Reline.readline('>')
+      p [Reline.ambiguous_width, line]
     RUBY
     ruby_file.close
     lib = File.expand_path('../../lib', __dir__)
-    cmd = [{ 'TERM' => 'xterm' }, 'ruby', '-I', lib, ruby_file.to_path]
+    cmd = [{ 'TERM' => 'xterm' }, Reline.test_rubybin, '-I', lib, ruby_file.to_path]
 
     # Calculate ambiguous width from cursor position
     [1, 2].each do |ambiguous_width|
       PTY.spawn(*cmd) do |r, w, pid|
         loop { break if r.readpartial(1024).include?("\e[6n") }
-        w.puts "hello\e[10;#{ambiguous_width + 1}Rworld"
-        assert_include(r.gets, [ambiguous_width, 'helloworld'].inspect)
+        w.puts "hello\e[10;#{ambiguous_width + 1}Rworld\n"
+        assert_include(r.gets + r.gets, [ambiguous_width, 'helloworld'].inspect)
       ensure
         r.close
         w.close
@@ -464,8 +453,8 @@ class Reline::Test < Reline::TestCase
     # Ambiguous width = 1 when cursor pos timed out
     PTY.spawn(*cmd) do |r, w, pid|
       loop { break if r.readpartial(1024).include?("\e[6n") }
-      w.puts "hello\e[10;2Sworld"
-      assert_include(r.gets, [1, "hello\e[10;2Sworld"].inspect)
+      w.puts "helloworld\n"
+      assert_include(r.gets + r.gets, [1, "helloworld"].inspect)
     ensure
       r.close
       w.close

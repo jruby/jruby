@@ -19,7 +19,7 @@ class Reline::Unicode::Test < Reline::TestCase
   end
 
   def test_csi_regexp
-    csi_sequences = ["\e[m", "\e[1m", "\e[12;34m", "\e[12;34H"]
+    csi_sequences = ["\e[m", "\e[1m", "\e[12;34m", "\e[12;34H", "\e[5 q", "\e[?2004h"]
     assert_equal(csi_sequences, "text#{csi_sequences.join('text')}text".scan(Reline::Unicode::CSI_REGEXP))
   end
 
@@ -105,6 +105,21 @@ class Reline::Unicode::Test < Reline::TestCase
     assert_equal ["\e[41m \e[42mい\e[43m ", 1, 4], Reline::Unicode.take_mbchar_range("\e[41mあ\e[42mい\e[43mう", 1, 4, padding: true)
     assert_equal ["\e[31mc[ABC]d\e[0mef", 2, 4], Reline::Unicode.take_mbchar_range("\e[31mabc\1[ABC]\2d\e[0mefghi", 2, 4)
     assert_equal ["\e[41m \e[42mい\e[43m ", 1, 4], Reline::Unicode.take_mbchar_range("\e[41mあ\e[42mい\e[43mう", 1, 4, padding: true)
+  end
+
+  def test_three_width_characters_take_mbchar_range
+    halfwidth_dakuten = 0xFF9E.chr('utf-8')
+    a = 'あ' + halfwidth_dakuten
+    b = 'い' + halfwidth_dakuten
+    c = 'う' + halfwidth_dakuten
+    line = 'x' + a + b + c + 'x'
+    assert_equal ['  ' + b + ' ', 2, 6], Reline::Unicode.take_mbchar_range(line, 2, 6, padding: true)
+    assert_equal [' ' + b + '  ', 3, 6], Reline::Unicode.take_mbchar_range(line, 3, 6, padding: true)
+    assert_equal [b + c, 4, 6], Reline::Unicode.take_mbchar_range(line, 4, 6, padding: true)
+    assert_equal [a + b, 1, 6], Reline::Unicode.take_mbchar_range(line, 2, 6, cover_begin: true)
+    assert_equal [a + b, 1, 6], Reline::Unicode.take_mbchar_range(line, 3, 6, cover_begin: true)
+    assert_equal [b + c, 4, 6], Reline::Unicode.take_mbchar_range(line, 2, 6, cover_end: true)
+    assert_equal [b + c, 4, 6], Reline::Unicode.take_mbchar_range(line, 3, 6, cover_end: true)
   end
 
   def test_common_prefix
@@ -282,5 +297,46 @@ class Reline::Unicode::Test < Reline::TestCase
     refute(Reline::Unicode.space_character?(33345.chr('sjis')))
     refute(Reline::Unicode.space_character?('-'))
     refute(Reline::Unicode.space_character?(nil))
+  end
+
+  def test_halfwidth_dakuten_handakuten_combinations
+    assert_equal 1, Reline::Unicode.get_mbchar_width("\uFF9E")
+    assert_equal 1, Reline::Unicode.get_mbchar_width("\uFF9F")
+    assert_equal 2, Reline::Unicode.get_mbchar_width("ｶﾞ")
+    assert_equal 2, Reline::Unicode.get_mbchar_width("ﾊﾟ")
+    assert_equal 2, Reline::Unicode.get_mbchar_width("ｻﾞ")
+    assert_equal 2, Reline::Unicode.get_mbchar_width("aﾞ")
+    assert_equal 2, Reline::Unicode.get_mbchar_width("1ﾟ")
+    assert_equal 3, Reline::Unicode.get_mbchar_width("あﾞ")
+    assert_equal 3, Reline::Unicode.get_mbchar_width("紅ﾞ")
+  end
+
+  def test_grapheme_cluster_width
+    # GB6, GB7, GB8: Hangul syllable
+    assert_equal 2, Reline::Unicode.get_mbchar_width('한'.unicode_normalize(:nfd))
+    assert_equal 6, Reline::Unicode.get_mbchar_width('ᄀ' * 3)
+
+    # GB9
+    # Char + NonspacingMark
+    assert_equal 1, Reline::Unicode.get_mbchar_width('ç'.unicode_normalize(:nfd))
+    assert_equal 2, Reline::Unicode.get_mbchar_width('ぱ'.unicode_normalize(:nfd))
+    assert_equal 1, Reline::Unicode.get_mbchar_width("c\u{301}\u{327}")
+    # '1' + NonspacingMark + EnclosingMark
+    assert_equal 1, Reline::Unicode.get_mbchar_width('1️⃣')
+    # Char + SpacingMark
+    assert_equal 2, Reline::Unicode.get_mbchar_width('কা')
+    assert_equal 5, Reline::Unicode.get_mbchar_width('ｶﾞﾟﾞﾞ')
+    # Emoji joined with ZeroWidthJoiner
+    assert_equal 2, Reline::Unicode.get_mbchar_width('👨‍👩‍👧')
+    assert_equal 7, Reline::Unicode.get_mbchar_width('👨‍👩‍👧ﾞﾟﾟﾟﾞ')
+
+    # GB9a: Char + GraphemeClusterBreak=SpacingMark
+    assert_equal 2, Reline::Unicode.get_mbchar_width('คำ')
+
+    # GB9c: Consonant + Linker(NonspacingMark) + Consonant
+    assert_equal 2, Reline::Unicode.get_mbchar_width('क्त')
+
+    # GB12, GB13: RegionalIndicator
+    assert_equal 2, Reline::Unicode.get_mbchar_width('🇯🇵')
   end
 end
