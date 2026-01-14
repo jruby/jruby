@@ -177,6 +177,26 @@ public class RubyBinding extends RubyObject implements DataType {
         return evalScope.setValue(slot & 0xffff, value, slot >> 16);
     }
 
+    @JRubyMethod(name = "implicit_parameter_defined?")
+    public IRubyObject implicit_parameter_defined_p(ThreadContext context, IRubyObject symbol) {
+        String id = checkImplicitId(context, symbol);
+        return asBoolean(context, binding.getEvalScope(context.runtime).getStaticScope().isDefined(id) != -1);
+    }
+
+    @JRubyMethod
+    public IRubyObject implicit_parameter_get(ThreadContext context, IRubyObject symbol) {
+        String id = checkImplicitId(context, symbol);
+        DynamicScope evalScope = binding.getEvalScope(context.runtime);
+        StaticScope staticScope = evalScope.getStaticScope();
+        int slot = staticScope.isDefinedNotImplicit(id);
+
+        if (slot != StaticScope.IMPLICIT) throw undefinedImplicitVariableError(context, symbol);
+
+        slot = staticScope.isDefined(id);
+
+        return evalScope.getValueOrNil(slot & 0xffff, slot >> 16, context.nil);
+    }
+
     private static boolean isNumberedVariable(String id) {
         return id.length() == 2 && id.charAt(0) == '_' && Character.isDigit(id.charAt(1));
     }
@@ -187,6 +207,10 @@ public class RubyBinding extends RubyObject implements DataType {
 
     private RaiseException undefinedVariableError(ThreadContext context, IRubyObject symbol) {
         return nameError(context, str(context.runtime, "local variable '", symbol, "' not defined for " + inspect(context)), symbol);
+    }
+
+    private RaiseException undefinedImplicitVariableError(ThreadContext context, IRubyObject symbol) {
+        return nameError(context, str(context.runtime, "'", symbol, "' is not an implicit parameter"), symbol);
     }
 
     // MRI: check_local_id
@@ -201,9 +225,23 @@ public class RubyBinding extends RubyObject implements DataType {
 
         return id;
     }
+
+    private String checkImplicitId(ThreadContext context, IRubyObject obj) {
+        String id = RubySymbol.idStringFromObject(context, obj);
+
+        if (!isNumberedVariable(id) && !id.equals("it")) throw undefinedImplicitVariableError(context, obj);
+
+        return id;
+    }
+
     @JRubyMethod
     public IRubyObject local_variables(ThreadContext context) {
         return binding.getEvalScope(context.runtime).getStaticScope().getLocalVariables(context);
+    }
+
+    @JRubyMethod
+    public IRubyObject implicit_parameters(ThreadContext context) {
+        return binding.getEvalScope(context.runtime).getStaticScope().getImplicitLocalVariables(context);
     }
 
     @JRubyMethod(name = "receiver")
