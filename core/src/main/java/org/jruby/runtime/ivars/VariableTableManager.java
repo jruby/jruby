@@ -111,10 +111,10 @@ public class VariableTableManager {
      *
      * @param original VariableTableManager to copy
      */
-    VariableTableManager(VariableTableManager original) {
+    VariableTableManager(VariableTableManager original, RubyClass realClass) {
         synchronized (original) {
-            this.realClass = original.realClass;
-            this.variableAccessors = copyVariableAccessors(original.variableAccessors);
+            this.realClass = realClass;
+            this.variableAccessors = copyVariableAccessors(realClass, original.variableAccessors);
             this.variableNames = original.variableNames.clone();
             this.hasObjectID = original.hasObjectID;
             this.hasFFI = original.hasFFI;
@@ -282,8 +282,10 @@ public class VariableTableManager {
         return ivarAccessor;
     }
 
-    private static Map<String, VariableAccessor> copyVariableAccessors(Map<String, VariableAccessor> myVariableAccessors) {
-        return new LinkedHashMap<>(myVariableAccessors);
+    private static Map<String, VariableAccessor> copyVariableAccessors(RubyClass realClass, Map<String, VariableAccessor> otherVariableAccessors) {
+        var myVariableAccessors = new LinkedHashMap<String, VariableAccessor>(otherVariableAccessors.size());
+        otherVariableAccessors.forEach((name, accessor) -> myVariableAccessors.put(name, accessor.cloneFor(realClass)));
+        return myVariableAccessors;
     }
 
     private static Map<String, VariableAccessor> copyVariableAccessors(Map<String, VariableAccessor> myVariableAccessors, String name, VariableAccessor ivarAccessor) {
@@ -544,8 +546,8 @@ public class VariableTableManager {
         }
     }
 
-    public VariableTableManager duplicate() {
-        return new VariableTableManager(this);
+    public VariableTableManager duplicate(RubyClass realClass) {
+        return new VariableTableManager(this, realClass);
     }
 
     /**
