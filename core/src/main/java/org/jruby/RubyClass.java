@@ -550,7 +550,7 @@ public class RubyClass extends RubyModule {
                 baseName(name);
         clazz.makeMetaClass(context, superClass.getMetaClass());
         if (setParent) clazz.setParent(parent);
-        clazz.copyVariableTableManager(context, superClass);
+        clazz.copyVariableTableManager(context, superClass, clazz);
         parent.setConstant(context, name, clazz, file, line);
         superClass.invokeInherited(context, superClass, clazz);
         return clazz;
@@ -1073,7 +1073,7 @@ public class RubyClass extends RubyModule {
         allocator = superClazz.allocator;
         makeMetaClass(context, superClazz.getMetaClass());
         superClazz.addSubclass(this);
-        copyVariableTableManager(context, superClazz);
+        copyVariableTableManager(context, superClazz, this);
 
         marshal = superClazz.marshal;
 
@@ -1083,11 +1083,11 @@ public class RubyClass extends RubyModule {
         return this;
     }
 
-    private void copyVariableTableManager(ThreadContext context, RubyClass superClazz) {
+    private void copyVariableTableManager(ThreadContext context, RubyClass realClass, RubyClass superClazz) {
         VariableTableManager variableTableManager = superClazz.getVariableTableManager();
         if (variableTableManager.getRealClass().superClass() == context.runtime.getData()) {
             // duplicate data's variable table in subclasses
-            this.variableTableManager = variableTableManager.duplicate();
+            this.variableTableManager = variableTableManager.duplicate(realClass);
         }
     }
 

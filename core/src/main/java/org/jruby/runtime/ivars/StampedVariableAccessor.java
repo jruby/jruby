@@ -51,6 +51,10 @@ public class StampedVariableAccessor extends VariableAccessor {
         super(realClass, name, index, classId);
     }
 
+    public StampedVariableAccessor cloneFor(RubyClass newRealClass) {
+        return new StampedVariableAccessor(newRealClass, name, index, classId);
+    }
+
     /**
      * Set this variable into the given object using Unsafe to ensure
      * safe updating of the variable table.
