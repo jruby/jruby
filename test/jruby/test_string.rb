@@ -274,4 +274,25 @@ class TestStringPrintf < Test::Unit::TestCase
     opponent = '41181 jpa:awh'.scan("jpa")[0]
     assert_equal('jpa', sprintf("%s", opponent))
   end
+
+  # GH-9009: encoding with invalid: :replace but without undef: :replace
+  # should raise UndefinedConversionError, not NoMethodError
+  def test_encode_undefined_conversion_with_invalid_replace
+    # "Ā" (U+0100) is valid UTF-8 but not representable in windows-1252
+    str = "1ĀŽ2"
+
+    # With only invalid: :replace (no undef:), should raise UndefinedConversionError
+    assert_raises(Encoding::UndefinedConversionError) do
+      str.encode("windows-1252", invalid: :replace, replace: "")
+    end
+
+    # With undef: :replace, should replace undefined chars
+    result = str.encode("windows-1252", undef: :replace, replace: "")
+    assert_equal "1\x8E2".force_encoding("windows-1252"), result
+
+    # Without any options, should also raise UndefinedConversionError
+    assert_raises(Encoding::UndefinedConversionError) do
+      str.encode("windows-1252")
+    end
+  end
 end
