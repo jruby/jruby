@@ -31,8 +31,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -195,8 +195,16 @@ public class VariableTableManager {
      * This is internal API, don't call this directly if you aren't in the JRuby codebase, it may change
      * Request that the listed ivars (no @ in name) have field storage when we are reified
      */
-    public synchronized void requestFieldStorage(String name, Class<?> fieldType,  Boolean unwrap, Class<?> toType) {
-        DirectFieldConfiguration config = new JavaClassConfiguration.DirectFieldConfiguration(name, fieldType, unwrap, toType);
+    public synchronized void requestFieldStorage(String name, Class<?> fieldType, Boolean unwrap, Class<?> toType) {
+        addDirectField(name, '@' + name, fieldType, unwrap, toType, RubyObjectSpecializer.LOOKUP);
+    }
+
+    /**
+     * This is internal API, don't call this directly if you aren't in the JRuby codebase, it may change
+     * Request that the listed ivars (no @ in name) have field storage when we are reified
+     */
+    public synchronized void addDirectField(String name, String rubyName, Class<?> fieldType, Boolean unwrap, Class<?> toType, MethodHandles.Lookup lookup) {
+        DirectFieldConfiguration config = new JavaClassConfiguration.DirectFieldConfiguration(name, rubyName, fieldType, unwrap, toType, lookup);
         if (realClass.reifiedClass() != null)
             requestFieldStorage(config);
         else {
@@ -213,7 +221,7 @@ public class VariableTableManager {
     public void requestFieldStorage(DirectFieldConfiguration config) {
         try {
             Class<? extends Reified> reifiedClass = realClass.reifiedClass();
-            Class<?> fieldType = reifiedClass.getField(config.name).getType();
+            Class<?> fieldType = reifiedClass.getDeclaredField(config.name).getType();
             if (fieldType != config.fieldType) {
                 throw typeError(realClass.getClassRuntime().getCurrentContext(), "java_field " + config.name + " has incorrectly specified types for @ivar mapping");
             }
@@ -225,12 +233,12 @@ public class VariableTableManager {
                 throw typeError(realClass.getClassRuntime().getCurrentContext(), config.name + " has incorrectly specified unwrap type for @ivar mapping: type is incompatible");
             }
             
-            getVariableAccessorForJavaMappedVar("@" + config.name,
+            getVariableAccessorForJavaMappedVar(config.rubyName,
                     unwrap,
                     fieldType,
                     unwrapType,
-                    RubyObjectSpecializer.LOOKUP.findGetter(reifiedClass, config.name, fieldType),
-                    RubyObjectSpecializer.LOOKUP.findSetter(reifiedClass, config.name, fieldType));
+                    config.lookup.findGetter(reifiedClass, config.name, fieldType),
+                    config.lookup.findSetter(reifiedClass, config.name, fieldType));
         } catch (NoSuchFieldException e) {
             throw nameError(realClass.getClassRuntime().getCurrentContext(), "java_field " + config.name + " was marked for @ivar mapping, but wasn't found (was the class reifed already?)", config.name);
         } catch (IllegalAccessException e) {
