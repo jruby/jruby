@@ -94,6 +94,7 @@ import static org.jruby.api.Convert.toInteger;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Create.newSharedString;
+import static org.jruby.api.Create.newSmallHash;
 import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.nameError;
@@ -1849,6 +1850,37 @@ public class Helpers {
         hash.fastASetSmallCheckString(runtime, key4, value4);
         hash.fastASetSmallCheckString(runtime, key5, value5);
         return hash;
+    }
+
+    /**
+     * A factory for keyword arguments hashes with lazy symbol creation
+     */
+    public static final class KwargConstructor {
+        private final String[] names;
+        private RubySymbol[] keys;
+        public KwargConstructor(String[] names) {
+            this.names = names;
+        }
+
+        public IRubyObject constructKwargs(ThreadContext context, IRubyObject[] values) {
+            RubySymbol[] keys = ensureKeys(context);
+
+            RubyHash hash = newSmallHash(context);
+            Ruby runtime = context.runtime;
+
+            for (int i = 0; i < keys.length; i++) {
+                hash.fastASetSmallCheckString(runtime, keys[i], values[i]);
+            }
+
+            return hash;
+        }
+
+        private RubySymbol[] ensureKeys(ThreadContext context) {
+            if (keys == null) {
+                keys = Arrays.stream(names).map(n -> asSymbol(context, n)).toArray(RubySymbol[]::new);
+            }
+            return keys;
+        }
     }
 
     public static IRubyObject negate(IRubyObject value, Ruby runtime) {
