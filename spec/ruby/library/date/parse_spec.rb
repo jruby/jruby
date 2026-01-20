@@ -65,6 +65,21 @@ describe "Date#parse" do
     d.should == Date.civil(1910, 11, 1)
   end
 
+  it "parses W## as week number and defaults to this year first day of week" do
+    d = Date.parse('W09') #9th week of the year assumes first day of the week.
+    d.should == Date.civil(Date.today.year, 2, 24) #Mon. 2/24/2020. Week always starts with a Monday.
+  end
+
+  it "parses YYYY-W## as year and week number and defaults to first day of week" do
+    d = Date.parse('2020-W09') #9th week of the year assumes first day of the week.
+    d.should == Date.civil(2020, 2, 24) #Mon. 2/24/2020. Week always starts with a Monday.
+  end
+
+  it "parses YYYY-W##-D# as year, week number and day number" do
+    d = Date.parse('2020-W09-7') #9th week of the year 7th (last) day of the week
+    d.should == Date.civil(2020, 3, 1) #Sun. 2/24/2020. Week always ends with a Sunday.
+  end
+
   it "raises a TypeError trying to parse non-String-like object" do
     -> { Date.parse(1) }.should raise_error(TypeError)
     -> { Date.parse([]) }.should raise_error(TypeError)
