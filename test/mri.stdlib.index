@@ -23,7 +23,6 @@ socket
 stringio
 strscan
 uri
-win32ole
 yaml
 zlib
 
