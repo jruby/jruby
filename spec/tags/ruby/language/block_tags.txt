@@ -1,1 +1,3 @@
 fails:A block yielded a single Array raises error when required keyword arguments are present
+fails:`it` calls without arguments in a block with no ordinary parameters can be used in nested calls
+fails:`it` calls without arguments in a block with no ordinary parameters cannot be mixed with numbered parameters

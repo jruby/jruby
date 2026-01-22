@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.function.ObjIntConsumer;
 
 public class HashMapInt<V> {
 
@@ -95,12 +96,12 @@ public class HashMapInt<V> {
         return contains(value);
     }
 
-    public boolean containsKey(Object key) {
+    public boolean containsKey(V key) {
         Entry<V>[] tab = table;
         int hash = getHash(key);
         int index = (hash & 0x7FFFFFFF) % tab.length;
         for (Entry<V> e = tab[index]; e != null; e = e.next) {
-            if (e.hash == hash && e.key.equals(key)) {
+            if (e.hash == hash && keyMatches(key, e)) {
                 return true;
             }
         }
@@ -216,6 +217,15 @@ public class HashMapInt<V> {
         count = 0;
     }
 
+    public <T> boolean ifPresent(T state, V key, ObjIntConsumer<T> action) {
+        Entry<V> entry = getEntry(key);
+        if (entry != null) {
+            action.accept(state, entry.value);
+            return true;
+        }
+        return false;
+    }
+
     private abstract class HashIterator<T> implements Iterator<T> {
 		Entry<V> next; // next entry to return
 		int index; // current slot
@@ -307,10 +317,7 @@ public class HashMapInt<V> {
 
         @Override
 		public boolean contains(Object o) {
-			if(o instanceof Number) {
-				return containsKey(((Number)o).intValue());
-			}
-			return false;
+			return containsKey((V) o);
 		}
 
         @Override

@@ -17,7 +17,7 @@ describe "Kernel#require" do
   end
 
   provided = %w[complex enumerator fiber rational thread ruby2_keywords]
-  ruby_version_is "3.5" do
+  ruby_version_is "4.0" do
     provided << "set"
     provided << "pathname"
   end
@@ -31,19 +31,16 @@ describe "Kernel#require" do
     it "#{feature} is already required and provided in loaded features at boot" do
       feature_require = provided_requires[feature]
 
-      code = <<~RUBY
-        loaded_feature_base = $\".map{|f| File.basename(f, '.*')}
-        required = begin
-          require(#{feature_require.inspect})
-        rescue LoadError
-          "error"
-        end
-        feature = loaded_feature_base.include?(#{feature.inspect})
-        p({required:, feature:})
-        RUBY
-      output = ruby_exe(code, options: '--disable-gems').chomp
-      output.should == "{required: false, feature: true}"
+    features.sort.should == provided.sort
+
+    requires = provided
+    ruby_version_is "4.0" do
+      requires = requires.map { |f| f == "pathname" ? "pathname.so" : f }
     end
+
+    code = requires.map { |f| "puts require #{f.inspect}\n" }.join
+    required = ruby_exe(code, options: '--disable-gems')
+    required.should == "false\n" * requires.size
   end
 
   it_behaves_like :kernel_require_basic, :require, CodeLoadingSpecs::Method.new

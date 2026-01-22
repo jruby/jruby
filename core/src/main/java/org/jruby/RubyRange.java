@@ -1414,7 +1414,7 @@ public class RubyRange extends RubyObject {
                               MarshalDumper marshalStream) {
             RubyRange range = (RubyRange) obj;
 
-            marshalStream.registerLinkTarget(range);
+            marshalStream.registerObject(range);
 
             marshalStream.dumpVariables(context, out, range, 3, (marshal, c, o, v, receiver) -> {
                 receiver.receive(marshal, c, o, "excl", v.isExclusive ? c.tru : c.fals);

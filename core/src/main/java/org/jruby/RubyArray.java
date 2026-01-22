@@ -5342,7 +5342,7 @@ float_loop:
     }
 
     public static void marshalTo(ThreadContext context, RubyOutputStream out, RubyArray array, MarshalDumper output) {
-        output.registerLinkTarget(array);
+        output.registerObject(array);
 
         int length = array.realLength;
 

@@ -955,7 +955,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     public FString dupAsFString(Ruby runtime) {
         shareLevel = SHARE_LEVEL_BYTELIST;
-        FString dup = new FString(runtime, value, getCodeRange());
+        FString dup = new FString(runtime, value.dup(), getCodeRange());
         dup.shareLevel = SHARE_LEVEL_BYTELIST;
         dup.flags |= (flags & CR_MASK);
         dup.setFrozen(true);
@@ -3848,7 +3848,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             return begLen == null ? context.nil : byteSubstr(context, begLen[0], begLen[1]);
         } else if (idx instanceof RubyFixnum fixnum) {
             long i = fixnum.getValue();
-            if (i > RubyFixnum.MAX || i < RubyFixnum.MIN) return context.nil;
+            if (i > Integer.MAX_VALUE || i < Integer.MIN_VALUE) return context.nil;
             index = (int) i;
         } else {
             StringSites sites = sites(context);

@@ -65,8 +65,7 @@ default_gems = [
   # ['prism', '1.6.0'],
   ['psych', '5.3.1'],
   ['rake-ant', '1.0.6'],
-  # https://github.com/ruby/resolv/issues/19
-  # ['resolv', '0.7.0'],
+  ['resolv', '0.7.0'],
   ['ruby2_keywords', '0.0.5'],
   ['securerandom', '0.4.1'],
   ['shellwords', '0.2.2'],

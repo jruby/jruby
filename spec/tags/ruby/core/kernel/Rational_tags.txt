@@ -1,0 +1,1 @@
+fails:Kernel.Rational when passed neither a Numeric nor a String raises TypeError if it neither responds to #to_r nor #to_int method

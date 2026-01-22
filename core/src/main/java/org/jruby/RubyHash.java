@@ -2610,7 +2610,7 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     public static void marshalTo(ThreadContext context, RubyOutputStream out, final RubyHash hash, final MarshalDumper output) {
-        output.registerLinkTarget(hash);
+        output.registerObject(hash);
         int hashSize = hash.size();
         output.writeInt(out, hashSize);
         try {
