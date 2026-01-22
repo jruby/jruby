@@ -3344,7 +3344,7 @@ public final class Ruby implements Constantizable {
             printProfileData(profileCollection);
         }
 
-        if (Options.PARSER_SUMMARY.load()) parserManager.getParserStats().printParserStatistics();
+        if (Options.PARSER_SUMMARY.load()) parserManager.getParserStats().printParserStatistics(this);
 
         // shut down executors
         getJITCompiler().shutdown();
