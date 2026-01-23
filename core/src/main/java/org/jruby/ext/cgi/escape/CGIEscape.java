@@ -378,7 +378,7 @@ public class CGIEscape implements Library {
         origenc = str.getEncoding();
         if (origenc != encidx) {
             dest.setEncoding(encidx);
-            if (StringSupport.encCoderangeClean(dest.getCodeRange()) == 0) {
+            if (StringSupport.encCoderangeClean(dest.scanForCodeRange()) == 0) {
                 dest.setEncoding(origenc);
                 if (cr != StringSupport.CR_UNKNOWN)
                     dest.setCodeRange(cr);
