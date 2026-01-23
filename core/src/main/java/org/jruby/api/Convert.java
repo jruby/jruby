@@ -40,6 +40,7 @@ import static org.jruby.api.Access.integerClass;
 import static org.jruby.api.Error.floatDomainError;
 import static org.jruby.api.Error.rangeError;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.util.TypeConverter.convertToType;
 import static org.jruby.util.TypeConverter.convertToTypeWithCheck;
 import static org.jruby.util.TypeConverter.sites;
 
@@ -507,19 +508,110 @@ public class Convert {
     /**
      * Safely convert a Ruby Numeric into a java double value.  Raising if the value will not fit.
      * @param context the current thread context
-     * @param arg the Object to convert
+     * @param val the Object to convert
      * @return the value
      */
-    public static double toDouble(ThreadContext context, IRubyObject arg) {
-        return switch (arg) {
-            case RubyFloat flote -> flote.getValue();
-            case RubyInteger integer when Builtins.checkIntegerToF(context) -> integer.asDouble(context);
-            case RubyRational rational when Builtins.checkRationalToF(context) -> rational.asDouble(context);
-            case RubyString a -> throw typeError(context, "can't convert String to Float");
-            case RubyNil a -> throw typeError(context, "can't convert nil to Float");
-            case RubyBoolean a -> throw typeError(context, "can't convert " + (arg.isTrue() ? "true" : "false" + " to Float"));
-            default -> ((RubyFloat) TypeConverter.convertToType(arg, floatClass(context), "to_f")).getValue();
-        };
+    public static double toDouble(ThreadContext context, IRubyObject val) {
+        if (isSpecialConst(context, val)) {
+            switch (val) {
+                case RubyFixnum fixnum when Builtins.checkIntegerToF(context):
+                    return fixnum.asDouble(context);
+                case RubyFloat flote:
+                    return flote.getValue();
+                default:
+                    implicitConversionToFloat(context, val);
+            }
+        } else {
+            switch (val) {
+                case RubyFloat flote:
+                    return flote.getValue();
+                case RubyInteger integer when Builtins.checkIntegerToF(context):
+                    return integer.asDouble(context);
+                case RubyRational rational when Builtins.checkRationalToF(context):
+                    return rational.asDouble(context);
+                case RubyString a:
+                    throw typeError(context, "no implicit conversion to float from string");
+                default:
+                    // slow path below
+            }
+        }
+        return ((RubyFloat) TypeConverter.convertToType(val, floatClass(context), "to_f")).getValue();
+    }
+
+    // MRI: rb_num_to_dbl and Get_Double
+    /**
+     * Convert value to a double with appropriate optimizations and type checks.
+     *
+     * @param context the current thread context
+     * @param val the Object to convert
+     * @return the value
+     */
+    public static double numToDouble(ThreadContext context, IRubyObject val) {
+        if (isSpecialConst(context, val)) {
+            switch (val) {
+                case RubyFixnum fixnum:
+                    if (Builtins.checkIntegerToF(context)) {
+                        return fixnum.asDouble(context);
+                    }
+                    break;
+                case RubyFloat flote:
+                    return flote.getValue();
+                default:
+                    conversionToFloat(context, val);
+            }
+        } else {
+            switch (val) {
+                case RubyFloat flote:
+                    return flote.getValue();
+                case RubyInteger fixnum:
+                    if (Builtins.checkIntegerToF(context)) {
+                        return fixnum.asDouble(context);
+                    }
+                    break;
+                case RubyRational rational:
+                    if (Builtins.checkRationalToF(context))
+                        return rational.asDouble(context);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        return numericToFloat(context, val).getValue();
+    }
+
+    // MRI: SPECIAL_CONST_P, used to identify false and immediate values nil, true, fixnums, flonums, and symbols
+    private static boolean isSpecialConst(ThreadContext context, IRubyObject val) {
+        return val == context.fals || val.isImmediate();
+    }
+
+    // MRI: conversion_to_float
+    private static void conversionToFloat(ThreadContext context, IRubyObject val) {
+        specialConstToFloat(context, val, "can't convert ", " into Float");
+    }
+
+    // MRI: implicit_conversion_to_float
+    private static void implicitConversionToFloat(ThreadContext context, IRubyObject val) {
+        specialConstToFloat(context, val, "no implicit conversion to float from ", "");
+    }
+
+    private static void specialConstToFloat(ThreadContext context, IRubyObject val, String pre, String post) {
+        switch (val) {
+            case RubyNil nil:
+                throw typeError(context, pre + "nil" + post);
+            case RubyBoolean.True tru:
+                throw typeError(context, pre + "true" + post);
+            case RubyBoolean.False fals:
+                throw typeError(context, pre + "false" + post);
+            default:
+        }
+    }
+
+    private static RubyFloat numericToFloat(ThreadContext context, IRubyObject val) {
+        if (!(val instanceof RubyNumeric)) {
+            throw typeError(context, "can't convert " + val.getMetaClass() + " into Float");
+        }
+        return (RubyFloat) convertToTypeWithCheck(context, val, context.runtime.getFloat(), sites(context).to_f_checked);
     }
 
     // MRI: rb_num2long and FIX2LONG (numeric.c)
