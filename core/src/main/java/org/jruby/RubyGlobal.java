@@ -194,8 +194,9 @@ public class RubyGlobal {
         RubyInstanceConfig.Verbosity verbosity = instanceConfig.getVerbosity();
         runtime.defineVariable(new WarningGlobalVariable(context, "$-W", verbosity), GLOBAL);
 
-        IRubyObject defaultRS = RubyString.newFString(runtime, instanceConfig.getRecordSeparator());
-        GlobalVariable rs = new DeprecatedFrozenStringGlobalVariable(runtime, "$/", defaultRS);
+        IRubyObject defaultRS = RubyString.newFString(runtime, "\n");
+        IRubyObject configRS = RubyString.newFString(runtime, instanceConfig.getRecordSeparator());
+        GlobalVariable rs = new DeprecatedFrozenStringGlobalVariable(runtime, "$/", configRS);
         runtime.defineVariable(rs, GLOBAL);
         runtime.setRecordSeparatorVar(rs);
         globals.setDefaultSeparator(defaultRS);
