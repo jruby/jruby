@@ -237,6 +237,11 @@ DO NOT MODIFY - GENERATED CODE
       <artifactId>crac</artifactId>
       <version>1.5.0</version>
     </dependency>
+    <dependency>
+      <groupId>org.jruby</groupId>
+      <artifactId>jruby-prism</artifactId>
+      <version>2.0.0-SNAPSHOT</version>
+    </dependency>
   </dependencies>
   <build>
     <defaultGoal>package</defaultGoal>

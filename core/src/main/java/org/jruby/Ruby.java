@@ -865,7 +865,7 @@ public final class Ruby implements Constantizable {
      */
     public IRubyObject evalScriptlet(String script, DynamicScope scope) {
         ThreadContext context = getCurrentContext();
-        RootNode rootNode = (RootNode) getParserManager().parseEval("<script>", 0, script, scope).getAST();
+        ParseResult rootNode = getParserManager().parseEval("<script>", 0, script, scope);
 
         context.preEvalScriptlet(scope);
 
@@ -3345,7 +3345,7 @@ public final class Ruby implements Constantizable {
             printProfileData(profileCollection);
         }
 
-        if (Options.PARSER_SUMMARY.load()) parserManager.getParserStats().printParserStatistics();
+        if (Options.PARSER_SUMMARY.load()) parserManager.getParserStats().printParserStatistics(this);
 
         // shut down executors
         getJITCompiler().shutdown();
