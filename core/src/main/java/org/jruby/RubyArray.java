@@ -1028,10 +1028,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         int length = args.length;
         if (length == 0) return Create.newEmptyArray(context);
 
-        int arraySize = size();
         var result = Create.allocArray(context, length);
         for (int i = 0; i < length; i++) {
-            int index = toInt(context, args[i]);
             result.append(context, fetch(context, args[i], block));
         }
 
