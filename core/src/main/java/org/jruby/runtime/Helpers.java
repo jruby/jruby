@@ -827,27 +827,42 @@ public class Helpers {
         return getMetaClass(self).invokePublic(context, self, name, arg);
     }
 
-    // MRI: rb_check_funcall
+    /**
+     * Invoke the method requested if the given object respond_to? it, returning null if it is not defined.
+     * MRI: rb_check_funcall
+     */
     public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, String name) {
         return getMetaClass(self).finvokeChecked(context, self, name);
     }
 
-    // MRI: rb_check_funcall
+    /**
+     * Invoke the method requested if the given object respond_to? it, returning null if it is not defined.
+     * MRI: rb_check_funcall
+     */
     public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites) {
         return getMetaClass(self).finvokeChecked(context, self, sites);
     }
 
-    // MRI: rb_check_funcall
+    /**
+     * Invoke the method requested if the given object respond_to? it, returning null if it is not defined.
+     * MRI: rb_check_funcall
+     */
     public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, String name, IRubyObject... args) {
         return getMetaClass(self).finvokeChecked(context, self, name, args);
     }
 
-    // MRI: rb_check_funcall
+    /**
+     * Invoke the method requested if the given object respond_to? it, returning null if it is not defined.
+     * MRI: rb_check_funcall
+     */
     public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites, IRubyObject arg0) {
         return getMetaClass(self).finvokeChecked(context, self, sites, arg0);
     }
 
-    // MRI: rb_check_funcall
+    /**
+     * Invoke the method requested if the given object respond_to? it, returning null if it is not defined.
+     * MRI: rb_check_funcall
+     */
     public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites, IRubyObject... args) {
         return getMetaClass(self).finvokeChecked(context, self, sites, args);
     }

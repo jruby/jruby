@@ -718,6 +718,8 @@ public class RubyClass extends RubyModule {
     /**
      * Safely attempt to invoke the given method name on self, using respond_to? and method_missing as appropriate.
      *
+     * Return null if the method does not exist.
+     *
      * MRI: rb_check_funcall
      */
     public final IRubyObject finvokeChecked(ThreadContext context, IRubyObject self, String name) {
@@ -726,6 +728,8 @@ public class RubyClass extends RubyModule {
 
     /**
      * Safely attempt to invoke the given method name on self, using respond_to? and method_missing as appropriate.
+     *
+     * Return null if the method does not exist.
      *
      * MRI: rb_check_funcall
      */
@@ -736,6 +740,8 @@ public class RubyClass extends RubyModule {
     /**
      * Safely attempt to invoke the given method name on self, using respond_to? and method_missing as appropriate.
      *
+     * Return null if the method does not exist.
+     *
      * MRI: rb_check_funcall
      */
     public final IRubyObject finvokeChecked(ThreadContext context, IRubyObject self, String name, IRubyObject... args) {
@@ -744,6 +750,8 @@ public class RubyClass extends RubyModule {
 
     /**
      * Safely attempt to invoke the given method name on self, using respond_to? and method_missing as appropriate.
+     *
+     * Return null if the method does not exist.
      *
      * MRI: rb_check_funcall
      */
