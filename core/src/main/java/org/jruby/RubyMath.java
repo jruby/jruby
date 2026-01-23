@@ -731,7 +731,7 @@ public class RubyMath {
         double xDouble = numToDouble(context, x);
 
         if (xDouble < -1.0) {
-            throw context.runtime.newMathDomainError("Numerical argument is out of domain - log1p");
+            throw context.runtime.newMathDomainError("log1p");
         }
 
         return asFloat(context, Math.log1p(xDouble));

@@ -4399,7 +4399,7 @@ public final class Ruby implements Constantizable {
     }
 
     public RaiseException newMathDomainError(String message) {
-        return newRaiseException(getMathDomainError(), "Numerical argument is out of domain - \"" + message + "\"");
+        return newRaiseException(getMathDomainError(), "Numerical argument is out of domain - " + message);
     }
 
     public RaiseException newEncodingError(String message){
