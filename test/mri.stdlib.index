@@ -35,7 +35,6 @@ test_ipaddr.rb
 test_open3.rb
 test_pp.rb
 test_prettyprint.rb
-test_pstore.rb
 test_pty.rb
 test_rbconfig.rb
 test_securerandom.rb
