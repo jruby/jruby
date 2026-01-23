@@ -81,11 +81,6 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
         return (flags & FALSE) == 0 ? ClassIndex.TRUE : ClassIndex.FALSE;
     }
     
-    @Override
-    public boolean isImmediate() {
-        return true;
-    }
-
     public RubyClass singletonClass(ThreadContext context) {
         return metaClass;
     }
@@ -223,6 +218,11 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
                 return (T) Boolean.TRUE;
             }
             return super.toJava(target);
+        }
+
+        @Override
+        public boolean isImmediate() {
+            return true;
         }
     }
     
