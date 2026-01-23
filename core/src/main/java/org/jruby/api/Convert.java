@@ -516,9 +516,9 @@ public class Convert {
             case RubyFixnum fixnum when sites.Fixnum.to_f.isBuiltin(fixnum) -> fixnum.asDouble(context);
             case RubyBignum bignum when sites.Bignum.to_f.isBuiltin(bignum) -> bignum.asDouble(context);
             case RubyRational rational when sites.Rational.to_f.isBuiltin(rational) -> rational.asDouble(context);
-            case RubyString a -> throw typeError(context, "no implicit conversion to float from string");
-            case RubyNil a -> throw typeError(context, "no implicit conversion to float from nil");
-            case RubyBoolean a -> throw typeError(context, "no implicit conversion to float from " + (arg.isTrue() ? "true" : "false"));
+            case RubyString a -> throw typeError(context, "can't convert String to Float");
+            case RubyNil a -> throw typeError(context, "can't convert nil to Float");
+            case RubyBoolean a -> throw typeError(context, "can't convert " + (arg.isTrue() ? "true" : "false" + " to Float"));
             default -> ((RubyFloat) TypeConverter.convertToType(arg, floatClass(context), "to_f")).getValue();
         };
     }
