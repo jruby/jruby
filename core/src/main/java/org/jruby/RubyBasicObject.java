@@ -1143,6 +1143,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public final IRubyObject hashyInspect(ThreadContext context) {
         IRubyObject ivars = Helpers.invokeChecked(context, this, sites(context).instance_variables_to_inspect_checked);
 
+        if (ivars != null && !ivars.isNil() && !(ivars instanceof RubyArray)) {
+            throw typeError(context, "Expected #instance_variables_to_inspect to return an Array or nil, but it returned " + ivars.getMetaClass());
+        }
+
         RubyString part = inspectPrefix(context, metaClass.getRealClass(), inspectHashCode());
 
         Ruby runtime = context.runtime;
@@ -1197,7 +1201,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     private RubyString inspectObj(final ThreadContext context, RubyString part, IRubyObject ivars) {
         Ruby runtime = context.runtime;
 
-        if (ivars == null) {
+        if (ivars == null || ivars.isNil()) {
             // no ivars specified, do all of them
             boolean first = true;
             for (Map.Entry<String, VariableAccessor> entry : metaClass.getVariableTableManager().getVariableAccessorsForRead().entrySet()) {
@@ -1208,7 +1212,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
                 first = false;
             }
-        } else if (!ivars.isNil()) {
+        } else {
             // ivars specified, do only those
             RubyArray ivarsAry = Convert.castAsArray(context, ivars);
 
@@ -1223,7 +1227,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
                 first = false;
             }
-        } // else ivars was provided and is nil, so do none
+        }
 
         encStrBufCat(runtime, part, GT);
         return part;
