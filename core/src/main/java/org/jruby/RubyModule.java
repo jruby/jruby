@@ -3500,7 +3500,7 @@ public class RubyModule extends RubyObject {
             if (method.getDefinedClass() == this) {
                 if (!method.isNative()) {
                     Signature signature = method.getSignature();
-                    if (!signature.hasRest()) {
+                    if (!signature.hasRest() || signature.post() != 0) {
                         warn(context, str(context.runtime, "Skipping set of ruby2_keywords flag for ", ids(context.runtime, name), " (method accepts keywords or post arguments or method does not accept argument splat)"));
                     } else if (!signature.hasKwargs()) {
                         method.setRuby2Keywords();
