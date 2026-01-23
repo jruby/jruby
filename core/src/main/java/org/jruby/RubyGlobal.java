@@ -195,12 +195,12 @@ public class RubyGlobal {
         runtime.defineVariable(new WarningGlobalVariable(context, "$-W", verbosity), GLOBAL);
 
         IRubyObject defaultRS = RubyString.newFString(runtime, instanceConfig.getRecordSeparator());
-        GlobalVariable rs = new DeprecatedStringGlobalVariable(runtime, "$/", defaultRS);
+        GlobalVariable rs = new DeprecatedFrozenStringGlobalVariable(runtime, "$/", defaultRS);
         runtime.defineVariable(rs, GLOBAL);
         runtime.setRecordSeparatorVar(rs);
         globals.setDefaultSeparator(defaultRS);
         runtime.defineVariable(new DeprecatedStringGlobalVariable(runtime, "$\\", context.nil), GLOBAL);
-        runtime.defineVariable(new DeprecatedStringGlobalVariable(runtime, "$,", context.nil), GLOBAL);
+        runtime.defineVariable(new DeprecatedFrozenStringGlobalVariable(runtime, "$,", context.nil), GLOBAL);
 
         runtime.defineVariable(new LineNumberGlobalVariable(runtime, "$."), GLOBAL);
         runtime.defineVariable(new LastlineGlobalVariable(runtime, "$_"), FRAME);
@@ -463,8 +463,8 @@ public class RubyGlobal {
         return env;
     }
 
-    private static void warnDeprecatedGlobal(ThreadContext context, final String name) {
-        warnDeprecated(context, "'" + name + "' is deprecated");
+    private static void warnDeprecatedGlobal(ThreadContext context, final String subject) {
+        warnDeprecated(context, subject + " is deprecated");
     }
 
     /**
@@ -1076,6 +1076,31 @@ public class RubyGlobal {
             if (!value.isNil()) warnDeprecatedGlobal(runtime.getCurrentContext(), "non-nil '" + name + "'");
 
             return result;
+        }
+    }
+
+    public static class DeprecatedFrozenStringGlobalVariable extends StringGlobalVariable {
+        public DeprecatedFrozenStringGlobalVariable(Ruby runtime, String name, IRubyObject value) {
+            super(runtime, name, value);
+        }
+
+        @Override
+        public IRubyObject set(IRubyObject value) {
+            ThreadContext currentContext = runtime.getCurrentContext();
+            IRubyObject setValue = value;
+            if (setValue instanceof RubyString stringValue) {
+                if (!stringValue.isBare(currentContext) || !stringValue.isFrozen()) {
+                    stringValue = newSharedString(currentContext, stringValue.getByteList());
+                    stringValue.setFrozen(true);
+                }
+                setValue = stringValue;
+            }
+
+            super.set(setValue);
+
+            if (!value.isNil()) warnDeprecatedGlobal(currentContext, "non-nil '" + name + "'");
+
+            return value;
         }
     }
 
