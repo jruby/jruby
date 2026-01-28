@@ -822,78 +822,105 @@ public class IRRuntimeHelpers {
         return (callInfo & CALL_KEYWORD_EMPTY) == 0 && args.length >= 1 && args[args.length - 1] instanceof RubyHash;
     }
 
+    enum KwargsAction {
+        REPLACE_WITH_DUP_RETURN_UNDEFINED,
+        REPLACE_WITH_DUP_WITH_RUBY2_RETURN_UNDEFINED,
+        RETURN_DUP,
+        RETURN_UNDEFINED,
+        RETURN_DUP_WITHOUT_RUBY2,
+        RETURN_DUP_WITH_RUBY2,
+        RETURN_WITHOUT_RUBY2,
+        RETURN_HASH
+    }
+
     private static IRubyObject receiveKeywordsHash(ThreadContext context, IRubyObject[] args, boolean hasRestArgs,
                                                    boolean acceptsKeywords, boolean ruby2_keywords_method, int callInfo) {
         RubyHash hash = (RubyHash) args[args.length - 1];
 
+        switch (kwargsAction(hash, hasRestArgs, acceptsKeywords, ruby2_keywords_method, callInfo)) {
+            case REPLACE_WITH_DUP_RETURN_UNDEFINED -> {
+                args[args.length - 1] = hash.dupFast(context);
+                return UNDEFINED;
+            }
+            case REPLACE_WITH_DUP_WITH_RUBY2_RETURN_UNDEFINED -> {
+                args[args.length - 1] = hash.dupFast(context).withRuby2Keywords(true);
+                return UNDEFINED;
+            }
+            case RETURN_DUP -> {
+                return hash.dupFast(context);
+            }
+            case RETURN_DUP_WITHOUT_RUBY2 -> {
+                return hash.dupFast(context).withRuby2Keywords(false);
+            }
+            case RETURN_DUP_WITH_RUBY2 -> {
+                return hash.dupFast(context).withRuby2Keywords(true);
+            }
+            case RETURN_WITHOUT_RUBY2 -> {
+                return hash.withRuby2Keywords(false);
+            }
+            case RETURN_HASH -> {
+                return hash;
+            }
+            case RETURN_UNDEFINED -> {
+                return UNDEFINED;
+            }
+            case null -> throw new IllegalArgumentException("null kwargs action");
+        }
+    }
+
+    private static KwargsAction kwargsAction(RubyHash hash, boolean hasRestArgs,
+                                                   boolean acceptsKeywords, boolean ruby2_keywords_method, int callInfo) {
         if (ruby2_keywords_method) {
-            return receiveKeywordsHashRuby2KeywordsMethod(context, args, acceptsKeywords, hash, callInfo);
+            // no keywords to use in this method
+            if ((callInfo & CALL_KEYWORD) != 0) {
+                return KwargsAction.REPLACE_WITH_DUP_WITH_RUBY2_RETURN_UNDEFINED;
+            } else if (hash.isRuby2KeywordHash() && (callInfo & CALL_SPLATS) != 0 && hash.isEmpty()) { // splatted empty hash...just return it
+                return KwargsAction.RETURN_HASH;
+            } else if (acceptsKeywords && !hash.isEmpty()) { // keywords method which has keywords
+                return KwargsAction.RETURN_DUP;
+            } else {
+                return KwargsAction.RETURN_UNDEFINED;
+            }
         } else if (hash.isRuby2KeywordHash()) {
-            return receiveKeywordsHashRubyKeywordsHash(context, args, hasRestArgs, acceptsKeywords, callInfo, hash);
-        } else if ((callInfo & CALL_KEYWORD) == 0) {
-            return UNDEFINED; // we did not pass keywords to process
-        } else if (acceptsKeywords && !hash.isEmpty()) { // normal case kwargs passed and not empty
-            return hash.dupFast(context);
+            RubyHash hash1 = hash;
+            // ruby2_keywords only get unmarked if it enters a method which accepts keywords.
+            // This means methods which don't just keep that marked hash around in case it is passed
+            // onto another method which accepts keywords.
+            if (acceptsKeywords) {
+                if (!hash1.isEmpty()) {
+                    return KwargsAction.RETURN_DUP_WITHOUT_RUBY2;
+                } else {
+                    return KwargsAction.RETURN_WITHOUT_RUBY2;
+                }
+            } else if ((callInfo & CALL_SPLATS) != 0) {
+                // somehow we splatted an array with an empty keyword argument attached (ruby2_keywords_hash can lead to this)
+                if (hash1.isEmpty()) {
+                    return KwargsAction.RETURN_HASH;
+                } else {
+                    return KwargsAction.REPLACE_WITH_DUP_RETURN_UNDEFINED;
+                }
+            } else if (hasKeywords(callInfo)) {
+                if (!hash1.isEmpty()) {
+                    return KwargsAction.RETURN_DUP;
+                } else if (hasRestArgs) {
+                    // FIXME: This is a bit gross.  a real kwarg callsite if passed to a non-kwarg method but it
+                    // has a rest arg will dup the original kwarg (presumably so you cannot modify the original
+                    // kwarg hash).  This should be handled during  recv_rest_arg but we no longer have the info so
+                    // it happening here.
+                    return KwargsAction.REPLACE_WITH_DUP_RETURN_UNDEFINED;
+                } else {
+                    return KwargsAction.RETURN_UNDEFINED;
+                }
+            } else {
+                return KwargsAction.RETURN_UNDEFINED;
+            }
+        } else if (!hasKeywords(callInfo)) {
+            return KwargsAction.RETURN_UNDEFINED;
+        } else if (acceptsKeywords && !hash.isEmpty()) {
+            return KwargsAction.RETURN_DUP;
+        } else {
+            return KwargsAction.REPLACE_WITH_DUP_RETURN_UNDEFINED;
         }
-
-        args[args.length - 1] = hash.dup(context);
-
-        // All other situations no-op
-        return UNDEFINED;
-    }
-
-    private static IRubyObject receiveKeywordsHashRubyKeywordsHash(ThreadContext context, IRubyObject[] args,
-                                                                   boolean hasRestArgs, boolean acceptsKeywords,
-                                                                   int callInfo, RubyHash hash) {
-        // ruby2_keywords only get unmarked if it enters a method which accepts keywords.
-        // This means methods which don't just keep that marked hash around in case it is passed
-        // onto another method which accepts keywords.
-        if (acceptsKeywords) {
-            if (!hash.isEmpty()) hash = hash.dupFast(context);
-            hash.setRuby2KeywordHash(false);
-            return hash;
-        }
-
-        if ((callInfo & CALL_SPLATS) != 0) {
-            // somehow we splatted an array with an empty keyword argument attached (ruby2_keywords_hash can lead to this)
-            if (hash.isEmpty()) return hash;
-
-            args[args.length - 1] = hash.dup(context);
-            return UNDEFINED;
-        }
-
-        boolean explicitKeywords = (callInfo & CALL_KEYWORD) != 0;
-        if (explicitKeywords) {
-            if (!hash.isEmpty()) return hash.dupFast(context);
-
-            // FIXME: This is a bit gross.  a real kwarg callsite if passed to a non-kwarg method but it
-            // has a rest arg will dup the original kwarg (presumably so you cannot modify the original
-            // kwarg hash).  This should be handled during  recv_rest_arg but we no longer have the info so
-            // it happening here.
-            if (hasRestArgs) args[args.length - 1] = hash.dup(context);
-        }
-
-        // All other situations no-op
-        return UNDEFINED;
-    }
-
-    private static IRubyObject receiveKeywordsHashRuby2KeywordsMethod(ThreadContext context, IRubyObject[] args,
-                                                                      boolean acceptsKeywords, RubyHash hash,
-                                                                      int callInfo) {
-        if ((callInfo & CALL_KEYWORD) != 0) { // We have passed in kwargs
-            setTrailingHashRuby2Keywords(context, args, hash);
-        } else if (hash.isRuby2KeywordHash() && (callInfo & CALL_SPLATS) != 0 && hash.isEmpty()) { // splatted empty hash...just return it
-            return hash;
-        } else if (acceptsKeywords && !hash.isEmpty()) { // keywords method which has keywords
-            return hash.dupFast(context);
-        }
-        return UNDEFINED; // no keywords to use in this method
-    }
-
-    private static void setTrailingHashRuby2Keywords(ThreadContext context, IRubyObject[] args, RubyHash hash) {
-        hash = hash.dupFast(context);
-        hash.setRuby2KeywordHash(true);
-        args[args.length - 1] = hash;
     }
 
     /**
