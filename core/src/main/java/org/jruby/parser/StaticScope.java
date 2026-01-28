@@ -293,7 +293,7 @@ public class StaticScope implements Serializable, Cloneable {
         implicitVariables.set(slot);
     }
 
-    private int addVariableName(String name) {
+    public int addVariableName(String name) {
         // Clear constructor since we are adding a name
         constructor = null;
 
