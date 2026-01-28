@@ -717,7 +717,13 @@ public class IRRuntimeHelpers {
         int callInfo = ThreadContext.resetCallInfo(context);
         boolean isKwarg = (callInfo & CALL_KEYWORD) != 0;
 
-        return receiverSpecificArityKwargsCommon(context, last, isKwarg);
+        if ((callInfo & CALL_SPLATS) != 0 && last.isRuby2KeywordHash()) {
+            return last.dupFast(context);
+        }
+
+        return isKwarg ?
+                last.dupFast(context) :
+                last;
     }
 
     private static IRubyObject receiveSpecificArityRuby2HashKeywords(ThreadContext context, RubyHash last) {
@@ -735,13 +741,7 @@ public class IRRuntimeHelpers {
             return hash;
         }
 
-        return receiverSpecificArityKwargsCommon(context, last, false);
-    }
-
-    private static IRubyObject receiverSpecificArityKwargsCommon(ThreadContext context, RubyHash last, boolean isKwarg) {
-        return isKwarg || last.isRuby2KeywordHash() ?
-                last.dupFast(context) :
-                last;
+        return last;
     }
 
     /**
