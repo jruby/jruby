@@ -12,3 +12,6 @@ fails:IO::Buffer#private? with a slice of a buffer created with .map is false wh
 fails:IO::Buffer#private? with a slice of a buffer created with .for is false when slicing a buffer created without a block
 fails:IO::Buffer#private? with a slice of a buffer created with .for is false when slicing a buffer created with a block
 fails:IO::Buffer#private? with a slice of a buffer created with .string is false
+fails:IO::Buffer#private? is true for a buffer created with PRIVATE flag
+fails:IO::Buffer#private? is false for a buffer created without PRIVATE flag
+fails:IO::Buffer#private? is false for a null buffer

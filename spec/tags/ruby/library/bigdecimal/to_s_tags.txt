@@ -1,0 +1,1 @@
+fails:BigDecimal#to_s inserts a space every n chars to integer part, if integer n is supplied
