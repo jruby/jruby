@@ -717,7 +717,11 @@ public class IRRuntimeHelpers {
         int callInfo = ThreadContext.resetCallInfo(context);
         boolean isKwarg = (callInfo & CALL_KEYWORD) != 0;
 
-        return isKwarg || last.isRuby2KeywordHash() ?
+        if ((callInfo & CALL_SPLATS) != 0 && last.isRuby2KeywordHash()) {
+            return last.dupFast(context);
+        }
+
+        return isKwarg ?
                 last.dupFast(context) :
                 last;
     }
