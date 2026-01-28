@@ -1,0 +1,1 @@
+fails:Hash#inspect can be evaled when Encoding.default_external is changed

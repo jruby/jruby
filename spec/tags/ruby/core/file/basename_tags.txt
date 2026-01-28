@@ -1,0 +1,2 @@
+fails:File.basename rejects strings encoded with non ASCII-compatible encodings
+fails:File.basename works with all ASCII-compatible encodings
