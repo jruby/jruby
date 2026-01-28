@@ -397,15 +397,28 @@ public abstract class RubyParserBase {
             node = new LocalVarNode(lexer.tokline, slot, name);
         } else if (dyna_in_block() && id.equals("it")) {
             if (!hasArguments()) {
-                int existing = currentScope.isDefined(id);
-                slot = existing == -1 ?
-                        currentScope.addVariable(id) : existing;
+                int existing = currentScope.isDefinedNotImplicit(id);
+                boolean newIt = false;
+
+                if (existing == -1) {
+                    slot = currentScope.addVariable(id);
+                    newIt = true;
+                } else if (existing == -2) { // We found an it either in this scope or above it
+                    if (it_id() != null) {   // It is the current scope
+                        slot = currentScope.isDefined(id);   // Get location of it
+                    } else {
+                        slot = currentScope.addVariable(id); // Was above this scope so make one for it.
+                        newIt = true;
+                    }
+                } else {
+                    slot = existing;
+                }
                 node = new DVarNode(lexer.tokline, slot, name);
-                if (existing == -1) set_it_id(node);
+                if (newIt) set_it_id(node);
             } else {
-                slot = currentScope.isDefined(id);
+                slot = currentScope.isDefinedNotImplicit(id);
                 // A special it cannot exist without being marked as a special it.
-                if (it_id() == null && slot == -1) compile_error("`it` is not allowed when an ordinary parameter is defined");
+                if (it_id() != null) compile_error("`it` is not allowed when an ordinary parameter is defined");
 
                 node = currentScope.declare(lexer.tokline, name);
             }
@@ -430,6 +443,16 @@ public abstract class RubyParserBase {
         numparam_name(byteName);
 
         if (warnOnUnusedVariables) addOrMarkVariable(name, currentScope.isDefined(name.idString()));
+
+        String id = name.idString();
+        // This differs from MRI annd it is a special branch because I do not want to infect staticscope with 'it'
+        // logic since it likely will be done differently in Prism (This will play out more once 10.1 updates
+        // to latest Prism).  If it is the same then we can reconsider whether this should be in staticscope or not.
+        if (id.equals("it") && currentScope.exists(id) == -1) { // case: foo { it.bar { <<it = something>> } it }
+            // we are assigning and there is no 'it' here so make it as a normal local
+            int slot = currentScope.addVariableName(id);
+            return new DAsgnNode(lexer.getRubySourceline(), name, slot, value);
+        }
 
         return currentScope.assign(lexer.getRubySourceline(), name, makeNullNil(value));
     }
