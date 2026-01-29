@@ -253,38 +253,9 @@ public class RubyFloat extends RubyNumeric {
     @JRubyMethod(name = {"to_s", "inspect"})
     @Override
     public IRubyObject to_s() {
-        final Ruby runtime = metaClass.runtime;
-        if (Double.isInfinite(value)) {
-            return RubyString.newStringShared(runtime, value < 0 ? NEGATIVE_INFINITY_TO_S_BYTELIST : POSITIVE_INFINITY_TO_S_BYTELIST);
-        }
-        if (Double.isNaN(value)) {
-            return RubyString.newStringShared(runtime, NAN_TO_S_BYTELIST);
-        }
-
-        ByteList buf = new ByteList();
-        // Under 1.9, use full-precision float formatting (JRUBY-4846).
-        // Double-precision can represent around 16 decimal digits;
-        // we use 20 to ensure full representation.
-        Sprintf.sprintf(buf, Locale.US, "%#.20g", this);
-        int e = buf.indexOf('e');
-        if (e == -1) e = buf.getRealSize();
-        ASCIIEncoding ascii = ASCIIEncoding.INSTANCE;
-
-        if (!ascii.isDigit(buf.get(e - 1))) {
-            buf.setRealSize(0);
-            Sprintf.sprintf(buf, Locale.US, "%#.14e", this);
-            e = buf.indexOf('e');
-            if (e == -1) e = buf.getRealSize();
-        }
-
-        int p = e;
-        while (buf.get(p - 1) == '0' && ascii.isDigit(buf.get(p - 2))) p--;
-        System.arraycopy(buf.getUnsafeBytes(), e, buf.getUnsafeBytes(), p, buf.getRealSize() - e);
-        buf.setRealSize(p + buf.getRealSize() - e);
-
-        buf.setEncoding(USASCIIEncoding.INSTANCE);
-
-        return runtime.newString(buf);
+        ByteList buf = new ByteList(24);
+        formatFloat(this, buf);
+        return RubyString.newString(getRuntime(), buf);
     }
 
     public static final ByteList POSITIVE_INFINITY_TO_S_BYTELIST = new ByteList(ByteList.plain("Infinity"), USASCIIEncoding.INSTANCE, false);
@@ -850,8 +821,8 @@ public class RubyFloat extends RubyNumeric {
             RubyInteger den;
 
             RubyInteger two_times_f = (RubyInteger) rf.op_mul(context, 2);
-            den = (RubyInteger) one.op_lshift(context, RubyFixnum.one(runtime).op_minus(context, n));
-            
+            den = (RubyInteger) one.op_lshift(context, one.op_minus(context, n));
+
             a = RubyRational.newRationalRaw(runtime, two_times_f.op_minus(context, 1), den);
             b = RubyRational.newRationalRaw(runtime, two_times_f.op_plus(context, 1), den);
         }
@@ -1219,7 +1190,48 @@ public class RubyFloat extends RubyNumeric {
         return byteList;
     }
 
-    public static void marshalTo(RubyFloat aFloat, MarshalStream output) throws java.io.IOException {
+    public static ByteList formatFloat(RubyFloat self, ByteList buf) {
+      buf.setRealSize(0);
+
+      double value = self.value;
+
+      if (Double.isInfinite(value)) {
+          buf.append(value < 0
+              ? NEGATIVE_INFINITY_TO_S_BYTELIST
+              : POSITIVE_INFINITY_TO_S_BYTELIST);
+          buf.setEncoding(USASCIIEncoding.INSTANCE);
+          return buf;
+      }
+
+      if (Double.isNaN(value)) {
+          buf.append(NAN_TO_S_BYTELIST);
+          buf.setEncoding(USASCIIEncoding.INSTANCE);
+          return buf;
+      }
+
+      Sprintf.sprintf(buf, Locale.US, "%#.20g", self);
+
+      int e = buf.indexOf('e');
+      if (e == -1) e = buf.getRealSize();
+      ASCIIEncoding ascii = ASCIIEncoding.INSTANCE;
+
+      if (!ascii.isDigit(buf.get(e - 1))) {
+          buf.setRealSize(0);
+          Sprintf.sprintf(buf, Locale.US, "%#.14e", self);
+          e = buf.indexOf('e');
+          if (e == -1) e = buf.getRealSize();
+      }
+
+      int p = e;
+      while (buf.get(p - 1) == '0' && ascii.isDigit(buf.get(p - 2))) p--;
+      System.arraycopy(buf.getUnsafeBytes(), e, buf.getUnsafeBytes(), p, buf.getRealSize() - e);
+      buf.setRealSize(p + buf.getRealSize() - e);
+
+      buf.setEncoding(USASCIIEncoding.INSTANCE);
+      return buf;
+    }
+
+    public static void marshalTo(RubyFloat aFloat, org.jruby.runtime.marshal.MarshalStream output) throws java.io.IOException {
         output.registerLinkTarget(aFloat);
         output.writeString(aFloat.marshalDump());
     }
