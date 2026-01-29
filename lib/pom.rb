@@ -83,8 +83,6 @@ default_gems = [
   ['strscan', '3.1.7'],
   ['subspawn', '0.1.1'], # has 3 transitive deps:
   ['subspawn-posix', '0.1.1'],
-  # temporarily a default gem until https://github.com/jruby/jruby/pull/9197
-  ['syslog', '0.4.0'],
   ['ffi-binary-libfixposix', '0.5.1.1'],
   ['ffi-bindings-libfixposix', '0.5.1.0'],
   ['syntax_suggest', '2.0.2'],
@@ -143,6 +141,7 @@ bundled_gems = [
   ['rexml', '3.4.4'],
   ['rinda', '0.2.0'],
   ['rss', '0.3.1'],
+  ['syslog', '0.4.0'],
   ['test-unit', '3.6.7']
   # Depends on many CRuby internals
   # ['typeprof', '0.30.1'],
