@@ -141,8 +141,7 @@ bundled_gems = [
   ['rexml', '3.4.4'],
   ['rinda', '0.2.0'],
   ['rss', '0.3.1'],
-  # https://github.com/ruby/syslog/issues/1
-  # ['syslog', '0.2.0'],
+  ['syslog', '0.4.0'],
   ['test-unit', '3.6.7']
   # Depends on many CRuby internals
   # ['typeprof', '0.30.1'],
