@@ -29,7 +29,6 @@ failures
 .debug.properties
 .redcar
 /.rbx/
-build
 build.properties
 build_graph.png
 core/src/main/java/org/jruby/runtime/Constants.java

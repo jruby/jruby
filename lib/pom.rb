@@ -213,6 +213,10 @@ project 'JRuby Lib Setup' do
 
     log "using jruby #{JRUBY_VERSION}"
 
+    # force platform to match build JRuby
+    Gem.set_target_rbconfig(File.join(File.dirname(__FILE__), "ruby/stdlib/jruby/build/rbconfig.rb"))
+    Gem.instance_variable_set :@ruby_api_version, Gem.target_rbconfig['ruby_version']
+
     target = ctx.project.build.directory.to_pathname
     gem_home = File.join(target, 'rubygems')
     gems = File.join(gem_home, 'gems')
@@ -251,6 +255,7 @@ project 'JRuby Lib Setup' do
         say 'Skipping native extensions.'
 
         FileUtils.mkdir_p File.dirname(@spec.gem_build_complete_path)
+        p @spec.gem_build_complete_path
         FileUtils.touch @spec.gem_build_complete_path
       end
     end
