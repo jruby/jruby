@@ -183,7 +183,7 @@ public final class ThreadContext {
      * This fields is no longer initialized, is null by default!
      * @deprecated Use {@link #getSecureRandom()} instead.
      */
-    @Deprecated
+    @Deprecated(since = "9.1.0.0")
     public transient SecureRandom secureRandom;
 
     private static boolean tryPreferredPRNG = true;
@@ -442,7 +442,7 @@ public final class ThreadContext {
         catchStack = newCatchStack;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.6.0")
     public void pushCatch(RubyContinuation.Continuation catchTarget) {
         pushCatch((CatchThrow) catchTarget);
     }
@@ -854,7 +854,7 @@ public final class ThreadContext {
     /**
      * Used by the evaluator and the compiler to look up a constant by name
      */
-    @Deprecated
+    @Deprecated(since = "1.7.2")
     public IRubyObject getConstant(String internedName) {
         return getCurrentStaticScope().getConstant(this, internedName);
     }
@@ -1469,12 +1469,12 @@ public final class ThreadContext {
     private Map<IRubyObject, IRubyObject> safeRecurseGetGuards(String name) {
         Map<String, IdentityHashMap<IRubyObject, IRubyObject>> symToGuards = this.symToGuards;
         if (symToGuards == null) {
-            this.symToGuards = symToGuards = new HashMap<>();
+            this.symToGuards = symToGuards = new HashMap<>(4);
         }
 
         IdentityHashMap<IRubyObject, IRubyObject> guards = symToGuards.get(name);
         if (guards == null) {;
-            symToGuards.put(name, guards = new IdentityHashMap<>());
+            symToGuards.put(name, guards = new IdentityHashMap<>(4));
         }
 
         return guards;
@@ -1549,7 +1549,7 @@ public final class ThreadContext {
      * @return the old call info
      * @deprecated use the trivially-inlinable static version
      */
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public int resetCallInfo() {
         return resetCallInfo(this);
     }
@@ -1571,7 +1571,7 @@ public final class ThreadContext {
      * Clear call info state (set to 0).
      * @deprecated use the trivially-inlinable static version
      */
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public void clearCallInfo() {
         clearCallInfo(this);
     }
@@ -1588,7 +1588,7 @@ public final class ThreadContext {
         return (callInfo & CALL_KEYWORD) != 0;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public IRubyObject setBackRef(IRubyObject match) {
         if (match.isNil()) return clearBackRef();
 

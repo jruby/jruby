@@ -30,7 +30,7 @@ def jruby(java_options = {}, &code)
 
   java_options[:fork] ||= 'true'
   java_options[:failonerror] ||= 'true'
-  java_options[:classname] = 'org.jruby.Main'
+  java_options[:classname] = 'org.jruby.main.Main'
   java_options[:maxmemory] ||= JRUBY_LAUNCH_MEMORY
 
   puts "JAVA options: #{java_options.inspect}"

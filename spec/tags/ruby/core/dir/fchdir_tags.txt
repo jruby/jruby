@@ -1,0 +1,6 @@
+fails:Dir.fchdir changes the current working directory to the directory specified by the integer file descriptor
+fails:Dir.fchdir raises a SystemCallError if the file descriptor given is not for a directory
+fails:Dir.fchdir returns 0 when successfully changing directory
+fails:Dir.fchdir returns the value of the block when a block is given
+fails:Dir.fchdir changes to the specified directory for the duration of the block
+fails:Dir.fchdir raises a SystemCallError if the file descriptor given is not valid

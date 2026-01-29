@@ -133,7 +133,7 @@
           <statusLine y="20" text="Loading irb..." />
         </text>
       </splashScreen>
-      <java mainClass="org.jruby.Main" vmParameters="&quot;-Djruby.home=${launcher:sys.launcherDirectory}&quot;" arguments="&quot;${launcher:sys.launcherDirectory}/bin/jirb_swing&quot;">
+      <java mainClass="org.jruby.main.Main" vmParameters="&quot;-Djruby.home=${launcher:sys.launcherDirectory}&quot;" arguments="&quot;${launcher:sys.launcherDirectory}/bin/jirb_swing&quot;">
         <classPath>
           <archive location="lib/jruby.jar" failOnError="false" />
         </classPath>

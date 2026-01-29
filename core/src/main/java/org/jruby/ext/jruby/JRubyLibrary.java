@@ -182,7 +182,7 @@ public class JRubyLibrary implements Library {
         return asBoolean(context, Ruby.isSecurityRestricted());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static RubyBoolean is_security_restricted(IRubyObject recv) {
         return is_security_restricted(((RubyBasicObject) recv).getCurrentContext(), recv);
     }
@@ -301,7 +301,7 @@ public class JRubyLibrary implements Library {
                 Block.NULL_BLOCK);
     }
 
-    @Deprecated // @JRubyMethod(meta = true, visibility = Visibility.PRIVATE)
+    @Deprecated(since = "9.2.1.0") // @JRubyMethod(meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject load_string_ext(ThreadContext context, IRubyObject recv) {
         CoreExt.loadStringExtensions(context);
         return context.nil;

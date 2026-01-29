@@ -1,0 +1,2 @@
+fails:Symbol#id2name warns about mutating returned string
+fails:Symbol#id2name does not warn about mutation when Warning[:deprecated] is false

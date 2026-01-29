@@ -938,7 +938,7 @@ public class Numeric {
         return x.op_eqq(context, y).isTrue();
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static void checkInteger(ThreadContext context, IRubyObject obj) {
         if (!(obj instanceof RubyInteger)) throw typeError(context, "not an integer");
     }

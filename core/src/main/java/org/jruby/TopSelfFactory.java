@@ -50,7 +50,7 @@ public final class TopSelfFactory {
         super();
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject createTopSelf(final Ruby runtime) {
         var Object = objectClass(runtime.getCurrentContext());
         var topSelf = new RubyObject(runtime, Object);

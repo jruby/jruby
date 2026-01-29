@@ -308,7 +308,7 @@ public class Block implements FunctionOneOrTwoOrThree<ThreadContext, IRubyObject
      *
      * @return the arity
      */
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public Arity arity() {
         return getSignature().arity();
     }

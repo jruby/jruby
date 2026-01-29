@@ -101,7 +101,7 @@ public class RubyNativeThread implements ThreadLike {
     }
 
     @Override
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public String getRubyName() {
         return rubyName;
     }

@@ -107,7 +107,7 @@ public class JavaMethod extends JavaCallable {
         return new JavaMethod(runtime, method);
     }
 
-    @Deprecated // no-longer used
+    @Deprecated(since = "9.0.0.0") // no-longer used
     public static JavaMethod create(Ruby runtime, Class<?> javaClass, String methodName, Class<?>[] argumentTypes) {
         try {
             return create(runtime, javaClass.getMethod(methodName, argumentTypes));
@@ -117,7 +117,7 @@ public class JavaMethod extends JavaCallable {
         }
     }
 
-    @Deprecated // no-longer used
+    @Deprecated(since = "9.0.0.0") // no-longer used
     public static JavaMethod createDeclared(Ruby runtime, Class<?> javaClass, String methodName, Class<?>[] argumentTypes) {
         try {
             return create(runtime, javaClass.getDeclaredMethod(methodName, argumentTypes));
@@ -493,7 +493,7 @@ public class JavaMethod extends JavaCallable {
         }
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RaiseException newMethodNotFoundError(Ruby runtime, Class target, String prettyName, String simpleName) {
         return newMethodNotFoundError(runtime.getCurrentContext(), target, prettyName, simpleName);
     }

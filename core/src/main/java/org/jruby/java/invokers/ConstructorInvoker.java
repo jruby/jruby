@@ -47,7 +47,7 @@ public final class ConstructorInvoker extends RubyToJavaInvoker {
     }
 
     @Override
-    @Deprecated
+    @Deprecated(since = "9.1.6.0")
     protected boolean isMemberVarArgs(Member member) {
         return ((Constructor) member).isVarArgs();
     }

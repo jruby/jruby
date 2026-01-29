@@ -44,7 +44,7 @@ public abstract class AbstractScript implements Script {
         return __file__(context, self, new IRubyObject[] {arg1, arg2, arg3}, block);
     }
     
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     public IRubyObject load(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
         return load(context, self, false);
     }
@@ -101,16 +101,27 @@ public abstract class AbstractScript implements Script {
 
     public static final int NUMBERED_SYMBOL_COUNT = 10;
 
+    @Deprecated(since = "10.0.3.0")
     public final RubySymbol getSymbol(ThreadContext context, int i, String name, String encoding) {return runtimeCache.getSymbol(context, i, name, encoding);}
+    @Deprecated(since = "10.0.3.0")
     public final RubySymbol getSymbol0(ThreadContext context, String name, String encoding) {return runtimeCache.getSymbol(context, 0, name, encoding);}
+    @Deprecated(since = "10.0.3.0")
     public final RubySymbol getSymbol1(ThreadContext context, String name, String encoding) {return runtimeCache.getSymbol(context, 1, name, encoding);}
+    @Deprecated(since = "10.0.3.0")
     public final RubySymbol getSymbol2(ThreadContext context, String name, String encoding) {return runtimeCache.getSymbol(context, 2, name, encoding);}
+    @Deprecated(since = "10.0.3.0")
     public final RubySymbol getSymbol3(ThreadContext context, String name, String encoding) {return runtimeCache.getSymbol(context, 3, name, encoding);}
+    @Deprecated(since = "10.0.3.0")
     public final RubySymbol getSymbol4(ThreadContext context, String name, String encoding) {return runtimeCache.getSymbol(context, 4, name, encoding);}
+    @Deprecated(since = "10.0.3.0")
     public final RubySymbol getSymbol5(ThreadContext context, String name, String encoding) {return runtimeCache.getSymbol(context, 5, name, encoding);}
+    @Deprecated(since = "10.0.3.0")
     public final RubySymbol getSymbol6(ThreadContext context, String name, String encoding) {return runtimeCache.getSymbol(context, 6, name, encoding);}
+    @Deprecated(since = "10.0.3.0")
     public final RubySymbol getSymbol7(ThreadContext context, String name, String encoding) {return runtimeCache.getSymbol(context, 7, name, encoding);}
+    @Deprecated(since = "10.0.3.0")
     public final RubySymbol getSymbol8(ThreadContext context, String name, String encoding) {return runtimeCache.getSymbol(context, 8, name, encoding);}
+    @Deprecated(since = "10.0.3.0")
     public final RubySymbol getSymbol9(ThreadContext context, String name, String encoding) {return runtimeCache.getSymbol(context, 9, name, encoding);}
 
     public static final int NUMBERED_STRING_COUNT = 10;

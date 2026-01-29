@@ -60,6 +60,10 @@ public class RubyStackTraceElement implements java.io.Serializable {
         return lineNumber;
     }
 
+    public String getFileAndLine() {
+        return "" + fileName + ":" + lineNumber;
+    }
+
     public final String getMethodName() {
         return methodName;
     }
@@ -75,7 +79,7 @@ public class RubyStackTraceElement implements java.io.Serializable {
         return element = new StackTraceElement(className, methodName, fileName, lineNumber);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.0.0")
     public StackTraceElement getElement() { return asStackTraceElement(); }
 
     public String toString() {
@@ -99,7 +103,7 @@ public class RubyStackTraceElement implements java.io.Serializable {
         return line;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public final CharSequence mriStyleString() {
         // return fileName + ':' + lineNumber + ":in '" + methodName + '\'';
         return new StringBuilder(fileName.length() + methodName.length() + 12).

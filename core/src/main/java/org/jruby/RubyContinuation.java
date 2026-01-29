@@ -42,9 +42,9 @@ import static org.jruby.api.Define.defineClass;
  * Minimal RubyContinuation class to support third-party users.
  */
 @JRubyClass(name="Continuation")
-@Deprecated
+@Deprecated(since = "9.2.6.0")
 public class RubyContinuation extends RubyObject {
-    @Deprecated
+    @Deprecated(since = "9.2.6.0")
     public static class Continuation extends CatchThrow {
         public Continuation() {
             super();
@@ -65,7 +65,7 @@ public class RubyContinuation extends RubyObject {
                 tap(c -> c.singletonClass(context).undefMethods(context, "new"));
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.6.0")
     public RubyContinuation(Ruby runtime) {
         super(runtime, runtime.getContinuation());
         this.continuation = new Continuation();
@@ -77,18 +77,18 @@ public class RubyContinuation extends RubyObject {
      * @param runtime Current JRuby runtime
      * @param tag The tag to use
      */
-    @Deprecated
+    @Deprecated(since = "9.2.6.0")
     public RubyContinuation(Ruby runtime, IRubyObject tag) {
         super(runtime, runtime.getContinuation());
         this.continuation = new Continuation(tag);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.6.0")
     public Continuation getContinuation() {
         return continuation;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.6.0")
     public IRubyObject call(ThreadContext context, IRubyObject[] args) {
         if (disabled) {
             RubyKernel.raise(context, context.runtime.getThreadError(),
@@ -99,7 +99,7 @@ public class RubyContinuation extends RubyObject {
         throw continuation;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.6.0")
     public IRubyObject enter(ThreadContext context, IRubyObject yielded, Block block) {
         try {
             return block.yield(context, yielded);

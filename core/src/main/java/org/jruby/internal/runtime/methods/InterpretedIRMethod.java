@@ -263,7 +263,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
         tryJit(context, this, false);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public String getClassName(ThreadContext context) {
         return null;
     }

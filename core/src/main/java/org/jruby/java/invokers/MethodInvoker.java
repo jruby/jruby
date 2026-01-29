@@ -40,7 +40,7 @@ public abstract class MethodInvoker extends RubyToJavaInvoker {
     }
 
     @Override
-    @Deprecated
+    @Deprecated(since = "9.1.6.0")
     protected final boolean isMemberVarArgs(Member member) {
         return ((Method) member).isVarArgs();
     }

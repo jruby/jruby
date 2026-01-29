@@ -205,12 +205,12 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         doWarn(filename, LINE_NUMBER_NON_WARNING, message, null);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public void warnExperimental(String filename, int line, String message) {
         warnWithCategory(filename, line, message, Category.EXPERIMENTAL);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public void warnDeprecated(ID id, String message) {
         warnWithCategory(message, Category.DEPRECATED);
     }
@@ -235,12 +235,12 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         if (runtime.getWarningCategories().contains(category)) warn(filename, line, message, category);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public void warnDeprecatedAlternate(String name, String alternate) {
         if (hasDeprecationWarningEnabled()) warn(ID.DEPRECATED_METHOD, name + " is deprecated; use " + alternate + " instead");
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public void warnDeprecatedForRemoval(String name, String version) {
         if (hasDeprecationWarningEnabled()) warn(ID.MISCELLANEOUS, name + " is deprecated and will be removed in Ruby " + version);
     }
@@ -386,7 +386,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
      * Prints a warning, unless $VERBOSE is nil.
      */
     @Override
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public void warn(ID id, String fileName, String message) {
         if (!runtime.warningsEnabled()) return;
 
@@ -394,7 +394,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         warn(context, newString(context, fileName + " warning: " + message + '\n'));
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return switch (args.length) {
             case 1 -> warn(context, recv, args[0]);

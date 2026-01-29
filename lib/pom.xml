@@ -12,7 +12,7 @@ DO NOT MODIFY - GENERATED CODE
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>10.0.1.0-SNAPSHOT</version>
+    <version>10.0.3.0-SNAPSHOT</version>
   </parent>
   <artifactId>jruby-stdlib</artifactId>
   <name>JRuby Lib Setup</name>
@@ -20,7 +20,7 @@ DO NOT MODIFY - GENERATED CODE
     <gem.home>${basedir}/ruby/gems/shared</gem.home>
     <jruby.complete.gems>${jruby.complete.home}/lib/ruby/gems/shared</jruby.complete.gems>
     <jruby.complete.home>${project.build.outputDirectory}/META-INF/jruby.home</jruby.complete.home>
-    <jruby.plugins.version>3.0.5</jruby.plugins.version>
+    <jruby.plugins.version>3.0.6</jruby.plugins.version>
     <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
     <polyglot.dump.readonly>true</polyglot.dump.readonly>
   </properties>
@@ -28,13 +28,13 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>jruby-core</artifactId>
-      <version>10.0.1.0-SNAPSHOT</version>
+      <version>10.0.3.0-SNAPSHOT</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>rubygems-update</artifactId>
-      <version>3.6.3</version>
+      <version>3.7.2</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -60,7 +60,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>bundler</artifactId>
-      <version>2.6.3</version>
+      <version>2.7.2</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -73,7 +73,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>cgi</artifactId>
-      <version>0.4.1</version>
+      <version>0.4.2</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -242,7 +242,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>io-console</artifactId>
-      <version>0.8.0</version>
+      <version>0.8.1</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -255,7 +255,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>io-wait</artifactId>
-      <version>0.3.1</version>
+      <version>0.3.2</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -320,7 +320,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>jruby-openssl</artifactId>
-      <version>0.15.3</version>
+      <version>0.15.5</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -333,7 +333,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>json</artifactId>
-      <version>2.9.1</version>
+      <version>2.16.0</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -502,7 +502,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>rdoc</artifactId>
-      <version>6.10.0</version>
+      <version>6.14.0</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -516,6 +516,19 @@ DO NOT MODIFY - GENERATED CODE
       <groupId>rubygems</groupId>
       <artifactId>reline</artifactId>
       <version>0.6.0</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>rubygems</groupId>
+          <artifactId>jar-dependencies</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>resolv</artifactId>
+      <version>0.6.3</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -580,7 +593,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>stringio</artifactId>
-      <version>3.1.5</version>
+      <version>3.1.9</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -593,7 +606,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>strscan</artifactId>
-      <version>3.1.2</version>
+      <version>3.1.7</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -918,7 +931,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>net-imap</artifactId>
-      <version>0.5.4</version>
+      <version>0.5.8</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -944,7 +957,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>net-smtp</artifactId>
-      <version>0.5.0</version>
+      <version>0.5.1</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -1048,7 +1061,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>rexml</artifactId>
-      <version>3.4.0</version>
+      <version>3.4.4</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -1118,10 +1131,10 @@ DO NOT MODIFY - GENERATED CODE
         <directory>${gem.home}</directory>
         <includes>
           <include>specifications/default/*</include>
-          <include>specifications/rubygems-update-3.6.3*</include>
+          <include>specifications/rubygems-update-3.7.2*</include>
           <include>specifications/benchmark-0.4.0*</include>
-          <include>specifications/bundler-2.6.3*</include>
-          <include>specifications/cgi-0.4.1*</include>
+          <include>specifications/bundler-2.7.2*</include>
+          <include>specifications/cgi-0.4.2*</include>
           <include>specifications/date-3.4.1*</include>
           <include>specifications/delegate-0.4.0*</include>
           <include>specifications/did_you_mean-2.0.0*</include>
@@ -1134,14 +1147,14 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/fileutils-1.7.3*</include>
           <include>specifications/find-0.2.0*</include>
           <include>specifications/forwardable-1.3.3*</include>
-          <include>specifications/io-console-0.8.0*</include>
-          <include>specifications/io-wait-0.3.1*</include>
+          <include>specifications/io-console-0.8.1*</include>
+          <include>specifications/io-wait-0.3.2*</include>
           <include>specifications/ipaddr-1.2.7*</include>
           <include>specifications/irb-1.14.3*</include>
           <include>specifications/jar-dependencies-0.5.4*</include>
           <include>specifications/jruby-readline-1.3.7*</include>
-          <include>specifications/jruby-openssl-0.15.3*</include>
-          <include>specifications/json-2.9.1*</include>
+          <include>specifications/jruby-openssl-0.15.5*</include>
+          <include>specifications/json-2.16.0*</include>
           <include>specifications/logger-1.6.4*</include>
           <include>specifications/net-http-0.6.0*</include>
           <include>specifications/net-protocol-0.2.2*</include>
@@ -1154,14 +1167,15 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/pstore-0.1.4*</include>
           <include>specifications/psych-5.2.3*</include>
           <include>specifications/rake-ant-1.0.6*</include>
-          <include>specifications/rdoc-6.10.0*</include>
+          <include>specifications/rdoc-6.14.0*</include>
           <include>specifications/reline-0.6.0*</include>
+          <include>specifications/resolv-0.6.3*</include>
           <include>specifications/ruby2_keywords-0.0.5*</include>
           <include>specifications/securerandom-0.4.1*</include>
           <include>specifications/shellwords-0.2.2*</include>
           <include>specifications/singleton-0.3.0*</include>
-          <include>specifications/stringio-3.1.5*</include>
-          <include>specifications/strscan-3.1.2*</include>
+          <include>specifications/stringio-3.1.9*</include>
+          <include>specifications/strscan-3.1.7*</include>
           <include>specifications/subspawn-0.1.1*</include>
           <include>specifications/subspawn-posix-0.1.1*</include>
           <include>specifications/ffi-binary-libfixposix-0.5.1.1*</include>
@@ -1186,9 +1200,9 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/minitest-5.25.4*</include>
           <include>specifications/mutex_m-0.3.0*</include>
           <include>specifications/net-ftp-0.3.8*</include>
-          <include>specifications/net-imap-0.5.4*</include>
+          <include>specifications/net-imap-0.5.8*</include>
           <include>specifications/net-pop-0.1.2*</include>
-          <include>specifications/net-smtp-0.5.0*</include>
+          <include>specifications/net-smtp-0.5.1*</include>
           <include>specifications/nkf-0.2.0*</include>
           <include>specifications/observer-0.1.2*</include>
           <include>specifications/power_assert-2.0.5*</include>
@@ -1196,14 +1210,14 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/racc-1.8.1*</include>
           <include>specifications/rake-${rake.version}*</include>
           <include>specifications/resolv-replace-0.1.1*</include>
-          <include>specifications/rexml-3.4.0*</include>
+          <include>specifications/rexml-3.4.4*</include>
           <include>specifications/rinda-0.2.0*</include>
           <include>specifications/rss-0.3.1*</include>
           <include>specifications/test-unit-3.6.7*</include>
-          <include>gems/rubygems-update-3.6.3*/**/*</include>
+          <include>gems/rubygems-update-3.7.2*/**/*</include>
           <include>gems/benchmark-0.4.0*/**/*</include>
-          <include>gems/bundler-2.6.3*/**/*</include>
-          <include>gems/cgi-0.4.1*/**/*</include>
+          <include>gems/bundler-2.7.2*/**/*</include>
+          <include>gems/cgi-0.4.2*/**/*</include>
           <include>gems/date-3.4.1*/**/*</include>
           <include>gems/delegate-0.4.0*/**/*</include>
           <include>gems/did_you_mean-2.0.0*/**/*</include>
@@ -1216,14 +1230,14 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/fileutils-1.7.3*/**/*</include>
           <include>gems/find-0.2.0*/**/*</include>
           <include>gems/forwardable-1.3.3*/**/*</include>
-          <include>gems/io-console-0.8.0*/**/*</include>
-          <include>gems/io-wait-0.3.1*/**/*</include>
+          <include>gems/io-console-0.8.1*/**/*</include>
+          <include>gems/io-wait-0.3.2*/**/*</include>
           <include>gems/ipaddr-1.2.7*/**/*</include>
           <include>gems/irb-1.14.3*/**/*</include>
           <include>gems/jar-dependencies-0.5.4*/**/*</include>
           <include>gems/jruby-readline-1.3.7*/**/*</include>
-          <include>gems/jruby-openssl-0.15.3*/**/*</include>
-          <include>gems/json-2.9.1*/**/*</include>
+          <include>gems/jruby-openssl-0.15.5*/**/*</include>
+          <include>gems/json-2.16.0*/**/*</include>
           <include>gems/logger-1.6.4*/**/*</include>
           <include>gems/net-http-0.6.0*/**/*</include>
           <include>gems/net-protocol-0.2.2*/**/*</include>
@@ -1236,14 +1250,15 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/pstore-0.1.4*/**/*</include>
           <include>gems/psych-5.2.3*/**/*</include>
           <include>gems/rake-ant-1.0.6*/**/*</include>
-          <include>gems/rdoc-6.10.0*/**/*</include>
+          <include>gems/rdoc-6.14.0*/**/*</include>
           <include>gems/reline-0.6.0*/**/*</include>
+          <include>gems/resolv-0.6.3*/**/*</include>
           <include>gems/ruby2_keywords-0.0.5*/**/*</include>
           <include>gems/securerandom-0.4.1*/**/*</include>
           <include>gems/shellwords-0.2.2*/**/*</include>
           <include>gems/singleton-0.3.0*/**/*</include>
-          <include>gems/stringio-3.1.5*/**/*</include>
-          <include>gems/strscan-3.1.2*/**/*</include>
+          <include>gems/stringio-3.1.9*/**/*</include>
+          <include>gems/strscan-3.1.7*/**/*</include>
           <include>gems/subspawn-0.1.1*/**/*</include>
           <include>gems/subspawn-posix-0.1.1*/**/*</include>
           <include>gems/ffi-binary-libfixposix-0.5.1.1*/**/*</include>
@@ -1268,9 +1283,9 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/minitest-5.25.4*/**/*</include>
           <include>gems/mutex_m-0.3.0*/**/*</include>
           <include>gems/net-ftp-0.3.8*/**/*</include>
-          <include>gems/net-imap-0.5.4*/**/*</include>
+          <include>gems/net-imap-0.5.8*/**/*</include>
           <include>gems/net-pop-0.1.2*/**/*</include>
-          <include>gems/net-smtp-0.5.0*/**/*</include>
+          <include>gems/net-smtp-0.5.1*/**/*</include>
           <include>gems/nkf-0.2.0*/**/*</include>
           <include>gems/observer-0.1.2*/**/*</include>
           <include>gems/power_assert-2.0.5*/**/*</include>
@@ -1278,14 +1293,14 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/racc-1.8.1*/**/*</include>
           <include>gems/rake-${rake.version}*/**/*</include>
           <include>gems/resolv-replace-0.1.1*/**/*</include>
-          <include>gems/rexml-3.4.0*/**/*</include>
+          <include>gems/rexml-3.4.4*/**/*</include>
           <include>gems/rinda-0.2.0*/**/*</include>
           <include>gems/rss-0.3.1*/**/*</include>
           <include>gems/test-unit-3.6.7*/**/*</include>
-          <include>cache/rubygems-update-3.6.3*</include>
+          <include>cache/rubygems-update-3.7.2*</include>
           <include>cache/benchmark-0.4.0*</include>
-          <include>cache/bundler-2.6.3*</include>
-          <include>cache/cgi-0.4.1*</include>
+          <include>cache/bundler-2.7.2*</include>
+          <include>cache/cgi-0.4.2*</include>
           <include>cache/date-3.4.1*</include>
           <include>cache/delegate-0.4.0*</include>
           <include>cache/did_you_mean-2.0.0*</include>
@@ -1298,14 +1313,14 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/fileutils-1.7.3*</include>
           <include>cache/find-0.2.0*</include>
           <include>cache/forwardable-1.3.3*</include>
-          <include>cache/io-console-0.8.0*</include>
-          <include>cache/io-wait-0.3.1*</include>
+          <include>cache/io-console-0.8.1*</include>
+          <include>cache/io-wait-0.3.2*</include>
           <include>cache/ipaddr-1.2.7*</include>
           <include>cache/irb-1.14.3*</include>
           <include>cache/jar-dependencies-0.5.4*</include>
           <include>cache/jruby-readline-1.3.7*</include>
-          <include>cache/jruby-openssl-0.15.3*</include>
-          <include>cache/json-2.9.1*</include>
+          <include>cache/jruby-openssl-0.15.5*</include>
+          <include>cache/json-2.16.0*</include>
           <include>cache/logger-1.6.4*</include>
           <include>cache/net-http-0.6.0*</include>
           <include>cache/net-protocol-0.2.2*</include>
@@ -1318,14 +1333,15 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/pstore-0.1.4*</include>
           <include>cache/psych-5.2.3*</include>
           <include>cache/rake-ant-1.0.6*</include>
-          <include>cache/rdoc-6.10.0*</include>
+          <include>cache/rdoc-6.14.0*</include>
           <include>cache/reline-0.6.0*</include>
+          <include>cache/resolv-0.6.3*</include>
           <include>cache/ruby2_keywords-0.0.5*</include>
           <include>cache/securerandom-0.4.1*</include>
           <include>cache/shellwords-0.2.2*</include>
           <include>cache/singleton-0.3.0*</include>
-          <include>cache/stringio-3.1.5*</include>
-          <include>cache/strscan-3.1.2*</include>
+          <include>cache/stringio-3.1.9*</include>
+          <include>cache/strscan-3.1.7*</include>
           <include>cache/subspawn-0.1.1*</include>
           <include>cache/subspawn-posix-0.1.1*</include>
           <include>cache/ffi-binary-libfixposix-0.5.1.1*</include>
@@ -1350,9 +1366,9 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/minitest-5.25.4*</include>
           <include>cache/mutex_m-0.3.0*</include>
           <include>cache/net-ftp-0.3.8*</include>
-          <include>cache/net-imap-0.5.4*</include>
+          <include>cache/net-imap-0.5.8*</include>
           <include>cache/net-pop-0.1.2*</include>
-          <include>cache/net-smtp-0.5.0*</include>
+          <include>cache/net-smtp-0.5.1*</include>
           <include>cache/nkf-0.2.0*</include>
           <include>cache/observer-0.1.2*</include>
           <include>cache/power_assert-2.0.5*</include>
@@ -1360,7 +1376,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/racc-1.8.1*</include>
           <include>cache/rake-${rake.version}*</include>
           <include>cache/resolv-replace-0.1.1*</include>
-          <include>cache/rexml-3.4.0*</include>
+          <include>cache/rexml-3.4.4*</include>
           <include>cache/rinda-0.2.0*</include>
           <include>cache/rss-0.3.1*</include>
           <include>cache/test-unit-3.6.7*</include>
@@ -1375,8 +1391,6 @@ DO NOT MODIFY - GENERATED CODE
           <include>lib/ruby/stdlib/**</include>
         </includes>
         <excludes>
-          <exclude>bin/ruby</exclude>
-          <exclude>bin/jruby</exclude>
           <exclude>bin/jruby*_*</exclude>
           <exclude>bin/jruby*-*</exclude>
           <exclude>**/.*</exclude>
@@ -1446,7 +1460,7 @@ DO NOT MODIFY - GENERATED CODE
       <plugin>
         <groupId>io.takari.polyglot</groupId>
         <artifactId>polyglot-maven-plugin</artifactId>
-        <version>0.5.0</version>
+        <version>0.8.1</version>
         <executions>
           <execution>
             <id>install_gems</id>
@@ -1471,17 +1485,6 @@ DO NOT MODIFY - GENERATED CODE
             </configuration>
           </execution>
           <execution>
-            <id>copy bin/jruby.sh to bin/jruby</id>
-            <phase>process-resources</phase>
-            <goals>
-              <goal>execute</goal>
-            </goals>
-            <configuration>
-              <taskId>copy bin/jruby.sh to bin/jruby</taskId>
-              <nativePom>pom.rb</nativePom>
-            </configuration>
-          </execution>
-          <execution>
             <id>jrubydir</id>
             <phase>prepare-package</phase>
             <goals>
@@ -1497,7 +1500,7 @@ DO NOT MODIFY - GENERATED CODE
           <dependency>
             <groupId>io.takari.polyglot</groupId>
             <artifactId>polyglot-ruby</artifactId>
-            <version>0.5.0</version>
+            <version>0.8.1</version>
           </dependency>
         </dependencies>
         <inherited>false</inherited>

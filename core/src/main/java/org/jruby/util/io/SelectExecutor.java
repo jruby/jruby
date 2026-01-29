@@ -295,7 +295,7 @@ public class SelectExecutor {
                 // need to create pipe between alt impl selector and native NIO selector
                 Pipe pipe = Pipe.open();
                 ENXIOSelector enxioSelector = new ENXIOSelector(selector, pipe);
-                if (enxioSelectors.isEmpty()) enxioSelectors = new ArrayList<ENXIOSelector>();
+                if (enxioSelectors.isEmpty()) enxioSelectors = new ArrayList<ENXIOSelector>(1);
                 enxioSelectors.add(enxioSelector);
                 pipe.source().configureBlocking(false);
                 pipe.source().register(getSelector(context, pipe.source()), SelectionKey.OP_READ, enxioSelector);

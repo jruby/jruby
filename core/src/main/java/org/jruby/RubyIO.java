@@ -72,7 +72,6 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.EOFError;
 import org.jruby.exceptions.IOError;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.exceptions.StandardError;
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.internal.runtime.ThreadedRunnable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -1295,7 +1294,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return port;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public static IRubyObject sysopen(IRubyObject recv, IRubyObject[] args, Block block) {
         return sysopen(((RubyBasicObject) recv).getCurrentContext(), recv, args, block);
     }
@@ -1428,7 +1427,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
      * @return
      * @deprecated Use {@link RubyIO#binmode(ThreadContext)} instead.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject binmode() {
         return binmode(getCurrentContext());
     }
@@ -2177,7 +2176,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
      * @return
      * @deprecated Use {@link RubyIO#sync_set(ThreadContext, IRubyObject)} instead.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject sync_set(IRubyObject sync) {
         return sync_set(getCurrentContext(), sync);
     }
@@ -2291,7 +2290,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             ChannelFD fd = orig.fd().dup();
             fptr.setFD(fd);
             long pos = orig.tell(context);
-            if (pos == -1)
+            if (0 <= pos)
                 fptr.seek(context, pos, PosixShim.SEEK_SET);
         } finally {
             if (locked2) fptr.unlock();
@@ -2363,14 +2362,14 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         IOSites sites = sites(context);
         IRubyObject closed = io.checkCallMethod(context, sites.closed_checked);
         if (closed != null && closed.isTrue()) return io;
-        IRubyObject oldExc = globalVariables(context).get("$!"); // Save $!
+        IRubyObject oldExc = context.getErrorInfo(); // Save $!
         try {
             closed = io.checkCallMethod(context, sites.close_checked);
             return asBoolean(context, closed != null && closed.isTrue());
         } catch (RaiseException re) {
             if (re.getMessage().contains(CLOSED_STREAM_MSG)) {
                 // ignore
-                globalVariables(context).set("$!", oldExc); // Restore $!
+                context.setErrorInfo(oldExc); // Restore $!
                 return context.nil;
             } else {
                 throw re;
@@ -3159,7 +3158,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return line;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.1.0")
     public IRubyObject getc() {
         return getbyte(getCurrentContext());
     }
@@ -3539,7 +3538,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return str;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject read(IRubyObject[] args) {
         return read(getCurrentContext(), args);
     }
@@ -3688,7 +3687,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return fptr.fread(context, buffer, start, len);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.1.0")
     public IRubyObject readchar() {
         return readchar(getCurrentContext());
     }
@@ -3747,7 +3746,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return block.isGiven() ? each_byteInternal(context, block) : enumeratorize(context.runtime, this, "each_byte");
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject bytes(ThreadContext context, Block block) {
         context.runtime.getWarnings().warn("IO#bytes is deprecated; use #each_byte instead");
         return each_byte(context, block);
@@ -3784,13 +3783,13 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return each_charInternal(context, block);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject chars(ThreadContext context, Block block) {
         context.runtime.getWarnings().warn("IO#chars is deprecated; use #each_char instead");
         return each_charInternal(context, block);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject codepoints(ThreadContext context, Block block) {
         context.runtime.getWarnings().warn("IO#codepoints is deprecated; use #each_codepoint instead");
         return eachCodePointCommon(context, block, "each_codepoint");
@@ -3993,7 +3992,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject lines(final ThreadContext context, Block block) {
         context.runtime.getWarnings().warn("IO#lines is deprecated; use #each_line instead");
         return each_line(context, block);
@@ -5433,7 +5432,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         ALL_SPAWN_OPTIONS = new HashSet<>(Arrays.asList(SPAWN_OPTIONS));
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.1.0")
     public static void checkExecOptions(IRubyObject options) {
         if (options instanceof RubyHash) {
             RubyHash opts = (RubyHash) options;
@@ -5444,7 +5443,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.1.0")
     public static void checkSpawnOptions(IRubyObject options) {
         if (options instanceof RubyHash) {
             RubyHash opts = (RubyHash) options;
@@ -5455,7 +5454,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.1.0")
     public static void checkPopenOptions(IRubyObject options) {
         if (options instanceof RubyHash) {
             RubyHash opts = (RubyHash) options;
@@ -5583,7 +5582,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "1.6.0")
     public IRubyObject readline(ThreadContext context, IRubyObject[] args) {
         return args.length == 0 ? readline(context) : readline(context, args[0]);
     }
@@ -5687,27 +5686,27 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return context.sites.IO;
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.5")
     public IRubyObject getline(Ruby runtime, ByteList separator) {
         return getline(runtime.getCurrentContext(), runtime.newString(separator), -1);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.5")
     public IRubyObject getline(Ruby runtime, ByteList separator, long limit) {
         return getline(runtime.getCurrentContext(), runtime.newString(separator), limit);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public IRubyObject getline(ThreadContext context, ByteList separator) {
         return getline(context, newString(context, separator), -1);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public IRubyObject getline(ThreadContext context, ByteList separator, long limit) {
         return getline(context, newString(context, separator), limit);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public RubyIO(Ruby runtime, STDIO stdio) {
         super(runtime, runtime.getIO());
 
@@ -5728,7 +5727,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         tmp.openFile = null;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public RubyIO(Ruby runtime, RubyClass cls, ShellLauncher.POpenProcess process, RubyHash options, IOOptions ioOptions) {
         super(runtime, cls);
         var context = runtime.getCurrentContext();
@@ -5740,12 +5739,12 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         setupPopen(context, ioOptions.getModeFlags(), process);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public static ModeFlags getIOModes(Ruby runtime, String modesString) {
         return newModeFlags(runtime, modesString);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public static int getIOModesIntFromString(Ruby runtime, String modesString) {
         try {
             return ModeFlags.getOFlagsFromString(modesString);
@@ -5754,12 +5753,12 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public static IRubyObject writeStatic(ThreadContext context, IRubyObject recv, IRubyObject[] argv, Block unusedBlock) {
         return write(context, recv, argv);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     @JRubyMethod(name = "popen3", rest = true, meta = true)
     public static IRubyObject popen3(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         final Ruby runtime = context.runtime;
@@ -5838,7 +5837,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return yieldArgs;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public static IRubyObject popen4(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.runtime;
 
@@ -5866,7 +5865,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     private static void cleanupPOpen(POpenTuple tuple) {
         if (tuple.input.openFile.isOpen()) {
             try {
@@ -5885,7 +5884,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     private static class POpenTuple {
         public POpenTuple(RubyIO i, RubyIO o, RubyIO e, Process p) {
             input = i; output = o; error = e; process = p;
@@ -5896,7 +5895,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         public final Process process;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public static POpenTuple popenSpecial(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
 
@@ -5938,27 +5937,27 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public IRubyObject doWriteNonblock(ThreadContext context, IRubyObject[] argv, boolean useException) {
         return write_nonblock(context, argv);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public static IRubyObject select_static(ThreadContext context, Ruby runtime, IRubyObject[] args) {
         return select(context, ioClass(context), args);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public static RubyArray checkExecEnv(ThreadContext context, RubyHash hash) {
         return PopenExecutor.checkExecEnv(context, hash, null);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public static IRubyObject ioOpen(ThreadContext context, IRubyObject filename, IRubyObject vmode, IRubyObject vperm, IRubyObject opt) {
         return ioOpen(context, ioClass(context), filename, vmode, vperm, opt);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public IRubyObject write_nonblock(ThreadContext context, IRubyObject[] argv) {
         switch (argv.length) {
             case 1:
@@ -5970,7 +5969,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public IRubyObject read_nonblock(ThreadContext context, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 1, 3);
 
@@ -5978,7 +5977,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return doReadNonblock(context, args, exception);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public IRubyObject readpartial(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 1, 2);
 
@@ -5996,7 +5995,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return value;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public IRubyObject sysread(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 1, 2);
 
@@ -6008,7 +6007,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return sysreadCommon(context, runtime, _length, _str);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public static IRubyObject pipe(ThreadContext context, IRubyObject klass, IRubyObject[] argv, Block block) {
         switch (argv.length) {
             case 0:

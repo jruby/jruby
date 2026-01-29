@@ -124,7 +124,7 @@ public class Helpers {
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyClass getSingletonClass(Ruby runtime, IRubyObject receiver) {
         // This is not all cases 
         if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
@@ -518,7 +518,7 @@ public class Helpers {
         return newLength;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static int multiplyBufferLength(Ruby runtime, int base, int multiplier) {
         return multiplyBufferLength(runtime.getCurrentContext(), base, multiplier);
     }
@@ -545,7 +545,7 @@ public class Helpers {
         throw argumentError(context, "argument too big");
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static int addBufferLength(Ruby runtime, int base, int extra) {
         return addBufferLength(runtime.getCurrentContext(), base, extra);
     }
@@ -972,12 +972,12 @@ public class Helpers {
         return method.call(context, self, entry.sourceModule, name, arg0, arg1, arg2, block);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.5.0")
     public static RubyArray ensureRubyArray(IRubyObject value) {
         return ensureRubyArray(((RubyBasicObject) value).getCurrentContext(), value);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyArray ensureRubyArray(Ruby runtime, IRubyObject value) {
         return ensureRubyArray(runtime.getCurrentContext(), value);
     }
@@ -986,12 +986,12 @@ public class Helpers {
         return value instanceof RubyArray ary ? ary : newArray(context, value);
     }
 
-    @Deprecated // not used
+    @Deprecated(since = "9.2.0.0") // not used
     public static IRubyObject nullToNil(IRubyObject value, ThreadContext context) {
         return value != null ? value : context.nil;
     }
 
-    @Deprecated // not used
+    @Deprecated(since = "9.2.0.0") // not used
     public static IRubyObject nullToNil(IRubyObject value, Ruby runtime) {
         return value != null ? value : runtime.getNil();
     }
@@ -1028,7 +1028,7 @@ public class Helpers {
         }
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static String getLocalJumpTypeOrRethrow(RaiseException re) {
         RubyException exception = re.getException();
         Ruby runtime = exception.getCurrentContext().runtime;
@@ -1084,27 +1084,27 @@ public class Helpers {
         return block.getFrame().getBlock();
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static Block getBlockFromBlockPassBody(IRubyObject proc, Block currentBlock) {
         return getBlockFromBlockPassBody(((RubyBasicObject) proc).getCurrentContext().runtime, proc, currentBlock);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static IRubyObject backrefLastMatch(ThreadContext context) {
         return RubyRegexp.last_match(context.getBackRef());
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static IRubyObject backrefMatchPre(ThreadContext context) {
         return RubyRegexp.match_pre(context, context.getBackRef());
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static IRubyObject backrefMatchPost(ThreadContext context) {
         return RubyRegexp.match_post(context.getBackRef());
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static IRubyObject backrefMatchLast(ThreadContext context) {
         return RubyRegexp.match_last(context, context.getBackRef());
     }
@@ -1235,7 +1235,7 @@ public class Helpers {
         return JavaUtil.convertJavaToUsableRubyObject(runtime, ex);
     }
 
-    @Deprecated // due deprecated checkJavaException
+    @Deprecated(since = "9.1.3.0") // due deprecated checkJavaException
     public static IRubyObject isJavaExceptionHandled(Throwable currentThrowable, IRubyObject[] throwables, ThreadContext context) {
         if (currentThrowable instanceof Unrescuable) {
             throwException(currentThrowable);
@@ -1259,7 +1259,7 @@ public class Helpers {
         }
     }
 
-    @Deprecated // due deprecated checkJavaException
+    @Deprecated(since = "9.1.3.0") // due deprecated checkJavaException
     public static IRubyObject isJavaExceptionHandled(Throwable currentThrowable, IRubyObject throwable, ThreadContext context) {
         if (currentThrowable instanceof Unrescuable) {
             throwException(currentThrowable);
@@ -1276,7 +1276,7 @@ public class Helpers {
         }
     }
 
-    @Deprecated // due deprecated checkJavaException
+    @Deprecated(since = "9.1.3.0") // due deprecated checkJavaException
     public static IRubyObject isJavaExceptionHandled(Throwable currentThrowable, IRubyObject throwable0, IRubyObject throwable1, ThreadContext context) {
         if (currentThrowable instanceof Unrescuable) {
             throwException(currentThrowable);
@@ -1296,7 +1296,7 @@ public class Helpers {
         }
     }
 
-    @Deprecated // due deprecated checkJavaException
+    @Deprecated(since = "9.1.3.0") // due deprecated checkJavaException
     public static IRubyObject isJavaExceptionHandled(Throwable currentThrowable, IRubyObject throwable0, IRubyObject throwable1, IRubyObject throwable2, ThreadContext context) {
         if (currentThrowable instanceof Unrescuable) {
             throwException(currentThrowable);
@@ -1319,7 +1319,7 @@ public class Helpers {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public static void storeExceptionInErrorInfo(Throwable currentThrowable, ThreadContext context) {
         IRubyObject exception;
         if (currentThrowable instanceof RaiseException) {
@@ -1856,7 +1856,7 @@ public class Helpers {
         return runtime.getTrue();
     }
 
-    @Deprecated // no-longer used + confusing argument order
+    @Deprecated(since = "9.0.3.0") // no-longer used + confusing argument order
     public static IRubyObject stringOrNil(ByteList value, ThreadContext context) {
         return value == null ? context.nil : newSharedString(context, value);
     }
@@ -1886,12 +1886,12 @@ public class Helpers {
         context.postScopedBody();
     }
 
-    @Deprecated // not-used
+    @Deprecated(since = "9.2.0.0") // not-used
     public static void registerEndBlock(Block block, Ruby runtime) {
         runtime.pushExitBlock(runtime.newProc(Block.Type.LAMBDA, block));
     }
 
-    @Deprecated // not-used
+    @Deprecated(since = "9.2.0.0") // not-used
     public static IRubyObject match3(RubyRegexp regexp, IRubyObject value, ThreadContext context) {
         if (value instanceof RubyString) {
             return regexp.op_match(context, value);
@@ -1900,12 +1900,12 @@ public class Helpers {
         }
     }
 
-    @Deprecated // not-used
+    @Deprecated(since = "9.2.9.0") // not-used
     public static IRubyObject getErrorInfo(Ruby runtime) {
         return runtime.getCurrentContext().getErrorInfo();
     }
 
-    @Deprecated // not-used
+    @Deprecated(since = "9.2.9.0") // not-used
     public static void setErrorInfo(Ruby runtime, IRubyObject error) {
         runtime.getCurrentContext().setErrorInfo(error);
     }
@@ -1918,7 +1918,7 @@ public class Helpers {
         return context.getLastLine();
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyArray arrayValue(IRubyObject value) {
         return arrayValue(((RubyBasicObject) value).getCurrentContext(), value);
     }
@@ -1930,7 +1930,7 @@ public class Helpers {
      * @return ""
      * @deprecated Use {@link Helpers#arrayValue(ThreadContext, IRubyObject)}
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyArray arrayValue(ThreadContext context, Ruby runtime, IRubyObject value) {
         return arrayValue(context, value);
     }
@@ -1969,12 +1969,12 @@ public class Helpers {
     }
 
     // mri: rb_Array
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static RubyArray asArray(ThreadContext context, IRubyObject value) {
         return TypeConverter.rb_Array(context, value);
     }
 
-    @Deprecated // not used
+    @Deprecated(since = "9.2.5.0") // not used
     public static IRubyObject aryToAry(IRubyObject value) {
         return aryToAry(((RubyBasicObject) value).getCurrentContext(), value);
     }
@@ -2005,7 +2005,7 @@ public class Helpers {
                 context.nil;
     }
 
-    @Deprecated // not used
+    @Deprecated(since = "9.2.0.0") // not used
     public static IRubyObject aValueSplat(IRubyObject value) {
         var context = ((RubyBasicObject) value).getCurrentContext();
         if (!(value instanceof RubyArray array) || array.length().getValue() == 0) return context.nil;
@@ -2051,7 +2051,7 @@ public class Helpers {
         return ary.toJavaArray(context);
     }
 
-    @SuppressWarnings("deprecation") @Deprecated // no longer used
+    @SuppressWarnings("deprecation") @Deprecated(since = "9.1.5.0") // no longer used
     public static IRubyObject[] argsCatToArguments(IRubyObject[] args, IRubyObject cat) {
         IRubyObject[] ary = splatToArguments(cat);
         if (ary.length > 0) {
@@ -2063,12 +2063,12 @@ public class Helpers {
         return args;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public static RubySymbol addInstanceMethod(RubyModule containingClass, String name, DynamicMethod method, Visibility visibility, ThreadContext context, Ruby runtime) {
         return addInstanceMethod(containingClass, runtime.fastNewSymbol(name), method, visibility, context, runtime);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static RubySymbol addInstanceMethod(RubyModule containingClass, RubySymbol symbol, DynamicMethod method, Visibility visibility, ThreadContext context, Ruby runtime) {
         return addInstanceMethod(containingClass, symbol, method, visibility, context);
     }
@@ -2207,7 +2207,7 @@ public class Helpers {
         return scope;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static Visibility performNormalMethodChecksAndDetermineVisibility(Ruby runtime, RubyModule clazz,
                                                                              RubySymbol symbol, Visibility visibility) throws RaiseException {
         return performNormalMethodChecksAndDetermineVisibility(runtime.getCurrentContext(), clazz, symbol, visibility);
@@ -2249,27 +2249,27 @@ public class Helpers {
         return visibility;
     }
 
-    @Deprecated // not used
+    @Deprecated(since = "9.2.0.0") // not used
     public static IRubyObject arrayEntryOrNil(RubyArray array, int index) {
         return index < array.getLength() ? array.eltInternal(index) : array.getCurrentContext().nil;
     }
 
-    @Deprecated // not used
+    @Deprecated(since = "9.2.0.0") // not used
     public static IRubyObject arrayEntryOrNilZero(RubyArray array) {
         return 0 < array.getLength() ? array.eltInternal(0) : array.getCurrentContext().nil;
     }
 
-    @Deprecated // not used
+    @Deprecated(since = "9.2.0.0") // not used
     public static IRubyObject arrayEntryOrNilOne(RubyArray array) {
         return 1 < array.getLength() ? array.eltInternal(1) : array.getCurrentContext().nil;
     }
 
-    @Deprecated // not used
+    @Deprecated(since = "9.2.0.0") // not used
     public static IRubyObject arrayEntryOrNilTwo(RubyArray array) {
         return 2 < array.getLength() ? array.eltInternal(2) : array.getCurrentContext().nil;
     }
 
-    @Deprecated // not used
+    @Deprecated(since = "9.2.0.0") // not used
     public static IRubyObject arrayPostOrNil(RubyArray array, int pre, int post, int index) {
         if (pre + post < array.getLength()) {
             return array.eltInternal(array.getLength() - post + index);
@@ -2280,7 +2280,7 @@ public class Helpers {
         }
     }
 
-    @Deprecated // not used
+    @Deprecated(since = "9.2.0.0") // not used
     public static IRubyObject arrayPostOrNilZero(RubyArray array, int pre, int post) {
         if (pre + post < array.getLength()) {
             return array.eltInternal(array.getLength() - post + 0);
@@ -2291,7 +2291,7 @@ public class Helpers {
         }
     }
 
-    @Deprecated // not used
+    @Deprecated(since = "9.2.0.0") // not used
     public static IRubyObject arrayPostOrNilOne(RubyArray array, int pre, int post) {
         if (pre + post < array.getLength()) {
             return array.eltInternal(array.getLength() - post + 1);
@@ -2302,7 +2302,7 @@ public class Helpers {
         }
     }
 
-    @Deprecated // not used
+    @Deprecated(since = "9.2.0.0") // not used
     public static IRubyObject arrayPostOrNilTwo(RubyArray array, int pre, int post) {
         if (pre + post < array.getLength()) {
             return array.eltInternal(array.getLength() - post + 2);
@@ -2313,7 +2313,7 @@ public class Helpers {
         }
     }
 
-    @Deprecated // not used
+    @Deprecated(since = "9.2.0.0") // not used
     public static RubyArray subarrayOrEmpty(RubyArray array, Ruby runtime, int index) {
         if (index < array.getLength()) {
             return createSubarray(array, index);
@@ -2322,7 +2322,7 @@ public class Helpers {
         }
     }
 
-    @Deprecated // not used
+    @Deprecated(since = "9.2.0.0") // not used
     public static RubyArray subarrayOrEmpty(RubyArray array, Ruby runtime, int index, int post) {
         if (index + post < array.getLength()) {
             return createSubarray(array, index, post);
@@ -2331,7 +2331,7 @@ public class Helpers {
         }
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyModule checkIsModule(IRubyObject maybeModule) {
         if (maybeModule instanceof RubyModule mod) return mod;
 
@@ -2366,7 +2366,7 @@ public class Helpers {
         return RubyProc.newProc(context.runtime, block, Block.Type.LAMBDA);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static void fillNil(final IRubyObject[] arr, int from, int to, Ruby runtime) {
         fillNil(runtime.getCurrentContext(), arr, from, to);
     }
@@ -2414,7 +2414,7 @@ public class Helpers {
         return arr;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static void fillNil(IRubyObject[] arr, Ruby runtime) {
         fillNil(runtime.getCurrentContext(), arr);
     }
@@ -2505,7 +2505,7 @@ public class Helpers {
         throw argumentError(context, length, expected);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static boolean isModuleAndHasConstant(IRubyObject left, String name) {
         return isModuleAndHasConstant(((RubyBasicObject) left).getCurrentContext(), left, name);
     }
@@ -2514,7 +2514,7 @@ public class Helpers {
         return left instanceof RubyModule && ((RubyModule) left).publicConstDefinedFrom(context, name);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject getDefinedConstantOrBoundMethod(IRubyObject left, String name, IRubyObject definedConstantMessage, IRubyObject definedMethodMessage) {
         return getDefinedConstantOrBoundMethod(((RubyBasicObject) left).getCurrentContext(), left, name, definedConstantMessage, definedMethodMessage);
     }
@@ -2526,7 +2526,7 @@ public class Helpers {
         return null;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyModule getSuperClassForDefined(Ruby runtime, RubyModule klazz) {
         RubyModule superklazz = klazz.getSuperClass();
 
@@ -2587,7 +2587,7 @@ public class Helpers {
         return scopeOffsets;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public static RubyArray argsPush(ThreadContext context, RubyArray first, IRubyObject second) {
         return ((RubyArray)first.dup()).append(context, second);
     }
@@ -2611,7 +2611,7 @@ public class Helpers {
         return ((RubyArray) Helpers.ensureRubyArray(context, first).dup()).concat(secondArgs);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public static RubyArray argsCat(IRubyObject first, IRubyObject second) {
         return argsCat(((RubyBasicObject) first).getCurrentContext(), first, second);
     }
@@ -2697,7 +2697,7 @@ public class Helpers {
         return descs.toArray(new ArgumentDescriptor[descs.size()]);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static ArgumentDescriptor[] parameterListToArgumentDescriptors(Ruby runtime, String[] parameterList, boolean isLambda) {
         return parameterListToArgumentDescriptors(runtime.getCurrentContext(), parameterList, isLambda);
     }
@@ -2730,7 +2730,7 @@ public class Helpers {
         return parms;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyArray argumentDescriptorsToParameters(Ruby runtime, ArgumentDescriptor[] argsDesc, boolean isLambda) {
         return argumentDescriptorsToParameters(runtime.getCurrentContext(), argsDesc, isLambda);
     }
@@ -2747,7 +2747,7 @@ public class Helpers {
         return Create.newArrayNoCopy(context, objArray);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static ArgumentDescriptor[] methodToArgumentDescriptors(DynamicMethod method) {
         return methodToArgumentDescriptors(method.getImplementationClass().getCurrentContext(), method);
     }
@@ -2764,7 +2764,7 @@ public class Helpers {
         }
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject methodToParameters(Ruby runtime, AbstractRubyMethod recv) {
         return methodToParameters(runtime.getCurrentContext(), recv);
     }
@@ -2810,12 +2810,12 @@ public class Helpers {
         return context.runtimeCache.getMethodEntry(context, metaclass, metaclass.getClassIndex().ordinal() * (index + 1), name);
     }
 
-    @Deprecated // not used
+    @Deprecated(since = "9.2.0.0") // not used
     public static IRubyObject lastElement(IRubyObject[] ary) {
         return ary[ary.length - 1];
     }
 
-    @Deprecated // not used
+    @Deprecated(since = "9.2.0.0") // not used
     public static RubyString appendAsString(RubyString target, IRubyObject other) {
         return target.append(other.asString());
     }
@@ -2834,7 +2834,7 @@ public class Helpers {
         return new IRubyObject[] { value };
     }
 
-    @Deprecated // not used
+    @Deprecated(since = "9.2.0.0") // not used
     public static RubyString appendByteList(RubyString target, ByteList source) {
         target.getByteList().append(source);
         return target;
@@ -2855,12 +2855,12 @@ public class Helpers {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.4")
     public static IRubyObject invokedynamic(ThreadContext context, IRubyObject self, int index) {
         return invokedynamic(context, self, MethodNames.values()[index]);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.4")
     public static IRubyObject invokedynamic(ThreadContext context, IRubyObject self, int index, IRubyObject arg0) {
         return invokedynamic(context, self, MethodNames.values()[index], arg0);
     }
@@ -3009,7 +3009,7 @@ public class Helpers {
         return null; // not reached
     }
 
-    @Deprecated // un-used
+    @Deprecated(since = "9.2.0.0") // un-used
     public static void rewriteStackTrace(final Ruby runtime, final Throwable e) {
         final StackTraceElement[] javaTrace = e.getStackTrace();
         BacktraceData backtraceData = runtime.getInstanceConfig().getTraceType().getIntegratedBacktrace(runtime.getCurrentContext(), javaTrace);
@@ -3084,7 +3084,7 @@ public class Helpers {
         return -1;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static int memchr(boolean[] ary, int start, int len, boolean find) {
         return memchr(ary, start, find, len);
     }
@@ -3169,7 +3169,7 @@ public class Helpers {
         return context.sites.Helpers;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public static String encodeParameterList(List<String[]> args) {
         if (args.size() == 0) return "NONE";
 
@@ -3254,34 +3254,34 @@ public class Helpers {
         return Helpers.invoke(context, self, name, IRubyObject.NULL_ARRAY, callType, Block.NULL_BLOCK);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.7.0")
     public static IRubyObject invokeFrom(ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject[] args, CallType callType, Block block) {
         return self.getMetaClass().invokeFrom(context, callType, caller, self, name, args, block);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.7.0")
     public static IRubyObject invokeFrom(ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg, CallType callType, Block block) {
         return self.getMetaClass().invokeFrom(context, callType, caller, self, name, arg, block);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.7.0")
     public static IRubyObject invokeFrom(ThreadContext context, IRubyObject caller, IRubyObject self, String name, CallType callType) {
         return self.getMetaClass().invokeFrom(context, callType, caller, self, name, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static IRubyObject setBackref(Ruby runtime, ThreadContext context, IRubyObject value) {
         if (!value.isNil() && !(value instanceof RubyMatchData)) throw typeError(context, value, "MatchData");
 
         return context.setBackRef(value);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static IRubyObject getBackref(Ruby runtime, ThreadContext context) {
         return context.getBackRef();
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static IRubyObject backref(ThreadContext context) {
         return context.getBackRef();
     }

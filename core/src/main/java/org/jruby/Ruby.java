@@ -76,6 +76,7 @@ import org.jruby.util.StrptimeParser;
 import org.jruby.util.StrptimeToken;
 import org.jruby.util.WeakIdentityHashMap;
 import org.jruby.util.collections.ConcurrentWeakHashMap;
+import org.jruby.util.collections.IntHashMap;
 import org.jruby.util.io.EncodingUtils;
 import org.objectweb.asm.util.TraceClassVisitor;
 
@@ -402,15 +403,16 @@ public final class Ruby implements Constantizable {
         stringClass = RubyString.createStringClass(context, objectClass, comparableModule);
         emptyFrozenString = freezeAndDedupString(newEmptyString(context));
 
-        falseString = Create.newString(context, FALSE_BYTES);
-        falseString.setFrozen(true);
-
         nilString = newEmptyString(context);
         nilString.setFrozen(true);
         nilInspectString = newString(RubyNil.nil);
         nilInspectString.setFrozen(true);
+
         trueString = newString(TRUE_BYTES);
         trueString.setFrozen(true);
+
+        falseString = Create.newString(context, FALSE_BYTES);
+        falseString.setFrozen(true);
 
         encodingService = new EncodingService(this);
 
@@ -427,6 +429,12 @@ public final class Ruby implements Constantizable {
         numericClass = profile.allowClass("Numeric") ? RubyNumeric.createNumericClass(context, objectClass, comparableModule) : null;
         integerClass = profile.allowClass("Integer") ? RubyInteger.createIntegerClass(context, numericClass) : null;
         fixnumClass = profile.allowClass("Fixnum") ? RubyFixnum.createFixnumClass(context, integerClass) : null;
+
+        nilHash = asFixnum(context, nilObject.hashCode());
+        nilID = asFixnum(context, RubyNil.ID);
+        trueHash = asFixnum(context, trueObject.hashCode());
+        trueID = asFixnum(context, RubyBoolean.TRUE_ID);
+        falseHash = asFixnum(context, falseObject.hashCode());
 
         encodingClass = RubyEncoding.createEncodingClass(context, objectClass);
         converterClass = RubyConverter.createConverterClass(context, objectClass, encodingClass);
@@ -681,7 +689,7 @@ public final class Ruby implements Constantizable {
         this.beanManager.register(inlineStats);
     }
 
-    void reinitialize(boolean reinitCore) {
+    public void reinitialize(boolean reinitCore) {
         this.doNotReverseLookupEnabled = true;
         this.in                 = config.getInput();
         this.out                = config.getOutput();
@@ -1020,7 +1028,7 @@ public final class Ruby implements Constantizable {
      * @param filename The filename to use for parsing
      * @return The root node of the parsed script
      */
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public Node parseFromMain(InputStream inputStream, String filename) {
         return (Node) parseFromMain(filename, inputStream).getAST();
     }
@@ -1105,12 +1113,12 @@ public final class Ruby implements Constantizable {
  *     @param wrap whether to wrap the execution in an anonymous module
      * @return The result of executing the script
      */
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public IRubyObject runNormally(Node scriptNode, boolean wrap) {
         return runNormally(scriptNode, getTopSelf(), wrap);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public IRubyObject runNormally(Node scriptNode, IRubyObject self, boolean wrap) {
         return runNormally((ParseResult) scriptNode, self, wrap);
     }
@@ -1147,7 +1155,7 @@ public final class Ruby implements Constantizable {
      * bytecode before execution
      * @return The result of executing the script
      */
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public IRubyObject runNormally(Node scriptNode) {
         return runNormally(scriptNode, false);
     }
@@ -1177,7 +1185,7 @@ public final class Ruby implements Constantizable {
         return scriptAndCode;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public Script tryCompile(Node node) {
         return tryCompile((ParseResult) node);
     }
@@ -1275,7 +1283,7 @@ public final class Ruby implements Constantizable {
         return runInterpreter(scriptNode);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public Parser getParser() {
         return getParserManager().getParser();
     }
@@ -1336,7 +1344,7 @@ public final class Ruby implements Constantizable {
         }
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyModule getModule(String name) {
         return Access.getModule(getCurrentContext(), name);
     }
@@ -1347,7 +1355,7 @@ public final class Ruby implements Constantizable {
      * @param name The name of the class
      * @return The class
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyClass getClass(String name) {
         return Access.getClass(getCurrentContext(), name);
     }
@@ -1360,7 +1368,7 @@ public final class Ruby implements Constantizable {
      * @param internedName the name of the class; <em>must</em> be an interned String!
      * @return
      */
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     public RubyClass fastGetClass(String internedName) {
         return Access.getClass(getCurrentContext(), internedName);
     }
@@ -1375,12 +1383,12 @@ public final class Ruby implements Constantizable {
      * instances of the new class.
      * @return The new class
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyClass defineClass(String name, RubyClass superClass, ObjectAllocator allocator, CallSite[] callSites) {
         return defineClassUnder(getCurrentContext(), name, superClass, allocator, objectClass, callSites);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyClass defineClass(String name, RubyClass superClass, ObjectAllocator allocator) {
         return defineClassUnder(getCurrentContext(), name, superClass, allocator, objectClass, null);
     }
@@ -1401,12 +1409,12 @@ public final class Ruby implements Constantizable {
      * @return The new class
      */
     @Extension
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyClass defineClassUnder(String name, RubyClass superClass, ObjectAllocator allocator, RubyModule parent) {
         return defineClassUnder(runtimeError.getCurrentContext(), name, superClass, allocator, parent, null);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyClass defineClassUnder(String id, RubyClass superClass, ObjectAllocator allocator, RubyModule parent, CallSite[] callSites) {
         return defineClassUnder(getCurrentContext(), id, superClass, allocator, parent, callSites);
     }
@@ -1464,7 +1472,7 @@ public final class Ruby implements Constantizable {
      * @param name The name of the new module
      * @return The new module
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyModule defineModule(String name) {
         return defineModuleUnder(getCurrentContext(), name, objectClass);
     }
@@ -1479,7 +1487,7 @@ public final class Ruby implements Constantizable {
         return RubyModule.newModuleBootstrap(this, name, objectClass);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyModule defineModuleUnder(String name, RubyModule parent) {
         return defineModuleUnder(getCurrentContext(), name, parent);
     }
@@ -1524,7 +1532,7 @@ public final class Ruby implements Constantizable {
      * @deprecated Use {@link org.jruby.api.Define#defineModule(ThreadContext, String)} OR
      * {@link org.jruby.RubyModule#defineModuleUnder(ThreadContext, String)}.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyModule getOrCreateModule(String id) {
         var context = getCurrentContext();
         IRubyObject module = objectClass.getConstantAt(context, id);
@@ -1554,7 +1562,7 @@ public final class Ruby implements Constantizable {
      * @deprecated Use {@link RubyModule#defineConstant(ThreadContext, String, IRubyObject)} with a reference
      * to Object.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public void defineGlobalConstant(String name, IRubyObject value) {
         objectClass.defineConstant(name, value);
     }
@@ -1566,12 +1574,12 @@ public final class Ruby implements Constantizable {
      * @param name the name
      * @return the value
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject fetchGlobalConstant(String name) {
         return objectClass.fetchConstant(getCurrentContext(), name, false);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public boolean isClassDefined(String name) {
         return Access.getModule(getCurrentContext(), name) != null;
     }
@@ -1700,7 +1708,7 @@ public final class Ruby implements Constantizable {
         }
     }
 
-    private final Map<Integer, RubyClass> errnos = new HashMap<>();
+    private final IntHashMap<RubyClass> errnos = new IntHashMap<>(Errno.values().length);
 
     public RubyClass getErrno(int n) {
         return errnos.get(n);
@@ -1822,7 +1830,7 @@ public final class Ruby implements Constantizable {
     }
 
     // Nothing uses this anymore
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyModule getEtc() {
         return etcModule;
     }
@@ -2041,6 +2049,26 @@ public final class Ruby implements Constantizable {
         return nilInspectString;
     }
 
+    RubyFixnum getNilID() {
+        return nilID;
+    }
+
+    RubyFixnum getNilHash() {
+        return nilHash;
+    }
+
+    RubyFixnum getTrueID() {
+        return trueID;
+    }
+
+    RubyFixnum getTrueHash() {
+        return trueHash;
+    }
+
+    RubyFixnum getFalseHash() {
+        return falseHash;
+    }
+
     /** Returns the "false" instance from the instance pool.
      * @return The "false" instance.
      */
@@ -2115,7 +2143,7 @@ public final class Ruby implements Constantizable {
      * @return
      * @deprecated Use {@link org.jruby.api.Access#integerClass(ThreadContext)} instead.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyClass getBignum() {
         return integerClass;
     }
@@ -2637,47 +2665,47 @@ public final class Ruby implements Constantizable {
     }
 
     // Obsolete parseFile function
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public Node parseFile(InputStream in, String file, DynamicScope scope) {
         // Note: We don't know what the caller so we have to assume it may be a toplevel binding use so it uses main parse.
         return (Node) getParserManager().parseMainFile(file, 0, in, setupSourceEncoding(UTF8Encoding.INSTANCE), scope, MAIN).getAST();
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public ParseResult parseFile(String file, InputStream in, DynamicScope scope) {
         // Note: We don't know what the caller so we have to assume it may be a toplevel binding use so it uses main parse.
        return getParserManager().parseMainFile(file, 0, in, setupSourceEncoding(UTF8Encoding.INSTANCE), scope, MAIN);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public Node parseFile(InputStream in, String file, DynamicScope scope, int lineNumber) {
         // Note: We don't know what the caller so we have to assume it may be a toplevel binding use so it uses main parse.
         return (Node) getParserManager().parseMainFile(file, lineNumber, in, setupSourceEncoding(UTF8Encoding.INSTANCE), scope, MAIN).getAST();
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public ParseResult parseFile(String file, InputStream in, DynamicScope scope, int lineNumber) {
         // Note: We don't know what the caller so we have to assume it may be a toplevel binding use so it uses main parse.
         return getParserManager().parseMainFile(file, lineNumber, in, setupSourceEncoding(UTF8Encoding.INSTANCE), scope, MAIN);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public Node parseFileFromMain(InputStream in, String file, DynamicScope scope) {
         return (Node) getParserManager().parseMainFile(file, 0, in, setupSourceEncoding(UTF8Encoding.INSTANCE), scope, MAIN).getAST();
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public ParseResult parseFileFromMain(String file, InputStream in, DynamicScope scope) {
         return getParserManager().parseMainFile(file, 0, in, setupSourceEncoding(UTF8Encoding.INSTANCE), scope, MAIN);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     private Node parseFileFromMainAndGetAST(InputStream in, String file, DynamicScope scope) {
         // Note: We don't know what the caller so we have to assume it may be a toplevel binding use so it uses main parse.
         return (Node) getParserManager().parseMainFile(file, 0, in, setupSourceEncoding(UTF8Encoding.INSTANCE), scope, MAIN).getAST();
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     private Node parseFileAndGetAST(InputStream in, String file, DynamicScope scope, int lineNumber, boolean isFromMain) {
          if (isFromMain) {
              return (Node) getParserManager().parseMainFile(file, lineNumber, in, setupSourceEncoding(UTF8Encoding.INSTANCE), scope, MAIN).getAST();
@@ -2686,7 +2714,7 @@ public final class Ruby implements Constantizable {
          }
      }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public Node parseInline(InputStream in, String file, DynamicScope scope) {
         return (Node) getParserManager().parseMainFile(file, 0, in, setupSourceEncoding(getEncodingService().getLocaleEncoding()), scope, INLINE).getAST();
     }
@@ -2700,7 +2728,7 @@ public final class Ruby implements Constantizable {
         return getEncodingService().getEncodingFromString(config.getSourceEncoding());
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public Node parseEval(String source, String file, DynamicScope scope, int lineNumber) {
         return (Node) getParserManager().parseEval(file, lineNumber, source, scope).getAST();
     }
@@ -2711,12 +2739,12 @@ public final class Ruby implements Constantizable {
         return charset == null ? string.getBytes() : string.getBytes(charset);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public ParseResult parseEval(ByteList source, String file, DynamicScope scope, int lineNumber) {
         return getParserManager().parseEval(file, lineNumber, source, scope);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public Node parse(ByteList content, String file, DynamicScope scope, int lineNumber, boolean extraPositionInformation) {
         InputStream in = new ByteArrayInputStream(content.getUnsafeBytes(), content.begin(), content.length());
         if (extraPositionInformation) {
@@ -2874,7 +2902,7 @@ public final class Ruby implements Constantizable {
 
             if ( p < length && path.charAt(p) == ':' ) {
                 if ( ++p < length && path.charAt(p) != ':' ) {
-                    throw newRaiseException(undefinedExceptionClass, str(this, "undefined class/module ", ids(this, path)));
+                    throw classPathUndefinedException(path, undefinedExceptionClass, p);
                 }
                 pbeg = ++p;
             }
@@ -2883,7 +2911,7 @@ public final class Ruby implements Constantizable {
             IRubyObject cc = flexibleSearch || isJavaPackageOrJavaClassProxyType(clazz) ?
                     clazz.getConstant(context, str) : clazz.getConstantAt(context, str);
 
-            if (!flexibleSearch && cc == null) return null;
+            if (cc == null) throw classPathUndefinedException(path, undefinedExceptionClass, p);
 
             if (!(cc instanceof RubyModule mod)) {
                 throw typeError(context, str(this, ids(this, path), " does not refer to class/module"));
@@ -2892,6 +2920,10 @@ public final class Ruby implements Constantizable {
         }
 
         return clazz;
+    }
+
+    private RaiseException classPathUndefinedException(String path, RubyClass undefinedExceptionClass, int p) {
+        return newRaiseException(undefinedExceptionClass, str(this, "undefined class/module ", ids(this, path.substring(0, p))));
     }
 
     private static boolean isJavaPackageOrJavaClassProxyType(final RubyModule type) {
@@ -3435,52 +3467,52 @@ public final class Ruby implements Constantizable {
 
     // new factory methods ------------------------------------------------------------------------
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyArray newEmptyArray() {
         return RubyArray.newEmptyArray(this);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyArray newArray() {
         return RubyArray.newArray(this.getCurrentContext());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyArray newArrayLight() {
         return RubyArray.newArrayLight(this);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyArray newArray(IRubyObject object) {
         return RubyArray.newArray(this, object);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyArray newArray(IRubyObject car, IRubyObject cdr) {
         return RubyArray.newArray(this, car, cdr);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyArray newArray(IRubyObject... objects) {
         return RubyArray.newArray(this, objects);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyArray newArrayNoCopy(IRubyObject... objects) {
         return RubyArray.newArrayNoCopy(this, objects);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyArray newArrayNoCopyLight(IRubyObject... objects) {
         return RubyArray.newArrayNoCopyLight(this, objects);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyArray newArray(List<IRubyObject> list) {
         return RubyArray.newArray(this, list);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyArray newArray(int size) {
         return RubyArray.newArray(this.getCurrentContext(), size);
     }
@@ -3626,7 +3658,7 @@ public final class Ruby implements Constantizable {
      * @return
      * @deprecated Use {@link org.jruby.api.Error#argumentError(ThreadContext, int, int)} instead.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RaiseException newArgumentError(int got, int expected) {
         return newArgumentError(got, expected, expected);
     }
@@ -3641,12 +3673,12 @@ public final class Ruby implements Constantizable {
         }
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RaiseException newArgumentError(String name, int got, int expected) {
         return newArgumentError(name, got, expected, expected);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RaiseException newArgumentError(String name, int got, int min, int max) {
         if (min == max) {
             return newRaiseException(getArgumentError(), "wrong number of arguments (given " + got + ", expected " + min + ")");
@@ -4012,7 +4044,7 @@ public final class Ruby implements Constantizable {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public RaiseException newTypeError(String message) {
         return newRaiseException(getTypeError(), message);
     }
@@ -4166,7 +4198,7 @@ public final class Ruby implements Constantizable {
      * @return a new NameError
      * @deprecated Use {@link org.jruby.api.Error#nameError(ThreadContext, String, String)}
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RaiseException newNameError(String message, String name) {
         return newNameError(message, name, null, false);
     }
@@ -4174,7 +4206,7 @@ public final class Ruby implements Constantizable {
     /**
      * @deprecated Use {@link org.jruby.api.Error#nameError(ThreadContext, String, String)}
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RaiseException newNameError(String message, IRubyObject name) {
         return newNameError(message, name, (Throwable) null, false);
     }
@@ -4192,7 +4224,7 @@ public final class Ruby implements Constantizable {
      * @return a new NameError
      * @deprecated Use {@link org.jruby.api.Error#nameError(ThreadContext, String, String, Throwable)} instead.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RaiseException newNameError(String message, String name, Throwable origException) {
         return newNameError(message, name, origException, false);
     }
@@ -4265,7 +4297,7 @@ public final class Ruby implements Constantizable {
         return newFrozenError(receiver, message);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RaiseException newFrozenError(IRubyObject receiver, String message) {
         ThreadContext context = getCurrentContext();
 
@@ -4329,19 +4361,19 @@ public final class Ruby implements Constantizable {
         return Helpers.newIOErrorFromException(this, ex);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public RaiseException newTypeError(IRubyObject receivedObject, RubyClass expectedType) {
         ThreadContext context = getCurrentContext();
         return createTypeError(context, createTypeErrorMessage(context, receivedObject, expectedType));
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public RaiseException newTypeError(IRubyObject receivedObject, RubyModule expectedType) {
         ThreadContext context = getCurrentContext();
         return createTypeError(context, createTypeErrorMessage(context, receivedObject, expectedType));
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public RaiseException newTypeError(IRubyObject receivedObject, String expectedType) {
         return newRaiseException(getTypeError(),
                 str(this, "wrong argument type ",
@@ -4519,17 +4551,17 @@ public final class Ruby implements Constantizable {
         this.abortOnException = abortOnException;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.1.0")
     public boolean isGlobalAbortOnExceptionEnabled() {
         return abortOnException;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.1.0")
     public void setGlobalAbortOnExceptionEnabled(boolean enable) {
         abortOnException = enable;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.1.0")
     public IRubyObject getReportOnException() {
         return reportOnException ? getTrue() : getFalse();
     }
@@ -4681,7 +4713,7 @@ public final class Ruby implements Constantizable {
      * @param <C> the enum type, which must implement {@link Constant}.
      * @deprecated Use {@link org.jruby.RubyModule#defineConstantsFrom(ThreadContext, Class)} instead.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public <C extends Enum<C> & Constant> void loadConstantSet(RubyModule module, Class<C> enumClass) {
         module.defineConstantsFrom(getCurrentContext(), enumClass);
     }
@@ -4692,7 +4724,7 @@ public final class Ruby implements Constantizable {
      * @param module the module in which we want to define the constants
      * @param constantSetName the name of the constant set from which to get the constants
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public void loadConstantSet(RubyModule module, String constantSetName) {
         var context = getCurrentContext();
         for (Constant c : ConstantSet.getConstantSet(constantSetName)) {
@@ -5176,6 +5208,11 @@ public final class Ruby implements Constantizable {
     private final RubyString falseString;
     private final RubyString nilString;
     private final RubyString nilInspectString;
+    private final RubyFixnum nilHash;
+    private final RubyFixnum nilID;
+    private final RubyFixnum trueHash;
+    private final RubyFixnum trueID;
+    private final RubyFixnum falseHash;
     final RubyFixnum[] fixnumCache = new RubyFixnum[2 * RubyFixnum.CACHE_OFFSET];
     final Object[] fixnumConstants = new Object[fixnumCache.length];
 
@@ -5358,6 +5395,8 @@ public final class Ruby implements Constantizable {
     private JavaSupport javaSupport;
     private final JRubyClassLoader jrubyClassLoader;
 
+    public static final Module JRUBY_MODULE = Ruby.class.getModule();
+
     // Object Specializer
     private final RubyObjectSpecializer objectSpecializer;
 
@@ -5423,7 +5462,7 @@ public final class Ruby implements Constantizable {
     // NOTE: module instances are unique and we only addModule from <init> - could use a ConcurrentLinkedQueue
     private final ConcurrentWeakHashMap<RubyModule, Object> allModules = new ConcurrentWeakHashMap<>(128);
 
-    private final Map<String, DateTimeZone> timeZoneCache = new HashMap<>();
+    private final Map<String, DateTimeZone> timeZoneCache = new HashMap<>(1);
 
     /**
      * A list of "external" finalizers (the ones, registered via ObjectSpace),
@@ -5680,62 +5719,62 @@ public final class Ruby implements Constantizable {
 
     ParserManager parserManager;
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public RaiseException newErrnoEADDRFromBindException(BindException be) {
         return newErrnoEADDRFromBindException(be, null);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     public RaiseException newFrozenError(String objectType) {
         return newFrozenError(objectType, null);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     public RaiseException newFrozenError(RubyModule type) {
         return newRaiseException(getFrozenError(), str(this, "can't modify frozen ", types(this, type)));
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     public RaiseException newFrozenError(String objectType, boolean runtimeError) {
         return newRaiseException(getFrozenError(), str(this, "can't modify frozen ", ids(this, objectType)));
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.3.0")
     public synchronized void addEventHook(EventHook hook) {
         traceEvents.addEventHook(getCurrentContext(), hook);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.3.0")
     public synchronized void removeEventHook(EventHook hook) {
         traceEvents.removeEventHook(hook);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.3.0")
     public void setTraceFunction(RubyProc traceFunction) {
         traceEvents.setTraceFunction(traceFunction);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.3.0")
     public void setTraceFunction(TraceEventManager.CallTraceFuncHook hook, RubyProc traceFunction) {
         traceEvents.setTraceFunction(hook, traceFunction);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.3.0")
     public void removeAllCallEventHooksFor(ThreadContext context) {
         traceEvents.removeAllCallEventHooksFor(context);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.3.0")
     public void callEventHooks(ThreadContext context, RubyEvent event, String file, int line, String name, IRubyObject type) {
         traceEvents.callEventHooks(context, event, file, line, name, type);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.3.0")
     public boolean hasEventHooks() {
         return traceEvents.hasEventHooks();
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public void setENV(RubyHash env) {
     }
 

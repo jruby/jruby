@@ -59,10 +59,7 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.RubyThread;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.api.Convert;
-import org.jruby.exceptions.CatchThrow;
 import org.jruby.exceptions.JumpException;
-import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
@@ -164,26 +161,29 @@ public class LoadService {
             return suffixes;
         }
 
-        @Deprecated
+        @Deprecated(since = "9.3.0.0")
         public String[] getSuffixes() {
             return suffixes.stream()
                     .map((suffix) -> suffix.name())
                     .toArray(String[]::new);
         }
 
-        @Deprecated
+        @Deprecated(since = "9.3.0.0")
         public static final String[] sourceSuffixes = LibrarySearcher.Suffix.SOURCES.stream().map((suffix) -> suffix.name()).toArray(String[]::new);
-        @Deprecated
+        @Deprecated(since = "9.3.0.0")
         public static final String[] extensionSuffixes = LibrarySearcher.Suffix.EXTENSIONS.stream().map((suffix) -> suffix.name()).toArray(String[]::new);
     }
 
+    @Deprecated(since = "10.0.3.0")
     protected static final Pattern sourcePattern = Pattern.compile("\\.(?:rb)$");
+    @Deprecated(since = "10.0.3.0")
     protected static final Pattern extensionPattern = Pattern.compile("\\.(?:so|o|jar)$");
 
     protected RubyArray loadPath;
     protected StringArraySet loadedFeatures;
 
-    protected final Map<String, JarFile> jarFiles = new HashMap<>();
+    @Deprecated(since = "10.0.3.0")
+    protected final Map<String, JarFile> jarFiles = new HashMap<>(0);
 
     protected final Ruby runtime;
     protected LibrarySearcher librarySearcher;
@@ -358,7 +358,7 @@ public class LoadService {
         int currentLine = runtime.getCurrentLine();
         try {
             if(!runtime.getProfile().allowLoad(file)) {
-                throw runtime.newLoadError("no such file to load -- " + file, file);
+                throw loadFailed(runtime, file);
             }
 
             LibrarySearcher.FoundLibrary library = librarySearcher.findLibraryForLoad(file);
@@ -367,7 +367,7 @@ public class LoadService {
             if (library == null) {
                 FileResource fileResource = JRubyFile.createResourceAsFile(runtime, file);
 
-                if (!fileResource.exists()) throw runtime.newLoadError("no such file to load -- " + file, file);
+                if (!fileResource.exists()) throw loadFailed(runtime, file);
 
                 library = new LibrarySearcher.FoundLibrary(file, file, LibrarySearcher.ResourceLibrary.create(file, file, fileResource));
             }
@@ -393,7 +393,7 @@ public class LoadService {
 
             LoadServiceResource resource = getClassPathResource(classLoader, file);
 
-            if (resource == null) throw runtime.newLoadError("no such file to load -- " + file);
+            if (resource == null) throw loadFailed(runtime, file);
 
             String loadName = resolveLoadName(resource, file);
             LibrarySearcher.FoundLibrary library =
@@ -455,51 +455,59 @@ public class LoadService {
             ThreadContext currentContext = runtime.getCurrentContext();
             RubyThread thread = currentContext.getThread();
 
-            RequireLock lock = pool.get(path);
-
-            // Check if lock is already there
-            if (lock == null) {
-                RequireLock newLock = new RequireLock();
-
-                // If lock is new, lock and return LOCKED
-                lock = pool.computeIfAbsent(path, (name) -> {
-                    thread.lock(newLock);
-                    return newLock;
-                });
-
-                if (lock == newLock) {
-                    // Lock is ours, run ifLocked and then clean up
-                    return executeAndClearLock(path, ifLocked, thread, lock);
-                }
-            }
-
-            if (lock.isHeldByCurrentThread()) {
-                // we hold the lock, which means we're re-locking for the same file; warn about this
-                if (circularRequireWarning && runtime.isVerbose()) {
-                    warnCircularRequire(path);
-                }
-
-                return null;
-            }
-
-            // Other thread holds the lock, wait to acquire
+            // loop until require fails for us or succeeds for another thread
             while (true) {
-                try {
-                    thread.lockInterruptibly(lock);
-                    break;
-                } catch (InterruptedException ie) {
-                    currentContext.pollThreadEvents();
+                RequireLock lock = pool.get(path);
+
+                // Check if lock is already there
+                if (lock == null) {
+                    RequireLock newLock = new RequireLock();
+
+                    // If lock is new, lock and return LOCKED
+                    lock = pool.computeIfAbsent(path, (name) -> {
+                        thread.lock(newLock);
+                        return newLock;
+                    });
+
+                    RequireState state = null;
+                    if (lock == newLock) {
+                        // Lock is ours, run ifLocked and then clean up
+                        try {
+                            return state = executeAndClearLock(path, ifLocked, thread, lock);
+                        } finally {
+                            // failed load, remove our lock and let other threads fight it out
+                            if (state == null) pool.remove(path);
+                        }
+                    }
                 }
-            }
 
-            // Lock has been acquired, confirm other thread has completed and return default
-            if (lock.destroyed) {
+                if (lock.isHeldByCurrentThread()) {
+                    // we hold the lock, which means we're re-locking for the same file; warn about this
+                    if (circularRequireWarning && runtime.isVerbose()) {
+                        warnCircularRequire(path);
+                    }
+
+                    return null;
+                }
+
+                // Other thread holds the lock, wait to acquire
+                while (true) {
+                    try {
+                        thread.lockInterruptibly(lock);
+                        break;
+                    } catch (InterruptedException ie) {
+                        currentContext.pollThreadEvents();
+                    }
+                }
+
+                // Lock has been acquired, confirm other thread has completed and return default
                 thread.unlock(lock);
-                return defaultResult;
-            }
+                if (lock.destroyed) {
+                    return defaultResult;
+                }
 
-            // Other thread failed to load, try on this thread instead
-            return executeAndClearLock(path, ifLocked, thread, lock);
+                // Other thread failed to load, try again to lock and load
+            }
         }
 
         private RequireState executeAndClearLock(String path, Function<String, RequireState> ifLocked, RubyThread thread, RequireLock lock) {
@@ -536,14 +544,14 @@ public class LoadService {
         checkEmptyLoad(file);
 
         if (!runtime.getProfile().allowRequire(file)) {
-            throw runtime.newLoadError("no such file to load -- " + file, file);
+            throw loadFailed(runtime, file);
         }
 
         LibrarySearcher.FoundLibrary[] libraryHolder = {null};
         char found = searchForRequire(file, libraryHolder);
 
         if (found == 0) {
-            throw runtime.newLoadError("no such file to load -- " + file, file);
+            throw loadFailed(runtime, file);
         }
 
         LibrarySearcher.FoundLibrary library = libraryHolder[0];
@@ -687,7 +695,7 @@ public class LoadService {
 
     protected void checkEmptyLoad(String file) throws RaiseException {
         if (file.isEmpty()) {
-            throw runtime.newLoadError("no such file to load -- " + file, file);
+            throw loadFailed(runtime, file);
         }
     }
 
@@ -765,6 +773,11 @@ public class LoadService {
         } else {
             return new ExternalScript(resource, location);
         }
+    }
+
+    // MRI: load_failed
+    static RaiseException loadFailed(Ruby runtime, String name) {
+        return runtime.newLoadError("cannot load such file -- " + name, name);
     }
 
     protected String getLoadPathEntry(IRubyObject entry) {

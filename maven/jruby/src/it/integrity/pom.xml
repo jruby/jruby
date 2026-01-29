@@ -40,7 +40,7 @@
 	      <arguments>
 		<argument>-classpath</argument>
 		<classpath/>
-		<argument>org.jruby.Main</argument>
+		<argument>org.jruby.main.Main</argument>
 		<argument>-S</argument>
 		<argument>gem</argument>
 		<argument>list</argument>
@@ -57,7 +57,7 @@
 	      <arguments>
 		<argument>-classpath</argument>
 		<classpath/>
-		<argument>org.jruby.Main</argument>
+		<argument>org.jruby.main.Main</argument>
 		<argument>-S</argument>
 		<argument>rake</argument>
 		<argument>--version</argument>
@@ -74,7 +74,7 @@
 	      <arguments>
 		<argument>-classpath</argument>
 		<classpath/>
-		<argument>org.jruby.Main</argument>
+		<argument>org.jruby.main.Main</argument>
 		<argument>-S</argument>
 		<argument>rdoc</argument>
 		<argument>--version</argument>
@@ -91,7 +91,7 @@
 	      <arguments>
 		<argument>-classpath</argument>
 		<classpath/>
-		<argument>org.jruby.Main</argument>
+		<argument>org.jruby.main.Main</argument>
 		<argument>-e</argument>
 		<argument>p JRuby.runtime.jruby_home</argument>
               </arguments>
@@ -107,7 +107,7 @@
 	      <arguments>
 		<argument>-classpath</argument>
 		<classpath/>
-		<argument>org.jruby.Main</argument>
+		<argument>org.jruby.main.Main</argument>
 		<argument>-e</argument>
 		<argument>
 		  require 'stringio'
@@ -136,7 +136,7 @@
 		<!-- automatically creates the classpath using all project dependencies,
 		     also adding the project build directory -->
 		<classpath/>
-		<argument>org.jruby.Main</argument>
+		<argument>org.jruby.main.Main</argument>
 		<argument>-e</argument>
 		<!-- make sure openssl loads -->
 		<argument>
@@ -160,7 +160,7 @@
 		<!-- automatically creates the classpath using all project dependencies,
 		     also adding the project build directory -->
 		<classpath/>
-		<argument>org.jruby.Main</argument>
+		<argument>org.jruby.main.Main</argument>
 		<argument>-e</argument>
 		<!-- make sure openssl loads -->
 		<argument>
@@ -185,7 +185,7 @@
           <arguments>
             <argument>-classpath</argument>
             <classpath/>
-            <argument>org.jruby.Main</argument>
+            <argument>org.jruby.main.Main</argument>
             <argument>classpath:hello.rb</argument>
           </arguments>
         </configuration>
@@ -201,7 +201,7 @@
           <arguments>
             <argument>-classpath</argument>
             <classpath/>
-            <argument>org.jruby.Main</argument>
+            <argument>org.jruby.main.Main</argument>
             <argument>classpath:/hello.rb</argument>
           </arguments>
         </configuration>
@@ -217,7 +217,7 @@
           <arguments>
             <argument>-classpath</argument>
             <classpath/>
-            <argument>org.jruby.Main</argument>
+            <argument>org.jruby.main.Main</argument>
             <argument>uri:classloader:/hello.rb</argument>
           </arguments>
         </configuration>
@@ -233,7 +233,7 @@
           <arguments>
             <argument>-classpath</argument>
             <classpath/>
-            <argument>org.jruby.Main</argument>
+            <argument>org.jruby.main.Main</argument>
             <argument>uri:classloader://hello.rb</argument>
           </arguments>
         </configuration>
@@ -249,7 +249,7 @@
           <arguments>
             <argument>-classpath</argument>
             <classpath/>
-            <argument>org.jruby.Main</argument>
+            <argument>org.jruby.main.Main</argument>
             <argument>-C</argument>
             <argument>uri:classloader://</argument>
             <argument>hello.rb</argument>
@@ -267,7 +267,7 @@
           <arguments>
             <argument>-classpath</argument>
             <classpath/>
-            <argument>org.jruby.Main</argument>
+            <argument>org.jruby.main.Main</argument>
             <argument>jar:file://${project.build.outputDirectory}/hello.jar!/helo.rb</argument>
           </arguments>
         </configuration>
@@ -283,7 +283,7 @@
           <arguments>
             <argument>-classpath</argument>
             <classpath/>
-            <argument>org.jruby.Main</argument>
+            <argument>org.jruby.main.Main</argument>
             <argument>file://${project.build.outputDirectory}/hello.jar!/helo.rb</argument>
           </arguments>
         </configuration>
@@ -299,7 +299,7 @@
           <arguments>
             <argument>-classpath</argument>
             <classpath/>
-            <argument>org.jruby.Main</argument>
+            <argument>org.jruby.main.Main</argument>
             <argument>file://${project.build.outputDirectory}/hello.rb</argument>
           </arguments>
         </configuration>
@@ -315,7 +315,7 @@
           <arguments>
             <argument>-classpath</argument>
             <classpath/>
-            <argument>org.jruby.Main</argument>
+            <argument>org.jruby.main.Main</argument>
             <argument>${project.build.outputDirectory}/hello.rb</argument>
           </arguments>
         </configuration>

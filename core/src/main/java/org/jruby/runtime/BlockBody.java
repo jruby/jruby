@@ -232,7 +232,7 @@ public abstract class BlockBody {
      *
      * @return the arity
      */
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public Arity arity() {
         return signature.arity();
     }

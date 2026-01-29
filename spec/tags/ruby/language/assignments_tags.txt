@@ -1,1 +1,2 @@
-fails:Multiple assignments evaluation order evaluates expressions right to left when assignment with compounded constant
+fails:Assignments using = given keyword arguments raises SyntaxError when given keyword arguments in index assignments
+fails:Assignments using += using a #[] given keyword arguments raises SyntaxError when given keyword arguments in index assignments

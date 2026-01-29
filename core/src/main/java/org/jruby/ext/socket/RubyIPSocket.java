@@ -182,22 +182,22 @@ public class RubyIPSocket extends RubyBasicSocket {
         };
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     public IRubyObject addr() {
         return addr(getCurrentContext());
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     public IRubyObject peeraddr() {
         return peeraddr(getCurrentContext());
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     public static IRubyObject getaddress(IRubyObject recv, IRubyObject hostname) {
         return getaddress(((RubyBasicObject) recv).getCurrentContext(), recv, hostname);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     public IRubyObject recvfrom(ThreadContext context, IRubyObject[] args) {
         switch (args.length) {
             case 1:

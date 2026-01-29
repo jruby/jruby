@@ -111,7 +111,7 @@ public class VariableInterceptor {
      * @param runtime Ruby runtime
      * @param scope scope to inject local variable values
      */
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static void inject(BiVariableMap map, Ruby runtime, ManyVarsDynamicScope scope) {
         // lvar might not be given while parsing but be given when evaluating.
         // to avoid ArrayIndexOutOfBoundsException, checks the length of scope.getValues()

@@ -30,7 +30,6 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
-import org.jruby.api.Access;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
@@ -1966,13 +1965,12 @@ public class RubyEnumerable {
     public static IRubyObject zipEnumNext(ThreadContext context, IRubyObject arg) {
         if (arg.isNil()) return context.nil;
 
-        var globalVariables = Access.globalVariables(context);
-        IRubyObject oldExc = globalVariables.get("$!");
+        IRubyObject oldExc = context.getErrorInfo();
         try {
             return sites(context).zip_next.call(context, arg, arg);
         } catch (RaiseException re) {
             if (re.getException().getMetaClass() == context.runtime.getStopIteration()) {
-                globalVariables.set("$!", oldExc);
+                context.setErrorInfo(oldExc);
                 return context.nil;
             }
             throw re;
@@ -2193,7 +2191,7 @@ public class RubyEnumerable {
 
         private final RubyArray result;
 
-        @Deprecated
+        @Deprecated(since = "9.1.3.0")
         public AppendBlockCallback(Ruby runtime, RubyArray result) {
             this.result = result;
         }
@@ -2222,13 +2220,13 @@ public class RubyEnumerable {
         private final RubyHash result;
         private final Block block;
 
-        @Deprecated
+        @Deprecated(since = "9.1.3.0")
         public PutKeyValueCallback(Ruby runtime, RubyHash result) {
             this.result = result;
             this.block = Block.NULL_BLOCK;
         }
 
-        @Deprecated
+        @Deprecated(since = "9.3.0.0")
         public PutKeyValueCallback(Ruby runtime, RubyHash result, Block block) {
             this.result = result;
             this.block = block;
@@ -2258,7 +2256,7 @@ public class RubyEnumerable {
                     break;
                 default:
                     IRubyObject v = RubyArray.newArrayMayCopy(context.runtime, largs);
-                    value = blockGiven ? block.yield(context, v) : v;
+                    value = blockGiven ? block.yieldArray(context, v, null) : v;
                     break;
             }
 
@@ -2311,18 +2309,18 @@ public class RubyEnumerable {
 
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static IRubyObject callEach(ThreadContext context, IRubyObject self, IRubyObject[] args, Signature signature,
                                        BlockCallback callback) {
         return callEach(context, eachSite(context), self, args, signature, callback);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static IRubyObject callEach(ThreadContext context, IRubyObject self, BlockCallback callback) {
         return callEach(context, eachSite(context), self, callback);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static IRubyObject each(ThreadContext context, IRubyObject self, BlockBody body) {
         return each(context, eachSite(context), self, body);
     }

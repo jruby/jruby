@@ -29,6 +29,8 @@
 
 package org.jruby.util.cli;
 
+import java.io.Console;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -41,6 +43,8 @@ import org.jruby.compiler.ClassLoaderMode;
 import org.jruby.runtime.Constants;
 import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
+import org.jruby.util.collections.ClassValue;
+
 import static org.jruby.util.cli.Category.*;
 import static org.jruby.RubyInstanceConfig.Verbosity;
 import static org.jruby.RubyInstanceConfig.ProfilingMode;
@@ -54,7 +58,28 @@ import static org.jruby.RubyInstanceConfig.CompileMode;
  */
 public class Options {
     private static final List<Option> _loadedOptions = new ArrayList<>(240);
-    private static final boolean COLOR = System.console() != null;
+    private static final boolean COLOR;
+
+    static {
+        boolean isatty;
+        Console console = System.console();
+
+        if (console == null) {
+            isatty = false;
+        } else if (Integer.parseInt(SafePropertyAccessor.getProperty("java.specification.version", "21")) <= 21) {
+            isatty = true;
+        } else {
+            // Java 22 always returns a Console so we have to check for tty with isTerminal()
+            try {
+                isatty = (Boolean) Console.class.getMethod("isTerminal").invoke(console);
+            } catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException |
+                     InvocationTargetException e) {
+                isatty = false;
+            }
+        }
+
+        COLOR = isatty;
+    }
 
     public static final String IR_PRINT_PATTERN_NO_PATTERN_STRING = "<NO_PATTERN>";
 
@@ -142,7 +167,7 @@ public class Options {
     public static final Option<Boolean> OBJECTSPACE_ENABLED = bool(MISCELLANEOUS, "objectspace.enabled", false, "Enable or disable ObjectSpace.each_object.");
     public static final Option<Boolean> SIPHASH_ENABLED = bool(MISCELLANEOUS, "siphash.enabled", false, "Enable or disable SipHash for String hash function.");
     public static final Option<Boolean> LAUNCH_INPROC = bool(MISCELLANEOUS, "launch.inproc", false, "Set in-process launching of e.g. system('ruby ...').");
-    public static final Option<String> BYTECODE_VERSION = string(MISCELLANEOUS, "bytecode.version", SafePropertyAccessor.getProperty("java.specification.version", "17"), "Specify the major Java bytecode version.");
+    public static final Option<String> BYTECODE_VERSION = string(MISCELLANEOUS, "bytecode.version", SafePropertyAccessor.getProperty("java.specification.version", "21"), "Specify the major Java bytecode version.");
     public static final Option<Boolean> MANAGEMENT_ENABLED = bool(MISCELLANEOUS, "management.enabled", false, "Set whether JMX management is enabled.");
     public static final Option<Boolean> JUMP_BACKTRACE = bool(MISCELLANEOUS, "jump.backtrace", false, "Make non-local flow jumps generate backtraces.");
     public static final Option<Boolean> PROCESS_NOUNWRAP = bool(MISCELLANEOUS, "process.noUnwrap", false, "Do not unwrap process streams (issue on some recent JVMs).");
@@ -165,6 +190,8 @@ public class Options {
     public static final Option<Boolean> REGEXP_INTERRUPTIBLE = bool(MISCELLANEOUS, "regexp.interruptible", true, "Allow regexp operations to be interruptible from Ruby.");
     public static final Option<Integer> JAR_CACHE_EXPIRATION = integer(MISCELLANEOUS, "jar.cache.expiration", 750, "The time (ms) between checks if a JAR file containing resources has been updated.");
     public static final Option<String> WINDOWS_FILESYSTEM_ENCODING = string(MISCELLANEOUS, "windows.filesystem.encoding", "UTF-8", "The encoding to use for filesystem names and paths on Windows.");
+    public static final Option<String> GEM_HOME = string(MISCELLANEOUS, "gem.home", "The home dir where Ruby gems will be installed.");
+    public static final Option<String> GEM_PATH = string(MISCELLANEOUS, "gem.path", "The path containing all dirs to search for installed Ruby gems.");
 
     public static final Option<Boolean> DEBUG_LOADSERVICE = bool(DEBUG, "debug.loadService", false, "Log require/load file searches.");
     public static final Option<Boolean> DEBUG_LOADSERVICE_TIMING = bool(DEBUG, "debug.loadService.timing", false, "Log require/load parse+evaluate times.");
@@ -198,6 +225,7 @@ public class Options {
     public static final Option<Boolean> JI_LOAD_LAZY = bool(JAVA_INTEGRATION, "ji.load.lazy", true, "Load Java support (class extensions) lazily on demand or ahead of time.");
     public static final Option<Boolean> JI_CLOSE_CLASSLOADER = bool(JAVA_INTEGRATION, "ji.close.classloader", false, "Close the JRubyClassLoader used by each runtime");
     public static final Option<String> JI_NESTED_JAR_TMPDIR = string(JAVA_INTEGRATION, "ji.nested.jar.tmpdir", "Use specified dir as a base for unpacking nested jar files.");
+    public static final Option<ClassValue.Type> JI_CLASS_VALUES = enumeration(JAVA_INTEGRATION, "ji.class.values", ClassValue.Type.class, ClassValue.Type.STABLE, "use the specified type of class-to-value holder for JI proxy structures");
 
     public static final Option<Integer> PROFILE_MAX_METHODS = integer(PROFILING, "profile.max.methods", 100000, "Maximum number of methods to consider for profiling.");
 
@@ -338,112 +366,112 @@ public class Options {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final Option<Boolean> PARSER_WARN_GROUPED_EXPRESSIONS = bool(PARSER, "parser.warn.grouped_expressions", true, "Warn about interpreting (...) as a grouped expression.");
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final Option<Boolean> COMPILE_FASTOPS = bool(COMPILER, "compile.fastops", true, "Turn on fast operators for Fixnum and Float.");
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final Option<Boolean> COMPILE_THREADLESS = bool(COMPILER, "compile.threadless", false, "(EXPERIMENTAL) Turn on compilation without polling for \"unsafe\" thread events.");
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final Option<Integer> COMPILE_CHAINSIZE = integer(COMPILER, "compile.chainsize", Constants.CHAINED_COMPILE_LINE_COUNT_DEFAULT, "Set the number of lines at which compiled bodies are \"chained\".");
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final Option<Boolean> COMPILE_PEEPHOLE = bool(COMPILER, "compile.peephole", true, "Enable or disable peephole optimizations.");
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final Option<Boolean> COMPILE_NOGUARDS = bool(COMPILER, "compile.noguards", false, "Compile calls without guards, for experimentation.");
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final Option<Boolean> COMPILE_FASTEST = bool(COMPILER, "compile.fastest", false, "Compile with all \"mostly harmless\" compiler optimizations.");
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final Option<Boolean> COMPILE_FASTSEND = bool(COMPILER, "compile.fastsend", false, "Compile obj.__send__(<literal>, ...) as obj.<literal>(...).");
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final Option<Boolean> COMPILE_FASTMASGN = bool(COMPILER, "compile.fastMasgn", false, "Return true from multiple assignment instead of a new array.");
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final Option<Integer> COMPILE_OUTLINE_CASECOUNT = integer(COMPILER, "compile.outline.casecount", 50, "Outline when bodies when number of cases exceeds this value.");
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final Option<Boolean> INVOKEDYNAMIC_SAFE = bool(INVOKEDYNAMIC, "invokedynamic.safe", false, "Enable all safe (but maybe not fast) uses of invokedynamic.");
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final Option<Boolean> INVOKEDYNAMIC_INVOCATION = bool(INVOKEDYNAMIC, "invokedynamic.invocation", true, "Enable invokedynamic for method invocations.");
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final Option<Boolean> INVOKEDYNAMIC_INVOCATION_INDIRECT = bool(INVOKEDYNAMIC, "invokedynamic.invocation.indirect", true, "Also bind indirect method invokers to invokedynamic.");
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final Option<Boolean> INVOKEDYNAMIC_INVOCATION_JAVA = bool(INVOKEDYNAMIC, "invokedynamic.invocation.java", true, "Bind Ruby to Java invocations with invokedynamic.");
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final Option<Boolean> INVOKEDYNAMIC_INVOCATION_ATTR = bool(INVOKEDYNAMIC, "invokedynamic.invocation.attr", true, "Bind Ruby attribute invocations directly to invokedynamic.");
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final Option<Boolean> INVOKEDYNAMIC_INVOCATION_FFI = bool(INVOKEDYNAMIC, "invokedynamic.invocation.ffi", true, "Bind Ruby FFI invocations directly to invokedynamic.");
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final Option<Boolean> INVOKEDYNAMIC_INVOCATION_FASTOPS = bool(INVOKEDYNAMIC, "invokedynamic.invocation.fastops", true, "Bind Fixnum and Float math using optimized logic.");
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final Option<Boolean> INVOKEDYNAMIC_CACHE = bool(INVOKEDYNAMIC, "invokedynamic.cache", true, "Use invokedynamic to load cached values like literals and constants.");
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final Option<Boolean> INVOKEDYNAMIC_CACHE_CONSTANTS = bool(INVOKEDYNAMIC, "invokedynamic.cache.constants", true, "Use invokedynamic to load constants.");
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final Option<Boolean> INVOKEDYNAMIC_CACHE_LITERALS = bool(INVOKEDYNAMIC, "invokedynamic.cache.literals", true, "Use invokedynamic to load literals.");
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final Option<Boolean> INVOKEDYNAMIC_CACHE_IVARS = bool(INVOKEDYNAMIC, "invokedynamic.cache.ivars", true, "Use invokedynamic to get/set instance variables.");
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final Option<Boolean> JIT_CACHE = bool(JIT, "jit.cache", !COMPILE_INVOKEDYNAMIC.load(), "(DEPRECATED) Cache jitted method in-memory bodies across runtimes and loads.");    public static final Option<Boolean> INVOKEDYNAMIC_ALL = bool(INVOKEDYNAMIC, "invokedynamic.all", false, "Enable all possible uses of invokedynamic.");
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final Option<Boolean> JIT_DUMPING = bool(JIT, "jit.dumping", false, "Enable stdout dumping of JITed bytecode.");
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final Option<String>  IR_INLINE_COMPILER_PASSES = string(IR, "ir.inline_passes", "Specify comma delimeted list of passes to run after inlining a method.");
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final Option<Boolean> FFI_COMPILE_INVOKEDYNAMIC = bool(NATIVE, "ffi.compile.invokedynamic", false, "Use invokedynamic to bind FFI invocations.");
 
     // internal IO mimics what this was doing, and this has been untested and unsupported for many years
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final Option<Boolean> NATIVE_NET_PROTOCOL = bool(MISCELLANEOUS, "native.net.protocol", false, "Use native impls for parts of net/protocol.");
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final Option<String> THREAD_DUMP_SIGNAL = string(MISCELLANEOUS, "thread.dump.signal", new String[]{"USR1", "USR2", "etc"}, "USR2", "Set the signal used for dumping thread stacks.");
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final Option<Boolean> FIBER_COROUTINES = bool(MISCELLANEOUS, "fiber.coroutines", false, "Use JVM coroutines for Fiber.");
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final Option<Boolean> GLOBAL_REQUIRE_LOCK = bool(MISCELLANEOUS, "global.require.lock", false, "Use a single global lock for requires.");
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final Option<Boolean> REFLECTED_HANDLES = bool(MISCELLANEOUS, "reflected.handles", false, "Use reflection for binding methods, not generated bytecode.");
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final Option<Boolean> ENUMERATOR_LIGHTWEIGHT = bool(MISCELLANEOUS, "enumerator.lightweight", true, "Use lightweight Enumerator#next logic when possible.");
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final Option<Boolean> FCNTL_LOCKING = bool(MISCELLANEOUS, "file.flock.fcntl", true, "Use fcntl rather than flock for File#flock");
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final Option<Boolean> RECORD_LEXICAL_HIERARCHY = bool(MISCELLANEOUS, "record.lexical.hierarchy", false, "Maintain children static scopes to support scope dumping.");
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final Option<Boolean> JI_LOGCANSETACCESSIBLE = bool(JAVA_INTEGRATION, "ji.logCanSetAccessible", false, "Log whether setAccessible is working.");
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final Option<Boolean> JAVA_HANDLES = bool(JAVA_INTEGRATION, "java.handles", false, "Use generated handles instead of reflection for calling Java.");
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static final Option<Boolean> NAME_ERROR_INSPECT_OBJECT = bool(MISCELLANEOUS, "nameError.inspect.object", true, "Inspect the target object for display in NameError messages.");
 }

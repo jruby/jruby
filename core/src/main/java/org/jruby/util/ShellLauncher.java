@@ -65,7 +65,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.jruby.Main;
+import org.jruby.main.Main;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyHash;
@@ -242,7 +242,7 @@ public class ShellLauncher {
         return getModifiedEnv(runtime, mergeEnv == null ? Collections.EMPTY_LIST : mergeEnv.entrySet(), false);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static String[] getModifiedEnv(Ruby runtime, Collection mergeEnv, boolean clearEnv) {
         return getModifiedEnv(runtime.getCurrentContext(), mergeEnv, clearEnv);
     }
@@ -432,7 +432,7 @@ public class ShellLauncher {
         return findPathExecutable(context, fname, pathObject);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static File findPathExecutable(Ruby runtime, String fname, IRubyObject pathObject) {
         return findPathExecutable(runtime.getCurrentContext(), fname, pathObject);
     }
@@ -489,7 +489,6 @@ public class ShellLauncher {
                     log(runtime, "Launching with shell");
                     // execute command with sh -c ... this does shell expansion of wildcards
                     cfg.verifyExecutableForShell();
-                    process = buildProcess(runtime, cfg.getExecArgs(), getCurrentEnv(runtime, mergeEnv), pwd);
                 } else {
                     log(runtime, "Launching directly (no shell)");
                     cfg.verifyExecutableForDirect();
@@ -578,9 +577,9 @@ public class ShellLauncher {
     }
 
     public static String changeDirInsideJar(final Ruby runtime, final String arg) {
-        // only if inside a jar and spawning org.jruby.Main we change to the current directory inside the jar
-        if (runtime.getCurrentDirectory().startsWith("uri:classloader:") && arg.contains("org.jruby.Main")) {
-            return StringSupport.replaceFirst(arg, "org.jruby.Main", "org.jruby.Main -C " + runtime.getCurrentDirectory()).toString();
+        // only if inside a jar and spawning org.jruby.main.Main we change to the current directory inside the jar
+        if (runtime.getCurrentDirectory().startsWith("uri:classloader:") && arg.contains("org.jruby.main.Main")) {
+            return StringSupport.replaceFirst(arg, "org.jruby.main.Main", "org.jruby.main.Main -C " + runtime.getCurrentDirectory()).toString();
         }
         return null;
     }
@@ -843,22 +842,22 @@ public class ShellLauncher {
         return new POpenProcess(popenShared(runtime, new IRubyObject[] {string}, env, true), runtime, modes);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.4")
     public static POpenProcess popen(Ruby runtime, IRubyObject string, IOOptions modes) throws IOException {
         return new POpenProcess(popenShared(runtime, new IRubyObject[] {string}, null, true), runtime, modes);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.4")
     public static POpenProcess popen(Ruby runtime, IRubyObject[] strings, Map env, IOOptions modes) throws IOException {
         return new POpenProcess(popenShared(runtime, strings, env), runtime, modes);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public static POpenProcess popen3(Ruby runtime, IRubyObject[] strings) throws IOException {
         return new POpenProcess(popenShared(runtime, strings));
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public static POpenProcess popen3(Ruby runtime, IRubyObject[] strings, boolean addShell) throws IOException {
         return new POpenProcess(popenShared(runtime, strings, null, addShell));
     }
@@ -925,7 +924,7 @@ public class ShellLauncher {
         private Pumper inputPumper;
         private Pumper inerrPumper;
 
-        @Deprecated
+        @Deprecated(since = "1.7.4")
         public POpenProcess(Process child, Ruby runtime, IOOptions modes) {
             this(child, runtime, modes.getModeFlags());
         }
@@ -1452,11 +1451,11 @@ public class ShellLauncher {
                     // system commands can't run with a URI for the current dir, so the best we can use is user.dir
                     pwd = new File(System.getProperty("user.dir"));
 
-                    // only if we inside a jar and spawning org.jruby.Main we
+                    // only if we inside a jar and spawning org.jruby.main.Main we
                     // change to the current directory inside the jar
-                    if (args[args.length - 1].contains("org.jruby.Main")) {
-                        args[args.length - 1] = args[args.length - 1].replace("org.jruby.Main",
-                                "org.jruby.Main -C " + dir);
+                    if (args[args.length - 1].contains("org.jruby.main.Main")) {
+                        args[args.length - 1] = args[args.length - 1].replace("org.jruby.main.Main",
+                                "org.jruby.main.Main -C " + dir);
                     }
                 }
                 aProcess = buildProcess(runtime, args, getCurrentEnv(runtime, env), pwd);
@@ -1736,22 +1735,22 @@ public class ShellLauncher {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.3.0")
     public static OutputStream unwrapBufferedStream(OutputStream filteredStream) {
         return ChannelHelper.unwrapBufferedStream(filteredStream);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.3.0")
     public static InputStream unwrapBufferedStream(InputStream filteredStream) {
         return ChannelHelper.unwrapBufferedStream(filteredStream);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.3.0")
     public static OutputStream unwrapFilterOutputStream(OutputStream filteredStream) {
         return ChannelHelper.unwrapFilterOutputStream(filteredStream);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.3.0")
     public static InputStream unwrapFilterInputStream(InputStream filteredStream) {
         return ChannelHelper.unwrapFilterInputStream(filteredStream);
     }

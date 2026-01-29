@@ -1,9 +1,13 @@
 package org.jruby.api;
 
+import org.jcodings.Encoding;
+import org.jcodings.specific.UTF8Encoding;
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
+import org.jruby.RubyEncoding;
 import org.jruby.RubyFile;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
@@ -405,11 +409,12 @@ public class Convert {
 
     /**
      * Create a Ruby Fixnum from a java long.
+     *
+     * MRI: RB_INT2FIX
      * @param context the current thread context
      * @param value the long value
      * @return the Ruby Fixnum
      */
-    // mri: fix2int
     public static RubyFixnum asFixnum(ThreadContext context, long value) {
         return RubyFixnum.newFixnum(context.runtime, value);
     }
@@ -593,6 +598,18 @@ public class Convert {
     }
 
     /**
+     * Create a Java String from a ByteList with the specified encoding.
+     * @param bytes to be made into a string
+     * @return a new Java String
+     */
+    public static String asJavaString(ByteList bytes) {
+        var encoding = bytes.getEncoding();
+        return encoding == UTF8Encoding.INSTANCE ?
+                RubyEncoding.decodeUTF8(bytes.unsafeBytes(), bytes.begin(), bytes.length()) :
+                RubyEncoding.decode(bytes.getUnsafeBytes(), bytes.begin(), bytes.length(), encoding.getCharset());
+    }
+
+    /**
      * Creates a new RubySymbol from the provided java String.
      *
      * @param context the current thread context
@@ -635,5 +652,27 @@ public class Convert {
      */
     public static RubySymbol toSymbol(ThreadContext context, IRubyObject arg) {
         return RubySymbol.toSymbol(context, arg);
+    }
+
+    /**
+     * Produce a string from a given object using its type identity.
+     *
+     * Equivalent to RubyBasicObject#anyToString but without re-acquiring context.
+     *
+     * @return The object represented as a hashy type string.
+     */
+    public static RubyString anyToString(ThreadContext context, IRubyObject obj) {
+        /* 6:tags 16:addr 1:eos */
+        String hex = Integer.toHexString(System.identityHashCode(obj));
+        ByteList className = obj.getType().toRubyString(context).getByteList();
+        ByteList bytes = new ByteList(2 + className.realSize() + 3 + hex.length() + 1);
+        bytes.setEncoding(className.getEncoding());
+        bytes.append('#').append('<');
+        bytes.append(className);
+        bytes.append(':').append('0').append('x');
+        bytes.append(hex.getBytes());
+        bytes.append('>');
+
+        return Create.newString(context, bytes);
     }
 }

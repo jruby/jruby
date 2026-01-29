@@ -1,3 +1,19 @@
 critical:IO#each with limit when limit is 0 raises an ArgumentError
 fails:IO#each with both separator and limit when no block is given returns an Enumerator
 fails:IO#each when passed chomp raises exception when options passed as Hash
+windows:IO#each with no separator yields each line to the passed block
+windows:IO#each with no separator yields each line starting from the current position
+windows:IO#each with no separator when no block is given returns an Enumerator
+windows:IO#each when passed a String containing one space as a separator uses the passed argument as the line separator
+windows:IO#each when passed a String containing one space as a separator tries to convert the passed separator to a String using #to_str
+windows:IO#each when passed nil as a separator yields self's content starting from the current position when the passed separator is nil
+windows:IO#each when passed an empty String as a separator yields each paragraph
+windows:IO#each when passed an empty String as a separator discards leading newlines
+windows:IO#each with both separator and limit when a block is given when passed nil as a separator yields self's content starting from the current position when the passed separator is nil
+windows:IO#each with both separator and limit when a block is given when passed an empty String as a separator yields each paragraph
+windows:IO#each with both separator and limit when a block is given when passed an empty String as a separator discards leading newlines
+windows:IO#each when passed chomp and a separator yields each line without separator to the passed block
+windows:IO#each when passed chomp and empty line as a separator yields each paragraph without trailing new line characters
+windows:IO#each when passed chomp and nil as a separator yields self's content
+windows:IO#each when passed chomp, nil as a separator, and a limit yields each line of limit size without truncating trailing new line character
+windows:IO#each uses $/ as the default line separator

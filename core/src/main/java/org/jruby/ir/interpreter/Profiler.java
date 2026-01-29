@@ -101,7 +101,6 @@ public class Profiler {
                 }
 
                 long x = csp.counters.get(s).count;
-                c += x;
                 cs.count += x;
             }
 

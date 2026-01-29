@@ -1,4 +1,4 @@
-# -*- encoding: binary -*-
+# encoding: binary
 require_relative '../fixtures/marshal_data'
 
 describe :marshal_load, shared: true do
@@ -127,36 +127,32 @@ describe :marshal_load, shared: true do
       Object.should_not.frozen?
     end
 
-    ruby_bug "#19427", ""..."3.3" do
-      it "does freeze extended objects" do
-        object = Marshal.load("\x04\be:\x0FEnumerableo:\vObject\x00", freeze: true)
-        object.should.frozen?
-      end
-
-      it "does freeze extended objects with instance variables" do
-        object = Marshal.load("\x04\be:\x0FEnumerableo:\vObject\x06:\n@ivarT", freeze: true)
-        object.should.frozen?
-      end
+    it "does freeze extended objects" do
+      object = Marshal.load("\x04\be:\x0FEnumerableo:\vObject\x00", freeze: true)
+      object.should.frozen?
     end
 
-    ruby_bug "#19427", "3.1"..."3.3" do
-      it "returns frozen object having #_dump method" do
-        object = Marshal.send(@method, Marshal.dump(UserDefined.new), freeze: true)
-        object.should.frozen?
-      end
+    it "does freeze extended objects with instance variables" do
+      object = Marshal.load("\x04\be:\x0FEnumerableo:\vObject\x06:\n@ivarT", freeze: true)
+      object.should.frozen?
+    end
 
-      it "returns frozen object responding to #marshal_dump and #marshal_load" do
-        object = Marshal.send(@method, Marshal.dump(UserMarshal.new), freeze: true)
-        object.should.frozen?
-      end
+    it "returns frozen object having #_dump method" do
+      object = Marshal.send(@method, Marshal.dump(UserDefined.new), freeze: true)
+      object.should.frozen?
+    end
 
-      it "returns frozen object extended by a module" do
-        object = Object.new
-        object.extend(MarshalSpec::ModuleToExtendBy)
+    it "returns frozen object responding to #marshal_dump and #marshal_load" do
+      object = Marshal.send(@method, Marshal.dump(UserMarshal.new), freeze: true)
+      object.should.frozen?
+    end
 
-        object = Marshal.send(@method, Marshal.dump(object), freeze: true)
-        object.should.frozen?
-      end
+    it "returns frozen object extended by a module" do
+      object = Object.new
+      object.extend(MarshalSpec::ModuleToExtendBy)
+
+      object = Marshal.send(@method, Marshal.dump(object), freeze: true)
+      object.should.frozen?
     end
 
     it "does not call freeze method" do
@@ -239,12 +235,10 @@ describe :marshal_load, shared: true do
       string.should.frozen?
     end
 
-    ruby_bug "#19427", ""..."3.3" do
-      it "call the proc with extended objects" do
-        objs = []
-        obj = Marshal.load("\x04\be:\x0FEnumerableo:\vObject\x00", Proc.new { |o| objs << o; o })
-        objs.should == [obj]
-      end
+    it "call the proc with extended objects" do
+      objs = []
+      obj = Marshal.load("\x04\be:\x0FEnumerableo:\vObject\x00", Proc.new { |o| objs << o; o })
+      objs.should == [obj]
     end
 
     it "returns the value of the proc" do
@@ -739,31 +733,29 @@ describe :marshal_load, shared: true do
     end
   end
 
-  ruby_version_is "3.2" do
-    describe "for a Data" do
-      it "loads a Data" do
-        obj = MarshalSpec::DataSpec::Measure.new(100, 'km')
-        dumped = "\x04\bS:#MarshalSpec::DataSpec::Measure\a:\vamountii:\tunit\"\akm"
-        Marshal.dump(obj).should == dumped
+  describe "for a Data" do
+    it "loads a Data" do
+      obj = MarshalSpec::DataSpec::Measure.new(100, 'km')
+      dumped = "\x04\bS:#MarshalSpec::DataSpec::Measure\a:\vamountii:\tunit\"\akm"
+      Marshal.dump(obj).should == dumped
 
-        Marshal.send(@method, dumped).should == obj
-      end
+      Marshal.send(@method, dumped).should == obj
+    end
 
-      it "loads an extended Data" do
-        obj = MarshalSpec::DataSpec::MeasureExtended.new(100, "km")
-        dumped = "\x04\bS:+MarshalSpec::DataSpec::MeasureExtended\a:\vamountii:\tunit\"\akm"
-        Marshal.dump(obj).should == dumped
+    it "loads an extended Data" do
+      obj = MarshalSpec::DataSpec::MeasureExtended.new(100, "km")
+      dumped = "\x04\bS:+MarshalSpec::DataSpec::MeasureExtended\a:\vamountii:\tunit\"\akm"
+      Marshal.dump(obj).should == dumped
 
-        Marshal.send(@method, dumped).should == obj
-      end
+      Marshal.send(@method, dumped).should == obj
+    end
 
-      it "returns a frozen object" do
-        obj = MarshalSpec::DataSpec::Measure.new(100, 'km')
-        dumped = "\x04\bS:#MarshalSpec::DataSpec::Measure\a:\vamountii:\tunit\"\akm"
-        Marshal.dump(obj).should == dumped
+    it "returns a frozen object" do
+      obj = MarshalSpec::DataSpec::Measure.new(100, 'km')
+      dumped = "\x04\bS:#MarshalSpec::DataSpec::Measure\a:\vamountii:\tunit\"\akm"
+      Marshal.dump(obj).should == dumped
 
-        Marshal.send(@method, dumped).should.frozen?
-      end
+      Marshal.send(@method, dumped).should.frozen?
     end
   end
 
@@ -932,15 +924,13 @@ describe :marshal_load, shared: true do
         [Meths, UserRegexp, Regexp]
     end
 
-    ruby_bug "#19439", ""..."3.3" do
-      it "restore the regexp instance variables" do
-        obj = Regexp.new("hello")
-        obj.instance_variable_set(:@regexp_ivar, [42])
+    it "restore the regexp instance variables" do
+      obj = Regexp.new("hello")
+      obj.instance_variable_set(:@regexp_ivar, [42])
 
-        new_obj = Marshal.send(@method, "\x04\bI/\nhello\x00\a:\x06EF:\x11@regexp_ivar[\x06i/")
-        new_obj.instance_variables.should == [:@regexp_ivar]
-        new_obj.instance_variable_get(:@regexp_ivar).should == [42]
-      end
+      new_obj = Marshal.send(@method, "\x04\bI/\nhello\x00\a:\x06EF:\x11@regexp_ivar[\x06i/")
+      new_obj.instance_variables.should == [:@regexp_ivar]
+      new_obj.instance_variable_get(:@regexp_ivar).should == [42]
     end
 
     it "preserves Regexp encoding" do

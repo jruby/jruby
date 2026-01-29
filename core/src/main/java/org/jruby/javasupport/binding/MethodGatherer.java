@@ -170,13 +170,13 @@ public class MethodGatherer {
     }
 
     public static void eachAccessibleMethod(final Class<?> javaClass, Predicate<Method[]> classProcessor, Predicate<Method[]> interfaceProcessor) {
-        boolean isPublic = Modifier.isPublic(javaClass.getModifiers());
+        boolean isPublic = Ruby.JRUBY_MODULE.canRead(javaClass.getModule()) && Modifier.isPublic(javaClass.getModifiers());
 
         // we scan all superclasses, but avoid adding superclass methods with
         // same name+signature as subclass methods (see JRUBY-3130)
         for ( Class<?> klass = javaClass; klass != null; klass = klass.getSuperclass() ) {
             // only add if target class is public or source class is public, and package is exported
-            if ((isPublic || Modifier.isPublic(klass.getModifiers())) && Modules.isExported(klass, Java.class)) {
+            if ((isPublic || (Ruby.JRUBY_MODULE.canRead(klass.getModule()) && Modifier.isPublic(klass.getModifiers()))) && Modules.isExported(klass, Java.class)) {
                 // for each class, scan declared methods for new signatures
                 try {
                     // add methods, including static if this is the actual class,
@@ -559,7 +559,7 @@ public class MethodGatherer {
 
     Map<String, NamedInstaller> getStaticInstallersForWrite() {
         Map<String, NamedInstaller> staticInstallers = this.staticInstallers;
-        return staticInstallers == Collections.EMPTY_MAP ? this.staticInstallers = new HashMap() : staticInstallers;
+        return staticInstallers == Collections.EMPTY_MAP ? this.staticInstallers = new HashMap(4) : staticInstallers;
     }
 
     Map<String, NamedInstaller> getInstanceInstallers() {
@@ -568,7 +568,7 @@ public class MethodGatherer {
 
     Map<String, NamedInstaller> getInstanceInstallersForWrite() {
         Map<String, NamedInstaller> instanceInstallers = this.instanceInstallers;
-        return instanceInstallers == Collections.EMPTY_MAP ? this.instanceInstallers = new HashMap() : instanceInstallers;
+        return instanceInstallers == Collections.EMPTY_MAP ? this.instanceInstallers = new HashMap(4) : instanceInstallers;
     }
 
     @SuppressWarnings("deprecation")
@@ -720,8 +720,8 @@ public class MethodGatherer {
                 }
             }
 
-            this.instanceMethods = instanceMethods.toArray(new Method[instanceMethods.size()]);
-            this.staticMethods = staticMethods.toArray(new Method[staticMethods.size()]);
+            this.instanceMethods = instanceMethods.toArray(Method[]::new);
+            this.staticMethods = staticMethods.toArray(Method[]::new);
         }
 
         private static boolean filterAccessible(Method method, int mod) {

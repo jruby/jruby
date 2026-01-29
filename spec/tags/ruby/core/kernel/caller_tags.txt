@@ -1,2 +1,4 @@
 fails:Kernel#caller can be called with a range whose end is negative
 fails:Kernel#caller must return the same locations when called with 1..-1 and when called with no arguments
+windows:Kernel#caller returns an Array with the block given to #at_exit at the base of the stack
+fails:Kernel#caller includes core library methods defined in Ruby

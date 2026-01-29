@@ -12,6 +12,14 @@ All branches are merged forward to the next major release (e.g. 9.4 is merged to
 
 If you have questions, please just submit as best you can and we will assist.
 
+We also request that current users of JRuby add themselves to our user
+list by submitting a pull request to the following file:
+
+* https://github.com/jruby/jruby/blob/master/USERS.md
+
+This helps the JRuby community grow and share best practices and new ideas
+for how to apply JRuby to JVM and Ruby apps around the world.
+
 Replace this text with your pull request details.
 
 -->

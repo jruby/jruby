@@ -16,6 +16,14 @@ If you need help, feel free to join the JRuby chat room on Matrix:
 
 * https://matrix.to/#/#jruby:matrix.org
 
+We also request that current users of JRuby add themselves to our user
+list by submitting a pull request to the following file:
+
+* https://github.com/jruby/jruby/blob/master/USERS.md
+
+This helps the JRuby community grow and share best practices and new ideas
+for how to apply JRuby to JVM and Ruby apps around the world.
+
 -->
 
 **Environment Information**

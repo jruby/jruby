@@ -42,7 +42,7 @@ import org.jruby.ast.visitor.NodeVisitor;
 /**
  * Class variable declaration.
  */
-@Deprecated
+@Deprecated(since = "9.2.0.0")
 public class ClassVarDeclNode extends AssignableNode implements INameNode {
     private final RubySymbol name;
 

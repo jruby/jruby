@@ -35,7 +35,7 @@ public abstract class JavaInternalBlockBody extends BlockBody {
         this.dummyScope = runtime.getStaticScopeFactory().getDummyScope();
     }
 
-    @Deprecated // needed by jruby-rack until it supports 1.7 along side with 9K
+    @Deprecated(since = "9.1.3.0") // needed by jruby-rack until it supports 1.7 along side with 9K
     public JavaInternalBlockBody(Ruby runtime, Arity arity) {
         this(runtime, null, null, Signature.from(arity));
     }

@@ -257,12 +257,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
     }
 
-    @Deprecated // not-used
+    @Deprecated(since = "9.2.0.0") // not-used
     public static int matcherSearch(Ruby runtime, Matcher matcher, int start, int range, int option) {
         return matcherSearch(runtime.getCurrentContext(), matcher, start, range, option);
     }
 
-    @Deprecated // not-used
+    @Deprecated(since = "9.2.0.0") // not-used
     public static int matcherMatch(Ruby runtime, Matcher matcher, int start, int range, int option) {
         return matcherMatch(runtime.getCurrentContext(), matcher, start, range, option);
     }
@@ -384,7 +384,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return re;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public final RegexpOptions getOptions() {
         return getOptions(getCurrentContext());
     }
@@ -396,7 +396,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return options;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public final Regex getPattern() {
         return getPattern(getCurrentContext());
     }
@@ -441,7 +441,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return enc;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public final Regex preparePattern(RubyString str) {
         return preparePattern(getCurrentContext(), str);
     }
@@ -477,7 +477,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         RegexpSupport.preprocess(runtime, bytes, bytes.getEncoding(), new Encoding[]{null}, RegexpSupport.ErrorMode.RAISE);
     }
 
-    @Deprecated // not used
+    @Deprecated(since = "9.2.10.0") // not used
     public static RubyString preprocessDRegexp(Ruby runtime, RubyString[] strings, int embeddedOptions) {
         return preprocessDRegexp(runtime, strings, RegexpOptions.fromEmbeddedOptions(embeddedOptions));
     }
@@ -507,7 +507,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return processElementIntoResult(context, null, arg0, options, null, context.encodingHolder());
     }
 
-    @Deprecated // not used
+    @Deprecated(since = "9.2.10.0") // not used
     public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject arg0, RegexpOptions options) {
         var context = runtime.getCurrentContext();
         return processElementIntoResult(context, null, arg0, options, null, context.encodingHolder());
@@ -517,7 +517,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return processElementIntoResult(context, null, arg0, arg1, options, null, context.encodingHolder());
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.10.0")
     public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject arg0, IRubyObject arg1, RegexpOptions options) {
         var context = runtime.getCurrentContext();
         return processElementIntoResult(context, null, arg0, arg1, options, null, context.encodingHolder());
@@ -527,19 +527,19 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return processElementIntoResult(context, null, arg0, arg1, arg2, options, null, context.encodingHolder());
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.10.0")
     public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, RegexpOptions options) {
         var context = runtime.getCurrentContext();
         return processElementIntoResult(context, null, arg0, arg1, arg2, options, null, context.encodingHolder());
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.10.0")
     public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, RegexpOptions options) {
         var context = runtime.getCurrentContext();
         return processElementIntoResult(context, null, arg0, arg1, arg2, arg3, options, null, context.encodingHolder());
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.10.0")
     public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, RegexpOptions options) {
         var context = runtime.getCurrentContext();
         return processElementIntoResult(context, null, arg0, arg1, arg2, arg3, arg4, options, null, context.encodingHolder());
@@ -922,7 +922,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return RE_OPTION_IGNORECASE;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject initialize_m(IRubyObject arg) {
         return initialize_m(getCurrentContext(), arg);
     }
@@ -934,7 +934,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 regexpInitializeString(context, arg.convertToString(), new RegexpOptions(), null);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject initialize_m(IRubyObject arg0, IRubyObject arg1) {
         return initialize_m(getCurrentContext(), arg0, arg1);
     }
@@ -961,7 +961,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return regexpInitializeString(context, arg0.convertToString(), regexpOptions, timeout);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject initialize_m(IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         return initialize_m(getCurrentContext(), arg0, arg1, arg2);
     }
@@ -1009,7 +1009,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return regexpInitialize(bytes, enc, options, timeout);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public final RubyRegexp regexpInitialize(ByteList bytes, Encoding enc, RegexpOptions options) {
         return regexpInitialize(bytes, enc, options, null);
     }
@@ -1322,7 +1322,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public final RubyBoolean startWithP(ThreadContext context, RubyString str) {
         return startsWith(context, str) ? context.tru : context.fals;
     }
@@ -1392,7 +1392,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return asFixnum(context, getOptions(context).toOptions());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject options() {
         return options(getCurrentContext());
     }
@@ -1414,7 +1414,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return newString(context, newStr);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject source() {
         return source(getCurrentContext());
     }
@@ -1440,7 +1440,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     private final static int EMBEDDABLE = RE_OPTION_MULTILINE|RE_OPTION_IGNORECASE|RE_OPTION_EXTENDED;
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyString to_s() {
         return to_s(getCurrentContext());
     }
@@ -1645,7 +1645,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return pattern != null && pattern.isLinear() ? context.tru : context.fals;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject nth_match(int nth, IRubyObject match) {
         return nth_match(((RubyBasicObject) match).getCurrentContext(), nth, match);
     }
@@ -1678,7 +1678,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 context.nil : match.str.makeSharedString(context.runtime, start, end - start);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject last_match(IRubyObject match) {
         return last_match(((RubyBasicObject) match).getCurrentContext(), match);
     }
@@ -1691,7 +1691,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject match_pre(IRubyObject match) {
         return match_pre(((RubyBasicObject) match).getCurrentContext(), match);
     }
@@ -1708,7 +1708,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 context.nil : match.str.makeShared(context.runtime, 0,  match.begin);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject match_post(IRubyObject match) {
         return match_post(((RubyBasicObject) match).getCurrentContext(), match);
     }
@@ -1726,7 +1726,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 context.nil;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject match_last(IRubyObject match) {
         return match_last(((RubyBasicObject) match).getCurrentContext(), match);
     }
@@ -1917,7 +1917,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return newRegexp(input.getRuntime(), input.unmarshalString(), RegexpOptions.fromJoniOptions(input.readSignedByte()));
     }
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0.0.0", forRemoval = true)
     @SuppressWarnings("removal")
     public static void marshalTo(RubyRegexp regexp, org.jruby.runtime.marshal.MarshalStream output) throws java.io.IOException {
         var context = regexp.getRuntime().getCurrentContext();
@@ -1942,7 +1942,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         output.writeByte(out, options);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public final int search(ThreadContext context, RubyString str, int pos, boolean reverse, IRubyObject[] holder) {
         int result = searchString(context, str, pos, reverse);
         if (holder != null) {
@@ -1953,12 +1953,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return result;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static IRubyObject getBackRef(ThreadContext context) {
         return context.getBackRef();
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public boolean isSimpleString() {
         return isSimpleString(getCurrentContext());
     }

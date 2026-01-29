@@ -43,6 +43,7 @@ import org.joni.exception.JOniException;
 import org.joni.exception.ValueException;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Convert;
 import org.jruby.api.Create;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.Arity;
@@ -328,12 +329,12 @@ public class RubyMatchData extends RubyObject {
         return arr;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject group(long n) {
         return group(getCurrentContext(), (int) n);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject group(int n) {
         return group(getCurrentContext(), n);
     }
@@ -342,7 +343,7 @@ public class RubyMatchData extends RubyObject {
         return RubyRegexp.nth_match(context, n, this);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public int getNameToBackrefNumber(String name) {
         return getNameToBackrefNumber(getCurrentContext(), name);
     }
@@ -358,7 +359,7 @@ public class RubyMatchData extends RubyObject {
 
     // This returns a list of values in the order the names are defined (named capture local var
     // feature uses this).
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject[] getNamedBackrefValues(Ruby runtime) {
         var context = runtime.getCurrentContext();
         final Regex pattern = getPattern(context);
@@ -411,7 +412,7 @@ public class RubyMatchData extends RubyObject {
         return start < 0 ? context.nil : asFixnum(context, regs.getEnd(index));
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyString inspect() {
         return inspect(getCurrentContext());
     }
@@ -419,7 +420,7 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod
     @Override
     public RubyString inspect(ThreadContext context) {
-        if (str == null) return (RubyString) anyToString();
+        if (str == null) return (RubyString) Convert.anyToString(context, this);
 
         RubyString result = newString(context, "#<");
         result.append(getMetaClass().getRealClass().to_s(context));
@@ -497,7 +498,7 @@ public class RubyMatchData extends RubyObject {
         return result;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject values_at(IRubyObject[] args) {
         return values_at(getCurrentContext(), args);
     }
@@ -537,7 +538,7 @@ public class RubyMatchData extends RubyObject {
         }
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public final int backrefNumber(Ruby runtime, IRubyObject obj) {
         return backrefNumber(runtime.getCurrentContext(), obj);
     }
@@ -547,7 +548,7 @@ public class RubyMatchData extends RubyObject {
         return backrefNumber(context, getPattern(context), regs, obj);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static int backrefNumber(Ruby runtime, Regex pattern, Region regs, IRubyObject obj) {
         return backrefNumber(runtime.getCurrentContext(), pattern, regs, obj);
     }
@@ -660,7 +661,7 @@ public class RubyMatchData extends RubyObject {
         return null;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public final IRubyObject at(final int nth) {
         return at(getCurrentContext(), nth);
     }
@@ -718,7 +719,7 @@ public class RubyMatchData extends RubyObject {
         return asFixnum(context, e);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject offset19(ThreadContext context, IRubyObject index) {
         return offset(context, index);
     }
@@ -837,7 +838,7 @@ public class RubyMatchData extends RubyObject {
         return ss.isNil() ? newEmptyString(context) : ss;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject string() {
         return string(getCurrentContext());
     }
@@ -894,7 +895,7 @@ public class RubyMatchData extends RubyObject {
         return asFixnum(context, hashCode());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyHash named_captures(ThreadContext context) {
         return named_captures(context, NULL_ARRAY);
     }
@@ -1032,18 +1033,18 @@ public class RubyMatchData extends RubyObject {
         return regs == null ? 1 : regs.getNumRegs();
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.10.0")
     @Override
     public RubyArray to_a() {
         return match_array(getCurrentContext(), 0);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.10.0")
     public IRubyObject op_aref(IRubyObject idx) {
         return op_aref(getCurrentContext(), idx);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.10.0")
     public IRubyObject op_aref(IRubyObject idx, IRubyObject rest) {
         return op_aref(getCurrentContext(), idx, rest);
     }

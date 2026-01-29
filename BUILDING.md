@@ -3,11 +3,13 @@ Building JRuby from Source
 
 Prerequisites:
 
-* A [Java 8-compatible (or higher) Java development kit (JDK)](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
+* A [Java 21-compatible (or higher) Java development kit (JDK)](http://www.oracle.com/technetwork/java/javase/downloads/index.html).
   * If `JAVA_HOME` is not set on Mac OS X: `export JAVA_HOME=$(/usr/libexec/java_home)`
 * [Maven](https://maven.apache.org/download.cgi) 3.3.0+ (Maven Wrapper provided with `./mvnw`)
+
+For running tests, you will need Ant:
+
 * [Apache Ant](https://ant.apache.org/bindownload.cgi) 1.8+ (see https://github.com/jruby/jruby/issues/2236)
-* [Make](https://www.gnu.org/software/make/) and a C++ compiler for installing the jruby-launcher gem
 
 JRuby uses Maven for building and bootstrapping itself, along with Rake,
 RSpec, and MSpec for running integration tests.
@@ -27,7 +29,7 @@ This will run the default "install" goal (`mvn install`) and will do all of the 
 
 * Compile JRuby
 * Build `lib/jruby.jar`, needed for running at command line
-* It will install the default gems specifications `lib/ruby/gems/shared/specifications/default/` and the ruby files of those gems in `lib/ruby/stdlib/`.
+* It will install the default gems specifications `lib/pom.rb` and the ruby files of those gems in `lib/ruby/stdlib/`.
 
 The environment is now suitable for running Ruby applications.
 

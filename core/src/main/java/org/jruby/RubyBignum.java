@@ -362,7 +362,7 @@ public class RubyBignum extends RubyInteger {
     /** rb_big_to_s
      *
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject to_s(IRubyObject[] args) {
         var context = getRuntime().getCurrentContext();
         return switch (args.length) {
@@ -655,7 +655,7 @@ public class RubyBignum extends RubyInteger {
      *
      * Deprecated since 10.0 since CRuby no longer has Bignum-specific quo logic.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject quo(ThreadContext context, IRubyObject otherArg) {
         return super.quo(context, otherArg);
     }
@@ -704,7 +704,7 @@ public class RubyBignum extends RubyInteger {
         }
         // number of words, not number of bits
         final int xbits = value.bitLength() / 8;
-        if ((xbits > BIGLEN_LIMIT) || (xbits * other > BIGLEN_LIMIT)) {
+        if (xbits * other > BIGLEN_LIMIT) {
             throw argumentError(context, "exponent is too large");
         } else {
             return newBignum(context.runtime, value.pow((int) other));
@@ -1106,7 +1106,7 @@ public class RubyBignum extends RubyInteger {
         return asFloat(context, asDouble(context));
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public IRubyObject abs() {
         return abs(getCurrentContext());
     }
@@ -1142,7 +1142,7 @@ public class RubyBignum extends RubyInteger {
         return isZero(context) ? context.nil : this;
     }
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0.0.0", forRemoval = true)
     @SuppressWarnings("removal")
     public static void marshalTo(RubyBignum bignum, org.jruby.runtime.marshal.MarshalStream output) throws IOException {
         var context = bignum.getRuntime().getCurrentContext();
@@ -1198,7 +1198,7 @@ public class RubyBignum extends RubyInteger {
         }
     }
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0.0.0", forRemoval = true)
     @SuppressWarnings("removal")
     public static RubyNumeric unmarshalFrom(org.jruby.runtime.marshal.UnmarshalStream input) throws IOException {
         boolean positive = input.readUnsignedByte() == '+';

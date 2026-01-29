@@ -1,7 +1,5 @@
 exclude :test_change_struct, "work in progress"
 exclude :test_class_ivar, "needs investigation"
-exclude :test_hash_compared_by_identity, "work in progress"
-exclude :test_hash_default_compared_by_identity, "work in progress"
 exclude :test_inconsistent_struct, "needs investigation"
 exclude :test_load_range_as_struct, "needs investigation"
 exclude :test_marshal_complex, "needs investigation"

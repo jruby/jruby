@@ -455,7 +455,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return basenameImpl(context, (RubyClass) recv, path, ext == context.nil ? null : ext);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public static IRubyObject basename(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         IRubyObject ext = (args.length > 1 && args[1] != context.nil) ? args[1] : null;
         return basenameImpl(context, (RubyClass) recv, args[0], ext);
@@ -893,11 +893,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             String spattern = _path.asJavaString();
             ArrayList<String> patterns = Dir.braces(spattern, flags, new ArrayList<>());
 
-            ArrayList<Boolean> matches = new ArrayList<>();
+            boolean matches = false;
             for(int i = 0; i < patterns.size(); i++) {
-                matches.add(dir_fnmatch(new ByteList(patterns.get(i).getBytes()), path, flags));
+                matches |= dir_fnmatch(new ByteList(patterns.get(i).getBytes()), path, flags);
             }
-            braces_match = matches.contains(true);
+            braces_match = matches;
         }
 
         return braces_match || dir_fnmatch(pattern, path, flags) ? context.tru : context.fals;
@@ -1105,7 +1105,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject truncate19(ThreadContext context, IRubyObject recv, IRubyObject path, IRubyObject length) {
         return truncate(context, recv, path, length);
     }
@@ -1213,9 +1213,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         var cwd = context.runtime.getCurrentDirectory();
         for (int i = 0; i < args.length; i++) {
-            var toUnlink = JRubyFile.create(cwd, get_path(context, args[i]).toString()).getAbsolutePath();
+            var path = get_path(context, args[i]).toString();
+            var toUnlink = JRubyFile.create(cwd, path).getAbsolutePath();
 
-            if (posix.unlink(toUnlink) < 0) throw context.runtime.newErrnoFromInt(posix.errno());
+            if (posix.unlink(toUnlink) < 0) throw context.runtime.newErrnoFromInt(posix.errno(), path);
         }
 
         return asFixnum(context, args.length);
@@ -1441,7 +1442,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return decodedPath;
     }
 
-    @Deprecated // Use fileResource instead
+    @Deprecated(since = "1.7.11") // Use fileResource instead
     public static JRubyFile file(IRubyObject pathOrFile) {
         return fileResource(((RubyBasicObject) pathOrFile).getCurrentContext(), pathOrFile).unwrap(JRubyFile.class);
     }
@@ -1461,12 +1462,12 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return entry;
     }
 
-    @Deprecated // not-used
+    @Deprecated(since = "9.1.11.0") // not-used
     public static ZipEntry getDirOrFileEntry(String jar, String path) throws IOException {
         return getDirOrFileEntry(new JarFile(jar), path);
     }
 
-    @Deprecated // not-used
+    @Deprecated(since = "9.2.0.0") // not-used
     public static ZipEntry getDirOrFileEntry(ZipFile jar, String path) throws IOException {
         String dirPath = path + '/';
         ZipEntry entry = jar.getEntry(dirPath); // first try as directory
@@ -2299,10 +2300,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     private static final String[] SLASHES = { "", "/", "//" };
     private static final Pattern URI_PREFIX = Pattern.compile("^(jar:)?[a-z]{2,}:(.*)");
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     protected String path;
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public static IRubyObject dirname(ThreadContext context, IRubyObject recv, IRubyObject [] args) {
         return switch (args.length) {
             case 1 -> dirname(context, recv, args[0]);
@@ -2311,7 +2312,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         };
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public static IRubyObject expand_path(ThreadContext context, IRubyObject recv, IRubyObject... args) {
         return switch (args.length) {
             case 1 -> expand_path(context, recv, args[0]);
@@ -2320,7 +2321,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         };
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     private static RubyString expandPathInternal(ThreadContext context, IRubyObject[] args, boolean expandUser, boolean canonicalize) {
         return switch (args.length) {
             case 1 -> expandPathInternal(context, args[0], null, expandUser, canonicalize);
@@ -2329,7 +2330,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         };
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public static IRubyObject absolute_path(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         switch (args.length) {
             case 1:
@@ -2341,7 +2342,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public static IRubyObject realdirpath(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         switch (args.length) {
             case 1:
@@ -2353,14 +2354,14 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public static IRubyObject realpath(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         RubyString file = expandPathInternal(context, args, false, true);
         if (!RubyFileTest.exist(context, file)) throw context.runtime.newErrnoENOENTError(file.toString());
         return file;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public static IRubyObject fnmatch(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return switch (args.length) {
             case 2 -> fnmatch(context, recv, args[0], args[1]);

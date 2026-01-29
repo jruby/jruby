@@ -2,12 +2,15 @@ package org.jruby.runtime.invokedynamic;
 
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;
+
+import com.headius.invokebinder.Binder;
 import org.jruby.Ruby;
 import org.jruby.RubyGlobal;
 import org.jruby.internal.runtime.GlobalVariable;
+import org.jruby.internal.runtime.UndefinedAccessor;
+import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.opto.Invalidator;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
@@ -107,10 +110,22 @@ public class GlobalSite extends MutableCallSite {
 
         // get switchpoint before value
         SwitchPoint switchPoint = (SwitchPoint) variable.getInvalidator().getData();
-        IRubyObject value = variable.getAccessor().getValue();
+        IAccessor accessor = variable.getAccessor();
+        IRubyObject value = accessor.getValue();
+        MethodHandle target;
 
-        MethodHandle target = constant(IRubyObject.class, value);
-        target = dropArguments(target, 0, ThreadContext.class);
+        if (accessor instanceof UndefinedAccessor) {
+            // don't cache value so we continue to warn; bind to accessor
+            target = Binder.from(type())
+                    .dropAll()
+                    .append(accessor)
+                    .invokeVirtualQuiet("getValue");
+        } else {
+
+            target = constant(IRubyObject.class, value);
+            target = dropArguments(target, 0, ThreadContext.class);
+        }
+
         MethodHandle fallback = lookup().findVirtual(GlobalSite.class, "getGlobalFallback", methodType(IRubyObject.class, ThreadContext.class));
         fallback = fallback.bindTo(this);
 

@@ -45,7 +45,7 @@ import org.jruby.util.KeyValuePair;
  * of default values or kwarg in a method call.
  */
 public class HashNode extends Node implements ILiteralNode {
-    private final List<KeyValuePair<Node,Node>> pairs = new ArrayList<>();
+    private final List<KeyValuePair<Node,Node>> pairs = new ArrayList<>(1);
     // contains at least one **k {a: 1, **k}, {**{}, **{}}
     private boolean hasRestKwarg = false;
 
@@ -159,7 +159,7 @@ public class HashNode extends Node implements ILiteralNode {
     }
 
     public List<Node> childNodes() {
-        List<Node> children = new ArrayList<>();
+        List<Node> children = new ArrayList<>(pairs.size() * 2);
 
         for (KeyValuePair<Node,Node> pair: pairs) {
             children.add(pair.getKey());
@@ -182,7 +182,7 @@ public class HashNode extends Node implements ILiteralNode {
         return hasOnlySymbolKeys;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     public boolean isMaybeKwargs() {
         return !isLiteral;
     }

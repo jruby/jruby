@@ -28,7 +28,7 @@ for more information.
 
 ## Getting JRuby
 
-To run JRuby you will need a JRE (the Java VM runtime environment) version 8 or higher.
+To run JRuby you will need a JRE (the Java VM runtime environment) version 21 or higher.
 
 Your operating system may provide a JRE and JRuby in a package manager, but you may find that this
 version is very old.
@@ -46,11 +46,11 @@ $ rbenv install jruby
 Note: if you do not regularly git update rbenv this list of versions may be out of date.
 
 We recommend always selecting the latest version of JRuby from the list. 
-You can install that particular version (9.2.13.0 is just for illustration):
+You can install that particular version (10.0.2.0 is just for illustration):
 
 
 ```
-$ rbenv install jruby-9.2.13.0
+$ rbenv install jruby-10.0.2.0
 ```
 
 For [`rvm`](https://rvm.io) you can simply do:

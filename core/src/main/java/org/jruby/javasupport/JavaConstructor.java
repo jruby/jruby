@@ -56,7 +56,7 @@ public class JavaConstructor extends JavaCallable {
         this.constructor = constructor;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     public static JavaConstructor create(Ruby runtime, Constructor<?> constructor) {
         return new JavaConstructor(constructor);
     }

@@ -239,8 +239,7 @@ public class RubyMethod extends AbstractRubyMethod {
                 receiver, originModule, originName, getFilename(), line == -1 ? -1 : line - 1);
         Block b = MethodBlockBody.createMethodBlock(body);
 
-        RubyProc proc = RubyProc.newProc(context.runtime, b, Block.Type.LAMBDA);
-        proc.setFromMethod();
+        RubyProc proc = RubyProc.newMethodProc(context.runtime, b);
         return proc;
     }
 
@@ -309,7 +308,7 @@ public class RubyMethod extends AbstractRubyMethod {
         return receiver;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public IRubyObject curry(ThreadContext context, IRubyObject[] args) {
         IRubyObject proc = to_proc(context);
         return sites(context).curry.call(context, proc, proc, args);

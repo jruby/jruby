@@ -1621,7 +1621,7 @@ public class PopenExecutor {
         IRubyObject chdir;
         if (!optForChdir.isNil() && (chdir = ((RubyHash) optForChdir).delete(chdirSym)) != null) {
             eargp.chdirGiven = true;
-            eargp.chdir_dir = chdir.convertToString().toString();
+            eargp.chdir_dir = RubyFile.get_path(context, chdir).toString();
         }
 
         execFillarg(context, prog, argv_p[0], env_opt[0], env_opt[1], eargp);
@@ -1743,7 +1743,7 @@ public class PopenExecutor {
         if (!virtualCWD.equals(runtime.getPosix().getcwd())) {
             String arg = prog.toString();
 
-            // if we're launching org.jruby.Main, adjust args to -C to new dir
+            // if we're launching org.jruby.main.Main, adjust args to -C to new dir
             if ((arg = ShellLauncher.changeDirInsideJar(runtime, arg)) != null) {
                 prog = newString(context, arg);
             } else if (virtualCWD.startsWith("uri:classloader:")) {

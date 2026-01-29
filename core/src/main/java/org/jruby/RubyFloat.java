@@ -210,7 +210,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         return asInteger(context, value > 0.0 ? Math.floor(value) : Math.ceil(value));
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public int signum() {
         return signum(getCurrentContext());
     }
@@ -254,7 +254,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     /** rb_flo_induced_from
      *
      */
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public static IRubyObject induced_from(ThreadContext context, IRubyObject recv, IRubyObject number) {
         if (number instanceof RubyFixnum || number instanceof RubyBignum || number instanceof RubyRational) {
             return number.callMethod(context, "to_f");
@@ -320,7 +320,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         return asFloat(context, -value);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public IRubyObject op_uminus() {
         return op_uminus(getCurrentContext());
     }
@@ -657,7 +657,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         return Helpers.multAndMix(runtime.getHashSeedK0(), hashLong);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject to_f() {
         return to_f(getCurrentContext());
     }
@@ -1089,7 +1089,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         return asBoolean(context, isNaN());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject nan_p() {
         return nan_p(getCurrentContext());
     }
@@ -1098,7 +1098,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         return Double.isNaN(value);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject infinite_p() {
         return infinite_p(getCurrentContext());
     }
@@ -1115,7 +1115,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         return Double.isInfinite(value);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject finite_p() {
         return finite_p(getCurrentContext());
     }
@@ -1136,7 +1136,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         return byteList;
     }
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0.0.0", forRemoval = true)
     @SuppressWarnings("removal")
     public static void marshalTo(RubyFloat aFloat, org.jruby.runtime.marshal.MarshalStream output) throws java.io.IOException {
         var context = aFloat.getRuntime().getCurrentContext();
@@ -1149,7 +1149,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         output.writeString(out, aFloat.marshalDump(context));
     }
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0.0.0", forRemoval = true)
     @SuppressWarnings("removal")
     public static RubyFloat unmarshalFrom(org.jruby.runtime.marshal.UnmarshalStream input) throws java.io.IOException {
         ByteList value = input.unmarshalString();
@@ -1183,7 +1183,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
     private static final ByteList NEGATIVE_INFINITY_BYTELIST = new ByteList("-inf".getBytes());
     private static final ByteList INFINITY_BYTELIST = new ByteList("inf".getBytes());
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject next_float() {
         return next_float(getCurrentContext());
     }
@@ -1193,7 +1193,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         return asFloat(context, Math.nextAfter(value, Double.POSITIVE_INFINITY));
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject prev_float() {
         return prev_float(getCurrentContext());
     }
@@ -1203,15 +1203,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         return asFloat(context, Math.nextAfter(value, Double.NEGATIVE_INFINITY));
     }
 
-    /**
-     * Produce an object ID for this Float.
-     *
-     * Values within the "flonum" range will produce a special object ID that emulates the CRuby tagged "flonum" pointer
-     * logic. This ID is never registered but can be reversed by ObjectSpace._id2ref using the same bit manipulation as
-     * in CRuby.
-     *
-     * @return the object ID for this Float
-     */
+    @Deprecated(since = "10.0.3.0")
     @Override
     public IRubyObject id() {
         long longBits = Double.doubleToLongBits(value);
@@ -1227,6 +1219,32 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         }
 
         return RubyFixnum.newFixnum(metaClass.runtime, flonum);
+    }
+
+    /**
+     * Produce an object ID for this Float.
+     *
+     * Values within the "flonum" range will produce a special object ID that emulates the CRuby tagged "flonum" pointer
+     * logic. This ID is never registered but can be reversed by ObjectSpace._id2ref using the same bit manipulation as
+     * in CRuby.
+     *
+     * @return the object ID for this Float
+     */
+    @Override
+    public RubyInteger __id__(ThreadContext context) {
+        long longBits = Double.doubleToLongBits(value);
+        long flonum;
+
+        // calculate flonum to use for ID, or fall back on default incremental ID
+        if (flonumRange(longBits)) {
+            flonum = (Numeric.rotl(longBits, 3) & ~0x01) | 0x02;
+        } else if (positiveZero(longBits)) {
+            flonum = 0x8000000000000002L;
+        } else {
+            return super.__id__(context);
+        }
+
+        return asFixnum(context, flonum);
     }
 
     /**
@@ -1289,12 +1307,12 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         target.catWithCodeRange((RubyString) to_s(getRuntime().getCurrentContext()));
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public IRubyObject zero_p() {
         return zero_p(getCurrentContext());
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public IRubyObject floor(ThreadContext context, IRubyObject[] args) {
         return switch (args.length) {
             case 0 -> floor(context);
@@ -1303,7 +1321,7 @@ public class RubyFloat extends RubyNumeric implements Appendable {
         };
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public IRubyObject round(ThreadContext context, IRubyObject[] args) {
         return switch (args.length) {
             case 0 -> round(context);

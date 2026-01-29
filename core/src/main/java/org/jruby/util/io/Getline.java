@@ -29,7 +29,7 @@ public class Getline {
     }
 
     // Work around native extensions calling without marking keywords annotation AND not calling newer non-deprecated methods.
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
                                                                         Self self, Encoding enc_io, IRubyObject arg0) {
         boolean keywords = arg0 instanceof RubyHash;
@@ -41,7 +41,7 @@ public class Getline {
     }
 
     // Work around native extensions calling without marking keywords annotation AND not calling newer non-deprecated methods.
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
                                                                         Self self, Encoding enc_io, IRubyObject arg0, IRubyObject arg1) {
         boolean keywords = arg1 instanceof RubyHash;
@@ -54,7 +54,7 @@ public class Getline {
     }
 
     // Work around native extensions calling without marking keywords annotation AND not calling newer non-deprecated methods.
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
                                                                         Self self, Encoding enc_io, IRubyObject arg0,
                                                                         IRubyObject arg1, IRubyObject arg2) {
@@ -74,7 +74,7 @@ public class Getline {
     }
 
     // Work around native extensions calling without marking keywords annotation AND not calling newer non-deprecated methods.
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
                                                                         Self self, Encoding enc_io, IRubyObject arg0, Block block) {
         boolean keywords = arg0 instanceof RubyHash;
@@ -88,7 +88,7 @@ public class Getline {
     }
 
     // Work around native extensions calling without marking keywords annotation AND not calling newer non-deprecated methods.
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
                                                                         Self self, Encoding enc_io, IRubyObject arg0,
                                                                         IRubyObject arg1, Block block) {
@@ -103,7 +103,7 @@ public class Getline {
     }
 
     // Work around native extensions calling without marking keywords annotation AND not calling newer non-deprecated methods.
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
                                                                         Self self, Encoding enc_io, IRubyObject arg0,
                                                                         IRubyObject arg1, IRubyObject arg2, Block block) {
@@ -118,7 +118,7 @@ public class Getline {
         return getlineCall(context, getline, self, enc_io, 3, arg0, arg1, arg2, block, keywords);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
                                                                         Self self, Encoding enc_io, IRubyObject... args) {
         return switch (args.length) {
@@ -144,7 +144,7 @@ public class Getline {
     // Work around native extensions calling without marking keywords annotation AND not calling newer non-deprecated methods.
     // Note: some callers use this as the single entry point vs calling into the specific overload so we need to do extra null
     //   checking to figure out actual last valid passed argument.
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static <Self, Return extends IRubyObject> Return getlineCall(ThreadContext context, Callback<Self, Return> getline,
                                                                         Self self, Encoding enc_io, int argc, IRubyObject arg0,
                                                                         IRubyObject arg1, IRubyObject arg2, Block block) {

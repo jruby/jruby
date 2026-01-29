@@ -137,7 +137,7 @@ public class RubyGlobal {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static void createGlobals(Ruby runtime) {
         var context = runtime.getCurrentContext();
         createGlobalsAndENV(context, globalVariables(context), instanceConfig(context));
@@ -574,7 +574,7 @@ public class RubyGlobal {
             return super.has_value_p(context, expected.convertToString());
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public IRubyObject index(ThreadContext context, IRubyObject expected) {
             warn(context, "ENV#index is deprecated; use ENV#key");
 
@@ -669,7 +669,7 @@ public class RubyGlobal {
             return newSharedString(context, ENV);
         }
 
-        @Deprecated
+        @Deprecated(since = "9.3.0.0")
         public RubyHash to_h() {
             return to_h(getCurrentContext(), Block.NULL_BLOCK);
         }
@@ -1009,22 +1009,10 @@ public class RubyGlobal {
         }
     }
 
-    private static class ErrorInfoGlobalVariable extends GlobalVariable {
+    private static class ErrorInfoGlobalVariable extends ReadonlyGlobalVariable {
         public ErrorInfoGlobalVariable(Ruby runtime, String name, IRubyObject value) {
             super(runtime, name, null);
-            set(value);
-        }
-
-        @Override
-        public IRubyObject set(IRubyObject value) {
-            var context = runtime.getCurrentContext();
-            if (!value.isNil() &&
-                    !exceptionClass(context).isInstance(value) &&
-                    !(JavaUtil.isJavaObject(value) && JavaUtil.unwrapJavaObject(value) instanceof Throwable)) {
-                throw typeError(context, "assigning non-exception to $!");
-            }
-
-            return context.setErrorInfo(value);
+            runtime.getCurrentContext().setErrorInfo(value);
         }
 
         @Override
@@ -1042,7 +1030,7 @@ public class RubyGlobal {
         @Override
         public IRubyObject set(IRubyObject value) {
             if (!value.isNil() && ! (value instanceof RubyString)) {
-                throw typeError(value.getRuntime().getCurrentContext(), name() + " must be a String");
+                throw typeError(value.getRuntime().getCurrentContext(), "value of " + name() + " must be String");
             }
             return super.set(value);
         }

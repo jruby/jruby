@@ -30,7 +30,7 @@ package org.jruby.runtime.load;
 
 import org.jruby.Ruby;
 
-@Deprecated // no longer used
+@Deprecated(since = "9.0.5.0") // no longer used
 public interface IAutoloadMethod {
     String file();
     void load(Ruby runtime);

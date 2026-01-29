@@ -76,38 +76,19 @@ describe "UnboundMethod#==" do
     (@identical_body == @original_body).should == false
   end
 
-  ruby_version_is ""..."3.2" do
-    it "returns false if same method but one extracted from a subclass" do
-      (@parent == @child1).should == false
-      (@child1 == @parent).should == false
-    end
-
-    it "returns false if same method but extracted from two different subclasses" do
-      (@child2 == @child1).should == false
-      (@child1 == @child2).should == false
-    end
-
-    it "returns false if methods are the same but added from an included Module" do
-      (@includee == @includer).should == false
-      (@includer == @includee).should == false
-    end
+  it "returns true if same method but one extracted from a subclass" do
+    (@parent == @child1).should == true
+    (@child1 == @parent).should == true
   end
 
-  ruby_version_is "3.2" do
-    it "returns true if same method but one extracted from a subclass" do
-      (@parent == @child1).should == true
-      (@child1 == @parent).should == true
-    end
+  it "returns true if same method but extracted from two different subclasses" do
+    (@child2 == @child1).should == true
+    (@child1 == @child2).should == true
+  end
 
-    it "returns false if same method but extracted from two different subclasses" do
-      (@child2 == @child1).should == true
-      (@child1 == @child2).should == true
-    end
-
-    it "returns true if methods are the same but added from an included Module" do
-      (@includee == @includer).should == true
-      (@includer == @includee).should == true
-    end
+  it "returns true if methods are the same but added from an included Module" do
+    (@includee == @includer).should == true
+    (@includer == @includee).should == true
   end
 
   it "returns false if both have same Module, same name, identical body but not the same" do
@@ -129,9 +110,6 @@ describe "UnboundMethod#==" do
     c.method(:n).should == Class.instance_method(:new).bind(c)
   end
 
-  # On CRuby < 3.2, the 2 specs below pass due to method/instance_method skipping zsuper methods.
-  # We are interested in the general pattern working, i.e. the combination of method/instance_method
-  # and #== exposes the wanted behavior.
   it "considers methods through visibility change equal" do
     c = Class.new do
       class << self

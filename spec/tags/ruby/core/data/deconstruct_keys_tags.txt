@@ -4,3 +4,11 @@ fails:Data#deconstruct accepts argument position number as well but returns them
 fails:Data#deconstruct ignores incorrect position numbers
 fails:Data#deconstruct support mixing attribute names and argument position numbers
 fails:Data#deconstruct accepts string attribute names
+fails:Data#deconstruct_keys accepts string attribute names
+fails:Data#deconstruct_keys accepts argument position number as well but returns them as keys
+fails:Data#deconstruct_keys ignores incorrect position numbers
+fails:Data#deconstruct_keys support mixing attribute names and argument position numbers
+fails:Data#deconstruct_keys returns at first not existing argument position number
+fails:Data#deconstruct_keys tries to convert a key with #to_int if index is not a String nor a Symbol, but responds to #to_int
+fails:Data#deconstruct_keys raises a TypeError if the conversion with #to_int does not return an Integer
+fails:Data#deconstruct_keys raises TypeError if index is not a String, a Symbol and not convertible to Integer 

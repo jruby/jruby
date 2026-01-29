@@ -141,7 +141,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         return proxyConstructor.newInstance(argsPlus1);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyFixnum arity() {
         return arity(getCurrentContext());
     }
@@ -166,7 +166,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         return proxyConstructor.hashCode();
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyString inspect() {
         return inspect(getCurrentContext());
     }
@@ -187,7 +187,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         return buf.toString();
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public final RubyArray argument_types() {
         return argument_types(getCurrentContext());
     }
@@ -259,7 +259,7 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         return new RuntimeException("Dead code... If you see this, file a bug: JPCtIEC fail"); // greppable
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject new_instance(IRubyObject[] args, Block block) {
         return new_instance2(getCurrentContext(), args, block);
     }

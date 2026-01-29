@@ -37,7 +37,9 @@ import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
+import org.jruby.api.Convert;
 import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.internal.runtime.SplitSuperState;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -426,7 +428,7 @@ public class ConcreteJavaProxy extends JavaProxy {
         if (getObject() == null) setObject(self);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     protected static void initialize(final RubyClass concreteJavaProxy) {
         initialize(concreteJavaProxy.getRuntime().getCurrentContext(), concreteJavaProxy);
     }
@@ -452,6 +454,12 @@ public class ConcreteJavaProxy extends JavaProxy {
 //        getRuntime().getJavaSupport().setJavaObjectVariable(this, index, value);
 //    }
 
+    @Deprecated(since = "10.0.3.0")
+    @Override
+    public IRubyObject id() {
+        return RubyFixnum.newFixnum(getRuntime(), System.identityHashCode(getObject()));
+    }
+
     /**
      * Because we can't physically associate an ID with a Java object, we can
      * only use the identity hashcode here.
@@ -459,8 +467,8 @@ public class ConcreteJavaProxy extends JavaProxy {
      * @return The identity hashcode for the Java object.
      */
     @Override
-    public IRubyObject id() {
-        return RubyFixnum.newFixnum(getRuntime(), System.identityHashCode(getObject()));
+    public RubyInteger __id__(ThreadContext context) {
+        return Convert.asFixnum(context, System.identityHashCode(getObject()));
     }
 
     @Override

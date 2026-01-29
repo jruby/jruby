@@ -160,7 +160,7 @@ public class RubyArgsFile extends RubyObject {
             this.currentFile = runtime.getNil();
         }
 
-        @Deprecated
+        @Deprecated(since = "9.1.8.0")
         public void setCurrentLineNumber(Ruby runtime, int linenumber) {
             runtime.setCurrentLine(linenumber);
         }
@@ -239,7 +239,7 @@ public class RubyArgsFile extends RubyObject {
             return (ArgsFileData) runtime.getArgsFile().dataGetStruct();
         }
 
-        @Deprecated
+        @Deprecated(since = "9.1.8.0")
         public static ArgsFileData getDataFrom(IRubyObject recv) {
             return getArgsFileData(((RubyBasicObject) recv).getCurrentContext().runtime);
         }
@@ -302,7 +302,7 @@ public class RubyArgsFile extends RubyObject {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.8.0")
     public static void setCurrentLineNumber(IRubyObject recv, int newLineNumber) {
         ((RubyBasicObject) recv).getCurrentContext().runtime.setCurrentLine(newLineNumber);
     }
@@ -623,7 +623,7 @@ public class RubyArgsFile extends RubyObject {
         return recv;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject lines(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         if (!block.isGiven()) return RubyEnumerator.enumeratorize(context.runtime, recv, "each_line");
         return each_line(context, recv, args, block);
@@ -643,7 +643,7 @@ public class RubyArgsFile extends RubyObject {
         return data.currentFile;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject skip(IRubyObject recv) {
         return skip(((RubyBasicObject) recv).getCurrentContext(), recv);
     }
@@ -952,7 +952,7 @@ public class RubyArgsFile extends RubyObject {
         return globalVariables(context).get("$FILENAME");
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject to_s(IRubyObject recv) {
         return to_s(((RubyBasicObject) recv).getCurrentContext(), recv);
     }

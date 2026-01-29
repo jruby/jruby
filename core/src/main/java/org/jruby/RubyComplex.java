@@ -193,7 +193,7 @@ public class RubyComplex extends RubyNumeric {
         return newComplexBang(context, clazz, x, RubyFixnum.zero(context.runtime));
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public static RubyComplex newComplexBang(ThreadContext context, RubyClass clazz, IRubyObject x) {
         return newComplexBang(context, clazz, (RubyNumeric) x);
     }
@@ -257,7 +257,7 @@ public class RubyComplex extends RubyNumeric {
     /** nucomp_s_new_bang
      *
      */
-    @Deprecated
+    @Deprecated(since = "1.1.4")
     public static IRubyObject newInstanceBang(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         switch (args.length) {
             case 1: return newInstanceBang(context, recv, args[0]);
@@ -342,7 +342,7 @@ public class RubyComplex extends RubyNumeric {
     /** nucomp_s_new
      * 
      */
-    @Deprecated
+    @Deprecated(since = "1.1.4")
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         switch (args.length) {
             case 1: return newInstance(context, recv, args[0]);
@@ -352,7 +352,7 @@ public class RubyComplex extends RubyNumeric {
         return null;
     }
 
-    @Deprecated // @JRubyMethod(name = "new", meta = true, visibility = Visibility.PRIVATE)
+    @Deprecated(since = "9.2.0.0") // @JRubyMethod(name = "new", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject newInstanceNew(ThreadContext context, IRubyObject recv, IRubyObject real) {
         return newInstance(context, recv, real);
     }
@@ -367,7 +367,7 @@ public class RubyComplex extends RubyNumeric {
         return canonicalizeInternal(context, (RubyClass) recv, real, RubyFixnum.zero(context.runtime));
     }
 
-    @Deprecated // @JRubyMethod(name = "new", meta = true, visibility = Visibility.PRIVATE)
+    @Deprecated(since = "9.2.0.0") // @JRubyMethod(name = "new", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject newInstanceNew(ThreadContext context, IRubyObject recv, IRubyObject real, IRubyObject image) {
         return newInstance(context, recv, real, image);
     }
@@ -427,7 +427,7 @@ public class RubyComplex extends RubyNumeric {
     }
 
 
-    @Deprecated
+    @Deprecated(since = "1.1.4")
     public static IRubyObject convert(ThreadContext context, IRubyObject clazz, IRubyObject[]args) {
         switch (args.length) {
             case 1: return convert(context, clazz, args[0]);
@@ -576,7 +576,7 @@ public class RubyComplex extends RubyNumeric {
         return context.nil;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject real() {
         return real(getCurrentContext());
     }
@@ -587,7 +587,7 @@ public class RubyComplex extends RubyNumeric {
         return real;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject image() {
         return image(getCurrentContext());
     }
@@ -1181,7 +1181,7 @@ public class RubyComplex extends RubyNumeric {
 
     private static final ObjectMarshal COMPLEX_MARSHAL = new ObjectMarshal() {
         @Override
-        @Deprecated(since = "10.0", forRemoval = true)
+        @Deprecated(since = "10.0.0.0", forRemoval = true)
         @SuppressWarnings("removal")
         public void marshalTo(Ruby runtime, Object obj, RubyClass type, org.jruby.runtime.marshal.MarshalStream marshalStream) {
             //do nothing
@@ -1193,7 +1193,7 @@ public class RubyComplex extends RubyNumeric {
         }
 
         @Override
-        @Deprecated(since = "10.0", forRemoval = true)
+        @Deprecated(since = "10.0.0.0", forRemoval = true)
         @SuppressWarnings("removal")
         public Object unmarshalFrom(Ruby runtime, RubyClass type,
                                     org.jruby.runtime.marshal.UnmarshalStream unmarshalStream) throws IOException {

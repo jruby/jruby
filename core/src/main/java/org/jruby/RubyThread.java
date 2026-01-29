@@ -602,7 +602,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return startThread(recv, args, true, block);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyThread start(IRubyObject recv, IRubyObject[] args, Block block) {
         return start(recv.getRuntime().getCurrentContext(), recv, args, block);
     }
@@ -928,7 +928,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return false;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject setName(IRubyObject name) {
         return setName(getCurrentContext(), name);
     }
@@ -948,7 +948,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return name;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject getName() {
         return getName(getCurrentContext());
     }
@@ -1016,7 +1016,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if (locals == null) {
             synchronized (this) {
                 locals = fiberLocalVariables;
-                if (locals == null) locals = fiberLocalVariables = new HashMap<>();
+                if (locals == null) locals = fiberLocalVariables = new HashMap<>(4);
             }
         }
         return locals;
@@ -1032,7 +1032,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if (locals == null) {
             synchronized (this) {
                 locals = threadLocalVariables;
-                if (locals == null) locals = threadLocalVariables = new HashMap<>();
+                if (locals == null) locals = threadLocalVariables = new HashMap<>(4);
             }
         }
         return locals;
@@ -1293,7 +1293,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         final Throwable exception = this.exitingException;
         if (exception != null) {
-            globalVariables(context).set("$!", exception instanceof RaiseException exc ?
+            context.setErrorInfo(exception instanceof RaiseException exc ?
                     exc.getException() : // Set $! in the current thread before exiting
                     JavaUtil.convertJavaToUsableRubyObject(context.runtime, exception));
             Helpers.throwException(exception);
@@ -1396,7 +1396,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return asBoolean(context, getStatus() == Status.SLEEP || getStatus() == Status.DEAD);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public RubyBoolean stop_p() {
         return stop_p(getRuntime().getCurrentContext());
     }
@@ -1413,7 +1413,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return this;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyFixnum priority() {
         return priority(getCurrentContext());
     }
@@ -1423,7 +1423,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return asFixnum(context, javaPriorityToRubyPriority(threadImpl.getPriority()));
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject priority_set(IRubyObject priority) {
         return priority_set(getCurrentContext(), priority);
     }
@@ -1671,7 +1671,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return exitingException;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public interface BlockingTask {
         public void run() throws InterruptedException;
         public void wakeup();
@@ -1747,7 +1747,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public void executeBlockingTask(BlockingTask task) throws InterruptedException {
         try {
             this.currentBlockingTask = task;
@@ -2400,7 +2400,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         enterSleep();
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public void beforeBlockingCall() {
         beforeBlockingCall(metaClass.runtime.getCurrentContext());
     }
@@ -2608,7 +2608,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                 f);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject setFiberScheduler(IRubyObject scheduler) {
         return setFiberScheduler(getCurrentContext(), scheduler);
     }
@@ -2656,7 +2656,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return blockingCount > 0;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public IRubyObject pending_interrupt_p(ThreadContext context, IRubyObject[] args) {
         return switch (args.length) {
             case 0 -> pending_interrupt_p(context);
@@ -2665,22 +2665,22 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         };
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public static IRubyObject pending_interrupt_p(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         return context.getThread().pending_interrupt_p(context, args);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public RubyBoolean alive_p() {
         return isAlive() ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public IRubyObject value() {
         return value(getCurrentContext());
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public IRubyObject join(ThreadContext context, IRubyObject[] args) {
         return switch (args.length) {
             case 0 -> join(context);
@@ -2689,7 +2689,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         };
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.10.0")
     public IRubyObject op_aset(IRubyObject key, IRubyObject value) {
         return op_aset(getRuntime().getCurrentContext(), key, value);
     }

@@ -111,19 +111,19 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
     }
 
     // Still used by exts like jruby-openssl. Regeneration should pick up new ones above.
-    @Deprecated
+    @Deprecated(since = "9.2.7.0")
     protected final void preFrameAndScope(ThreadContext context, IRubyObject self, String name, Block block) {
         context.preMethodFrameAndScope(getImplementationClass(), name, self, block, staticScope);
     }
 
     // Still used by exts like jruby-openssl. Regeneration should pick up new ones above.
-    @Deprecated
+    @Deprecated(since = "9.2.7.0")
     protected final void preFrameAndDummyScope(ThreadContext context, IRubyObject self, String name, Block block) {
         context.preMethodFrameAndDummyScope(getImplementationClass(), name, self, block, staticScope);
     }
 
     // Still used by exts like jruby-openssl. Regeneration should pick up new ones above.
-    @Deprecated
+    @Deprecated(since = "9.2.7.0")
     protected final void preFrameOnly(ThreadContext context, IRubyObject self, String name, Block block) {
         context.preMethodFrameOnly(getImplementationClass(), name, self, block);
     }
@@ -196,7 +196,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         if (enabled) context.trace(RubyEvent.RETURN, Helpers.getSuperNameFromCompositeName(name), getImplementationClass());
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public void setArity(Arity arity) {
         this.signature = Signature.from(arity);
     }
@@ -205,7 +205,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         this.signature = signature;
     }
 
-    @Deprecated @Override
+    @Deprecated(since = "9.3.0.0") @Override
     public Arity getArity() {
         return getSignature().arity();
     }
@@ -297,15 +297,15 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodNBlock(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodNBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodNBlock(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodNBlock(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, String name) {
             super(implementationClass, visibility, name);
         }
@@ -317,11 +317,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodZeroOrNBlock(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodZeroOrNBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodZeroOrNBlock(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
@@ -339,11 +339,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodZeroOrOneOrNBlock(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodZeroOrOneOrNBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodZeroOrOneOrNBlock(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
@@ -361,11 +361,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodZeroOrOneOrTwoOrNBlock(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodZeroOrOneOrTwoOrNBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodZeroOrOneOrTwoOrNBlock(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
@@ -383,11 +383,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodZeroOrOneOrTwoOrThreeOrNBlock(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodZeroOrOneOrTwoOrThreeOrNBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodZeroOrOneOrTwoOrThreeOrNBlock(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
@@ -407,11 +407,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodOneOrNBlock(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodOneOrNBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodOneOrNBlock(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
@@ -429,11 +429,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodOneOrTwoOrNBlock(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodOneOrTwoOrNBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodOneOrTwoOrNBlock(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
@@ -451,11 +451,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodOneOrTwoOrThreeOrNBlock(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodOneOrTwoOrThreeOrNBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodOneOrTwoOrThreeOrNBlock(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
@@ -475,11 +475,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodTwoOrNBlock(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodTwoOrNBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodTwoOrNBlock(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
@@ -497,11 +497,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodTwoOrThreeOrNBlock(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodTwoOrThreeOrNBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodTwoOrThreeOrNBlock(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
@@ -521,11 +521,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodThreeOrNBlock(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodThreeOrNBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodThreeOrNBlock(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
@@ -545,11 +545,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodZeroBlock(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodZeroBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodZeroBlock(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
@@ -564,11 +564,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodZeroOrOneBlock(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodZeroOrOneBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodZeroOrOneBlock(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
@@ -589,11 +589,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodZeroOrOneOrTwoBlock(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodZeroOrOneOrTwoBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodZeroOrOneOrTwoBlock(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
@@ -616,11 +616,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodZeroOrOneOrTwoOrThreeBlock(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodZeroOrOneOrTwoOrThreeBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodZeroOrOneOrTwoOrThreeBlock(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
@@ -646,11 +646,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodOneBlock(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodOneBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodOneBlock(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
@@ -660,7 +660,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             return call(context, self, clazz, name, args[0], block);
         }
 
-        @Deprecated @Override
+        @Deprecated(since = "9.3.0.0") @Override
         public Arity getArity() {
             return Arity.ONE_ARGUMENT;
         }
@@ -674,11 +674,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodOneOrTwoBlock(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodOneOrTwoBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodOneOrTwoBlock(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
@@ -699,11 +699,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodOneOrTwoOrThreeBlock(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodOneOrTwoOrThreeBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodOneOrTwoOrThreeBlock(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
@@ -728,11 +728,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodTwoBlock(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodTwoBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodTwoBlock(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
@@ -747,11 +747,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodTwoOrThreeBlock(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodTwoOrThreeBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodTwoOrThreeBlock(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
@@ -774,11 +774,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodThreeBlock(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodThreeBlock(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodThreeBlock(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
@@ -794,15 +794,15 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodN(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodN(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodN(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodN(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, String name) {
             super(implementationClass, visibility, name);
         }
@@ -854,15 +854,15 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodZeroOrN(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodZeroOrN(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodZeroOrN(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodZeroOrN(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, String name) {
             super(implementationClass, visibility, name);
         }
@@ -880,11 +880,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodZeroOrOneOrN(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodZeroOrOneOrN(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodZeroOrOneOrN(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
@@ -902,11 +902,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodZeroOrOneOrTwoOrN(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodZeroOrOneOrTwoOrN(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodZeroOrOneOrTwoOrN(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
@@ -924,11 +924,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodZeroOrOneOrTwoOrThreeOrN(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodZeroOrOneOrTwoOrThreeOrN(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodZeroOrOneOrTwoOrThreeOrN(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
@@ -948,15 +948,15 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodOneOrN(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodOneOrN(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodOneOrN(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodOneOrN(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, String name) {
             super(implementationClass, visibility, name);
         }
@@ -974,11 +974,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodOneOrTwoOrN(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodOneOrTwoOrN(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodOneOrTwoOrN(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
@@ -996,11 +996,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodOneOrTwoOrThreeOrN(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodOneOrTwoOrThreeOrN(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodOneOrTwoOrThreeOrN(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
@@ -1020,11 +1020,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodTwoOrN(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodTwoOrN(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodTwoOrN(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
@@ -1042,11 +1042,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodTwoOrThreeOrN(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodTwoOrThreeOrN(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodTwoOrThreeOrN(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
@@ -1066,11 +1066,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodThreeOrN(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodThreeOrN(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodThreeOrN(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
@@ -1090,15 +1090,15 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodZero(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodZero(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodZero(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodZero(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, String name) {
             super(implementationClass, visibility, name);
         }
@@ -1107,7 +1107,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             if (args.length != 0) return raiseArgumentError(this, context, name, args.length, 0, 0);
             return call(context, self, clazz, name);
         }
-        @Deprecated @Override
+        @Deprecated(since = "9.3.0.0") @Override
         public Arity getArity() {
             return Arity.NO_ARGUMENTS;
         }
@@ -1121,11 +1121,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodZeroOrOne(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodZeroOrOne(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodZeroOrOne(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
@@ -1147,11 +1147,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodZeroOrOneOrTwo(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodZeroOrOneOrTwo(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodZeroOrOneOrTwo(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
@@ -1175,11 +1175,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodZeroOrOneOrTwoOrThree(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodZeroOrOneOrTwoOrThree(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodZeroOrOneOrTwoOrThree(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
@@ -1207,17 +1207,17 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             super(implementationClass, visibility, name);
             setParameterList(ONE_REQ);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodOne(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
             setParameterList(ONE_REQ);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodOne(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
             setParameterList(ONE_REQ);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodOne(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, String name) {
             super(implementationClass, visibility, name);
             setParameterList(ONE_REQ);
@@ -1228,7 +1228,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             return call(context, self, clazz, name, args[0]);
         }
 
-        @Deprecated @Override
+        @Deprecated(since = "9.3.0.0") @Override
         public Arity getArity() {
             return Arity.ONE_ARGUMENT;
         }
@@ -1242,11 +1242,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodOneOrTwo(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodOneOrTwo(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodOneOrTwo(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
@@ -1267,11 +1267,11 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodOneOrTwoOrThree(RubyModule implementationClass, Visibility visibility, String name) {
             super(implementationClass, visibility, name);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodOneOrTwoOrThree(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodOneOrTwoOrThree(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
@@ -1297,12 +1297,12 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             super(implementationClass, visibility, name);
             setParameterList(TWO_REQ);
         }
-        @Deprecated
+        @Deprecated(since = "9.1.16.0")
         public JavaMethodTwo(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
             setParameterList(TWO_REQ);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodTwo(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
             setParameterList(TWO_REQ);
@@ -1313,7 +1313,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             return call(context, self, clazz, name, args[0], args[1]);
         }
 
-        @Deprecated @Override
+        @Deprecated(since = "9.3.0.0") @Override
         public Arity getArity() {
             return Arity.TWO_ARGUMENTS;
         }
@@ -1331,7 +1331,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         public JavaMethodTwoOrThree(RubyModule implementationClass, Visibility visibility) {
             super(implementationClass, visibility);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodTwoOrThree(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
@@ -1359,7 +1359,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             super(implementationClass, visibility);
             setParameterList(THREE_REQ);
         }
-        @Deprecated
+        @Deprecated(since = "9.0.1.0")
         public JavaMethodThree(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
             super(implementationClass, visibility);
         }
@@ -1369,7 +1369,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             return call(context, self, clazz, name, args[0], args[1], args[2]);
         }
 
-        @Deprecated @Override
+        @Deprecated(since = "9.3.0.0") @Override
         public Arity getArity() {
             return Arity.THREE_ARGUMENTS;
         }
@@ -1379,32 +1379,32 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.1.0")
     public JavaMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
         super(implementationClass, visibility);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.1.0")
     public JavaMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, String name) {
         super(implementationClass, visibility, name);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.1.0")
     public CallConfiguration getCallerRequirement() {
         return CallConfiguration.FrameNoneScopeNone;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.1.0")
     public void setCallerRequirement(CallConfiguration callerRequirement) {
     }
 
     /**
      * Used for old-style nameless constructor to pass name in out-of-band.
      */
-    @Deprecated
+    @Deprecated(since = "9.1.16.0")
     public static final ThreadLocal<String> NAME_PASSER = new ThreadLocal<>();
 
-    @Deprecated
+    @Deprecated(since = "9.1.16.0")
     public JavaMethod(RubyModule implementationClass, Visibility visibility) {
         this(implementationClass, visibility, NAME_PASSER.get());
     }

@@ -44,7 +44,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Error.typeError;
 
-@Deprecated(since = "10.0", forRemoval = true)
+@Deprecated(since = "10.0.0.0", forRemoval = true)
 @SuppressWarnings("removal")
 public class UnmarshalCache {
     private final Ruby runtime;
@@ -94,23 +94,23 @@ public class UnmarshalCache {
     }
 
     // Deprecated: Use readSymbolLink OR readDataLink directly
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     public IRubyObject readLink(UnmarshalStream input, int type) throws IOException {
         return type == '@' ? readDataLink(input) : readSymbolLink(input);
     }
 
     // Deprecated: Use registerDataLink or registerSymbolLink directly.
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     public void register(IRubyObject value) {
         selectCache(value).add(value);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     public boolean isLinkType(int c) {
         return c == ';' || c == '@';
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     private List selectCache(IRubyObject value) {
         return (value instanceof RubySymbol) ? symbols : links;
     }

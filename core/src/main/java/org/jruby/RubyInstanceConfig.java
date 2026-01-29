@@ -1563,16 +1563,16 @@ public class RubyInstanceConfig {
     }
 
     // from CommandlineParser
-    private List<String> loadPaths = new ArrayList<String>();
-    private Set<String> excludedMethods = new HashSet<String>();
-    private final StringBuffer inlineScript = new StringBuffer();
+    private List<String> loadPaths = new ArrayList<String>(0);
+    private Set<String> excludedMethods = new HashSet<String>(0);
+    private final StringBuffer inlineScript = new StringBuffer(0);
     private boolean hasInlineScript = false;
     private String scriptFileName = null;
-    private final Collection<String> requiredLibraries = new LinkedHashSet<String>();
+    private final Collection<String> requiredLibraries = new LinkedHashSet<String>(0);
     private boolean argvGlobalsOn = false;
     private boolean assumeLoop = Options.CLI_ASSUME_LOOP.load();
     private boolean assumePrinting = Options.CLI_ASSUME_PRINT.load();
-    private final Map<String, String> optionGlobals = new HashMap<String, String>();
+    private final Map<String, String> optionGlobals = new HashMap<String, String>(0);
     private boolean processLineEnds = Options.CLI_PROCESS_LINE_ENDS.load();
     private boolean split = Options.CLI_AUTOSPLIT.load();
     private Verbosity verbosity = Options.CLI_WARNING_LEVEL.load();
@@ -1735,7 +1735,7 @@ public class RubyInstanceConfig {
      */
     public static final boolean NATIVE_ENABLED = Options.NATIVE_ENABLED.load();
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public final static boolean CEXT_ENABLED = false;
 
     /**
@@ -1836,87 +1836,82 @@ public class RubyInstanceConfig {
         int version = Integer.parseInt(specVersion);
         switch (version) {
             default:
-            case 17:
-            case 18:
-            case 19:
-            case 20:
-                return Opcodes.V17;
             case 21:
             case 22:
                 return Opcodes.V21;
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     public void setSafeLevel(int safeLevel) {
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     public String getInPlaceBackupExtention() {
         return inPlaceBackupExtension;
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.5")
     public String getBasicUsageHelp() {
         return OutputStrings.getBasicUsageHelp();
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.5")
     public String getExtendedHelp() {
         return OutputStrings.getExtendedHelp();
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.5")
     public String getPropertyHelp() {
         return OutputStrings.getPropertyHelp();
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.5")
     public String getVersionString() {
         return OutputStrings.getVersionString();
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.5")
     public String getCopyrightString() {
         return OutputStrings.getCopyrightString();
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.5")
     public Collection<String> requiredLibraries() {
         return requiredLibraries;
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.5")
     public List<String> loadPaths() {
         return loadPaths;
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.5")
     public boolean shouldPrintUsage() {
         return shouldPrintUsage;
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.5")
     public boolean shouldPrintProperties() {
         return shouldPrintProperties;
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.5")
     public Boolean getVerbose() {
         return isVerbose();
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.5")
     public boolean shouldRunInterpreter() {
         return isShouldRunInterpreter();
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.5")
     public boolean isShouldRunInterpreter() {
         return shouldRunInterpreter;
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.5")
     public boolean isxFlag() {
         return xFlag;
     }
@@ -1924,129 +1919,129 @@ public class RubyInstanceConfig {
     /**
      * The max count of active methods eligible for JIT-compilation.
      */
-    @Deprecated
+    @Deprecated(since = "1.7.5")
     public static final int JIT_MAX_METHODS_LIMIT = Constants.JIT_MAX_METHODS_LIMIT;
 
     /**
      * The max size of JIT-compiled methods (full class size) allowed.
      */
-    @Deprecated
+    @Deprecated(since = "1.7.5")
     public static final int JIT_MAX_SIZE_LIMIT = Constants.JIT_MAX_SIZE_LIMIT;
 
     /**
      * The JIT threshold to the specified method invocation count.
      */
-    @Deprecated
+    @Deprecated(since = "1.7.5")
     public static final int JIT_THRESHOLD = Constants.JIT_THRESHOLD;
 
     /**
      * Default size for chained compilation.
      */
-    @Deprecated
+    @Deprecated(since = "1.7.5")
     public static final int CHAINED_COMPILE_LINE_COUNT_DEFAULT = Constants.CHAINED_COMPILE_LINE_COUNT_DEFAULT;
 
-    @Deprecated
+    @Deprecated(since = "1.7.5")
     public static final boolean nativeEnabled = NATIVE_ENABLED;
 
-    @Deprecated
+    @Deprecated(since = "1.7.5")
     public boolean isSamplingEnabled() {
         return false;
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.5")
     public void setBenchmarking(boolean benchmarking) {
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.5")
     public boolean isBenchmarking() {
         return false;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public void setCextEnabled(boolean b) {
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public boolean isCextEnabled() {
         return false;
     }
 
-    @Deprecated public static final String JIT_CODE_CACHE = "";
+    @Deprecated(since = "1.7.22") public static final String JIT_CODE_CACHE = "";
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public boolean isJitDumping() {
         return jitDumping;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public String getThreadDumpSignal() {
         return threadDumpSignal;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public boolean isGlobalRequireLock() {
         return globalRequireLock;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public void setGlobalRequireLock(boolean globalRequireLock) {
         this.globalRequireLock = globalRequireLock;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.6.0")
     public static final boolean NATIVE_NET_PROTOCOL = Options.NATIVE_NET_PROTOCOL.load();
 
-    @Deprecated
+    @Deprecated(since = "9.2.9.0")
     public static final boolean CAN_SET_ACCESSIBLE = Options.JI_SETACCESSIBLE.load();
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static boolean THREADLESS_COMPILE_ENABLED = false;
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final int CHAINED_COMPILE_LINE_COUNT = 500;
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final boolean PEEPHOLE_OPTZ = true;
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static boolean NOGUARDS_COMPILE_ENABLED = false;
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final boolean FASTEST_COMPILE_ENABLED = false;
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static boolean FASTSEND_COMPILE_ENABLED = false;
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static boolean FAST_MULTIPLE_ASSIGNMENT = false;
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     private final boolean jitDumping = false;
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final boolean JIT_LOADING_DEBUG = false;
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final boolean JIT_CACHE_ENABLED = false;
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     private boolean runRubyInProcess = true;
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final boolean REFLECTED_HANDLES = false;
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     private String threadDumpSignal = null;
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final boolean COROUTINE_FIBERS = false;
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     private boolean globalRequireLock = false;
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static final boolean USE_GENERATED_HANDLES = false;
 
-    @Deprecated
+    @Deprecated(since = "9.4.3.0")
     public static final boolean FASTOPS_COMPILE_ENABLED = Options.COMPILE_FASTOPS.load();
 }

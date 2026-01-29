@@ -142,7 +142,7 @@ public class RubyClass extends RubyModule {
      * @param allocator
      * @deprecated Use {@link org.jruby.RubyClass#allocator(ObjectAllocator)} instead.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public void setAllocator(ObjectAllocator allocator) {
         allocator(allocator);
     }
@@ -279,7 +279,7 @@ public class RubyClass extends RubyModule {
         return withException(createTypeError(runtime.getCurrentContext(), msg.toString()), e);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject allocate() {
         return allocate(getCurrentContext());
     }
@@ -492,14 +492,14 @@ public class RubyClass extends RubyModule {
      * and with Object as its immediate superclass.
      * Corresponds to rb_class_new in MRI.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyClass newClass(Ruby runtime, RubyClass superClass) {
         if (superClass == runtime.getClassClass()) throw typeError(runtime.getCurrentContext(), "can't make subclass of Class");
         if (superClass.isSingleton()) throw typeError(runtime.getCurrentContext(), "can't make subclass of virtual class");
         return new RubyClass(runtime, superClass);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyClass newClass(Ruby runtime, RubyClass superClass, CallSite[] extraCallSites) {
         return newClass(runtime.getCurrentContext(), superClass, extraCallSites);
     }
@@ -522,7 +522,7 @@ public class RubyClass extends RubyModule {
      * Corresponds to rb_class_new/rb_define_class_id/rb_name_class/rb_set_class_path
      * in MRI.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyClass newClass(Ruby runtime, RubyClass superClass, String name, ObjectAllocator allocator, RubyModule parent, boolean setParent) {
         var context = runtime.getCurrentContext();
         RubyClass clazz = newClass(context, superClass, null).
@@ -536,7 +536,7 @@ public class RubyClass extends RubyModule {
         return clazz;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyClass newClass(Ruby runtime, RubyClass superClass, String name, ObjectAllocator allocator,
                                      RubyModule parent, boolean setParent, String file, int line) {
         return newClass(runtime.getCurrentContext(), superClass, name, allocator, parent, setParent, file, line);
@@ -550,13 +550,13 @@ public class RubyClass extends RubyModule {
                 baseName(name);
         clazz.makeMetaClass(context, superClass.getMetaClass());
         if (setParent) clazz.setParent(parent);
-        clazz.copyVariableTableManager(context, superClass);
+        clazz.copyVariableTableManagerForData(context, superClass);
         parent.setConstant(context, name, clazz, file, line);
         superClass.invokeInherited(context, superClass, clazz);
         return clazz;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyClass newClass(Ruby runtime, RubyClass superClass, String name, ObjectAllocator allocator, RubyModule parent, boolean setParent, CallSite[] extraCallSites) {
         return newClass(runtime.getCurrentContext(), superClass, name, allocator, parent, setParent, extraCallSites);
     }
@@ -596,7 +596,7 @@ public class RubyClass extends RubyModule {
         return clazz;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     RubyClass toSingletonClass(RubyBasicObject target) {
         return toSingletonClass(getCurrentContext(), target);
     }
@@ -1073,7 +1073,7 @@ public class RubyClass extends RubyModule {
         allocator = superClazz.allocator;
         makeMetaClass(context, superClazz.getMetaClass());
         superClazz.addSubclass(this);
-        copyVariableTableManager(context, superClazz);
+        copyVariableTableManagerForData(context, superClazz);
 
         marshal = superClazz.marshal;
 
@@ -1083,11 +1083,11 @@ public class RubyClass extends RubyModule {
         return this;
     }
 
-    private void copyVariableTableManager(ThreadContext context, RubyClass superClazz) {
+    private void copyVariableTableManagerForData(ThreadContext context, RubyClass superClazz) {
         VariableTableManager variableTableManager = superClazz.getVariableTableManager();
         if (variableTableManager.getRealClass().superClass() == context.runtime.getData()) {
             // duplicate data's variable table in subclasses
-            this.variableTableManager = variableTableManager.duplicate();
+            this.variableTableManager = variableTableManager.duplicateForData(this);
         }
     }
 
@@ -1247,7 +1247,7 @@ public class RubyClass extends RubyModule {
 
     private static RubyClassSet getOrCreateSubclasses(RubyClassSet subclasses) {
         if (subclasses != null && subclasses != EMPTY_RUBYCLASS_SET) return subclasses;
-        return new WeakRubyClassSet();
+        return new WeakRubyClassSet(4);
     }
 
     interface RubyClassSet {
@@ -1281,10 +1281,6 @@ public class RubyClass extends RubyModule {
 
     static class WeakRubyClassSet extends WeakHashMap<RubyClass, Object> implements RubyClassSet {
         final ReentrantLock lock = new ReentrantLock();
-
-        public WeakRubyClassSet() {
-            super();
-        }
 
         public WeakRubyClassSet(int size) {
             super(size);
@@ -1403,7 +1399,9 @@ public class RubyClass extends RubyModule {
     public void invalidateCacheDescendants(ThreadContext context) {
         super.invalidateCacheDescendants(context);
 
-        getSubclassesForRead().forEachClass(context, (ctx, cls) -> cls.invalidateCacheDescendants(ctx));
+        synchronized (getRuntime().getHierarchyLock()) {
+            getSubclassesForRead().forEachClass(context, (ctx, cls) -> cls.invalidateCacheDescendants(ctx));
+        }
     }
 
     void addInvalidatorsAndFlush(InvalidatorList invalidators) {
@@ -1446,7 +1444,7 @@ public class RubyClass extends RubyModule {
     /** rb_class_inherited (reversed semantics!)
      *
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public void inherit(RubyClass superClazz) {
         if (superClazz == null) superClazz = runtime.getObject();
 
@@ -1485,7 +1483,7 @@ public class RubyClass extends RubyModule {
     /** rb_check_inheritable
      *
      */
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static void checkInheritable(IRubyObject superClass) {
         checkInheritable(((RubyBasicObject) superClass).getCurrentContext(), superClass);
     }
@@ -1506,12 +1504,12 @@ public class RubyClass extends RubyModule {
      * @param marshal
      * @deprecated Use {@link org.jruby.RubyClass#marshalWith(ObjectMarshal)} instead.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public final void setMarshal(ObjectMarshal marshal) {
         marshalWith(marshal);
     }
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0.0.0", forRemoval = true)
     @SuppressWarnings("removal")
     public final void marshal(Object obj, org.jruby.runtime.marshal.MarshalStream marshalStream) throws IOException {
         getMarshal().marshalTo(runtime, obj, this, marshalStream);
@@ -1521,7 +1519,7 @@ public class RubyClass extends RubyModule {
         getMarshal().marshalTo(context, out, obj, this, marshalStream);
     }
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0.0.0", forRemoval = true)
     @SuppressWarnings("removal")
     public final Object unmarshal(org.jruby.runtime.marshal.UnmarshalStream unmarshalStream) throws IOException {
         return getMarshal().unmarshalFrom(runtime, this, unmarshalStream);
@@ -1531,7 +1529,7 @@ public class RubyClass extends RubyModule {
         return getMarshal().unmarshalFrom(context, in, this, loader);
     }
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0.0.0", forRemoval = true)
     @SuppressWarnings("removal")
     public static void marshalTo(RubyClass clazz, org.jruby.runtime.marshal.MarshalStream output) throws java.io.IOException {
         var context = clazz.getRuntime().getCurrentContext();
@@ -1544,7 +1542,7 @@ public class RubyClass extends RubyModule {
         output.writeString(out, MarshalDumper.getPathFromClass(context, clazz).idString());
     }
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0.0.0", forRemoval = true)
     @SuppressWarnings("removal")
     public static RubyClass unmarshalFrom(org.jruby.runtime.marshal.UnmarshalStream input) throws java.io.IOException {
         String name = RubyString.byteListToString(input.unmarshalString());
@@ -1558,7 +1556,7 @@ public class RubyClass extends RubyModule {
 
     protected static final ObjectMarshal DEFAULT_OBJECT_MARSHAL = new ObjectMarshal() {
         @Override
-        @Deprecated(since = "10.0", forRemoval = true)
+        @Deprecated(since = "10.0.0.0", forRemoval = true)
         @SuppressWarnings("removal")
         public void marshalTo(Ruby runtime, Object obj, RubyClass type, org.jruby.runtime.marshal.MarshalStream marshalStream) throws IOException {
             IRubyObject object = (IRubyObject) obj;
@@ -1577,7 +1575,7 @@ public class RubyClass extends RubyModule {
         }
 
         @Override
-        @Deprecated(since = "10.0", forRemoval = true)
+        @Deprecated(since = "10.0.0.0", forRemoval = true)
         @SuppressWarnings("removal")
         public Object unmarshalFrom(Ruby runtime, RubyClass type, org.jruby.runtime.marshal.UnmarshalStream input) throws IOException {
             IRubyObject result = input.entry(type.allocate(runtime.getCurrentContext()));
@@ -2591,7 +2589,7 @@ public class RubyClass extends RubyModule {
      * @param reifiedClass
      * @deprecated Use {@link org.jruby.RubyClass#reifiedClass(Class)} instead.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public void setReifiedClass(Class<? extends IRubyObject> reifiedClass) {
         this.reifiedClass = (Class<? extends Reified>) reifiedClass; // Not always true
     }
@@ -2600,7 +2598,7 @@ public class RubyClass extends RubyModule {
      * @return
      * @deprecated Use {@link RubyClass#reifiedClass()} instead.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public Class<? extends Reified> getReifiedClass() {
         return reifiedClass();
     }
@@ -2616,6 +2614,7 @@ public class RubyClass extends RubyModule {
     /**
      * Gets a reified Ruby class. Throws if this is a Java class
      */
+    @SuppressWarnings("BoxedPrimitiveEquality")
     public Class<? extends IRubyObject> getReifiedRubyClass() {
         if (reifiedClassJava == Boolean.TRUE) throw typeError(runtime.getCurrentContext(), "Attempted to get a Ruby class for a Java class");
 
@@ -2625,6 +2624,7 @@ public class RubyClass extends RubyModule {
     /**
      * Gets a reified Java class. Throws if this is a Ruby class
      */
+    @SuppressWarnings("BoxedPrimitiveEquality")
     public Class<? extends ReifiedJavaProxy> getReifiedJavaClass() {
         // TODO: error type
         if (reifiedClassJava == Boolean.FALSE) throw typeError(runtime.getCurrentContext(), "Attempted to get a Java class for a Ruby class");
@@ -2835,7 +2835,7 @@ public class RubyClass extends RubyModule {
          * @param object The object to dump
          * @throws IOException If there is an IO error during dumping
          */
-        @Deprecated(since = "10.0", forRemoval = true)
+        @Deprecated(since = "10.0.0.0", forRemoval = true)
         @SuppressWarnings("removal")
         public void dump(org.jruby.runtime.marshal.MarshalStream stream, IRubyObject object) throws IOException {
             var context = object.getRuntime().getCurrentContext();
@@ -2912,7 +2912,7 @@ public class RubyClass extends RubyModule {
      * @throws IOException If there is an IO exception while writing to the
      * stream.
      */
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0.0.0", forRemoval = true)
     @SuppressWarnings("removal")
     public void smartDump(org.jruby.runtime.marshal.MarshalStream stream, IRubyObject target) throws IOException {
         MarshalTuple tuple;
@@ -3077,7 +3077,7 @@ public class RubyClass extends RubyModule {
 
     // DEPRECATED METHODS
 
-    @Deprecated
+    @Deprecated(since = "9.1.5.0")
     public IRubyObject invoke(ThreadContext context, IRubyObject self, int methodIndex, String name, IRubyObject[] args, CallType callType, Block block) {
         return invoke(context, self, name, args, callType, block);
     }
@@ -3309,7 +3309,7 @@ public class RubyClass extends RubyModule {
         return variableTableManager.getObjectGroupAccessorField();
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.7.0")
     public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name,
                                   Block block) {
         CacheEntry entry = searchWithCache(name);
@@ -3321,7 +3321,7 @@ public class RubyClass extends RubyModule {
         return method.call(context, self, entry.sourceModule, name, block);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.7.0")
     public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name,
                                   IRubyObject[] args, Block block) {
         assert args != null;
@@ -3334,7 +3334,7 @@ public class RubyClass extends RubyModule {
         return method.call(context, self, entry.sourceModule, name, args, block);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.7.0")
     public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name,
                                   IRubyObject arg, Block block) {
         CacheEntry entry = searchWithCache(name);
@@ -3346,7 +3346,7 @@ public class RubyClass extends RubyModule {
         return method.call(context, self, entry.sourceModule, name, arg, block);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.7.0")
     public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name,
                                   IRubyObject arg0, IRubyObject arg1, Block block) { // NOT USED?
         CacheEntry entry = searchWithCache(name);
@@ -3358,7 +3358,7 @@ public class RubyClass extends RubyModule {
         return method.call(context, self, entry.sourceModule, name, arg0, arg1, block);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.7.0")
     public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name,
                                   IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         CacheEntry entry = searchWithCache(name);
@@ -3370,7 +3370,7 @@ public class RubyClass extends RubyModule {
         return method.call(context, self, entry.sourceModule, name, arg0, arg1, arg2, block);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.7.0")
     public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name) {
         CacheEntry entry = searchWithCache(name);
         DynamicMethod method = entry.method;
@@ -3381,7 +3381,7 @@ public class RubyClass extends RubyModule {
         return method.call(context, self, entry.sourceModule, name);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.7.0")
     public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name,
                                   IRubyObject[] args) {
         assert args != null;
@@ -3394,7 +3394,7 @@ public class RubyClass extends RubyModule {
         return method.call(context, self, entry.sourceModule, name, args);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.7.0")
     public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name,
                                   IRubyObject arg) {
         CacheEntry entry = searchWithCache(name);
@@ -3406,7 +3406,7 @@ public class RubyClass extends RubyModule {
         return method.call(context, self, entry.sourceModule, name, arg);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.7.0")
     public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name,
                                   IRubyObject arg0, IRubyObject arg1) {
         CacheEntry entry = searchWithCache(name);
@@ -3418,7 +3418,7 @@ public class RubyClass extends RubyModule {
         return method.call(context, self, entry.sourceModule, name, arg0, arg1);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.7.0")
     public IRubyObject invokeFrom(ThreadContext context, CallType callType, IRubyObject caller, IRubyObject self, String name,
                                   IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         CacheEntry entry = searchWithCache(name);

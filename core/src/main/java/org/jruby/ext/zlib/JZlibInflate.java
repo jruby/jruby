@@ -71,7 +71,7 @@ public class JZlibInflate extends ZStream {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject _initialize(IRubyObject[] args) {
          return _initialize(getCurrentContext(), args);
     }
@@ -127,7 +127,7 @@ public class JZlibInflate extends ZStream {
         return this;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
      public void append(ByteList obj) {
         append(getCurrentContext(), obj);
      }
@@ -141,7 +141,7 @@ public class JZlibInflate extends ZStream {
         run(context, false);
     }
 
-     @Deprecated(since = "10.0")
+     @Deprecated(since = "10.0.0.0")
      public IRubyObject sync_point_p() {
          return sync_point_p(getCurrentContext());
      }
@@ -151,7 +151,7 @@ public class JZlibInflate extends ZStream {
          return sync_point(context);
      }
 
-     @Deprecated(since = "10.0")
+     @Deprecated(since = "10.0.0.0")
      public IRubyObject sync_point() {
          return sync_point(getCurrentContext());
      }

@@ -39,6 +39,7 @@ package org.jruby.util;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
@@ -65,8 +66,8 @@ import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.TypeConverter.toFloat;
 
 public class Pack {
-    private static final byte[] sSp10 = "          ".getBytes();
-    private static final byte[] sNil10 = "\000\000\000\000\000\000\000\000\000\000".getBytes();
+    private static final byte[] sSp10 = "          ".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] sNil10 = "\000\000\000\000\000\000\000\000\000\000".getBytes(StandardCharsets.UTF_8);
     private static final int IS_STAR = -1;
     private static final ASCIIEncoding ASCII = ASCIIEncoding.INSTANCE;
     private static final USASCIIEncoding USASCII = USASCIIEncoding.INSTANCE;
@@ -75,7 +76,7 @@ public class Pack {
      **/
     private static final String NATIVE_CODES = "sSiIlLjJ";
     private static final String MAPPED_CODES = "sSiIqQjJ";
-    
+
     private static final char BE = '>' + 127; // 189, bumped up to avoid collisions with LE
     private static final char LE = '<'; // 60
     private static final String ENDIANESS_CODES = new String(new char[] {
@@ -126,6 +127,7 @@ public class Pack {
 
         // single precision, little-endian
         converters['e'] = new Converter(4) {
+            @Override
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
                 return asFloat(context, decodeFloatLittleEndian(enc));
             }
@@ -137,6 +139,7 @@ public class Pack {
         };
         // single precision, big-endian
         converters['g'] = new Converter(4) {
+            @Override
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
                 return asFloat(context, decodeFloatBigEndian(enc));
             }
@@ -148,6 +151,7 @@ public class Pack {
         };
         // single precision, native
         Converter tmp = new Converter(4) {
+            @Override
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
                 return asFloat(context, Platform.BYTE_ORDER == Platform.BIG_ENDIAN ?
                         decodeFloatBigEndian(enc) : decodeFloatLittleEndian(enc));
@@ -156,7 +160,7 @@ public class Pack {
             @Override
             public void encode(ThreadContext context, IRubyObject o, ByteList result) {
                 var value = obj2flt(context, o);
-                if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN) {                
+                if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN) {
                     encodeFloatBigEndian(result, value);
                 } else {
                     encodeFloatLittleEndian(result, value);
@@ -168,6 +172,7 @@ public class Pack {
 
         // double precision, little-endian
         converters['E'] = new Converter(8) {
+            @Override
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
                 return asFloat(context, decodeDoubleLittleEndian(enc));
             }
@@ -175,10 +180,11 @@ public class Pack {
             @Override
             public void encode(ThreadContext context, IRubyObject o, ByteList result){
                 encodeDoubleLittleEndian(result, obj2dbl(context, o));
-            }               
+            }
         };
         // double precision, big-endian
         converters['G'] = new Converter(8) {
+            @Override
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
                 return asFloat(context, decodeDoubleBigEndian(enc));
             }
@@ -190,6 +196,7 @@ public class Pack {
         };
         // double precision, native
         tmp = new Converter(8) {
+            @Override
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
                 return asFloat(context, Platform.BYTE_ORDER == Platform.BIG_ENDIAN ?
                     decodeDoubleBigEndian(enc) : decodeDoubleLittleEndian(enc));
@@ -205,6 +212,7 @@ public class Pack {
 
         // signed short, little-endian
         tmp = new QuadConverter(2, "Integer") {
+            @Override
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
                 return asFixnum(context, decodeShortUnsignedLittleEndian(enc));
             }
@@ -212,12 +220,13 @@ public class Pack {
             @Override
             public void encode(ThreadContext context, IRubyObject o, ByteList result){
                 encodeShortLittleEndian(result, overflowQuad(num2quad(context, o)));
-            }            
+            }
         };
         converters['v'] = tmp;
         converters['S' + LE] = tmp;
         // signed short, big-endian
         tmp = new QuadConverter(2, "Integer") {
+            @Override
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
                 return asFixnum(context, decodeShortUnsignedBigEndian(enc));
             }
@@ -231,6 +240,7 @@ public class Pack {
         converters['S' + BE] = tmp;
         // signed short, native
         converters['s'] = new QuadConverter(2, "Integer") {
+            @Override
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
                 return asFixnum(context, Platform.BYTE_ORDER == Platform.BIG_ENDIAN ?
                         decodeShortBigEndian(enc) : decodeShortLittleEndian(enc));
@@ -243,6 +253,7 @@ public class Pack {
         };
         // unsigned short, native
         converters['S'] = new QuadConverter(2, "Integer") {
+            @Override
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
                 return asFixnum(context, Platform.BYTE_ORDER == Platform.BIG_ENDIAN ?
                     decodeShortUnsignedBigEndian(enc) : decodeShortUnsignedLittleEndian(enc));
@@ -255,6 +266,7 @@ public class Pack {
         };
         // signed short, little endian
         converters['s' + LE] = new QuadConverter(2, "Integer") {
+            @Override
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
                 return asFixnum(context, decodeShortLittleEndian(enc));
             }
@@ -266,6 +278,7 @@ public class Pack {
         };
         // signed short, big endian
         converters['s' + BE] = new QuadConverter(2, "Integer") {
+            @Override
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
                 return asFixnum(context, decodeShortBigEndian(enc));
             }
@@ -278,11 +291,12 @@ public class Pack {
 
         // signed char
         converters['c'] = new Converter(1, "Integer") {
+            @Override
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
                 int c = enc.get();
                 return asFixnum(context, c > (char) 127 ? c-256 : c);
             }
-
+            @Override
             public void encode(ThreadContext context, IRubyObject o, ByteList result) {
                 byte c = (byte) (num2quad(context, o) & 0xff);
                 result.append(c);
@@ -290,10 +304,11 @@ public class Pack {
         };
         // unsigned char
         converters['C'] = new Converter(1, "Integer") {
+            @Override
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
                 return asFixnum(context, enc.get() & 0xFF);
             }
-
+            @Override
             public void encode(ThreadContext context, IRubyObject o, ByteList result){
                 byte c = o == context.nil ? 0 : (byte) (num2quad(context, o) & 0xff);
                 result.append(c);
@@ -302,10 +317,11 @@ public class Pack {
 
         // unsigned long, little-endian
         tmp = new Converter(4, "Integer") {
+            @Override
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
                 return asFixnum(context, decodeIntUnsignedLittleEndian(enc));
             }
-            
+            @Override
             public void encode(ThreadContext context, IRubyObject o, ByteList result){
                 encodeIntLittleEndian(result, (int) toLong(context, o));
             }
@@ -317,10 +333,11 @@ public class Pack {
 
         // unsigned long, big-endian
         tmp = new Converter(4, "Integer") {
+            @Override
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
                 return asFixnum(context, decodeIntUnsignedBigEndian(enc));
             }
-            
+            @Override
             public void encode(ThreadContext context, IRubyObject o, ByteList result){
                 encodeIntBigEndian(result, (int) toLong(context, o));
             }
@@ -332,10 +349,12 @@ public class Pack {
 
         // unsigned int, native
         tmp = new Converter(4, "Integer") {
+            @Override
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
                 return asFixnum(context, Platform.BYTE_ORDER == Platform.BIG_ENDIAN ?
                         decodeIntUnsignedBigEndian(enc) : decodeIntUnsignedLittleEndian(enc));
             }
+            @Override
             public void encode(ThreadContext context, IRubyObject o, ByteList result){
                 int s = o == context.nil ? 0 : (int) toLong(context, o);
                 packInt_i(result, s);
@@ -347,9 +366,11 @@ public class Pack {
 
         // int, native
         tmp = new Converter(4, "Integer") {
+            @Override
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
                 return asFixnum(context, unpackInt_i(enc));
             }
+            @Override
             public void encode(ThreadContext context, IRubyObject o, ByteList result){
                 int s = o == context.nil ? 0 : (int) toLong(context, o);
                 packInt_i(result, s);
@@ -361,9 +382,11 @@ public class Pack {
 
         // int, little endian
         tmp = new Converter(4, "Integer") {
+            @Override
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
                 return asFixnum(context, decodeIntLittleEndian(enc));
             }
+            @Override
             public void encode(ThreadContext context, IRubyObject o, ByteList result){
                 int s = o == context.nil ? 0 : (int) toLong(context, o);
                 encodeIntLittleEndian(result, s);
@@ -375,9 +398,11 @@ public class Pack {
 
         // int, big endian
         tmp = new Converter(4, "Integer") {
+            @Override
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
                 return asFixnum(context, decodeIntBigEndian(enc));
             }
+            @Override
             public void encode(ThreadContext context, IRubyObject o, ByteList result){
                 int s = o == context.nil ? 0 : (int) toLong(context, o);
                 encodeIntBigEndian(result, s);
@@ -389,6 +414,7 @@ public class Pack {
 
         // 64-bit number, native (as bignum)
         tmp = new QuadConverter(8, "Integer") {
+            @Override
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
                 long l = Platform.BYTE_ORDER == Platform.BIG_ENDIAN ? decodeLongBigEndian(enc) : decodeLongLittleEndian(enc);
 
@@ -405,6 +431,7 @@ public class Pack {
 
         // 64-bit number, little endian (as bignum)
         tmp = new QuadConverter(8, "Integer") {
+            @Override
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
                 long l = decodeLongLittleEndian(enc);
                 return RubyBignum.bignorm(context.runtime,BigInteger.valueOf(l).and(new BigInteger("FFFFFFFFFFFFFFFF", 16)));
@@ -420,6 +447,7 @@ public class Pack {
 
         // 64-bit number, big endian (as bignum)
         tmp = new QuadConverter(8, "Integer") {
+            @Override
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
                 long l = decodeLongBigEndian(enc);
                 return RubyBignum.bignorm(context.runtime,BigInteger.valueOf(l).and(new BigInteger("FFFFFFFFFFFFFFFF", 16)));
@@ -435,6 +463,7 @@ public class Pack {
 
         // 64-bit number, native (as fixnum)
         tmp = new QuadConverter(8, "Integer") {
+            @Override
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
                 return asFixnum(context, Platform.BYTE_ORDER == Platform.BIG_ENDIAN ?
                         decodeLongBigEndian(enc) : decodeLongLittleEndian(enc));
@@ -450,6 +479,7 @@ public class Pack {
 
         // 64-bit number, little-endian (as fixnum)
         tmp = new QuadConverter(8, "Integer") {
+            @Override
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
                 return asFixnum(context, decodeLongLittleEndian(enc));
             }
@@ -464,6 +494,7 @@ public class Pack {
 
         // 64-bit number, big-endian (as fixnum)
         tmp = new QuadConverter(8, "Integer") {
+            @Override
             public IRubyObject decode(ThreadContext context, ByteBuffer enc) {
                 return asFixnum(context, decodeLongBigEndian(enc));
             }
@@ -638,7 +669,7 @@ public class Pack {
      *       Note that if passed a block, this method will return null and instead yield results to the block.
      *       The directives <code>sSiIlL</code> may each be followed by an underscore (``<code>_</code>'') to use the underlying platform's native size for the specified type; otherwise, it uses a platform-independent consistent size.  <br>
      *       Spaces are ignored in the format string.
-     * 
+     *
      *       <table border="1"><caption style="display:none">layout table</caption>
      *           <tr>
      *             <td>
@@ -889,7 +920,7 @@ public class Pack {
         if (length % 4 != 0) throw argumentError(context, "invalid base64");
 
         int p = begin;
-        byte[] out = new byte[3 * ((length + 3) / 4)];
+        byte[] out = new byte[unpackUMMaxOutputBytes(length)];
 
         while (p < end && s != '=') {
             // obtain a
@@ -935,7 +966,7 @@ public class Pack {
                 out[index++] = (byte)((b << 4 | c >> 2) & 255);
             }
         }
-        return newString(context, new ByteList(out, 0, index));
+        return newString(context, new ByteList(out, 0, index, false));
     }
 
     public static IRubyObject unpack1WithBlock(ThreadContext context, RubyString encoded, ByteList formatString, Block block) {
@@ -981,7 +1012,7 @@ public class Pack {
         int next = getDirective(context, "unpack", formatString, format);
         IRubyObject value = null; // UNPACK_1
 
-        mainLoop: while (next != 0) {
+        while (next != 0) {
             int type = next;
             next = getDirective(context, "unpack", formatString, format);
 
@@ -1000,10 +1031,10 @@ public class Pack {
                     throw argumentError(context, "'" + next + "' allowed only after types " + NATIVE_CODES);
                 }
                 type = MAPPED_CODES.charAt(index);
-                
+
                 next = getDirective(context, "unpack", formatString, format);
             }
-            
+
             if (next == '>' || next == '<') {
                 next = next == '>' ? BE : LE;
                 int index = ENDIANESS_CODES.indexOf(type + next);
@@ -1012,7 +1043,7 @@ public class Pack {
                 }
                 type = ENDIANESS_CODES.charAt(index);
                 next = getDirective(context, "unpack", formatString, format);
-                
+
                 if (next == '_' || next == '!') next = getDirective(context, "unpack", formatString, format);
             }
 
@@ -1256,9 +1287,9 @@ public class Pack {
     }
 
     private static IRubyObject unpack_m(ThreadContext context, Block block, RubyArray result, ByteBuffer encode, int occurrences, int mode) {
-        int length = encode.remaining()*3/4;
+        int length = unpackUMMaxOutputBytes(encode.remaining());
         byte[] lElem = new byte[length];
-        int a = -1, b = -1, c = 0, d;
+        int a = -1, b = -1, c = 0;
         int index = 0;
         int s = -1;
 
@@ -1390,7 +1421,7 @@ public class Pack {
     }
 
     private static IRubyObject unpack_u(ThreadContext context, Block block, RubyArray result, ByteBuffer encode, int mode) {
-        int length = encode.remaining() * 3 / 4;
+        int length = unpackUMMaxOutputBytes(encode.remaining());
         byte[] lElem = new byte[length];
         int index = 0;
         int s = 0;
@@ -1453,6 +1484,10 @@ public class Pack {
             }
         }
         return appendOrYield(context, block, result, new ByteList(lElem, 0, index, ASCII, false), mode);
+    }
+
+    private static int unpackUMMaxOutputBytes(int length) {
+        return (int)((long)length * 3 / 4);  // If we don't cast to long here, the multiplication can overflow!
     }
 
     private static IRubyObject unpack_H(ThreadContext context, Block block, RubyArray result, ByteBuffer encode, int occurrences, int mode) {
@@ -1655,16 +1690,14 @@ public class Pack {
             to[p + 4] = (byte)((code & 0x3f) | 0x80);
             return 5;
         }
-        if (code <= 0x7fffffff) {
-            to[p + 0] = (byte)(((code >>> 30) & 0xff) | 0xfc);
-            to[p + 1] = (byte)(((code >>> 24) & 0x3f) | 0x80);
-            to[p + 2] = (byte)(((code >>> 18) & 0x3f) | 0x80);
-            to[p + 3] = (byte)(((code >>> 12) & 0x3f) | 0x80);
-            to[p + 4] = (byte)(((code >>> 6) & 0x3f) | 0x80);
-            to[p + 5] = (byte)((code & 0x3f) | 0x80);
-            return 6;
-        }
-        throw runtime.newRangeError("pack(U): value out of range");
+        // else code is high int range
+        to[p + 0] = (byte)(((code >>> 30) & 0xff) | 0xfc);
+        to[p + 1] = (byte)(((code >>> 24) & 0x3f) | 0x80);
+        to[p + 2] = (byte)(((code >>> 18) & 0x3f) | 0x80);
+        to[p + 3] = (byte)(((code >>> 12) & 0x3f) | 0x80);
+        to[p + 4] = (byte)(((code >>> 6) & 0x3f) | 0x80);
+        to[p + 5] = (byte)((code & 0x3f) | 0x80);
+        return 6;
     }
 
     /** utf8_to_uv
@@ -1681,7 +1714,7 @@ public class Pack {
         if ((c & 0x40) == 0) {
             throw new IllegalArgumentException("malformed UTF-8 character");
         }
-        
+
       if      ((uv & 0x20) == 0) { n = 2; uv &= 0x1f; }
       else if ((uv & 0x10) == 0) { n = 3; uv &= 0x0f; }
       else if ((uv & 0x08) == 0) { n = 4; uv &= 0x07; }
@@ -1733,10 +1766,10 @@ public class Pack {
     public static int safeGet(ByteBuffer encode) {
         while (encode.hasRemaining()) {
             int got = encode.get() & 0xff;
-            
+
             if (got != 0) return got;
         }
-        
+
         return 0;
     }
 
@@ -1798,17 +1831,11 @@ public class Pack {
             this.converter = converter;
         }
 
-        public abstract IRubyObject decode(ThreadContext context, ByteBuffer format);
         public abstract void encode(ThreadContext context, IRubyObject from, ByteList result);
     }
 
     private static ConverterExecutor executor() {
         return new ConverterExecutor() {
-            @Override
-            public IRubyObject decode(ThreadContext context, ByteBuffer format) {
-                return converter.decode(context, format);
-            }
-
             @Override
             public void encode(ThreadContext context, IRubyObject from, ByteList result) {
                 if (from == context.nil && converter.getType() != null) {
@@ -1826,12 +1853,12 @@ public class Pack {
         public Converter(int size) {
             this(size, null);
         }
-        
+
         public Converter(int size, String type) {
             this.size = size;
             this.type = type;
         }
-        
+
         public String getType() {
             return type;
         }
@@ -1844,7 +1871,7 @@ public class Pack {
         public QuadConverter(int size, String type) {
             super(size, type);
         }
-        
+
         public QuadConverter(int size) {
             super(size);
         }
@@ -1958,12 +1985,11 @@ public class Pack {
                 if (index == -1) {
                     throw argumentError(context, "'" + next + "' allowed only after types " + NATIVE_CODES);
                 }
-                int typeBeforeMap = type;
                 type = MAPPED_CODES.charAt(index);
 
                 next = getDirective(context, "pack", formatString, format);
             }
-            
+
             if (next == '>' || next == '<') {
                 next = next == '>' ? BE : LE;
                 int index = ENDIANESS_CODES.indexOf(type + next);
@@ -2667,30 +2693,30 @@ public class Pack {
         result.append((byte) ((s & 0xff00) >> 8)).append((byte) (s & 0xff));
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public static RubyArray unpack(Ruby runtime, ByteList encodedString, ByteList formatString) {
         return unpackWithBlock(runtime.getCurrentContext(), runtime, encodedString, formatString, Block.NULL_BLOCK);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public static RubyString pack(Ruby runtime, RubyArray list, ByteList formatString) {
         RubyString buffer = runtime.newString();
         return packCommon(runtime.getCurrentContext(), list, formatString, executor(), buffer);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public static RubyString pack(ThreadContext context, Ruby runtime, RubyArray list, RubyString formatString) {
         RubyString buffer = runtime.newString();
         return pack(context, list, formatString, buffer);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public static void decode(ThreadContext context, Ruby runtime, ByteBuffer encode, int occurrences,
                               RubyArray result, Block block, Converter converter) {
         decode(context, encode, occurrences, result, block, converter, block.isGiven() ? UNPACK_BLOCK : UNPACK_ARRAY);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public static RubyArray unpackWithBlock(ThreadContext context, Ruby runtime, ByteList encodedString, ByteList formatString, Block block) {
         return unpackWithBlock(context, RubyString.newStringLight(runtime, encodedString), formatString, block);
     }

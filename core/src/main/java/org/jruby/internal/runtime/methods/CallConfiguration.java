@@ -89,23 +89,23 @@ public enum CallConfiguration {
         }
     };
 
-    @Deprecated
+    @Deprecated(since = "1.2")
     public static final CallConfiguration FRAME_AND_SCOPE = FrameFullScopeFull;
-    @Deprecated
+    @Deprecated(since = "1.2")
     public static final CallConfiguration FRAME_AND_DUMMY_SCOPE = FrameFullScopeDummy;
-    @Deprecated
+    @Deprecated(since = "1.2")
     public static final CallConfiguration FRAME_ONLY = FrameFullScopeNone;
-    @Deprecated
+    @Deprecated(since = "1.2")
     public static final CallConfiguration BACKTRACE_AND_SCOPE = FrameBacktraceScopeFull;
-    @Deprecated
+    @Deprecated(since = "1.2")
     public static final CallConfiguration BACKTRACE_DUMMY_SCOPE = FrameBacktraceScopeNone;
-    @Deprecated
+    @Deprecated(since = "1.2")
     public static final CallConfiguration BACKTRACE_ONLY = FrameBacktraceScopeNone;
-    @Deprecated
+    @Deprecated(since = "1.2")
     public static final CallConfiguration SCOPE_ONLY = FrameNoneScopeFull;
-    @Deprecated
+    @Deprecated(since = "1.2")
     public static final CallConfiguration NO_FRAME_DUMMY_SCOPE = FrameNoneScopeDummy;
-    @Deprecated
+    @Deprecated(since = "1.2")
     public static final CallConfiguration NO_FRAME_NO_SCOPE = FrameNoneScopeNone;
 
     /**
@@ -165,7 +165,7 @@ public enum CallConfiguration {
     abstract void post(ThreadContext context);
     boolean isNoop() { return framing == Framing.None && scoping == Scoping.None; }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public static CallConfiguration getCallConfig(boolean frame, boolean scope, boolean backtrace) {
         return getCallConfig(frame, scope);
     }
@@ -175,7 +175,7 @@ public enum CallConfiguration {
      *
      * @see org.jruby.anno.AnnotationHelper#getCallConfigName(boolean, boolean)
      */
-    @Deprecated
+    @Deprecated(since = "9.1.6.0")
     public static CallConfiguration getCallConfig(boolean frame, boolean scope) {
         if (frame) {
             if (scope) {

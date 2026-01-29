@@ -11,3 +11,21 @@ fails:IO.foreach when passed name, separator, limit, keyword arguments calls #to
 fails:IO.foreach when passed name, separator, limit, keyword arguments calls #to_int to convert the limit argument
 fails:IO.foreach when passed name, separator, limit, keyword arguments uses the keyword arguments as options
 fails:IO.foreach when passed name, separator, limit, keyword arguments when passed chomp, nil as a separator, and a limit yields each line of limit size without truncating trailing new line character
+windows:IO.foreach when the filename starts with | warns about deprecation given a path with a pipe
+windows:IO.foreach yields a sequence of paragraphs when the separator is an empty string
+windows:IO.foreach when no block is given returns an Enumerator
+windows:IO.foreach when passed name defaults to $/ as the separator
+windows:IO.foreach when passed name, object calls #to_str to convert the object to a separator
+windows:IO.foreach when passed name, object when the object is an Integer defaults to $/ as the separator
+windows:IO.foreach when passed name, object when the object is an Integer uses the object as a limit if it is an Integer
+windows:IO.foreach when passed name, object when the object is an Integer ignores the object as a limit if it is negative
+windows:IO.foreach when passed name, object when the object is a String uses the value as the separator
+windows:IO.foreach when passed name, object when the object is a String accepts non-ASCII data as separator
+windows:IO.foreach when passed name, keyword arguments uses the keyword arguments as options
+windows:IO.foreach when passed name, object, object when the first object is a String uses the second object as a limit if it is an Integer
+windows:IO.foreach when passed name, object, object when the first object is a String calls #to_int to convert the second object
+windows:IO.foreach when passed name, object, object when the first object is not a String or Integer calls #to_str to convert the object to a String
+windows:IO.foreach when passed name, object, object when the first object is not a String or Integer uses the second object as a limit if it is an Integer
+windows:IO.foreach when passed name, object, object when the first object is not a String or Integer calls #to_int to convert the second object
+windows:IO.foreach warns about deprecation given a path with a pipe
+

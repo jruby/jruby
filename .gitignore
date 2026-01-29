@@ -106,6 +106,7 @@ lib/ruby/stdlib/rake*
 lib/ruby/stdlib/rdoc*
 lib/ruby/stdlib/readline*
 lib/ruby/stdlib/reline*
+lib/ruby/stdlib/resolv.rb
 lib/ruby/stdlib/ripper.jar
 lib/ruby/stdlib/ruby2_keywords*
 lib/ruby/stdlib/rubygems*
@@ -142,7 +143,6 @@ rubyspec_temp
 !bin/gem
 !bin/update_rubygems
 !bin/bundle
-!bin/jruby.bash
 !bin/jruby.bat
 !bin/jrubyc
 !bin/jrubyc.bat
@@ -157,6 +157,7 @@ rubyspec_temp
 !bin/jgem
 !bin/jirb
 !bin/jirb_swing
+!bin/jruby
 !bin/jruby.bash
 !bin/jruby.bat
 !bin/jruby.dll

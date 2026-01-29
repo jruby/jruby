@@ -137,10 +137,16 @@ public class PrependedModule extends RubyClass implements DelegatedModule {
         return origin;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     @Override
     public RubyModule getNonIncludedClass() {
         return origin;
+    }
+
+    @Deprecated(since = "10.0.3.0")
+    @Override
+    public IRubyObject id() {
+        return origin.id();
     }
 
     /**
@@ -148,8 +154,8 @@ public class PrependedModule extends RubyClass implements DelegatedModule {
      * operation.
      */
     @Override
-    public IRubyObject id() {
-        return origin.id();
+    public RubyInteger __id__(ThreadContext context) {
+        return origin.__id__(context);
     }
 
     @Override
@@ -157,7 +163,6 @@ public class PrependedModule extends RubyClass implements DelegatedModule {
         super.addMethod(context, id, method);
         method.setDefinedClass(origin);
     }
-
 
     @Override
     protected synchronized Map<String, IRubyObject> getClassVariables() {

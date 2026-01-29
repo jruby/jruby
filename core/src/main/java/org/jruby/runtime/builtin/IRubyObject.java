@@ -64,16 +64,16 @@ public interface IRubyObject {
 
     IRubyObject[] NULL_ARRAY = new IRubyObject[0];
 
-    @Deprecated
+    @Deprecated(since = "1.1.5")
     public IRubyObject callSuper(ThreadContext context, IRubyObject[] args, Block block);
 
     public IRubyObject callMethod(ThreadContext context, String name);
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject arg);
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args);
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args, Block block);
-    @Deprecated
+    @Deprecated(since = "1.1.5")
     public IRubyObject callMethod(ThreadContext context, int methodIndex, String name);
-    @Deprecated
+    @Deprecated(since = "1.1.6")
     public IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject arg);
 
     public IRubyObject checkCallMethod(ThreadContext context, String name);
@@ -332,21 +332,23 @@ public interface IRubyObject {
      */
     Object dataGetStruct();
 
-    @Deprecated // not used at all
+    @Deprecated(since = "9.2.0.0") // not used at all
     Object dataGetStructChecked();
-    
+
+    @Deprecated
+    IRubyObject id();
+
     /**
      * The id of the object
      * @return the object id
      */
-    IRubyObject id();
-    
+    RubyInteger __id__(ThreadContext context);
     
     public IRubyObject op_equal(ThreadContext context, IRubyObject other);
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other);
     public boolean eql(IRubyObject other);
 
-    @Deprecated
+    @Deprecated(since = "9.4.10.0")
     public void addFinalizer(IRubyObject finalizer);
 
     @SuppressWarnings("deprecation")
@@ -386,7 +388,7 @@ public interface IRubyObject {
      * 
      * @param variables the variables to be set for object 
      */
-    @Deprecated
+    @Deprecated(since = "1.6.0")
     void syncVariables(List<Variable<Object>> variables);
 
     /**
@@ -444,7 +446,7 @@ public interface IRubyObject {
      * @deprecated Use {@link #checkStringType()} instead.
      * @return the string if so
      */
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     default IRubyObject checkStringType19() {
         return checkStringType();
     }
@@ -456,17 +458,17 @@ public interface IRubyObject {
      * @see #convertToInteger(String)
      * @return integer
      */
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     default RubyInteger convertToInteger(int convertMethodIndex, String convertMethod) {
         return convertToInteger(convertMethod);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     boolean isTaint();
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     void setTaint(boolean taint);
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     IRubyObject infectBy(IRubyObject obj);
 }

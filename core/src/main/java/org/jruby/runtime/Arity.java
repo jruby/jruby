@@ -39,6 +39,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Error;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ArraySupport;
+import org.jruby.util.collections.IntHashMap;
 
 import static org.jruby.api.Error.argumentError;
 
@@ -47,7 +48,7 @@ import static org.jruby.api.Error.argumentError;
  */
 public final class Arity implements Serializable {
     private static final long serialVersionUID = 1L;
-    private static final Map<Integer, Arity> arities = new HashMap<>();
+    private static final IntHashMap<Arity> arities = new IntHashMap<>();
     private final int value;
     
     public final static Arity NO_ARGUMENTS = newArity(0);
@@ -269,7 +270,7 @@ public final class Arity implements Serializable {
         }
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject[] scanArgs(Ruby runtime, IRubyObject[] args, int required, int optional) {
         return scanArgs(runtime.getCurrentContext(), args, required, optional);
     }
@@ -285,53 +286,53 @@ public final class Arity implements Serializable {
         return args;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static int checkArgumentCount(Ruby runtime, IRubyObject[] args, int min, int max) {
         return checkArgumentCount(runtime.getCurrentContext(), args.length, min, max);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static int checkArgumentCount(Ruby runtime, String name, IRubyObject[] args, int min, int max) {
         return checkArgumentCount(runtime.getCurrentContext(), name, args.length, min, max);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static int checkArgumentCount(Ruby runtime, int length, int min, int max) {
         raiseArgumentError(runtime.getCurrentContext(), length, min, max);
 
         return length;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static int checkArgumentCount(Ruby runtime, int length, int min, int max, boolean hasKwargs) {
         return checkArgumentCount(runtime.getCurrentContext(), length, min, max, hasKwargs);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static int checkArgumentCount(Ruby runtime, String name, int length, int min, int max) {
         raiseArgumentError(runtime.getCurrentContext(), name, length, min, max);
 
         return length;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static void raiseArgumentError(Ruby runtime, IRubyObject[] args, int min, int max) {
         raiseArgumentError(runtime.getCurrentContext(), args.length, min, max);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static void raiseArgumentError(Ruby runtime, int length, int min, int max) {
         raiseArgumentError(runtime.getCurrentContext(), length, min, max);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static void raiseArgumentError(Ruby runtime, int length, int min, int max, boolean hasKwargs) {
         ThreadContext context = runtime.getCurrentContext();
 
         raiseArgumentError(context, length, min, max, hasKwargs);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static void raiseArgumentError(Ruby runtime, String name, int length, int min, int max) {
         raiseArgumentError(runtime.getCurrentContext(), name, length, min, max);
     }

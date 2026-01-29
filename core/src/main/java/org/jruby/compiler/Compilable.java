@@ -16,7 +16,7 @@ import static org.jruby.api.Access.classClass;
  */
 public interface Compilable<T> {
     void setCallCount(int count);
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     default void completeBuild(T buildResult) {
         completeBuild(getImplementationClass().getCurrentContext(), buildResult);
     }
@@ -54,7 +54,7 @@ public interface Compilable<T> {
      * Return the owning module/class name.
      * @return method/block owner's name
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     default String getOwnerName() {
         return getOwnerName(getImplementationClass().getCurrentContext());
     }
@@ -81,7 +81,7 @@ public interface Compilable<T> {
 
     public RubyModule getImplementationClass();
 
-    @Deprecated
+    @Deprecated(since = "9.2.9.0")
     default String getClassName(ThreadContext context) {
         return getOwnerName(context);
     }

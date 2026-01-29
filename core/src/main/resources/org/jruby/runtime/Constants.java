@@ -50,7 +50,7 @@ public final class Constants {
     public static final String JODA_TIME_VERSION = "@joda.time.version@";
     public static final String TZDATA_VERSION = "@tzdata.version@";
 
-    @Deprecated
+    @Deprecated(since = "9.1.7.0")
     public static final String DEFAULT_RUBY_VERSION = RUBY_MAJOR_VERSION;
     
     /**
@@ -67,7 +67,7 @@ public final class Constants {
     /**
      * The max count of active methods eligible for JIT-compilation.
      */
-    @Deprecated
+    @Deprecated(since = "9.2.9.0")
     public static final int JIT_MAX_METHODS_LIMIT = JIT_MAX_LIMIT;
 
     /**
@@ -87,7 +87,7 @@ public final class Constants {
     
     private static String jruby_revision = "@jruby.revision@";
 
-    @Deprecated
+    @Deprecated(since = "1.6.0")
     public static final String JRUBY_PROPERTIES = "/org/jruby/jruby.properties";
 
     public static final String BOGUS_REVISION = "ffffffffff";
@@ -105,9 +105,9 @@ public final class Constants {
 
     private Constants() {}
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public static final int    RUBY_PATCHLEVEL = 0;
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     public static final int    RUBY_REVISION = 1;
 }

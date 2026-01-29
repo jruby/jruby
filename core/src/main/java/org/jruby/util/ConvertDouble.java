@@ -154,7 +154,7 @@ public class ConvertDouble {
                 addExponentToResult(adjustExponent);
             }
 
-            return SafeDoubleParser.parseDouble(new String(chars, 0, charsIndex));
+            return Double.valueOf(new String(chars, 0, charsIndex));
         }
 
         static class LightweightNumberFormatException extends NumberFormatException {

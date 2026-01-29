@@ -3,3 +3,4 @@ windows:IO.copy_stream from an IO to an IO copies only length bytes from the off
 windows:IO.copy_stream from a file name to a file name copies only length bytes from the offset
 windows:IO.copy_stream from a file name to an IO copies only length bytes from the offset
 windows:IO.copy_stream with non-IO Objects calls #read on the source Object
+windows:IO.copy_stream from an IO does change the IO offset when an offset is not specified

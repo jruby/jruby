@@ -37,7 +37,7 @@ public class DefaultMethod extends DynamicMethod implements CacheableMethod {
         return this;
     }
 
-    @Deprecated @Override
+    @Deprecated(since = "9.4.3.0") @Override
     public final Arity getArity() {
         return arity;
     }
@@ -59,7 +59,7 @@ public class DefaultMethod extends DynamicMethod implements CacheableMethod {
         return function.getFunctionAddress();
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     protected final NativeInvoker getNativeInvoker() {
         return getNativeInvoker(getImplementationClass().getRuntime().getCurrentContext());
     }

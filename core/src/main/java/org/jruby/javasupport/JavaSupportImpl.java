@@ -53,15 +53,19 @@ import org.jruby.javasupport.proxy.JavaProxyClass;
 public class JavaSupportImpl extends JavaSupport {
 
     private final ClassValue<Map<String, AssignedName>> staticAssignedNames =
-            ClassValue.newInstance(klass -> new HashMap<>(8, 1));
+            ClassValue.newInstance(JavaSupportImpl::newAssignedNames);
     private final ClassValue<Map<String, AssignedName>> instanceAssignedNames =
-            ClassValue.newInstance(klass -> new HashMap<>(8, 1));
+            ClassValue.newInstance(JavaSupportImpl::newAssignedNames);
 
     public JavaSupportImpl(final Ruby runtime) {
         super(runtime);
     }
 
-    @Deprecated
+    private static Map<String, AssignedName> newAssignedNames(Class<?> klass) {
+        return new HashMap<>(8, 1);
+    }
+
+    @Deprecated(since = "9.3.0.0")
     public Map<String, JavaClass> getNameClassMap() {
         return Collections.emptyMap();
     }
@@ -74,7 +78,7 @@ public class JavaSupportImpl extends JavaSupport {
         return instanceAssignedNames;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.0.0")
     public Map<Set<?>, JavaProxyClass> getJavaProxyClassCache() {
         Map<Set<?>, JavaProxyClass> javaProxyClassCache = new HashMap<>(javaProxyClasses.size());
         synchronized (javaProxyClasses) {
@@ -188,10 +192,10 @@ public class JavaSupportImpl extends JavaSupport {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     private volatile Map<Object, Object[]> javaObjectVariables;
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public Object getJavaObjectVariable(Object o, int i) {
         if (i == -1) return null;
 
@@ -205,7 +209,7 @@ public class JavaSupportImpl extends JavaSupport {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public void setJavaObjectVariable(Object o, int i, Object v) {
         if (i == -1) return;
 

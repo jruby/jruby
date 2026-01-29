@@ -603,32 +603,30 @@ describe "Module#autoload" do
       end
     end
 
-    ruby_version_is "3.2" do
-      it "warns once in verbose mode if the constant was defined in a parent scope" do
-        ScratchPad.record -> {
-          ModuleSpecs::DeclaredInCurrentDefinedInParent = :declared_in_current_defined_in_parent
-        }
+    it "warns once in verbose mode if the constant was defined in a parent scope" do
+      ScratchPad.record -> {
+        ModuleSpecs::DeclaredInCurrentDefinedInParent = :declared_in_current_defined_in_parent
+      }
 
-        module ModuleSpecs
-          module Autoload
-            autoload :DeclaredInCurrentDefinedInParent, fixture(__FILE__, "autoload_callback.rb")
-            self.autoload?(:DeclaredInCurrentDefinedInParent).should == fixture(__FILE__, "autoload_callback.rb")
-            const_defined?(:DeclaredInCurrentDefinedInParent).should == true
+      module ModuleSpecs
+        module Autoload
+          autoload :DeclaredInCurrentDefinedInParent, fixture(__FILE__, "autoload_callback.rb")
+          self.autoload?(:DeclaredInCurrentDefinedInParent).should == fixture(__FILE__, "autoload_callback.rb")
+          const_defined?(:DeclaredInCurrentDefinedInParent).should == true
 
-            -> {
-              DeclaredInCurrentDefinedInParent
-            }.should complain(
-              /Expected .*autoload_callback.rb to define ModuleSpecs::Autoload::DeclaredInCurrentDefinedInParent but it didn't/,
-              verbose: true,
-            )
+          -> {
+            DeclaredInCurrentDefinedInParent
+          }.should complain(
+            /Expected .*autoload_callback.rb to define ModuleSpecs::Autoload::DeclaredInCurrentDefinedInParent but it didn't/,
+            verbose: true,
+          )
 
-            -> {
-              DeclaredInCurrentDefinedInParent
-            }.should_not complain(/.*/, verbose: true)
-            self.autoload?(:DeclaredInCurrentDefinedInParent).should == nil
-            const_defined?(:DeclaredInCurrentDefinedInParent).should == false
-            ModuleSpecs.const_defined?(:DeclaredInCurrentDefinedInParent).should == true
-          end
+          -> {
+            DeclaredInCurrentDefinedInParent
+          }.should_not complain(/.*/, verbose: true)
+          self.autoload?(:DeclaredInCurrentDefinedInParent).should == nil
+          const_defined?(:DeclaredInCurrentDefinedInParent).should == false
+          ModuleSpecs.const_defined?(:DeclaredInCurrentDefinedInParent).should == true
         end
       end
     end
@@ -718,6 +716,21 @@ describe "Module#autoload" do
       end
       ModuleSpecs::Autoload.r.should be_kind_of(ModuleSpecs::Autoload::MetaScope)
     end
+  end
+
+  it "should trigger the autoload when using `private_constant`" do
+    @remove << :DynClass
+    module ModuleSpecs::Autoload
+      autoload :DynClass, fixture(__FILE__, "autoload_c.rb")
+      private_constant :DynClass
+
+      ScratchPad.recorded.should be_nil
+
+      DynClass::C.new.loaded.should == :dynclass_c
+      ScratchPad.recorded.should == :loaded
+    end
+
+    -> { ModuleSpecs::Autoload::DynClass }.should raise_error(NameError, /private constant/)
   end
 
   # [ruby-core:19127] [ruby-core:29941]

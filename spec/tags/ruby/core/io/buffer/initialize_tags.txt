@@ -1,0 +1,9 @@
+fails:IO::Buffer#initialize with size argument creates a null buffer if size is 0
+fails:IO::Buffer#initialize with size argument raises TypeError if size is not an Integer
+fails:IO::Buffer#initialize with size argument raises ArgumentError if size is negative
+fails:IO::Buffer#initialize with size and flags arguments raises IO::Buffer::AllocationError if neither IO::Buffer::MAPPED nor IO::Buffer::INTERNAL is given
+fails:IO::Buffer#initialize with size and flags arguments raises ArgumentError if flags is negative
+fails:IO::Buffer#initialize with size and flags arguments raises TypeError with non-Integer flags
+fails:IO::Buffer#initialize creates a buffer with default state
+fails:IO::Buffer#initialize with size and flags arguments allows extra flags
+fails:IO::Buffer#initialize with size and flags arguments ignores flags if size is 0

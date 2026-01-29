@@ -65,7 +65,7 @@ public abstract class JavaSupport {
 
     protected final Ruby runtime;
 
-    @Deprecated
+    @Deprecated(since = "9.4.3.0")
     private final ClassValue<JavaClass> javaClassCache;
     private final ClassValue<RubyModule> proxyClassCache;
 
@@ -92,7 +92,7 @@ public abstract class JavaSupport {
     private RubyModule javaUtilitiesModule;
     private RubyModule javaArrayUtilitiesModule;
     private RubyClass javaObjectClass;
-    @Deprecated
+    @Deprecated(since = "9.4.3.0")
     private Object objectJavaClass;
     private RubyClass javaClassClass;
     private RubyClass javaPackageClass;
@@ -114,24 +114,24 @@ public abstract class JavaSupport {
 
         this.javaClassCache = ClassValue.newInstance(klass -> new JavaClass(runtime, getJavaClassClass(), klass));
 
-        this.proxyClassCache = ClassValue.newInstance(new ClassValueCalculator<RubyModule>() {
-            /**
-             * Because of the complexity of processing a given class and all its dependencies,
-             * we opt to synchronize this logic. Creation of all proxies goes through here,
-             * allowing us to skip some threading work downstream.
-             */
-            @Override
-            public synchronized RubyModule computeValue(Class<?> klass) {
-                RubyModule proxyKlass = Java.createProxyClassForClass(runtime, klass);
-                JavaExtensions.define(runtime, klass, proxyKlass); // (lazy) load extensions
-                return proxyKlass;
-            }
-        });
+        this.proxyClassCache = ClassValue.newInstance(this::computeProxyClass);
+
         // Proxy creation is synchronized (see above) so a HashMap is fine for recursion detection.
         this.unfinishedProxies = new ConcurrentHashMap<>(8, 0.75f, 1);
     }
 
-    @Deprecated
+    /**
+     * Because of the complexity of processing a given class and all its dependencies,
+     * we opt to synchronize this logic. Creation of all proxies goes through here,
+     * allowing us to skip some threading work downstream.
+     */
+    private synchronized RubyModule computeProxyClass(Class<?> klass) {
+        RubyModule proxyKlass = Java.createProxyClassForClass(runtime, klass);
+        JavaExtensions.define(runtime, klass, proxyKlass); // (lazy) load extensions
+        return proxyKlass;
+    }
+
+    @Deprecated(since = "9.4.0.0")
     public Class loadJavaClassVerbose(String className) {
         var context = runtime.getCurrentContext();
         try {
@@ -148,7 +148,7 @@ public abstract class JavaSupport {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     public Class loadJavaClassQuiet(String className) {
         try {
             return loadJavaClass(className);
@@ -187,7 +187,7 @@ public abstract class JavaSupport {
     // class/module, as happens-before is guaranteed by volatile write/read
     // of constants table.)
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyModule getJavaModule() {
         return getJavaModule(runtime.getCurrentContext());
     }
@@ -197,14 +197,14 @@ public abstract class JavaSupport {
         return module != null ? module : (javaModule = getModule(context, "Java"));
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyModule getJavaUtilitiesModule() {
         RubyModule module;
         if ((module = javaUtilitiesModule) != null) return module;
         return javaUtilitiesModule = getModule(runtime.getCurrentContext(), "JavaUtilities");
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyModule getJavaArrayUtilitiesModule() {
         RubyModule module;
         if ((module = javaArrayUtilitiesModule) != null) return module;
@@ -228,7 +228,7 @@ public abstract class JavaSupport {
         return javaProxyConstructorClass = getJavaModule(context).getClass(context, "JavaProxyConstructor");
     }
 
-    @Deprecated // no longer used
+    @Deprecated(since = "9.4.0.0") // no longer used
     public JavaClass getObjectJavaClass() {
         Object clazz;
         if ((clazz = objectJavaClass) != null) return (JavaClass) clazz;
@@ -237,12 +237,12 @@ public abstract class JavaSupport {
         return javaClass;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.0.0")
     public void setObjectJavaClass(JavaClass objectJavaClass) {
         // noop
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     public RubyClass getJavaArrayClass() {
         RubyClass clazz;
         if ((clazz = javaArrayClass) != null) return clazz;
@@ -251,7 +251,7 @@ public abstract class JavaSupport {
         return javaArrayClass = getJavaModule(context).getClass(context, "JavaArray");
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     public RubyClass getJavaClassClass() {
         RubyClass clazz;
         if ((clazz = javaClassClass) != null) return clazz;
@@ -274,7 +274,7 @@ public abstract class JavaSupport {
         return javaInterfaceTemplate = getModule(runtime.getCurrentContext(), "JavaInterfaceTemplate");
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public RubyModule getPackageModuleTemplate() {
         return null; // no longer used + has been deprecated since ~ 9.1
     }
@@ -310,7 +310,7 @@ public abstract class JavaSupport {
         return arrayProxyClass = Access.getClass(runtime.getCurrentContext(), "ArrayJavaProxy");
     }
 
-    @Deprecated // not used
+    @Deprecated(since = "9.4.0.0") // not used
     public RubyClass getJavaFieldClass() {
         RubyClass clazz;
         if ((clazz = javaFieldClass) != null) return clazz;
@@ -319,7 +319,7 @@ public abstract class JavaSupport {
         return javaFieldClass = getJavaModule(context).getClass(context, "JavaField");
     }
 
-    @Deprecated // not used
+    @Deprecated(since = "9.4.0.0") // not used
     public RubyClass getJavaMethodClass() {
         RubyClass clazz;
         if ((clazz = javaMethodClass) != null) return clazz;
@@ -328,7 +328,7 @@ public abstract class JavaSupport {
         return javaMethodClass = getJavaModule(context).getClass(context, "JavaMethod");
     }
 
-    @Deprecated // not used
+    @Deprecated(since = "9.4.0.0") // not used
     public RubyClass getJavaConstructorClass() {
         RubyClass clazz;
         if ((clazz = javaConstructorClass) != null) return clazz;
@@ -367,13 +367,13 @@ public abstract class JavaSupport {
 
     abstract ClassValue<Map<String, AssignedName>> getInstanceAssignedNames();
 
-    @Deprecated
+    @Deprecated(since = "9.4.3.0")
     public abstract Map<String, JavaClass> getNameClassMap();
 
-    @Deprecated // internal API - no longer used
+    @Deprecated(since = "9.1.0.0") // internal API - no longer used
     public abstract Map<Set<?>, JavaProxyClass> getJavaProxyClassCache();
 
-    @Deprecated // internal API - no longer used (kept functional due deprecated JavaClass.get API)
+    @Deprecated(since = "9.4.0.0") // internal API - no longer used (kept functional due deprecated JavaClass.get API)
     public JavaClass getJavaClassFromCache(Class clazz) {
         return javaClassCache.get(clazz);
     }

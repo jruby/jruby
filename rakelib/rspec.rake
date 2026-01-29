@@ -71,5 +71,6 @@ namespace :spec do
 
   permute_specs "jrubyc", compile_flags do |t|
     t.pattern = 'spec/jrubyc/**/*_spec.rb'
+    t.ruby_opts << "-Xaot.loadClasses"
   end
 end

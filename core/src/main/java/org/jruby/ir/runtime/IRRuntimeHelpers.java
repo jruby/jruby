@@ -28,6 +28,7 @@ import org.jruby.RubyRational;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.api.Convert;
 import org.jruby.api.Create;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
@@ -367,7 +368,7 @@ public class IRRuntimeHelpers {
         return (excObj instanceof RaiseException) ? ((RaiseException) excObj).getException() : excObj;
     }
 
-    private static boolean isJavaExceptionHandled(ThreadContext context, IRubyObject excType, Object excObj, boolean arrayCheck) {
+    private static boolean isJavaExceptionHandled(ThreadContext context, IRubyObject excType, Object excObj) {
         if (!(excObj instanceof Throwable)) {
             return false;
         }
@@ -375,11 +376,10 @@ public class IRRuntimeHelpers {
         final Ruby runtime = context.runtime;
         final Throwable ex = (Throwable) excObj;
 
-        if (excType instanceof RubyArray) {
-            RubyArray testTypes = (RubyArray)excType;
+        if (excType instanceof RubyArray testTypes) {
             for (int i = 0, n = testTypes.getLength(); i < n; i++) {
                 IRubyObject testType = testTypes.eltInternal(i);
-                if (IRRuntimeHelpers.isJavaExceptionHandled(context, testType, ex, true)) {
+                if (IRRuntimeHelpers.isJavaExceptionHandled(context, testType, ex)) {
                     IRubyObject exception;
                     if (n == 1) {
                         exception = wrapJavaException(context, testType, ex);
@@ -387,7 +387,7 @@ public class IRRuntimeHelpers {
                         exception = Helpers.wrapJavaException(runtime, ex);
                     }
 
-                    globalVariables(context).set("$!", exception);
+                    context.setErrorInfo(exception);
                     return true;
                 }
             }
@@ -395,7 +395,7 @@ public class IRRuntimeHelpers {
         else {
             IRubyObject exception = wrapJavaException(context, excType, ex);
             if (Helpers.checkJavaException(exception, ex, excType, context)) {
-                globalVariables(context).set("$!", exception);
+                context.setErrorInfo(exception);
                 return true;
             }
         }
@@ -425,7 +425,7 @@ public class IRRuntimeHelpers {
             for (int i = 0, n = testTypes.getLength(); i < n; i++) {
                 IRubyObject testType = testTypes.eltInternal(i);
                 if (IRRuntimeHelpers.isRubyExceptionHandled(context, testType, excObj)) {
-                    globalVariables(context).set("$!", (IRubyObject)excObj);
+                    context.setErrorInfo((IRubyObject) excObj);
                     return true;
                 }
             }
@@ -435,7 +435,7 @@ public class IRRuntimeHelpers {
             }
 
             if (excType.callMethod(context, "===", (IRubyObject)excObj).isTrue()) {
-                globalVariables(context).set("$!", (IRubyObject)excObj);
+                context.setErrorInfo((IRubyObject) excObj);
                 return true;
             }
         }
@@ -452,7 +452,7 @@ public class IRRuntimeHelpers {
         excObj = unwrapRubyException(excObj);
 
         boolean ret = IRRuntimeHelpers.isRubyExceptionHandled(context, excType, excObj)
-            || IRRuntimeHelpers.isJavaExceptionHandled(context, excType, excObj, false);
+            || IRRuntimeHelpers.isJavaExceptionHandled(context, excType, excObj);
 
         return asBoolean(context, ret);
     }
@@ -717,7 +717,13 @@ public class IRRuntimeHelpers {
         int callInfo = ThreadContext.resetCallInfo(context);
         boolean isKwarg = (callInfo & CALL_KEYWORD) != 0;
 
-        return receiverSpecificArityKwargsCommon(context, last, isKwarg);
+        if ((callInfo & CALL_SPLATS) != 0 && last.isRuby2KeywordHash()) {
+            return last.dupFast(context);
+        }
+
+        return isKwarg ?
+                last.dupFast(context) :
+                last;
     }
 
     private static IRubyObject receiveSpecificArityRuby2HashKeywords(ThreadContext context, RubyHash last) {
@@ -735,13 +741,7 @@ public class IRRuntimeHelpers {
             return hash;
         }
 
-        return receiverSpecificArityKwargsCommon(context, last, false);
-    }
-
-    private static IRubyObject receiverSpecificArityKwargsCommon(ThreadContext context, RubyHash last, boolean isKwarg) {
-        return isKwarg || last.isRuby2KeywordHash() ?
-                last.dupFast(context) :
-                last;
+        return last;
     }
 
     /**
@@ -2446,7 +2446,7 @@ public class IRRuntimeHelpers {
     @JIT
     public static RubyString asString(ThreadContext context, IRubyObject caller, IRubyObject target, CallSite site) {
         IRubyObject str = site.call(context, caller, target);
-        return str instanceof RubyString string ? string : (RubyString) target.anyToString();
+        return str instanceof RubyString string ? string : (RubyString) Convert.anyToString(context, target);
     }
 
     @JIT

@@ -125,7 +125,7 @@ import static org.jruby.runtime.ThreadContext.*;
 // this is not a big deal.  Think this through!
 
 public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyNode, Colon3Node, HashNode> {
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public static Node buildAST(boolean isCommandLineScript, String arg) {
         Ruby ruby = Ruby.getGlobalRuntime();
 
@@ -315,7 +315,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     public Operand buildMultipleAsgn(MultipleAsgnNode multipleAsgnNode) {
         Node valueNode = multipleAsgnNode.getValueNode();
         Map<Node, Operand> reads = new HashMap<>();
-        final List<Tuple<Node, ResultInstr>> assigns = new ArrayList<>();
+        final List<Tuple<Node, ResultInstr>> assigns = new ArrayList<>(4);
         Variable values = temp();
         buildMultipleAssignment2(multipleAsgnNode, assigns, reads, values);
 
@@ -529,17 +529,17 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         List<KeyValuePair<Node, Node>> pairs = keywordArgs.getPairs();
 
         if (pairs.size() == 1) { // Only a single rest arg here.  Do not bother to merge.
-            if (pairs.get(0).getValue() instanceof NilNode) return new Hash(new ArrayList<>()); // **nil
+            if (pairs.get(0).getValue() instanceof NilNode) return new Hash(new ArrayList<>(4)); // **nil
 
             Operand splat = buildWithOrder(pairs.get(0).getValue(), keywordArgs.containsVariableAssignment());
 
             return addResultInstr(new RuntimeHelperCall(temp(), HASH_CHECK, new Operand[] { splat }));
         }
 
-        Variable splatValue = copy(new Hash(new ArrayList<>()));
+        Variable splatValue = copy(new Hash(new ArrayList<>(1)));
         for (KeyValuePair<Node, Node> pair: pairs) {
             Operand splat = pair.getValue() instanceof NilNode ?
-                    new Hash(new ArrayList<>()) : // **nil
+                    new Hash(new ArrayList<>(1)) : // **nil
                     buildWithOrder(pair.getValue(), keywordArgs.containsVariableAssignment()); // **r
             addInstr(new RuntimeHelperCall(splatValue, MERGE_KWARGS, new Operand[] { splatValue, splat, fals() }));
         }
@@ -1242,8 +1242,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     private Variable buildStandardCaseWhen(CaseNode caseNode, Map<Node, Label> nodeBodies, Label endLabel, boolean hasElse, Label elseLabel, Operand value, Variable result) {
-        List<Label> labels = new ArrayList<>();
-        Map<Label, Node> bodies = new HashMap<>();
+        List<Label> labels = new ArrayList<>(4);
+        Map<Label, Node> bodies = new HashMap<>(4);
 
         // build each "when"
         for (Node aCase : caseNode.getCases().children()) {
@@ -1351,7 +1351,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     protected Operand putConstant(Colon3Node colonNode, Operand value) {
         if (colonNode.getNodeType() == NodeType.COLON2NODE) {
             Colon2Node colon2Node = (Colon2Node) colonNode;
@@ -2072,7 +2072,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     // Multiple assignment in an ordinary expression (e.g a,b,*c=v).
     public void buildMultipleAssignment(final MultipleAsgnNode multipleAsgnNode, Operand values) {
         final ListNode masgnPre = multipleAsgnNode.getPre();
-        final List<Tuple<Node, Variable>> assigns = new ArrayList<>();
+        final List<Tuple<Node, Variable>> assigns = new ArrayList<>(4);
 
         int i = 0;
         if (masgnPre != null) {
@@ -2104,7 +2104,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
 
     // Multiple assignment in arguments (e.g. { |a,b,*c| ..})
     public void buildMultipleAssignmentArgs(final MultipleAsgnNode multipleAsgnNode, Operand argsArray) {
-        final List<Tuple<Node, Variable>> assigns = new ArrayList<>();
+        final List<Tuple<Node, Variable>> assigns = new ArrayList<>(4);
         int i = 0;
         ListNode masgnPre = multipleAsgnNode.getPre();
         if (masgnPre != null) {
@@ -2320,7 +2320,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     public Operand buildHash(HashNode hashNode) {
-        List<KeyValuePair<Operand, Operand>> args = new ArrayList<>();
+        List<KeyValuePair<Operand, Operand>> args = new ArrayList<>(1);
         boolean hasAssignments = hashNode.containsVariableAssignment();
         Variable hash = null;
         // Duplication checks happen when **{} are literals and not **h variable references.
@@ -2336,10 +2336,10 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
                  duplicateCheck = value instanceof HashNode && ((HashNode) value).isLiteral() ? tru() : fals();
                 if (hash == null) {                     // No hash yet. Define so order is preserved.
                     hash = copy(new Hash(args));
-                    args = new ArrayList<>();           // Used args but we may find more after the splat so we reset
+                    args = new ArrayList<>(1);           // Used args but we may find more after the splat so we reset
                 } else if (!args.isEmpty()) {
                     addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args), duplicateCheck}));
-                    args = new ArrayList<>();
+                    args = new ArrayList<>(1);
                 }
                 Operand splat = buildWithOrder(value, hasAssignments);
                 addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, splat, duplicateCheck}));

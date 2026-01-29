@@ -38,7 +38,7 @@ public enum RubyEvent {
     private final String event_name;
     private final boolean requiresDebug;
 
-    private static final Map<String, RubyEvent> fromName = new HashMap<>();
+    private static final Map<String, RubyEvent> fromName = new HashMap<>(RubyEvent.values().length);
     static {
         for (RubyEvent event : RubyEvent.values()) {
             fromName.put(event.getName(), event);
@@ -54,7 +54,7 @@ public enum RubyEvent {
         this.requiresDebug = requiresDebug;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.9.0")
     public int getLineNumberOffset(){
         return 0;
     }

@@ -1,0 +1,17 @@
+fails:IO::Buffer#private? with a buffer created with .new is false for an internal buffer
+fails:IO::Buffer#private? with a buffer created with .new is false for a mapped buffer
+fails:IO::Buffer#private? with a file-backed buffer created with .map is false for a regular mapping
+fails:IO::Buffer#private? with a file-backed buffer created with .map is true for a private mapping
+fails:IO::Buffer#private? with a String-backed buffer created with .for is false for a buffer created without a block
+fails:IO::Buffer#private? with a String-backed buffer created with .for is false for a buffer created with a block
+fails:IO::Buffer#private? with a String-backed buffer created with .string is false
+fails:IO::Buffer#private? with a slice of a buffer created with .new is false when slicing an internal buffer
+fails:IO::Buffer#private? with a slice of a buffer created with .new is false when slicing a mapped buffer
+fails:IO::Buffer#private? with a slice of a buffer created with .map is false when slicing a regular file-backed buffer
+fails:IO::Buffer#private? with a slice of a buffer created with .map is false when slicing a private file-backed buffer
+fails:IO::Buffer#private? with a slice of a buffer created with .for is false when slicing a buffer created without a block
+fails:IO::Buffer#private? with a slice of a buffer created with .for is false when slicing a buffer created with a block
+fails:IO::Buffer#private? with a slice of a buffer created with .string is false
+fails:IO::Buffer#private? is true for a buffer created with PRIVATE flag
+fails:IO::Buffer#private? is false for a buffer created without PRIVATE flag
+fails:IO::Buffer#private? is false for a null buffer

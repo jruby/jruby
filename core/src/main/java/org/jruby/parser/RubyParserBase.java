@@ -58,9 +58,7 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.OperatorCallNode;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.common.RubyWarnings;
 import org.jruby.ext.coverage.CoverageData;
-import org.jruby.ir.IRScopeType;
 import org.jruby.ir.builder.StringStyle;
 import org.jruby.lexer.LexerSource;
 import org.jruby.lexer.yacc.LexContext;
@@ -218,7 +216,7 @@ public abstract class RubyParserBase {
 
         for (int i = 1; i <= paramCount; i++) {
             RubySymbol name = symbolID(new ByteList(("_" + i).getBytes()));
-            list.add(new ArgumentNode(lexer.getRubySourceline(), name, getCurrentScope().addVariableThisScope(name.idString())));
+            list.add(new ArgumentNode(lexer.getRubySourceline(), name, getCurrentScope().addImplicitVariableThisScope(name.idString())));
         }
 
         return list;
@@ -399,15 +397,28 @@ public abstract class RubyParserBase {
             node = new LocalVarNode(lexer.tokline, slot, name);
         } else if (dyna_in_block() && id.equals("it")) {
             if (!hasArguments()) {
-                int existing = currentScope.isDefined(id);
-                slot = existing == -1 ?
-                        currentScope.addVariable(id) : existing;
+                int existing = currentScope.isDefinedNotImplicit(id);
+                boolean newIt = false;
+
+                if (existing == -1) {
+                    slot = currentScope.addVariable(id);
+                    newIt = true;
+                } else if (existing == -2) { // We found an it either in this scope or above it
+                    if (it_id() != null) {   // It is the current scope
+                        slot = currentScope.isDefined(id);   // Get location of it
+                    } else {
+                        slot = currentScope.addVariable(id); // Was above this scope so make one for it.
+                        newIt = true;
+                    }
+                } else {
+                    slot = existing;
+                }
                 node = new DVarNode(lexer.tokline, slot, name);
-                if (existing == -1) set_it_id(node);
+                if (newIt) set_it_id(node);
             } else {
-                slot = currentScope.isDefined(id);
+                slot = currentScope.isDefinedNotImplicit(id);
                 // A special it cannot exist without being marked as a special it.
-                if (it_id() == null && slot == -1) compile_error("`it` is not allowed when an ordinary parameter is defined");
+                if (it_id() != null) compile_error("`it` is not allowed when an ordinary parameter is defined");
 
                 node = currentScope.declare(lexer.tokline, name);
             }
@@ -432,6 +443,16 @@ public abstract class RubyParserBase {
         numparam_name(byteName);
 
         if (warnOnUnusedVariables) addOrMarkVariable(name, currentScope.isDefined(name.idString()));
+
+        String id = name.idString();
+        // This differs from MRI annd it is a special branch because I do not want to infect staticscope with 'it'
+        // logic since it likely will be done differently in Prism (This will play out more once 10.1 updates
+        // to latest Prism).  If it is the same then we can reconsider whether this should be in staticscope or not.
+        if (id.equals("it") && currentScope.exists(id) == -1) { // case: foo { it.bar { <<it = something>> } it }
+            // we are assigning and there is no 'it' here so make it as a normal local
+            int slot = currentScope.addVariableName(id);
+            return new DAsgnNode(lexer.getRubySourceline(), name, slot, value);
+        }
 
         return currentScope.assign(lexer.getRubySourceline(), name, makeNullNil(value));
     }
@@ -604,7 +625,7 @@ public abstract class RubyParserBase {
             yyerror("keyword arg given in index");
         }
         if (block != null) {
-            yyerror("block arg given in index");
+            yyerror("block arg given in index assignment");
         }
     }
 
@@ -639,7 +660,7 @@ public abstract class RubyParserBase {
 
     public void backref_error(Node node) {
         String varName = "$" + (node instanceof NthRefNode ?
-                ((NthRefNode) node).getMatchNumber() : ((BackRefNode) node).getType());
+                ((NthRefNode) node).getMatchNumber() : ""+((BackRefNode) node).getType());
         lexer.compile_error("Can't set variable " + varName + '.');
     }
 
@@ -1255,6 +1276,8 @@ public abstract class RubyParserBase {
     public Node new_ary_op_assign(Node receiverNode, Node argsNode, ByteList operatorName, Node valueNode) {
         int line = lexer.tokline;
 
+        aryset_check(argsNode);
+
         // We extract BlockPass from tree and insert it as a block node value (MRI wraps it around the args)
         Node blockNode = null;
         if (argsNode instanceof BlockPassNode) {
@@ -1693,7 +1716,7 @@ public abstract class RubyParserBase {
         return RubyLexer.isIdentifierChar(name.charAt(0));
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public boolean is_local_id(String name) {
         return RubyLexer.isIdentifierChar(name.charAt(0));
     }
@@ -1742,7 +1765,7 @@ public abstract class RubyParserBase {
     }
 
     public enum IDType {
-        Local, Global, Instance, AttrSet, Constant, Class;
+        Local, Global, Instance, AttrSet, Constant, Class, Error;
     }
 
     public static IDType id_type(ByteList identifier) {
@@ -1765,6 +1788,8 @@ public abstract class RubyParserBase {
             }
             return AttrSet;
         }
+
+        if (last == '!' || last == '?') return Error;
 
         return Local;
     }
@@ -1976,7 +2001,7 @@ public abstract class RubyParserBase {
 
     public static final ByteList INTERNAL_ID = new ByteList(new byte[] {}, USASCIIEncoding.INSTANCE);
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public String internalId() {
         return INTERNAL_ID.toString();
     }
@@ -2463,6 +2488,9 @@ public abstract class RubyParserBase {
     }
 
     protected void set_it_id(Node node) {
+        if (node != null) {
+            currentScope.markImplicitVariable(((DVarNode) node).getIndex());
+        }
         this.itId = node;
     }
 

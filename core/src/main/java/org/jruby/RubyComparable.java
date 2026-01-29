@@ -90,7 +90,7 @@ public class RubyComparable {
         return cmpint(context, op_gt, op_lt, cmpResult, a, b);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject cmperr(IRubyObject recv, IRubyObject other) {
         return cmperr(((RubyBasicObject) recv).getCurrentContext(), recv, other);
     }

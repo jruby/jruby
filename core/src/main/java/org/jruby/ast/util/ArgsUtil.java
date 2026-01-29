@@ -104,7 +104,7 @@ public final class ArgsUtil {
         return runtime.getNil();
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject getOptionsArg(Ruby runtime, IRubyObject arg) {
         return getOptionsArg(runtime, arg, true);
     }
@@ -171,7 +171,7 @@ public final class ArgsUtil {
     }
 
     // not used
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject[] extractKeywordArgs(ThreadContext context, IRubyObject[] args, String... validKeys) {
         return extractKeywordArgs(context, ArgsUtil.getOptionsArg(context.runtime, args), validKeys);
     }

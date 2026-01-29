@@ -250,7 +250,12 @@ public class LibrarySearcher {
     }
 
     public static boolean isSourceExt(String file) {
-        return file.endsWith(".rb");
+        for (Suffix suffix : Suffix.SOURCES) {
+            if (file.endsWith(suffix.extension)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static boolean isLibraryExt(String file) {
@@ -466,7 +471,7 @@ public class LibrarySearcher {
     class Feature {
         Feature(StringWrapper key, IRubyObject featurePath) {
             this.key = key;
-            this.featurePaths = new ArrayList<>();
+            this.featurePaths = new ArrayList<>(1);
 
             featurePaths.add(featurePath);
         }
@@ -705,13 +710,17 @@ public class LibrarySearcher {
         }
         else {
             int e;
-            for (e = nameLength - 1; e >= 0 && name.charAt(e) != '.' && name.charAt(e) != '/'; --e);
+            // search from end until we find '.' or '/' or we're at the first character
+            for (e = nameLength - 1; e > 0 && name.charAt(e) != '.' && name.charAt(e) != '/'; --e);
+            // if initial character is not '.' or we have too few chars left or the remaining region doesn't match, quit
             if (name.charAt(e) != '.' ||
                     e < featureLength ||
                     !name.regionMatches(e - featureLength, feature, 0, featureLength))
                 return null;
+            // new path length is current position minus the feature length
             plen = e - featureLength;
         }
+        // if path length is zero or the last character of path is not '/', quit
         if (plen > 0 && name.charAt(plen-1) != '/') {
             return null;
         }
@@ -965,7 +974,8 @@ public class LibrarySearcher {
                 script.setFileName(scriptName);
                 runtime.loadScope(script, wrap);
             } catch(IOException e) {
-                throw runtime.newLoadError("no such file to load -- " + searchName, searchName);
+                String name = searchName;
+                throw LoadService.loadFailed(runtime, name);
             }
         }
     }

@@ -95,7 +95,7 @@ public class RubyDateTime extends RubyDate {
         this.off = dt.getZone().getOffset(dt.getMillis()) / 1000;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyDateTime(Ruby runtime, DateTime dt) {
         this(runtime, getDateTime(runtime.getCurrentContext()), dt);
     }

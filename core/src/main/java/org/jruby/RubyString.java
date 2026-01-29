@@ -59,6 +59,7 @@ import org.joni.Regex;
 import org.joni.Region;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Convert;
 import org.jruby.api.Create;
 import org.jruby.api.JRubyAPI;
 import org.jruby.ast.util.ArgsUtil;
@@ -240,7 +241,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         setCodeRange(cr);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public final Encoding toEncoding(Ruby runtime) {
         return encodingService(getCurrentContext()).findEncoding(this);
     }
@@ -350,7 +351,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return checkEncoding((CodeRangeable) other);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     final Encoding checkEncoding(EncodingCapable other) {
         var context = ((RubyBasicObject) other).getCurrentContext();
         Encoding enc = isCompatibleWith(other);
@@ -409,7 +410,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return eqlAndComparable(other);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     private boolean eql19(IRubyObject other) {
         return eqlAndComparable(other);
     }
@@ -512,17 +513,17 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     // Deprecated String construction routines
 
-    @Deprecated
+    @Deprecated(since = "1.1.6")
     public RubyString newString(CharSequence s) {
         return new RubyString(getRuntime(), getType(), s);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.1.6")
     public RubyString newString(ByteList s) {
         return new RubyString(getRuntime(), getMetaClass(), s);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.1.2")
     public static RubyString newString(Ruby runtime, RubyClass clazz, CharSequence str) {
         return new RubyString(runtime, clazz, str);
     }
@@ -669,7 +670,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return RubyString.newString(runtime,  new ByteList(RubyEncoding.encode(str, rubyInt), internal));
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static RubyString newExternalStringWithEncoding(Ruby runtime, String string, Encoding encoding) {
         return EncodingUtils.newExternalStringWithEncoding(runtime, string, encoding);
     }
@@ -717,17 +718,17 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return str;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyString newStringShared(Ruby runtime, byte[] bytes) {
         return newStringShared(runtime, bytes, 0, bytes.length, ASCIIEncoding.INSTANCE);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyString newStringShared(Ruby runtime, byte[] bytes, Encoding encoding) {
         return newStringShared(runtime, bytes, 0, bytes.length, encoding);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyString newStringShared(Ruby runtime, byte[] bytes, int start, int length) {
         return newStringShared(runtime, bytes, start, length, ASCIIEncoding.INSTANCE);
     }
@@ -960,8 +961,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     public final RubyString dupAsChilled(Ruby runtime, RubyClass clazz, String file, int line) {
         if (runtime.getInstanceConfig().isDebuggingFrozenStringLiteral()) {
             shareLevel = SHARE_LEVEL_BYTELIST;
-            RubyString dup = new DebugChilledString(runtime, clazz, value, getCodeRange(), file, line + 1);
-            dup.shareLevel = SHARE_LEVEL_BYTELIST;
+            RubyString dup = new DebugChilledString(runtime, clazz, value, getCodeRange(), file, line + 1 + 1);
             dup.flags |= flags & CR_MASK;
 
             return dup;
@@ -972,7 +972,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     public FString dupAsFString(Ruby runtime) {
         shareLevel = SHARE_LEVEL_BYTELIST;
-        FString dup = new FString(runtime, value, getCodeRange());
+        FString dup = new FString(runtime, value.dup(), getCodeRange());
         dup.shareLevel = SHARE_LEVEL_BYTELIST;
         dup.flags |= FSTRING | FROZEN_F | (flags & CR_MASK);
 
@@ -1103,7 +1103,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         value.invalidate();
     }
 
-    @Deprecated(since = "9.4")
+    @Deprecated(since = "10.0.0.0")
     public final void modify19() {
         modifyAndClearCodeRange();
     }
@@ -1247,6 +1247,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
             this.file = file;
             this.line = line;
+
+            // Always set as shared bytelist, since chilled strings reuse bytelists and will eventually be immutable
+            this.shareLevel = SHARE_LEVEL_BYTELIST;
 
             chill();
         }
@@ -1463,7 +1466,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return context.runtime.freezeAndDedupString(this);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public final IRubyObject plus_at() {
         return plus_at(getCurrentContext());
     }
@@ -1473,7 +1476,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return isFrozen() | isChilled() ? this.dup() : this;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject op_plus19(ThreadContext context, IRubyObject arg) {
         return op_plus(context, arg);
     }
@@ -1491,7 +1494,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return resultStr;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject op_mul19(ThreadContext context, IRubyObject other) {
         return op_mul(context, other);
     }
@@ -1607,7 +1610,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     public static RubyString objAsString(ThreadContext context, IRubyObject obj) {
         if (obj instanceof RubyString str) return str;
         IRubyObject str = sites(context).to_s.call(context, obj, obj);
-        if (!(str instanceof RubyString)) return (RubyString) obj.anyToString();
+        if (!(str instanceof RubyString)) return (RubyString) Convert.anyToString(context, obj);
         // TODO: MRI sets an fstring flag on fstrings and uses that flag here
         return (RubyString) str;
     }
@@ -1652,7 +1655,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     // Needs to remain in place until StringIO has migrated to the new methods
     // See https://github.com/ruby/stringio/issues/83
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public final RubyString cat19(RubyString str2) {
         return catWithCodeRange(str2);
     }
@@ -1675,7 +1678,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     // Needs to remain in place until StringIO has migrated to the new methods
     // See https://github.com/ruby/stringio/issues/83
     // jruby-rack also uses this and must be updated: https://github.com/jruby/jruby-rack/issues/267
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public final int cat19(ByteList other, int codeRange) {
         return catWithCodeRange(other, codeRange);
     }
@@ -1760,12 +1763,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return this;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public RubyString replace19(IRubyObject other) {
         return replace(getCurrentContext(), other);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyString initialize_copy(IRubyObject other) {
         return initialize_copy(getCurrentContext(), other);
     }
@@ -1775,7 +1778,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return replace(context, other);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject replace(IRubyObject other) {
         return replace(getCurrentContext(), other);
     }
@@ -1799,7 +1802,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return otherStr;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyString clear() {
         return clear(getCurrentContext());
     }
@@ -1816,7 +1819,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return this;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject reverse19(ThreadContext context) {
         return reverse(context);
     }
@@ -1828,7 +1831,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return str;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public RubyString reverse_bang19(ThreadContext context) {
         return reverse_bang(context);
     }
@@ -1976,17 +1979,17 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (other instanceof RubyString) throw typeError(context, "type mismatch: String given");
         return sites(context).op_match.call(context, other, other, this);
     }
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject match19(ThreadContext context, IRubyObject pattern) {
         return match(context, pattern, Block.NULL_BLOCK);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject match19(ThreadContext context, IRubyObject pattern, IRubyObject pos, Block block) {
         return match(context, pattern, pos, block);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject match19(ThreadContext context, IRubyObject[] args, Block block) {
         return match(context, args, block);
     }
@@ -1999,7 +2002,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      * @param pattern Regexp or String
      */
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject match(ThreadContext context, IRubyObject pattern) {
         return match(context, pattern, Block.NULL_BLOCK);
     }
@@ -2039,7 +2042,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return getPattern(context, pattern).matchP(context, this, toInt(context, pos));
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject op_ge19(ThreadContext context, IRubyObject other) {
         return op_ge(context, other);
     }
@@ -2050,7 +2053,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             asBoolean(context, op_cmp(otherStr) >= 0) : RubyComparable.op_ge(context, this, other);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject op_gt19(ThreadContext context, IRubyObject other) {
         return op_gt(context, other);
     }
@@ -2061,7 +2064,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             asBoolean(context, op_cmp(otherStr) > 0) : RubyComparable.op_gt(context, this, other);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject op_le19(ThreadContext context, IRubyObject other) {
         return op_le(context, other);
     }
@@ -2072,7 +2075,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 asBoolean(context, op_cmp(otherStr) <= 0) : RubyComparable.op_le(context, this, other);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject op_lt19(ThreadContext context, IRubyObject other) {
         return op_lt(context, other);
     }
@@ -2087,7 +2090,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return sites(context).cmp.isBuiltin(this);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject str_eql_p19(ThreadContext context, IRubyObject other) {
         return str_eql_p(context, other);
     }
@@ -2342,7 +2345,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return context.nil;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject dump() {
         return dump(getCurrentContext());
     }
@@ -2619,7 +2622,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         throw indexError(context, "index " + index + " out of string");
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyString inspect() {
         // The return type confuses existing extensions who expect this method on RubyString.
         return (RubyString) super.inspect();
@@ -2700,7 +2703,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return result;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyString inspect(final Ruby runtime, ByteList byteList) {
         return inspect(runtime.getCurrentContext(), byteList);
     }
@@ -2814,7 +2817,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return asFixnum(context, value.getRealSize());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public RubyFixnum bytesize() {
         return bytesize(getCurrentContext());
     }
@@ -2880,7 +2883,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      *
      */
     public RubyString append(IRubyObject other, Function<IRubyObject, RubyString> convert) {
-        modifyCheck();
         if (other instanceof Appendable appendable) {
             appendable.appendIntoString(this);
         } else {
@@ -2898,7 +2900,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return catWithCodeRange(other);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.4.0")
     public RubyString append19(IRubyObject other) {
         return append(other);
     }
@@ -3795,7 +3797,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return substr(getCurrentContext(), beg, len);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public final IRubyObject substr(Ruby runtime, int beg, int len) {
         return substr(getCurrentContext(), beg, len);
     }
@@ -3841,7 +3843,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             return begLen == null ? context.nil : byteSubstr(context, begLen[0], begLen[1]);
         } else if (idx instanceof RubyFixnum fixnum) {
             long i = fixnum.value;
-            if (i > RubyFixnum.MAX || i < RubyFixnum.MIN) return context.nil;
+            if (i > Integer.MAX_VALUE || i < Integer.MIN_VALUE) return context.nil;
             index = (int) i;
         } else {
             StringSites sites = sites(context);
@@ -3860,12 +3862,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return obj;
     }
 
-    @Deprecated(since = "9.4")
+    @Deprecated(since = "10.0.0.0")
     public final IRubyObject substr19(Ruby runtime, int beg, int len) {
         return substrEnc(getCurrentContext(), beg, len);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public final IRubyObject substrEnc(Ruby runtime, int beg, int len) {
         return substrEnc(getCurrentContext(), beg, len);
     }
@@ -3977,7 +3979,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return this;
     }
 
-    @Deprecated(since = "9.4")
+    @Deprecated(since = "10.0.0.0")
     private void replaceInternal19(Ruby runtime, int beg, int len, RubyString repl) {
         strUpdate(getCurrentContext(), beg, len, this, repl);
     }
@@ -4177,7 +4179,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     // MRI: at_char_boundary
-    private static boolean atCharBoundary(byte[] bytes, int s, int p, int e, Encoding enc) {
+    public static boolean atCharBoundary(byte[] bytes, int s, int p, int e, Encoding enc) {
         // our version checks if p == bytes.length, where CRuby would have a \0 character and not reposition
         return p == bytes.length || enc.leftAdjustCharHead(bytes, s, p, e) == p;
     }
@@ -4373,7 +4375,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 Create.newEmptyString(context, value.getEncoding());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject succ_bang() {
         return succ_bang(getCurrentContext());
     }
@@ -4584,7 +4586,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return val;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject to_i() {
         return to_i(getCurrentContext());
     }
@@ -4595,7 +4597,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return stringToInum(10);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject to_i(IRubyObject arg0) {
         return to_i(getCurrentContext(), arg0);
     }
@@ -4642,7 +4644,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return stringToInum(16, false);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject to_f() {
         return to_f(getCurrentContext());
     }
@@ -4713,12 +4715,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      * @param delimiter
      * @return splited entries
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyArray split(RubyRegexp delimiter) {
         return splitCommon(getCurrentContext(), delimiter, 0);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyArray split(RubyRegexp delimiter, int limit) {
         return split(getCurrentContext(), delimiter, limit);
     }
@@ -4735,12 +4737,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return splitCommon(context, delimiter, limit);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyArray split(RubyString delimiter) {
         return splitCommon(getCurrentContext(), delimiter, 0);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyArray split(RubyString delimiter, int limit) {
         return split(getCurrentContext(), delimiter, limit);
     }
@@ -5548,7 +5550,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return result;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject ljust(IRubyObject arg0) {
         return ljust(getCurrentContext(), arg0);
     }
@@ -5561,7 +5563,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return justify(context, arg0, 'l');
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject ljust(IRubyObject arg0, IRubyObject arg1) {
         return ljust(getCurrentContext(), arg0, arg1);
     }
@@ -5571,7 +5573,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return justify(context, arg0, arg1, 'l');
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject rjust(IRubyObject arg0) {
         return rjust(getCurrentContext(), arg0);
     }
@@ -5584,7 +5586,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return justify(context, arg0, 'r');
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject rjust(IRubyObject arg0, IRubyObject arg1) {
         return rjust(getCurrentContext(), arg0, arg1);
     }
@@ -5594,7 +5596,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return justify(context, arg0, arg1, 'r');
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject center(IRubyObject arg0) {
         return center(getCurrentContext(), arg0);
     }
@@ -5608,7 +5610,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject center(IRubyObject arg0, IRubyObject arg1) {
         return center(getCurrentContext(), arg0, arg1);
     }
@@ -5746,22 +5748,22 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return context.nil;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public RubyString chomp19(ThreadContext context) {
         return chomp(context);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public RubyString chomp19(ThreadContext context, IRubyObject arg0) {
         return chomp(context, arg0);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject chomp_bang19(ThreadContext context) {
         return chomp_bang(context);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject chomp_bang19(ThreadContext context, IRubyObject arg0) {
         return chomp_bang(context, arg0);
     }
@@ -6246,12 +6248,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return this;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public IRubyObject tr19(ThreadContext context, IRubyObject src, IRubyObject repl) {
         return tr(context, src, repl);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public IRubyObject tr_bang19(ThreadContext context, IRubyObject src, IRubyObject repl) {
         return tr_bang(context, src, repl);
     }
@@ -6291,12 +6293,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject tr_s19(ThreadContext context, IRubyObject src, IRubyObject repl) {
         return tr_s(context, src, repl);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject tr_s_bang19(ThreadContext context, IRubyObject src, IRubyObject repl) {
         return tr_s_bang(context, src, repl);
     }
@@ -6334,7 +6336,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return StringSupport.rbStrEnumerateLines(this, context, "each_line", arg, opts, block, false);
     }
 
-    @Deprecated // no longer used
+    @Deprecated(since = "9.2.1.0") // no longer used
     public IRubyObject each_lineCommon(ThreadContext context, IRubyObject sep, Block block) {
         if (sep == context.nil) {
             block.yield(context, this);
@@ -6641,7 +6643,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return enumerateGraphemeClusters(context, "each_grapheme_cluster", block, false);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubySymbol intern() {
         return intern(getCurrentContext());
     }
@@ -6731,7 +6733,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 first : RubyRational.newRationalNoReduce(context, asFixnum(context, 0), asFixnum(context, 1));
     }
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0.0.0", forRemoval = true)
     @SuppressWarnings("removal")
     public static RubyString unmarshalFrom(org.jruby.runtime.marshal.UnmarshalStream input) throws java.io.IOException {
         return newString(input.getRuntime(), input.unmarshalString());
@@ -6928,7 +6930,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return this;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public void setValue(CharSequence value) {
         view(ByteList.plain(value), false);
     }
@@ -7362,7 +7364,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         }
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public boolean isBare(Ruby runtime) {
         return isBare(getCurrentContext());
     }
@@ -7378,17 +7380,17 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return context.sites.String;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public final RubyString strDup() {
         return strDup(getRuntime(), getMetaClass().getRealClass());
     }
 
-    @Deprecated // not used
+    @Deprecated(since = "9.4.6.0") // not used
     public RubyArray unpack(IRubyObject obj) {
         return Pack.unpack(getRuntime(), this.value, stringValue(obj).value);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public IRubyObject encode_bang(ThreadContext context, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 2);
 

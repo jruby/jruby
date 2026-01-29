@@ -1,0 +1,1 @@
+windows:ARGF.seek sets the absolute position relative to end of file

@@ -59,7 +59,11 @@ def compile_extension(name)
   tmpdir = tmp("cext_#{name}")
   Dir.mkdir(tmpdir)
   begin
-    ["#{core_ext_dir}/rubyspec.h", "#{spec_ext_dir}/#{ext}.c"].each do |file|
+    files = ["#{core_ext_dir}/rubyspec.h", "#{spec_ext_dir}/#{ext}.c"]
+    if spec_ext_dir != core_ext_dir
+      files += Dir.glob("#{spec_ext_dir}/*.h")
+    end
+    files.each do |file|
       if cxx and file.end_with?('.c')
         cp file, "#{tmpdir}/#{File.basename(file, '.c')}.cpp"
       else
@@ -74,12 +78,19 @@ def compile_extension(name)
         init_mkmf unless required
         create_makefile(ext, tmpdir)
       else
+        # Workaround for digest C-API specs to find the ruby/digest.h header
+        # when run in the CRuby repository via make test-spec
+        if MSpecScript.instance_variable_defined?(:@testing_ruby)
+          ruby_repository_extra_include_dir = "-I#{RbConfig::CONFIG.fetch("prefix")}/#{RbConfig::CONFIG.fetch("EXTOUT")}/include"
+        end
+
         File.write("extconf.rb", <<-RUBY)
           require 'mkmf'
           $ruby = ENV.values_at('RUBY_EXE', 'RUBY_FLAGS').join(' ')
           # MRI magic to consider building non-bundled extensions
           $extout = nil
           append_cflags '-Wno-declaration-after-statement'
+          #{"append_cflags #{ruby_repository_extra_include_dir.inspect}" if ruby_repository_extra_include_dir}
           create_makefile(#{ext.inspect})
         RUBY
         output = ruby_exe("extconf.rb")
@@ -115,13 +126,9 @@ def setup_make
 
   opts = {}
   if /(?:\A|\s)--jobserver-(?:auth|fds)=(\d+),(\d+)/ =~ make_flags
-    begin
-      r = IO.for_fd($1.to_i(10), "rb", autoclose: false)
-      w = IO.for_fd($2.to_i(10), "wb", autoclose: false)
-    rescue Errno::EBADF
-    else
-      opts[r] = r
-      opts[w] = w
+    [$1, $2].each do |fd|
+      fd = fd.to_i(10)
+      opts[fd] = fd
     end
   end
 

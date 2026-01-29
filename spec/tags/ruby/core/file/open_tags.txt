@@ -1,1 +1,4 @@
 windows:File.open opens directories
+windows:File.open does not open a file that does no exists when using File::TRUNC mode
+windows:File.open can't write in a block when call open with File::TRUNC mode
+windows:File.open raises an Errno::EEXIST if the file exists when open with File::RDONLY|File::TRUNC

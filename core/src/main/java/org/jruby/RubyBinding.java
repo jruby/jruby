@@ -45,6 +45,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.marshal.DataType;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
@@ -55,7 +56,7 @@ import static org.jruby.api.Error.nameError;
 import static org.jruby.util.RubyStringBuilder.str;
 
 @JRubyClass(name="Binding")
-public class RubyBinding extends RubyObject {
+public class RubyBinding extends RubyObject implements DataType {
     private Binding binding;
 
     public RubyBinding(Ruby runtime, RubyClass rubyClass, Binding binding) {
@@ -86,12 +87,12 @@ public class RubyBinding extends RubyObject {
         return new RubyBinding(runtime, runtime.getBinding(), binding);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.2")
     public static RubyBinding newBinding(Ruby runtime) {
         return newBinding(runtime, runtime.getCurrentContext().currentBinding());
     }
 
-    @Deprecated
+    @Deprecated(since = "1.2")
     public static RubyBinding newBinding(Ruby runtime, IRubyObject self) {
        return newBinding(runtime, runtime.getCurrentContext().currentBinding(self));
     }

@@ -57,7 +57,7 @@ public interface EmbedEvalUnit extends JavaEmbedUtils.EvalUnit {
      */
     DynamicScope getLocalVarScope();
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     default ManyVarsDynamicScope getScope() {
         return (ManyVarsDynamicScope) getLocalVarScope();
     }

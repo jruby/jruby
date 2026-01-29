@@ -1,9 +1,10 @@
+# frozen_string_literal: true
+
 require 'rubygems/package'
 require 'fileutils'
 project 'JRuby Dist' do
-
   version = ENV['JRUBY_VERSION'] ||
-    File.read( File.join( basedir, '..', '..', 'VERSION' ) ).strip
+            File.read(File.join(basedir, '..', '..', 'VERSION')).strip
 
   model_version '4.0.0'
   id "org.jruby:jruby-dist:#{version}"
@@ -11,67 +12,109 @@ project 'JRuby Dist' do
   packaging 'pom'
 
   phase 'prepare-package' do
-
     plugin :dependency do
-      execute_goals( 'unpack',
-                     :id => 'unpack jruby-stdlib',
-                     'stripVersion' =>  'true',
-                     'artifactItems' => [ { 'groupId' =>  'org.jruby',
-                                            'artifactId' =>  'jruby-stdlib',
-                                            'version' =>  '${project.version}',
-                                            'type' =>  'jar',
-                                            'overWrite' =>  'false',
-                                            'outputDirectory' =>  '${project.build.directory}' } ] )
+      execute_goals('unpack',
+                    id: 'unpack jruby-stdlib',
+                    stripVersion: 'true',
+                    artifactItems: [{ groupId: 'org.jruby',
+                                      artifactId: 'jruby-stdlib',
+                                      version: '${project.version}',
+                                      type: 'jar',
+                                      overWrite: 'false',
+                                      outputDirectory: '${project.build.directory}' }])
+    end
+
+    plugin :antrun do
+      execute_goals('run',
+                    id: 'unpack-ri-docs',
+                    configuration: [xml('<target>
+
+          <!-- Create download directory -->
+          <mkdir dir="${project.build.directory}/rdoc/downloads"/>
+
+          <!-- Download the .deb file -->
+          <ftp action="get" server="rsync.osuosl.org" passive="yes" userid="anonymous" password=""
+               remotedir="/debian/pool/main/r/ruby3.4" depends="yes">
+            <fileset dir="${project.build.directory}/rdoc/downloads">
+              <include name="ruby3.4-doc*.deb"/>
+            </fileset>
+          </ftp>
+
+          <!-- Move the .deb file to a simple name (should be only one or this will fail) -->
+          <move tofile="${project.build.directory}/rdoc/downloads/rubydoc.deb">
+            <fileset dir="${project.build.directory}/rdoc/downloads" includes="ruby3.4-doc*.deb"/>
+          </move>
+
+          <!-- Extract .deb using ar -->
+          <exec executable="ar" dir="${project.build.directory}/rdoc/downloads">
+            <arg value="x"/>
+            <arg value="rubydoc.deb"/>
+          </exec>
+
+          <!-- Create output directory -->
+          <mkdir dir="${project.build.directory}/rdoc/unpacked"/>
+
+          <!-- Unpack data.tar.xz -->
+          <exec executable="tar" dir="${project.build.directory}/rdoc/downloads">
+            <arg value="-xf"/>
+            <arg value="data.tar.xz"/>
+            <arg value="-C"/>
+            <arg value="${project.build.directory}/rdoc/unpacked"/>
+          </exec>
+        </target>')])
     end
 
     execute :fix_executable_bits do |ctx|
-      Dir[ File.join( ctx.project.build.directory.to_pathname,
-                      'META-INF/jruby.home/bin/*' ) ].each do |f|
-        unless f.match /.(bat|exe|dll)$/
-          puts f
-          File.chmod( 0755, f ) rescue nil
+      Dir[ File.join(ctx.project.build.directory.to_pathname,
+                     'META-INF/jruby.home/bin/*') ].each do |f|
+        next if f.match(/.(bat|exe|dll)$/)
+
+        puts f
+        begin
+          File.chmod(0o755, f)
+        rescue StandardError
+          nil
         end
       end
     end
   end
 
   phase :package do
-    plugin( :assembly, '2.4',
-            :recompressZippedFiles => true,
-            :tarLongFileMode =>  'gnu' ) do
-      execute_goals( :single, :id => 'bin.tar.gz and bin.zip',
-                     :descriptors => [ 'src/main/assembly/bin.xml' ] )
+    plugin(:assembly, '2.4',
+           recompressZippedFiles: true,
+           tarLongFileMode: 'gnu') do
+      execute_goals(:single, id: 'bin.tar.gz and bin.zip',
+                             descriptors: ['src/main/assembly/bin.xml'])
     end
   end
 
-  plugin( :invoker )
+  plugin(:invoker)
 
-  plugin( 'net.ju-n.maven.plugins:checksum-maven-plugin' )
+  plugin('net.ju-n.maven.plugins:checksum-maven-plugin')
 
   profile 'sonatype-oss-release' do
-
     plugin 'org.codehaus.mojo:build-helper-maven-plugin' do
-      execute_goals( 'attach-artifact',
-                     id: 'attach-checksums',
-                     phase: :package,
-                     artifacts: [ { file: '${project.build.directory}/jruby-dist-${project.version}-bin.tar.gz.sha256',
-                                    classifier: :bin,
-                                    type: 'tar.gz.sha256'},
-                                  { file: '${project.build.directory}/jruby-dist-${project.version}-bin.tar.gz.sha512',
-                                    classifier: :bin,
-                                    type: 'tar.gz.sha512'},
-                                  { file: '${project.build.directory}/jruby-dist-${project.version}-bin.zip.sha256',
-                                    classifier: :bin,
-                                    type: 'zip.sha256'},
-                                  { file: '${project.build.directory}/jruby-dist-${project.version}-bin.zip.sha512',
-                                    classifier: :bin,
-                                    type: 'zip.sha512'},
-                                  { file: '${project.build.directory}/jruby-dist-${project.version}-src.zip.sha256',
-                                    classifier: :src,
-                                    type: 'zip.sha256'},
-                                  { file: '${project.build.directory}/jruby-dist-${project.version}-src.zip.sha512',
-                                    classifier: :src,
-                                    type: 'zip.sha512'} ] )
+      execute_goals('attach-artifact',
+                    id: 'attach-checksums',
+                    phase: :package,
+                    artifacts: [{ file: '${project.build.directory}/jruby-dist-${project.version}-bin.tar.gz.sha256',
+                                  classifier: :bin,
+                                  type: 'tar.gz.sha256' },
+                                { file: '${project.build.directory}/jruby-dist-${project.version}-bin.tar.gz.sha512',
+                                  classifier: :bin,
+                                  type: 'tar.gz.sha512' },
+                                { file: '${project.build.directory}/jruby-dist-${project.version}-bin.zip.sha256',
+                                  classifier: :bin,
+                                  type: 'zip.sha256' },
+                                { file: '${project.build.directory}/jruby-dist-${project.version}-bin.zip.sha512',
+                                  classifier: :bin,
+                                  type: 'zip.sha512' },
+                                { file: '${project.build.directory}/jruby-dist-${project.version}-src.zip.sha256',
+                                  classifier: :src,
+                                  type: 'zip.sha256' },
+                                { file: '${project.build.directory}/jruby-dist-${project.version}-src.zip.sha512',
+                                  classifier: :src,
+                                  type: 'zip.sha512' }])
     end
   end
 
@@ -81,9 +124,8 @@ project 'JRuby Dist' do
   # the source packages itself !!
 
   profile 'source dist' do
-
     activation do
-      file( :exists => '../../.git' )
+      file(exists: '../../.git')
     end
 
     phase 'prepare-package' do
@@ -94,20 +136,19 @@ project 'JRuby Dist' do
 
         basefile = "#{ctx.project.build.directory}/#{ctx.project.artifactId}-#{ctx.project.version}-src"
 
-        FileUtils.cd( File.join( ctx.project.basedir.to_s, '..', '..' ) ) do
-          [ 'tar.gz', 'zip' ].each do |format|
+        FileUtils.cd(File.join(ctx.project.basedir.to_s, '..', '..')) do
+          ['tar.gz', 'zip'].each do |format|
             puts "create #{basefile}.#{format}"
-            system( "git archive --prefix 'jruby-#{ctx.project.version}/' --format #{format} #{revision} . -o #{basefile}.#{format}" ) || raise( "error creating #{format}-file" )
+            system("git archive --prefix 'jruby-#{ctx.project.version}/' --format #{format} #{revision} . -o #{basefile}.#{format}") || raise("error creating #{format}-file")
           end
         end
       end
       plugin 'org.codehaus.mojo:build-helper-maven-plugin' do
-        execute_goal( 'attach-artifact',
-                      :id => 'attach-artifacts',
-                      :artifacts => [ { :file => '${project.build.directory}/${project.build.finalName}-src.zip',
-                                        :type => 'zip',
-                                        :classifier => 'src' } ] )
-
+        execute_goal('attach-artifact',
+                     id: 'attach-artifacts',
+                     artifacts: [{ file: '${project.build.directory}/${project.build.finalName}-src.zip',
+                                   type: 'zip',
+                                   classifier: 'src' }])
       end
     end
   end

@@ -494,7 +494,7 @@ public class PosixShim {
         return open(cwd, path, flags.getFlags(), perm);
     }
 
-    @Deprecated // special case is already handled with JRubyFile.createResource
+    @Deprecated(since = "9.0.0.0") // special case is already handled with JRubyFile.createResource
     public Channel open(String cwd, String path, ModeFlags flags, int perm, ClassLoader classLoader) {
         if (path.startsWith("classpath:/") && classLoader != null) {
             path = path.substring("classpath:/".length());

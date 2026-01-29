@@ -246,7 +246,7 @@ public class BiVariableMap implements Map<String, Object> {
      * @return the BiVariable type object to which the specified key is mapped, or
      *         {@code null} if this map contains no mapping for the key
      */
-    //@Deprecated
+    //@Deprecated(since = "1.7.20")
     public BiVariable getVariable(final String name) {
         return getVariable(getTopSelf(), name);
     }

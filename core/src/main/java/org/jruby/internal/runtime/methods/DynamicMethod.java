@@ -429,7 +429,7 @@ public abstract class DynamicMethod {
      *
      * @return The arity of the method, as reported to Ruby consumers.
      */
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public Arity getArity() {
         return Arity.optional();
     }
@@ -644,27 +644,27 @@ public abstract class DynamicMethod {
         return false;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.1.0")
     protected DynamicMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
         this(implementationClass, visibility);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.1.0")
     protected DynamicMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, String name) {
         this(implementationClass, visibility, name);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.1.0")
     protected void init(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
         init(implementationClass, visibility);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.1.0")
     public CallConfiguration getCallConfig() {
         return CallConfiguration.FrameNoneScopeNone;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.1.0")
     public void setCallConfig(CallConfiguration callConfig) {
     }
 
@@ -673,7 +673,7 @@ public abstract class DynamicMethod {
      * @param visibility of the method
      * @deprecated Use {@link DynamicMethod#DynamicMethod(RubyModule, Visibility, String)}
      */
-    @Deprecated
+    @Deprecated(since = "9.1.16.0")
     protected DynamicMethod(RubyModule implementationClass, Visibility visibility) {
         this(implementationClass, visibility, "(anonymous)");
     }

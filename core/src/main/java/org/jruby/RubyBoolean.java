@@ -47,6 +47,7 @@ import static org.jruby.api.Convert.asFixnum;
 
 @JRubyClass(name={"TrueClass", "FalseClass"})
 public class RubyBoolean extends RubyObject implements Constantizable, Appendable {
+    public static final int TRUE_ID = 20;
 
     private final int hashCode;
     private final transient Object constant;
@@ -114,12 +115,12 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
                 tap(c -> c.getMetaClass().undefMethods(context, "new"));
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static RubyBoolean newBoolean(Ruby runtime, boolean value) {
         return value ? runtime.getTrue() : runtime.getFalse();
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static RubyBoolean newBoolean(ThreadContext context, boolean value) {
         return value ? context.tru : context.fals;
     }
@@ -153,12 +154,12 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
             return oth.isTrue() ? context.tru : fals;
         }
 
-        @Deprecated
+        @Deprecated(since = "10.0.0.0")
         public static RubyString false_to_s(ThreadContext context, IRubyObject fals) {
             return context.runtime.getFalseString();
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public RubyString inspect() {
             return getRuntime().getFalseString();
         }
@@ -201,12 +202,12 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
             return oth.isTrue() ? context.fals : tru;
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public static RubyString true_to_s(ThreadContext context, IRubyObject tru) {
             return context.runtime.getTrueString();
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         public RubyString inspect() {
             return getRuntime().getTrueString();
         }
@@ -227,7 +228,11 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
     
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
-        return asFixnum(context, hashCode());
+        if ((flags & FALSE_F) == 0) {
+            return context.runtime.getTrueHash();
+        } else {
+            return context.runtime.getFalseHash();
+        }
     }
 
     @Override
@@ -235,22 +240,32 @@ public class RubyBoolean extends RubyObject implements Constantizable, Appendabl
         return hashCode;
     }
 
+    @Deprecated(since = "10.0.3.0")
     @Override
     public RubyFixnum id() {
         if ((flags & FALSE_F) == 0) {
-            return RubyFixnum.newFixnum(metaClass.runtime, 20);
+            return metaClass.runtime.getTrueID();
         } else {
             return RubyFixnum.zero(metaClass.runtime);
         }
     }
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Override
+    public RubyInteger __id__(ThreadContext context) {
+        if ((flags & FALSE_F) == 0) {
+            return context.runtime.getTrueID();
+        } else {
+            return RubyFixnum.zero(context.runtime);
+        }
+    }
+
+    @Deprecated(since = "10.0.0.0", forRemoval = true)
     @SuppressWarnings("removal")
     public void marshalTo(org.jruby.runtime.marshal.MarshalStream output) throws java.io.IOException {
         output.write(isTrue() ? 'T' : 'F');
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     @Override
     public IRubyObject taint(ThreadContext context) {
         return this;

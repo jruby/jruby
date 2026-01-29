@@ -109,7 +109,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
             value = context.nil;
         }
 
-        @Deprecated(since = "10.0")
+        @Deprecated(since = "10.0.0.0")
         FeedValue(Ruby runtime) {
             this(runtime.getCurrentContext());
         }
@@ -329,7 +329,14 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         if (methodArgsHasKeywords) context.callInfo = CALL_KEYWORD;
         return object.callMethod(context, method, methodArgs,
                 CallBlock.newCallClosure(context, this, Signature.OPTIONAL, (ctx, args, blk) -> {
-                    IRubyObject ret = block.yieldValues(ctx, args);
+                    IRubyObject ret;
+
+                    if (args.length == 1) {
+                        ret = block.yield(ctx, args[0]);
+                    } else {
+                        ret = block.yieldValues(ctx, args);
+                    }
+
                     IRubyObject val = feedValue.use_value(ctx);
                     return val.isNil() ? ret : val;
                 })
@@ -567,14 +574,14 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         return enumeratorizeWithSize(context, producer, "each", RubyProducer::size);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.3.0")
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
         IRubyObject size = Arity.checkArgumentCount(context, args, 0, 1) == 1 ? args[0] : null;
 
         return initializeWithSize(context, size, block);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.3.0")
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         return initialize(context, args, Block.NULL_BLOCK);
     }

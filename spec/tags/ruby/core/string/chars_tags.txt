@@ -1,0 +1,1 @@
+fails:String#chars returns individual chars for dummy encodings

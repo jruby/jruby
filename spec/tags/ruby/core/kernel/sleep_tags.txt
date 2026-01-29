@@ -1,0 +1,2 @@
+critical(hangs):Kernel#sleep Kernel.sleep with Fiber scheduler calls the scheduler without arguments when no duration is given
+fails:Kernel#sleep Kernel.sleep with Fiber scheduler calls the scheduler with the given duration

@@ -77,20 +77,20 @@ public class MethodIndex {
 
     private static final Logger LOG = LoggerFactory.getLogger(MethodIndex.class);
 
-    @Deprecated
+    @Deprecated(since = "1.7.1")
     public static final int NO_METHOD = MethodNames.DUMMY.ordinal();
-    @Deprecated
+    @Deprecated(since = "1.7.1")
     public static final int OP_EQUAL = MethodNames.OP_EQUAL.ordinal();
-    @Deprecated
+    @Deprecated(since = "1.7.1")
     public static final int EQL = MethodNames.EQL.ordinal();
-    @Deprecated
+    @Deprecated(since = "1.7.1")
     public static final int HASH = MethodNames.HASH.ordinal();
-    @Deprecated
+    @Deprecated(since = "1.7.1")
     public static final int OP_CMP = MethodNames.OP_CMP.ordinal();
-    @Deprecated
+    @Deprecated(since = "1.7.1")
     public static final int MAX_METHODS = MethodNames.values().length;
 
-    @Deprecated
+    @Deprecated(since = "1.7.1")
     public static final String[] METHOD_NAMES = {
         "",
         "==",
@@ -275,13 +275,13 @@ public class MethodIndex {
         addMethodWriteFieldsPacked(FrameField.pack(write), name);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public static void addFrameAwareMethods(String... methods) {
         if (DEBUG) LOG.debug("Adding frame-aware method names: {}", Arrays.toString(methods));
         FRAME_AWARE_METHODS.addAll(Arrays.asList(methods));
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public static void addScopeAwareMethods(String... methods) {
         if (DEBUG) LOG.debug("Adding scope-aware method names: {}", Arrays.toString(methods));
         SCOPE_AWARE_METHODS.addAll(Arrays.asList(methods));

@@ -107,13 +107,14 @@ public class VariableTableManager {
     }
 
     /**
-     * Copy constructor with deep cloning.
+     * Copy constructor with deep cloning for subclasses of Data types. The new realClass will be the
+     * subclass rather than the original Data type.
      *
      * @param original VariableTableManager to copy
      */
-    VariableTableManager(VariableTableManager original) {
+    VariableTableManager(VariableTableManager original, RubyClass realClass) {
         synchronized (original) {
-            this.realClass = original.realClass;
+            this.realClass = realClass;
             this.variableAccessors = copyVariableAccessors(original.variableAccessors);
             this.variableNames = original.variableNames.clone();
             this.hasObjectID = original.hasObjectID;
@@ -154,13 +155,13 @@ public class VariableTableManager {
      */
     public long getObjectId(RubyBasicObject self) {
         VariableAccessor objectIdAccessor = getObjectIdAccessorForRead();
-        Long id = (Long)objectIdAccessor.get(self);
-        if (id != null) return id;
+        Number id = (Number)objectIdAccessor.get(self);
+        if (id != null) return id.longValue();
 
         synchronized (self) {
             objectIdAccessor = getObjectIdAccessorForRead();
-            id = (Long)objectIdAccessor.get(self);
-            if (id != null) return id;
+            id = (Number)objectIdAccessor.get(self);
+            if (id != null) return id.longValue();
 
             objectIdAccessor = getObjectIdAccessorForWrite();
             return initObjectId(self, objectIdAccessor);
@@ -322,7 +323,9 @@ public class VariableTableManager {
      * @return the write accessor for object_id
      */
     public VariableAccessor getObjectIdAccessorForWrite() {
+        // set-only so no synchronization required
         if (hasObjectID == 0) hasObjectID = 1;
+
         return objectIdVariableAccessorField.getVariableAccessorForWrite(this);
     }
 
@@ -542,8 +545,8 @@ public class VariableTableManager {
         }
     }
 
-    public VariableTableManager duplicate() {
-        return new VariableTableManager(this);
+    public VariableTableManager duplicateForData(RubyClass newRealClass) {
+        return new VariableTableManager(this, newRealClass);
     }
 
     /**
@@ -594,7 +597,25 @@ public class VariableTableManager {
      */
     private static void setObjectId(RubyClass realClass, RubyBasicObject self, int index, long value) {
         if (index < 0) return;
-        setVariableInternal(realClass, self, index, value);
+        setVariableInternal(realClass, self, index, smallestBox(value));
+    }
+
+    /**
+     * Return the smallest boxed Number that can hold the given value.
+     *
+     * @param value the value to box
+     * @return the smallest Number box for that value
+     */
+    private static Number smallestBox(long value) {
+        if (value >= Byte.MIN_VALUE && value <= Byte.MAX_VALUE) {
+            return Byte.valueOf((byte) value);
+        } else if (value >= Short.MIN_VALUE && value <= Short.MAX_VALUE) {
+            return Short.valueOf((short) value);
+        } else if (value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE) {
+            return Integer.valueOf((int) value);
+        } else {
+            return Long.valueOf(value);
+        }
     }
 
     /**

@@ -51,7 +51,7 @@ import static org.jruby.javasupport.Java.castToJavaObject;
  *
  * @deprecated since 9.4
  */
-@Deprecated // @JRubyClass(name="Java::JavaArray", parent="Java::JavaObject")
+@Deprecated(since = "9.4.0.0") // @JRubyClass(name="Java::JavaArray", parent="Java::JavaObject")
 public class JavaArray extends JavaObject {
 
     private final JavaUtil.JavaConverter javaConverter;
@@ -66,7 +66,7 @@ public class JavaArray extends JavaObject {
         return getValue().getClass().getComponentType();
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyFixnum length() {
         return asFixnum(getCurrentContext(), getLength());
     }
@@ -85,12 +85,12 @@ public class JavaArray extends JavaObject {
         return 17 * getValue().hashCode();
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject arefDirect(Ruby runtime, int intIndex) {
         return ArrayUtils.arefDirect(runtime, getValue(), javaConverter, intIndex);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject aset(IRubyObject indexArg, IRubyObject value) {
         var context = getCurrentContext();
         var index = Convert.castAsInteger(context, indexArg).asInt(context);
@@ -105,12 +105,12 @@ public class JavaArray extends JavaObject {
         return ArrayUtils.asetDirect(runtime, getValue(), javaConverter, intIndex, value);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public void setWithExceptionHandling(ThreadContext context, int intIndex, Object javaObject) {
         ArrayUtils.setWithExceptionHandlingDirect(context.runtime, getValue(), intIndex, javaObject);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject afill(IRubyObject beginArg, IRubyObject endArg, IRubyObject value) {
         var context = ((RubyBasicObject) beginArg).getCurrentContext();
         var beginIndex = Convert.castAsInteger(context, beginArg).asInt(context);
@@ -122,7 +122,7 @@ public class JavaArray extends JavaObject {
         return value;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public final void fillWithExceptionHandling(ThreadContext context, int start, int end, Object javaValue) {
         final Object array = getValue();
         for (int i = start; i < end; i++) {

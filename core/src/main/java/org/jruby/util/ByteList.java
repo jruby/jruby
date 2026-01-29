@@ -63,11 +63,11 @@ public class ByteList implements Comparable, CharSequence, Serializable {
 
     // NOTE: AR-JDBC (still) uses these fields directly in its ext .java parts  ,
     // until there's new releases we shall keep them public and maybe review other exts using BL's API
-    @Deprecated
+    @Deprecated(since = "9.2.1.0")
     public byte[] bytes;
-    @Deprecated
+    @Deprecated(since = "9.2.1.0")
     public int begin;
-    @Deprecated
+    @Deprecated(since = "9.2.1.0")
     public int realSize;
 
     private Encoding encoding = ASCIIEncoding.INSTANCE;

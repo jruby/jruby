@@ -63,7 +63,7 @@ public class ParserConfiguration {
         this.saveData = saveData;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public ParserConfiguration(Ruby runtime, int lineNumber,
             boolean inlineSource, boolean isFileParse, RubyInstanceConfig config) {
         this(runtime, lineNumber, inlineSource, isFileParse, false, config);

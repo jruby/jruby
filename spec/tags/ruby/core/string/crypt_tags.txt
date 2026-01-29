@@ -1,1 +1,3 @@
 fails:String#crypt raises an ArgumentError when the string contains NUL character
+windows:String#crypt returns a cryptographic hash of self by applying the UNIX crypt algorithm with the specified salt
+windows:String#crypt calls #to_str to converts the salt arg to a String

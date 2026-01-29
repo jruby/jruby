@@ -35,6 +35,8 @@ import org.jcodings.Encoding;
 import org.jcodings.IntHolder;
 import org.jcodings.unicode.UnicodeCodeRange;
 import org.jruby.Ruby;
+import org.jruby.RubySymbol;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public final class IdUtil {
     /**
@@ -72,7 +74,7 @@ public final class IdUtil {
     /**
      * rb_is_local_id and is_local_id
      */
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static boolean isLocal(String id) {
         return !isGlobal(id) && !isClassVariable(id) && !isInstanceVariable(id) && !isConstant(id) && !isPredicate(id) && !isSpecial(id);
     }
@@ -96,6 +98,14 @@ public final class IdUtil {
             return isNameString(id, 1, len);
         }
         return false;
+    }
+
+    public static boolean isValidConstantName(IRubyObject id) {
+        if (id instanceof RubySymbol sym) {
+            return sym.validConstantName();
+        } else {
+            return isValidConstantName(id.asJavaString());
+        }
     }
 
     public static boolean isValidInstanceVariableName(String id) {

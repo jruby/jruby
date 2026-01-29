@@ -25,18 +25,18 @@ public class MRIRecursionGuard {
     private final ThreadLocal<Map<String, RubyHash>> recursive = new ThreadLocal<Map<String, RubyHash>>();
     private final ThreadLocal<Boolean> inRecursiveListOperation = new ThreadLocal<>();
 
-    @Deprecated
+    @Deprecated(since = "9.1.7.0")
     public MRIRecursionGuard(Ruby runtime) {
         this.runtime = runtime;
         this.recursiveKey = runtime.newSymbol("__recursive_key__");
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.7.0")
     public interface RecursiveFunction  {
         IRubyObject call(IRubyObject obj, boolean recur);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.7.0")
     public IRubyObject execRecursive(RecursiveFunction func, IRubyObject obj) {
         if (!inRecursiveListOperation.get()) {
             throw runtime.newThreadError("BUG: execRecursive called outside recursiveListOperation");
@@ -44,7 +44,7 @@ public class MRIRecursionGuard {
         return execRecursiveInternal(func, obj, null, false);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.7.0")
     public IRubyObject execRecursiveOuter(RecursiveFunction func, IRubyObject obj) {
         try {
             return execRecursiveInternal(func, obj, null, true);
@@ -53,7 +53,7 @@ public class MRIRecursionGuard {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.7.0")
     public <T extends IRubyObject> T recursiveListOperation(Callable<T> body) {
         try {
             inRecursiveListOperation.set(true);
@@ -68,12 +68,12 @@ public class MRIRecursionGuard {
     }
 
     // exec_recursive
-    @Deprecated
+    @Deprecated(since = "9.1.7.0")
     private IRubyObject execRecursiveInternal(RecursiveFunction func, IRubyObject obj, IRubyObject pairid, boolean outer) {
         var context = runtime.getCurrentContext();
         ExecRecursiveParams p = new ExecRecursiveParams();
         p.list = recursiveListAccess(context);
-        p.objid = obj.id();
+        p.objid = obj.__id__(context);
         boolean outermost = outer && !recursiveCheck(p.list, recursiveKey, null);
         if(recursiveCheck(p.list, p.objid, pairid)) {
             if(outer && !outermost) {

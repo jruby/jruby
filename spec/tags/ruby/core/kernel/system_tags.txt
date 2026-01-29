@@ -8,3 +8,11 @@ windows:Kernel.system expands shell variables when given a single string argumen
 windows:Kernel.system does not expand shell variables when given multiples arguments
 fails:Kernel#system executes with `sh` if the command is executable but not binary and there is no shebang
 fails:Kernel.system executes with `sh` if the command is executable but not binary and there is no shebang
+windows:Kernel#system raises RuntimeError when `exception: true` is given and the command exits with a non-zero exit status
+windows:Kernel#system raises Errno::ENOENT when `exception: true` is given and the specified command does not exist
+windows:Kernel#system does expand shell variables when given multiples arguments
+windows:Kernel#system runs commands starting with any number of @ using shell
+windows:Kernel.system raises RuntimeError when `exception: true` is given and the command exits with a non-zero exit status
+windows:Kernel.system raises Errno::ENOENT when `exception: true` is given and the specified command does not exist
+windows:Kernel.system does expand shell variables when given multiples arguments
+windows:Kernel.system runs commands starting with any number of @ using shell

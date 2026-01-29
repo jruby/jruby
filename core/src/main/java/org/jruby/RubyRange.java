@@ -240,7 +240,7 @@ public class RubyRange extends RubyObject {
         return len;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     final int[] begLenInt(int len, final int err) {
         return begLenInt(getCurrentContext(), len, err);
     }
@@ -371,7 +371,7 @@ public class RubyRange extends RubyObject {
         return asBoolean(context, isExclusive);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public RubyBoolean exclude_end_p() {
         return exclude_end_p(getRuntime().getCurrentContext());
     }
@@ -1214,14 +1214,23 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod
     public IRubyObject count(ThreadContext context, Block block) {
-        if (isBeginless || isEndless) return asFloat(context, RubyFloat.INFINITY);
+        if (!block.isGiven()) {
+            if (isBeginless || isEndless) return asFloat(context, RubyFloat.INFINITY);
 
-        if (begin instanceof RubyInteger) {
-            IRubyObject size = size(context);
-            if (!size.isNil()) return size;
+            if (begin instanceof RubyInteger) {
+                IRubyObject size = size(context);
+                if (!size.isNil()) return size;
+            }
+
+            // fall back on Enumerable logic for other cases
         }
 
         return RubyEnumerable.count(context, this, block);
+    }
+
+    @JRubyMethod
+    public IRubyObject count(ThreadContext context, IRubyObject arg, Block block) {
+        return RubyEnumerable.count(context, this, arg, block);
     }
 
     @JRubyMethod
@@ -1318,7 +1327,7 @@ public class RubyRange extends RubyObject {
 
     private static final ObjectMarshal RANGE_MARSHAL = new ObjectMarshal() {
         @Override
-        @Deprecated(since = "10.0", forRemoval = true)
+        @Deprecated(since = "10.0.0.0", forRemoval = true)
         @SuppressWarnings("removal")
         public void marshalTo(Ruby runtime, Object obj, RubyClass type,
                               org.jruby.runtime.marshal.MarshalStream marshalStream) throws IOException {
@@ -1350,7 +1359,7 @@ public class RubyRange extends RubyObject {
         }
 
         @Override
-        @Deprecated(since = "10.0", forRemoval = true)
+        @Deprecated(since = "10.0.0.0", forRemoval = true)
         @SuppressWarnings("removal")
         public Object unmarshalFrom(Ruby runtime, RubyClass type, org.jruby.runtime.marshal.UnmarshalStream input) throws IOException {
             var context = runtime.getCurrentContext();

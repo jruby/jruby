@@ -1,0 +1,2 @@
+windows:IO#read_nonblock raises an exception extending IO::WaitReadable when there is no data
+windows:IO#read_nonblock reads after ungetc with data in the buffer

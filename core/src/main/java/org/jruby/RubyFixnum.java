@@ -221,13 +221,13 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
     }
 
     @Override
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public double getDoubleValue() {
         return value;
     }
 
     @Override
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public long getLongValue() {
         return value;
     }
@@ -269,7 +269,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
         return runtime.fixnumCache[(int) (value + CACHE_OFFSET)];
     }
 
-    @Deprecated // not used
+    @Deprecated(since = "9.2.1.0") // not used
     public final RubyFixnum newFixnum(long newValue) {
         return newFixnum(getCurrentContext().runtime, newValue);
     }
@@ -437,7 +437,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
     /** fix_to_s
      *
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyString to_s(IRubyObject[] args) {
         var context = getCurrentContext();
         return switch (args.length) {
@@ -469,7 +469,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
     /** fix_to_sym
      *
      */
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public IRubyObject to_sym() {
         var context = getCurrentContext();
         RubySymbol symbol = RubySymbol.getSymbolLong(context.runtime, value);
@@ -708,7 +708,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
         return op_minus_one(context);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public IRubyObject idiv(ThreadContext context, IRubyObject other, String method) {
         if (other instanceof RubyFixnum) {
             return idivLong(context, value, ((RubyFixnum) other).value);
@@ -723,7 +723,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
         return coerceBin(context, site, other);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public IRubyObject idiv(ThreadContext context, long y, String method) {
         long x = value;
 
@@ -935,7 +935,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
         return asFixnum(context, tmp);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.7.0")
     protected IRubyObject intPowTmp2(ThreadContext context, IRubyObject y, final long mm, boolean negaFlg) {
         return intPowTmp2(context, (RubyInteger) y, mm, negaFlg);
     }
@@ -1311,7 +1311,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
         return asFixnum(context, value << width);
     }
 
-    @Deprecated // no longer used
+    @Deprecated(since = "9.2.0.0") // no longer used
     public IRubyObject op_lshift(long width) {
         return op_lshift(getCurrentContext(), width);
     }
@@ -1339,7 +1339,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
                 asFixnum(context, value >> width);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public IRubyObject op_rshift(long width) {
         return op_rshift(getCurrentContext(), width);
     }
@@ -1353,7 +1353,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
     }
 
     @Override
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject to_f() {
         return RubyFloat.newFloat(metaClass.runtime, (double) value);
     }
@@ -1366,7 +1366,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
         return asFixnum(context, (long) ((BIT_SIZE + 7) / 8));
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public IRubyObject zero_p() {
         return zero_p(getCurrentContext());
     }
@@ -1407,6 +1407,7 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
         return asFixnum(context, 64 - Long.numberOfLeadingZeros(tmpValue));
     }
 
+    @Deprecated(since = "10.0.3.0")
     @Override
     public IRubyObject id() {
         long value = this.value;
@@ -1418,13 +1419,24 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
         return super.id();
     }
 
+    @Override
+    public RubyInteger __id__(ThreadContext context) {
+        long value = this.value;
+
+        if (fixnumable(value)) {
+            return asFixnum(context, 2 * value + 1);
+        }
+
+        return super.__id__(context);
+    }
+
     // Piece of mri rb_to_id
     @Override
     public String asJavaString() {
         throw typeError(getRuntime().getCurrentContext(), "", this, " is not a symbol");
     }
 
-    @Deprecated(since = "10.0", forRemoval = true)
+    @Deprecated(since = "10.0.0.0", forRemoval = true)
     @SuppressWarnings("removal")
     public static RubyFixnum unmarshalFrom(org.jruby.runtime.marshal.UnmarshalStream input) throws java.io.IOException {
         return input.getRuntime().newFixnum(input.unmarshalInt());
@@ -1526,12 +1538,12 @@ public class RubyFixnum extends RubyInteger implements Constantizable, Appendabl
         return context.sites.Fixnum;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.3.0")
     public static IRubyObject induced_from(IRubyObject recv, IRubyObject other) {
         return RubyNumeric.num2fix(recv.getRuntime().getCurrentContext(), other);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     @Override
     public IRubyObject taint(ThreadContext context) {
         return this;

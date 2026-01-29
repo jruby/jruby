@@ -281,7 +281,7 @@ public class Binding {
         return evalScopeBinding.evalScope;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public Binding(IRubyObject self, Frame frame,
                    Visibility visibility, DynamicScope dynamicScope, BacktraceElement backtrace) {
         this.self = self;
@@ -293,7 +293,7 @@ public class Binding {
         this.line = backtrace.line;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public Binding(Frame frame, DynamicScope dynamicScope, BacktraceElement backtrace) {
         this.self = frame.getSelf();
         this.frame = frame;
@@ -304,12 +304,12 @@ public class Binding {
         this.line = backtrace.line;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.0.0")
     public BacktraceElement getBacktrace() {
         return new BacktraceElement(method, filename, line);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.8.0")
     public static final Binding DUMMY =
             new Binding(
                     RubyBasicObject.NEVER,

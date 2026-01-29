@@ -338,7 +338,7 @@ public class RubyKernel {
         return RubyIO.open(context, fileClass(context), args, block);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject getc(ThreadContext context, IRubyObject recv) {
         Warn.warn(context, "getc is obsolete; use STDIN.getc instead");
         IRubyObject defin = globalVariables(context).get("$stdin");
@@ -450,14 +450,11 @@ public class RubyKernel {
         return  exObj.isTrue();
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyFloat new_float(IRubyObject recv, IRubyObject object) {
         return (RubyFloat) new_float(((RubyBasicObject) recv).getCurrentContext(), object, true);
     }
 
-    private static final ByteList ZEROx = new ByteList(new byte[] { '0','x' }, false);
-
-    @Deprecated(since = "10.0")
     public static RubyFloat new_float(final Ruby runtime, IRubyObject object) {
         return (RubyFloat) new_float(runtime.getCurrentContext(), object, true);
     }
@@ -473,7 +470,7 @@ public class RubyKernel {
         throw argumentError(context, str(context.runtime, "invalid value for Float(): ", newString(context, string)));
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static double parseHexidecimalExponentString2(Ruby runtime, ByteList str) {
         return parseHexidecimalExponentString2(runtime.getCurrentContext(), str);
     }
@@ -580,7 +577,7 @@ public class RubyKernel {
                 throw argumentError(context, "invalid value for Float(): " + object.inspect(context));
             }
 
-            if (bytes.startsWith(ZEROx)) { // startsWith("0x")
+            if (isHexValue(bytes)) {
                 if (bytes.indexOf('p') != -1 || bytes.indexOf('P') != -1) {
                     return asFloat(context, parseHexidecimalExponentString2(context, bytes));
                 }
@@ -610,6 +607,19 @@ public class RubyKernel {
     static RubyFloat new_float(ThreadContext context, RubyInteger num) {
         return asFloat(context, num instanceof RubyBignum big ?
                 RubyBignum.big2dbl(big) : num.asDouble(context));
+    }
+
+    static RubyFloat new_float(final Ruby runtime, RubyInteger num) {
+        if (num instanceof RubyBignum) {
+            return RubyFloat.newFloat(runtime, RubyBignum.big2dbl((RubyBignum) num));
+        }
+        return RubyFloat.newFloat(runtime, num.getDoubleValue());
+    }
+
+    static boolean isHexValue(ByteList bytes) {
+        int length = bytes.getRealSize();
+        int index = length >= 1 && bytes.get(0) == '-' ? 1 : 0;
+        return length >= index + 2 && bytes.get(index) == '0' && (bytes.get(index + 1) == 'x' || bytes.get(index + 1) == 'X');
     }
 
     @JRubyMethod(name = "Hash", required = 1, module = true, visibility = PRIVATE)
@@ -910,7 +920,7 @@ public class RubyKernel {
         return asFixnum(context, Math.round((System.nanoTime() - startTime) / 1_000_000_000.0));
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject exit(IRubyObject recv, IRubyObject[] args) {
         return exit(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
@@ -923,7 +933,7 @@ public class RubyKernel {
         throw exit(context, args, false);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject exit_bang(IRubyObject recv, IRubyObject[] args) {
         return exit_bang(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
@@ -1025,7 +1035,7 @@ public class RubyKernel {
         return str.op_format(context, arg);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.5.0")
     public static IRubyObject sprintf(IRubyObject recv, IRubyObject[] args) {
         return sprintf(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
@@ -1278,7 +1288,7 @@ public class RubyKernel {
                 binding.setLine(0);
             }
         } else {  // no explicit file/line argument given
-            binding.setFile("(eval at " + context.getFileAndLine() + ")");
+            binding.setFile("(eval at " + context.getSingleBacktrace().getFileAndLine() + ")");
             binding.setLine(0);
         }
 
@@ -1410,7 +1420,7 @@ public class RubyKernel {
     private static final ByteList uncaught_throw_p = new ByteList(new byte[] { 'u','n','c','a','u','g','h','t',' ','t','h','r','o','w',' ','%','p' });
 
     private static IRubyObject rbThrowInternal(ThreadContext context, IRubyObject tag, IRubyObject arg) {
-        globalVariables(context).set("$!", context.nil);
+        context.setErrorInfo(context.nil);
 
         CatchThrow continuation = context.getActiveCatch(tag);
 
@@ -1484,7 +1494,7 @@ public class RubyKernel {
                 argMessagesLen--;
 
                 IRubyObject[] ret = ArgsUtil.extractKeywordArgs(context, (RubyHash) opts, "uplevel", "category");
-                if (ret[0] != null) {
+                if (ret[0] != null && !ret[0].isNil()) {
                     explicitUplevel = true;
                     uplevel = toInt(context, ret[0]);
                     if (uplevel < 0) throw argumentError(context, "negative level (" + uplevel + ")");
@@ -1641,7 +1651,7 @@ public class RubyKernel {
         return context.runtime.newProc(Block.Type.LAMBDA, block);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.3.0")
     public static RubyProc proc_1_9(ThreadContext context, IRubyObject recv, Block block) {
         return proc(context, recv, block);
     }
@@ -1651,8 +1661,7 @@ public class RubyKernel {
         if ( ! block.isGiven() ) {
             return enumeratorizeWithSize(context, recv, "loop", RubyKernel::loopSize);
         }
-        final Ruby runtime = context.runtime;
-        IRubyObject oldExc = globalVariables(context).get("$!"); // Save $!
+        IRubyObject oldExc = context.getErrorInfo();
         try {
             while (true) {
                 block.yieldSpecific(context);
@@ -1661,9 +1670,9 @@ public class RubyKernel {
             }
         }
         catch (RaiseException ex) {
-            final RubyClass StopIteration = runtime.getStopIteration();
+            final RubyClass StopIteration = context.runtime.getStopIteration();
             if ( StopIteration.isInstance(ex.getException()) ) {
-                globalVariables(context).set("$!", oldExc); // Restore $!
+                context.setErrorInfo(oldExc); // Restore $!
                 return ex.getException().callMethod("result");
             }
             else {
@@ -1989,7 +1998,7 @@ public class RubyKernel {
         System.setProperty("user.dir", runtime.getCurrentDirectory());
 
         if (nativeExec) {
-            IRubyObject oldExc = globalVariables(context).get("$!"); // Save $!
+            IRubyObject oldExc = context.getErrorInfo();
             try {
                 ShellLauncher.LaunchConfig cfg = new ShellLauncher.LaunchConfig(runtime, args, true);
 
@@ -2036,7 +2045,7 @@ public class RubyKernel {
                 // Only here because native exec could not exec (always -1)
                 nativeFailed = true;
             } catch (RaiseException e) {
-                globalVariables(context).set("$!", oldExc); // Restore $!
+                context.setErrorInfo(oldExc); // Restore $!
             } catch (Exception e) {
                 throw runtime.newErrnoENOENTError("cannot execute: " + e.getLocalizedMessage());
             }
@@ -2111,7 +2120,7 @@ public class RubyKernel {
         return newString(context, RubyFile.dirname(context, path.asJavaString()));
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject singleton_class(IRubyObject recv) {
         return singleton_class(((RubyBasicObject) recv).getCurrentContext(), recv);
     }
@@ -2145,7 +2154,7 @@ public class RubyKernel {
         return method.call(context, recv, entry.sourceModule, name, args, block);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject eql_p(IRubyObject self, IRubyObject obj) {
         return eql_p(((RubyBasicObject) self).getCurrentContext(), self, obj);
     }
@@ -2177,7 +2186,7 @@ public class RubyKernel {
      * @return
      * @deprecated Use {@link org.jruby.RubyKernel#initialize_copy(ThreadContext, IRubyObject, IRubyObject)} instead.
      */
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject initialize_copy(IRubyObject self, IRubyObject original) {
         return initialize_copy(((RubyBasicObject) self).getCurrentContext(), self, original);
     }
@@ -2199,12 +2208,12 @@ public class RubyKernel {
         return sites(context).initialize_copy.call(context, self, self, original);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public static RubyBoolean respond_to_p(IRubyObject self, IRubyObject mname) {
         return ((RubyBasicObject) self).respond_to_p(mname);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public static RubyBoolean respond_to_p(IRubyObject self, IRubyObject mname, IRubyObject includePrivate) {
         return ((RubyBasicObject) self).respond_to_p(mname, includePrivate);
     }
@@ -2219,7 +2228,7 @@ public class RubyKernel {
         return ((RubyBasicObject) self).respond_to_p(context, name, includePrivate.isTrue());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyFixnum hash(IRubyObject self) {
         return ((RubyBasicObject) self).hash(((RubyBasicObject) self).getCurrentContext());
     }
@@ -2266,7 +2275,7 @@ public class RubyKernel {
         return ((RubyBasicObject)self).frozen_p(context);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject inspect(IRubyObject self) {
         return inspect(((RubyBasicObject) self).getCurrentContext(), self);
     }
@@ -2298,9 +2307,14 @@ public class RubyKernel {
         return ((RubyBasicObject)self).methods(context, args);
     }
 
-    @JRubyMethod(name = "object_id")
+    @Deprecated(since = "10.0.3.0")
     public static IRubyObject object_id(IRubyObject self) {
         return self.id();
+    }
+
+    @JRubyMethod(name = "object_id")
+    public static IRubyObject object_id(ThreadContext context, IRubyObject self) {
+        return self.__id__(context);
     }
 
     @JRubyMethod(name = "public_methods", optional = 1, checkArity = false)
@@ -2331,7 +2345,7 @@ public class RubyKernel {
         return ((RubyBasicObject)self).singleton_methods(context, args);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject singleton_method(IRubyObject self, IRubyObject symbol) {
         return singleton_method(((RubyBasicObject) self).getCurrentContext(), self, symbol);
     }
@@ -2346,7 +2360,7 @@ public class RubyKernel {
         return ((RubyBasicObject)self).method(context, symbol, context.getCurrentStaticScope());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject to_s(IRubyObject self) {
         return to_s(((RubyBasicObject) self).getCurrentContext(), self);
     }
@@ -2356,7 +2370,7 @@ public class RubyKernel {
         return ((RubyBasicObject) self).to_s(context);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject extend(IRubyObject self, IRubyObject[] args) {
         return extend(((RubyBasicObject) self).getCurrentContext(), self, args);
     }
@@ -2490,12 +2504,12 @@ public class RubyKernel {
         return context.sites.Kernel;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.0.0")
     public static IRubyObject methodMissing(ThreadContext context, IRubyObject recv, String name, Visibility lastVis, CallType lastCallType, IRubyObject[] args, Block block) {
         return methodMissing(context, recv, name, lastVis, lastCallType, args);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.16.0")
     private static IRubyObject caller(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         switch (args.length) {
             case 0:
@@ -2510,7 +2524,7 @@ public class RubyKernel {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.1.16.0")
     public static IRubyObject caller_locations(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         switch (args.length) {
             case 0:
@@ -2525,24 +2539,24 @@ public class RubyKernel {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.7.0")
     public static IRubyObject require(IRubyObject recv, IRubyObject name, Block block) {
         return require(((RubyBasicObject) recv).getCurrentContext(), recv, name, block);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject op_match(ThreadContext context, IRubyObject self, IRubyObject arg) {
         Warn.warn(context, "deprecated Object#=~ is called on " + ((RubyBasicObject) self).type() +
                 "; it always returns nil");
         return ((RubyBasicObject) self).op_match(context, arg);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static IRubyObject autoload(final IRubyObject recv, IRubyObject symbol, IRubyObject file) {
         return autoload(((RubyBasicObject) recv).getCurrentContext(), recv, symbol, file);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.3.0.0")
     public static IRubyObject rand(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         switch (args.length) {
             case 0:
@@ -2554,13 +2568,13 @@ public class RubyKernel {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.0.0")
     public static IRubyObject method(IRubyObject self, IRubyObject symbol) {
         return ((RubyBasicObject)self).method(symbol);
     }
 
     // defined in Ruby now but left here for backward compat
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public static IRubyObject tap(ThreadContext context, IRubyObject recv, Block block) {
         if (block.getProcObject() != null) {
             block.getProcObject().call(context, recv);
@@ -2570,7 +2584,7 @@ public class RubyKernel {
         return recv;
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public static IRubyObject sleep(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         switch (args.length) {
             case 0:
@@ -2582,7 +2596,7 @@ public class RubyKernel {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public static IRubyObject test(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         switch (args.length) {
             case 2:

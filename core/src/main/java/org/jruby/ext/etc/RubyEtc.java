@@ -22,10 +22,8 @@ import jnr.posix.Group;
 import jnr.posix.POSIX;
 import jnr.posix.util.Platform;
 import org.jruby.Ruby;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyIO;
 import org.jruby.RubyModule;
-import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.RubyStruct;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
@@ -220,7 +218,7 @@ public class RubyEtc {
         return newString(context, new ByteList(buf.array(), 0, n - 1));
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static synchronized IRubyObject getpwuid(IRubyObject recv, IRubyObject[] args) {
         return getpwuid(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
@@ -230,8 +228,7 @@ public class RubyEtc {
         Arity.checkArgumentCount(context, args, 0, 1);
 
         POSIX posix = context.runtime.getPosix();
-        var globalVariables = globalVariables(context);
-        IRubyObject oldExc = globalVariables.get("$!"); // Save $!
+        IRubyObject oldExc = context.getErrorInfo(); // Save $!
         try {
             int uid = args.length == 0 ? posix.getuid() : toInt(context, args[0]);
             Passwd pwd = posix.getpwuid(uid);
@@ -243,7 +240,7 @@ public class RubyEtc {
             return setupPasswd(context, pwd);
         } catch (RaiseException re) {
             if (context.runtime.getNotImplementedError().isInstance(re.getException())) {
-                globalVariables.set("$!", oldExc); // Restore $!
+                context.setErrorInfo(oldExc); // Restore $!
                 return context.nil;
             }
             throw re;
@@ -254,7 +251,7 @@ public class RubyEtc {
         }
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static synchronized IRubyObject getpwnam(IRubyObject recv, IRubyObject name) {
         return getpwnam(((RubyBasicObject) recv).getCurrentContext(), recv, name);
     }
@@ -280,7 +277,7 @@ public class RubyEtc {
         }
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static synchronized IRubyObject passwd(IRubyObject recv, Block block) {
         return passwd(((RubyBasicObject) recv).getCurrentContext(), recv, block);
     }
@@ -315,7 +312,7 @@ public class RubyEtc {
         }
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static synchronized IRubyObject getlogin(IRubyObject recv) {
         return getlogin(((RubyBasicObject) recv).getCurrentContext(), recv);
     }
@@ -336,7 +333,7 @@ public class RubyEtc {
         }
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static synchronized IRubyObject endpwent(IRubyObject recv) {
         return endpwent(((RubyBasicObject) recv).getCurrentContext(), recv);
     }
@@ -353,7 +350,7 @@ public class RubyEtc {
         return context.nil;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static synchronized IRubyObject setpwent(IRubyObject recv) {
         return setpwent(((RubyBasicObject) recv).getCurrentContext(), recv);
     }
@@ -370,7 +367,7 @@ public class RubyEtc {
         return context.nil;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static synchronized IRubyObject getpwent(IRubyObject recv) {
         return getpwent(((RubyBasicObject) recv).getCurrentContext(), recv);
     }
@@ -389,7 +386,7 @@ public class RubyEtc {
         }
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static synchronized IRubyObject getgrnam(IRubyObject recv, IRubyObject name) {
         return getgrnam(((RubyBasicObject) recv).getCurrentContext(), recv, name);
     }
@@ -414,7 +411,7 @@ public class RubyEtc {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static synchronized IRubyObject getgrgid(IRubyObject recv, IRubyObject[] args) {
         return getgrgid(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
@@ -442,7 +439,7 @@ public class RubyEtc {
         }
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static synchronized IRubyObject endgrent(IRubyObject recv) {
         return endgrent(((RubyBasicObject) recv).getCurrentContext(), recv);
     }
@@ -459,7 +456,7 @@ public class RubyEtc {
         return context.nil;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static synchronized IRubyObject setgrent(IRubyObject recv) {
         return setgrent(((RubyBasicObject) recv).getCurrentContext(), recv);
     }
@@ -476,7 +473,7 @@ public class RubyEtc {
         return context.nil;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static synchronized IRubyObject group(IRubyObject recv, Block block) {
         return group(((RubyBasicObject) recv).getCurrentContext(), recv, block);
     }
@@ -518,7 +515,7 @@ public class RubyEtc {
         return context.nil;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static synchronized IRubyObject getgrent(IRubyObject recv) {
         return getgrent(((RubyBasicObject) recv).getCurrentContext(), recv);
     }

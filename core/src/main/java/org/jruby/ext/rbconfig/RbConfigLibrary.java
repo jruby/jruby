@@ -50,6 +50,7 @@ import org.jruby.runtime.Constants;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.SafePropertyAccessor;
+import org.jruby.util.cli.Options;
 
 import static org.jruby.api.Access.loadService;
 import static org.jruby.api.Access.objectClass;
@@ -250,9 +251,15 @@ public class RbConfigLibrary implements Library {
         setConfig(context, CONFIG, "TEENY", teeny);
         setConfig(context, CONFIG, "PATCHLEVEL", "0");
         setConfig(context, CONFIG, "ruby_version", major + '.' + minor + ".0");
-        // Rubygems is too specific on host cpu so until we have real need lets default to universal
-        //setConfig(CONFIG, "arch", System.getProperty("os.arch") + "-java" + System.getProperty("java.specification.version"));
-        setConfig(context, CONFIG, "arch", "universal-java" + System.getProperty("java.specification.version"));
+
+        // normalize Java version 1.8 to 8
+        String javaSpecVersion = System.getProperty("java.specification.version");
+        if (javaSpecVersion.equals("1.8")) javaSpecVersion = "8";
+
+        // Rubygems uses this to indicate extensions have been built, so we separate the Java version.
+        // See https://github.com/ruby/rubygems/issues/3520
+        setConfig(context, CONFIG, "arch", "universal-java");
+        setConfig(context, CONFIG, "arch_version", javaSpecVersion);
 
         // Use property for binDir if available, otherwise fall back to common bin default
         String binDir = SafePropertyAccessor.getProperty("jruby.bindir");
@@ -370,8 +377,8 @@ public class RbConfigLibrary implements Library {
         setConfig(context, CONFIG, "ridir", newFile(shareDir, "ri").getPath());
 
         // These will be used as jruby defaults for rubygems if found
-        String gemhome = SafePropertyAccessor.getProperty("jruby.gem.home");
-        String gempath = SafePropertyAccessor.getProperty("jruby.gem.path");
+        String gemhome = Options.GEM_HOME.load();
+        String gempath = Options.GEM_PATH.load();
         if (gemhome != null) setConfig(context, CONFIG, "default_gem_home", gemhome);
         if (gempath != null) setConfig(context, CONFIG, "default_gem_path", gempath);
 

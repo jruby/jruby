@@ -297,7 +297,7 @@ public class SizedQueue extends Queue {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public IRubyObject push(ThreadContext context, final IRubyObject[] argv) {
         return switch (argv.length) {
             case 1 -> push(context, argv[0]);

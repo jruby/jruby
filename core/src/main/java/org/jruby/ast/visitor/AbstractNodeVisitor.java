@@ -632,7 +632,7 @@ public abstract class AbstractNodeVisitor<T> implements NodeVisitor<T> {
     }
 
     @Override
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public T visitClassVarDeclNode(ClassVarDeclNode node) {
         return defaultVisit(node);
     }

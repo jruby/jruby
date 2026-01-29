@@ -62,7 +62,7 @@ public class LocalContext {
 
     // This method is used only from ThreadLocalContextProvider.
     // Other providers should instantialte runtime in their own way.
-    @Deprecated
+    @Deprecated(since = "1.7.20")
     public Ruby getThreadSafeRuntime() {
         return getRuntime();
     }

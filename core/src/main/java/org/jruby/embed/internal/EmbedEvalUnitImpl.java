@@ -77,7 +77,7 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
      *
      * @return a root node of parsed Ruby script
      */
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public Node getNode() {
         return (Node) parseResult.getAST();
     }

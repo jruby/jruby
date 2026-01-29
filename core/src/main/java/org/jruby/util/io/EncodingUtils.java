@@ -31,7 +31,6 @@ import org.jruby.RubyHash;
 import org.jruby.RubyIO;
 import org.jruby.RubyInteger;
 import org.jruby.RubyMethod;
-import org.jruby.RubyNumeric;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
@@ -55,7 +54,9 @@ import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.function.BiConsumer;
 
 import static org.jruby.RubyString.encodeBytelist;
 import static org.jruby.RubyString.newBinaryString;
@@ -93,12 +94,12 @@ public class EncodingUtils {
         return idx;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject[] openArgsToArgs(Ruby runtime, IRubyObject firstElement, RubyHash options) {
         return openArgsToArgs(runtime.getCurrentContext(), firstElement, options);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject[] openArgsToArgs(ThreadContext context, IRubyObject firstElement, RubyHash options) {
         IRubyObject value = hashARef(context, options, "open_args");
 
@@ -117,7 +118,7 @@ public class EncodingUtils {
         return args;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static void extractBinmode(Ruby runtime, IRubyObject optionsArg, int[] fmode_p) {
         extractBinmode(runtime.getCurrentContext(), optionsArg, fmode_p);
     }
@@ -162,27 +163,27 @@ public class EncodingUtils {
         return runtime.getEncodingService().getAscii8bitEncoding();
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static Object vmodeVperm(IRubyObject vmode, IRubyObject vperm) {
         return new API.ModeAndPermission(vmode, vperm);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject vmode(Object vmodeVperm) {
         return ((API.ModeAndPermission) vmodeVperm).mode;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static void vmode(Object vmodeVperm, IRubyObject vmode) {
         ((API.ModeAndPermission) vmodeVperm).mode = vmode;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject vperm(Object vmodeVperm) {
         return ((API.ModeAndPermission) vmodeVperm).permission;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static void vperm(Object vmodeVperm, IRubyObject vperm) {
         ((API.ModeAndPermission) vmodeVperm).permission = vperm;
     }
@@ -219,7 +220,7 @@ public class EncodingUtils {
         return ecflags;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static void extractModeEncoding(ThreadContext context,
                                            IOEncodable ioEncodable, Object vmodeAndVperm_p, IRubyObject options, int[] oflags_p, int[] fmode_p) {
         extractModeEncoding(context, ioEncodable, (API.ModeAndPermission) vmodeAndVperm_p, options, oflags_p, fmode_p);
@@ -659,18 +660,20 @@ public class EncodingUtils {
         RubyHash optHash2 = (RubyHash)opthash;
         ecflags = econvOpts(context, opthash, ecflags);
 
-        v = optHash2.op_aref(context, Convert.asSymbol(context, "replace"));
+        RubySymbol replaceSymbol = asSymbol(context, "replace");
+        v = optHash2.op_aref(context, replaceSymbol);
         if (!v.isNil()) {
             RubyString v_str = v.convertToString();
             if (v_str.scanForCodeRange() == StringSupport.CR_BROKEN) {
                 throw argumentError(context, "replacement string is broken: " + v_str);
             }
-            v = v_str.freeze(context);
+            v = v_str.newFrozen();
             newhash = newHash(context);
-            ((RubyHash)newhash).op_aset(context, Convert.asSymbol(context, "replace"), v);
+            ((RubyHash)newhash).op_aset(context, replaceSymbol, v);
         }
 
-        v = optHash2.op_aref(context, Convert.asSymbol(context, "fallback"));
+        RubySymbol fallbackSymbol = asSymbol(context, "fallback");
+        v = optHash2.op_aref(context, fallbackSymbol);
         if (!v.isNil()) {
             IRubyObject h = TypeConverter.checkHashType(context.runtime, v);
             boolean condition;
@@ -684,7 +687,7 @@ public class EncodingUtils {
             if (condition) {
                 if (newhash.isNil()) newhash = newHash(context);
 
-                ((RubyHash)newhash).op_aset(context, Convert.asSymbol(context, "fallback"), v);
+                ((RubyHash)newhash).op_aset(context, fallbackSymbol, v);
             }
         }
 
@@ -710,7 +713,7 @@ public class EncodingUtils {
         }
 
         v = ((RubyHash)opt).op_aref(context, Convert.asSymbol(context, "replace"));
-        if (!v.isNil() && (ecflags & EConvFlags.INVALID_REPLACE) != 0) {
+        if (!v.isNil() && (ecflags & EConvFlags.INVALID_REPLACE) == 0) {
             ecflags |= EConvFlags.UNDEF_REPLACE;
         }
 
@@ -1331,7 +1334,7 @@ public class EncodingUtils {
             str = obj.convertToString();
             int clen = str.size();
             if (clen >= len) {
-                str.modify();
+                str.modifyAndClearCodeRange();
                 return str;
             }
             str.modifyExpand(len);
@@ -1340,13 +1343,12 @@ public class EncodingUtils {
     }
 
     public static List<String> encodingNames(byte[] name, int p, int end) {
-        final List<String> names = new ArrayList<String>();
 
         Encoding enc = ASCIIEncoding.INSTANCE;
         int s = p;
 
         int code = name[s] & 0xff;
-        if (enc.isDigit(code)) return names;
+        if (enc.isDigit(code)) return Collections.EMPTY_LIST;
 
         boolean hasUpper = false;
         boolean hasLower = false;
@@ -1357,6 +1359,7 @@ public class EncodingUtils {
             }
         }
 
+        final List<String> names = new ArrayList<String>(4);
         boolean isValid = false;
         if (s >= end) {
             isValid = true;
@@ -1645,7 +1648,7 @@ public class EncodingUtils {
         }
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RaiseException makeEconvException(Ruby runtime, EConv ec) {
         return makeEconvException(runtime.getCurrentContext(), ec);
     }
@@ -1849,31 +1852,27 @@ public class EncodingUtils {
     public static void rbEncSetDefaultExternal(ThreadContext context, IRubyObject encoding) {
         if (encoding.isNil()) throw argumentError(context, "default external can not be nil");
 
-        Encoding[] enc_p = {context.runtime.getDefaultExternalEncoding()};
-        encSetDefaultEncoding(context, enc_p, encoding, "external");
-        context.runtime.setDefaultExternalEncoding(enc_p[0]);
+        encSetDefaultEncoding(context, context.runtime.getDefaultExternalEncoding(), encoding, "external", (ctx, enc) -> ctx.runtime.setDefaultExternalEncoding(enc));
     }
 
     // rb_enc_set_default_internal
     public static void rbEncSetDefaultInternal(ThreadContext context, IRubyObject encoding) {
-        Encoding[] enc_p = {context.runtime.getDefaultInternalEncoding()};
-        encSetDefaultEncoding(context, enc_p, encoding, "internal");
-        context.runtime.setDefaultInternalEncoding(enc_p[0]);
+        encSetDefaultEncoding(context, context.runtime.getDefaultInternalEncoding(), encoding, "internal", (ctx, enc) -> ctx.runtime.setDefaultInternalEncoding(enc));
     }
 
     // enc_set_default_encoding
-    public static boolean encSetDefaultEncoding(ThreadContext context, Encoding[] def_p, IRubyObject encoding, String name) {
+    static boolean encSetDefaultEncoding(ThreadContext context, Encoding defaultEncoding, IRubyObject encoding, String name, BiConsumer<ThreadContext, Encoding> setter) {
         boolean overridden = false;
 
-        if (def_p != null) {
+        if (defaultEncoding != null) {
             overridden = true;
         }
 
         if (encoding.isNil()) {
-            def_p[0] = null;
+            setter.accept(context, null);
             // don't set back into encoding table since it defers to us
         } else {
-            def_p[0] = rbToEncoding(context, encoding);
+            setter.accept(context, rbToEncoding(context, encoding));
             // don't set back into encoding table since it defers to us
         }
 
@@ -2283,7 +2282,7 @@ public class EncodingUtils {
         return StringSupport.codePoint(enc, pBytes, p, e);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static int encCodepointLength(Ruby runtime, byte[] pBytes, int p, int e, int[] len_p, Encoding enc) {
         return encCodepointLength(runtime.getCurrentContext(), pBytes, p, e, len_p, enc);
     }
@@ -2360,7 +2359,7 @@ public class EncodingUtils {
         return getEncoding(str.getByteList());
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static RubyString rbStrEscape(Ruby runtime, RubyString str) {
         return (RubyString) RubyString.rbStrEscape(runtime.getCurrentContext(), str);
     }
@@ -2445,12 +2444,12 @@ public class EncodingUtils {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.0.0")
     public static Encoding ioStripBOM(RubyIO io) {
         return ioStripBOM(io.getRuntime().getCurrentContext(), io);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public static Encoding strTranscode0(ThreadContext context, int argc, IRubyObject[] args, IRubyObject[] self_p, int ecflags, IRubyObject ecopts) {
         Encoding[] enc_p = {null};
         TranscodeResult result = (ctx, str, enc, newStr) -> {enc_p[0] = enc; self_p[0] = newStr; return newStr;};
@@ -2471,7 +2470,7 @@ public class EncodingUtils {
         };
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public static Encoding strTranscode(ThreadContext context, IRubyObject[] args, IRubyObject[] self_p) {
         Encoding[] enc_p = {null};
         TranscodeResult result = (ctx, str, enc, newStr) -> {enc_p[0] = enc; self_p[0] = newStr; return newStr;};
@@ -2481,22 +2480,22 @@ public class EncodingUtils {
         return enc_p[0];
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public static IRubyObject strEncode(ThreadContext context, IRubyObject str, IRubyObject... args) {
         return strTranscode(context, args, (RubyString) str, EncodingUtils::encodedDup);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public static IRubyObject encodedDup(ThreadContext context, IRubyObject newstr, IRubyObject str, Encoding encindex) {
         return encodedDup(context, (RubyString) newstr, encindex, (RubyString) str);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public static IRubyObject strEncodeAssociate(ThreadContext context, IRubyObject str, Encoding encidx) {
         return strEncodeAssociate((RubyString) str, encidx);
     }
 
-    @Deprecated
+    @Deprecated(since = "9.4.6.0")
     public static IRubyObject strTranscode(ThreadContext context, IRubyObject[] args, RubyString str, TranscodeResult result) {
         return switch (args.length) {
             case 0 -> strTranscode(context, str, result);

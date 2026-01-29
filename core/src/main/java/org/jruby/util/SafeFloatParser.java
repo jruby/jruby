@@ -7,6 +7,7 @@ import java.math.BigDecimal;
  * <p>
  * Prevents brute force attacks using the famous Java bug.
  */
+@Deprecated(since = "10.0.3.0")
 public final class SafeFloatParser extends SafeDecimalParser {
 
     /**
@@ -16,13 +17,9 @@ public final class SafeFloatParser extends SafeDecimalParser {
      *            The input String
      * @return the Float value
      */
+    @Deprecated(since = "10.0.3.0")
     public static Float valueOf(String s) {
-        Float result = null;
-        Double decimalValue = decimalValueOf(s);
-        if (decimalValue != null) {
-            result = Float.valueOf(decimalValue.floatValue());
-        }
-        return result;
+        return s != null ? Float.valueOf(Double.valueOf(s).floatValue()) : null;
     }
 
     /**
@@ -32,8 +29,9 @@ public final class SafeFloatParser extends SafeDecimalParser {
      *            The input String
      * @return the Float value
      */
+    @Deprecated(since = "10.0.3.0")
     public static Float parseFloat(String s) {
-        return valueOf(s);
+        return s != null ? Float.valueOf(Double.valueOf(s).floatValue()) : null;
     }
 
     /**
@@ -43,8 +41,9 @@ public final class SafeFloatParser extends SafeDecimalParser {
      * @param number
      * @return the float value
      */
+    @Deprecated(since = "10.0.3.0")
     public static float floatValue(Number number) {
-        return Float.valueOf((float)decimalValue(number));
+        return number != null ? (float) number.doubleValue() : 0.0f;
     }
 
     /**
@@ -54,7 +53,8 @@ public final class SafeFloatParser extends SafeDecimalParser {
      * @param bigDecimal
      * @return the float value
      */
+    @Deprecated(since = "10.0.3.0")
     public static float floatValue(BigDecimal bigDecimal) {
-        return Float.valueOf((float)decimalValue(bigDecimal));
+        return bigDecimal != null ? (float) bigDecimal.doubleValue() : 0.0f;
     }
 }

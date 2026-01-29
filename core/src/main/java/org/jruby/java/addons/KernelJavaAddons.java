@@ -65,7 +65,7 @@ public class KernelJavaAddons {
         return newArray;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject java_signature(IRubyObject recv, IRubyObject[] args) {
         return java_signature(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
@@ -75,7 +75,7 @@ public class KernelJavaAddons {
         return context.nil;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject java_name(IRubyObject recv, IRubyObject[] args) {
         return java_name(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
@@ -85,7 +85,7 @@ public class KernelJavaAddons {
         return context.nil;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject java_implements(IRubyObject recv, IRubyObject[] args) {
         return java_implements(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
@@ -95,7 +95,7 @@ public class KernelJavaAddons {
         return context.nil;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject java_annotation(IRubyObject recv, IRubyObject[] args) {
         return java_annotation(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
@@ -105,7 +105,7 @@ public class KernelJavaAddons {
         return context.nil;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject java_require(IRubyObject recv, IRubyObject[] args) {
         return java_require(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
@@ -115,7 +115,7 @@ public class KernelJavaAddons {
         return context.nil;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject java_package(IRubyObject recv, IRubyObject[] args) {
         return java_package(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }
@@ -125,7 +125,7 @@ public class KernelJavaAddons {
         return context.nil;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject java_field(IRubyObject recv, IRubyObject[] args) {
         return java_field(((RubyBasicObject) recv).getCurrentContext(), recv, args);
     }

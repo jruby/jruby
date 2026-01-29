@@ -56,7 +56,7 @@ public class ExternalScript implements Library {
             } else {
                 name = CompiledScriptLoader.getFilenameFromPathAndName(resource.getPath(), name, resource.isAbsolute());
 
-                runtime.loadFile(name, new LoadServiceResourceInputStream(in), wrap);
+                runtime.loadFile(name, in, wrap);
             }
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);

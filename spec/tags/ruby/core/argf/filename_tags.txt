@@ -1,0 +1,1 @@
+windows:ARGF.filename sets the $FILENAME global variable with the current file name on each file

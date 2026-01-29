@@ -191,11 +191,19 @@ describe "C-API String function" do
     end
 
     it "returns a new String object filled with \\0 bytes" do
-      s = @s.rb_str_tmp_new(4)
-      s.encoding.should == Encoding::BINARY
-      s.bytesize.should == 4
-      s.size.should == 4
-      s.should == "\x00\x00\x00\x00"
+      lens = [4]
+
+      ruby_version_is "4.0" do
+        lens << 100
+      end
+
+      lens.each do |len|
+        s = @s.rb_str_tmp_new(len)
+        s.encoding.should == Encoding::BINARY
+        s.bytesize.should == len
+        s.size.should == len
+        s.should == "\x00" * len
+      end
     end
   end
 
@@ -1040,11 +1048,19 @@ describe "C-API String function" do
       @s.rb_sprintf3(true.class).should == s
     end
 
-    ruby_bug "#19167", ""..."3.2" do
-      it "formats a TrueClass VALUE as 'true' if sign specified in format" do
-        s = 'Result: TrueClass.'
-        @s.rb_sprintf4(true.class).should == s
-      end
+    it "formats a TrueClass VALUE as 'true' if sign specified in format" do
+      s = 'Result: TrueClass.'
+      @s.rb_sprintf4(true.class).should == s
+    end
+
+    it "formats nil using to_s if sign not specified in format" do
+      s = 'Result: .'
+      @s.rb_sprintf3(nil).should == s
+    end
+
+    it "formats nil using inspect if sign specified in format" do
+      s = 'Result: nil.'
+      @s.rb_sprintf4(nil).should == s
     end
 
     it "truncates a string to a supplied precision if that is shorter than the string" do
@@ -1203,28 +1219,50 @@ describe "C-API String function" do
 
   describe "rb_str_locktmp" do
     it "raises an error when trying to lock an already locked string" do
-      str = "test"
+      str = +"test"
       @s.rb_str_locktmp(str).should == str
       -> { @s.rb_str_locktmp(str) }.should raise_error(RuntimeError, 'temporal locking already locked string')
     end
 
     it "locks a string so that modifications would raise an error" do
-      str = "test"
+      str = +"test"
       @s.rb_str_locktmp(str).should == str
       -> { str.upcase! }.should raise_error(RuntimeError, 'can\'t modify string; temporarily locked')
+    end
+
+    ruby_version_is "4.0" do
+      it "raises FrozenError if string is frozen" do
+        str = -"rb_str_locktmp"
+        -> { @s.rb_str_locktmp(str) }.should raise_error(FrozenError)
+
+        str = +"rb_str_locktmp"
+        str.freeze
+        -> { @s.rb_str_locktmp(str) }.should raise_error(FrozenError)
+      end
     end
   end
 
   describe "rb_str_unlocktmp" do
     it "unlocks a locked string" do
-      str = "test"
+      str = +"test"
       @s.rb_str_locktmp(str)
       @s.rb_str_unlocktmp(str).should == str
       str.upcase!.should == "TEST"
     end
 
     it "raises an error when trying to unlock an already unlocked string" do
-      -> { @s.rb_str_unlocktmp("test") }.should raise_error(RuntimeError, 'temporal unlocking already unlocked string')
+      -> { @s.rb_str_unlocktmp(+"test") }.should raise_error(RuntimeError, 'temporal unlocking already unlocked string')
+    end
+
+    ruby_version_is "4.0" do
+      it "raises FrozenError if string is frozen" do
+        str = -"rb_str_locktmp"
+        -> { @s.rb_str_unlocktmp(str) }.should raise_error(FrozenError)
+
+        str = +"rb_str_locktmp"
+        str.freeze
+        -> { @s.rb_str_unlocktmp(str) }.should raise_error(FrozenError)
+      end
     end
   end
 
@@ -1331,8 +1369,133 @@ describe "C-API String function" do
       result1.should_not.equal?(result2)
     end
 
+    it "preserves the encoding of the original string" do
+      result1 = @s.rb_str_to_interned_str("hello".dup.force_encoding(Encoding::US_ASCII))
+      result2 = @s.rb_str_to_interned_str("hello".dup.force_encoding(Encoding::UTF_8))
+      result1.encoding.should == Encoding::US_ASCII
+      result2.encoding.should == Encoding::UTF_8
+    end
+
     it "returns the same string as String#-@" do
       @s.rb_str_to_interned_str("hello").should.equal?(-"hello")
+    end
+  end
+
+  describe "rb_interned_str" do
+    it "returns a frozen string" do
+      str = "hello"
+      result = @s.rb_interned_str(str, str.bytesize)
+      result.should.is_a?(String)
+      result.should.frozen?
+      result.encoding.should == Encoding::US_ASCII
+    end
+
+    it "returns the same frozen string" do
+      str = "hello"
+      result1 = @s.rb_interned_str(str, str.bytesize)
+      result2 = @s.rb_interned_str(str, str.bytesize)
+      result1.should.equal?(result2)
+    end
+
+    it "supports strings with embedded null bytes" do
+      str = "foo\x00bar\x00baz".b
+      result = @s.rb_interned_str(str, str.bytesize)
+      result.should == str
+    end
+
+    it "return US_ASCII encoding for an empty string" do
+      result = @s.rb_interned_str("", 0)
+      result.should == ""
+      result.encoding.should == Encoding::US_ASCII
+    end
+
+    it "returns US_ASCII encoding for strings of only 7 bit ASCII" do
+      0x00.upto(0x7f).each do |char|
+        result = @s.rb_interned_str(char.chr, 1)
+        result.encoding.should == Encoding::US_ASCII
+      end
+    end
+
+    ruby_bug "21842", ""..."4.1" do
+      it "returns BINARY encoding for strings that use the 8th bit" do
+        0x80.upto(0xff) do |char|
+          result = @s.rb_interned_str(char.chr, 1)
+          result.encoding.should == Encoding::BINARY
+        end
+      end
+    end
+
+    it 'returns the same string when using non-ascii characters' do
+      str = 'こんにちは'
+      result1 = @s.rb_interned_str(str, str.bytesize)
+      result2 = @s.rb_interned_str(str, str.bytesize)
+      result1.should.equal?(result2)
+    end
+
+    ruby_bug "21842", ""..."4.1" do
+      it "returns the same string as String#-@" do
+        str = "hello".dup.force_encoding(Encoding::US_ASCII)
+        @s.rb_interned_str(str, str.bytesize).should.equal?(-str)
+      end
+    end
+  end
+
+  describe "rb_interned_str_cstr" do
+    it "returns a frozen string" do
+      str = "hello"
+      result = @s.rb_interned_str_cstr(str)
+      result.should.is_a?(String)
+      result.should.frozen?
+      result.encoding.should == Encoding::US_ASCII
+    end
+
+    it "returns the same frozen string" do
+      str = "hello"
+      result1 = @s.rb_interned_str_cstr(str)
+      result2 = @s.rb_interned_str_cstr(str)
+      result1.should.equal?(result2)
+    end
+
+    it "does not support strings with embedded null bytes" do
+      str = "foo\x00bar\x00baz".b
+      result = @s.rb_interned_str_cstr(str)
+      result.should == "foo"
+    end
+
+    it "return US_ASCII encoding for an empty string" do
+      result = @s.rb_interned_str_cstr("")
+      result.should == ""
+      result.encoding.should == Encoding::US_ASCII
+    end
+
+    it "returns US_ASCII encoding for strings of only 7 bit ASCII" do
+      0x01.upto(0x7f).each do |char|
+        result = @s.rb_interned_str_cstr(char.chr)
+        result.encoding.should == Encoding::US_ASCII
+      end
+    end
+
+    ruby_bug "21842", ""..."4.1" do
+      it "returns BINARY encoding for strings that use the 8th bit" do
+        0x80.upto(0xff) do |char|
+          result = @s.rb_interned_str_cstr(char.chr)
+          result.encoding.should == Encoding::BINARY
+        end
+      end
+    end
+
+    it 'returns the same string when using non-ascii characters' do
+      str = 'こんにちは'
+      result1 = @s.rb_interned_str_cstr(str)
+      result2 = @s.rb_interned_str_cstr(str)
+      result1.should.equal?(result2)
+    end
+
+    ruby_bug "21842", ""..."4.1" do
+      it "returns the same string as String#-@" do
+        str = "hello".dup.force_encoding(Encoding::US_ASCII)
+        @s.rb_interned_str_cstr(str).should.equal?(-str)
+      end
     end
   end
 end

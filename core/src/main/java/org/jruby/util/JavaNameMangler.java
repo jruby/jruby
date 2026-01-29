@@ -360,7 +360,7 @@ public class JavaNameMangler {
 
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.7.0")
     public static boolean willMethodMangleOk(CharSequence name) {
         if (false && Platform.IS_IBM) {
             // IBM's JVM is much less forgiving, so we disallow anything with non-alphanumeric, _, and $

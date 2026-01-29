@@ -28,7 +28,7 @@ public interface InstanceVariables {
      */
     boolean hasInstanceVariable(String name);
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     boolean fastHasInstanceVariable(String internedName);
     
     /**
@@ -39,7 +39,7 @@ public interface InstanceVariables {
      */
     IRubyObject getInstanceVariable(String name);
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     IRubyObject fastGetInstanceVariable(String internedName);
 
     /**
@@ -51,7 +51,7 @@ public interface InstanceVariables {
      */    
     IRubyObject setInstanceVariable(String name, IRubyObject value);
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     IRubyObject fastSetInstanceVariable(String internedName, IRubyObject value);
 
     /**

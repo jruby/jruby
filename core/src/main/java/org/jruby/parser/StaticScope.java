@@ -86,6 +86,8 @@ public class StaticScope implements Serializable, Cloneable {
     public static final int MAX_SPECIALIZED_SIZE = 50;
     private static final long serialVersionUID = 3423852552352498148L;
 
+    public static final int IMPLICIT = -2;
+
     // Next immediate scope.  Variable and constant scoping rules make use of this variable
     // in different ways.
     protected StaticScope enclosingScope;
@@ -99,6 +101,8 @@ public class StaticScope implements Serializable, Cloneable {
     // Our name holder (offsets are assigned as variables are added) [these are symbol strings.  Use
     // as key to Symbol table for actual encoded versions].
     private String[] variableNames;
+
+    private BitSet implicitVariables;
 
     private int variableNamesLength;
 
@@ -261,6 +265,36 @@ public class StaticScope implements Serializable, Cloneable {
         if (slot >= 0) return slot;
 
         // Clear constructor since we are adding a name
+        return addVariableName(name);
+    }
+
+    /**
+     * Add an implicit variable ("it", "_1") to this (current) scope unless it is already defined in the
+     * current scope. The variable will be marked as implicit to omit it from local variable lists and functions.
+     *
+     * @param name of new variable
+     * @return index of variable
+     */
+    public int addImplicitVariableThisScope(String name) {
+        int slot = exists(name);
+
+        if (slot >= 0) return slot;
+
+        slot = addVariableName(name);
+
+        markImplicitVariable(slot);
+
+        return slot;
+    }
+
+    public void markImplicitVariable(int slot) {
+        if (implicitVariables == null) implicitVariables = new BitSet();
+
+        implicitVariables.set(slot);
+    }
+
+    public int addVariableName(String name) {
+        // Clear constructor since we are adding a name
         constructor = null;
 
         // This is perhaps innefficient timewise?  Optimal spacewise
@@ -283,13 +317,7 @@ public class StaticScope implements Serializable, Cloneable {
         if (slot >= 0) return slot;
 
         // Clear constructor since we are adding a name
-        constructor = null;
-
-        // This is perhaps innefficient timewise?  Optimal spacewise
-        growVariableNames(name);
-
-        // Returns slot of variable
-        return variableNames.length - 1;
+        return addVariableName(name);
     }
 
     public String[] getVariables() {
@@ -311,7 +339,7 @@ public class StaticScope implements Serializable, Cloneable {
         System.arraycopy(names, 0, variableNames, 0, names.length);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject getConstantDefined(String internedName) {
         return getConstantDefined(cref.getRuntime().getCurrentContext(), internedName);
     }
@@ -329,7 +357,7 @@ public class StaticScope implements Serializable, Cloneable {
         return previousCRefScope == null ? null : previousCRefScope.getConstantDefinedNoObject(context, internedName);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject getConstantDefinedNoObject(String internedName) {
         return getConstantDefinedNoObject(cref.getRuntime().getCurrentContext(), internedName);
     }
@@ -338,7 +366,7 @@ public class StaticScope implements Serializable, Cloneable {
         return previousCRefScope == null ? null : getConstantDefined(context, internedName);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject getConstant(String internedName) {
         return getConstant(cref.getRuntime().getCurrentContext(), internedName);
     }
@@ -350,7 +378,7 @@ public class StaticScope implements Serializable, Cloneable {
         return result == null ? cref.getConstantNoConstMissing(context, internedName) : result;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject getConstantInner(String internedName) {
         return getScopedConstant(cref.getRuntime().getCurrentContext(), internedName);
     }
@@ -396,6 +424,18 @@ public class StaticScope implements Serializable, Cloneable {
         return findVariableName(name);
     }
 
+    /**
+     * Does the variable exist and not implicit?
+     *
+     * @param name of the variable to find
+     * @return index of variable; -1 if it does not exist; -2 if is implicit.
+     */
+    public int existsAndNotImplicit(String name) {
+        int slot = findVariableName(name);
+        if (slot >= 0 && isImplicitVariable(slot)) return IMPLICIT;
+        return slot;
+    }
+
     private int findVariableName(String name) {
         for (int i = 0; i < variableNames.length; i++) {
             if (name.equals(variableNames[i])) return i;
@@ -412,6 +452,24 @@ public class StaticScope implements Serializable, Cloneable {
      */
     public int isDefined(String name) {
         return isDefined(name, 0);
+    }
+
+    /**
+     * Is this name visible to the current scope and not an implicit variable ("it", "_1", etc).
+     *
+     * @param name to be looked for
+     * @return -1 if it is not defined; -2 if it is implicit; or a location where the left-most 16 bits of number of scopes down it is and the
+     * right-most 16 bits represents its index in that scope.
+     */
+    public int isDefinedNotImplicit(String name) {
+        return isDefinedNotImplicit(name, 0);
+    }
+
+    /**
+     * @return whether the given slot contains an implicit variable ("it", "_1", etc).
+     */
+    public boolean isImplicitVariable(int slot) {
+        return implicitVariables != null && implicitVariables.get(slot);
     }
 
     /**
@@ -488,7 +546,41 @@ public class StaticScope implements Serializable, Cloneable {
      * @param <T> resulting collection type
      * @return populated collection
      */
+    public <T> T collectAllVariables(ThreadContext context, BiFunction<ThreadContext, Integer, T> collectionFactory, BiConsumer<T, String> collectionPopulator) {
+        return collectVariables(context, collectionFactory, collectionPopulator, null);
+    }
+
+    /**
+     * Populate a deduplicated collection of variable names in scope using the given functions.
+     *
+     * This may include variables that are not strictly Ruby local variable names, so the consumer should validate
+     * names as appropriate.
+     *
+     * @param collectionFactory used to construct the collection
+     * @param collectionPopulator used to pass values into the collection
+     * @param <T> resulting collection type
+     * @return populated collection
+     */
     public <T> T collectVariables(ThreadContext context, BiFunction<ThreadContext, Integer, T> collectionFactory, BiConsumer<T, String> collectionPopulator) {
+        return collectVariables(context, collectionFactory, collectionPopulator, false);
+    }
+
+    /**
+     * Populate a deduplicated collection of implicit variable names("it", "_1", etc) in scope using the given functions.
+     *
+     * This may include variables that are not strictly Ruby local variable names, so the consumer should validate
+     * names as appropriate.
+     *
+     * @param collectionFactory used to construct the collection
+     * @param collectionPopulator used to pass values into the collection
+     * @param <T> resulting collection type
+     * @return populated collection
+     */
+    public <T> T collectImplicitVariables(ThreadContext context, BiFunction<ThreadContext, Integer, T> collectionFactory, BiConsumer<T, String> collectionPopulator) {
+        return collectVariables(context, collectionFactory, collectionPopulator, true);
+    }
+
+    public <T> T collectVariables(ThreadContext context, BiFunction<ThreadContext, Integer, T> collectionFactory, BiConsumer<T, String> collectionPopulator, Boolean implicit) {
         StaticScope current = this;
 
         T collection = collectionFactory.apply(context, current.variableNamesLength);
@@ -496,21 +588,39 @@ public class StaticScope implements Serializable, Cloneable {
         HashMap<String, Object> dedup = new HashMap<>();
 
         while (current.isBlockOrEval) {
-            for (String name : current.variableNames) {
-                dedup.computeIfAbsent(name, key -> {collectionPopulator.accept(collection, key); return key;});
-            }
+            addVariableNamesToCollection(current, collectionPopulator, dedup, collection, implicit);
             current = current.enclosingScope;
         }
 
         // once more for method scope
-        for (String name : current.variableNames) {
-            dedup.computeIfAbsent(name, key -> {collectionPopulator.accept(collection, key); return key;});
-        }
+        addVariableNamesToCollection(current, collectionPopulator, dedup, collection, implicit);
 
         return collection;
     }
 
-    @Deprecated(since = "10.0")
+    private static <T> void addVariableNamesToCollection(StaticScope current, BiConsumer<T, String> collectionPopulator, HashMap<String, Object> dedup, T collection, Boolean implicit) {
+        BitSet implicitVariables = current.implicitVariables;
+
+        boolean hasImplicits = implicitVariables != null;
+        boolean filterImplicits = implicit != null;
+        if (filterImplicits && implicit && !hasImplicits) return;
+
+        int variableNamesLength = current.variableNamesLength;
+        String[] variableNames = current.variableNames;
+
+        for (int i = 0; i < variableNamesLength; i++) {
+            if (hasImplicits && implicitVariables.get(i)) {
+                if (filterImplicits && !implicit) continue;
+            } else if (filterImplicits && implicit) continue;
+
+            String name = variableNames[i];
+            dedup.computeIfAbsent(name, key -> {
+                collectionPopulator.accept(collection, key);
+                return key;});
+        }
+    }
+
+    @Deprecated(since = "10.0.0.0")
     public RubyArray getLocalVariables(Ruby runtime) {
         return getLocalVariables(runtime.getCurrentContext());
     }
@@ -522,13 +632,15 @@ public class StaticScope implements Serializable, Cloneable {
      * @return populated RubyArray
      */
     public RubyArray getLocalVariables(ThreadContext context) {
-        return collectVariables(
+        return collectAllVariables(
                 context,
-                (ctxt, length) -> allocArray(ctxt, length),
-                (array, id) -> {
-                    RubySymbol symbol = Convert.asSymbol(context, id);
-                    if (symbol.validLocalVariableName()) array.append(context, symbol);
-                });
+                Create::allocArray,
+                (array, id) -> appendVariableIfValid(context, array, id));
+    }
+
+    private static void appendVariableIfValid(ThreadContext context, RubyArray<?> array, String id) {
+        RubySymbol symbol = Convert.asSymbol(context, id);
+        if (symbol.validLocalVariableName()) array.append(context, symbol);
     }
 
     public int isDefined(String name, int depth) {
@@ -539,6 +651,19 @@ public class StaticScope implements Serializable, Cloneable {
             return enclosingScope.isDefined(name, depth + 1);
         } else {
             return (depth << 16) | exists(name);
+        }
+    }
+
+    public int isDefinedNotImplicit(String name, int depth) {
+        int slot = existsAndNotImplicit(name);
+        if (slot == IMPLICIT) return slot;
+
+        if (isBlockOrEval) {
+            if (slot >= 0) return (depth << 16) | slot;
+
+            return enclosingScope.isDefinedNotImplicit(name, depth + 1);
+        } else {
+            return (depth << 16) | slot;
         }
     }
 

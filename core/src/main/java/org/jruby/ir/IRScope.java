@@ -103,7 +103,7 @@ public abstract class IRScope implements ParseResult {
 
     // List of all scopes this scope contains lexically.  This is not used
     // for execution, but is used during dry-runs for debugging.
-    private final List<IRScope> lexicalChildren = Collections.synchronizedList(new ArrayList<>());
+    private final List<IRScope> lexicalChildren = Collections.synchronizedList(new ArrayList<>(1));
 
     /** Startup interpretation depends on this */
     protected InterpreterContext interpreterContext;
@@ -282,6 +282,15 @@ public abstract class IRScope implements ParseResult {
         return false;
     }
 
+    public boolean isWithinMethod() {
+        for (IRScope current = this; current != null; current = current.getLexicalParent()) {
+            if (current instanceof IRModuleBody) return false;
+            if (current instanceof IRMethod) return true;
+        }
+
+        return false;
+    }
+
     // walks up closures
     public IRScope getNearestNonClosurelikeScope() {
         IRScope current = this;
@@ -377,7 +386,7 @@ public abstract class IRScope implements ParseResult {
         throw new IllegalArgumentException("This is only here because prism requires this in ParseResult");
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.1.0")
     public String getFileName() {
         return getFile();
     }
@@ -386,7 +395,7 @@ public abstract class IRScope implements ParseResult {
         return getRootLexicalScope().getFile();
     }
 
-    @Deprecated
+    @Deprecated(since = "9.2.1.0")
     public int getLineNumber() {
         return lineNumber;
     }

@@ -129,7 +129,7 @@ public class RubyDate extends RubyObject {
     // Julian Day Number day 0 ... `def self.civil(y=-4712, m=1, d=1, sg=ITALY)`
     static final DateTime defaultDateTime = new DateTime(-4712 - 1, 1, 1, 0, 0, CHRONO_ITALY_UTC);
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     static RubyClass getDate(final Ruby runtime) {
         return getDate(runtime.getCurrentContext());
     }
@@ -138,7 +138,7 @@ public class RubyDate extends RubyObject {
         return (RubyClass) objectClass(context).getConstantAt(context, "Date");
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     static RubyClass getDateTime(final Ruby runtime) {
         return getDateTime(runtime.getCurrentContext());
     }
@@ -147,7 +147,7 @@ public class RubyDate extends RubyObject {
         return (RubyClass) objectClass(context).getConstantAt(context, "DateTime");
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     static boolean isDateTime(final Ruby runtime, final IRubyObject type) {
         return isDateTime(runtime.getCurrentContext(), type);
     }
@@ -166,7 +166,7 @@ public class RubyDate extends RubyObject {
         this.dt = dt; // assuming of = 0 (UTC)
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyDate(Ruby runtime, DateTime dt) {
         this(runtime, getDate(runtime.getCurrentContext()), dt);
     }
@@ -186,7 +186,7 @@ public class RubyDate extends RubyObject {
         this.subMillisNum = subMillisNum; this.subMillisDen = subMillisDen;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public RubyDate(Ruby runtime, long millis, Chronology chronology) {
         this(runtime.getCurrentContext(), millis, chronology);
     }
@@ -491,7 +491,7 @@ public class RubyDate extends RubyObject {
         return dt;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     static int getYear(IRubyObject year) {
         return getYear(((RubyBasicObject) year).getCurrentContext(), year);
     }
@@ -502,7 +502,7 @@ public class RubyDate extends RubyObject {
         return (y <= 0) ? --y : y; // due julian date calc -> see adjustJodaYear
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     static int getMonth(IRubyObject month) {
         return getYear(((RubyBasicObject) month).getCurrentContext(), month);
     }
@@ -693,7 +693,7 @@ public class RubyDate extends RubyObject {
         return DateUtils._valid_ordinal_p(y, day, sg);
     }
 
-    @Deprecated // NOTE: should go away once no date.rb is using it
+    @Deprecated(since = "9.2.0.0") // NOTE: should go away once no date.rb is using it
     @JRubyMethod(name = "_valid_ordinal?", meta = true, required = 2, optional = 1, checkArity = false, visibility = Visibility.PRIVATE)
     public static IRubyObject _valid_ordinal_p(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 2, 3);
@@ -703,7 +703,7 @@ public class RubyDate extends RubyObject {
         return jd == null ? context.nil : asFixnum(context, jd);
     }
 
-    @Deprecated // NOTE: should go away once no date.rb is using it
+    @Deprecated(since = "9.2.0.0") // NOTE: should go away once no date.rb is using it
     @JRubyMethod(name = "_valid_ordinal?", required = 2, optional = 1, checkArity = false, visibility = Visibility.PRIVATE)
     public IRubyObject _valid_ordinal_p(ThreadContext context, IRubyObject[] args) {
         return RubyDate._valid_ordinal_p(context, null, args);
@@ -742,7 +742,7 @@ public class RubyDate extends RubyObject {
         return DateUtils._valid_commercial_p(y, w, d, sg);
     }
 
-    @Deprecated // NOTE: should go away once no date.rb is using it
+    @Deprecated(since = "9.2.0.0") // NOTE: should go away once no date.rb is using it
     @JRubyMethod(name = "_valid_commercial?", meta = true, required = 3, optional = 1, checkArity = false, visibility = Visibility.PRIVATE)
     public static IRubyObject _valid_commercial_p(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 3, 4);
@@ -752,7 +752,7 @@ public class RubyDate extends RubyObject {
         return jd == null ? context.nil : asFixnum(context, jd);
     }
 
-    @Deprecated // NOTE: should go away once no date.rb is using it
+    @Deprecated(since = "9.2.0.0") // NOTE: should go away once no date.rb is using it
     @JRubyMethod(name = "_valid_weeknum?", meta = true, required = 4, optional = 1, checkArity = false, visibility = Visibility.PRIVATE)
     public static IRubyObject _valid_weeknum_p(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 4, 5);
@@ -798,7 +798,7 @@ public class RubyDate extends RubyObject {
         return jd == null ? context.nil : asFixnum(context, jd);
     }
 
-    @Deprecated // NOTE: should go away once no date.rb is using it
+    @Deprecated(since = "9.2.0.0") // NOTE: should go away once no date.rb is using it
     @JRubyMethod(name = "_valid_civil?", required = 3, optional = 1, checkArity = false, visibility = Visibility.PRIVATE)
     public IRubyObject _valid_civil_p(ThreadContext context, IRubyObject[] args) {
         return RubyDate._valid_civil_p(context, null, args);
@@ -1545,7 +1545,7 @@ public class RubyDate extends RubyObject {
         return getValidStart(context, sg.convertToFloat().asDouble(context), ITALY);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     static long valid_sg(ThreadContext context, IRubyObject sg) {
         return getValidStart(context, sg.convertToFloat().asDouble(context), 0);
     }
@@ -1687,7 +1687,7 @@ public class RubyDate extends RubyObject {
         return new RubyDateParser().parse(context, format, (RubyString) string);
     }
 
-    // @Deprecated
+    // @Deprecated(since = "9.2.0.0")
     public static IRubyObject _strptime(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         return switch (args.length) {
             case 1 -> _strptime(context, self, args[0]);

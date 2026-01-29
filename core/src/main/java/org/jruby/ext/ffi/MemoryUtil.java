@@ -228,7 +228,7 @@ public final class MemoryUtil {
         return Create.newArrayNoCopy(context, objArray);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static void putArrayOfFloat32(MemoryIO io, long offset, RubyArray ary) {
         putArrayOfFloat32(((RubyBasicObject) ary).getCurrentContext(), io, offset, ary);
     }
@@ -258,7 +258,7 @@ public final class MemoryUtil {
         return Create.newArrayNoCopy(context, objArray);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static void putArrayOfFloat64(MemoryIO io, long offset, RubyArray ary) {
         putArrayOfFloat64(ary.getCurrentContext(), io, offset, ary);
     }

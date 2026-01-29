@@ -75,7 +75,7 @@ public class JavaArrayUtilities {
         return string;
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public static IRubyObject ruby_string_to_bytes(IRubyObject recv, IRubyObject string) {
         return ruby_string_to_bytes(((RubyBasicObject) recv).getCurrentContext(), recv, string);
     }

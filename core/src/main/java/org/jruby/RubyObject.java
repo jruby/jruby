@@ -109,7 +109,7 @@ public class RubyObject extends RubyBasicObject {
         super(metaClass);
     }
 
-    @Deprecated
+    @Deprecated(since = "1.7.0")
     protected RubyObject(Ruby runtime, RubyClass metaClass, boolean useObjectSpace, boolean canBeTainted) {
         super(runtime, metaClass, useObjectSpace, canBeTainted);
     }
@@ -226,7 +226,7 @@ public class RubyObject extends RubyBasicObject {
      * @deprecated no longer used - uses Java's System.out
      * @param obj to puts
      */
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public static void puts(Object obj) {
         System.out.println(obj.toString());
     }
@@ -336,7 +336,7 @@ public class RubyObject extends RubyBasicObject {
      * Tries to convert this object to the specified Ruby type, using
      * a specific conversion method.
      */
-    @Deprecated
+    @Deprecated(since = "1.1.6")
     public final IRubyObject convertToType(RubyClass target, int convertMethodIndex) {
         throw new RuntimeException("Not supported; use the String versions");
     }
@@ -351,7 +351,7 @@ public class RubyObject extends RubyBasicObject {
      * arguments in the args-array is optional, but can contain the
      * filename and line of the string under evaluation.
      */
-    @Deprecated
+    @Deprecated(since = "1.1.2")
     public IRubyObject specificEval(ThreadContext context, RubyModule mod, IRubyObject[] args, Block block, EvalType evalType) {
         if (block.isGiven()) {
             if (args.length > 0) throw argumentError(context, args.length, 0);
@@ -374,7 +374,7 @@ public class RubyObject extends RubyBasicObject {
             file = args[1].convertToString().asJavaString();
             line = args.length > 2 ? toInt(context, args[2]) - 1 : 0;
         } else {
-            file = "(eval at " + context.getFileAndLine() + ")";
+            file = "(eval at " + context.getSingleBacktrace().getFileAndLine() + ")";
             line = 0;
         }
 

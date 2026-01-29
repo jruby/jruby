@@ -1,6 +1,5 @@
 #!/bin/sh
-# shellcheck shell=dash   # local variable support
-# shellcheck disable=1007 # spurious warnings when initializing multiple vars
+# shellcheck disable=3043 # assume local variable support in shell
 
 # -----------------------------------------------------------------------------
 # jruby.sh - Start Script for the JRuby interpreter
@@ -59,6 +58,7 @@ fi
 # https://github.com/mentalisttraceur/esceval
 esceval()
 {
+    # shellcheck disable=1007 # multiple empty var initialization intentional here
     local escaped= unescaped= output=
     REPLY=
 
@@ -170,6 +170,16 @@ is_newer() {
     [ -e "$master" ] && ! find "$@" -newer "$master" 2>/dev/null | read -r _
 }
 
+# unquote STRING
+#
+# Remove single/double quotes from beginning and end of a string
+unquote() {
+    REPLY=$1
+    case $REPLY in
+        (\"*\" | \'*\') REPLY=${REPLY#?}; REPLY=${REPLY%?} ;;
+    esac
+}
+
 # echo [STRING...]
 #
 # Dumb echo, i.e. print arguments joined by spaces with no further processing
@@ -179,7 +189,6 @@ echo() {
 
 # ----- Set variable defaults -------------------------------------------------
 
-java_class=org.jruby.Main
 JRUBY_SHELL=/bin/sh
 
 # Detect cygwin and mingw environments
@@ -235,12 +244,13 @@ if [ -r "/dev/urandom" ]; then
     JAVA_SECURITY_EGD="file:/dev/urandom"
 fi
 
-# Gather environment information as we go
-readonly cr='
+cr="$(printf '\r')" && readonly cr
+readonly nl='
 '
-environment_log="JRuby Environment$cr================="
+# Gather environment information as we go
+environment_log=""
 add_log() {
-    environment_log="${environment_log}${cr}${*-}"
+    environment_log="${environment_log}${nl}${*-}"
 }
 
 # Logic to process "arguments files" on both Java 8 and Java 9+
@@ -256,7 +266,7 @@ process_java_opts() {
             append java_opts_from_files "@$java_opts_file"
         else
             local line=
-            while read -r line; do
+            while IFS="$cr" read -r line; do
                 if [ "$line" ]; then
                     # shellcheck disable=2086  # Split options on whitespace
                     append java_opts_from_files $line
@@ -402,6 +412,15 @@ JRUBY_HOME="${SELF_PATH%/*/*}"
 
 # ----- File paths for various options and files we'll process later ----------
 
+# Find HOME of current user if empty
+if [ -z "${HOME-}" ]; then
+    username=$(id -un)
+    case $username in
+        (*[!_[:alnum]]*) ;;
+        (*) eval HOME="~$username"; export HOME ;;
+    esac
+fi
+
 # Module options to open up packages we need to reflect
 readonly jruby_module_opts_file="$JRUBY_HOME/bin/.jruby.module_opts"
 
@@ -416,6 +435,9 @@ readonly pwd_jruby_java_opts_file="$PWD/.jruby.java_opts"
 
 # Options from .dev_mode.java_opts for "--dev" mode, to reduce JRuby startup time
 readonly dev_mode_opts_file="$JRUBY_HOME/bin/.dev_mode.java_opts"
+
+# Release file with version-specific values
+readonly jruby_release_file="$JRUBY_HOME/bin/.jruby.release"
 
 # ----- Initialize environment log --------------------------------------------
 
@@ -504,29 +526,57 @@ if $use_modules; then
 fi
 
 # ----- Detect Java version and determine available features ------------------
+
+# assume Java 8 if no release file
+java_version=1.8
+java_major=8
+
 # shellcheck source=/dev/null
 if [ -f "$JAVA_HOME/release" ]; then
-    java_version=$(. "$JAVA_HOME/release" && echo "${JAVA_VERSION-}")
+    # Get java version from JAVA_HOME/release file
+    while IFS="$cr" read -r line; do
+        case $line in
+            (\#*) continue ;;
+        esac
+
+        name=${line%%=*}
+        value=${line#*=}
+
+        case $name in
+            (JAVA_VERSION) unquote "$value" && java_version=$REPLY ;;
+            (JAVA_RUNTIME_VERSION) unquote "$value" && java_runtime_version=$REPLY ;;
+        esac
+    done < "$JAVA_HOME"/release
+    unset line name value
 
     # convert version to major, considering 1.8 as 8
     case $java_version in
         1.8 | 1.8.*) java_major=8 ;;
         *)           java_major=${java_version%%.*} ;;
     esac
-else
-    # assume Java 8 if no release file
-    java_version=1.8
-    java_major=8
 fi
 
+# Get main class and version from .jruby.release
+
 # shellcheck source=/dev/null
-if [ -f "$JRUBY_HOME/bin/.java-version" ] && . "$JRUBY_HOME/bin/.java-version" && [ "${JRUBY_MINIMUM_JAVA_VERSION-}" ]; then
+# shellcheck disable=2153  # Assigned in sourced file
+if [ -f "$jruby_release_file" ] && . "$jruby_release_file"; then
+    java_class=$JRUBY_MAIN
+    jruby_version=$JRUBY_VERSION
     minimum_java_version=$JRUBY_MINIMUM_JAVA_VERSION
 else
-    # Only 9.4.12.0 and earlier will have shipped without a .java-version file, so fall back on minimum of 8
+    # Only 9.4.14.0 and earlier will have shipped without a .jruby.release file, so fall back on 9.4 defaults
+    java_class=org.jruby.Main
+    jruby_version=unspecified
     minimum_java_version=8
 fi
-add_log "Detected Java version: $java_version"
+
+# Default java_runtime_version to $java_version
+: "${java_runtime_version:=$java_version}"
+
+add_log "Detected Java version: $java_version (major: $java_major)"
+add_log "Detected Java runtime version: $java_runtime_version"
+add_log "Detected JRuby minimum java version: $minimum_java_version"
 
 # Present a useful error if running a Java version lower than bin/.java-version
 if [ "$java_major" -lt "$minimum_java_version" ]; then
@@ -702,6 +752,10 @@ do
         -X*.*) append java_args -Djruby."${1#-X}" ;;
         # Match switches that take an argument
         -[CeIS])
+            if [ "$#" -eq 1 ]; then
+                echo "Error: Missing argument to $1" >&2
+                exit 2
+            fi
             append ruby_args "$1" "$2"
             shift
             ;;
@@ -802,17 +856,18 @@ if $use_modules; then
     process_java_opts "$jruby_module_opts_file"
 fi
 
-# Default JVM Class Data Sharing Archive (jsa) file for JVMs that support it
-readonly jruby_jsa_file="$JRUBY_HOME/lib/jruby-java$java_version.jsa"
+if [ -n "${JRUBY_JSA-}" ]; then
+    # Allow overriding default JSA file location
+    jruby_jsa_file="$JRUBY_JSA"
+else
+    # Default JVM Class Data Sharing Archive (jsa) file for JVMs that support it
+    jruby_jsa_file="$JRUBY_HOME/lib/jruby-java$java_runtime_version.jsa"
+fi
+readonly jruby_jsa_file
 
 # Find JSAs for all Java versions
 assign jruby_jsa_files "$JRUBY_HOME"/lib/jruby-java*.jsa
 readonly jruby_jsa_files
-
-# Allow overriding default JSA file location
-if [ -n "${JRUBY_JSA-}" ]; then
-    jruby_jsa_file="$JRUBY_JSA"
-fi
 
 # Ensure the AppCDS parent directory is actually writable
 if dir_name "$jruby_jsa_file" && ! [ -w "$REPLY" ]; then
@@ -955,7 +1010,9 @@ add_log
 add_log "Java command line:"
 add_log "  $*"
 
+# shellcheck source=/dev/null
 if $print_environment_log; then
+    environment_log="JRuby Environment${nl}=================${nl}${nl}JRuby version: ${jruby_version}${environment_log}"
     echo "$environment_log"
     exit 0
 fi

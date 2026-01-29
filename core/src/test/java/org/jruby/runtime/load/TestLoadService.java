@@ -33,6 +33,8 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.test.Base;
 import org.jruby.test.BasicLibraryTestService;
 
+import java.util.Collections;
+
 import static org.jruby.api.Access.loadService;
 
 public class TestLoadService extends Base {
@@ -120,5 +122,12 @@ public class TestLoadService extends Base {
         sw.clear();
 
         assertEquals("StringWrapper()", sw.toString());
+    }
+
+    public void testLoadedFeatureWithPath() {
+        // Test that a simple feature lock name does not trigger AIOOB (https://github.com/jruby/jruby/issues/8958)
+        String lockedFeature = "previous_feature";
+        String feature = "current_feature";
+        assertEquals(null, LibrarySearcher.loadedFeatureWithPath(lockedFeature, feature, LibrarySearcher.Suffix.RUBY, Collections.EMPTY_LIST));
     }
 }

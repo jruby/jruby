@@ -4,3 +4,5 @@ fails:Thread::Backtrace::Location#absolute_path canonicalization returns a canon
 fails:Thread::Backtrace::Location#absolute_path canonicalization returns a canonical path without symlinks, even when __FILE__ is removed
 fails:Thread::Backtrace::Location#absolute_path when used in a core method returns nil
 fails:Thread::Backtrace::Location#absolute_path when used in eval with a given filename returns nil with absolute_path
+windows:Thread::Backtrace::Location#absolute_path returns an absolute path when using a relative main script path
+windows:Thread::Backtrace::Location#absolute_path returns the correct absolute path when using a relative main script path and changing CWD

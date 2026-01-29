@@ -1280,7 +1280,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
     // Pre-Ruby 3.4 path for JRuby 9.4.x.
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     protected Operand buildDStr(Variable result, U[] nodePieces, Encoding encoding, boolean isFrozen, int line) {
         if (result == null) result = temp();
 
@@ -1807,7 +1807,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
     protected Operand buildNthRef(int matchNumber) {
-        return copy(new NthRef(scope, matchNumber));
+        return addResultInstr(new BuildNthRefInstr(temp(), matchNumber));
     }
 
     // FIXME: The logic for lazy and non-lazy building is pretty icky...clean up
@@ -1924,7 +1924,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     protected abstract Operand buildColon2ForConstAsgnDeclNode(U lhs, Variable valueResult, boolean constMissing);
 
-    @Deprecated
+    @Deprecated(since = "9.4.7.0")
     protected Operand buildOpAsgnConstDecl(Y left, U right, RubySymbol operator) {
         Operand lhs = build((U) left);
         Operand rhs = build(right);
@@ -1940,7 +1940,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         return copy(temp(), putConstant(parent, name, result));
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     protected abstract Operand putConstant(Y constant, Operand value);
     protected abstract Operand putConstant(Y constant, CodeBlock value);
 
@@ -2233,8 +2233,8 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         Variable errorString = copy(nil());
 
         label("pattern_case_end", end -> {
-            List<Label> labels = new ArrayList<>();
-            Map<Label, U> bodies = new HashMap<>();
+            List<Label> labels = new ArrayList<>(4);
+            Map<Label, U> bodies = new HashMap<>(4);
 
             // build each "when"
             Variable deconstructed = copy(nil());
@@ -2269,7 +2269,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
                 fcall(inspect, manager.getObjectClass(), "sprintf", new FrozenString("%s: key not found: :%s"), value, errorString);
                 Operand exceptionClass = searchModuleForConst(temp(), getManager().getObjectClass(), symbol("NoMatchingPatternKeyError"));
-                List<KeyValuePair<Operand, Operand>> kwargs = new ArrayList<>();
+                List<KeyValuePair<Operand, Operand>> kwargs = new ArrayList<>(4);
                 kwargs.add(new KeyValuePair<>(new Symbol(symbol("key")), errorString));
                 kwargs.add(new KeyValuePair<>(new Symbol(symbol("matchee")), value));
                 Variable exception = addResultInstr(CallInstr.create(scope, NORMAL, temp(), symbol("new"), exceptionClass, new Operand[] { inspect, new Hash(kwargs) }, NullBlock.INSTANCE, CALL_KEYWORD));
@@ -2684,7 +2684,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             addInstr(new ThreadPollInstr(true));
             // Restore $! and jump back to the entry of the rescue block
             RescueBlockInfo rbi = activeRescueBlockStack.peek();
-            addInstr(new PutGlobalVarInstr(symbol("$!"), rbi.savedExceptionVariable));
+            addInstr(new RuntimeHelperCall(temp(), RESET_GVAR_UNDERSCORE, new Operand[] { rbi.savedExceptionVariable }));
             addInstr(new JumpInstr(rbi.entryLabel));
             // Retries effectively create a loop
             scope.setHasLoops();
@@ -2712,7 +2712,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                 // for non-local returns (from rescue block) we need to restore $! so it does not get carried over
                 if (!activeRescueBlockStack.isEmpty()) {
                     RescueBlockInfo rbi = activeRescueBlockStack.peek();
-                    addInstr(new PutGlobalVarInstr(symbol("$!"), rbi.savedExceptionVariable));
+                    addInstr(new RuntimeHelperCall(temp(), RESET_GVAR_UNDERSCORE, new Operand[] { rbi.savedExceptionVariable }));
                 }
 
                 addInstr(new NonlocalReturnInstr(retVal, definedWithinMethod ? scope.getNearestMethod().getId() : "--none--"));
@@ -3069,7 +3069,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
     public void addArgumentDescription(ArgumentType type, RubySymbol name) {
-        if (argumentDescriptions == null) argumentDescriptions = new ArrayList<>();
+        if (argumentDescriptions == null) argumentDescriptions = new ArrayList<>(2);
 
         argumentDescriptions.add(type);
         argumentDescriptions.add(name);

@@ -143,12 +143,12 @@ public class RubyFileStat extends RubyObject {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject initialize19(IRubyObject fname, Block unusedBlock) {
         return initialize(fname, unusedBlock);
     }
 
-    @Deprecated(since = "10.0")
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject initialize(IRubyObject fname, Block unusedBlock) {
         return initialize(getCurrentContext(), fname, unusedBlock);
     }
@@ -167,7 +167,7 @@ public class RubyFileStat extends RubyObject {
                 context.runtime.newTime(stat.atime() * 1000);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject atime() {
         return atime(getCurrentContext());
     }
@@ -179,7 +179,7 @@ public class RubyFileStat extends RubyObject {
         return asFixnum(context, stat.blockSize());
     }
 
-    @Deprecated
+    @Deprecated(since = "9.0.4.0")
     public RubyFixnum blksize() {
         ThreadContext context = getCurrentContext();
         checkInitialized(context);
@@ -192,7 +192,7 @@ public class RubyFileStat extends RubyObject {
         return asBoolean(context, stat.isBlockDev());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject blockdev_p() {
         return blockdev_p(getCurrentContext());
     }
@@ -204,7 +204,7 @@ public class RubyFileStat extends RubyObject {
         return asFixnum(context, stat.blocks());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject blocks() {
         return blocks(getCurrentContext());
     }
@@ -215,7 +215,7 @@ public class RubyFileStat extends RubyObject {
         return asBoolean(context, stat.isCharDev());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject chardev_p() {
         return chardev_p(getCurrentContext());
     }
@@ -237,7 +237,7 @@ public class RubyFileStat extends RubyObject {
         }
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject cmp(IRubyObject other) {
         return cmp(getCurrentContext(), other);
     }
@@ -251,7 +251,7 @@ public class RubyFileStat extends RubyObject {
         return context.runtime.newTime(stat.ctime() * 1000);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject ctime() {
         return ctime(getCurrentContext());
     }
@@ -271,7 +271,7 @@ public class RubyFileStat extends RubyObject {
         return context.runtime.newTime(btime.toMillis());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject birthtime() {
         return birthtime(getCurrentContext());
     }
@@ -282,7 +282,7 @@ public class RubyFileStat extends RubyObject {
         return asFixnum(context, stat.dev());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject dev() {
         return dev(getCurrentContext());
     }
@@ -294,7 +294,7 @@ public class RubyFileStat extends RubyObject {
         return asFixnum(context, stat.major(stat.dev()));
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject devMajor() {
         return devMajor(getCurrentContext());
     }
@@ -306,7 +306,7 @@ public class RubyFileStat extends RubyObject {
         return asFixnum(context, stat.minor(stat.dev()));
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject devMinor() {
         return devMinor(getCurrentContext());
     }
@@ -317,7 +317,7 @@ public class RubyFileStat extends RubyObject {
         return asBoolean(context, stat.isDirectory());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public RubyBoolean directory_p() {
         return directory_p(getCurrentContext());
     }
@@ -328,7 +328,7 @@ public class RubyFileStat extends RubyObject {
         return asBoolean(context, stat.isExecutable());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject executable_p() {
         return executable_p(getCurrentContext());
     }
@@ -339,7 +339,7 @@ public class RubyFileStat extends RubyObject {
         return asBoolean(context, stat.isExecutableReal());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject executableReal_p() {
         return executableReal_p(getCurrentContext());
     }
@@ -350,7 +350,7 @@ public class RubyFileStat extends RubyObject {
         return asBoolean(context, stat.isFile());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public RubyBoolean file_p() {
         return file_p(getCurrentContext());
     }
@@ -361,7 +361,7 @@ public class RubyFileStat extends RubyObject {
         return newString(context, stat.ftype());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public RubyString ftype() {
         return ftype(getCurrentContext());
     }
@@ -373,7 +373,7 @@ public class RubyFileStat extends RubyObject {
         return asFixnum(context, stat.gid());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject gid() {
         return gid(getCurrentContext());
     }
@@ -385,7 +385,7 @@ public class RubyFileStat extends RubyObject {
         return asBoolean(context, stat.isGroupOwned());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject group_owned_p() {
         return group_owned_p(getCurrentContext());
     }
@@ -410,7 +410,7 @@ public class RubyFileStat extends RubyObject {
         return asFixnum(context, stat.ino());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject ino() {
         return ino(getCurrentContext());
     }
@@ -457,7 +457,7 @@ public class RubyFileStat extends RubyObject {
         return asFixnum(context, stat.uid());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject uid() {
         return uid(getCurrentContext());
     }
@@ -468,7 +468,7 @@ public class RubyFileStat extends RubyObject {
         return asFixnum(context, stat.mode());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject mode() {
         return mode(getCurrentContext());
     }
@@ -481,7 +481,7 @@ public class RubyFileStat extends RubyObject {
                 context.runtime.newTime(stat.mtime() * 1000);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject mtime() {
         return mtime(getCurrentContext());
     }
@@ -497,7 +497,7 @@ public class RubyFileStat extends RubyObject {
         return asBoolean(context, equal);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject mtimeEquals(IRubyObject other) {
         return mtimeEquals(getCurrentContext(), other);
     }
@@ -516,7 +516,7 @@ public class RubyFileStat extends RubyObject {
         return asBoolean(context, gt);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject mtimeGreaterThan(IRubyObject other) {
         return mtimeGreaterThan(getCurrentContext(), other);
     }
@@ -535,7 +535,7 @@ public class RubyFileStat extends RubyObject {
         return asBoolean(context, lt);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject mtimeLessThan(IRubyObject other) {
         return mtimeLessThan(getCurrentContext(), other);
     }
@@ -546,7 +546,7 @@ public class RubyFileStat extends RubyObject {
         return asFixnum(context, stat.nlink());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject nlink() {
         return nlink(getCurrentContext());
     }
@@ -557,7 +557,7 @@ public class RubyFileStat extends RubyObject {
         return asBoolean(context, stat.isOwned());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject owned_p() {
         return owned_p(getCurrentContext());
     }
@@ -568,7 +568,7 @@ public class RubyFileStat extends RubyObject {
         return asBoolean(context, stat.isNamedPipe());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject pipe_p() {
         return pipe_p(getCurrentContext());
     }
@@ -579,7 +579,7 @@ public class RubyFileStat extends RubyObject {
         return asFixnum(context, stat.rdev());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject rdev() {
         return rdev(getCurrentContext());
     }
@@ -591,7 +591,7 @@ public class RubyFileStat extends RubyObject {
         return asFixnum(context, stat.major(stat.rdev()));
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject rdevMajor() {
         return rdevMajor(getCurrentContext());
     }
@@ -603,7 +603,7 @@ public class RubyFileStat extends RubyObject {
         return asFixnum(context, stat.minor(stat.rdev()));
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject rdevMinor() {
         return rdevMinor(getCurrentContext());
     }
@@ -614,7 +614,7 @@ public class RubyFileStat extends RubyObject {
         return asBoolean(context, stat.isReadable());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject readable_p() {
         return readable_p(getCurrentContext());
     }
@@ -625,7 +625,7 @@ public class RubyFileStat extends RubyObject {
         return asBoolean(context, stat.isReadableReal());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject readableReal_p() {
         return readableReal_p(getCurrentContext());
     }
@@ -636,7 +636,7 @@ public class RubyFileStat extends RubyObject {
         return asBoolean(context, stat.isSetgid());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject setgid_p() {
         return setgid_p(getCurrentContext());
     }
@@ -647,7 +647,7 @@ public class RubyFileStat extends RubyObject {
         return asBoolean(context, stat.isSetuid());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject setuid_p() {
         return setuid_p(getCurrentContext());
     }
@@ -671,7 +671,7 @@ public class RubyFileStat extends RubyObject {
         return asFixnum(context, sizeInternal(context));
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject size() {
         return size(getCurrentContext());
     }
@@ -685,7 +685,7 @@ public class RubyFileStat extends RubyObject {
         return asFixnum(context, size);
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject size_p() {
         return size_p(getCurrentContext());
     }
@@ -696,7 +696,7 @@ public class RubyFileStat extends RubyObject {
         return asBoolean(context, stat.isSocket());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject socket_p() {
         return socket_p(getCurrentContext());
     }
@@ -710,7 +710,7 @@ public class RubyFileStat extends RubyObject {
                 context.nil;
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject sticky_p() {
         return sticky_p(getCurrentContext());
     }
@@ -721,7 +721,7 @@ public class RubyFileStat extends RubyObject {
         return asBoolean(context, stat.isSymlink());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject symlink_p() {
         return symlink_p(getCurrentContext());
     }
@@ -732,7 +732,7 @@ public class RubyFileStat extends RubyObject {
         return asBoolean(context, stat.isWritable());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject writable_p() {
         return writable_p(getCurrentContext());
     }
@@ -743,7 +743,7 @@ public class RubyFileStat extends RubyObject {
         return asBoolean(context, stat.isWritableReal());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject writableReal_p() {
         return writableReal_p(getCurrentContext());
     }
@@ -754,7 +754,7 @@ public class RubyFileStat extends RubyObject {
         return asBoolean(context, stat.isEmpty());
     }
 
-    @Deprecated
+    @Deprecated(since = "10.0.0.0")
     public IRubyObject zero_p() {
         return zero_p(getCurrentContext());
     }
