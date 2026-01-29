@@ -644,19 +644,6 @@ DO NOT MODIFY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
-      <artifactId>syslog</artifactId>
-      <version>0.4.0</version>
-      <type>gem</type>
-      <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>rubygems</groupId>
-          <artifactId>jar-dependencies</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
       <artifactId>ffi-binary-libfixposix</artifactId>
       <version>0.5.1.1</version>
       <type>gem</type>
@@ -1112,6 +1099,19 @@ DO NOT MODIFY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
+      <artifactId>syslog</artifactId>
+      <version>0.4.0</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>rubygems</groupId>
+          <artifactId>jar-dependencies</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
       <artifactId>test-unit</artifactId>
       <version>3.6.7</version>
       <type>gem</type>
@@ -1191,7 +1191,6 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/strscan-3.1.7*</include>
           <include>specifications/subspawn-0.1.1*</include>
           <include>specifications/subspawn-posix-0.1.1*</include>
-          <include>specifications/syslog-0.4.0*</include>
           <include>specifications/ffi-binary-libfixposix-0.5.1.1*</include>
           <include>specifications/ffi-bindings-libfixposix-0.5.1.0*</include>
           <include>specifications/syntax_suggest-2.0.2*</include>
@@ -1227,6 +1226,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/rexml-3.4.4*</include>
           <include>specifications/rinda-0.2.0*</include>
           <include>specifications/rss-0.3.1*</include>
+          <include>specifications/syslog-0.4.0*</include>
           <include>specifications/test-unit-3.6.7*</include>
           <include>gems/rubygems-update-3.7.2*/**/*</include>
           <include>gems/benchmark-0.4.0*/**/*</include>
@@ -1275,7 +1275,6 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/strscan-3.1.7*/**/*</include>
           <include>gems/subspawn-0.1.1*/**/*</include>
           <include>gems/subspawn-posix-0.1.1*/**/*</include>
-          <include>gems/syslog-0.4.0*/**/*</include>
           <include>gems/ffi-binary-libfixposix-0.5.1.1*/**/*</include>
           <include>gems/ffi-bindings-libfixposix-0.5.1.0*/**/*</include>
           <include>gems/syntax_suggest-2.0.2*/**/*</include>
@@ -1311,6 +1310,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/rexml-3.4.4*/**/*</include>
           <include>gems/rinda-0.2.0*/**/*</include>
           <include>gems/rss-0.3.1*/**/*</include>
+          <include>gems/syslog-0.4.0*/**/*</include>
           <include>gems/test-unit-3.6.7*/**/*</include>
           <include>cache/rubygems-update-3.7.2*</include>
           <include>cache/benchmark-0.4.0*</include>
@@ -1359,7 +1359,6 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/strscan-3.1.7*</include>
           <include>cache/subspawn-0.1.1*</include>
           <include>cache/subspawn-posix-0.1.1*</include>
-          <include>cache/syslog-0.4.0*</include>
           <include>cache/ffi-binary-libfixposix-0.5.1.1*</include>
           <include>cache/ffi-bindings-libfixposix-0.5.1.0*</include>
           <include>cache/syntax_suggest-2.0.2*</include>
@@ -1395,6 +1394,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/rexml-3.4.4*</include>
           <include>cache/rinda-0.2.0*</include>
           <include>cache/rss-0.3.1*</include>
+          <include>cache/syslog-0.4.0*</include>
           <include>cache/test-unit-3.6.7*</include>
         </includes>
       </resource>
