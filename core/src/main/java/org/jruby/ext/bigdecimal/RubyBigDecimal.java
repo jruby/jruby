@@ -1267,9 +1267,9 @@ public class RubyBigDecimal extends RubyNumeric {
             // http://blade.nagaokaut.ac.jp/cgi-bin/scat.rb/ruby/ruby-core/17374
             // return callCoerced(context, op, b, true); -- this is MRI behavior.
             // We'll use ours for now, thus providing an ability to add Floats.
-            RubyBigDecimal ret = (RubyBigDecimal) callCoerced(context, sites(context).op_plus, b, true);
-            if (ret != null) {
-                ret.setResult(context, prec);
+            IRubyObject ret = callCoerced(context, sites(context).op_plus, b, true);
+            if (ret != null && ret instanceof RubyBigDecimal bd) {
+                bd.setResult(context, prec);
             }
             return ret;
         }
@@ -1333,7 +1333,13 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     private IRubyObject subInternal(ThreadContext context, RubyBigDecimal val, IRubyObject b, int prec) {
-        if (val == null) return ((RubyBigDecimal)callCoerced(context, sites(context).op_minus, b, true)).setResult(context, prec);
+        if (val == null) {
+            IRubyObject ret = callCoerced(context, sites(context).op_minus, b, true);
+            if (ret != null && ret instanceof RubyBigDecimal bd) {
+                bd.setResult(context, prec);
+            }
+            return ret;
+        }
         RubyBigDecimal res = subSpecialCases(context, val);
         return res != null ? res : new RubyBigDecimal(context.runtime, value.subtract(val.value)).setResult(context, prec);
     }
