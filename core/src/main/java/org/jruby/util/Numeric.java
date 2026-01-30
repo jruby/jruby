@@ -933,6 +933,15 @@ public class Numeric {
         return x.op_eqq(context, y).isTrue();
     }
 
+    // MRI: is_pos_inf
+    public static boolean isPositiveInfinity(IRubyObject x) {
+        double f;
+        if (!(x instanceof RubyFloat flote))
+            return false;
+        f = flote.getValue();
+        return Double.isInfinite(f) && 0 < f;
+    }
+
     @Deprecated(since = "10.0.0.0")
     public static void checkInteger(ThreadContext context, IRubyObject obj) {
         if (!(obj instanceof RubyInteger)) throw typeError(context, "not an integer");

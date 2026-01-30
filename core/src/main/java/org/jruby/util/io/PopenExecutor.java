@@ -73,6 +73,7 @@ public class PopenExecutor {
     }
 
     // MRI: check_pipe_command
+    @Deprecated(since = "10.1.0.0", forRemoval = true)
     public static IRubyObject checkPipeCommand(ThreadContext context, IRubyObject filenameOrCommand) {
         RubyString filenameStr = filenameOrCommand.convertToString();
         ByteList filenameByteList = filenameStr.getByteList();

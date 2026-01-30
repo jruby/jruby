@@ -126,8 +126,21 @@ public class BacktraceData implements Serializable {
                             continue;
                         }
 
-                        // mask internal file paths
-                        filename = TraceType.maskInternalFiles(filename);
+                        // skip internal sources if requested
+                        if (TraceType.isExcludedInternal(filename)) {
+                            // if excluding internal sources, skip frame altogether
+                            if (excludeInternal) continue;
+
+                            // if masking internal sources, replace only the highest frame with most recent Ruby frame
+                            if (maskNative) {
+                                dupFrame = true;
+                                dupFrameName = decodedName;
+                                continue;
+                            }
+
+                            // otherwise, mark internal file paths with "internal:" prefix
+                            filename = TraceType.maskInternalFiles(filename);
+                        }
 
                         // construct Ruby trace element
                         RubyStackTraceElement rubyElement = new RubyStackTraceElement(className, decodedName, filename, line, false, type);
@@ -180,28 +193,38 @@ public class BacktraceData implements Serializable {
                 BacktraceElement rubyFrame = backIter.next();
 
                 // construct Ruby trace element
-                final String newName;
+                final String translatedName;
                 switch (frameType) {
-                    case METHOD: newName = rubyFrame.method; break;
-                    case BLOCK: newName = rubyFrame.method; break;
-                    case CLASS: newName = "<class:" + rubyFrame.method + '>'; break;
-                    case MODULE: newName = "<module:" + rubyFrame.method + '>'; break;
-                    case METACLASS: newName = "singleton class"; break;
-                    case ROOT: newName = "<main>"; break;
+                    case METHOD: translatedName = rubyFrame.method; break;
+                    case BLOCK: translatedName = rubyFrame.method; break;
+                    case CLASS: translatedName = "<class:" + rubyFrame.method + '>'; break;
+                    case MODULE: translatedName = "<module:" + rubyFrame.method + '>'; break;
+                    case METACLASS: translatedName = "singleton class"; break;
+                    case ROOT: translatedName = "<main>"; break;
                     case EVAL:
-                        newName = rubyFrame.method == null || rubyFrame.method.isEmpty() ? "<main>" : rubyFrame.method;
+                        translatedName = rubyFrame.method == null || rubyFrame.method.isEmpty() ? "<main>" : rubyFrame.method;
                         break;
-                    default: newName = rubyFrame.method;
+                    default: translatedName = rubyFrame.method;
                 }
 
                 // skip internal sources if requested
                 filename = rubyFrame.filename;
-                if (excludeInternal && TraceType.isExcludedInternal(filename)) continue;
+                if (TraceType.isExcludedInternal(filename)) {
+                    // if excluding internal sources, skip frame altogether
+                    if (excludeInternal) continue;
 
-                // mask internal file paths
-                filename = TraceType.maskInternalFiles(filename);
+                    // if masking internal sources, replace only the highest frame with most recent Ruby frame
+                    if (maskNative) {
+                        dupFrame = true;
+                        dupFrameName = translatedName;
+                        continue;
+                    }
 
-                RubyStackTraceElement rubyElement = new RubyStackTraceElement("RUBY", newName, filename, rubyFrame.line + 1, false, frameType);
+                    // otherwise, mark internal file paths with "internal:" prefix
+                    filename = TraceType.maskInternalFiles(filename);
+                }
+
+                RubyStackTraceElement rubyElement = new RubyStackTraceElement("RUBY", translatedName, filename, rubyFrame.line + 1, false, frameType);
 
                 // dup if masking native and previous frame was native
                 if (maskNative && dupFrame) {

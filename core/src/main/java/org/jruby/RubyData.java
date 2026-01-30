@@ -98,6 +98,8 @@ public class RubyData {
             if (numMembers > 0) {
                 throw keywordError(context, "missing", members);
             }
+
+            selfObj.setFrozen(true);
             return;
         }
 

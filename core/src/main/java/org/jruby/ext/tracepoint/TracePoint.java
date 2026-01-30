@@ -2,6 +2,7 @@ package org.jruby.ext.tracepoint;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
+
 import org.jruby.Ruby;
 import org.jruby.RubyBinding;
 import org.jruby.RubyClass;
@@ -18,8 +19,13 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
 
+import static org.jruby.RubyHash.newHash;
+import static org.jruby.api.Access.getModule;
 import static org.jruby.api.Access.symbolClass;
-import static org.jruby.api.Convert.*;
+import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
@@ -230,6 +236,15 @@ public class TracePoint extends RubyObject {
         TracePoint tp = (TracePoint) self.callMethod(context, "new", events, block);
         tp.enable(context, Block.NULL_BLOCK);
         return tp;
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject stat(ThreadContext context, IRubyObject self) {
+        Ruby runtime = context.runtime;
+        var stats = runtime.getTraceEvents().eventHookStats();
+        return newHash(runtime,
+                getModule(context, "JRuby"),
+                newArray(context, asFixnum(context, stats[0]), asFixnum(context, stats[1])));
     }
     
     private void update(String eventName, String file, int line, String name, IRubyObject type, IRubyObject exception, IRubyObject returnValue, IRubyObject binding) {

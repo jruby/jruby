@@ -1,1 +1,0 @@
-fails:Set#proper_subset? when comparing to a Set-like object returns true if passed a Set-like object that self is a proper subset of
