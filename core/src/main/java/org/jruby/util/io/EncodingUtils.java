@@ -1515,14 +1515,16 @@ public class EncodingUtils {
 
         if (!ecopts.isNil() && ecopts instanceof RubyHash) {
             fallback = ((RubyHash)ecopts).op_aref(context, asSymbol(context, "fallback"));
-            if (fallback instanceof RubyHash) {
-                fallbackFunc = HASH_FALLBACK;
-            } else if (fallback instanceof RubyProc) { // not quite same check as MRI
-                fallbackFunc = PROC_FALLBACK;
-            } else if (fallback instanceof RubyMethod) { // not quite same check as MRI
-                fallbackFunc = METHOD_FALLBACK;
-            } else {
-                fallbackFunc = AREF_FALLBACK;
+            if (!fallback.isNil()) {
+                if (fallback instanceof RubyHash) {
+                    fallbackFunc = HASH_FALLBACK;
+                } else if (fallback instanceof RubyProc) { // not quite same check as MRI
+                    fallbackFunc = PROC_FALLBACK;
+                } else if (fallback instanceof RubyMethod) { // not quite same check as MRI
+                    fallbackFunc = METHOD_FALLBACK;
+                } else {
+                    fallbackFunc = AREF_FALLBACK;
+                }
             }
         }
 
