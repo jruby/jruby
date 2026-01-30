@@ -1938,9 +1938,7 @@ public class RubyModule extends RubyObject {
             putMethod(context, name, method);
         }
 
-        synchronized (getRuntime().getHierarchyLock()) {
-            invalidateCacheDescendants(context);
-        }
+        invalidateMethodCache(context);
     }
 
     public void removeMethod(ThreadContext context, String id) {
@@ -2374,6 +2372,17 @@ public class RubyModule extends RubyObject {
         lastInvalidatorSize = invalidators.size();
 
         methodInvalidator.invalidateAll(invalidators);
+    }
+
+    /**
+     * Invalidate the method cache of this class and all descendants under lock.
+     *
+     * @param context
+     */
+    public void invalidateMethodCache(ThreadContext context) {
+        synchronized (getRuntime().getHierarchyLock()) {
+            invalidateCacheDescendants(context);
+        }
     }
 
     public static class InvalidatorList<T> extends ArrayList<T> implements RubyClass.BiConsumerIgnoresSecond<RubyClass> {
