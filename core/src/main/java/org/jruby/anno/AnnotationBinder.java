@@ -242,6 +242,15 @@ public class AnnotationBinder extends AbstractProcessor {
             out.print(classAndSubs.stream().map(s -> quote(s)).collect(Collectors.joining(", ")));
             mappings.forEach((javaName, rubyName) -> out.print(", " + quote(javaName) + ", " + quote(rubyName) + ""));
             out.println(");");
+
+            // invalidateMethodCache if not booting core
+            out.println("        if (!core) {");
+            out.println("            cls.invalidateMethodCache(context);");
+            if (hasMeta || hasModule) {
+                out.println("            singletonClass.invalidateMethodCache(context);");
+            }
+            out.println("        }");
+
             out.println("    }");
 
             // write out a static initializer for frame names, so it only fires once
