@@ -2477,6 +2477,11 @@ public class RubyHash extends RubyObject implements Map {
         return dup;
     }
 
+    public RubyHash withRuby2Keywords(boolean ruby2Keywords) {
+        setRuby2KeywordHash(ruby2Keywords);
+        return this;
+    }
+
     public boolean hasDefaultProc() {
         return (flags & PROCDEFAULT_HASH_F) != 0;
     }
