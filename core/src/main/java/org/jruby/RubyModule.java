@@ -6841,6 +6841,7 @@ public class RubyModule extends RubyObject {
 
             for (IRubyObject _module : modules) {
                 RubyModule module = castAsModule(context, _module);
+                if (module.getClass() != RubyModule.class) throw typeError(context, "wrong argument type Class (expected Module)");
 
                 if (module.getSuperClass() != null) {
                     warn(context, module.getName(context) + " has ancestors, but Refinement#import_methods doesn't import their methods");
