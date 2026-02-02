@@ -38,6 +38,9 @@ project 'JRuby Core' do
                                      'Enable-Native-Access' => 'ALL-UNNAMED',
                                    }
                                  }],
+                  filters: [
+                    { artifact: 'com.dynatrace.hash4j:hash4j', excludes: '**/25/**' },
+                  ],
                   createSourcesJar: false,
                   compress: false)
   end
