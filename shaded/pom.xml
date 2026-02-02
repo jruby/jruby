@@ -12,7 +12,7 @@ DO NOT MODIFY - GENERATED CODE
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>10.0.3.0-SNAPSHOT</version>
+    <version>10.0.3.0</version>
   </parent>
   <artifactId>jruby-core</artifactId>
   <name>JRuby Core</name>
