@@ -1932,7 +1932,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     public static void marshalTo(ThreadContext context, RubyRegexp regexp, MarshalDumper output, RubyOutputStream out) {
-        output.registerLinkTarget(regexp);
+        output.registerObject(regexp);
         output.writeString(out, regexp.str);
 
         int options = regexp.pattern.getOptions() & EMBEDDABLE;

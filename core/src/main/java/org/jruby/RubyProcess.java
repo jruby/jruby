@@ -186,7 +186,7 @@ public class RubyProcess {
                               MarshalDumper marshalStream) {
             RubyStatus status = (RubyStatus) obj;
 
-            marshalStream.registerLinkTarget(status);
+            marshalStream.registerObject(status);
 
             marshalStream.dumpVariables(context, out, status, 2, (marshal, c, o, v, receiver) -> {
                 // TODO: marshal these values directly
@@ -260,31 +260,6 @@ public class RubyProcess {
             //checkErrno(runtime, pid, ECHILD);
         }
 
-        @JRubyMethod(name = "&")
-        public IRubyObject op_and(ThreadContext context, IRubyObject arg) {
-            long mask = toInt(context, arg);
-
-            if (mask < 0) throw argumentError(context, "negative mask value: " + mask);
-            if (mask > Integer.MAX_VALUE || mask < Integer.MIN_VALUE) {
-                throw rangeError(context, "mask value out of range: " + mask);
-            }
-
-            String message = switch ((int) mask) {
-                case 0x80 -> "Process::Status#coredump?";
-                case 0x7f -> "Process::Status#signaled? or Process::Status#termsig";
-                case 0xff -> "Process::Status#exited?, Process::Status#stopped? or Process::Status#coredump?";
-                case 0xff00 -> "Process::Status#exitstatus or Process::Status#stopsig";
-                default -> "other Process::Status predicates";
-            };
-            deprecateAndSuggest(context, "Process::Status#&", "3.5", message);
-
-            return asFixnum(context, status & mask);
-        }
-
-        private static void deprecateAndSuggest(ThreadContext context, String method, String version, String suggest) {
-            context.runtime.getWarnings().warnDeprecatedForRemovalAlternate(method, version, suggest);
-        }
-
         @JRubyMethod(name = "stopped?")
         public IRubyObject stopped_p(ThreadContext context) {
             return asBoolean(context, PosixShim.WAIT_MACROS.WIFSTOPPED(status));
@@ -345,23 +320,6 @@ public class RubyProcess {
         public IRubyObject exitstatus(ThreadContext context) {
             return PosixShim.WAIT_MACROS.WIFEXITED(status) ?
                 asFixnum(context, PosixShim.WAIT_MACROS.WEXITSTATUS(status)) : context.nil;
-        }
-
-        @JRubyMethod(name = ">>")
-        public IRubyObject op_rshift(ThreadContext context, IRubyObject other) {
-            long places = toInt(context, other);
-
-            if (places < 0) throw argumentError(context, "negative shift value: " + places);
-            if (places > Integer.MAX_VALUE) throw rangeError(context, "shift value out of range: " + places);
-
-            String message = switch ((int) places) {
-                case 7 -> "Process::Status#coredump?";
-                case 8 -> "Process::Status#exitstatus or Process::Status#stopsig";
-                default -> "other Process::Status attributes";
-            };
-            deprecateAndSuggest(context, "Process::Status#>>", "3.5", message);
-
-            return asFixnum(context, status >> places);
         }
 
         @Override
@@ -466,18 +424,6 @@ public class RubyProcess {
         @Deprecated(since = "9.0.0.0")
         public IRubyObject to_i() {
             return to_i(getCurrentContext().runtime);
-        }
-
-        @Deprecated(since = "9.0.0.0")
-        public IRubyObject op_rshift(Ruby runtime, IRubyObject other) {
-            var context = getCurrentContext();
-            long shiftValue = toLong(context, other);
-            return asFixnum(context, status >> shiftValue);
-        }
-
-        @Deprecated(since = "10.0.0.0")
-        public IRubyObject op_and(IRubyObject arg) {
-            return op_and(getCurrentContext(), arg);
         }
     }
 

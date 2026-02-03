@@ -53,6 +53,7 @@ import org.jruby.exceptions.TypeError;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Builtins;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.TimeSites;
@@ -809,11 +810,10 @@ public class RubyTime extends RubyObject {
 
     private static int safeCmp(ThreadContext context, RubyTime self, IRubyObject other) {
         int cmpResult;
-        CachingCallSite cmp = sites(context).cmp;
-        if (cmp.isBuiltin(self)) {
+        if (self.metaClass == context.runtime.getTime() && Builtins.checkTimeCmp(context)) {
             cmpResult = self.cmp((RubyTime) other);
         } else {
-            cmpResult = toInt(context, cmp.call(context, self, self, other));
+            cmpResult = toInt(context, sites(context).cmp.call(context, self, self, other));
         }
         return cmpResult;
     }

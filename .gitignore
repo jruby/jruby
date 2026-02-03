@@ -105,6 +105,7 @@ lib/ruby/stdlib/rake*
 lib/ruby/stdlib/rdoc*
 lib/ruby/stdlib/readline*
 lib/ruby/stdlib/reline*
+lib/ruby/stdlib/resolv.rb
 lib/ruby/stdlib/ripper.jar
 lib/ruby/stdlib/ruby2_keywords*
 lib/ruby/stdlib/rubygems*

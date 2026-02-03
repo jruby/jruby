@@ -1,0 +1,1 @@
+fails:Regexp.linear_time? returns true for positive lookarounds

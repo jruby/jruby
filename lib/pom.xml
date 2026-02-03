@@ -410,6 +410,19 @@ DO NOT MODIFY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
+      <artifactId>resolv</artifactId>
+      <version>0.7.0</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>rubygems</groupId>
+          <artifactId>jar-dependencies</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
       <artifactId>ruby2_keywords</artifactId>
       <version>0.0.5</version>
       <type>gem</type>
@@ -1147,6 +1160,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/prettyprint-0.2.0*</include>
           <include>specifications/psych-5.3.1*</include>
           <include>specifications/rake-ant-1.0.6*</include>
+          <include>specifications/resolv-0.7.0*</include>
           <include>specifications/ruby2_keywords-0.0.5*</include>
           <include>specifications/securerandom-0.4.1*</include>
           <include>specifications/shellwords-0.2.2*</include>
@@ -1229,6 +1243,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/prettyprint-0.2.0*/**/*</include>
           <include>gems/psych-5.3.1*/**/*</include>
           <include>gems/rake-ant-1.0.6*/**/*</include>
+          <include>gems/resolv-0.7.0*/**/*</include>
           <include>gems/ruby2_keywords-0.0.5*/**/*</include>
           <include>gems/securerandom-0.4.1*/**/*</include>
           <include>gems/shellwords-0.2.2*/**/*</include>
@@ -1311,6 +1326,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/prettyprint-0.2.0*</include>
           <include>cache/psych-5.3.1*</include>
           <include>cache/rake-ant-1.0.6*</include>
+          <include>cache/resolv-0.7.0*</include>
           <include>cache/ruby2_keywords-0.0.5*</include>
           <include>cache/securerandom-0.4.1*</include>
           <include>cache/shellwords-0.2.2*</include>

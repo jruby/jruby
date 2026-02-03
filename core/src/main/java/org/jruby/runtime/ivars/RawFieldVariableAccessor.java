@@ -89,7 +89,7 @@ public class RawFieldVariableAccessor extends FieldVariableAccessor {
             // accepts objects, yay, just need to check if we are proxied
             if (!unwrap)
             {
-                if (realClass.getIsReifiedExtendedJavaClass() == Boolean.TRUE)
+                if (Boolean.TRUE.equals(realClass.getIsReifiedExtendedJavaClass()))
                 {
                     MethodHandle cjpUnwrap = Binder
                             .from(realClass.reifiedClass(), ConcreteJavaProxy.class, Object.class)
@@ -112,7 +112,7 @@ public class RawFieldVariableAccessor extends FieldVariableAccessor {
             else
             {
                 // check if we are proxied
-                if (realClass.getIsReifiedExtendedJavaClass() == Boolean.TRUE)
+                if (Boolean.TRUE.equals(realClass.getIsReifiedExtendedJavaClass()))
                 {
                     // we are given a ConcreteJavaProxy, must unwrap first
                     MethodHandle cjpUnwrap = Binder
@@ -182,8 +182,8 @@ public class RawFieldVariableAccessor extends FieldVariableAccessor {
                     .invokeStatic(RubyObjectSpecializer.LOOKUP, JavaUtil.class, "convertJavaToUsableRubyObject");
             
             MethodHandle temp = MethodHandles.filterReturnValue(getter, wrapperGet);
-            
-            if (realClass.getIsReifiedExtendedJavaClass() == Boolean.TRUE)
+
+            if (Boolean.TRUE.equals(realClass.getIsReifiedExtendedJavaClass()))
             {
                 // we are given a ConcreteJavaProxy, must unwrap first
                 MethodHandle cjpUnwrap = Binder

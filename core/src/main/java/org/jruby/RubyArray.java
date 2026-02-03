@@ -64,6 +64,7 @@ import org.jruby.java.util.ArrayUtils;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Builtins;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
@@ -1028,10 +1029,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         int length = args.length;
         if (length == 0) return Create.newEmptyArray(context);
 
-        int arraySize = size();
         var result = Create.allocArray(context, length);
         for (int i = 0; i < length; i++) {
-            int index = toInt(context, args[i]);
             result.append(context, fetch(context, args[i], block));
         }
 
@@ -4039,8 +4038,8 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         DefaultComparator(ThreadContext context, final boolean honorOverride) {
             this.context = context;
             if ( honorOverride && context != null ) {
-                this.fixnumBypass = !honorOverride || fixnumClass(context).isMethodBuiltin("<=>");
-                this.stringBypass = !honorOverride || stringClass(context).isMethodBuiltin("<=>");
+                this.fixnumBypass = !honorOverride || Builtins.checkIntegerCmp(context);
+                this.stringBypass = !honorOverride || Builtins.checkStringCmp(context);
             }
             else { // no-opt
                 this.fixnumBypass = false;
@@ -5342,7 +5341,7 @@ float_loop:
     }
 
     public static void marshalTo(ThreadContext context, RubyOutputStream out, RubyArray array, MarshalDumper output) {
-        output.registerLinkTarget(array);
+        output.registerObject(array);
 
         int length = array.realLength;
 

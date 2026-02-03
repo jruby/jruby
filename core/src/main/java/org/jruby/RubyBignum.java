@@ -42,6 +42,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Convert;
 import org.jruby.api.Create;
 import org.jruby.api.JRubyAPI;
+import org.jruby.runtime.Builtins;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
@@ -705,7 +706,7 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
         }
         // number of words, not number of bits
         final int xbits = value.bitLength() / 8;
-        if ((xbits > BIGLEN_LIMIT) || (xbits * other > BIGLEN_LIMIT)) {
+        if (xbits * other > BIGLEN_LIMIT) {
             throw argumentError(context, "exponent is too large");
         } else {
             return newBignum(context.runtime, value.pow((int) other));
@@ -1174,12 +1175,20 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
     }
 
     public static void marshalTo(ThreadContext context, RubyOutputStream out, RubyBignum bignum, MarshalDumper output) {
-        output.registerLinkTarget(bignum);
+        output.registerObject(bignum);
+        marshalBigInteger(out, output, bignum.value);
+    }
 
-        int b = bignum.value.signum() >= 0 ? '+' : '-';
+    public static void marshalAsBignumTo(ThreadContext context, RubyOutputStream out, RubyFixnum fixnum, MarshalDumper output) {
+        output.registerObject(fixnum);
+        marshalBigInteger(out, output, BigInteger.valueOf(fixnum.getValue()));
+    }
+
+    private static void marshalBigInteger(RubyOutputStream out, MarshalDumper output, BigInteger value) {
+        int b = value.signum() >= 0 ? '+' : '-';
         out.write(b);
 
-        BigInteger absValue = bignum.value.abs();
+        BigInteger absValue = value.abs();
 
         byte[] digits = absValue.toByteArray();
 
@@ -1281,20 +1290,18 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
 
     @Override
     public IRubyObject isNegative(ThreadContext context) {
-        CachingCallSite op_lt_site = sites(context).basic_op_lt;
-        if (op_lt_site.isBuiltin(metaClass)) {
+        if (Builtins.checkIntegerLt(context)) {
             return asBoolean(context, value.signum() < 0);
         }
-        return op_lt_site.call(context, this, this, zero(context.runtime));
+        return sites(context).basic_op_lt.call(context, this, this, zero(context.runtime));
     }
 
     @Override
     public IRubyObject isPositive(ThreadContext context) {
-        CachingCallSite op_gt_site = sites(context).basic_op_gt;
-        if (op_gt_site.isBuiltin(metaClass)) {
+        if (Builtins.checkIntegerGt(context)) {
             return asBoolean(context, value.signum() > 0);
         }
-        return op_gt_site.call(context, this, this, zero(context.runtime));
+        return sites(context).basic_op_gt.call(context, this, this, zero(context.runtime));
     }
 
     @Override
@@ -1325,7 +1332,7 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
     // MRI: rb_int_s_isqrt, Fixnum portion
     @Override
     public IRubyObject sqrt(ThreadContext context) {
-        if (isNegativeNumber(context)) throw context.runtime.newMathDomainError("Numerical argument is out of domain - isqrt");
+        if (isNegativeNumber(context)) throw context.runtime.newMathDomainError("isqrt");
 
         return bignorm(context.runtime, floorSqrt(value));
     }

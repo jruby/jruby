@@ -123,9 +123,9 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
       execute_goal :enforce, rules: rules
     end
 
-    plugin :compiler, '3.8.1'
+    plugin :compiler, '3.14.1'
     plugin :shade, '3.5.1'
-    plugin :surefire, '3.0.0'
+    plugin :surefire, '3.5.4'
     plugin :plugin, '3.6.0'
     plugin(:invoker, '3.2.1',
            properties: { "jruby.version": '${project.version}',

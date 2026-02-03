@@ -12,3 +12,6 @@ fails:Predefined global $` is read-only when aliased
 fails:Predefined global $' is read-only when aliased
 fails:Predefined global $-0 raises a TypeError if assigned a boolean
 windows:Global variable $0 is the path given as the main script and the same as __FILE__
+fails:Predefined global $/ warns if assigned non-nil
+fails:Predefined global $-0 warns if assigned non-nil
+fails:Predefined global $\ warns if assigned non-nil

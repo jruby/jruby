@@ -1373,10 +1373,8 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(name = "to_set", rest = true, frame = true)
     public IRubyObject to_set(ThreadContext context, IRubyObject[] args) {
-        IRubyObject size = sites(context).size.call(context, this, this);
-
-        if (size instanceof RubyFloat flote && flote.isInfinite()) {
-            throw context.runtime.newRangeError("cannot convert an infinite range to a set");
+        if (isEndless) {
+            throw context.runtime.newRangeError("cannot convert endless range to a set");
         }
 
         return invokeSuper(context, this, context.getFrameKlazz(), context.getFrameName(), args, Block.NULL_BLOCK);
@@ -1414,7 +1412,7 @@ public class RubyRange extends RubyObject {
                               MarshalDumper marshalStream) {
             RubyRange range = (RubyRange) obj;
 
-            marshalStream.registerLinkTarget(range);
+            marshalStream.registerObject(range);
 
             marshalStream.dumpVariables(context, out, range, 3, (marshal, c, o, v, receiver) -> {
                 receiver.receive(marshal, c, o, "excl", v.isExclusive ? c.tru : c.fals);

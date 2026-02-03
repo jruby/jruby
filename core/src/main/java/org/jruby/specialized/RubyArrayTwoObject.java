@@ -10,6 +10,7 @@ import org.jruby.RubyString;
 import org.jruby.api.Create;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Builtins;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -266,9 +267,9 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
         IRubyObject o2 = cdr;
 
         int compare;
-        if (isFixnumBypass(runtime, sites, honorOverride) && o1 instanceof RubyFixnum && o2 instanceof RubyFixnum) {
+        if (isFixnumBypass(context, honorOverride) && o1 instanceof RubyFixnum && o2 instanceof RubyFixnum) {
             compare = compareFixnums((RubyFixnum) o1, (RubyFixnum) o2);
-        } else if (isStringBypass(runtime, sites, honorOverride) && o1 instanceof RubyString && o2 instanceof RubyString) {
+        } else if (isStringBypass(context, honorOverride) && o1 instanceof RubyString && o2 instanceof RubyString) {
             compare = ((RubyString) o1).op_cmp((RubyString) o2);
         } else {
             compare = compareOthers(context, o1, o2);
@@ -279,12 +280,12 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
         return this;
     }
 
-    private boolean isStringBypass(Ruby runtime, JavaSites.Array2Sites sites, boolean honorOverride) {
-        return !honorOverride || sites.op_cmp_string.isBuiltin(runtime.getString());
+    private boolean isStringBypass(ThreadContext context, boolean honorOverride) {
+        return !honorOverride || Builtins.checkStringCmp(context);
     }
 
-    private boolean isFixnumBypass(Ruby runtime, JavaSites.Array2Sites sites, boolean honorOverride) {
-        return !honorOverride || sites.op_cmp_fixnum.isBuiltin(runtime.getFixnum());
+    private boolean isFixnumBypass(ThreadContext context, boolean honorOverride) {
+        return !honorOverride || Builtins.checkIntegerCmp(context);
     }
 
     @Deprecated(since = "10.0.0.0")

@@ -188,7 +188,7 @@ public class RubyException extends RubyObject {
         @Override
         public void marshalTo(ThreadContext context, RubyOutputStream out, RubyException exc, RubyClass type,
                               MarshalDumper marshalStream) {
-            marshalStream.registerLinkTarget(exc);
+            marshalStream.registerObject(exc);
             marshalStream.dumpVariables(context, out, exc, 2, (marshal, c, o, v, receiver) -> {
                 receiver.receive(marshal, c, o, "mesg", v.getMessage());
                 receiver.receive(marshal, c, o, "bt", v.getBacktrace());

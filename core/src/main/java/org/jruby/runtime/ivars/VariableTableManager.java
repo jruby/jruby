@@ -107,7 +107,8 @@ public class VariableTableManager {
     }
 
     /**
-     * Copy constructor with deep cloning.
+     * Copy constructor with deep cloning for subclasses of Data types. The new realClass will be the
+     * subclass rather than the original Data type.
      *
      * @param original VariableTableManager to copy
      */
@@ -546,8 +547,8 @@ public class VariableTableManager {
         }
     }
 
-    public VariableTableManager duplicate(RubyClass realClass) {
-        return new VariableTableManager(this, realClass);
+    public VariableTableManager duplicateForData(RubyClass newRealClass) {
+        return new VariableTableManager(this, newRealClass);
     }
 
     /**

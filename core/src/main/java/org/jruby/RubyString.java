@@ -68,6 +68,7 @@ import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
+import org.jruby.runtime.Builtins;
 import org.jruby.runtime.CallBlock19;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
@@ -955,7 +956,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     public FString dupAsFString(Ruby runtime) {
         shareLevel = SHARE_LEVEL_BYTELIST;
-        FString dup = new FString(runtime, value, getCodeRange());
+        FString dup = new FString(runtime, value.dup(), getCodeRange());
         dup.shareLevel = SHARE_LEVEL_BYTELIST;
         dup.flags |= (flags & CR_MASK);
         dup.setFrozen(true);
@@ -2101,7 +2102,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     private boolean cmpIsBuiltin(ThreadContext context) {
-        return sites(context).cmp.isBuiltin(this);
+        return metaClass == context.runtime.getString() && Builtins.checkStringHash(context);
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -3848,7 +3849,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             return begLen == null ? context.nil : byteSubstr(context, begLen[0], begLen[1]);
         } else if (idx instanceof RubyFixnum fixnum) {
             long i = fixnum.getValue();
-            if (i > RubyFixnum.MAX || i < RubyFixnum.MIN) return context.nil;
+            if (i > Integer.MAX_VALUE || i < Integer.MIN_VALUE) return context.nil;
             index = (int) i;
         } else {
             StringSites sites = sites(context);

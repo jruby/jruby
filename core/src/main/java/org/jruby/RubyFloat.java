@@ -1150,7 +1150,7 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
     }
 
     public static void marshalTo(ThreadContext context, RubyOutputStream out, RubyFloat aFloat, MarshalDumper output) {
-        output.registerLinkTarget(aFloat);
+        output.registerObject(aFloat);
         output.writeString(out, aFloat.marshalDump(context));
     }
 
@@ -1310,6 +1310,11 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
     @Override
     public void appendIntoString(RubyString target) {
         target.catWithCodeRange((RubyString) to_s(getRuntime().getCurrentContext()));
+    }
+
+    @Override
+    public boolean isImmediate() {
+        return true;
     }
 
     @Deprecated(since = "9.2.0.0")

@@ -73,4 +73,20 @@ public class TestRubyString extends Base {
         res = str.split(context, pat, 4);
         assertEquals(3, res.size());
     }
+
+    // See https://github.com/jruby/jruby/pull/9145
+    public void testDefensiveFString() throws Throwable {
+        byte[] bytes = ByteList.plain("foo9145");
+        RubyString goodString = newString(context, bytes);
+        RubyString badString = newString(context, bytes);
+        ByteList badBytes = badString.getByteList();
+
+        RubyString fstring = context.runtime.freezeAndDedupString(badString);
+        badBytes.set(0, 'b');
+
+        // previously returned fstring should not have been modified
+        assertEquals(goodString, fstring);
+        assertNotSame(fstring.getByteList(), badBytes);
+        assertNotSame(fstring.getByteList().unsafeBytes(), badBytes.unsafeBytes());
+    }
 }

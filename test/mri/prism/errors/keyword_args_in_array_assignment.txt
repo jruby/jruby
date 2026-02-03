@@ -1,3 +1,0 @@
-matrix[5, axis: :y] = 8
-          ^~~~~~~~ unexpected keyword arg given in index assignment; keywords are not allowed in index assignment expressions
-
