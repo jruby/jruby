@@ -3,10 +3,12 @@ require_relative 'fixtures/classes'
 
 describe "Data#initialize" do
   context "with no members" do
-    it "is frozen" do
-      data = Data.define
+    ruby_bug "#21819", ""..."4.0.1" do
+      it "is frozen" do
+        data = Data.define
 
-      data.new.frozen?.should == true
+        data.new.should.frozen?
+      end
     end
   end
 
