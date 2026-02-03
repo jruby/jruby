@@ -1877,7 +1877,7 @@ public class RubyEnumerable {
 
         if (block.isGiven()) {
             callEach(context, eachSite(context), self, (ctx, largs, unused) -> {
-                var array = RubyArray.newBlankArrayInternal(ctx.runtime, len);
+                var array = RubyArrayNative.newBlankArrayInternal(ctx.runtime, len);
                 int myIx = ix.getAndIncrement();
                 array.eltInternalSet(0, packEnumValues(ctx, largs));
                 for (int i = 0, j = args.length; i < j; i++) {
@@ -1891,7 +1891,7 @@ public class RubyEnumerable {
         } else {
             final var zip = newArray(context);
             callEach(context, eachSite(context), self, Signature.ONE_REQUIRED, (ctx, largs, unused) -> {
-                var array = RubyArray.newBlankArrayInternal(ctx.runtime, len);
+                var array = RubyArrayNative.newBlankArrayInternal(ctx.runtime, len);
                 int myIx = ix.getAndIncrement();
                 array.eltInternalSet(0, packEnumValues(ctx, largs));
                 for (int i = 0, j = args.length; i < j; i++) {
