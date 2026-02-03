@@ -989,7 +989,7 @@ public class RubyModule extends RubyObject {
         return metaClass.getRealClass().getName(context) + ":0x" + Integer.toHexString(System.identityHashCode(this));
     }
 
-    @JRubyMethod(name = "refine", reads = SCOPE)
+    @JRubyMethod(name = "refine", visibility = PRIVATE, reads = SCOPE)
     public IRubyObject refine(ThreadContext context, IRubyObject klass, Block block) {
         if (!block.isGiven()) throw argumentError(context, "no block given");
         if (block.isEscaped()) throw argumentError(context, "can't pass a Proc as a block to Module#refine");
