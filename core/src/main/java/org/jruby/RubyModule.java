@@ -6868,6 +6868,7 @@ public class RubyModule extends RubyObject {
             }
 
             DynamicMethod dup = entry.getValue().dup();
+            dup.setImplementationClass(selfModule);
 
             // maybe insufficient if we have already compiled assuming no refinements
             ((AbstractIRMethod) dup).getIRScope().setIsMaybeUsingRefinements();
