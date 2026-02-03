@@ -45,6 +45,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.API;
+import org.jruby.api.Error;
 import org.jruby.exceptions.NotImplementedError;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.*;
@@ -1365,12 +1366,37 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     // mri: FilePathValue/rb_get_path/rb_get_patch_check
     public static RubyString get_path(ThreadContext context, IRubyObject path) {
-        if (path instanceof RubyString) return checkEmbeddedNulls(context, path);
+        return getPathCheckConvert(context, getPathCheckToString(context, path));
+    }
+
+    // CRuby rb_get_path_check_convert
+    private static RubyString getPathCheckConvert(ThreadContext context, RubyString path) {
+        path = filePathConvert(context, path);
+
+        checkPathEncoding(context, path);
+
+        checkEmbeddedNulls(context, path);
+
+        return path.strDup(context.runtime);
+    }
+
+    // CRuby: check_path_encoding
+    private static Encoding checkPathEncoding(ThreadContext context, RubyString str) {
+        Encoding enc = str.getEncoding();
+        if (!enc.isAsciiCompatible()) {
+            throw Error.encodingCompatibilityError(context, "path name must be ASCII-compatible (" + enc + "): " + str);
+        }
+        return enc;
+    }
+
+    // CRuby: rb_get_path_check_to_string
+    private static RubyString getPathCheckToString(ThreadContext context, IRubyObject path) {
+        if (path instanceof RubyString) return (RubyString) path;
 
         FileSites sites = sites(context);
         if (sites.respond_to_to_path.respondsTo(context, path, path, true)) path = sites.to_path.call(context, path, path);
 
-        return filePathConvert(context, path.convertToString());
+        return path.convertToString();
     }
 
     // FIXME: MRI skips this logic on windows?  Does not make sense to me why so I left it in.

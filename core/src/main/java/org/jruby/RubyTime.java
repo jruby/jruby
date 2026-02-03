@@ -65,6 +65,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.RubyDateFormatter;
 import org.jruby.util.RubyTimeParser;
 import org.jruby.util.Sprintf;
+import org.jruby.util.TypeConverter;
 import org.jruby.util.time.TimeArgs;
 
 import java.io.Serializable;
@@ -2161,27 +2162,31 @@ public class RubyTime extends RubyObject {
 
         // NOTE: we can probably do better here, but we're matching MRI behavior
         // this is for converting custom objects such as ActiveSupport::Duration
-        else if ( sites(context).respond_to_divmod.respondsTo(context, sec, sec) ) {
-            IRubyObject result = sites(context).divmod.call(context, sec, sec, 1);
-            if (!(result instanceof RubyArray arr)) throw typeError(context, "unexpected divmod result: into ", result, "");
+        else {
+            IRubyObject ary = Helpers.invokeChecked(context, sec, sites(context).divmod_checked, RubyFixnum.one(context.runtime));
+            RubyArray arr;
+            if (ary != null && !(ary = TypeConverter.checkArrayType(context, sites(context).to_a_checked, ary)).isNil()) {
+                arr = (RubyArray) ary;
+                seconds = ((RubyNumeric) arr.eltOk(0)).asDouble(context) + // div
+                        ((RubyNumeric) arr.eltOk(1)).asDouble(context); // mod
+            } else {
+                boolean raise = true;
+                seconds = 0;
 
-            seconds = ((RubyNumeric) arr.eltOk(0)).asDouble(context) + // div
-                    ((RubyNumeric) arr.eltOk(1)).asDouble(context); // mod
-        } else {
-            boolean raise = true;
-            seconds = 0;
+                if (sec instanceof JavaProxy) {
+                    try { // support java.lang.Number proxies
+                        seconds = sec.convertToFloat().value;
+                        raise = false;
+                    } catch (TypeError ex) { /* fallback bellow to raising a TypeError */ }
+                }
 
-            if (sec instanceof JavaProxy) {
-                try { // support java.lang.Number proxies
-                    seconds = sec.convertToFloat().value;
-                    raise = false;
-                } catch (TypeError ex) { /* fallback bellow to raising a TypeError */ }
+                if (raise) throw typeError(context, "can't convert ", sec, " into time interval");
             }
-
-            if (raise) throw typeError(context, "can't convert ", sec, " into time interval");
         }
 
         if (seconds < 0) throw argumentError(context,"time interval must not be negative");
+
+        if (Double.isNaN(seconds)) throw rangeError(context, seconds + " out of Time range");
 
         return seconds;
     }

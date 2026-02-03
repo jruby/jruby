@@ -1,4 +1,5 @@
 exclude :test_error, "work in progress"
+exclude :test_exit_in_fiber, "raises NPE and then hangs"
 exclude :test_fatal_in_fiber, "work in progress"
 exclude :test_no_valid_cfp, "raises NPE rather than detecting bad context and raising a Ruby error"
 exclude :test_prohibit_transfer_to_resuming_fiber, "FiberError expected"

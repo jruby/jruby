@@ -1029,17 +1029,9 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         int length = args.length;
         if (length == 0) return Create.newEmptyArray(context);
 
-        int arraySize = size();
         var result = Create.allocArray(context, length);
         for (int i = 0; i < length; i++) {
-            int index = toInt(context, args[i]);
-            // FIXME: lookup the bounds part of this in error message??
-            if (index >= arraySize) {
-                if (!block.isGiven()) throw indexError(context, "index " + index + " outside of array bounds: 0...0");
-                result.append(context, block.yield(context, asFixnum(context, index)));
-            } else {
-                result.append(context, eltOk(index));
-            }
+            result.append(context, fetch(context, args[i], block));
         }
 
         return result;
@@ -5261,6 +5253,12 @@ float_loop:
         return result;
     }
 
+    @JRubyMethod(name = {"detect", "find"})
+    public IRubyObject find(ThreadContext context, Block block) {
+        return find(context, context.nil, block);
+    }
+
+    @JRubyMethod(name = {"detect", "find"})
     public IRubyObject find(ThreadContext context, IRubyObject ifnone, Block block) {
         CachingCallSite self_each = sites(context).self_each;
         if (!self_each.isBuiltin(this)) return RubyEnumerable.detectCommon(context, self_each, this, block);
@@ -5292,6 +5290,25 @@ float_loop:
 
     public IRubyObject detectCommon(ThreadContext context, IRubyObject ifnone, Block block) {
         for (int i = 0; i < realLength; i++) {
+            IRubyObject value = eltOk(i);
+
+            if (block.yield(context, value).isTrue()) return value;
+        }
+
+        return ifnone != null && !ifnone.isNil() ? sites(context).call.call(context, ifnone, ifnone) : context.nil;
+    }
+
+    @JRubyMethod
+    public IRubyObject rfind(ThreadContext context, Block block) {
+        return rfind(context, context.nil, block);
+    }
+
+    @JRubyMethod
+    public IRubyObject rfind(ThreadContext context, IRubyObject ifnone, Block block) {
+        CachingCallSite self_each = sites(context).self_each;
+        if (!self_each.isBuiltin(this)) return RubyEnumerable.detectCommon(context, self_each, this, block);
+
+        for (int i = realLength - 1; i >= 0; i--) {
             IRubyObject value = eltOk(i);
 
             if (block.yield(context, value).isTrue()) return value;

@@ -173,8 +173,11 @@ class TestSocket < Test::Unit::TestCase
 
   def errors_addrinuse
     errs = [Errno::EADDRINUSE]
-    # MinGW fails with "Errno::EACCES: Permission denied - bind(2) for 0.0.0.0:49721"
-    errs << Errno::EACCES if /mingw/ =~ RUBY_PLATFORM
+    # Windows can fail with "Errno::EACCES: Permission denied - bind(2) for 0.0.0.0:49721"
+    # or "Test::Unit::ProxyError: Permission denied - bind(2) for 0.0.0.0:55333"
+    if /mswin|mingw/ =~ RUBY_PLATFORM
+      errs += [Errno::EACCES, Test::Unit::ProxyError]
+    end
     errs
   end
 
@@ -489,7 +492,7 @@ class TestSocket < Test::Unit::TestCase
         end while IO.select([r], nil, nil, 0.1).nil?
         n
       end
-      timeout = (defined?(RubyVM::RJIT) && RubyVM::RJIT.enabled? ? 120 : 30) # for --jit-wait
+      timeout = 30
       assert_equal([[s1],[],[]], IO.select([s1], nil, nil, timeout))
       msg, _, _, stamp = s1.recvmsg
       assert_equal("a", msg)
@@ -513,7 +516,7 @@ class TestSocket < Test::Unit::TestCase
   end
 
   def test_timestamp
-    return if /linux|freebsd|netbsd|openbsd|solaris|darwin/ !~ RUBY_PLATFORM
+    return if /linux|freebsd|netbsd|openbsd|darwin/ !~ RUBY_PLATFORM
     return if !defined?(Socket::AncillaryData) || !defined?(Socket::SO_TIMESTAMP)
     t1 = Time.now.strftime("%Y-%m-%d")
     stamp = nil
@@ -906,7 +909,7 @@ class TestSocket < Test::Unit::TestCase
 
       Addrinfo.define_singleton_method(:getaddrinfo) { |*_| sleep }
 
-      assert_raise(Errno::ETIMEDOUT) do
+      assert_raise(IO::TimeoutError) do
         Socket.tcp("localhost", port, resolv_timeout: 0.01)
       end
     ensure
@@ -931,8 +934,34 @@ class TestSocket < Test::Unit::TestCase
 
     server.close
 
-    assert_raise(Errno::ETIMEDOUT) do
+    assert_raise(IO::TimeoutError) do
       Socket.tcp("localhost", port, resolv_timeout: 0.01)
+    end
+    RUBY
+  end
+
+  def test_tcp_socket_open_timeout
+    opts = %w[-rsocket -W1]
+    assert_separately opts, <<~RUBY
+    Addrinfo.define_singleton_method(:getaddrinfo) do |_, _, family, *_|
+      if family == Socket::AF_INET6
+        sleep
+      else
+        [Addrinfo.tcp("127.0.0.1", 12345)]
+      end
+    end
+
+    assert_raise(IO::TimeoutError) do
+      Socket.tcp("localhost", 12345, open_timeout: 0.01)
+    end
+    RUBY
+  end
+
+  def test_tcp_socket_open_timeout_with_other_timeouts
+    opts = %w[-rsocket -W1]
+    assert_separately opts, <<~RUBY
+    assert_raise(ArgumentError) do
+      Socket.tcp("localhost", 12345, open_timeout: 0.01, resolv_timout: 0.01)
     end
     RUBY
   end
@@ -982,7 +1011,7 @@ class TestSocket < Test::Unit::TestCase
       Addrinfo.define_singleton_method(:getaddrinfo) do |_, _, family, *_|
         case family
         when Socket::AF_INET6 then raise SocketError
-        when Socket::AF_INET then sleep(0.001); raise SocketError, "Last hostname resolution error"
+        when Socket::AF_INET then sleep(0.01); raise SocketError, "Last hostname resolution error"
         end
       end
 

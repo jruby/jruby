@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Create.*;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Warn.warn;
 
 public class TraceEventManager {
@@ -46,6 +46,8 @@ public class TraceEventManager {
     private final Ruby runtime;
     private volatile EventHook[] eventHooks = EMPTY_HOOKS;
     private boolean hasEventHooks;
+    private volatile int added;
+    private volatile int deleted;
     private final CallTraceFuncHook callTraceFuncHook = new CallTraceFuncHook(null);
 
     private final MutableCallSite callTrace = new MutableCallSite(TRACE_OFF);
@@ -84,6 +86,7 @@ public class TraceEventManager {
         eventHooks = newHooks;
 
         hasEventHooks = true;
+        added++;
 
         enableTraceSites(hook);
     }
@@ -115,6 +118,8 @@ public class TraceEventManager {
 
             disableTraceSites(hook);
         }
+        added--;
+        deleted++;
     }
 
     private void enableTraceSites(EventHook hook) {
@@ -209,6 +214,10 @@ public class TraceEventManager {
 
     public boolean hasEventHooks() {
         return hasEventHooks;
+    }
+
+    public int[] eventHookStats() {
+        return new int[] {added, deleted};
     }
 
     public static class CallTraceFuncHook extends EventHook {

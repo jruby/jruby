@@ -2,6 +2,16 @@ require_relative '../../spec_helper'
 require_relative 'fixtures/classes'
 
 describe "Data#initialize" do
+  context "with no members" do
+    ruby_bug "#21819", ""..."4.0.1" do
+      it "is frozen" do
+        data = Data.define
+
+        data.new.should.frozen?
+      end
+    end
+  end
+
   it "accepts positional arguments" do
     data = DataSpecs::Measure.new(42, "km")
 

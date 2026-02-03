@@ -1332,7 +1332,7 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
     // MRI: rb_int_s_isqrt, Fixnum portion
     @Override
     public IRubyObject sqrt(ThreadContext context) {
-        if (isNegativeNumber(context)) throw context.runtime.newMathDomainError("Numerical argument is out of domain - isqrt");
+        if (isNegativeNumber(context)) throw context.runtime.newMathDomainError("isqrt");
 
         return bignorm(context.runtime, floorSqrt(value));
     }

@@ -553,7 +553,7 @@ public class IRRuntimeHelpers {
         } else if ((value instanceof IRubyObject) && ((IRubyObject)value).isNil()) {
             block = Block.NULL_BLOCK;
         } else if (value instanceof IRubyObject) {
-            block = ((RubyProc) TypeConverter.convertToType((IRubyObject) value, context.runtime.getProc(), "to_proc", true)).getBlock();
+            block = ((RubyProc) TypeConverter.convertToType((IRubyObject) value, context.runtime.getProc(), "to_proc")).getBlock();
         } else {
             throw new RuntimeException("Unhandled case in CallInstr:prepareBlock.  Got block arg: " + value);
         }
@@ -2035,12 +2035,7 @@ public class IRRuntimeHelpers {
      */
     @JIT @Interp
     public static RubyArray splatArray(ThreadContext context, IRubyObject ary, boolean dupArray) {
-        IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, ary, arrayClass(context), sites(context).to_a_checked);
-
-        if (tmp.isNil()) return newArray(context, ary);
-        if (dupArray) return ((RubyArray<?>) tmp).aryDup();
-
-        return (RubyArray<?>) tmp;
+        return dupArray ? splatArrayDup(context, ary) : splatArray(context, ary);
     }
 
     /**
@@ -2050,6 +2045,8 @@ public class IRRuntimeHelpers {
      */
     @JIT @Interp
     public static RubyArray splatArray(ThreadContext context, IRubyObject ary) {
+        if (ary.isNil()) return context.runtime.getEmptyFrozenArray();
+
         IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, ary, arrayClass(context), sites(context).to_a_checked);
 
         if (tmp.isNil()) return newArray(context, ary);
@@ -2064,9 +2061,13 @@ public class IRRuntimeHelpers {
      */
     @JIT @Interp
     public static RubyArray splatArrayDup(ThreadContext context, IRubyObject ary) {
+        if (ary.isNil()) return newEmptyArray(context);
+
         IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, ary, arrayClass(context), sites(context).to_a_checked);
 
-        return tmp.isNil() ? newArray(context, ary) : ((RubyArray<?>) tmp).aryDup();
+        if (tmp.isNil()) return newArray(context, ary);
+
+        return ((RubyArray<?>) tmp).aryDup();
     }
 
     public static IRubyObject irToAry(ThreadContext context, IRubyObject value) {

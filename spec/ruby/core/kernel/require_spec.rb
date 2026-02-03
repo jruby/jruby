@@ -22,13 +22,14 @@ describe "Kernel#require" do
     provided << "pathname"
   end
 
-  it "#{provided.join(', ')} are already required" do
-    out = ruby_exe("puts $LOADED_FEATURES", options: '--disable-gems --disable-did-you-mean')
-    features = out.lines.map { |line| File.basename(line.chomp, '.*') }
+  provided_requires = provided.dup.to_h {|f| [f,f]}
+  ruby_version_is "3.5" do
+    provided_requires["pathname"] = "pathname.so"
+  end
 
-    # Ignore CRuby internals
-    features -= %w[encdb transdb windows_1252 windows_31j]
-    features.reject! { |feature| feature.end_with?('-fake') }
+  provided.each do |feature|
+    it "#{feature} is already required and provided in loaded features at boot" do
+      feature_require = provided_requires[feature]
 
     features.sort.should == provided.sort
 

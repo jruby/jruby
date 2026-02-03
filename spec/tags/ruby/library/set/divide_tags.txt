@@ -1,1 +1,0 @@
-fails:Set#divide when passed a block with an arity of 2 returns an enumerator when not passed a block

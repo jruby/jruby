@@ -1,1 +1,1 @@
-fails:Set#merge raises RuntimeError when called during iteration
+fails(we do not track iteration in progress in set or hash):Set#merge raises RuntimeError when called during iteration
