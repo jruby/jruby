@@ -7,7 +7,7 @@ describe "Data#initialize" do
       it "is frozen" do
         data = Data.define
 
-        data.new.frozen?.should == true
+        data.new.should.frozen?
       end
     end
   end
