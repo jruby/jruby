@@ -83,8 +83,6 @@ default_gems = [
   ['strscan', '3.1.7'],
   ['subspawn', '0.1.1'], # has 3 transitive deps:
   ['subspawn-posix', '0.1.1'],
-  # temporarily a default gem until https://github.com/jruby/jruby/pull/9197
-  ['syslog', '0.4.0'],
   ['ffi-binary-libfixposix', '0.5.1.1'],
   ['ffi-bindings-libfixposix', '0.5.1.0'],
   ['syntax_suggest', '2.0.2'],
@@ -143,6 +141,7 @@ bundled_gems = [
   ['rexml', '3.4.4'],
   ['rinda', '0.2.0'],
   ['rss', '0.3.1'],
+  ['syslog', '0.4.0'],
   ['test-unit', '3.6.7']
   # Depends on many CRuby internals
   # ['typeprof', '0.30.1'],
@@ -213,6 +212,10 @@ project 'JRuby Lib Setup' do
 
     log "using jruby #{JRUBY_VERSION}"
 
+    # force platform to match build JRuby
+    Gem.set_target_rbconfig(File.join(File.dirname(__FILE__), "ruby/stdlib/jruby/build/rbconfig.rb"))
+    Gem.instance_variable_set :@ruby_api_version, Gem.target_rbconfig['ruby_version']
+
     target = ctx.project.build.directory.to_pathname
     gem_home = File.join(target, 'rubygems')
     gems = File.join(gem_home, 'gems')
@@ -251,6 +254,7 @@ project 'JRuby Lib Setup' do
         say 'Skipping native extensions.'
 
         FileUtils.mkdir_p File.dirname(@spec.gem_build_complete_path)
+        p @spec.gem_build_complete_path
         FileUtils.touch @spec.gem_build_complete_path
       end
     end
