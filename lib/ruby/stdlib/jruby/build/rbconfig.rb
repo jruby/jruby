@@ -10,4 +10,5 @@ module RbConfig
     CONFIG = {}
     CONFIG['ruby_version'] = build_props["version.ruby.major"] + '.0'
     CONFIG['arch'] = 'universal-java'
+    CONFIG['ruby_install_name'] = 'jruby'
 end
