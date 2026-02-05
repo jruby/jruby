@@ -254,7 +254,6 @@ project 'JRuby Lib Setup' do
         say 'Skipping native extensions.'
 
         FileUtils.mkdir_p File.dirname(@spec.gem_build_complete_path)
-        p @spec.gem_build_complete_path
         FileUtils.touch @spec.gem_build_complete_path
       end
     end
