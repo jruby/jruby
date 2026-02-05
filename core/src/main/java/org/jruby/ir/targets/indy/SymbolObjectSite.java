@@ -1,6 +1,7 @@
 package org.jruby.ir.targets.indy;
 
 import org.jruby.RubyEncoding;
+import org.jruby.RubySymbol;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -42,7 +43,11 @@ public class SymbolObjectSite extends LazyObjectSite {
     }
 
     public IRubyObject construct(ThreadContext context) {
+        return constructSymbolFromRaw(context, value, encoding);
+    }
+
+    static RubySymbol constructSymbolFromRaw(ThreadContext context, String rawValue, String encoding) {
         return asSymbol(context,
-                new ByteList(RubyEncoding.encodeISO(value), IRRuntimeHelpers.retrieveJCodingsEncoding(context, encoding), false));
+                new ByteList(RubyEncoding.encodeISO(rawValue), IRRuntimeHelpers.retrieveJCodingsEncoding(context, encoding), false));
     }
 }
