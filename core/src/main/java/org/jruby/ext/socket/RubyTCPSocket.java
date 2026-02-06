@@ -1,249 +1,314 @@
-/*
- ***** BEGIN LICENSE BLOCK *****
- * Version: EPL 2.0/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Eclipse Public
- * License Version 2.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of
- * the License at http://www.eclipse.org/legal/epl-v20.html
- *
- * Software distributed under the License is distributed on an "AS
- * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
- * implied. See the License for the specific language governing
- * rights and limitations under the License.
- *
- * Copyright (C) 2007 Ola Bini <ola@ologix.com>
- * Copyright (C) 2007 Thomas E Enebo <enebo@acm.org>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either of the GNU General Public License Version 2 or later (the "GPL"),
- * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the EPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the EPL, the GPL or the LGPL.
- ***** END LICENSE BLOCK *****/
-
 package org.jruby.ext.socket;
 
-import jnr.constants.platform.Errno;
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
-import org.jruby.RubyBasicObject;
-import org.jruby.RubyClass;
-import org.jruby.RubyHash;
+import org.jruby.*;
+import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.ast.util.ArgsUtil;
-import org.jruby.runtime.Arity;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 
+import java.nio.ByteBuffer;
 import java.io.IOException;
-import java.net.BindException;
-import java.net.ConnectException;
-import java.net.Inet4Address;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.NoRouteToHostException;
-import java.net.StandardSocketOptions;
-import java.net.UnknownHostException;
-import java.nio.channels.ClosedChannelException;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.SocketChannel;
 
-import static jnr.constants.platform.AddressFamily.AF_INET;
-import static jnr.constants.platform.AddressFamily.AF_INET6;
-import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Create.*;
-import static org.jruby.api.Define.defineClass;
+/**
+ * RubyTCPSocket - Ruby wrapper for TCP sockets
+ * Provides MRI-compatible TCPSocket API with enhanced features
+ */
+@JRubyClass(name="TCPSocket", parent="IPSocket")
+public class RubyTCPSocket extends RubyBasicSocket {
 
-public class RubyTCPSocket extends RubyIPSocket {
+    private RubyTCPSocketChannel channel;
+    private String remoteHost;
+    private int remotePort;
+
+    public RubyTCPSocket(Ruby runtime, RubyClass metaClass) {
+        super(runtime, metaClass);
+    }
+
     static RubyClass createTCPSocket(ThreadContext context, RubyClass IPSocket) {
-        return defineClass(context, "TCPSocket", IPSocket, RubyTCPSocket::new).
+        return org.jruby.api.Define.defineClass(context, "TCPSocket", IPSocket, RubyTCPSocket::new).
                 defineMethods(context, RubyTCPSocket.class);
     }
 
-    public RubyTCPSocket(Ruby runtime, RubyClass type) {
-        super(runtime, type);
-    }
-
-
-    private SocketChannel attemptConnect(ThreadContext context, IRubyObject host, String localHost, int localPort,
-                                         String remoteHost, int remotePort, RubyHash opts) throws IOException {
-        for (InetAddress address: InetAddress.getAllByName(remoteHost)) {
-            SocketChannel channel = SocketChannel.open();
-
-            openFile = null; // Second or later attempts will have non-closeable failed attempt to connect.
-
-            initSocket(newChannelFD(context.runtime, channel));
-
-            // Do this nonblocking so we can be interrupted
-            channel.configureBlocking(false);
-
-            if (localHost != null) {
-                channel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
-                channel.bind( new InetSocketAddress(InetAddress.getByName(localHost), localPort) );
-            }
-            try {
-                channel.connect(new InetSocketAddress(address, remotePort));
-
-                long timeout = -1;
-                if (opts != null) {
-                    IRubyObject timeoutObj = ArgsUtil.extractKeywordArg(context, opts, "connect_timeout");
-                    if (!timeoutObj.isNil()) {
-                        timeout = (long) (timeoutObj.convertToFloat().asDouble(context) * 1000);
-                    }
-                }
-
-                // wait for connection
-                if (context.getThread().select(channel, this, SelectionKey.OP_CONNECT, timeout)) {
-                    // complete connection
-                    while (!channel.finishConnect()) {
-                        context.pollThreadEvents();
-                    }
-
-                    channel.configureBlocking(true);
-
-                    return channel;
-                }
-
-                throw RubyIOTimeoutError.newIOTimeoutError(context.runtime, Errno.ETIMEDOUT.description()).toThrowable();
-            } catch (ConnectException e) {
-                // fall through and try next valid address for the host.
-            }
-        }
-
-        // did not complete and only path out is n repeated ConnectExceptions
-        throw context.runtime.newErrnoECONNREFUSEDError("connect(2) for " + host.inspect(context) + " port " + remotePort);
-    }
-
-    @JRubyMethod(visibility = Visibility.PRIVATE)
-    public IRubyObject initialize(ThreadContext context, IRubyObject host, IRubyObject port) {
-        final String remoteHost = host.isNil() ? "localhost" : host.convertToString().toString();
-        final int remotePort = SocketUtils.getPortFrom(context, port);
-
-        return initialize(context, remoteHost, remotePort, host, null, 0, null);
-    }
-
-    @JRubyMethod(visibility = Visibility.PRIVATE)
-    public IRubyObject initialize(ThreadContext context, IRubyObject host, IRubyObject port, IRubyObject localOrOpts) {
-        final String remoteHost = host.isNil() ? "localhost" : host.convertToString().toString();
-        final int remotePort = SocketUtils.getPortFrom(context, port);
-        IRubyObject opts = ArgsUtil.getOptionsArg(context, localOrOpts);
-
-        if (!opts.isNil()) return initialize(context, remoteHost, remotePort, host, null, 0, (RubyHash) opts);
-
-        String localHost = localOrOpts.isNil() ? null : localOrOpts.convertToString().toString();
-
-        return initialize(context, remoteHost, remotePort, host, localHost, 0, null);
-
-    }
-
-    @JRubyMethod(required = 2, optional = 3, checkArity = false, visibility = Visibility.PRIVATE)
+    /**
+     * TCPSocket.new(host, port, local_host=nil, local_port=nil, **opts)
+     * Create and connect to a TCP socket
+     *
+     * Options:
+     *   :connect_timeout - Connection timeout in seconds (default: no timeout)
+     *   :read_timeout    - Read timeout in seconds (default: no timeout)
+     *   :write_timeout   - Write timeout in seconds (default: no timeout)
+     *   :keepalive       - Enable TCP keepalive (default: false)
+     *   :nodelay         - Disable Nagle's algorithm (default: false)
+     */
+    @JRubyMethod(name = "initialize", required = 2, optional = 3)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
-        int argc = Arity.checkArgumentCount(context, args, 2, 5);
+        // Parse arguments
+        this.remoteHost = args[0].convertToString().asJavaString();
+        this.remotePort = RubyNumeric.fix2int(args[1]);
 
-        String localHost = null;
-        int localPort = 0;
-        IRubyObject maybeOpts;
-        RubyHash opts = null;
-
-        switch (argc) {
-            case 2 -> { return initialize(context, args[0], args[1]); }
-            case 3 -> { return initialize(context, args[0], args[1], args[2]); }
+        // Validate inputs
+        if (remoteHost == null || remoteHost.trim().isEmpty()) {
+            throw context.runtime.newArgumentError("invalid host");
+        }
+        if (remotePort < 1 || remotePort > 65535) {
+            throw context.runtime.newArgumentError("invalid port: " + remotePort);
         }
 
-        // cut switch in half to evaluate early args first
-        IRubyObject host = args[0];
-        IRubyObject port = args[1];
-
-        final String remoteHost = host.isNil() ? "localhost" : host.convertToString().toString();
-        final int remotePort = SocketUtils.getPortFrom(context, port);
-
-        switch (argc) {
-            case 4:
-                if (!args[2].isNil()) localHost = args[2].convertToString().toString();
-
-                maybeOpts = ArgsUtil.getOptionsArg(context, args[3]);
-                if (!maybeOpts.isNil()) {
-                    opts = (RubyHash) maybeOpts;
-                } else if (!args[3].isNil()) {
-                    localPort = SocketUtils.getPortFrom(context, args[3]);
-                }
-
-                break;
-            case 5:
-                if (!args[4].isNil()) opts = (RubyHash) ArgsUtil.getOptionsArg(context.runtime, args[4], true);
-                break;
+        // Parse options (if provided as last argument as hash)
+        RubyHash options = null;
+        if (args.length > 2 && args[args.length - 1] instanceof RubyHash) {
+            options = (RubyHash) args[args.length - 1];
         }
-
-        return initialize(context, remoteHost, remotePort, host, localHost, localPort, opts);
-    }
-
-    public IRubyObject initialize(ThreadContext context, String remoteHost, int remotePort, IRubyObject host, String localHost, int localPort, RubyHash opts) {
-        Ruby runtime = context.runtime;
-
-        // try to ensure the socket closes if it doesn't succeed
-        boolean success = false;
-        SocketChannel channel = null;
 
         try {
-            try {
-                channel = attemptConnect(context, host, localHost, localPort, remoteHost, remotePort, opts);
-                success = true;
-            } catch (BindException e) {
-            	throw runtime.newErrnoEADDRFromBindException(e, " to: " + remoteHost + ':' + remotePort);
-            } catch (NoRouteToHostException e) {
-                throw runtime.newErrnoEHOSTUNREACHError("SocketChannel.connect");
-            } catch (UnknownHostException e) {
-                throw SocketUtils.sockerr(runtime, "initialize: name or service not known");
+            // Create channel
+            channel = new PlainTCPSocketChannel();
+
+            // Apply options
+            if (options != null) {
+                applyOptions(context, options);
             }
-        } catch (ClosedChannelException e) {
-            throw runtime.newErrnoECONNREFUSEDError();
-        } catch (BindException e) {
-            throw runtime.newErrnoEADDRFromBindException(e, " on: " + localHost + ':' + localPort);
+
+            // Extract connect timeout
+            int connectTimeout = 0;
+            if (options != null) {
+                IRubyObject timeoutObj = options.op_aref(context,
+                    context.runtime.newSymbol("connect_timeout"));
+                if (timeoutObj != null && !timeoutObj.isNil()) {
+                    connectTimeout = (int)(RubyNumeric.num2dbl(timeoutObj) * 1000);
+                }
+            }
+
+            // Connect
+            channel.connect(remoteHost, remotePort, connectTimeout);
+
         } catch (IOException e) {
-            throw runtime.newIOErrorFromException(e);
-        } catch (IllegalArgumentException e) {
-            // NOTE: MRI does -1 as SocketError but +65536 as ECONNREFUSED
-            // ... which JRuby does currently not blindly follow!
-            throw sockerr(runtime, e.getMessage(), e);
-        } finally {
-            if (!success && channel != null) try { channel.close(); } catch (IOException ioe) {}
+            throw context.runtime.newErrnoECONNREFUSEDError(
+                "Connection refused - " + remoteHost + ":" + remotePort + ": " + e.getMessage()
+            );
+        } catch (Exception e) {
+            throw context.runtime.newIOError(e.getMessage());
         }
 
+        return this;
+    }
+
+    /**
+     * Apply socket options from hash
+     */
+    private void applyOptions(ThreadContext context, RubyHash options) throws IOException {
+        Ruby runtime = context.runtime;
+
+        // Read timeout
+        IRubyObject readTimeout = options.op_aref(context, runtime.newSymbol("read_timeout"));
+        if (readTimeout != null && !readTimeout.isNil()) {
+            int timeout = (int)(RubyNumeric.num2dbl(readTimeout) * 1000);
+            channel.setReadTimeout(timeout);
+        }
+
+        // Write timeout
+        IRubyObject writeTimeout = options.op_aref(context, runtime.newSymbol("write_timeout"));
+        if (writeTimeout != null && !writeTimeout.isNil()) {
+            int timeout = (int)(RubyNumeric.num2dbl(writeTimeout) * 1000);
+            channel.setWriteTimeout(timeout);
+        }
+
+        // Keepalive
+        IRubyObject keepalive = options.op_aref(context, runtime.newSymbol("keepalive"));
+        if (keepalive != null && keepalive.isTrue()) {
+            channel.setKeepAlive(true);
+        }
+
+        // TCP No Delay
+        IRubyObject nodelay = options.op_aref(context, runtime.newSymbol("nodelay"));
+        if (nodelay != null && nodelay.isTrue()) {
+            channel.setTcpNoDelay(true);
+        }
+    }
+
+    /**
+     * recv(maxlen, flags=0)
+     * Receive up to maxlen bytes from the socket
+     */
+    @JRubyMethod(name = "recv", required = 1, optional = 1)
+    public IRubyObject recv(ThreadContext context, IRubyObject[] args) {
+        int maxlen = RubyNumeric.fix2int(args[0]);
+
+        // Validate maxlen
+        if (maxlen < 0) {
+            throw context.runtime.newArgumentError("negative length");
+        }
+        if (maxlen == 0) {
+            return RubyString.newEmptyString(context.runtime);
+        }
+
+        if (channel == null || !channel.isOpen()) {
+            throw context.runtime.newIOError("closed stream");
+        }
+
+        try {
+            ByteBuffer buffer = ByteBuffer.allocate(maxlen);
+            int bytesRead = channel.read(buffer);
+
+            if (bytesRead == -1) {
+                return context.nil;
+            }
+            if (bytesRead == 0) {
+                return RubyString.newEmptyString(context.runtime);
+            }
+
+            buffer.flip();
+            byte[] data = new byte[bytesRead];
+            buffer.get(data);
+
+            return RubyString.newString(context.runtime, new ByteList(data, false));
+
+        } catch (IOException e) {
+            throw context.runtime.newIOError(e.getMessage());
+        }
+    }
+
+    /**
+     * send(mesg, flags=0)
+     * Send a message over the socket
+     */
+    @JRubyMethod(name = "send", required = 1, optional = 1)
+    public IRubyObject send(ThreadContext context, IRubyObject[] args) {
+        if (channel == null || !channel.isOpen()) {
+            throw context.runtime.newIOError("closed stream");
+        }
+
+        RubyString message = args[0].convertToString();
+        byte[] data = message.getBytes();
+
+        if (data.length == 0) {
+            return context.runtime.newFixnum(0);
+        }
+
+        try {
+            ByteBuffer buffer = ByteBuffer.wrap(data);
+            int totalWritten = 0;
+
+            // Handle partial writes
+            while (buffer.hasRemaining()) {
+                int written = channel.write(buffer);
+                if (written == 0) {
+                    break;
+                }
+                totalWritten += written;
+            }
+
+            return context.runtime.newFixnum(totalWritten);
+
+        } catch (IOException e) {
+            throw context.runtime.newIOError(e.getMessage());
+        }
+    }
+
+    /**
+     * read(length=nil)
+     * Read length bytes, or all available if length is nil
+     */
+    @JRubyMethod(name = "read", optional = 1)
+    public IRubyObject read(ThreadContext context, IRubyObject[] args) {
+        if (args.length == 0) {
+            // Read all available (up to 64KB)
+            return recv(context, new IRubyObject[]{context.runtime.newFixnum(65536)});
+        }
+        return recv(context, args);
+    }
+
+    /**
+     * write(string)
+     * Write string to socket
+     */
+    @JRubyMethod(name = "write", required = 1)
+    public IRubyObject write(ThreadContext context, IRubyObject string) {
+        return send(context, new IRubyObject[]{string});
+    }
+
+    /**
+     * close()
+     * Close the socket connection
+     */
+    @JRubyMethod(name = "close")
+    public IRubyObject close(ThreadContext context) {
+        if (channel != null && channel.isOpen()) {
+            try {
+                channel.close();
+            } catch (IOException e) {
+                throw context.runtime.newIOError(e.getMessage());
+            }
+        }
         return context.nil;
     }
 
-    @JRubyMethod(meta = true)
-    public static IRubyObject gethostbyname(ThreadContext context, IRubyObject recv, IRubyObject hostname) {
+    /**
+     * closed?()
+     * Returns true if the socket is closed
+     */
+    @JRubyMethod(name = "closed?")
+    public RubyBoolean closed_p(ThreadContext context) {
+        if (channel == null) {
+            return context.runtime.getTrue();
+        }
+        return RubyBoolean.newBoolean(context.runtime, !channel.isOpen());
+    }
+
+    /**
+     * peeraddr()
+     * Returns remote address information [family, port, hostname, ip]
+     */
+    @JRubyMethod(name = "peeraddr")
+    public IRubyObject peeraddr(ThreadContext context) {
         try {
-            var addr = InetAddress.getByName(hostname.convertToString().toString());
+            InetSocketAddress addr = channel.getRemoteAddress();
+            if (addr == null) {
+                return context.nil;
+            }
 
-            return RubyArray.newArray(context.runtime,
-                    newString(context, do_not_reverse_lookup(context, recv).isTrue() ? addr.getHostAddress() : addr.getCanonicalHostName()),
-                    newEmptyArray(context),
-                    asFixnum(context, addr instanceof Inet4Address ? AF_INET.longValue() : AF_INET6.longValue()),
-                    newString(context, addr.getHostAddress()));
-        }
-        catch(UnknownHostException e) {
-            throw SocketUtils.sockerr(context.runtime, "gethostbyname: name or service not known");
+            RubyArray result = context.runtime.newArray();
+            result.append(context.runtime.newString("AF_INET"));
+            result.append(context.runtime.newFixnum(addr.getPort()));
+            result.append(context.runtime.newString(addr.getHostName()));
+            result.append(context.runtime.newString(addr.getAddress().getHostAddress()));
+            return result;
+
+        } catch (IOException e) {
+            throw context.runtime.newIOError(e.getMessage());
         }
     }
 
-    @Deprecated(since = "1.7.0")
-    public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
-        return open(((RubyBasicObject) recv).getCurrentContext(), recv, args, block);
+    /**
+     * addr()
+     * Returns local address information [family, port, hostname, ip]
+     */
+    @JRubyMethod(name = "addr")
+    public IRubyObject addr(ThreadContext context) {
+        try {
+            InetSocketAddress addr = channel.getLocalAddress();
+            if (addr == null) {
+                return context.nil;
+            }
+
+            RubyArray result = context.runtime.newArray();
+            result.append(context.runtime.newString("AF_INET"));
+            result.append(context.runtime.newFixnum(addr.getPort()));
+            result.append(context.runtime.newString(addr.getHostName()));
+            result.append(context.runtime.newString(addr.getAddress().getHostAddress()));
+            return result;
+
+        } catch (IOException e) {
+            throw context.runtime.newIOError(e.getMessage());
+        }
     }
 
-    @Deprecated(since = "1.7.0")
-    public static IRubyObject gethostbyname(IRubyObject recv, IRubyObject hostname) {
-        return gethostbyname(((RubyBasicObject) recv).getCurrentContext(), recv, hostname);
+    /**
+     * Internal method to set the channel (used by TCPServer.accept)
+     */
+    public void setChannel(RubyTCPSocketChannel channel) {
+        this.channel = channel;
     }
 }
