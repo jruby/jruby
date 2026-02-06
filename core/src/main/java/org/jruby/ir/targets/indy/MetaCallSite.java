@@ -78,6 +78,12 @@ public class MetaCallSite extends MutableCallSite {
         if (callArguments[rubyArgsStart].type() == CallArgument.Type.RECEIVER) rubyArgsStart++;
 
         int rubyKwargsStart = rubyArgsStart;
+        for (int i = rubyArgsStart; i < callArguments.length; i++) {
+            if (callArguments[i].type() != CallArgument.Type.POSITIONAL) {
+                break;
+            }
+            rubyKwargsStart++;
+        }
         int rubyKwargsCount = callArguments.length - rubyKwargsStart;
         int closureInt = 0;
         CallArgument lastArgument = callArguments[callArguments.length - 1];

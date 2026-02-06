@@ -1281,15 +1281,16 @@ public class JVMVisitor extends IRVisitor {
     }
 
     private void compileCallCommon(IRBytecodeAdapter m, CallBase call) {
-        if (ThreadContext.hasKeywords(call.getFlags()) && call.getArgsCount() == 1 && (call.getFlags() & ThreadContext.CALL_KEYWORD_REST) == 0) {
-            // only normal keyword args, compile for pass-through
+        Operand[] args = call.getCallArgs();
+
+        if (!CallBase.containsArgSplat(args) && ThreadContext.hasKeywords(call.getFlags()) && (call.getFlags() & ThreadContext.CALL_KEYWORD_REST) == 0) {
+            // only normal positional or keyword args, compile for pass-through
             compileCallWithKeywords(m, call);
             return;
         }
 
         boolean functional = call.getCallType() == CallType.FUNCTIONAL || call.getCallType() == CallType.VARIABLE;
 
-        Operand[] args = call.getCallArgs();
         BlockPassType blockPassType = BlockPassType.fromIR(call);
         m.loadContext();
         if (!functional) m.loadSelf(); // caller
@@ -1342,8 +1343,6 @@ public class JVMVisitor extends IRVisitor {
 
         BlockPassType blockPassType = BlockPassType.fromIR(call);
 
-        int argIndex = 0;
-
         callArguments.add(new CallArgument(callArguments.size(), CallArgument.Type.CONTEXT, Identifier.CONTEXT));
         m.loadContext();
 
@@ -1356,10 +1355,11 @@ public class JVMVisitor extends IRVisitor {
         visit(call.getReceiver());
 
         // compile positional arguments as normal
+        int positionalID = 0;
         for (Operand operand : args) {
             if (operand == keywords) break;
             callArguments.add(
-                    new CallArgument(callArguments.size(), CallArgument.Type.POSITIONAL, new Identifier(String.valueOf(argIndex++))));
+                    new CallArgument(callArguments.size(), CallArgument.Type.POSITIONAL, new Identifier(String.valueOf(positionalID++))));
             visit(operand);
         }
 
