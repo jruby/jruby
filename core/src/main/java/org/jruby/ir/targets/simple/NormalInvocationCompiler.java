@@ -8,6 +8,7 @@ import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.instructions.AsStringInstr;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.EQQInstr;
+import org.jruby.ir.operands.Symbol;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.targets.IRBytecodeAdapter;
 import org.jruby.ir.targets.InvocationCompiler;
@@ -46,6 +47,11 @@ public class NormalInvocationCompiler implements InvocationCompiler {
 
     @Override
     public void invokeOther(String file, String scopeFieldName, CallBase call, int arity) {
+        invoke(file, compiler.getLastLine(), scopeFieldName, call, arity);
+    }
+
+    @Override
+    public void invokeOther(String file, String scopeFieldName, CallBase call, int arity, Symbol[] keywords) {
         invoke(file, compiler.getLastLine(), scopeFieldName, call, arity);
     }
 
@@ -354,6 +360,13 @@ public class NormalInvocationCompiler implements InvocationCompiler {
     }
 
     public void invokeSelf(String file, String scopeFieldName, CallBase call, int arity) {
+        if (arity > IRBytecodeAdapter.MAX_ARGUMENTS)
+            throw new NotCompilableException("call to '" + call.getId() + "' has more than " + IRBytecodeAdapter.MAX_ARGUMENTS + " arguments");
+
+        invoke(file, compiler.getLastLine(), scopeFieldName, call, arity);
+    }
+
+    public void invokeSelf(String file, String scopeFieldName, CallBase call, int arity, Symbol[] keywords) {
         if (arity > IRBytecodeAdapter.MAX_ARGUMENTS)
             throw new NotCompilableException("call to '" + call.getId() + "' has more than " + IRBytecodeAdapter.MAX_ARGUMENTS + " arguments");
 

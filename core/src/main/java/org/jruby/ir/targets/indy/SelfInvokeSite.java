@@ -36,7 +36,24 @@ public class SelfInvokeSite extends InvokeSite {
             sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, int.class, int.class, String.class, int.class),
             false);
 
+    public static final Handle BOOTSTRAP_KEYWORDS = new Handle(
+            Opcodes.H_INVOKESTATIC,
+            p(SelfInvokeSite.class),
+            "bootstrap",
+            sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, int.class, int.class, String.class, int.class),
+            false);
+
     public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, int closureInt, int flags, String file, int line) {
+        boolean literalClosure = closureInt != 0;
+        List<String> nameComponents = StringSupport.split(name, ':');
+        String methodName = JavaNameMangler.demangleMethodName(nameComponents.get(1));
+        CallType callType = nameComponents.get(0).equals("callFunctional") ? CallType.FUNCTIONAL : CallType.VARIABLE;
+        InvokeSite site = new SelfInvokeSite(type, methodName, callType, literalClosure, flags, file, line);
+
+        return InvokeSite.bootstrap(site, lookup);
+    }
+
+    public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, String keywords, int closureInt, int flags, String file, int line) {
         boolean literalClosure = closureInt != 0;
         List<String> nameComponents = StringSupport.split(name, ':');
         String methodName = JavaNameMangler.demangleMethodName(nameComponents.get(1));

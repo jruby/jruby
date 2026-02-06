@@ -1279,6 +1279,12 @@ public class JVMVisitor extends IRVisitor {
     }
 
     private void compileCallCommon(IRBytecodeAdapter m, CallBase call) {
+        if (ThreadContext.hasKeywords(call.getFlags()) && (call.getFlags() & ThreadContext.CALL_KEYWORD_REST) == 0) {
+            // normal keyword args, compile for pass-through
+            compileCallWithKeywords(m, call);
+            return;
+        }
+
         boolean functional = call.getCallType() == CallType.FUNCTIONAL || call.getCallType() == CallType.VARIABLE;
 
         Operand[] args = call.getCallArgs();
@@ -1318,6 +1324,56 @@ public class JVMVisitor extends IRVisitor {
                 break;
             case NORMAL:
                 m.getInvocationCompiler().invokeOther(file, jvm.methodData().scopeField, call, arity);
+                break;
+        }
+
+        handleCallResult(m, call.getResult());
+    }
+
+    private void compileCallWithKeywords(IRBytecodeAdapter m, CallBase call) {
+        boolean functional = call.getCallType() == CallType.FUNCTIONAL || call.getCallType() == CallType.VARIABLE;
+
+        Operand[] args = call.getCallArgs();
+        Hash keywords = (Hash) args[args.length - 1];
+
+        BlockPassType blockPassType = BlockPassType.fromIR(call);
+        m.loadContext();
+        if (!functional) m.loadSelf(); // caller
+        visit(call.getReceiver());
+        int positionalArity = args.length - 1;
+        int keywordsArity = keywords.pairs.length;
+
+        // compile positional arguments as normal
+        for (Operand operand : args) {
+            if (operand == keywords) break;
+            visit(operand);
+        }
+
+        // compile keyword values, which will be all literals or loads
+        var keys = new ArrayList<Symbol>();
+        for (var pair : keywords.pairs) {
+            keys.add((Symbol) pair.getKey());
+            visit(pair.getValue());
+        }
+
+        if (blockPassType.given()) {
+            m.loadContext();
+            if (call.isPotentiallyRefined()) m.loadStaticScope();
+            visit(call.getClosureArg());
+            if (call.isPotentiallyRefined()) {
+                m.invokeIRHelper("getRefinedBlockFromObject", sig(Block.class, ThreadContext.class, StaticScope.class, Object.class));
+            } else {
+                m.invokeIRHelper("getBlockFromObject", sig(Block.class, ThreadContext.class, Object.class));
+            }
+        }
+
+        switch (call.getCallType()) {
+            case FUNCTIONAL:
+            case VARIABLE:
+                m.getInvocationCompiler().invokeSelf(file, jvm.methodData().scopeField, call, positionalArity, keys.toArray(Symbol[]::new));
+                break;
+            case NORMAL:
+                m.getInvocationCompiler().invokeOther(file, jvm.methodData().scopeField, call, positionalArity, keys.toArray(Symbol[]::new));
                 break;
         }
 
