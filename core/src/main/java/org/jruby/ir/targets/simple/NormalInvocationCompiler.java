@@ -15,6 +15,7 @@ import org.jruby.ir.targets.InvocationCompiler;
 import org.jruby.ir.targets.JVM;
 import org.jruby.ir.targets.indy.IndyInvocationCompiler;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallArgument;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.MethodIndex;
@@ -47,11 +48,6 @@ public class NormalInvocationCompiler implements InvocationCompiler {
 
     @Override
     public void invokeOther(String file, String scopeFieldName, CallBase call, int arity) {
-        invoke(file, compiler.getLastLine(), scopeFieldName, call, arity);
-    }
-
-    @Override
-    public void invokeOther(String file, String scopeFieldName, CallBase call, int arity, Symbol[] keywords) {
         invoke(file, compiler.getLastLine(), scopeFieldName, call, arity);
     }
 
@@ -366,11 +362,8 @@ public class NormalInvocationCompiler implements InvocationCompiler {
         invoke(file, compiler.getLastLine(), scopeFieldName, call, arity);
     }
 
-    public void invokeSelf(String file, String scopeFieldName, CallBase call, int arity, Symbol[] keywords) {
-        if (arity > IRBytecodeAdapter.MAX_ARGUMENTS)
-            throw new NotCompilableException("call to '" + call.getId() + "' has more than " + IRBytecodeAdapter.MAX_ARGUMENTS + " arguments");
-
-        invoke(file, compiler.getLastLine(), scopeFieldName, call, arity);
+    public void invoke(String file, String scopeFieldName, CallBase call, CallArgument[] callArguments) {
+        throw new NotCompilableException("unimplemented");
     }
 
     public void invokeInstanceSuper(String file, String name, int arity, boolean hasClosure, boolean literalClosure, boolean[] splatmap, int flags) {

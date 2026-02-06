@@ -13,6 +13,7 @@ import org.jruby.ir.targets.JVM;
 import org.jruby.ir.targets.simple.NormalInvocationCompiler;
 import org.jruby.ir.targets.simple.NormalInvokeSite;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallArgument;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
@@ -57,35 +58,6 @@ public class IndyInvocationCompiler implements InvocationCompiler {
                 compiler.adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY)), NormalInvokeSite.BOOTSTRAP, false, flags, file, compiler.getLastLine());
             } else {
                 compiler.adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity)), NormalInvokeSite.BOOTSTRAP, false, flags, file, compiler.getLastLine());
-            }
-        }
-    }
-
-    @Override
-    public void invokeOther(String file, String scopeFieldName, CallBase call, int arity, Symbol[] keys) {
-        String id = call.getId();
-        if (arity > IRBytecodeAdapter.MAX_ARGUMENTS)
-            throw new NotCompilableException("call to '" + id + "' has more than " + IRBytecodeAdapter.MAX_ARGUMENTS + " arguments");
-        if (call.isPotentiallyRefined()) {
-            normalCompiler.invokeOther(file, scopeFieldName, call, arity);
-            return;
-        }
-
-        int flags = call.getFlags();
-
-        IRBytecodeAdapter.BlockPassType blockPassType = IRBytecodeAdapter.BlockPassType.fromIR(call);
-        String keywordsDescriptor = buildKeywordsDescriptor(keys);
-        if (blockPassType.given()) {
-            if (arity == -1) {
-                compiler.adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(id), CodegenUtils.sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY, JVM.OBJECT, arity + keys.length, Block.class)), NormalInvokeSite.BOOTSTRAP_KEYWORDS, keywordsDescriptor, blockPassType.literal(), flags, file, compiler.getLastLine());
-            } else {
-                compiler.adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity + keys.length, Block.class)), NormalInvokeSite.BOOTSTRAP_KEYWORDS, keywordsDescriptor, blockPassType.literal(), flags, file, compiler.getLastLine());
-            }
-        } else {
-            if (arity == -1) {
-                compiler.adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT_ARRAY, JVM.OBJECT, arity + keys.length)), NormalInvokeSite.BOOTSTRAP_KEYWORDS, keywordsDescriptor, false, flags, file, compiler.getLastLine());
-            } else {
-                compiler.adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(id), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, arity + keys.length)), NormalInvokeSite.BOOTSTRAP_KEYWORDS, keywordsDescriptor, false, flags, file, compiler.getLastLine());
             }
         }
     }
@@ -176,46 +148,21 @@ public class IndyInvocationCompiler implements InvocationCompiler {
     }
 
     @Override
-    public void invokeSelf(String file, String scopeFieldName, CallBase call, int arity, Symbol[] keys) {
+    public void invoke(String file, String scopeFieldName, CallBase call, CallArgument[] callArguments) {
         String id = call.getId();
-        if (arity > IRBytecodeAdapter.MAX_ARGUMENTS)
+        if (callArguments.length > IRBytecodeAdapter.MAX_ARGUMENTS)
             throw new NotCompilableException("call to '" + id + "' has more than " + IRBytecodeAdapter.MAX_ARGUMENTS + " arguments");
         if (call.isPotentiallyRefined()) {
-            normalCompiler.invokeSelf(file, scopeFieldName, call, arity);
-            return;
+            throw new NotCompilableException("no specialized calls for refined method '" + id + "'");
         }
 
         int flags = call.getFlags();
 
         String action = call.getCallType() == CallType.FUNCTIONAL ? "callFunctional" : "callVariable";
-        IRBytecodeAdapter.BlockPassType blockPassType = IRBytecodeAdapter.BlockPassType.fromIR(call);
         String callName = constructIndyCallName(action, id);
-        String keywordsDescriptor = buildKeywordsDescriptor(keys);
+        String descriptor = CallArgument.encode(callArguments);
 
-        if (blockPassType != IRBytecodeAdapter.BlockPassType.NONE) {
-            if (arity == -1) {
-                compiler.adapter.invokedynamic(callName, sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT_ARRAY, JVM.OBJECT, keys.length, Block.class)), SelfInvokeSite.BOOTSTRAP_KEYWORDS, keywordsDescriptor, blockPassType.literal(), flags, file, compiler.getLastLine());
-            } else {
-                compiler.adapter.invokedynamic(callName, sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, arity + keys.length, Block.class)), SelfInvokeSite.BOOTSTRAP_KEYWORDS, keywordsDescriptor, blockPassType.literal(), flags, file, compiler.getLastLine());
-            }
-        } else {
-            if (arity == -1) {
-                compiler.adapter.invokedynamic(callName, sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT_ARRAY, JVM.OBJECT, keys.length)), SelfInvokeSite.BOOTSTRAP_KEYWORDS, keywordsDescriptor, false, flags, file, compiler.getLastLine());
-            } else {
-                compiler.adapter.invokedynamic(callName, sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, arity  + keys.length)), SelfInvokeSite.BOOTSTRAP_KEYWORDS, keywordsDescriptor, false, flags, file, compiler.getLastLine());
-            }
-        }
-    }
-
-    private static String buildKeywordsDescriptor(Symbol[] keys) {
-        // build keywords descriptor
-        StringBuilder descriptorBuilder = new StringBuilder();
-        for (var key : keys) {
-            if (descriptorBuilder.length() > 0) descriptorBuilder.append(',');
-            descriptorBuilder.append(key.getString()); // TODO: encoding etc
-        }
-        String keywordsDescriptor = descriptorBuilder.toString();
-        return keywordsDescriptor;
+        compiler.adapter.invokedynamic(callName, sig(JVM.OBJECT, CallArgument.classes(callArguments)), MetaCallSite.BOOTSTRAP, descriptor, flags, file, compiler.getLastLine());
     }
 
     public static String constructIndyCallName(String action, String id) {

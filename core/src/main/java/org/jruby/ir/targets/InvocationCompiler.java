@@ -4,6 +4,7 @@ import org.jruby.ir.instructions.AsStringInstr;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.EQQInstr;
 import org.jruby.ir.operands.Symbol;
+import org.jruby.runtime.CallArgument;
 
 public interface InvocationCompiler {
     /**
@@ -17,19 +18,6 @@ public interface InvocationCompiler {
      * @param arity of the call.
      */
     void invokeOther(String file, String scopeFieldName, CallBase call, int arity);
-
-    /**
-     * Invoke a method with keyword arguments on an object other than self.
-     * <p>
-     * Stack required: context, self, all arguments, optional block
-     *
-     * @param file the filename of the script making this call
-     * @param scopeFieldName the field storing the current statics cope
-     * @param call to be invoked
-     * @param arity of the call.
-     * @param keywordArity keyword arity of the call.
-     */
-    void invokeOther(String file, String scopeFieldName, CallBase call, int arity, Symbol[] keys);
 
     /**
      * Invoke the array dereferencing method ([]) on an object other than self.
@@ -67,17 +55,16 @@ public interface InvocationCompiler {
     void invokeSelf(String file, String scopeFieldName, CallBase call, int arity);
 
     /**
-     * Invoke a method with keyword arguments on self.
+     * Invoke a method dynamically.
      *
-     * Stack required: context, caller, self, all arguments, optional block
+     * Stack required: context, caller, self, all arguments, block
      *
      * @param file the filename of the script making this call
      * @param scopeFieldName the field storing the current statics cope
      * @param call to be invoked on self
-     * @param arity of the call.
-     * @param keywordArity keyword arity of the call.
+     * @param callArguments a description of the call arguments pushed on the stack
      */
-    void invokeSelf(String file, String scopeFieldName, CallBase call, int arity, Symbol[] keys);
+    void invoke(String file, String scopeFieldName, CallBase call, CallArgument[] callArguments);
 
     /**
      * Invoke a superclass method from an instance context.

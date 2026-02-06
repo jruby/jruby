@@ -57,6 +57,8 @@ import org.jruby.ir.targets.indy.MetaClassBootstrap;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallArgument;
+import org.jruby.runtime.CallArgument.Identifier;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Frame;
@@ -1279,8 +1281,8 @@ public class JVMVisitor extends IRVisitor {
     }
 
     private void compileCallCommon(IRBytecodeAdapter m, CallBase call) {
-        if (ThreadContext.hasKeywords(call.getFlags()) && (call.getFlags() & ThreadContext.CALL_KEYWORD_REST) == 0) {
-            // normal keyword args, compile for pass-through
+        if (ThreadContext.hasKeywords(call.getFlags()) && call.getArgsCount() == 1 && (call.getFlags() & ThreadContext.CALL_KEYWORD_REST) == 0) {
+            // only normal keyword args, compile for pass-through
             compileCallWithKeywords(m, call);
             return;
         }
@@ -1336,46 +1338,53 @@ public class JVMVisitor extends IRVisitor {
         Operand[] args = call.getCallArgs();
         Hash keywords = (Hash) args[args.length - 1];
 
+        var callArguments = new ArrayList<CallArgument>();
+
         BlockPassType blockPassType = BlockPassType.fromIR(call);
+
+        int argIndex = 0;
+
+        callArguments.add(new CallArgument(callArguments.size(), CallArgument.Type.CONTEXT, Identifier.CONTEXT));
         m.loadContext();
-        if (!functional) m.loadSelf(); // caller
+
+        if (!functional) {
+            callArguments.add(new CallArgument(callArguments.size(), CallArgument.Type.CALLER, Identifier.CALLER));
+            m.loadSelf(); // caller
+        }
+
+        callArguments.add(new CallArgument(callArguments.size(), CallArgument.Type.RECEIVER, Identifier.RECEIVER));
         visit(call.getReceiver());
-        int positionalArity = args.length - 1;
-        int keywordsArity = keywords.pairs.length;
 
         // compile positional arguments as normal
         for (Operand operand : args) {
             if (operand == keywords) break;
+            callArguments.add(
+                    new CallArgument(callArguments.size(), CallArgument.Type.POSITIONAL, new Identifier(String.valueOf(argIndex++))));
             visit(operand);
         }
 
         // compile keyword values, which will be all literals or loads
-        var keys = new ArrayList<Symbol>();
-        for (var pair : keywords.pairs) {
-            keys.add((Symbol) pair.getKey());
+        for (int i = 0; i < keywords.pairs.length; i++) {
+            var pair = keywords.pairs[0];
+            callArguments.add(
+                    new CallArgument(callArguments.size(), CallArgument.Type.KEYWORD, new Identifier(((Symbol) pair.getKey()).getSymbol().idString())));
             visit(pair.getValue());
         }
 
         if (blockPassType.given()) {
-            m.loadContext();
-            if (call.isPotentiallyRefined()) m.loadStaticScope();
             visit(call.getClosureArg());
-            if (call.isPotentiallyRefined()) {
-                m.invokeIRHelper("getRefinedBlockFromObject", sig(Block.class, ThreadContext.class, StaticScope.class, Object.class));
-            } else {
-                m.invokeIRHelper("getBlockFromObject", sig(Block.class, ThreadContext.class, Object.class));
+            switch (BlockPassType.fromIR(call)) {
+                case LITERAL:
+                    callArguments.add(new CallArgument(callArguments.size(), CallArgument.Type.BLOCK, Identifier.BLOCK));
+                    break;
+                case GIVEN:
+                    callArguments.add(new CallArgument(callArguments.size(), CallArgument.Type.BLOCK_PASS, Identifier.BLOCK));
+                    break;
+                case NONE:
             }
         }
 
-        switch (call.getCallType()) {
-            case FUNCTIONAL:
-            case VARIABLE:
-                m.getInvocationCompiler().invokeSelf(file, jvm.methodData().scopeField, call, positionalArity, keys.toArray(Symbol[]::new));
-                break;
-            case NORMAL:
-                m.getInvocationCompiler().invokeOther(file, jvm.methodData().scopeField, call, positionalArity, keys.toArray(Symbol[]::new));
-                break;
-        }
+        m.getInvocationCompiler().invoke(file, jvm.methodData().scopeField, call, callArguments.toArray(CallArgument[]::new));
 
         handleCallResult(m, call.getResult());
     }

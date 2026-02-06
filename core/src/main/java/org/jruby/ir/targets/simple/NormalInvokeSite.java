@@ -33,21 +33,7 @@ public class NormalInvokeSite extends InvokeSite {
             sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, int.class, int.class, String.class, int.class),
             false);
 
-    public static final Handle BOOTSTRAP_KEYWORDS = new Handle(
-            Opcodes.H_INVOKESTATIC,
-            p(NormalInvokeSite.class),
-            "bootstrap",
-            sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, int.class, int.class, String.class, int.class),
-            false);
-
     public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, int closureInt, int flags, String file, int line) {
-        boolean literalClosure = closureInt != 0;
-        String methodName = JavaNameMangler.demangleMethodName(StringSupport.split(name, ':').get(1));
-
-        return newSite(lookup, methodName, type, literalClosure, flags, file, line);
-    }
-
-    public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, String keywords, int closureInt, int flags, String file, int line) {
         boolean literalClosure = closureInt != 0;
         String methodName = JavaNameMangler.demangleMethodName(StringSupport.split(name, ':').get(1));
 
