@@ -20,7 +20,16 @@ import static org.jruby.runtime.Arity.UNLIMITED_ARGUMENTS;
 /**
  * A representation of a Ruby method signature (argument layout, min/max, keyword layout, rest args).
  */
-public class Signature {
+public record Signature(
+        short pre,
+        short opt,
+        short post,
+        Rest rest,
+        short kwargs,
+        short requiredKwargs,
+        int keyRest,
+        int arityValue) {
+    
     public enum Rest {
         NONE, NORM, ANON, STAR;
 
@@ -46,24 +55,12 @@ public class Signature {
     public static final Signature FOUR_REQUIRED = new Signature(4, 0, 0, Rest.NORM, 0, 0, -1);
     public static final Signature ONE_OPT_ARGUMENT = new Signature(0, 1, 0, Rest.NONE, 0, 0, -1);
 
-    private final short pre;
-    private final short opt;
-    private final Rest rest;
-    private final short post;
-    private final short kwargs;
-    private final short requiredKwargs;
-    private final int arityValue;
-    private final int keyRest;
+    public Signature(short pre, short opt, short post, Rest rest, short kwargs, short requiredKwargs, int keyRest) {
+        this(pre, opt, post, rest, kwargs, requiredKwargs, keyRest, calculateArity(pre, opt, rest, post, kwargs, requiredKwargs, keyRest));
+    }
 
     public Signature(int pre, int opt, int post, Rest rest, int kwargs, int requiredKwargs, int keyRest) {
-        this.pre = (short) pre;
-        this.opt = (short) opt;
-        this.post = (short) post;
-        this.rest = rest;
-        this.kwargs = (short) kwargs;
-        this.requiredKwargs = (short) requiredKwargs;
-        this.keyRest = keyRest;
-        this.arityValue = calculateArityValue();
+        this((short) pre, (short) opt, (short) post, rest, (short) kwargs, (short) requiredKwargs, keyRest);
     }
 
     public int getRequiredKeywordForArityCount() {
@@ -74,13 +71,8 @@ public class Signature {
         return keyRest != -1;
     }
 
-    public int pre() { return pre; }
-    public int opt() { return opt; }
-    public Rest rest() { return rest; }
-    public int post() { return post; }
     public boolean hasKwargs() { return kwargs > 0 || restKwargs(); }
     public boolean hasRest() { return rest != Rest.NONE; }
-    public int keyRest() { return keyRest; }
 
     /**
      * The minimum number of parameters supplied which can fulfill a call to this signature.  This
@@ -101,14 +93,6 @@ public class Signature {
     public int max() {
         return rest != Rest.NONE && rest != Rest.ANON ?
                 -1 : required() + opt() + (kwargs() > 0 || restKwargs() ? 1 : 0);
-    }
-
-    /**
-     * Total number of keyword argument parameters.
-     * @return the number of kwarg parameters
-     */
-    public int kwargs() {
-        return kwargs;
     }
 
     /**
@@ -155,27 +139,28 @@ public class Signature {
         }
     }
 
+    @Deprecated
+    public int calculateArityValue() {
+        return calculateArity(pre, opt, rest, post, kwargs, requiredKwargs, keyRest);
+    }
+
     /**
      * Best attempt at breaking the code of arity values!  We figure out how many fixed/required parameters
      * must be supplied. Then we figure out if we need to mark the value as optional. Optional is indicated
      * by multiplying -1 * (fixed + 1). Keyword args optional and rest values can indicate this optional
      * condition but only if no required keyword arguments are present.
      */
-    public int calculateArityValue() {
+    private static int calculateArity(short pre, short opt, Rest rest, short post, short kwargs, short requiredKwargs, int keyRest) {
         int oneForKeywords = requiredKwargs > 0 ? 1 : 0;
-        int fixedValue = pre() + post() + oneForKeywords;
+        int fixedValue = pre + post + oneForKeywords;
         boolean hasOptionalKeywords = kwargs - requiredKwargs > 0;
-        boolean optionalFromRest = rest() != Rest.NONE && rest != Rest.ANON;
+        boolean optionalFromRest = rest != Rest.NONE && rest != Rest.ANON;
 
-        if (opt() > 0 || optionalFromRest || fixedValue == 0 && (hasOptionalKeywords || restKwargs())) {
+        if (opt > 0 || optionalFromRest || fixedValue == 0 && (hasOptionalKeywords || keyRest != -1)) {
             return -1 * (fixedValue + 1);
         }
 
         return fixedValue;
-    }
-
-    public int arityValue() {
-        return arityValue;
     }
 
     /**
