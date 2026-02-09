@@ -1,1 +1,0 @@
-fails:The yield call taking a single argument yielding to a lambda should not destructure an Array into multiple arguments
