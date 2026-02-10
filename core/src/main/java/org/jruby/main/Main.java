@@ -511,7 +511,7 @@ public class Main {
 
     private void doShowVersion() {
         if (config.isShowVersion()) {
-            config.getOutput().println(OutputStrings.getVersionString());
+            config.getOutput().println(OutputStrings.getVersionString(config));
         }
     }
 
