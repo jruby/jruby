@@ -2189,7 +2189,7 @@ public class IRRuntimeHelpers {
 
         // FIXME: For NORMAL/THREAD but it is unclear if we really need any keyword logic in here anymore.
         org.jruby.runtime.Signature sig = block.getBody().getSignature();
-        if (!sig.isSpreadable()) return args;
+        if (!sig.isSpreadable() || (sig.opt() + sig.required() == 1 && !sig.hasRest())) return args;
 
         // We get here only when we need both required and optional/rest args
         // (keyword or non-keyword in either case).
