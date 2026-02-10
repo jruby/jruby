@@ -1588,6 +1588,14 @@ public final class ThreadContext {
         return (callInfo & CALL_KEYWORD) != 0;
     }
 
+    public static boolean hasNonemptyKeywords(int callInfo) {
+        return (callInfo & CALL_KEYWORD) != 0 && !keywordsEmpty(callInfo);
+    }
+
+    public static boolean keywordsEmpty(int callInfo) {
+        return (callInfo & CALL_KEYWORD_EMPTY) != 0;
+    }
+
     @Deprecated(since = "9.3.0.0")
     public IRubyObject setBackRef(IRubyObject match) {
         if (match.isNil()) return clearBackRef();
