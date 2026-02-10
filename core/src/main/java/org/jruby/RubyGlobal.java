@@ -167,7 +167,7 @@ public class RubyGlobal {
         Object.defineConstant(context, "RUBY_RELEASE_DATE", release);
         Object.defineConstant(context, "RUBY_PLATFORM", platform);
 
-        IRubyObject description = RubyString.newFString(runtime, OutputStrings.getVersionString());
+        IRubyObject description = RubyString.newFString(runtime, OutputStrings.getVersionString(instanceConfig));
         Object.defineConstant(context, "RUBY_DESCRIPTION", description);
 
         IRubyObject copyright = RubyString.newFString(runtime, OutputStrings.getCopyrightString());
