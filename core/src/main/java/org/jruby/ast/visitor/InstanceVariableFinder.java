@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
 import org.jruby.ast.ClassNode;
 import org.jruby.ast.InstAsgnNode;
@@ -27,7 +28,10 @@ import org.jruby.ast.PreExeNode;
  * node.accept(finder);
  * System.out.println("found: " + finder.getFoundVariables);
  * </code>
+ *
+ * @deprecated See {@link RubyModule#discoverInstanceVariables()} for the working version
  */
+@Deprecated
 public class InstanceVariableFinder extends AbstractNodeVisitor<Void> {
 
     @Override

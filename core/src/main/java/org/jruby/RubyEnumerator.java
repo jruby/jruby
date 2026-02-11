@@ -332,7 +332,14 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         if (methodArgsHasKeywords) context.callInfo = CALL_KEYWORD;
         return object.callMethod(context, method, methodArgs,
                 CallBlock.newCallClosure(context, this, block.getSignature(), (ctx, args, blk) -> {
-                    IRubyObject ret = block.yieldValues(ctx, args);
+                    IRubyObject ret;
+
+                    if (args.length == 1) {
+                        ret = block.yield(ctx, args[0]);
+                    } else {
+                        ret = block.yieldValues(ctx, args);
+                    }
+
                     IRubyObject val = feedValue.use_value(ctx);
                     return val.isNil() ? ret : val;
                 })

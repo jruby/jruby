@@ -293,7 +293,7 @@ public class StaticScope implements Serializable, Cloneable {
         implicitVariables.set(slot);
     }
 
-    private int addVariableName(String name) {
+    public int addVariableName(String name) {
         // Clear constructor since we are adding a name
         constructor = null;
 
@@ -537,6 +537,22 @@ public class StaticScope implements Serializable, Cloneable {
 
     /**
      * Populate a deduplicated collection of variable names in scope using the given functions.
+     *
+     * This may include variables that are not strictly Ruby local variable names, so the consumer should validate
+     * names as appropriate.
+     *
+     * @param collectionFactory used to construct the collection
+     * @param collectionPopulator used to pass values into the collection
+     * @param <T> resulting collection type
+     * @return populated collection
+     */
+    public <T> T collectAllVariables(ThreadContext context, BiFunction<ThreadContext, Integer, T> collectionFactory, BiConsumer<T, String> collectionPopulator) {
+        T collection = collectVariables(context, collectionFactory, collectionPopulator, false);
+        return collectVariables(context, (t, i) -> collection, collectionPopulator, true);
+    }
+
+    /**
+     * Populate a deduplicated collection of non-implicit variable names in scope using the given functions.
      *
      * This may include variables that are not strictly Ruby local variable names, so the consumer should validate
      * names as appropriate.

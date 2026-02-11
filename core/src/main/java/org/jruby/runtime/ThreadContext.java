@@ -917,7 +917,7 @@ public final class ThreadContext {
      * @param length the length of the trace
      * @return an Array with the backtrace locations
      */
-    public IRubyObject createCallerLocations(int level, Integer length, Stream<StackWalker.StackFrame> stackStream) {
+    public IRubyObject createCallerLocations(int level, int length, Stream<StackWalker.StackFrame> stackStream) {
         runtime.incrementCallerCount();
 
         RubyStackTraceElement[] fullTrace = getPartialTrace(level, length, stackStream);
@@ -933,7 +933,7 @@ public final class ThreadContext {
     }
 
     /**
-     * Like {@link #createCallerLocations(int, Integer, Stream)} but accepts a lambda to yield each location and yields
+     * Like {@link #createCallerLocations(int, int, Stream)} but accepts a lambda to yield each location and yields
      * all stack elements until the loop ends or is broken early.
      *
      * @param stackStream the stream of StackFrame objects from JVM
@@ -943,8 +943,8 @@ public final class ThreadContext {
         eachPartialTrace(stackStream, (elt) -> consumer.accept(RubyThread.Location.newLocation(runtime, elt)));
     }
 
-    private RubyStackTraceElement[] getPartialTrace(int level, Integer length, Stream<StackWalker.StackFrame> stackStream) {
-        if (length != null && length == 0) return RubyStackTraceElement.EMPTY_ARRAY;
+    private RubyStackTraceElement[] getPartialTrace(int level, int length, Stream<StackWalker.StackFrame> stackStream) {
+        if (length == 0) return RubyStackTraceElement.EMPTY_ARRAY;
         return TraceType.Gather.CALLER.getBacktraceData(this, stackStream).getPartialBacktrace(runtime, level + length);
     }
 
@@ -956,7 +956,7 @@ public final class ThreadContext {
         return TraceType.Gather.WARN.getBacktraceData(this, stackStream).getPartialBacktrace(runtime, level + 1);
     }
 
-    private static int safeLength(int level, Integer length, RubyStackTraceElement[] trace) {
+    private static int safeLength(int level, int length, RubyStackTraceElement[] trace) {
         final int baseLength = trace.length - level;
         return Math.min(length, baseLength);
     }
@@ -1595,6 +1595,14 @@ public final class ThreadContext {
 
     public static boolean hasKeywords(int callInfo) {
         return (callInfo & CALL_KEYWORD) != 0;
+    }
+
+    public static boolean hasNonemptyKeywords(int callInfo) {
+        return (callInfo & CALL_KEYWORD) != 0 && !keywordsEmpty(callInfo);
+    }
+
+    public static boolean keywordsEmpty(int callInfo) {
+        return (callInfo & CALL_KEYWORD_EMPTY) != 0;
     }
 
     @Deprecated(since = "9.3.0.0")

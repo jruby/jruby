@@ -71,6 +71,7 @@ import static org.jruby.api.Warn.warn;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
+import static org.jruby.runtime.ThreadContext.hasNonemptyKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import static org.jruby.RubyEnumerator.SizeFn;
@@ -531,7 +532,7 @@ public class RubyStruct extends RubyObject {
 
     @JRubyMethod(visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject arg0) {
-        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
+        boolean keywords = hasNonemptyKeywords(ThreadContext.resetCallInfo(context));
 
         if (keywords) {
             return setupStructValuesFromHash(context, (RubyHash) arg0);

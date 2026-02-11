@@ -1,0 +1,1 @@
+fails:Symbol#inspect quotes and escapes symbols in dummy encodings

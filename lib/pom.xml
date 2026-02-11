@@ -1099,6 +1099,19 @@ DO NOT MODIFY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
+      <artifactId>syslog</artifactId>
+      <version>0.4.0</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>rubygems</groupId>
+          <artifactId>jar-dependencies</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
       <artifactId>test-unit</artifactId>
       <version>3.7.5</version>
       <type>gem</type>
@@ -1213,6 +1226,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/rexml-3.4.4*</include>
           <include>specifications/rinda-0.2.0*</include>
           <include>specifications/rss-0.3.2*</include>
+          <include>specifications/syslog-0.4.0*</include>
           <include>specifications/test-unit-3.7.5*</include>
           <include>gems/rubygems-update-4.0.3*/**/*</include>
           <include>gems/bundler-4.0.3*/**/*</include>
@@ -1296,6 +1310,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/rexml-3.4.4*/**/*</include>
           <include>gems/rinda-0.2.0*/**/*</include>
           <include>gems/rss-0.3.2*/**/*</include>
+          <include>gems/syslog-0.4.0*/**/*</include>
           <include>gems/test-unit-3.7.5*/**/*</include>
           <include>cache/rubygems-update-4.0.3*</include>
           <include>cache/bundler-4.0.3*</include>
@@ -1379,6 +1394,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/rexml-3.4.4*</include>
           <include>cache/rinda-0.2.0*</include>
           <include>cache/rss-0.3.2*</include>
+          <include>cache/syslog-0.4.0*</include>
           <include>cache/test-unit-3.7.5*</include>
         </includes>
       </resource>

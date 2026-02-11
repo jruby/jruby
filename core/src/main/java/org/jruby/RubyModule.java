@@ -1028,7 +1028,7 @@ public class RubyModule extends RubyObject {
         return metaClass.getRealClass().getName(context) + ":0x" + Integer.toHexString(System.identityHashCode(this));
     }
 
-    @JRubyMethod(name = "refine", reads = SCOPE)
+    @JRubyMethod(name = "refine", visibility = PRIVATE, reads = SCOPE)
     public IRubyObject refine(ThreadContext context, IRubyObject klass, Block block) {
         if (!block.isGiven()) throw argumentError(context, "no block given");
         if (block.isEscaped()) throw argumentError(context, "can't pass a Proc as a block to Module#refine");
@@ -1978,9 +1978,7 @@ public class RubyModule extends RubyObject {
             putMethod(context, name, method);
         }
 
-        synchronized (getRuntime().getHierarchyLock()) {
-            invalidateCacheDescendants(context);
-        }
+        invalidateMethodCache(context);
     }
 
     public void removeMethod(ThreadContext context, String id) {
@@ -2414,6 +2412,17 @@ public class RubyModule extends RubyObject {
         lastInvalidatorSize = invalidators.size();
 
         methodInvalidator.invalidateAll(invalidators);
+    }
+
+    /**
+     * Invalidate the method cache of this class and all descendants under lock.
+     *
+     * @param context
+     */
+    public void invalidateMethodCache(ThreadContext context) {
+        synchronized (getRuntime().getHierarchyLock()) {
+            invalidateCacheDescendants(context);
+        }
     }
 
     public static class InvalidatorList<T> extends ArrayList<T> implements RubyClass.BiConsumerIgnoresSecond<RubyClass> {
@@ -6881,6 +6890,7 @@ public class RubyModule extends RubyObject {
 
             for (IRubyObject _module : modules) {
                 RubyModule module = castAsModule(context, _module);
+                if (module.getClass() != RubyModule.class) throw typeError(context, "wrong argument type Class (expected Module)");
 
                 if (module.getSuperClass() != null) {
                     warn(context, module.getName(context) + " has ancestors, but Refinement#import_methods doesn't import their methods");
@@ -6908,6 +6918,7 @@ public class RubyModule extends RubyObject {
             }
 
             DynamicMethod dup = entry.getValue().dup();
+            dup.setImplementationClass(selfModule);
 
             // maybe insufficient if we have already compiled assuming no refinements
             ((AbstractIRMethod) dup).getIRScope().setIsMaybeUsingRefinements();

@@ -1,0 +1,22 @@
+fails:IO::Buffer.map creates a new buffer mapped from a file
+fails:IO::Buffer.map allows to close the file after creating buffer, retaining mapping
+fails:IO::Buffer.map creates a mapped, external, shared buffer
+fails:IO::Buffer.map is shareable across processes
+fails:IO::Buffer.map with an empty file raises a SystemCallError
+fails:IO::Buffer.map with a file opened only for reading raises a SystemCallError if no flags are used
+fails:IO::Buffer.map with size argument limits the buffer to the specified size in bytes, starting from the start of the file
+fails:IO::Buffer.map with size argument maps the whole file if size is nil
+fails:IO::Buffer.map with size argument raises TypeError if size is not an Integer or nil
+fails:IO::Buffer.map with size argument if size is 0 raises a SystemCallError
+fails:IO::Buffer.map with size and offset arguments maps the file from the start if offset is 0
+fails:IO::Buffer.map with size and offset arguments raises a SystemCallError if offset is not an allowed value
+fails:IO::Buffer.map with size and offset arguments raises a SystemCallError if offset is negative
+fails:IO::Buffer.map with size and offset arguments if offset is an allowed value for system call maps the span specified by size starting from the offset
+fails:IO::Buffer.map with size and offset arguments if offset is an allowed value for system call if size is nil maps the rest of the file
+fails:IO::Buffer.map with size and offset arguments if offset is an allowed value for system call if size is nil incorrectly sets buffer's size to file's full size
+fails:IO::Buffer.map with flags argument when READONLY flag is specified sets readonly flag on the buffer, allowing only reads
+fails:IO::Buffer.map with flags argument when READONLY flag is specified allows mapping read-only files
+fails:IO::Buffer.map with flags argument when READONLY flag is specified causes IO::Buffer::AccessError on write
+fails:IO::Buffer.map with flags argument when PRIVATE is specified sets private flag on the buffer, making it freely modifiable
+fails:IO::Buffer.map with flags argument when PRIVATE is specified allows mapping read-only files and modifying the buffer
+fails:IO::Buffer.map with flags argument when PRIVATE is specified is not shared across processes

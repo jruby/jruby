@@ -671,6 +671,11 @@ for j in "$JRUBY_HOME"/lib/jruby.jar "$JRUBY_HOME"/lib/jruby-complete.jar; do
     fi
     jruby_jar="$j"
 done
+
+if [ -z "${jruby_jar-}" ]; then
+    echo "JRUBY_HOME at ${JRUBY_HOME} contains no lib/jruby.jar, exiting."
+    exit 1
+fi
 readonly jruby_jar
 
 if $cygwin; then
