@@ -8,12 +8,14 @@ import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.instructions.AsStringInstr;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.EQQInstr;
+import org.jruby.ir.operands.Symbol;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.targets.IRBytecodeAdapter;
 import org.jruby.ir.targets.InvocationCompiler;
 import org.jruby.ir.targets.JVM;
 import org.jruby.ir.targets.indy.IndyInvocationCompiler;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallArgument;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.MethodIndex;
@@ -358,6 +360,10 @@ public class NormalInvocationCompiler implements InvocationCompiler {
             throw new NotCompilableException("call to '" + call.getId() + "' has more than " + IRBytecodeAdapter.MAX_ARGUMENTS + " arguments");
 
         invoke(file, compiler.getLastLine(), scopeFieldName, call, arity);
+    }
+
+    public void invoke(String file, String scopeFieldName, CallBase call, CallArgument[] callArguments) {
+        throw new NotCompilableException("unimplemented");
     }
 
     public void invokeInstanceSuper(String file, String name, int arity, boolean hasClosure, boolean literalClosure, boolean[] splatmap, int flags) {

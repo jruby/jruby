@@ -57,6 +57,8 @@ import org.jruby.ir.targets.indy.MetaClassBootstrap;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallArgument;
+import org.jruby.runtime.CallArgument.Identifier;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Frame;
@@ -1279,9 +1281,16 @@ public class JVMVisitor extends IRVisitor {
     }
 
     private void compileCallCommon(IRBytecodeAdapter m, CallBase call) {
+        Operand[] args = call.getCallArgs();
+
+        if (!CallBase.containsArgSplat(args) && ThreadContext.hasKeywords(call.getFlags()) && (call.getFlags() & ThreadContext.CALL_KEYWORD_REST) == 0) {
+            // only normal positional or keyword args, compile for pass-through
+            compileCallWithKeywords(m, call);
+            return;
+        }
+
         boolean functional = call.getCallType() == CallType.FUNCTIONAL || call.getCallType() == CallType.VARIABLE;
 
-        Operand[] args = call.getCallArgs();
         BlockPassType blockPassType = BlockPassType.fromIR(call);
         m.loadContext();
         if (!functional) m.loadSelf(); // caller
@@ -1320,6 +1329,62 @@ public class JVMVisitor extends IRVisitor {
                 m.getInvocationCompiler().invokeOther(file, jvm.methodData().scopeField, call, arity);
                 break;
         }
+
+        handleCallResult(m, call.getResult());
+    }
+
+    private void compileCallWithKeywords(IRBytecodeAdapter m, CallBase call) {
+        boolean functional = call.getCallType() == CallType.FUNCTIONAL || call.getCallType() == CallType.VARIABLE;
+
+        Operand[] args = call.getCallArgs();
+        Hash keywords = (Hash) args[args.length - 1];
+
+        var callArguments = new ArrayList<CallArgument>();
+
+        BlockPassType blockPassType = BlockPassType.fromIR(call);
+
+        callArguments.add(new CallArgument(callArguments.size(), CallArgument.Type.CONTEXT, Identifier.CONTEXT));
+        m.loadContext();
+
+        if (!functional) {
+            callArguments.add(new CallArgument(callArguments.size(), CallArgument.Type.CALLER, Identifier.CALLER));
+            m.loadSelf(); // caller
+        }
+
+        callArguments.add(new CallArgument(callArguments.size(), CallArgument.Type.RECEIVER, Identifier.RECEIVER));
+        visit(call.getReceiver());
+
+        // compile positional arguments as normal
+        int positionalID = 0;
+        for (Operand operand : args) {
+            if (operand == keywords) break;
+            callArguments.add(
+                    new CallArgument(callArguments.size(), CallArgument.Type.POSITIONAL, new Identifier(String.valueOf(positionalID++))));
+            visit(operand);
+        }
+
+        // compile keyword values, which will be all literals or loads
+        for (int i = 0; i < keywords.pairs.length; i++) {
+            var pair = keywords.pairs[0];
+            callArguments.add(
+                    new CallArgument(callArguments.size(), CallArgument.Type.KEYWORD, new Identifier(((Symbol) pair.getKey()).getSymbol().idString())));
+            visit(pair.getValue());
+        }
+
+        if (blockPassType.given()) {
+            visit(call.getClosureArg());
+            switch (BlockPassType.fromIR(call)) {
+                case LITERAL:
+                    callArguments.add(new CallArgument(callArguments.size(), CallArgument.Type.BLOCK, Identifier.BLOCK));
+                    break;
+                case GIVEN:
+                    callArguments.add(new CallArgument(callArguments.size(), CallArgument.Type.BLOCK_PASS, Identifier.BLOCK));
+                    break;
+                case NONE:
+            }
+        }
+
+        m.getInvocationCompiler().invoke(file, jvm.methodData().scopeField, call, callArguments.toArray(CallArgument[]::new));
 
         handleCallResult(m, call.getResult());
     }

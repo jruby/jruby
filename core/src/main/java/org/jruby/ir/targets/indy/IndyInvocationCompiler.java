@@ -5,6 +5,7 @@ import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.instructions.AsStringInstr;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.EQQInstr;
+import org.jruby.ir.operands.Symbol;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.targets.IRBytecodeAdapter;
 import org.jruby.ir.targets.InvocationCompiler;
@@ -12,6 +13,7 @@ import org.jruby.ir.targets.JVM;
 import org.jruby.ir.targets.simple.NormalInvocationCompiler;
 import org.jruby.ir.targets.simple.NormalInvokeSite;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallArgument;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
@@ -134,7 +136,7 @@ public class IndyInvocationCompiler implements InvocationCompiler {
             if (arity == -1) {
                 compiler.adapter.invokedynamic(callName, sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT_ARRAY, Block.class)), SelfInvokeSite.BOOTSTRAP, blockPassType.literal(), flags, file, compiler.getLastLine());
             } else {
-                compiler.adapter.invokedynamic(callName, sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, arity + 1, Block.class)), SelfInvokeSite.BOOTSTRAP, blockPassType.literal(), flags, file, compiler.getLastLine());
+                compiler.adapter.invokedynamic(callName, sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, arity, Block.class)), SelfInvokeSite.BOOTSTRAP, blockPassType.literal(), flags, file, compiler.getLastLine());
             }
         } else {
             if (arity == -1) {
@@ -143,6 +145,24 @@ public class IndyInvocationCompiler implements InvocationCompiler {
                 compiler.adapter.invokedynamic(callName, sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, arity)), SelfInvokeSite.BOOTSTRAP, false, flags, file, compiler.getLastLine());
             }
         }
+    }
+
+    @Override
+    public void invoke(String file, String scopeFieldName, CallBase call, CallArgument[] callArguments) {
+        String id = call.getId();
+        if (callArguments.length > IRBytecodeAdapter.MAX_ARGUMENTS)
+            throw new NotCompilableException("call to '" + id + "' has more than " + IRBytecodeAdapter.MAX_ARGUMENTS + " arguments");
+        if (call.isPotentiallyRefined()) {
+            throw new NotCompilableException("no specialized calls for refined method '" + id + "'");
+        }
+
+        int flags = call.getFlags();
+
+        String action = call.getCallType() == CallType.FUNCTIONAL ? "callFunctional" : "callVariable";
+        String callName = constructIndyCallName(action, id);
+        String descriptor = CallArgument.encode(callArguments);
+
+        compiler.adapter.invokedynamic(callName, sig(JVM.OBJECT, CallArgument.classes(callArguments)), MetaCallSite.BOOTSTRAP, descriptor, flags, file, compiler.getLastLine());
     }
 
     public static String constructIndyCallName(String action, String id) {

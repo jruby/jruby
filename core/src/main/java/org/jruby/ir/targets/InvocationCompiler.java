@@ -3,6 +3,8 @@ package org.jruby.ir.targets;
 import org.jruby.ir.instructions.AsStringInstr;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.EQQInstr;
+import org.jruby.ir.operands.Symbol;
+import org.jruby.runtime.CallArgument;
 
 public interface InvocationCompiler {
     /**
@@ -10,7 +12,10 @@ public interface InvocationCompiler {
      * <p>
      * Stack required: context, self, all arguments, optional block
      *
-     * @param call the call to be invoked
+     * @param file the filename of the script making this call
+     * @param scopeFieldName the field storing the current statics cope
+     * @param call to be invoked
+     * @param arity of the call.
      */
     void invokeOther(String file, String scopeFieldName, CallBase call, int arity);
 
@@ -48,6 +53,18 @@ public interface InvocationCompiler {
      * @param arity of the call.
      */
     void invokeSelf(String file, String scopeFieldName, CallBase call, int arity);
+
+    /**
+     * Invoke a method dynamically.
+     *
+     * Stack required: context, caller, self, all arguments, block
+     *
+     * @param file the filename of the script making this call
+     * @param scopeFieldName the field storing the current statics cope
+     * @param call to be invoked on self
+     * @param callArguments a description of the call arguments pushed on the stack
+     */
+    void invoke(String file, String scopeFieldName, CallBase call, CallArgument[] callArguments);
 
     /**
      * Invoke a superclass method from an instance context.
