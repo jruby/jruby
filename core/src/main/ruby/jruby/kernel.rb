@@ -7,7 +7,7 @@ end
 
 begin
   # Try to access ProcessBuilder; if it fails, don't define our special process logic
-  load 'jruby/kernel/jruby/process_manager.rb'
+  load 'uri:classloader:jruby/kernel/jruby/process_manager.rb'
 rescue Exception # java.lang.ProcessBuilder not available
   warn "ProcessBuilder unavailable; using default backtick" if $VERBOSE
   JRuby.send(:remove_const, :ProcessManager) rescue nil
@@ -15,18 +15,18 @@ rescue Exception # java.lang.ProcessBuilder not available
 end unless JRuby::Util.native_posix? # native POSIX uses new logic for back-quote
 
 # These are loads so they don't pollute LOADED_FEATURES
-load 'jruby/kernel/signal.rb'
-load 'jruby/kernel/kernel.rb'
-load 'jruby/kernel/proc.rb'
-load 'jruby/kernel/process.rb'
-load 'jruby/kernel/enumerator.rb'
-load 'jruby/kernel/enumerable.rb'
-load 'jruby/kernel/io.rb'
-load 'jruby/kernel/gc.rb'
-load 'jruby/kernel/range.rb'
-load 'jruby/kernel/file.rb'
-load 'jruby/kernel/method.rb'
-load 'jruby/kernel/thread.rb'
-load 'jruby/kernel/integer.rb'
-load 'jruby/kernel/time.rb'
-load 'jruby/kernel/string.rb'
+load 'uri:classloader:jruby/kernel/signal.rb'
+load 'uri:classloader:jruby/kernel/kernel.rb'
+load 'uri:classloader:jruby/kernel/proc.rb'
+load 'uri:classloader:jruby/kernel/process.rb'
+load 'uri:classloader:jruby/kernel/enumerator.rb'
+load 'uri:classloader:jruby/kernel/enumerable.rb'
+load 'uri:classloader:jruby/kernel/io.rb'
+load 'uri:classloader:jruby/kernel/gc.rb'
+load 'uri:classloader:jruby/kernel/range.rb'
+load 'uri:classloader:jruby/kernel/file.rb'
+load 'uri:classloader:jruby/kernel/method.rb'
+load 'uri:classloader:jruby/kernel/thread.rb'
+load 'uri:classloader:jruby/kernel/integer.rb'
+load 'uri:classloader:jruby/kernel/time.rb'
+load 'uri:classloader:jruby/kernel/string.rb'

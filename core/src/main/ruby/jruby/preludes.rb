@@ -1,3 +1,3 @@
 # Load preludes
-load 'jruby/kernel/prelude.rb'
-load 'jruby/kernel/gem_prelude.rb'
+load 'uri:classloader:/jruby/kernel/prelude.rb'
+load 'uri:classloader:/jruby/kernel/gem_prelude.rb'
