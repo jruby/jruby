@@ -25,6 +25,7 @@ exclude :test_match_without_regexp, "matches non-unicode with exception message 
 exclude :test_named_capture_nonascii, "needs investigation"
 exclude :test_once_multithread, "seems to be flaky, failed in JIT mode on Linux CI on GHA"
 exclude :test_posix_bracket, "work in progress"
+exclude :test_regsub_no_memory_leak, "no working assert_no_memory_leak method"
 exclude :test_s_timeout_memory_leak, "no working assert_no_memory_leak method"
 exclude :test_timeout_memory_leak, "no working assert_no_memory_leak method"
 exclude :test_timeout_nil, "times out without error on JRuby, adds 10s for no value"

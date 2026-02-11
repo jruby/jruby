@@ -44,6 +44,7 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Create;
+import org.jruby.api.Define;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.exceptions.RaiseException;
@@ -155,6 +156,9 @@ public class RubyGlobal {
         // initially set to config's script name, if any
         defineArgv0Global(context, globals, instanceConfig.displayedFileName());
 
+        // Ruby module contains general Ruby constants
+        RubyModule Ruby = Define.defineModule(context, "Ruby");
+
         // Version information:
         IRubyObject release = RubyString.newFString(runtime, Constants.COMPILE_DATE);
         IRubyObject platform = RubyString.newFString(runtime, Constants.PLATFORM);
@@ -162,38 +166,42 @@ public class RubyGlobal {
         IRubyObject version = RubyString.newFString(runtime, Constants.RUBY_VERSION);
         IRubyObject patchlevel = asFixnum(context, 0);
 
-        Object.defineConstant(context, "RUBY_VERSION", version);
-        Object.defineConstant(context, "RUBY_PATCHLEVEL", patchlevel);
-        Object.defineConstant(context, "RUBY_RELEASE_DATE", release);
-        Object.defineConstant(context, "RUBY_PLATFORM", platform);
+        defineRubyConstant(context, Object, Ruby, "VERSION", version);
+        defineRubyConstant(context, Object, Ruby, "PATCHLEVEL", patchlevel);
+        defineRubyConstant(context, Object, Ruby, "RELEASE_DATE", release);
+        defineRubyConstant(context, Object, Ruby, "PLATFORM", platform);
 
         IRubyObject description = RubyString.newFString(runtime, OutputStrings.getVersionString(instanceConfig));
-        Object.defineConstant(context, "RUBY_DESCRIPTION", description);
+        defineRubyConstant(context, Object, Ruby, "DESCRIPTION", description);
 
         IRubyObject copyright = RubyString.newFString(runtime, OutputStrings.getCopyrightString());
-        Object.defineConstant(context, "RUBY_COPYRIGHT", copyright);
+        defineRubyConstant(context, Object, Ruby, "COPYRIGHT", copyright);
 
         Object.defineConstant(context, "RELEASE_DATE", release);
         Object.defineConstant(context, "PLATFORM", platform);
 
         IRubyObject jrubyVersion = RubyString.newFString(runtime, Constants.VERSION);
-        IRubyObject jrubyRevision = RubyString.newFString(runtime, Constants.REVISION);
+        RubyString revision = RubyString.newFString(runtime, Constants.REVISION);
+        IRubyObject jrubyRevision = revision;
+
         Object.defineConstant(context, "JRUBY_VERSION", jrubyVersion);
         Object.defineConstant(context, "JRUBY_REVISION", jrubyRevision);
-        Object.defineConstant(context, "RUBY_REVISION", RubyString.newFString(runtime, Constants.REVISION));
-        Object.defineConstant(context, "RUBY_ENGINE", engine);
-        Object.defineConstant(context, "RUBY_ENGINE_VERSION", jrubyVersion);
+
+        defineRubyConstant(context, Object, Ruby, "REVISION", revision);
+        defineRubyConstant(context, Object, Ruby, "ENGINE", engine);
+        defineRubyConstant(context, Object, Ruby, "ENGINE_VERSION", jrubyVersion);
 
         RubyInstanceConfig.Verbosity verbosity = instanceConfig.getVerbosity();
         runtime.defineVariable(new WarningGlobalVariable(context, "$-W", verbosity), GLOBAL);
 
-        IRubyObject defaultRS = RubyString.newFString(runtime, instanceConfig.getRecordSeparator());
-        GlobalVariable rs = new StringGlobalVariable(runtime, "$/", defaultRS);
+        IRubyObject defaultRS = RubyString.newFString(runtime, "\n");
+        IRubyObject configRS = RubyString.newFString(runtime, instanceConfig.getRecordSeparator());
+        GlobalVariable rs = new DeprecatedFrozenStringGlobalVariable(runtime, "$/", configRS);
         runtime.defineVariable(rs, GLOBAL);
         runtime.setRecordSeparatorVar(rs);
         globals.setDefaultSeparator(defaultRS);
-        runtime.defineVariable(new StringGlobalVariable(runtime, "$\\", context.nil), GLOBAL);
-        runtime.defineVariable(new DeprecatedStringGlobalVariable(runtime, "$,", context.nil), GLOBAL);
+        runtime.defineVariable(new DeprecatedStringGlobalVariable(runtime, "$\\", context.nil), GLOBAL);
+        runtime.defineVariable(new DeprecatedFrozenStringGlobalVariable(runtime, "$,", context.nil), GLOBAL);
 
         runtime.defineVariable(new LineNumberGlobalVariable(runtime, "$."), GLOBAL);
         runtime.defineVariable(new LastlineGlobalVariable(runtime, "$_"), FRAME);
@@ -297,6 +305,11 @@ public class RubyGlobal {
         globals.alias("$LAST_PAREN_MATCH", "$+");
 
         return env;
+    }
+
+    private static void defineRubyConstant(ThreadContext context, RubyClass Object, RubyModule Ruby, String name, IRubyObject value) {
+        Object.defineConstant(context, "RUBY_" + name, value);
+        Ruby.defineConstant(context, name, value);
     }
 
     static void defineArgv0Global(ThreadContext context, GlobalVariables globals, String scriptName) {
@@ -451,8 +464,8 @@ public class RubyGlobal {
         return env;
     }
 
-    private static void warnDeprecatedGlobal(ThreadContext context, final String name) {
-        warnDeprecated(context, "'" + name + "' is deprecated");
+    private static void warnDeprecatedGlobal(ThreadContext context, final String subject) {
+        warnDeprecated(context, subject + " is deprecated");
     }
 
     /**
@@ -1061,9 +1074,34 @@ public class RubyGlobal {
         public IRubyObject set(IRubyObject value) {
             IRubyObject result = super.set(value);
 
-            if (!value.isNil()) warnDeprecatedGlobal(runtime.getCurrentContext(), name);
+            if (!value.isNil()) warnDeprecatedGlobal(runtime.getCurrentContext(), "non-nil '" + name + "'");
 
             return result;
+        }
+    }
+
+    public static class DeprecatedFrozenStringGlobalVariable extends StringGlobalVariable {
+        public DeprecatedFrozenStringGlobalVariable(Ruby runtime, String name, IRubyObject value) {
+            super(runtime, name, value);
+        }
+
+        @Override
+        public IRubyObject set(IRubyObject value) {
+            ThreadContext currentContext = runtime.getCurrentContext();
+            IRubyObject setValue = value;
+            if (setValue instanceof RubyString stringValue) {
+                if (!stringValue.isBare(currentContext) || !stringValue.isFrozen()) {
+                    stringValue = newSharedString(currentContext, stringValue.getByteList());
+                    stringValue.setFrozen(true);
+                }
+                setValue = stringValue;
+            }
+
+            super.set(setValue);
+
+            if (!value.isNil()) warnDeprecatedGlobal(currentContext, "non-nil '" + name + "'");
+
+            return value;
         }
     }
 
@@ -1076,7 +1114,7 @@ public class RubyGlobal {
         public IRubyObject set(IRubyObject value) {
             IRubyObject result = super.set(value);
 
-            if (!result.isNil()) warnDeprecatedGlobal(runtime.getCurrentContext(), name);
+            if (!value.isNil()) warnDeprecatedGlobal(runtime.getCurrentContext(), "non-nil '" + name + "'");
 
             return result;
         }

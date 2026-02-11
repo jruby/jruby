@@ -50,6 +50,7 @@ import org.jruby.compiler.NotCompilableException;
 import org.jruby.exceptions.LocalJumpError;
 import org.jruby.exceptions.SystemExit;
 import org.jruby.ext.jruby.JRubyUtilLibrary;
+import org.jruby.ext.set.RubySet;
 import org.jruby.ext.thread.ConditionVariable;
 import org.jruby.ext.thread.Mutex;
 import org.jruby.ext.thread.Queue;
@@ -518,6 +519,8 @@ public final class Ruby implements Constantizable {
 
         dataClass = RubyData.createDataClass(context, objectClass);
 
+        setClass = RubySet.createSetClass(context, objectClass, enumerableModule);
+
         // everything booted, so SizedQueue should be available; set up root fiber
         ThreadFiber.initRootFiber(context, context.getThread());
 
@@ -602,6 +605,7 @@ public final class Ruby implements Constantizable {
         loadService.provide("thread.rb");
         loadService.provide("fiber.rb");
         loadService.provide("ruby2_keywords.rb");
+        loadService.provide("set.rb");
 
         // Load preludes
         initRubyPreludes();
@@ -2508,6 +2512,10 @@ public final class Ruby implements Constantizable {
         return dataClass;
     }
 
+    public RubyClass getSet() {
+        return setClass;
+    }
+
     /** The default Ruby Random object for this runtime */
     private RubyRandom defaultRandom;
 
@@ -4391,7 +4399,7 @@ public final class Ruby implements Constantizable {
     }
 
     public RaiseException newMathDomainError(String message) {
-        return newRaiseException(getMathDomainError(), "Numerical argument is out of domain - \"" + message + "\"");
+        return newRaiseException(getMathDomainError(), "Numerical argument is out of domain - " + message);
     }
 
     public RaiseException newEncodingError(String message){
@@ -4452,12 +4460,13 @@ public final class Ruby implements Constantizable {
      * @return a new RaiseException wrapping a new Ruby exception
      */
     public RaiseException newRaiseException(RubyClass exceptionClass, String message) {
-        IRubyObject cause = getCurrentContext().getErrorInfo();
+        ThreadContext context = getCurrentContext();
+        IRubyObject cause = context.getErrorInfo();
 
         RaiseException exception = RaiseException.from(this, exceptionClass, message);
 
         if (cause != null && !cause.isNil()) {
-            exception.getException().setCause(cause);
+            exception.getException().setCause(context, cause);
         }
 
         return exception;
@@ -5076,7 +5085,6 @@ public final class Ruby implements Constantizable {
     public RubyThread getChdirThread() { return this.chdirCurrentThread; }
 
     public RubyStackTraceElement getChdirLocation() { return this.chdirLocation; }
-
     /**
      * Because RubyString.equals does not consider encoding, and MRI's logic for deduplication does need to consider
      * encoding, we use a wrapper object as the key. These wrappers need to be used on all get operations, so if we
@@ -5316,6 +5324,7 @@ public final class Ruby implements Constantizable {
     private final RubyClass closedQueueError;
     private final RubyClass sizedQueueClass;
     private final RubyClass dataClass;
+    private final RubyClass setClass;
 
     private RubyClass tmsStruct;
     private RubyClass passwdStruct;

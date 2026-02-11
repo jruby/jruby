@@ -31,6 +31,7 @@ import org.jruby.anno.JRubyMethod;
 
 import org.jruby.exceptions.StopIteration;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -44,6 +45,7 @@ public class RubyProducer extends RubyObject {
 
     private IRubyObject init;
     private Block producerBlock;
+    private IRubyObject size;
 
     public static RubyClass createProducerClass(ThreadContext context, RubyClass Object, RubyClass Enumerator, RubyModule Enumerable) {
         return Enumerator.defineClassUnder(context, "Producer", Object, RubyProducer::new).
@@ -56,19 +58,33 @@ public class RubyProducer extends RubyObject {
     }
 
     public RubyProducer(Ruby runtime, RubyClass klass, IRubyObject init, final Block block) {
+        this(runtime, klass, init, block, runtime.getNil());
+    }
+
+    public RubyProducer(Ruby runtime, RubyClass klass, IRubyObject init, final Block block, IRubyObject size) {
         super(runtime, klass);
         this.init = init;
         this.producerBlock = block;
+        this.size = size;
     }
 
     public static RubyProducer newProducer(ThreadContext context, IRubyObject init, final Block block) {
-        return new RubyProducer(context.runtime, context.runtime.getProducer(), init, block);
+        return newProducer(context, init, block, context.nil);
+    }
+
+    public static RubyProducer newProducer(ThreadContext context, IRubyObject init, final Block block, IRubyObject size) {
+        return new RubyProducer(context.runtime, context.runtime.getProducer(), init, block, size);
     }
 
     /** MRI: producer_size
      */
     public static IRubyObject size(ThreadContext context, RubyProducer self, IRubyObject[] args) {
-        return asFloat(context, Double.POSITIVE_INFINITY);
+        IRubyObject size = self.size;
+
+        if (size.isNil()) return size;
+        if (size instanceof RubyInteger || size instanceof RubyFloat) return size;
+
+        return sites(context).call.call(context, self, size);
     }
 
     @JRubyMethod(rest = true)
@@ -92,5 +108,9 @@ public class RubyProducer extends RubyObject {
         }
 
         return this;
+    }
+
+    private static JavaSites.ProducerSites sites(ThreadContext context) {
+        return context.sites.Producer;
     }
 }

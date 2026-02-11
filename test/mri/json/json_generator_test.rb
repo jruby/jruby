@@ -282,13 +282,49 @@ class JSONGeneratorTest < Test::Unit::TestCase
   end
 
   def test_depth
+    pretty = { object_nl: "\n", array_nl: "\n", space: " ", indent: "  " }
+    state = JSON.state.new(**pretty)
+    assert_equal %({\n  "foo": 42\n}), JSON.generate({ foo: 42 }, pretty)
+    assert_equal %({\n  "foo": 42\n}), state.generate(foo: 42)
+    state.depth = 1
+    assert_equal %({\n    "foo": 42\n  }), JSON.generate({ foo: 42 }, pretty.merge(depth: 1))
+    assert_equal %({\n    "foo": 42\n  }), state.generate(foo: 42)
+  end
+
+  def test_depth_nesting_error
     ary = []; ary << ary
     assert_raise(JSON::NestingError) { generate(ary) }
     assert_raise(JSON::NestingError) { JSON.pretty_generate(ary) }
-    s = JSON.state.new
-    assert_equal 0, s.depth
+  end
+
+  def test_depth_nesting_error_to_json
+    ary = []; ary << ary
+    s = JSON.state.new(depth: 1)
     assert_raise(JSON::NestingError) { ary.to_json(s) }
-    assert_equal 100, s.depth
+    assert_equal 1, s.depth
+  end
+
+  def test_depth_nesting_error_Hash_to_json
+    hash = {}; hash[:a] = hash
+    s = JSON.state.new(depth: 1)
+    assert_raise(JSON::NestingError) { hash.to_json(s) }
+    assert_equal 1, s.depth
+  end
+
+  def test_depth_nesting_error_generate
+    ary = []; ary << ary
+    s = JSON.state.new(depth: 1)
+    assert_raise(JSON::NestingError) { s.generate(ary) }
+    assert_equal 1, s.depth
+  end
+
+  def test_depth_exception_calling_to_json
+    def (obj = Object.new).to_json(*)
+      raise
+    end
+    s = JSON.state.new(depth: 1).freeze
+    assert_raise(RuntimeError) { s.generate([{ hash: obj }]) }
+    assert_equal 1, s.depth
   end
 
   def test_buffer_initial_length

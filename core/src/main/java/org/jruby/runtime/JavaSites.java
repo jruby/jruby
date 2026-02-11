@@ -58,6 +58,7 @@ public class JavaSites {
     public final SymbolSites Symbol = new SymbolSites();
     public final ProcSites Proc = new ProcSites();
     public final ModuleSites Module = new ModuleSites();
+    public final ProducerSites Producer = new ProducerSites();
 
     public static class BasicObjectSites {
         public final CallSite respond_to = new FunctionalCachingCallSite("respond_to?");
@@ -77,6 +78,7 @@ public class JavaSites {
         public final CallSite match = new FunctionalCachingCallSite("=~");
         public final CallSite call = new FunctionalCachingCallSite("call");
         public final CallSite op_equal = new FunctionalCachingCallSite("==");
+        public final CheckedSites instance_variables_to_inspect_checked = new CheckedSites("instance_variables_to_inspect");
     }
 
     public static class ObjectSites {
@@ -333,8 +335,8 @@ public class JavaSites {
         public final CachingCallSite to_r = new FunctionalCachingCallSite("to_r");
         public final CheckedSites checked_to_r = new CheckedSites("to_r");
 
-        public final RespondToCallSite respond_to_divmod = new RespondToCallSite("divmod");
-        public final CachingCallSite divmod = new FunctionalCachingCallSite("divmod");
+        public final CheckedSites divmod_checked = new CheckedSites("divmod");
+        public final CheckedSites to_a_checked = new CheckedSites("to_a");
     }
 
     public static class EnumerableSites {
@@ -469,7 +471,9 @@ public class JavaSites {
         public final CallSite op_cmp = new FunctionalCachingCallSite("<=>");
         public final CallSite op_gt = new FunctionalCachingCallSite(">");
         public final CallSite op_lt = new FunctionalCachingCallSite("<");
-        public final CallSite each = new FunctionalCachingCallSite("each");
+        public final CachingCallSite each = new FunctionalCachingCallSite("each");
+        public final CallSite reverse_each = new FunctionalCachingCallSite("reverse_each");
+        public final CallSite size = new FunctionalCachingCallSite("size");
     }
 
     public static class WarningSites {
@@ -569,6 +573,10 @@ public class JavaSites {
 
     public static class ModuleSites {
         public final CachingCallSite hash = new FunctionalCachingCallSite("hash");
+    }
+
+    public static class ProducerSites {
+        public final CachingCallSite call = new FunctionalCachingCallSite("call");
     }
 
     public static class CheckedSites {

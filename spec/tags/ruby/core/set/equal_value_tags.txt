@@ -1,1 +1,0 @@
-fails:Set#== when comparing to a Set-like object returns true when a Set and a Set-like object contain the same elements

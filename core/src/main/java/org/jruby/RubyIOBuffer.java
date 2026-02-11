@@ -33,7 +33,8 @@ import static org.jruby.api.Warn.warnExperimental;
 
 public class RubyIOBuffer extends RubyObject {
 
-    public static final Runtime FFI_RUNTIME = Runtime.getSystemRuntime();
+    private static final BigInteger MIN_S128 = BigInteger.ONE.shiftLeft(127).negate();
+    private static final BigInteger MAX_S128 = BigInteger.ONE.shiftLeft(127).subtract(BigInteger.ONE);
 
     public static RubyClass createIOBufferClass(ThreadContext context, RubyClass Object, RubyModule Comparable, RubyClass IO) {
         RubyClass IOBuffer = IO.defineClassUnder(context, "Buffer", Object, RubyIOBuffer::new).
@@ -745,6 +746,7 @@ public class RubyIOBuffer extends RubyObject {
     public IRubyObject clear(ThreadContext context, IRubyObject _value, IRubyObject _offset) {
         int value = toInt(context, _value);
         int offset = toInt(context, _offset);
+        if (offset > size) throw argumentError(context, "The given offset is bigger than the buffer size!");
         return clear(context, value, offset, size - offset);
     }
 
@@ -759,7 +761,7 @@ public class RubyIOBuffer extends RubyObject {
     // MRI: rb_io_buffer_clear
     private IRubyObject clear(ThreadContext context, int value, int offset, int length) {
         ByteBuffer buffer = getBufferForWriting(context);
-        if (offset + length > size) throw argumentError(context, "The given offset + length out of bounds!");
+        if (size - length < offset) throw argumentError(context, "The given offset + length out of bounds!");
 
         if (buffer.hasArray()) Arrays.fill(buffer.array(), offset, offset + length, (byte) value);
 
@@ -821,17 +823,19 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "size_of", meta = true)
     public static IRubyObject size_of(ThreadContext context, IRubyObject self, IRubyObject dataType) {
-        if (dataType instanceof RubyArray) {
-            long total = 0;
-            RubyArray<?> array = (RubyArray<?>) dataType;
+        long total;
+        if (dataType instanceof RubyArray array) {
+            total = 0;
             int size = array.size();
             for (int i = 0; i < size; i++) {
                 IRubyObject elt = array.eltOk(i);
-                total += getDataType(elt).type.size();
+                total += getDataType(elt).size;
             }
+        } else {
+            total = getDataType(dataType).size;
         }
 
-        return asFixnum(context, getDataType(dataType).type.size());
+        return asFixnum(context, total);
     }
 
     private boolean isBigEndian() {
@@ -946,6 +950,100 @@ public class RubyIOBuffer extends RubyObject {
         buffer.putLong(offset, Long.reverseBytes(value));
     }
 
+    private static BigInteger readLongLong(ThreadContext context, ByteBuffer buffer, int offset, ByteOrder order) {
+        if (order == ByteOrder.BIG_ENDIAN) {
+            // Read 16 bytes (big-endian)
+            byte[] bytes = new byte[16];
+            for (int i = 0; i < 16; i++) {
+                bytes[i] = buffer.get(offset + i);
+            }
+
+            return new BigInteger(bytes);
+        }
+
+        byte[] bytes = new byte[16];
+        for (int i = 0; i < 16; i++) {
+            bytes[15 - i] = buffer.get(offset + i);
+        }
+
+        return new BigInteger(bytes);
+    }
+
+    private static BigInteger readUnsignedLongLong(ThreadContext context, ByteBuffer buffer, int offset, ByteOrder order) {
+        // Read 16 bytes (big-endian)
+        byte[] bytes = new byte[16];
+        buffer.get(offset, bytes);
+
+        if (order == ByteOrder.LITTLE_ENDIAN) {
+            reverseBytes(bytes);
+        }
+
+        return new BigInteger(1, bytes);
+    }
+
+    private static byte[] reverseBytes(byte[] bytes) {
+        for (int i = 0; i < bytes.length / 2; i++) {
+            byte tmp = bytes[i];
+            bytes[i] = bytes[bytes.length - i - 1];
+            bytes[bytes.length - i - 1] = tmp;
+        }
+        return bytes;
+    }
+
+    private static void writeUnsignedLongLong(ThreadContext context, ByteBuffer buffer, int offset, ByteOrder order, BigInteger value) {
+        if (value.signum() < 0) {
+            throw argumentError(context, "Value must be non-negative");
+        }
+        if (value.bitLength() > 128) {
+            throw argumentError(context, "Value exceeds 128 bits");
+        }
+
+        writeLongLongBytes(buffer, offset, order, value.signum(), value.toByteArray());
+    }
+
+    private static void writeLongLong(ThreadContext context, ByteBuffer buffer, int offset, ByteOrder order, BigInteger value) {
+        if (value.compareTo(MIN_S128) < 0 || value.compareTo(MAX_S128) > 0) {
+            throw argumentError(context, "Value exceeds signed 128-bit range");
+        }
+
+        writeLongLongBytes(buffer, offset, order, value.signum(), value.toByteArray());
+    }
+
+    private static void writeLongLongBytes(ByteBuffer buffer, int offset, ByteOrder order, int signum, byte[] bytes) {
+        // Convert to byte array (big-endian, two's complement)
+        int byteLength = bytes.length;
+        int paddingNeeded = 16 - byteLength;
+
+        // Sign-extend padding byte if needed
+        byte paddingByte = (signum < 0) ? (byte) 0xFF : (byte) 0x00;
+
+        if (order == ByteOrder.BIG_ENDIAN) {// Validate the value fits in 128 bits (signed range)
+            if (byteLength <= 16) {
+                writePadding(buffer, offset, paddingNeeded, paddingByte);
+                buffer.put(offset + paddingNeeded, bytes);
+            } else {
+                // drop sign byte
+                buffer.put(offset, bytes, 1, bytes.length - 1);
+            }
+            return;
+        }
+
+        reverseBytes(bytes);
+        if (byteLength <= 16) {
+            buffer.put(offset, bytes);
+            writePadding(buffer, offset + byteLength, paddingNeeded, paddingByte);
+        } else {
+            // drop sign byte
+            buffer.put(offset, bytes, 0, 16);
+        }
+    }
+
+    private static void writePadding(ByteBuffer buffer, int offset, int paddingNeeded, byte paddingByte) {
+        for (int i = 0; i < paddingNeeded; i++) {
+            buffer.put(offset + i, paddingByte);
+        }
+    }
+
     private static void writeUnsignedLong(ThreadContext context, ByteBuffer buffer, int offset, ByteOrder order, long value) {
         writeLong(context, buffer, offset, order, value);
     }
@@ -1004,6 +1102,10 @@ public class RubyIOBuffer extends RubyObject {
         return RubyNumeric.num2ulong(value);
     }
 
+    private static BigInteger unwrapUnsignedLongLong(ThreadContext context, IRubyObject value) {
+        return value.convertToInteger().asBigInteger(context);
+    }
+
     @JRubyMethod(name = "get_value")
     public IRubyObject get_value(ThreadContext context, IRubyObject type, IRubyObject _offset) {
         ByteBuffer buffer = getBufferForReading(context);
@@ -1016,7 +1118,8 @@ public class RubyIOBuffer extends RubyObject {
     }
 
     private static IRubyObject getValue(ThreadContext context, ByteBuffer buffer, int size, DataType dataType, int offset) {
-        // TODO: validate size
+        if (offset < 0) throw argumentError(context, "Offset can't be negative!");
+        if (offset == size || size - dataType.size < offset) throw argumentError(context, "Type extends beyond end of buffer! (offset=" + offset + " > size=" + size + ")");
 
         switch (dataType) {
             case S8:
@@ -1047,6 +1150,14 @@ public class RubyIOBuffer extends RubyObject {
                 return wrap(context, readLong(context, buffer, offset, ByteOrder.LITTLE_ENDIAN));
             case S64:
                 return wrap(context, readLong(context, buffer, offset, ByteOrder.BIG_ENDIAN));
+            case u128:
+                return wrap(context, readUnsignedLongLong(context, buffer, offset, ByteOrder.LITTLE_ENDIAN));
+            case U128:
+                return wrap(context, readUnsignedLongLong(context, buffer, offset, ByteOrder.BIG_ENDIAN));
+            case s128:
+                return wrap(context, readLongLong(context, buffer, offset, ByteOrder.LITTLE_ENDIAN));
+            case S128:
+                return wrap(context, readLongLong(context, buffer, offset, ByteOrder.BIG_ENDIAN));
             case f32:
                 return wrap(context, readFloat(context, buffer, offset, ByteOrder.LITTLE_ENDIAN));
             case F32:
@@ -1078,7 +1189,7 @@ public class RubyIOBuffer extends RubyObject {
             DataType dataType = getDataType(type);
             IRubyObject value = getValue(context, buffer, size, dataType, offset);
 
-            offset += dataType.type.size();
+            offset += dataType.size;
 
             values.append(context, value);
         }
@@ -1123,7 +1234,7 @@ public class RubyIOBuffer extends RubyObject {
         for (int i = 0 ; i < count; i++) {
             int currentOffset = offset;
             IRubyObject value = getValue(context, buffer, size, dataType, offset);
-            offset += dataType.type.size();
+            offset += dataType.size;
             block.yieldSpecific(context, asFixnum(context, currentOffset), value);
         }
 
@@ -1162,7 +1273,7 @@ public class RubyIOBuffer extends RubyObject {
 
         for (int i = 0 ; i < count; i++) {
             IRubyObject value = getValue(context, buffer, size, dataType, offset);
-            offset += dataType.type.size();
+            offset += dataType.size;
             values.push(context, value);
         }
 
@@ -1200,8 +1311,6 @@ public class RubyIOBuffer extends RubyObject {
     }
 
     private IRubyObject eachByte(ThreadContext context, ByteBuffer buffer, int offset, int count, Block block) {
-        Ruby runtime = context.runtime;
-
         for (int i = 0 ; i < count; i++) {
             IRubyObject value = wrap(context, readByte(context, buffer, offset + i));
             block.yieldSpecific(context, value);
@@ -1211,7 +1320,9 @@ public class RubyIOBuffer extends RubyObject {
     }
 
     private static void setValue(ThreadContext context, ByteBuffer buffer, int size, DataType dataType, int offset, IRubyObject value) {
-        // TODO: validate size
+        if (offset < 0) throw argumentError(context, "Offset can't be negative!");
+        if (size == 0) throw argumentError(context, "Size can't be zero!");
+        if (offset == size || size - dataType.size < offset) throw argumentError(context, "Specified offset+length is bigger than the buffer size!");
 
         switch (dataType) {
             case S8:
@@ -1256,6 +1367,18 @@ public class RubyIOBuffer extends RubyObject {
             case S64:
                 writeLong(context, buffer, offset, ByteOrder.BIG_ENDIAN, toLong(context, value));
                 return;
+            case u128:
+                writeUnsignedLongLong(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, unwrapUnsignedLongLong(context, value));
+                return;
+            case U128:
+                writeUnsignedLongLong(context, buffer, offset, ByteOrder.BIG_ENDIAN, unwrapUnsignedLongLong(context, value));
+                return;
+            case s128:
+                writeLongLong(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, toLongLong(context, value));
+                return;
+            case S128:
+                writeLongLong(context, buffer, offset, ByteOrder.BIG_ENDIAN, toLongLong(context, value));
+                return;
             case f32:
                 writeFloat(context, buffer, offset, ByteOrder.LITTLE_ENDIAN, (float) unwrapDouble(context, value));
                 return;
@@ -1283,7 +1406,7 @@ public class RubyIOBuffer extends RubyObject {
 
         setValue(context, buffer, size, dataType, offset, _value);
 
-        return asFixnum(context, offset + dataType.type.size());
+        return asFixnum(context, offset + dataType.size);
     }
 
     @JRubyMethod(name = "set_values")
@@ -1313,7 +1436,7 @@ public class RubyIOBuffer extends RubyObject {
 
             setValue(context, buffer, size, dataType, offset, value);
 
-            offset += dataType.type.size();
+            offset += dataType.size;
         }
 
         return asFixnum(context, offset);
@@ -2067,42 +2190,36 @@ public class RubyIOBuffer extends RubyObject {
     }
 
     enum DataType {
-        U8(NativeType.UCHAR, BIG_ENDIAN),
-        S8(NativeType.SCHAR, BIG_ENDIAN),
-        u16(NativeType.USHORT, LITTLE_ENDIAN),
-        U16(NativeType.USHORT, BIG_ENDIAN),
-        s16(NativeType.SSHORT, LITTLE_ENDIAN),
-        S16(NativeType.SSHORT, BIG_ENDIAN),
-        u32(NativeType.UINT, LITTLE_ENDIAN),
-        U32(NativeType.UINT, BIG_ENDIAN),
-        s32(NativeType.SINT, LITTLE_ENDIAN),
-        S32(NativeType.SINT, BIG_ENDIAN),
-        u64(NativeType.ULONG, LITTLE_ENDIAN),
-        U64(NativeType.ULONG, BIG_ENDIAN),
-        s64(NativeType.SLONG, LITTLE_ENDIAN),
-        S64(NativeType.SLONG, BIG_ENDIAN),
-        f32(NativeType.FLOAT,LITTLE_ENDIAN),
-        F32(NativeType.FLOAT, BIG_ENDIAN),
-        f64(NativeType.DOUBLE, LITTLE_ENDIAN),
-        F64(NativeType.DOUBLE, BIG_ENDIAN);
+        U8(1, BIG_ENDIAN),
+        S8(1, BIG_ENDIAN),
+        u16(2, LITTLE_ENDIAN),
+        U16(2, BIG_ENDIAN),
+        s16(2, LITTLE_ENDIAN),
+        S16(2, BIG_ENDIAN),
+        u32(4, LITTLE_ENDIAN),
+        U32(4, BIG_ENDIAN),
+        s32(4, LITTLE_ENDIAN),
+        S32(4, BIG_ENDIAN),
+        u64(8, LITTLE_ENDIAN),
+        U64(8, BIG_ENDIAN),
+        s64(8, LITTLE_ENDIAN),
+        S64(8, BIG_ENDIAN),
+        u128(16, LITTLE_ENDIAN),
+        U128(16, BIG_ENDIAN),
+        s128(16, LITTLE_ENDIAN),
+        S128(16, BIG_ENDIAN),
+        f32(4, LITTLE_ENDIAN),
+        F32(4, BIG_ENDIAN),
+        f64(8, LITTLE_ENDIAN),
+        F64(8, BIG_ENDIAN);
 
-        DataType(NativeType type, int endian) {
-            this.type = FFI_RUNTIME.findType(type);
+        DataType(int size, int endian) {
+            this.size = size;
             this.endian = endian;
         }
 
-        private final Type type;
+        private final int size;
         private final int endian;
-    }
-
-    private static long swapAsShort(long l) {
-        short s = (short) l;
-
-        return (s >>> 8) | (int) (s << 8);
-    }
-
-    private static short swap(short s) {
-        return (short) ((s >>> 8) | (s << 8));
     }
 
     private static long swapAsInt(long l) {

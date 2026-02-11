@@ -547,11 +547,12 @@ public class StaticScope implements Serializable, Cloneable {
      * @return populated collection
      */
     public <T> T collectAllVariables(ThreadContext context, BiFunction<ThreadContext, Integer, T> collectionFactory, BiConsumer<T, String> collectionPopulator) {
-        return collectVariables(context, collectionFactory, collectionPopulator, null);
+        T collection = collectVariables(context, collectionFactory, collectionPopulator, false);
+        return collectVariables(context, (t, i) -> collection, collectionPopulator, true);
     }
 
     /**
-     * Populate a deduplicated collection of variable names in scope using the given functions.
+     * Populate a deduplicated collection of non-implicit variable names in scope using the given functions.
      *
      * This may include variables that are not strictly Ruby local variable names, so the consumer should validate
      * names as appropriate.
@@ -580,7 +581,7 @@ public class StaticScope implements Serializable, Cloneable {
         return collectVariables(context, collectionFactory, collectionPopulator, true);
     }
 
-    public <T> T collectVariables(ThreadContext context, BiFunction<ThreadContext, Integer, T> collectionFactory, BiConsumer<T, String> collectionPopulator, Boolean implicit) {
+    public <T> T collectVariables(ThreadContext context, BiFunction<ThreadContext, Integer, T> collectionFactory, BiConsumer<T, String> collectionPopulator, boolean implicit) {
         StaticScope current = this;
 
         T collection = collectionFactory.apply(context, current.variableNamesLength);
@@ -598,20 +599,19 @@ public class StaticScope implements Serializable, Cloneable {
         return collection;
     }
 
-    private static <T> void addVariableNamesToCollection(StaticScope current, BiConsumer<T, String> collectionPopulator, HashMap<String, Object> dedup, T collection, Boolean implicit) {
+    private static <T> void addVariableNamesToCollection(StaticScope current, BiConsumer<T, String> collectionPopulator, HashMap<String, Object> dedup, T collection, boolean implicit) {
         BitSet implicitVariables = current.implicitVariables;
 
         boolean hasImplicits = implicitVariables != null;
-        boolean filterImplicits = implicit != null;
-        if (filterImplicits && implicit && !hasImplicits) return;
+        if (implicit && !hasImplicits) return;
 
         int variableNamesLength = current.variableNamesLength;
         String[] variableNames = current.variableNames;
 
         for (int i = 0; i < variableNamesLength; i++) {
             if (hasImplicits && implicitVariables.get(i)) {
-                if (filterImplicits && !implicit) continue;
-            } else if (filterImplicits && implicit) continue;
+                if (!implicit) continue;
+            } else if (implicit) continue;
 
             String name = variableNames[i];
             dedup.computeIfAbsent(name, key -> {
@@ -632,7 +632,20 @@ public class StaticScope implements Serializable, Cloneable {
      * @return populated RubyArray
      */
     public RubyArray getLocalVariables(ThreadContext context) {
-        return collectAllVariables(
+        return collectVariables(
+                context,
+                Create::allocArray,
+                (array, id) -> appendVariableIfValid(context, array, id));
+    }
+
+    /**
+     * Get a Ruby Array of all implicit local variables.
+     *
+     * @param context the current context
+     * @return populated RubyArray
+     */
+    public RubyArray getImplicitLocalVariables(ThreadContext context) {
+        return collectImplicitVariables(
                 context,
                 Create::allocArray,
                 (array, id) -> appendVariableIfValid(context, array, id));

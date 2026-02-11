@@ -156,7 +156,7 @@ end
   end
 
   def test_invalid_multibyte_character_in_regexp
-    lex = Ripper.lex(%q[/#{"\xcd"}/])
+    lex = Ripper::Lexer.new(%q[/#{"\xcd"}/]).scan.map(&:to_a)
     assert_equal([[1, 0], :on_regexp_beg, "/", state(:EXPR_BEG)], lex.shift)
     assert_equal([[1, 1], :on_embexpr_beg, "\#{", state(:EXPR_BEG)], lex.shift)
     assert_equal([[1, 3], :on_tstring_beg, "\"", state(:EXPR_BEG)], lex.shift)
@@ -187,6 +187,13 @@ end
         Ripper.parse("-> {")
       end
     end;
+
+    # [Bug #21004]
+    assert_no_memory_leak(%w(-rripper), "", <<~RUBY, rss: true)
+      1_000_000.times do
+        Ripper.parse("-> do it end")
+      end
+    RUBY
   end
 
   def test_sexp_no_memory_leak

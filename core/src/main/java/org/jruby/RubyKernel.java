@@ -305,17 +305,6 @@ public class RubyKernel {
                 tmp = RubyFile.get_path(context, tmp);
                 if (tmp == context.nil) {
                     redirect = true;
-                } else {
-                    IRubyObject cmd = PopenExecutor.checkPipeCommand(context, tmp);
-                    if (cmd != context.nil) {
-                        warnDeprecatedForRemovalAlternate(context, "Calling Kernel#open with a leading '|'", "4.0", "IO.popen");
-                        if (PopenExecutor.nativePopenAvailable(context.runtime)) {
-                            args[0] = cmd;
-                            return PopenExecutor.popen(context, args, ioClass(context), block);
-                        }
-
-                        throw argumentError(context, "pipe open is not supported without native subprocess logic");
-                    }
                 }
             }
         }
@@ -1049,23 +1038,28 @@ public class RubyKernel {
 
         IRubyObject cause = context.getErrorInfo(); // returns nil for no error-info
 
-        maybeRaiseJavaException(context, arg0);
+        Throwable throwable = unwrapJavaException(context, arg0);
 
-        RaiseException raise = arg0 instanceof RubyString ?
-                ((RubyException) context.runtime.getRuntimeError().newInstance(context, arg0)).toThrowable() :
-                convertToException(context, arg0, null).toThrowable();
+        if (throwable == null) {
+            RaiseException raise = arg0 instanceof RubyString ?
+                    ((RubyException) context.runtime.getRuntimeError().newInstance(context, arg0)).toThrowable() :
+                    convertToException(context, arg0, null).toThrowable();
 
-        var exception = raise.getException();
+            var exception = raise.getException();
 
-        if (context.runtime.isDebug()) printExceptionSummary(context, exception);
-        if (exception.getCause() == null && cause != exception) exception.setCause(cause);
+            if (context.runtime.isDebug()) printExceptionSummary(context, exception);
+            if (exception.getCause() == null && cause != exception) exception.setCause(context, cause);
 
-        throw raise;
+            throwable = raise;
+        }
+
+        Helpers.throwException(throwable);
+        return null; // not reached
     }
 
-    @JRubyMethod(name = {"raise", "fail"}, optional = 3, checkArity = false, module = true, visibility = PRIVATE, omit = true)
+    @JRubyMethod(name = {"raise", "fail"}, optional = 4, checkArity = false, module = true, visibility = PRIVATE, omit = true)
     public static IRubyObject raise(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        int argc = Arity.checkArgumentCount(context, args, 0, 3);
+        int argc = args.length;
         boolean forceCause = false;
 
         // semi extract_raise_opts :
@@ -1084,49 +1078,65 @@ public class RubyKernel {
             }
         }
 
+        Arity.checkArgumentCount(context, argc, 0, 3);
+
         if ( argc > 0 ) { // for argc == 0 we will be raising $!
             // NOTE: getErrorInfo needs to happen before new RaiseException(...)
             if ( cause == null ) cause = context.getErrorInfo(); // returns nil for no error-info
         }
 
-        maybeRaiseJavaException(context, args, argc);
+        Throwable throwable = unwrapJavaException(context, args, argc);
 
-        RaiseException raise;
-        switch (argc) {
-            case 0:
-                IRubyObject lastException = globalVariables(context).get("$!");
-                if (lastException.isNil()) {
-                    raise = RaiseException.from(context.runtime, runtimeErrorClass(context), "");
-                } else {
-                    // non RubyException value is allowed to be assigned as $!.
-                    raise = ((RubyException) lastException).toThrowable();
-                }
-                break;
-            case 1:
-                if (args[0] instanceof RubyString) {
-                    raise = ((RubyException) runtimeErrorClass(context).newInstance(context, args, block)).toThrowable();
-                } else {
-                    raise = convertToException(context, args[0], null).toThrowable();
-                }
-                break;
-            case 2:
-                raise = convertToException(context, args[0], args[1]).toThrowable();
-                break;
-            default:
-                RubyException exception = convertToException(context, args[0], args[1]);
-                exception.setBacktrace(context, args[2]);
-                raise = exception.toThrowable();
-                break;
+        if (throwable == null) {
+            RaiseException raise;
+            switch (argc) {
+                case 0:
+                    IRubyObject lastException = globalVariables(context).get("$!");
+                    if (lastException.isNil()) {
+                        raise = RaiseException.from(context.runtime, runtimeErrorClass(context), "");
+                    } else {
+                        // non RubyException value is allowed to be assigned as $!.
+                        raise = ((RubyException) lastException).toThrowable();
+                    }
+                    break;
+                case 1:
+                    if (args[0] instanceof RubyString) {
+                        raise = ((RubyException) runtimeErrorClass(context).newInstance(context, args[0], block)).toThrowable();
+                    } else {
+                        raise = convertToException(context, args[0], null).toThrowable();
+                    }
+                    break;
+                case 2:
+                    raise = convertToException(context, args[0], args[1]).toThrowable();
+                    break;
+                default:
+                    RubyException exception = convertToException(context, args[0], args[1]);
+                    exception.setBacktrace(context, args[2]);
+                    raise = exception.toThrowable();
+                    break;
+            }
+
+            var exception = raise.getException();
+            if (context.runtime.isDebug()) printExceptionSummary(context, exception);
+            if (forceCause || argc > 0 && exception.getCause() == null && cause != exception) exception.setCause(context, cause);
+
+            throwable = raise;
         }
 
-        var exception = raise.getException();
-        if (context.runtime.isDebug()) printExceptionSummary(context, exception);
-        if (forceCause || argc > 0 && exception.getCause() == null && cause != exception) exception.setCause(cause);
-
-        throw raise;
+        Helpers.throwException(throwable);
+        return null; // not reached
     }
 
-    private static void maybeRaiseJavaException(ThreadContext context, final IRubyObject[] args, final int argc) {
+    /**
+     * Locate and unwrap (if possible) a Java exception to be raised. This path will check for a Java exception in $!
+     * (if no arguments are passed) or as the first argument (if one argument is passed).
+     *
+     * @param context the current context
+     * @param args the arguments passed to Kernel#raise
+     * @param argc the count of arguments passed to Kernel#raise
+     * @return a Java Throwable for the unwrapped exception, or null if no Java exception is available
+     */
+    private static Throwable unwrapJavaException(ThreadContext context, final IRubyObject[] args, final int argc) {
         // Check for a Java exception
         IRubyObject maybeException = null;
         switch (argc) {
@@ -1138,10 +1148,18 @@ public class RubyKernel {
                 break;
         }
 
-        maybeRaiseJavaException(context, maybeException);
+        return unwrapJavaException(context, maybeException);
     }
 
-    private static void maybeRaiseJavaException(ThreadContext context, final IRubyObject arg) {
+    /**
+     * Unwrap (if possible) a Java exception to be raised from the given argument. If the argument does not wrap a Java
+     * exception, this will return null.
+     *
+     * @param context the current context
+     * @param arg the argument to unwrap, if it is a Java exception
+     * @return a Java Throwable for the unwrapped exception, or null if no Java exception is available
+     */
+    private static Throwable unwrapJavaException(ThreadContext context, final IRubyObject arg) {
         // Check for a Java exception
         if (arg instanceof ConcreteJavaProxy) {
             // looks like someone's trying to raise a Java exception. Let them.
@@ -1150,9 +1168,9 @@ public class RubyKernel {
             if (!(maybeThrowable instanceof Throwable)) throw typeError(context, "can't raise a non-Throwable Java object");
 
             final Throwable ex = (Throwable) maybeThrowable;
-            Helpers.throwException(ex);
-            return; // not reached
+            return ex; // not reached
         }
+        return null;
     }
 
     private static RubyException convertToException(ThreadContext context, IRubyObject obj, IRubyObject optionalMessage) {

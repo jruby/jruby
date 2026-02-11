@@ -1,1 +1,0 @@
-fails:Set#merge accepts only a single argument

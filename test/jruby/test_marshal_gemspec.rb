@@ -107,7 +107,6 @@ YAML
       s.date = %q{2007-11-04}
       s.description = %q{Install this gem to use Derby with JRuby on Rails.}
       s.email = %q{nick@nicksieger.com, ola.bini@gmail.com}
-      s.has_rdoc = true
       s.homepage = %q{http://jruby-extras.rubyforge.org/ActiveRecord-JDBC}
       s.require_paths = ["lib"]
       s.required_ruby_version = Gem::Requirement.new("> 0.0.0")

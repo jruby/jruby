@@ -1607,7 +1607,7 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
     // MRI: rb_int_s_isqrt, Fixnum portion
     @Override
     public IRubyObject sqrt(ThreadContext context) {
-        if (isNegativeNumber(context)) throw context.runtime.newMathDomainError("Numerical argument is out of domain - isqrt");
+        if (isNegativeNumber(context)) throw context.runtime.newMathDomainError("isqrt");
 
         return asFixnum(context, floorSqrt(getValue()));
     }

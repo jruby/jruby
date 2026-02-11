@@ -34,20 +34,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>rubygems-update</artifactId>
-      <version>3.7.2</version>
-      <type>gem</type>
-      <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>rubygems</groupId>
-          <artifactId>jar-dependencies</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>benchmark</artifactId>
-      <version>0.4.0</version>
+      <version>4.0.3</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -60,20 +47,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>bundler</artifactId>
-      <version>2.7.2</version>
-      <type>gem</type>
-      <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>rubygems</groupId>
-          <artifactId>jar-dependencies</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>cgi</artifactId>
-      <version>0.4.2</version>
+      <version>4.0.3</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -86,7 +60,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>date</artifactId>
-      <version>3.4.1</version>
+      <version>3.5.1</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -99,7 +73,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>delegate</artifactId>
-      <version>0.4.0</version>
+      <version>0.6.1</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -125,7 +99,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>digest</artifactId>
-      <version>3.2.0</version>
+      <version>3.2.1</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -138,7 +112,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>english</artifactId>
-      <version>0.8.0</version>
+      <version>0.8.1</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -151,7 +125,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>erb</artifactId>
-      <version>4.0.4</version>
+      <version>6.0.1</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -164,7 +138,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>error_highlight</artifactId>
-      <version>0.7.0</version>
+      <version>0.7.1</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -189,21 +163,8 @@ DO NOT MODIFY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
-      <artifactId>fiddle</artifactId>
-      <version>1.1.6</version>
-      <type>gem</type>
-      <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>rubygems</groupId>
-          <artifactId>jar-dependencies</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
       <artifactId>fileutils</artifactId>
-      <version>1.7.3</version>
+      <version>1.8.0</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -229,7 +190,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>forwardable</artifactId>
-      <version>1.3.3</version>
+      <version>1.4.0</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -242,7 +203,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>io-console</artifactId>
-      <version>0.8.1</version>
+      <version>0.8.2</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -255,7 +216,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>io-wait</artifactId>
-      <version>0.3.2</version>
+      <version>0.4.0</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -268,20 +229,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>ipaddr</artifactId>
-      <version>1.2.7</version>
-      <type>gem</type>
-      <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>rubygems</groupId>
-          <artifactId>jar-dependencies</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>irb</artifactId>
-      <version>1.14.3</version>
+      <version>1.2.8</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -333,20 +281,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>json</artifactId>
-      <version>2.16.0</version>
-      <type>gem</type>
-      <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>rubygems</groupId>
-          <artifactId>jar-dependencies</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>logger</artifactId>
-      <version>1.6.4</version>
+      <version>2.18.0</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -359,7 +294,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>net-http</artifactId>
-      <version>0.6.0</version>
+      <version>0.9.1</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -411,20 +346,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>optparse</artifactId>
-      <version>0.6.0</version>
-      <type>gem</type>
-      <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>rubygems</groupId>
-          <artifactId>jar-dependencies</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>ostruct</artifactId>
-      <version>0.6.1</version>
+      <version>0.8.1</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -437,7 +359,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>pp</artifactId>
-      <version>0.6.2</version>
+      <version>0.6.3</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -462,21 +384,8 @@ DO NOT MODIFY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
-      <artifactId>pstore</artifactId>
-      <version>0.1.4</version>
-      <type>gem</type>
-      <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>rubygems</groupId>
-          <artifactId>jar-dependencies</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
       <artifactId>psych</artifactId>
-      <version>5.2.3</version>
+      <version>5.3.1</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -501,34 +410,8 @@ DO NOT MODIFY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
-      <artifactId>rdoc</artifactId>
-      <version>6.14.0</version>
-      <type>gem</type>
-      <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>rubygems</groupId>
-          <artifactId>jar-dependencies</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
-      <artifactId>reline</artifactId>
-      <version>0.6.0</version>
-      <type>gem</type>
-      <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>rubygems</groupId>
-          <artifactId>jar-dependencies</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>rubygems</groupId>
       <artifactId>resolv</artifactId>
-      <version>0.6.3</version>
+      <version>0.7.0</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -593,7 +476,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>stringio</artifactId>
-      <version>3.1.9</version>
+      <version>3.2.0</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -606,7 +489,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>strscan</artifactId>
-      <version>3.1.5</version>
+      <version>3.1.6</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -697,7 +580,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>time</artifactId>
-      <version>0.4.1</version>
+      <version>0.4.2</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -710,7 +593,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>timeout</artifactId>
-      <version>0.4.3</version>
+      <version>0.6.0</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -749,7 +632,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>uri</artifactId>
-      <version>1.0.3</version>
+      <version>1.1.1</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -762,7 +645,20 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>weakref</artifactId>
-      <version>0.1.3</version>
+      <version>0.1.4</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>rubygems</groupId>
+          <artifactId>jar-dependencies</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>win32-registry</artifactId>
+      <version>0.1.1</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -801,7 +697,20 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>base64</artifactId>
-      <version>0.2.0</version>
+      <version>0.3.0</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>rubygems</groupId>
+          <artifactId>jar-dependencies</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>benchmark</artifactId>
+      <version>0.5.0</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -814,7 +723,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>bigdecimal</artifactId>
-      <version>3.1.9</version>
+      <version>4.0.1</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -827,7 +736,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>csv</artifactId>
-      <version>3.3.2</version>
+      <version>3.3.5</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -853,7 +762,20 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>drb</artifactId>
-      <version>2.2.1</version>
+      <version>2.2.3</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>rubygems</groupId>
+          <artifactId>jar-dependencies</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>fiddle</artifactId>
+      <version>1.1.8</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -878,8 +800,34 @@ DO NOT MODIFY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
+      <artifactId>irb</artifactId>
+      <version>1.16.0</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>rubygems</groupId>
+          <artifactId>jar-dependencies</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>logger</artifactId>
+      <version>1.7.0</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>rubygems</groupId>
+          <artifactId>jar-dependencies</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
       <artifactId>matrix</artifactId>
-      <version>0.4.2</version>
+      <version>0.4.3</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -892,7 +840,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>minitest</artifactId>
-      <version>5.25.4</version>
+      <version>6.0.0</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -918,7 +866,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>net-ftp</artifactId>
-      <version>0.3.8</version>
+      <version>0.3.9</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -931,7 +879,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>net-imap</artifactId>
-      <version>0.5.8</version>
+      <version>0.6.2</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -995,8 +943,21 @@ DO NOT MODIFY - GENERATED CODE
     </dependency>
     <dependency>
       <groupId>rubygems</groupId>
+      <artifactId>ostruct</artifactId>
+      <version>0.6.3</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>rubygems</groupId>
+          <artifactId>jar-dependencies</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
       <artifactId>power_assert</artifactId>
-      <version>2.0.5</version>
+      <version>3.0.1</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -1009,7 +970,20 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>prime</artifactId>
-      <version>0.1.3</version>
+      <version>0.1.4</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>rubygems</groupId>
+          <artifactId>jar-dependencies</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>pstore</artifactId>
+      <version>0.2.0</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -1036,6 +1010,32 @@ DO NOT MODIFY - GENERATED CODE
       <groupId>rubygems</groupId>
       <artifactId>rake</artifactId>
       <version>${rake.version}</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>rubygems</groupId>
+          <artifactId>jar-dependencies</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>rdoc</artifactId>
+      <version>7.0.3</version>
+      <type>gem</type>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>rubygems</groupId>
+          <artifactId>jar-dependencies</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>rubygems</groupId>
+      <artifactId>reline</artifactId>
+      <version>0.6.3</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -1087,7 +1087,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>rss</artifactId>
-      <version>0.3.1</version>
+      <version>0.3.2</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -1113,7 +1113,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>test-unit</artifactId>
-      <version>3.6.7</version>
+      <version>3.7.5</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -1144,258 +1144,258 @@ DO NOT MODIFY - GENERATED CODE
         <directory>${gem.home}</directory>
         <includes>
           <include>specifications/default/*</include>
-          <include>specifications/rubygems-update-3.7.2*</include>
-          <include>specifications/benchmark-0.4.0*</include>
-          <include>specifications/bundler-2.7.2*</include>
-          <include>specifications/cgi-0.4.2*</include>
-          <include>specifications/date-3.4.1*</include>
-          <include>specifications/delegate-0.4.0*</include>
+          <include>specifications/rubygems-update-4.0.3*</include>
+          <include>specifications/bundler-4.0.3*</include>
+          <include>specifications/date-3.5.1*</include>
+          <include>specifications/delegate-0.6.1*</include>
           <include>specifications/did_you_mean-2.0.0*</include>
-          <include>specifications/digest-3.2.0*</include>
-          <include>specifications/english-0.8.0*</include>
-          <include>specifications/erb-4.0.4*</include>
-          <include>specifications/error_highlight-0.7.0*</include>
+          <include>specifications/digest-3.2.1*</include>
+          <include>specifications/english-0.8.1*</include>
+          <include>specifications/erb-6.0.1*</include>
+          <include>specifications/error_highlight-0.7.1*</include>
           <include>specifications/ffi-1.17.0*</include>
-          <include>specifications/fiddle-1.1.6*</include>
-          <include>specifications/fileutils-1.7.3*</include>
+          <include>specifications/fileutils-1.8.0*</include>
           <include>specifications/find-0.2.0*</include>
-          <include>specifications/forwardable-1.3.3*</include>
-          <include>specifications/io-console-0.8.1*</include>
-          <include>specifications/io-wait-0.3.2*</include>
-          <include>specifications/ipaddr-1.2.7*</include>
-          <include>specifications/irb-1.14.3*</include>
+          <include>specifications/forwardable-1.4.0*</include>
+          <include>specifications/io-console-0.8.2*</include>
+          <include>specifications/io-wait-0.4.0*</include>
+          <include>specifications/ipaddr-1.2.8*</include>
           <include>specifications/jar-dependencies-0.5.4*</include>
           <include>specifications/jruby-readline-1.3.7*</include>
           <include>specifications/jruby-openssl-0.15.5*</include>
-          <include>specifications/json-2.16.0*</include>
-          <include>specifications/logger-1.6.4*</include>
-          <include>specifications/net-http-0.6.0*</include>
+          <include>specifications/json-2.18.0*</include>
+          <include>specifications/net-http-0.9.1*</include>
           <include>specifications/net-protocol-0.2.2*</include>
           <include>specifications/open-uri-0.5.0*</include>
           <include>specifications/open3-0.2.1*</include>
-          <include>specifications/optparse-0.6.0*</include>
-          <include>specifications/ostruct-0.6.1*</include>
-          <include>specifications/pp-0.6.2*</include>
+          <include>specifications/optparse-0.8.1*</include>
+          <include>specifications/pp-0.6.3*</include>
           <include>specifications/prettyprint-0.2.0*</include>
-          <include>specifications/pstore-0.1.4*</include>
-          <include>specifications/psych-5.2.3*</include>
+          <include>specifications/psych-5.3.1*</include>
           <include>specifications/rake-ant-1.0.6*</include>
-          <include>specifications/rdoc-6.14.0*</include>
-          <include>specifications/reline-0.6.0*</include>
-          <include>specifications/resolv-0.6.3*</include>
+          <include>specifications/resolv-0.7.0*</include>
           <include>specifications/ruby2_keywords-0.0.5*</include>
           <include>specifications/securerandom-0.4.1*</include>
           <include>specifications/shellwords-0.2.2*</include>
           <include>specifications/singleton-0.3.0*</include>
-          <include>specifications/stringio-3.1.9*</include>
-          <include>specifications/strscan-3.1.5*</include>
+          <include>specifications/stringio-3.2.0*</include>
+          <include>specifications/strscan-3.1.6*</include>
           <include>specifications/subspawn-0.1.1*</include>
           <include>specifications/subspawn-posix-0.1.1*</include>
           <include>specifications/ffi-binary-libfixposix-0.5.1.1*</include>
           <include>specifications/ffi-bindings-libfixposix-0.5.1.0*</include>
           <include>specifications/syntax_suggest-2.0.2*</include>
           <include>specifications/tempfile-0.3.1*</include>
-          <include>specifications/time-0.4.1*</include>
-          <include>specifications/timeout-0.4.3*</include>
+          <include>specifications/time-0.4.2*</include>
+          <include>specifications/timeout-0.6.0*</include>
           <include>specifications/tsort-0.2.0*</include>
           <include>specifications/un-0.3.0*</include>
-          <include>specifications/uri-1.0.3*</include>
-          <include>specifications/weakref-0.1.3*</include>
+          <include>specifications/uri-1.1.1*</include>
+          <include>specifications/weakref-0.1.4*</include>
+          <include>specifications/win32-registry-0.1.1*</include>
           <include>specifications/yaml-0.4.0*</include>
           <include>specifications/abbrev-0.1.2*</include>
-          <include>specifications/base64-0.2.0*</include>
-          <include>specifications/bigdecimal-3.1.9*</include>
-          <include>specifications/csv-3.3.2*</include>
+          <include>specifications/base64-0.3.0*</include>
+          <include>specifications/benchmark-0.5.0*</include>
+          <include>specifications/bigdecimal-4.0.1*</include>
+          <include>specifications/csv-3.3.5*</include>
           <include>specifications/debug-0.2.1*</include>
-          <include>specifications/drb-2.2.1*</include>
+          <include>specifications/drb-2.2.3*</include>
+          <include>specifications/fiddle-1.1.8*</include>
           <include>specifications/getoptlong-0.2.1*</include>
-          <include>specifications/matrix-0.4.2*</include>
-          <include>specifications/minitest-5.25.4*</include>
+          <include>specifications/irb-1.16.0*</include>
+          <include>specifications/logger-1.7.0*</include>
+          <include>specifications/matrix-0.4.3*</include>
+          <include>specifications/minitest-6.0.0*</include>
           <include>specifications/mutex_m-0.3.0*</include>
-          <include>specifications/net-ftp-0.3.8*</include>
-          <include>specifications/net-imap-0.5.8*</include>
+          <include>specifications/net-ftp-0.3.9*</include>
+          <include>specifications/net-imap-0.6.2*</include>
           <include>specifications/net-pop-0.1.2*</include>
           <include>specifications/net-smtp-0.5.1*</include>
           <include>specifications/nkf-0.2.0*</include>
           <include>specifications/observer-0.1.2*</include>
-          <include>specifications/power_assert-2.0.5*</include>
-          <include>specifications/prime-0.1.3*</include>
+          <include>specifications/ostruct-0.6.3*</include>
+          <include>specifications/power_assert-3.0.1*</include>
+          <include>specifications/prime-0.1.4*</include>
+          <include>specifications/pstore-0.2.0*</include>
           <include>specifications/racc-1.8.1*</include>
           <include>specifications/rake-${rake.version}*</include>
+          <include>specifications/rdoc-7.0.3*</include>
+          <include>specifications/reline-0.6.3*</include>
           <include>specifications/resolv-replace-0.1.1*</include>
           <include>specifications/rexml-3.4.4*</include>
           <include>specifications/rinda-0.2.0*</include>
-          <include>specifications/rss-0.3.1*</include>
+          <include>specifications/rss-0.3.2*</include>
           <include>specifications/syslog-0.4.0*</include>
-          <include>specifications/test-unit-3.6.7*</include>
-          <include>gems/rubygems-update-3.7.2*/**/*</include>
-          <include>gems/benchmark-0.4.0*/**/*</include>
-          <include>gems/bundler-2.7.2*/**/*</include>
-          <include>gems/cgi-0.4.2*/**/*</include>
-          <include>gems/date-3.4.1*/**/*</include>
-          <include>gems/delegate-0.4.0*/**/*</include>
+          <include>specifications/test-unit-3.7.5*</include>
+          <include>gems/rubygems-update-4.0.3*/**/*</include>
+          <include>gems/bundler-4.0.3*/**/*</include>
+          <include>gems/date-3.5.1*/**/*</include>
+          <include>gems/delegate-0.6.1*/**/*</include>
           <include>gems/did_you_mean-2.0.0*/**/*</include>
-          <include>gems/digest-3.2.0*/**/*</include>
-          <include>gems/english-0.8.0*/**/*</include>
-          <include>gems/erb-4.0.4*/**/*</include>
-          <include>gems/error_highlight-0.7.0*/**/*</include>
+          <include>gems/digest-3.2.1*/**/*</include>
+          <include>gems/english-0.8.1*/**/*</include>
+          <include>gems/erb-6.0.1*/**/*</include>
+          <include>gems/error_highlight-0.7.1*/**/*</include>
           <include>gems/ffi-1.17.0*/**/*</include>
-          <include>gems/fiddle-1.1.6*/**/*</include>
-          <include>gems/fileutils-1.7.3*/**/*</include>
+          <include>gems/fileutils-1.8.0*/**/*</include>
           <include>gems/find-0.2.0*/**/*</include>
-          <include>gems/forwardable-1.3.3*/**/*</include>
-          <include>gems/io-console-0.8.1*/**/*</include>
-          <include>gems/io-wait-0.3.2*/**/*</include>
-          <include>gems/ipaddr-1.2.7*/**/*</include>
-          <include>gems/irb-1.14.3*/**/*</include>
+          <include>gems/forwardable-1.4.0*/**/*</include>
+          <include>gems/io-console-0.8.2*/**/*</include>
+          <include>gems/io-wait-0.4.0*/**/*</include>
+          <include>gems/ipaddr-1.2.8*/**/*</include>
           <include>gems/jar-dependencies-0.5.4*/**/*</include>
           <include>gems/jruby-readline-1.3.7*/**/*</include>
           <include>gems/jruby-openssl-0.15.5*/**/*</include>
-          <include>gems/json-2.16.0*/**/*</include>
-          <include>gems/logger-1.6.4*/**/*</include>
-          <include>gems/net-http-0.6.0*/**/*</include>
+          <include>gems/json-2.18.0*/**/*</include>
+          <include>gems/net-http-0.9.1*/**/*</include>
           <include>gems/net-protocol-0.2.2*/**/*</include>
           <include>gems/open-uri-0.5.0*/**/*</include>
           <include>gems/open3-0.2.1*/**/*</include>
-          <include>gems/optparse-0.6.0*/**/*</include>
-          <include>gems/ostruct-0.6.1*/**/*</include>
-          <include>gems/pp-0.6.2*/**/*</include>
+          <include>gems/optparse-0.8.1*/**/*</include>
+          <include>gems/pp-0.6.3*/**/*</include>
           <include>gems/prettyprint-0.2.0*/**/*</include>
-          <include>gems/pstore-0.1.4*/**/*</include>
-          <include>gems/psych-5.2.3*/**/*</include>
+          <include>gems/psych-5.3.1*/**/*</include>
           <include>gems/rake-ant-1.0.6*/**/*</include>
-          <include>gems/rdoc-6.14.0*/**/*</include>
-          <include>gems/reline-0.6.0*/**/*</include>
-          <include>gems/resolv-0.6.3*/**/*</include>
+          <include>gems/resolv-0.7.0*/**/*</include>
           <include>gems/ruby2_keywords-0.0.5*/**/*</include>
           <include>gems/securerandom-0.4.1*/**/*</include>
           <include>gems/shellwords-0.2.2*/**/*</include>
           <include>gems/singleton-0.3.0*/**/*</include>
-          <include>gems/stringio-3.1.9*/**/*</include>
-          <include>gems/strscan-3.1.5*/**/*</include>
+          <include>gems/stringio-3.2.0*/**/*</include>
+          <include>gems/strscan-3.1.6*/**/*</include>
           <include>gems/subspawn-0.1.1*/**/*</include>
           <include>gems/subspawn-posix-0.1.1*/**/*</include>
           <include>gems/ffi-binary-libfixposix-0.5.1.1*/**/*</include>
           <include>gems/ffi-bindings-libfixposix-0.5.1.0*/**/*</include>
           <include>gems/syntax_suggest-2.0.2*/**/*</include>
           <include>gems/tempfile-0.3.1*/**/*</include>
-          <include>gems/time-0.4.1*/**/*</include>
-          <include>gems/timeout-0.4.3*/**/*</include>
+          <include>gems/time-0.4.2*/**/*</include>
+          <include>gems/timeout-0.6.0*/**/*</include>
           <include>gems/tsort-0.2.0*/**/*</include>
           <include>gems/un-0.3.0*/**/*</include>
-          <include>gems/uri-1.0.3*/**/*</include>
-          <include>gems/weakref-0.1.3*/**/*</include>
+          <include>gems/uri-1.1.1*/**/*</include>
+          <include>gems/weakref-0.1.4*/**/*</include>
+          <include>gems/win32-registry-0.1.1*/**/*</include>
           <include>gems/yaml-0.4.0*/**/*</include>
           <include>gems/abbrev-0.1.2*/**/*</include>
-          <include>gems/base64-0.2.0*/**/*</include>
-          <include>gems/bigdecimal-3.1.9*/**/*</include>
-          <include>gems/csv-3.3.2*/**/*</include>
+          <include>gems/base64-0.3.0*/**/*</include>
+          <include>gems/benchmark-0.5.0*/**/*</include>
+          <include>gems/bigdecimal-4.0.1*/**/*</include>
+          <include>gems/csv-3.3.5*/**/*</include>
           <include>gems/debug-0.2.1*/**/*</include>
-          <include>gems/drb-2.2.1*/**/*</include>
+          <include>gems/drb-2.2.3*/**/*</include>
+          <include>gems/fiddle-1.1.8*/**/*</include>
           <include>gems/getoptlong-0.2.1*/**/*</include>
-          <include>gems/matrix-0.4.2*/**/*</include>
-          <include>gems/minitest-5.25.4*/**/*</include>
+          <include>gems/irb-1.16.0*/**/*</include>
+          <include>gems/logger-1.7.0*/**/*</include>
+          <include>gems/matrix-0.4.3*/**/*</include>
+          <include>gems/minitest-6.0.0*/**/*</include>
           <include>gems/mutex_m-0.3.0*/**/*</include>
-          <include>gems/net-ftp-0.3.8*/**/*</include>
-          <include>gems/net-imap-0.5.8*/**/*</include>
+          <include>gems/net-ftp-0.3.9*/**/*</include>
+          <include>gems/net-imap-0.6.2*/**/*</include>
           <include>gems/net-pop-0.1.2*/**/*</include>
           <include>gems/net-smtp-0.5.1*/**/*</include>
           <include>gems/nkf-0.2.0*/**/*</include>
           <include>gems/observer-0.1.2*/**/*</include>
-          <include>gems/power_assert-2.0.5*/**/*</include>
-          <include>gems/prime-0.1.3*/**/*</include>
+          <include>gems/ostruct-0.6.3*/**/*</include>
+          <include>gems/power_assert-3.0.1*/**/*</include>
+          <include>gems/prime-0.1.4*/**/*</include>
+          <include>gems/pstore-0.2.0*/**/*</include>
           <include>gems/racc-1.8.1*/**/*</include>
           <include>gems/rake-${rake.version}*/**/*</include>
+          <include>gems/rdoc-7.0.3*/**/*</include>
+          <include>gems/reline-0.6.3*/**/*</include>
           <include>gems/resolv-replace-0.1.1*/**/*</include>
           <include>gems/rexml-3.4.4*/**/*</include>
           <include>gems/rinda-0.2.0*/**/*</include>
-          <include>gems/rss-0.3.1*/**/*</include>
+          <include>gems/rss-0.3.2*/**/*</include>
           <include>gems/syslog-0.4.0*/**/*</include>
-          <include>gems/test-unit-3.6.7*/**/*</include>
-          <include>cache/rubygems-update-3.7.2*</include>
-          <include>cache/benchmark-0.4.0*</include>
-          <include>cache/bundler-2.7.2*</include>
-          <include>cache/cgi-0.4.2*</include>
-          <include>cache/date-3.4.1*</include>
-          <include>cache/delegate-0.4.0*</include>
+          <include>gems/test-unit-3.7.5*/**/*</include>
+          <include>cache/rubygems-update-4.0.3*</include>
+          <include>cache/bundler-4.0.3*</include>
+          <include>cache/date-3.5.1*</include>
+          <include>cache/delegate-0.6.1*</include>
           <include>cache/did_you_mean-2.0.0*</include>
-          <include>cache/digest-3.2.0*</include>
-          <include>cache/english-0.8.0*</include>
-          <include>cache/erb-4.0.4*</include>
-          <include>cache/error_highlight-0.7.0*</include>
+          <include>cache/digest-3.2.1*</include>
+          <include>cache/english-0.8.1*</include>
+          <include>cache/erb-6.0.1*</include>
+          <include>cache/error_highlight-0.7.1*</include>
           <include>cache/ffi-1.17.0*</include>
-          <include>cache/fiddle-1.1.6*</include>
-          <include>cache/fileutils-1.7.3*</include>
+          <include>cache/fileutils-1.8.0*</include>
           <include>cache/find-0.2.0*</include>
-          <include>cache/forwardable-1.3.3*</include>
-          <include>cache/io-console-0.8.1*</include>
-          <include>cache/io-wait-0.3.2*</include>
-          <include>cache/ipaddr-1.2.7*</include>
-          <include>cache/irb-1.14.3*</include>
+          <include>cache/forwardable-1.4.0*</include>
+          <include>cache/io-console-0.8.2*</include>
+          <include>cache/io-wait-0.4.0*</include>
+          <include>cache/ipaddr-1.2.8*</include>
           <include>cache/jar-dependencies-0.5.4*</include>
           <include>cache/jruby-readline-1.3.7*</include>
           <include>cache/jruby-openssl-0.15.5*</include>
-          <include>cache/json-2.16.0*</include>
-          <include>cache/logger-1.6.4*</include>
-          <include>cache/net-http-0.6.0*</include>
+          <include>cache/json-2.18.0*</include>
+          <include>cache/net-http-0.9.1*</include>
           <include>cache/net-protocol-0.2.2*</include>
           <include>cache/open-uri-0.5.0*</include>
           <include>cache/open3-0.2.1*</include>
-          <include>cache/optparse-0.6.0*</include>
-          <include>cache/ostruct-0.6.1*</include>
-          <include>cache/pp-0.6.2*</include>
+          <include>cache/optparse-0.8.1*</include>
+          <include>cache/pp-0.6.3*</include>
           <include>cache/prettyprint-0.2.0*</include>
-          <include>cache/pstore-0.1.4*</include>
-          <include>cache/psych-5.2.3*</include>
+          <include>cache/psych-5.3.1*</include>
           <include>cache/rake-ant-1.0.6*</include>
-          <include>cache/rdoc-6.14.0*</include>
-          <include>cache/reline-0.6.0*</include>
-          <include>cache/resolv-0.6.3*</include>
+          <include>cache/resolv-0.7.0*</include>
           <include>cache/ruby2_keywords-0.0.5*</include>
           <include>cache/securerandom-0.4.1*</include>
           <include>cache/shellwords-0.2.2*</include>
           <include>cache/singleton-0.3.0*</include>
-          <include>cache/stringio-3.1.9*</include>
-          <include>cache/strscan-3.1.5*</include>
+          <include>cache/stringio-3.2.0*</include>
+          <include>cache/strscan-3.1.6*</include>
           <include>cache/subspawn-0.1.1*</include>
           <include>cache/subspawn-posix-0.1.1*</include>
           <include>cache/ffi-binary-libfixposix-0.5.1.1*</include>
           <include>cache/ffi-bindings-libfixposix-0.5.1.0*</include>
           <include>cache/syntax_suggest-2.0.2*</include>
           <include>cache/tempfile-0.3.1*</include>
-          <include>cache/time-0.4.1*</include>
-          <include>cache/timeout-0.4.3*</include>
+          <include>cache/time-0.4.2*</include>
+          <include>cache/timeout-0.6.0*</include>
           <include>cache/tsort-0.2.0*</include>
           <include>cache/un-0.3.0*</include>
-          <include>cache/uri-1.0.3*</include>
-          <include>cache/weakref-0.1.3*</include>
+          <include>cache/uri-1.1.1*</include>
+          <include>cache/weakref-0.1.4*</include>
+          <include>cache/win32-registry-0.1.1*</include>
           <include>cache/yaml-0.4.0*</include>
           <include>cache/abbrev-0.1.2*</include>
-          <include>cache/base64-0.2.0*</include>
-          <include>cache/bigdecimal-3.1.9*</include>
-          <include>cache/csv-3.3.2*</include>
+          <include>cache/base64-0.3.0*</include>
+          <include>cache/benchmark-0.5.0*</include>
+          <include>cache/bigdecimal-4.0.1*</include>
+          <include>cache/csv-3.3.5*</include>
           <include>cache/debug-0.2.1*</include>
-          <include>cache/drb-2.2.1*</include>
+          <include>cache/drb-2.2.3*</include>
+          <include>cache/fiddle-1.1.8*</include>
           <include>cache/getoptlong-0.2.1*</include>
-          <include>cache/matrix-0.4.2*</include>
-          <include>cache/minitest-5.25.4*</include>
+          <include>cache/irb-1.16.0*</include>
+          <include>cache/logger-1.7.0*</include>
+          <include>cache/matrix-0.4.3*</include>
+          <include>cache/minitest-6.0.0*</include>
           <include>cache/mutex_m-0.3.0*</include>
-          <include>cache/net-ftp-0.3.8*</include>
-          <include>cache/net-imap-0.5.8*</include>
+          <include>cache/net-ftp-0.3.9*</include>
+          <include>cache/net-imap-0.6.2*</include>
           <include>cache/net-pop-0.1.2*</include>
           <include>cache/net-smtp-0.5.1*</include>
           <include>cache/nkf-0.2.0*</include>
           <include>cache/observer-0.1.2*</include>
-          <include>cache/power_assert-2.0.5*</include>
-          <include>cache/prime-0.1.3*</include>
+          <include>cache/ostruct-0.6.3*</include>
+          <include>cache/power_assert-3.0.1*</include>
+          <include>cache/prime-0.1.4*</include>
+          <include>cache/pstore-0.2.0*</include>
           <include>cache/racc-1.8.1*</include>
           <include>cache/rake-${rake.version}*</include>
+          <include>cache/rdoc-7.0.3*</include>
+          <include>cache/reline-0.6.3*</include>
           <include>cache/resolv-replace-0.1.1*</include>
           <include>cache/rexml-3.4.4*</include>
           <include>cache/rinda-0.2.0*</include>
-          <include>cache/rss-0.3.1*</include>
+          <include>cache/rss-0.3.2*</include>
           <include>cache/syslog-0.4.0*</include>
-          <include>cache/test-unit-3.6.7*</include>
+          <include>cache/test-unit-3.7.5*</include>
         </includes>
       </resource>
       <resource>

@@ -828,7 +828,7 @@ public class RubyModule extends RubyObject {
         anonBase.append(metaClass.getRealClass().rubyName(context)).append(newString(context, ":0x"));
         anonBase.append(newString(context, Integer.toHexString(System.identityHashCode(this)))).append(newString(context, ">"));
 
-        return anonBase;
+        return (RubyString) anonBase.freeze(context);
     }
 
     private RubyString calculateRubyName(ThreadContext context) {
@@ -837,7 +837,7 @@ public class RubyModule extends RubyObject {
         if (getBaseName() == null) return calculateAnonymousRubyName(context); // no name...anonymous!
 
         if (usingTemporaryName()) { // temporary name
-            cachedRubyName = asSymbol(context, baseName).toRubyString(context);
+            cachedRubyName = (RubyString) asSymbol(context, baseName).toRubyString(context).freeze(context);
             return cachedRubyName;
         }
         
@@ -864,7 +864,7 @@ public class RubyModule extends RubyObject {
 
         RubyString fullName = buildPathString(context, parents);
 
-        if (cache) cachedRubyName = fullName;
+        if (cache) cachedRubyName = (RubyString) fullName.freeze(context);
 
         return fullName;
     }
@@ -1000,6 +1000,8 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(required = 1)
     public IRubyObject set_temporary_name(ThreadContext context, IRubyObject arg) {
+        checkFrozen();
+
         if (baseName != null && IdUtil.isValidConstantName(baseName) && (parent == null || parent.baseName != null)) {
             throw runtimeError(context, "can't change permanent name");
         }
@@ -3508,12 +3510,12 @@ public class RubyModule extends RubyObject {
             if (method.getDefinedClass() == this) {
                 if (!method.isNative()) {
                     Signature signature = method.getSignature();
-                    if (!signature.hasRest()) {
-                        warn(context, str(context.runtime, "Skipping set of ruby2_keywords flag for ", ids(context.runtime, name), " (method accepts keywords or method does not accept argument splat)"));
+                    if (!signature.hasRest() || signature.post() != 0) {
+                        warn(context, str(context.runtime, "Skipping set of ruby2_keywords flag for ", ids(context.runtime, name), " (method accepts keywords or post arguments or method does not accept argument splat)"));
                     } else if (!signature.hasKwargs()) {
                         method.setRuby2Keywords();
                     } else if (method instanceof AbstractIRMethod && ((AbstractIRMethod) method).getStaticScope().exists("...") == -1) {
-                        warn(context, str(context.runtime, "Skipping set of ruby2_keywords flag for ", ids(context.runtime, name), " (method accepts keywords or method does not accept argument splat)"));
+                        warn(context, str(context.runtime, "Skipping set of ruby2_keywords flag for ", ids(context.runtime, name), " (method accepts keywords or post arguments or method does not accept argument splat)"));
                     }
                 } else {
                     warn(context, str(context.runtime, "Skipping set of ruby2_keywords flag for ", ids(context.runtime, name), " (method not defined in Ruby)"));
