@@ -94,6 +94,7 @@ public abstract class InvokeSite extends MutableCallSite {
     public final Signature fullSignature;
     public final int arity;
     protected final String methodName;
+    protected final CallType visibilityCallType;
     final MethodHandle fallback;
     private final SiteTracker tracker = new SiteTracker();
     private final long siteID = SITE_ID.getAndIncrement();
@@ -695,12 +696,14 @@ public abstract class InvokeSite extends MutableCallSite {
         return methodName;
     }
 
-    public final CallType callType;
-
     public InvokeSite(MethodType type, String name, CallType callType, boolean literalClosure, int flags, String file, int line) {
+        this(type, name, callType, callType, literalClosure, flags, file, line);
+    }
+
+    protected InvokeSite(MethodType type, String name, CallType structuralCallType, CallType visibilityCallType, boolean literalClosure, int flags, String file, int line) {
         super(type);
         this.methodName = name;
-        this.callType = callType;
+        this.visibilityCallType = visibilityCallType;
         this.literalClosure = literalClosure;
         this.file = file;
         this.line = line;
@@ -708,12 +711,12 @@ public abstract class InvokeSite extends MutableCallSite {
 
         Signature startSig;
 
-        if (callType == CallType.SUPER) {
+        if (structuralCallType == CallType.SUPER) {
             // super calls receive current class argument, so offsets and signature are different
             startSig = JRubyCallSite.STANDARD_SUPER_SIG;
             functional = false;
             argOffset = 4;
-        } else if (callType == CallType.FUNCTIONAL || callType == CallType.VARIABLE) {
+        } else if (structuralCallType == CallType.FUNCTIONAL || structuralCallType == CallType.VARIABLE) {
             startSig = JRubyCallSite.STANDARD_FSITE_SIG;
             functional = true;
             argOffset = 2;
@@ -818,7 +821,7 @@ public abstract class InvokeSite extends MutableCallSite {
             logMethodMissing();
         }
         Visibility visibility = entry.method.getVisibility();
-        return Helpers.createMethodMissingEntry(context, selfClass, callType, visibility, entry.token, methodName);
+        return Helpers.createMethodMissingEntry(context, selfClass, visibilityCallType, visibility, entry.token, methodName);
     }
 
     private void finishBinding(CacheEntry entry, MethodHandle mh, IRubyObject self, RubyClass selfClass, SwitchPoint switchPoint) {
@@ -916,7 +919,7 @@ public abstract class InvokeSite extends MutableCallSite {
         entry = selfClass.searchWithCache(name);
 
         if (methodMissing(entry, caller)) {
-            return callMethodMissing(entry, callType, context, self, selfClass, name, args, block);
+            return callMethodMissing(entry, visibilityCallType, context, self, selfClass, name, args, block);
         }
 
         cache = entry;
@@ -941,7 +944,7 @@ public abstract class InvokeSite extends MutableCallSite {
         entry = selfClass.searchWithCache(name);
 
         if (methodMissing(entry)) {
-            return callMethodMissing(entry, callType, context, self, selfClass, name, args, block);
+            return callMethodMissing(entry, visibilityCallType, context, self, selfClass, name, args, block);
         }
 
         cache = entry;
@@ -980,7 +983,7 @@ public abstract class InvokeSite extends MutableCallSite {
         entry = selfClass.searchWithCache(name);
 
         if (methodMissing(entry, caller)) {
-            return callMethodMissing(entry, callType, context, self, selfClass, name, arg0, block);
+            return callMethodMissing(entry, visibilityCallType, context, self, selfClass, name, arg0, block);
         }
 
         cache = entry;
@@ -1005,7 +1008,7 @@ public abstract class InvokeSite extends MutableCallSite {
         entry = selfClass.searchWithCache(name);
 
         if (methodMissing(entry)) {
-            return callMethodMissing(entry, callType, context, self, selfClass, name, arg0, block);
+            return callMethodMissing(entry, visibilityCallType, context, self, selfClass, name, arg0, block);
         }
 
         cache = entry;
@@ -1030,7 +1033,7 @@ public abstract class InvokeSite extends MutableCallSite {
         entry = selfClass.searchWithCache(name);
 
         if (methodMissing(entry, caller)) {
-            return callMethodMissing(entry, callType, context, self, selfClass, name, arg0, arg1, block);
+            return callMethodMissing(entry, visibilityCallType, context, self, selfClass, name, arg0, arg1, block);
         }
 
         cache = entry;
@@ -1055,7 +1058,7 @@ public abstract class InvokeSite extends MutableCallSite {
         entry = selfClass.searchWithCache(name);
 
         if (methodMissing(entry)) {
-            return callMethodMissing(entry, callType, context, self, selfClass, name, arg0, arg1, block);
+            return callMethodMissing(entry, visibilityCallType, context, self, selfClass, name, arg0, arg1, block);
         }
 
         cache = entry;
@@ -1080,7 +1083,7 @@ public abstract class InvokeSite extends MutableCallSite {
         entry = selfClass.searchWithCache(name);
 
         if (methodMissing(entry, caller)) {
-            return callMethodMissing(entry, callType, context, self, selfClass, name, arg0, arg1, arg2, block);
+            return callMethodMissing(entry, visibilityCallType, context, self, selfClass, name, arg0, arg1, arg2, block);
         }
 
         cache = entry;
@@ -1105,7 +1108,7 @@ public abstract class InvokeSite extends MutableCallSite {
         entry = selfClass.searchWithCache(name);
 
         if (methodMissing(entry)) {
-            return callMethodMissing(entry, callType, context, self, selfClass, name, arg0, arg1, arg2, block);
+            return callMethodMissing(entry, visibilityCallType, context, self, selfClass, name, arg0, arg1, arg2, block);
         }
 
         cache = entry;
@@ -1537,7 +1540,7 @@ public abstract class InvokeSite extends MutableCallSite {
     public boolean methodMissing(CacheEntry entry, IRubyObject caller) {
         DynamicMethod method = entry.method;
 
-        return method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(caller, callType));
+        return method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(caller, visibilityCallType));
     }
 
     public boolean methodMissing(CacheEntry entry) {

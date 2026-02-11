@@ -141,8 +141,7 @@ bundled_gems = [
   ['rexml', '3.4.4'],
   ['rinda', '0.2.0'],
   ['rss', '0.3.1'],
-  # https://github.com/ruby/syslog/issues/1
-  # ['syslog', '0.2.0'],
+  ['syslog', '0.4.0'],
   ['test-unit', '3.6.7']
   # Depends on many CRuby internals
   # ['typeprof', '0.30.1'],
@@ -212,6 +211,10 @@ project 'JRuby Lib Setup' do
     require 'fileutils'
 
     log "using jruby #{JRUBY_VERSION}"
+
+    # force platform to match build JRuby
+    Gem.set_target_rbconfig(File.join(File.dirname(__FILE__), "ruby/stdlib/jruby/build/rbconfig.rb"))
+    Gem.instance_variable_set :@ruby_api_version, Gem.target_rbconfig['ruby_version']
 
     target = ctx.project.build.directory.to_pathname
     gem_home = File.join(target, 'rubygems')

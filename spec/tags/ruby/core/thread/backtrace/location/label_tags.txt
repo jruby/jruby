@@ -1,3 +1,35 @@
 fails:Thread::Backtrace::Location#label returns the base label of the call frame
 fails:Thread::Backtrace::Location#label includes the nesting level of a block as part of the location label
 fails:Thread::Backtrace::Location#label sets the location label for a top-level block differently depending on it being in the main file or a required file
+fails:Thread::Backtrace::Location#label is correct for ThreadBacktraceLocationSpecs.nested_class_method
+fails:Thread::Backtrace::Location#label is correct for M#mod_function
+fails:Thread::Backtrace::Location#label is correct for M.mod_function
+fails:Thread::Backtrace::Location#label is correct for sdef_expression
+fails:Thread::Backtrace::Location#label is correct for block_in_sdef_expression
+fails:Thread::Backtrace::Location#label return the same name as the caller for eval
+fails:Thread::Backtrace::Location#label shows the original method name for an aliased method
+fails:Thread::Backtrace::Location#label is Module#method for a core method defined natively
+fails:Thread::Backtrace::Location#label is Module#method for a core method defined in Ruby
+fails:Thread::Backtrace::Location#label is Module#method for an instance method defined in Ruby
+fails:Thread::Backtrace::Location#label is Module#method for a block in an instance method defined in Ruby
+fails:Thread::Backtrace::Location#label is Module#method for a nested block in an instance method defined in Ruby
+fails:Thread::Backtrace::Location#label is Module#method for a method defined via module_exec
+fails:Thread::Backtrace::Location#label is Module#method for a method defined via module_eval
+fails:Thread::Backtrace::Location#label is Module.method for a singleton method defined in Ruby
+fails:Thread::Backtrace::Location#label is Module.method for a block in a singleton method defined in Ruby
+fails:Thread::Backtrace::Location#label is Module.method for a nested block in a singleton method defined in Ruby
+fails:Thread::Backtrace::Location#label is Module.method for a singleton method defined via def Const.method
+fails:Thread::Backtrace::Location#label is correct for M::C#regular_instance_method
+fails:Thread::Backtrace::Location#label is correct for M::C.sdef_class_method
+fails:Thread::Backtrace::Location#label is correct for M::C.sclass_method
+fails:Thread::Backtrace::Location#label is correct for M::C.block_in_sclass_method
+fails:Thread::Backtrace::Location#label is correct for M::D#scoped_method
+fails:Thread::Backtrace::Location#label is correct for M::D.sdef_scoped_method
+fails:Thread::Backtrace::Location#label is correct for M::D.sclass_scoped_method
+fails:Thread::Backtrace::Location#label is correct for ThreadBacktraceLocationSpecs#top
+fails:Thread::Backtrace::Location#label is correct for ThreadBacktraceLocationSpecs::Nested#top_nested
+fails:Thread::Backtrace::Location#label is correct for ThreadBacktraceLocationSpecs::Nested::C#top_nested_c
+fails:Thread::Backtrace::Location#label is correct for Object#label_top_method
+fails:Thread::Backtrace::Location#label is correct for M#module_eval_method
+fails:Thread::Backtrace::Location#label is correct for M.sdef_module_eval_method
+fails:Thread::Backtrace::Location#label is correct for ThreadBacktraceLocationSpecs.string_class_method

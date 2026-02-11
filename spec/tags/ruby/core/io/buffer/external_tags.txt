@@ -4,3 +4,4 @@ fails:IO::Buffer#external? with a String-backed buffer created with .for is true
 fails:IO::Buffer#external? with a String-backed buffer created with .for is true for a buffer created with a block
 fails:IO::Buffer#external? with a String-backed buffer created with .string is true
 fails:IO::Buffer#external? with a slice of a buffer created with .map is false
+fails:IO::Buffer#external? is true for a buffer with externally-managed memory

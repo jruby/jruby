@@ -1,4 +1,2 @@
-fails:Refinement#import_methods doesn't import any methods if one of the arguments is not a module
 fails:Refinement#import_methods imports methods from multiple modules so that methods see other's module's methods
 fails:Refinement#import_methods imports methods from module so that methods can see each other
-fails:Refinement#import_methods when methods are defined in Ruby code throws an exception when argument is not a module

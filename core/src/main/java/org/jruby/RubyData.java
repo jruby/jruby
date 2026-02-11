@@ -40,8 +40,10 @@ import static org.jruby.ir.runtime.IRRuntimeHelpers.setCallInfo;
 import static org.jruby.runtime.Arity.checkArgumentCount;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
+import static org.jruby.runtime.ThreadContext.CALL_KEYWORD_EMPTY;
 import static org.jruby.runtime.ThreadContext.clearCallInfo;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
+import static org.jruby.runtime.ThreadContext.hasNonemptyKeywords;
 import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import static org.jruby.util.RubyStringBuilder.str;
@@ -309,7 +311,7 @@ public class RubyData {
 
             RubyHash init;
             int callInfo = resetCallInfo(context);
-            if (hasKeywords(callInfo)) {
+            if (hasNonemptyKeywords(callInfo)) {
                 if (!(hashOrElt instanceof RubyHash)) {
                     throw argumentError(context, 1, 0, 0);
                 }

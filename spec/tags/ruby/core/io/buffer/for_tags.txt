@@ -1,0 +1,3 @@
+fails:IO::Buffer.for without a block creates an external, read-only buffer
+fails:IO::Buffer.for with a block frees the buffer at the end of the block
+fails:IO::Buffer.for with a block if string is not frozen locks the original string to prevent modification

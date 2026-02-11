@@ -1456,9 +1456,11 @@ public class EncodingUtils {
                 rep = rep.convertToString();
                 Encoding repEnc = ((RubyString) rep).getEncoding();
                 ByteList repByteList = ((RubyString) rep).getByteList();
-                ec.insertOutput(repByteList.getUnsafeBytes(), repByteList.begin(), repByteList.getRealSize(), repEnc.getName());
+                int ret = ec.insertOutput(repByteList.getUnsafeBytes(), repByteList.begin(), repByteList.getRealSize(), repEnc.getName());
 
-                // TODO: check for too-large replacement
+                if (ret == -1) {
+                    throw argumentError(context, "too big fallback string");
+                }
                 return true;
             }
             return false;
@@ -1515,14 +1517,16 @@ public class EncodingUtils {
 
         if (!ecopts.isNil() && ecopts instanceof RubyHash) {
             fallback = ((RubyHash)ecopts).op_aref(context, asSymbol(context, "fallback"));
-            if (fallback instanceof RubyHash) {
-                fallbackFunc = HASH_FALLBACK;
-            } else if (fallback instanceof RubyProc) { // not quite same check as MRI
-                fallbackFunc = PROC_FALLBACK;
-            } else if (fallback instanceof RubyMethod) { // not quite same check as MRI
-                fallbackFunc = METHOD_FALLBACK;
-            } else {
-                fallbackFunc = AREF_FALLBACK;
+            if (!fallback.isNil()) {
+                if (fallback instanceof RubyHash) {
+                    fallbackFunc = HASH_FALLBACK;
+                } else if (fallback instanceof RubyProc) { // not quite same check as MRI
+                    fallbackFunc = PROC_FALLBACK;
+                } else if (fallback instanceof RubyMethod) { // not quite same check as MRI
+                    fallbackFunc = METHOD_FALLBACK;
+                } else {
+                    fallbackFunc = AREF_FALLBACK;
+                }
             }
         }
 
@@ -1689,18 +1693,27 @@ public class EncodingUtils {
             int errBytesP = ec.lastError.getErrorBytesP();
             int errorLen = ec.lastError.getErrorBytesLength();
             final byte[] errSource = ec.lastError.getSource();
-            if (Arrays.equals(errSource, "UTF-8".getBytes())) {
-                // prepare dumped form
-            }
 
             RubyString bytes = newString(context, new ByteList(errBytes, errBytesP, errorLen - errBytesP));
-            RubyString dumped = (RubyString) bytes.dump(context);
+            String charRepresentation;
+
+            // For UTF-8 source, format as U+XXXX codepoint instead of byte dump
+            if (Arrays.equals(errSource, "UTF-8".getBytes())) {
+                int codepoint = StringSupport.preciseCodePoint(UTF8Encoding.INSTANCE, errBytes, errBytesP, errBytesP + errorLen);
+                if (codepoint >= 0) {
+                    charRepresentation = String.format("U+%04X", codepoint);
+                } else {
+                    charRepresentation = ((RubyString) bytes.dump(context)).toString();
+                }
+            } else {
+                charRepresentation = ((RubyString) bytes.dump(context)).toString();
+            }
 
             mesg = new StringBuilder();
             if (Arrays.equals(errSource, ec.source) &&  Arrays.equals(ec.lastError.getDestination(), ec.destination)) {
-                mesg.append(dumped).append(" from ").append( new String(errSource) ).append(" to ").append( new String(ec.lastError.getDestination()) );
+                mesg.append(charRepresentation).append(" from ").append( new String(errSource) ).append(" to ").append( new String(ec.lastError.getDestination()) );
             } else {
-                mesg.append(dumped).append(" to ").append( new String(ec.lastError.getDestination()) ).append(" in conversion from ").append( new String(ec.source) );
+                mesg.append(charRepresentation).append(" to ").append( new String(ec.lastError.getDestination()) ).append(" in conversion from ").append( new String(ec.source) );
                 for (int i = 0; i < ec.numTranscoders; i++) {
                     mesg.append(" to ").append( new String(ec.elements[i].transcoding.transcoder.getDestination()) );
                 }
