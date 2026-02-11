@@ -1610,7 +1610,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                 }
                 cur = curException.getCause();
             }
-            exception.setCause(cause);
+            exception.setCause(context, cause);
         }
 
         return exception;

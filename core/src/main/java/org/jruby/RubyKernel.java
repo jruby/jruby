@@ -1048,7 +1048,7 @@ public class RubyKernel {
             var exception = raise.getException();
 
             if (context.runtime.isDebug()) printExceptionSummary(context, exception);
-            if (exception.getCause() == null && cause != exception) exception.setCause(cause);
+            if (exception.getCause() == null && cause != exception) exception.setCause(context, cause);
 
             throwable = raise;
         }
@@ -1057,9 +1057,9 @@ public class RubyKernel {
         return null; // not reached
     }
 
-    @JRubyMethod(name = {"raise", "fail"}, optional = 3, checkArity = false, module = true, visibility = PRIVATE, omit = true)
+    @JRubyMethod(name = {"raise", "fail"}, optional = 4, checkArity = false, module = true, visibility = PRIVATE, omit = true)
     public static IRubyObject raise(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        int argc = Arity.checkArgumentCount(context, args, 0, 3);
+        int argc = args.length;
         boolean forceCause = false;
 
         // semi extract_raise_opts :
@@ -1077,6 +1077,8 @@ public class RubyKernel {
                 }
             }
         }
+
+        Arity.checkArgumentCount(context, argc, 0, 3);
 
         if ( argc > 0 ) { // for argc == 0 we will be raising $!
             // NOTE: getErrorInfo needs to happen before new RaiseException(...)
@@ -1099,7 +1101,7 @@ public class RubyKernel {
                     break;
                 case 1:
                     if (args[0] instanceof RubyString) {
-                        raise = ((RubyException) runtimeErrorClass(context).newInstance(context, args, block)).toThrowable();
+                        raise = ((RubyException) runtimeErrorClass(context).newInstance(context, args[0], block)).toThrowable();
                     } else {
                         raise = convertToException(context, args[0], null).toThrowable();
                     }
@@ -1116,7 +1118,7 @@ public class RubyKernel {
 
             var exception = raise.getException();
             if (context.runtime.isDebug()) printExceptionSummary(context, exception);
-            if (forceCause || argc > 0 && exception.getCause() == null && cause != exception) exception.setCause(cause);
+            if (forceCause || argc > 0 && exception.getCause() == null && cause != exception) exception.setCause(context, cause);
 
             throwable = raise;
         }

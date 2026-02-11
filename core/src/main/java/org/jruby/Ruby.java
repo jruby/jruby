@@ -4460,12 +4460,13 @@ public final class Ruby implements Constantizable {
      * @return a new RaiseException wrapping a new Ruby exception
      */
     public RaiseException newRaiseException(RubyClass exceptionClass, String message) {
-        IRubyObject cause = getCurrentContext().getErrorInfo();
+        ThreadContext context = getCurrentContext();
+        IRubyObject cause = context.getErrorInfo();
 
         RaiseException exception = RaiseException.from(this, exceptionClass, message);
 
         if (cause != null && !cause.isNil()) {
-            exception.getException().setCause(cause);
+            exception.getException().setCause(context, cause);
         }
 
         return exception;

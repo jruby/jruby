@@ -495,6 +495,23 @@ public class RubyException extends RubyObject {
     }
 
     public void setCause(IRubyObject cause) {
+        setCause(getRuntime().getCurrentContext(), cause);
+    }
+
+    public void setCause(ThreadContext context, IRubyObject cause) {
+        if (cause == this) {
+            this.cause = context.nil;
+            return;
+        }
+
+        Object c = cause;
+        while (c instanceof RubyException causeException) {
+            if (c == this) {
+                throw argumentError(context, "circular causes");
+            }
+            c = causeException.getCause();
+        }
+
         this.cause = cause;
 
         // don't do anything to throwable for null/nil cause to avoid forcing backtrace
