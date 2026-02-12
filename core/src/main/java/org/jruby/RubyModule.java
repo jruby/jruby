@@ -1924,7 +1924,7 @@ public class RubyModule extends RubyObject {
     }
 
     private String frozenType() {
-        return isClass() ? "class" : "module";
+        return isClass() ? "Class" : "Module";
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -6356,7 +6356,7 @@ public class RubyModule extends RubyObject {
     @Override
     public final void checkFrozen() {
        if ( isFrozen() ) {
-           throw getRuntime().newFrozenError(isClass() ? "class" : "module", this);
+           throw getRuntime().newFrozenError(frozenType(), this);
        }
     }
 
