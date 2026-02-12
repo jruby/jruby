@@ -1057,14 +1057,15 @@ public class RubyKernel {
         return null; // not reached
     }
 
-    @JRubyMethod(name = {"raise", "fail"}, optional = 4, checkArity = false, module = true, visibility = PRIVATE, omit = true)
+    @JRubyMethod(name = {"raise", "fail"}, optional = 4, checkArity = false, module = true, visibility = PRIVATE, omit = true, keywords = true)
     public static IRubyObject raise(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         int argc = args.length;
         boolean forceCause = false;
 
         // semi extract_raise_opts :
+        int callInfo = ThreadContext.resetCallInfo(context);
         IRubyObject cause = null;
-        if (argc > 0) {
+        if (ThreadContext.hasNonemptyKeywords(callInfo) && argc > 0) {
             IRubyObject last = args[argc - 1];
             if (last instanceof RubyHash opt) {
                 RubySymbol key;
