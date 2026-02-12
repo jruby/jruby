@@ -39,6 +39,8 @@
 
 package org.jruby;
 
+import com.dynatrace.hash4j.hashing.Hasher64;
+import com.dynatrace.hash4j.hashing.Hashing;
 import jnr.posix.POSIX;
 
 import org.jcodings.Config;
@@ -172,6 +174,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     // Follow-up work should reevaluate this value (Currently only explicit capacity to initialize is using
     // this value).
     private static final int STRING_MINIMUM_SIZE = 4;
+    private static final Hasher64 RAPIDHASHER = Hashing.rapidhash3(Ruby.getHashSeed0());
 
     public static RubyString[] NULL_ARRAY = {};
 
@@ -1584,8 +1587,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                     Ruby.getHashSeed1(), value.getUnsafeBytes(), value.getBegin(),
                     value.getRealSize());
         } else {
-            hash = PerlHash.hash(Ruby.getHashSeed0(),
-            value.getUnsafeBytes(), value.getBegin(), value.getRealSize());
+//            hash = PerlHash.hash(Ruby.getHashSeed0(),
+//            value.getUnsafeBytes(), value.getBegin(), value.getRealSize());
+            hash = RAPIDHASHER.hashBytesToLong(value.getUnsafeBytes(), value.getBegin(), value.getRealSize());
         }
         hash ^= (enc.isAsciiCompatible() && scanForCodeRange() == CR_7BIT ? 0 : enc.getIndex());
         return (int) hash;
