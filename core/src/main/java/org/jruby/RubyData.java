@@ -125,7 +125,7 @@ public class RubyData {
             String keyString = toSymbol(context, k).idString();
             VariableAccessor variableAccessor = variableAccessors.get(keyString);
             if (variableAccessor != null) {
-                selfObj.setInternalVariable(keyString, v);
+                selfObj.setInstanceVariable(keyString, v);
             } else {
                 RubyArray unknownKeywords = unknownKeywordsPtr[0];
                 if (unknownKeywords == null) {
