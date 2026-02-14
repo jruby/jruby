@@ -905,6 +905,30 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
         return asFixnum(context, value.testBit((int)position) ? 1: 0);
     }
 
+    // MRI: rb_big_aref2
+    @Override
+    public IRubyObject op_aref(ThreadContext context, IRubyObject index, IRubyObject length) {
+        long shift = index.convertToInteger().asLong(context);
+        if (shift >= Integer.MAX_VALUE) {
+            throw rangeError(context, "offset too big");
+        }
+        if (shift <= Integer.MIN_VALUE) {
+            return RubyFixnum.zero(context.runtime);
+        }
+        BigInteger shifted = value.shiftRight((int) shift);
+        long bitLength = length.convertToInteger().asLong(context);
+        long len = bitLength;
+        if (value.signum() > 0) {
+            len = Math.min(bitLength, shifted.bitLength());
+        }
+        if (len >= Integer.MAX_VALUE) {
+            throw rangeError(context, "length too big");
+        }
+        BigInteger mask = BigInteger.ONE.shiftLeft((int) bitLength).subtract(BigInteger.ONE);
+        BigInteger slice = shifted.and(mask);
+        return bignorm(context.runtime, slice);
+    }
+
     private enum BIGNUM_OP_T {
         BIGNUM_OP_GT,
         BIGNUM_OP_GE,
