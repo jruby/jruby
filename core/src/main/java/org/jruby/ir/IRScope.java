@@ -246,6 +246,7 @@ public abstract class IRScope implements ParseResult {
 
     public void setIsMaybeUsingRefinements() {
         maybeUsingRefinements = true;
+        fullInterpreterContext = null;
     }
 
     public boolean parentMaybeUsingRefinements() {
