@@ -1133,7 +1133,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     // MRI: rb_obj_inspect
     public IRubyObject inspect(ThreadContext context) {
         return !isImmediate() && !(this instanceof RubyModule) && hasVariables() ?
-                hashyInspect(context) : to_s(context);
+                hashyInspect(context) : Convert.anyToString(context, this);
     }
 
     @Deprecated(since = "10.1.0.0")
@@ -1150,18 +1150,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         RubyString part = inspectPrefix(context, metaClass.getRealClass(), inspectHashCode());
 
-        Ruby runtime = context.runtime;
-
-        if (runtime.isInspecting(this)) {
-            encStrBufCat(runtime, part, SPACE_DOT_DOT_DOT_GT);
-            return part;
-        }
-        try {
-            runtime.registerInspecting(this);
-            return inspectObj(context, part, ivars);
-        } finally {
-            runtime.unregisterInspecting(this);
-        }
+        return context.safeRecurse(
+                (ctx, p, obj, recur) -> inspectObj(ctx, p, ivars, recur),
+                part, this, "inspect", true);
     }
 
     // MRI: rb_inspect, which does dispatch
@@ -1199,8 +1190,13 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * The internal helper method that takes care of the part of the
      * inspection that inspects instance variables.
      */
-    private RubyString inspectObj(final ThreadContext context, RubyString part, IRubyObject ivars) {
+    private RubyString inspectObj(final ThreadContext context, RubyString part, IRubyObject ivars, boolean recur) {
         Ruby runtime = context.runtime;
+
+        if (recur) {
+            encStrBufCat(runtime, part, SPACE_DOT_DOT_DOT_GT);
+            return part;
+        }
 
         if (ivars == null || ivars.isNil()) {
             // no ivars specified, do all of them
