@@ -1851,8 +1851,6 @@ public class IRRuntimeHelpers {
                     ids(context.runtime, id), "\" for ", obj.getMetaClass().rubyBaseName(context)));
         }
 
-        // if (obj.isFrozen()) throw context.runtime.newFrozenError("object");
-
         return obj.singletonClass(context);
     }
 
