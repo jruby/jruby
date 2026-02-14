@@ -905,6 +905,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             RubyModule cloneMod = (RubyModule)clone;
             cloneMod.syncConstants((RubyModule)original);
             cloneMod.syncClassVariables((RubyModule)original);
+            cloneMod.initializeCopiedModule(context, original);
         }
     }
 

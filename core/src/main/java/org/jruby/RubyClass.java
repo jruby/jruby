@@ -1099,16 +1099,11 @@ public class RubyClass extends RubyModule {
         }
     }
 
-    /** rb_class_init_copy
-     *
+    /**
+     * Class-specific logic for {@link RubyModule#initializeCopiedModule(ThreadContext, IRubyObject)}
      */
-    @JRubyMethod(name = "initialize_copy", visibility = PRIVATE)
-    public IRubyObject initialize_copy(ThreadContext context, IRubyObject original) {
-        checkNotInitialized(context);
-        if (original == basicObjectClass(context)) throw typeError(context, "can't copy the root class");
-        if (original instanceof MetaClass) throw typeError(context, "can't copy singleton class");
-
-        super.initialize_copy(context, original);
+    public IRubyObject initializeCopiedModule(ThreadContext context, IRubyObject original) {
+        super.initializeCopiedModule(context, original);
         RubyClass originalClazz = (RubyClass) original;
         allocator = originalClazz.allocator;
 

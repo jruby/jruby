@@ -3122,12 +3122,14 @@ public class RubyModule extends RubyObject {
         return clone;
     }
 
-    /** mri: rb_mod_init_copy
+    /**
+     * mri: rb_mod_init_copy
      *
+     * This no longer overrides {@link RubyBasicObject#initialize_copy(ThreadContext, IRubyObject)} to ensure a cloned
+     * class or module is internally initialized before calling any user `initialize_copy` that might be defined.
      */
-    @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE)
-    public IRubyObject initialize_copy(ThreadContext context, IRubyObject original) {
-        if (this instanceof RubyClass klazz) checkSafeTypeToCopy(context, klazz);
+    public IRubyObject initializeCopiedModule(ThreadContext context, IRubyObject original) {
+        if (original instanceof RubyClass klazz) checkSafeTypeToCopy(context, klazz);
 
         super.initialize_copy(context, original);
 
@@ -3152,7 +3154,7 @@ public class RubyModule extends RubyObject {
         var BasicObject = basicObjectClass(context);
         if (original == BasicObject) throw typeError(context, "can't copy the root class");
         if (getSuperClass() == BasicObject) throw typeError(context, "already initialized class");
-        if (original.isSingleton()) throw typeError(context, "can't copy singleton class");
+        if (original instanceof MetaClass) throw typeError(context, "can't copy singleton class");
     }
 
     public void syncConstants(RubyModule other) {
