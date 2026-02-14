@@ -315,7 +315,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
    protected final void testFrozen() {
        if (isFrozen()) {
            var context = getRuntime().getCurrentContext();
-           throw context.runtime.newFrozenError((isClass() ? "Class: " : (isModule() ? "Module: " : "object: ")) + inspect(context), this);
+           throw context.runtime.newFrozenError((isClass() ? "Class: " : (isModule() ? "Module: " : "Object: ")) + inspect(context), this);
        }
    }
 
