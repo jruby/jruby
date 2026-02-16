@@ -1365,7 +1365,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     // mri: FilePathValue/rb_get_path/rb_get_patch_check
     public static RubyString get_path(ThreadContext context, IRubyObject path) {
-        if (path instanceof RubyString) return checkEmbeddedNulls(context, path);
+        if (path instanceof RubyString) return filePathConvert(context, (RubyString) path);
 
         FileSites sites = sites(context);
         if (sites.respond_to_to_path.respondsTo(context, path, path, true)) path = sites.to_path.call(context, path, path);
@@ -1377,6 +1377,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     // mri: file_path_convert
     protected static RubyString filePathConvert(ThreadContext context, RubyString path) {
         checkEmbeddedNulls(context, path);
+
+        if (!path.getEncoding().isAsciiCompatible()) {
+            throw context.runtime.newEncodingCompatibilityError("path name must be ASCII-compatible (" + path.getEncoding() + "): " + path);
+        }
 
         if (!Platform.IS_WINDOWS) {
             var encodingService = encodingService(context);
