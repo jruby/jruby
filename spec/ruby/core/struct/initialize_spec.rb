@@ -48,4 +48,15 @@ describe "Struct#initialize" do
     positional_args.version.should == keyword_args.version
     positional_args.platform.should == keyword_args.platform
   end
+
+  it "accepts positional arguments with empty keyword arguments" do
+    data = StructClasses::Single.new(42, **{})
+
+    data.value.should == 42
+
+    data = StructClasses::Ruby.new("3.2", "OS", **{})
+
+    data.version.should == "3.2"
+    data.platform.should == "OS"
+  end
 end
