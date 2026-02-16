@@ -92,7 +92,7 @@ public class JavaEmbedUtilsTest {
         assertEquals("barbarbar", javaStr);
 
         Object val = JavaEmbedUtils.rubyToJava(newEmptyArray(context));
-        assertEquals("org.jruby.RubyArray", val.getClass().getName());
+        assertEquals("org.jruby.RubyArrayNative", val.getClass().getName());
     }
 
     @Test

@@ -45,6 +45,11 @@ public class Create {
         return RubyArray.newArray(context, length);
     }
 
+    public static RubyArrayNative<?> allocNativeArray(ThreadContext context, int length) {
+        // note: this cannot be newBlankArray because packed arrays only exist fully populated.
+        return RubyArrayNative.newArray(context, length);
+    }
+
     /**
      * Create an empty array with a specific allocated size.  This should be used to
      * make an array where you think you know how big the array will be and you plan on
@@ -67,6 +72,10 @@ public class Create {
         return allocArray(context, checkLength(context, length));
     }
 
+    public static RubyArrayNative<?> allocNativeArray(ThreadContext context, long length) {
+        // note: this cannot be newBlankArray because packed arrays only exist fully populated.
+        return allocNativeArray(context, checkLength(context, length));
+    }
 
     /**
      * Create a new array with a single element.

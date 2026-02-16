@@ -1619,7 +1619,7 @@ public final class Ruby implements Constantizable {
         return null;
     }
 
-    public static final int NIL_PREFILLED_ARRAY_SIZE = RubyArray.ARRAY_DEFAULT_SIZE * 8;
+    public static final int NIL_PREFILLED_ARRAY_SIZE = RubyArrayNative.ARRAY_DEFAULT_SIZE * 8;
     private final IRubyObject nilPrefilledArray[];
 
     public IRubyObject[] getNilPrefilledArray() {

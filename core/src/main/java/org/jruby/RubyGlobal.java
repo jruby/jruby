@@ -532,7 +532,7 @@ public class RubyGlobal {
         public IRubyObject each(final ThreadContext context, final Block block) {
             if (!block.isGiven()) return super.each(context, block);
 
-            RubyArray ary = new RubyArray(context.runtime, size());
+            RubyArray ary = RubyArray.newArray(context.runtime, size());
 
             visitAll(context, EachVisitor, ary);
 
@@ -584,7 +584,7 @@ public class RubyGlobal {
         @JRubyMethod(name = "keys")
         public RubyArray keys(final ThreadContext context) {
             try {
-                RubyArray keys = RubyArray.newBlankArrayInternal(context.runtime, size());
+                RubyArray keys = RubyArrayNative.newBlankArrayInternal(context.runtime, size());
 
                 visitAll(context, StoreKeyVisitor, keys);
 
