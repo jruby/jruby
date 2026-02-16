@@ -2021,6 +2021,11 @@ public class IRRuntimeHelpers {
      */
     @JIT @Interp
     public static RubyArray splatArray(ThreadContext context, IRubyObject ary, boolean dupArray) {
+        // FIXME: In MRI this is adds ARG_SPLAT vs ARG_SPLAT_MUT and will return a cache frozen empty array if not mut
+        // To add this we need another boolean passed from splatarray instr which then needs to add this new field and
+        // detect literal *nil.
+        if (ary.isNil()) return newEmptyArray(context); // Ruby 4+: *nil does not to_ary
+
         IRubyObject tmp = TypeConverter.convertToTypeWithCheck(context, ary, arrayClass(context), sites(context).to_a_checked);
 
         if (tmp.isNil()) return newArray(context, ary);
