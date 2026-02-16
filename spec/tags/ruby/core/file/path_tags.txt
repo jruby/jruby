@@ -1,3 +1,1 @@
 fails:File#path preserves the encoding of the path
-fails:File.path raises Encoding::CompatibilityError for ASCII-incompatible string argument
-fails:File.path raises Encoding::CompatibilityError when #to_path result is ASCII-incompatible
