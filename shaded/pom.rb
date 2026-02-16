@@ -23,7 +23,9 @@ project 'JRuby Core' do
                   },
                   relocations: [
                     { pattern: 'org.objectweb', shadedPattern: 'org.jruby.org.objectweb' },
-                    { pattern: 'me.qmx.jitescript', shadedPattern: 'org.jruby.me.qmx.jitescript' }
+                    { pattern: 'me.qmx.jitescript', shadedPattern: 'org.jruby.me.qmx.jitescript' },
+                    { pattern: 'com.dylibso.chicory', shadedPattern: 'com.jruby.internal.org.dylibso.chicory'},
+                    { pattern: 'org.prism', shadedPattern: 'org.jruby.internal.prism'}
                   ],
                   transformers: [{ :@implementation => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
                                    mainClass: 'org.jruby.main.Main',
@@ -77,12 +79,17 @@ project 'JRuby Core' do
                         # maven/jruby-complete/pom.rb
                         includes: ['com.github.jnr:jnr-ffi',
                                    'me.qmx.jitescript:jitescript',
-                                   'org.ow2.asm:*'],
+                                   'org.ow2.asm:*',
+                                   'com.dylibso:*',
+                                   'org.jruby:jruby-prism',
+                                   'org.jruby:chicory-prism'],
                         excludes: 'javax.annotation:javax.annotation-api'
                       },
                       relocations: [
                         { pattern: 'org.objectweb', shadedPattern: 'org.jruby.org.objectweb' },
-                        { pattern: 'me.qmx.jitescript', shadedPattern: 'org.jruby.me.qmx.jitescript' }
+                        { pattern: 'me.qmx.jitescript', shadedPattern: 'org.jruby.me.qmx.jitescript' },
+                        { pattern: 'com.dylibso.chicory', shadedPattern: 'org.jruby.internal.com.dylibso.chicory'},
+                        { pattern: 'org.prism', shadedPattern: 'org.jruby.internal.prism'}
                       ],
                       transformers: [{ :@implementation => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
                                        :mainClass => 'org.jruby.main.Main',
