@@ -534,8 +534,8 @@ public class RubyStruct extends RubyObject {
     public IRubyObject initialize(ThreadContext context, IRubyObject arg0) {
         boolean keywords = hasNonemptyKeywords(ThreadContext.resetCallInfo(context));
 
-        if (keywords) {
-            return setupStructValuesFromHash(context, (RubyHash) arg0);
+        if (keywords && arg0 instanceof RubyHash hash) {
+            return setupStructValuesFromHash(context, hash);
         } else if (RubyStruct.getInternalVariable(context, classOf(), KEYWORD_INIT_VAR).isTrue()) {
             if (!(arg0 instanceof RubyHash hash)) throw argumentError(context, 1, 0);
             return setupStructValuesFromHash(context, hash);
