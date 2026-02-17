@@ -64,14 +64,26 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
         hasClosure = closure != NullBlock.INSTANCE;
         this.name = name;
         this.callType = callType;
-        this.callSite = callSite == null ? getCallSiteFor(scope, callType, name.idString(), callSiteId, hasLiteralClosure(), potentiallyRefined) : callSite;
+
+        boolean effectivelyRefined = potentiallyRefined || (scope != null && scope.maybeUsingRefinements());
+        boolean hasUnrefinedCallSite = callSite != null && !(callSite instanceof RefinedCachingCallSite);
+        if (effectivelyRefined && hasUnrefinedCallSite) {
+            callSite = null;
+        }
+
+        if (callSite == null) {
+          this.callSite = getCallSiteFor(scope, callType, name.idString(), callSiteId, hasLiteralClosure(), effectivelyRefined);
+        } else {
+          this.callSite = callSite;
+        }
+
         splatMap = IRRuntimeHelpers.buildSplatMap(args);
         flagsComputed = false;
         canBeEval = true;
         targetRequiresCallersBinding = true;
         targetRequiresCallersFrame = true;
         dontInline = false;
-        this.potentiallyRefined = potentiallyRefined;
+        this.potentiallyRefined = effectivelyRefined;
 
         captureFrameReadsAndWrites();
     }

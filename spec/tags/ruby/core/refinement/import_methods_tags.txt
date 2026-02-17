@@ -1,2 +1,0 @@
-fails:Refinement#import_methods imports methods from multiple modules so that methods see other's module's methods
-fails:Refinement#import_methods imports methods from module so that methods can see each other
