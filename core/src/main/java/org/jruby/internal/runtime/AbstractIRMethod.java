@@ -33,6 +33,7 @@ import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.IRMethodArgs;
+import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
@@ -169,7 +170,12 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
     @Override
     public Object clone() {
         try {
-            return super.clone();
+            AbstractIRMethod clone = (AbstractIRMethod) super.clone();
+            clone.callCount = 0;
+            if (clone instanceof MixedModeIRMethod mixedMode) {
+                mixedMode.reset();
+            }
+            return clone;
         } catch (CloneNotSupportedException cnse) {
             throw new RuntimeException("not cloneable: " + this);
         }

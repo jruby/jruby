@@ -25,7 +25,6 @@ import java.util.Set;
 import static org.jruby.ir.IRFlags.*;
 
 public abstract class CallBase extends NOperandInstr implements ClosureAcceptingInstr, Site {
-    public static long callSiteCounter = 1;
     private static final EnumSet<FrameField> ALL = EnumSet.allOf(FrameField.class);
 
     public transient long callSiteId;
@@ -49,33 +48,17 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     // main constructor
     protected CallBase(IRScope scope, Operation op, CallType callType, RubySymbol name, Operand receiver,
                        Operand[] args, Operand closure, int flags, boolean potentiallyRefined) {
-        this(scope, op, callType, name, receiver, args, closure, flags, potentiallyRefined, null, callSiteCounter++);
-    }
-
-    // clone constructor
-    protected CallBase(IRScope scope, Operation op, CallType callType, RubySymbol name, Operand receiver,
-                       Operand[] args, Operand closure, int flags, boolean potentiallyRefined, CallSite callSite,
-                       long callSiteId) {
         super(op, arrayifyOperands(receiver, args, closure));
 
         this.flags = flags;
-        this.callSiteId = callSiteId;
+        this.callSiteId = scope.getManager().nextCallSiteID();
         argsCount = args.length;
         hasClosure = closure != NullBlock.INSTANCE;
         this.name = name;
         this.callType = callType;
 
         boolean effectivelyRefined = potentiallyRefined || (scope != null && scope.maybeUsingRefinements());
-        boolean hasUnrefinedCallSite = callSite != null && !(callSite instanceof RefinedCachingCallSite);
-        if (effectivelyRefined && hasUnrefinedCallSite) {
-            callSite = null;
-        }
-
-        if (callSite == null) {
-          this.callSite = getCallSiteFor(scope, callType, name.idString(), callSiteId, hasLiteralClosure(), effectivelyRefined);
-        } else {
-          this.callSite = callSite;
-        }
+        this.callSite = getCallSiteFor(scope, callType, name.idString(), callSiteId, hasLiteralClosure(), effectivelyRefined);
 
         splatMap = IRRuntimeHelpers.buildSplatMap(args);
         flagsComputed = false;

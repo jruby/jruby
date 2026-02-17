@@ -16,7 +16,6 @@ import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -32,16 +31,6 @@ public class UnresolvedSuperInstr extends CallInstr {
 
     private static final ByteList DYNAMIC_SUPER_TARGET =
             new ByteList("-dynamic-super_target-".getBytes(), USASCIIEncoding.INSTANCE, false);
-
-    // clone constructor
-    public UnresolvedSuperInstr(IRScope scope, Operation op, Variable result, Operand receiver, Operand[] args,
-                                Operand closure, int flags, boolean isPotentiallyRefined, CallSite callSite,
-                                long callSiteId) {
-        super(scope, op, CallType.SUPER, result, scope.getManager().getRuntime().newSymbol(DYNAMIC_SUPER_TARGET),
-                receiver, args, closure, flags, isPotentiallyRefined, callSite, callSiteId);
-
-        isLiteralBlock = closure instanceof WrappedIRClosure;
-    }
 
     // normal constructor
     public UnresolvedSuperInstr(IRScope scope, Operation op, Variable result, Operand receiver, Operand[] args,
@@ -72,7 +61,7 @@ public class UnresolvedSuperInstr extends CallInstr {
         return new UnresolvedSuperInstr(ii.getScope(), Operation.UNRESOLVED_SUPER, ii.getRenamedVariable(getResult()),
                 getReceiver().cloneForInlining(ii), cloneCallArgs(ii),
                 getClosureArg().cloneForInlining(ii), getFlags(),
-                isPotentiallyRefined(), getCallSite(), getCallSiteId());
+                isPotentiallyRefined());
     }
 
     public static UnresolvedSuperInstr decode(IRReaderDecoder d) {

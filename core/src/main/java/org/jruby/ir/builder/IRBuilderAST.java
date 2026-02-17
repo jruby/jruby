@@ -2762,7 +2762,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         int[] flags = new int[] { 0 };
         Operand value = buildYieldArgs(argNode, flags);
 
-        addInstr(new YieldInstr(result, getYieldClosureVariable(), value, flags[0], unwrap));
+        addInstr(new YieldInstr(scope, result, getYieldClosureVariable(), value, flags[0], unwrap));
 
         return result;
     }
