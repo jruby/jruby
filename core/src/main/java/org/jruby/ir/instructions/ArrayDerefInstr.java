@@ -14,7 +14,6 @@ import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -36,16 +35,6 @@ public class ArrayDerefInstr extends OneOperandArgNoBlockCallInstr {
         return new ArrayDerefInstr(scope, result, obj, arg0, flags);
     }
 
-    // clone constructor
-    public ArrayDerefInstr(IRScope scope, Variable result, Operand obj, FrozenString arg0, int flags,
-                           CallSite callSite, long callSiteId) {
-        super(scope, Operation.ARRAY_DEREF, CallType.FUNCTIONAL, result,
-                scope.getManager().getRuntime().newSymbol(AREF), obj, new Operand[] {arg0}, flags, false,
-                callSite, callSiteId);
-
-        key = arg0;
-    }
-
     // normal constructor
     public ArrayDerefInstr(IRScope scope, Variable result, Operand obj, FrozenString arg0, int flags) {
         super(scope, Operation.ARRAY_DEREF, CallType.FUNCTIONAL, result,
@@ -57,7 +46,7 @@ public class ArrayDerefInstr extends OneOperandArgNoBlockCallInstr {
     @Override
     public Instr clone(CloneInfo ii) {
         return new ArrayDerefInstr(ii.getScope(), (Variable) getResult().cloneForInlining(ii),
-                getReceiver().cloneForInlining(ii), key, getFlags(), getCallSite(), getCallSiteId());
+                getReceiver().cloneForInlining(ii), key, getFlags());
     }
 
     @Override

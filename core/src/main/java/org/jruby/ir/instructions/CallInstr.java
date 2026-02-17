@@ -11,18 +11,13 @@ import org.jruby.ir.instructions.specialized.OneOperandArgBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.TwoOperandArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
-import org.jruby.ir.operands.Hash;
 import org.jruby.ir.operands.NullBlock;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
-import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
-import org.jruby.util.KeyValuePair;
-
-import java.util.List;
 
 /*
  * args field: [self, receiver, *args]
@@ -64,16 +59,6 @@ public class CallInstr extends CallBase implements ResultInstr {
     public CallInstr(IRScope scope, CallType callType, Variable result, RubySymbol name, Operand receiver, Operand[] args,
                      Operand closure, int flags, boolean potentiallyRefined) {
         this(scope, Operation.CALL, callType, result, name, receiver, args, closure, flags, potentiallyRefined);
-    }
-
-    // clone constructor
-    protected CallInstr(IRScope scope, Operation op, CallType callType, Variable result, RubySymbol name, Operand receiver,
-                                Operand[] args, Operand closure, int flags, boolean potentiallyRefined, CallSite callSite, long callSiteId) {
-        super(scope, op, callType, name, receiver, args, closure, flags, potentiallyRefined, callSite, callSiteId);
-
-        assert result != null;
-
-        this.result = result;
     }
 
     // normal constructor
@@ -141,8 +126,8 @@ public class CallInstr extends CallBase implements ResultInstr {
         return new CallInstr(ii.getScope(), getOperation(), getCallType(), ii.getRenamedVariable(result), getName(),
                 getReceiver().cloneForInlining(ii), cloneCallArgs(ii),
                 getClosureArg().cloneForInlining(ii),
-                getFlags(), isPotentiallyRefined(),
-                getCallSite(), getCallSiteId());
+                getFlags(), isPotentiallyRefined()
+        );
     }
 
     @Override
