@@ -297,7 +297,7 @@ public class RubyNumeric extends RubyObject {
     @Deprecated(since = "10.0.0.0")
     public static long float2long(RubyFloat flt) {
         final double aFloat = flt.value;
-        if (aFloat <= (double) Long.MAX_VALUE && aFloat >= (double) Long.MIN_VALUE) {
+        if (aFloat < (double) Long.MAX_VALUE && aFloat >= (double) Long.MIN_VALUE) {
             return (long) aFloat;
         }
         // TODO: number formatting here, MRI uses "%-.10g", 1.4 API is a must?
