@@ -183,14 +183,43 @@ public class IRClosure extends IRScope {
         return this.body = shouldJit ? new MixedModeIRBlockBody(this, signature) : new InterpretedIRBlockBody(this, signature);
     }
 
-    // FIXME: This is too strict.  We can use any closure which does not dip below the define_method closure.  This
-    // will deopt any nested block which dips out of itself.
-    public boolean isNestedClosuresSafeForMethodConversion() {
+    /**
+     * Makes sure any nested closures do not look outside the closure being converted.  It is fine if they
+     * look at their parents though.
+      * @param outerClosure the closure potentially being converted to a method
+     * @return true if nothing reaches out of the closure being converted
+     */
+    public boolean isNestedClosuresSafeForMethodConversion(IRClosure outerClosure) {
         for (IRClosure closure: getClosures()) {
-            if (!closure.isNestedClosuresSafeForMethodConversion()) return false;
+            if (!closure.isNestedClosuresSafeForMethodConversion(outerClosure)) return false;
         }
 
-        return !accessesParentsLocalVariables();
+        return !accessesParentsLocalVariables() || !accessesVariablesAbove(outerClosure);
+    }
+
+    private boolean accessesVariablesAbove(IRClosure outerClosure) {
+        var depthTo = depthTo(outerClosure);
+        var scope = getStaticScope();
+
+        for (String name: scope.getAllNamesInScope()) {
+            int location = scope.isDefined(name);
+            int depth = location >> 16;
+            if (depth > depthTo) return true;
+        }
+        return false;
+    }
+
+    private int depthTo(IRClosure outerClosure) {
+        int depth = 0;
+        IRScope scope = this;
+        for (; scope != null && scope != outerClosure; scope = scope.getLexicalParent()) {
+            depth++;
+        }
+
+        // This should never happen in the context it is used.
+        if (scope == null) throw new RuntimeException("Could not find parent closure");
+
+        return depth;
     }
 
     public IRMethod convertToMethod(ByteList name) {
@@ -200,7 +229,7 @@ public class IRClosure extends IRScope {
             accessesParentsLocalVariables() ||  // Built methods cannot search down past method scope
             receivesClosureArg() ||             // we pass in captured block at define_method as block so explicits ones not supported
             usesZSuper() ||                     // methods defined from closures cannot use zsuper
-            !isNestedClosuresSafeForMethodConversion()) {
+            !isNestedClosuresSafeForMethodConversion(this)) {
             source = null;
             return null;
         }
