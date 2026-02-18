@@ -1137,7 +1137,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     // MRI: rb_obj_inspect
     public IRubyObject inspect(ThreadContext context) {
         return !isImmediate() && !(this instanceof RubyModule) && hasVariables() ?
-                hashyInspect(context) : Convert.anyToString(context, this);
+                hashyInspect(context) : to_s(context);
     }
 
     @Deprecated(since = "10.1.0.0")
