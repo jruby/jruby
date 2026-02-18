@@ -606,6 +606,7 @@ public final class Ruby implements Constantizable {
         loadService.provide("fiber.rb");
         loadService.provide("ruby2_keywords.rb");
         loadService.provide("set.rb");
+        loadService.provide("pathname.rb");
 
         // Load preludes
         initRubyPreludes();
