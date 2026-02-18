@@ -402,13 +402,6 @@ public class RubyData {
 
         RubyClass subclass = RubyClass.newClass(runtime, superClass);
 
-        VariableTableManager vtm = subclass.getVariableTableManager();
-        VariableAccessor[] accessors = new VariableAccessor[keySet.size()];
-        int i = 0;
-        for (RubySymbol sym : keySet) {
-            accessors[i++] = vtm.getVariableAccessorForWrite(sym.idString());
-        }
-
         ObjectAllocator allocator =
                 runtime.getObjectSpecializer()
                         .specializeForVariables(
@@ -416,6 +409,18 @@ public class RubyData {
                                 keySet.stream().map(RubySymbol::idString).collect(Collectors.toSet()));
 
         subclass.allocator(allocator);
+
+        VariableTableManager vtm = subclass.getVariableTableManager();
+        VariableAccessor[] accessors = new VariableAccessor[keySet.size()];
+        int i = 0;
+        for (RubySymbol sym : keySet) {
+            VariableAccessor accessor = vtm.getVariableAccessorForWrite(sym.idString());
+
+            accessors[i++] = accessor;
+
+            // TODO: AttrReader expects to potentially see many variable tables; this could be simplified
+            subclass.addMethod(context, sym.idString(), new AttrReaderMethod(subclass, Visibility.PUBLIC, accessor));
+        }
 
         RubyArray members = newArray(context, keySet);
         members.freeze(context);
@@ -426,12 +431,6 @@ public class RubyData {
 
         dataSClass.undefMethods(context, "define")
                 .defineMethods(context, DataMethods.class);
-
-        for (RubySymbol sym : keySet) {
-            VariableAccessor accessor = vtm.getVariableAccessorForWrite(sym.idString());
-            // TODO: AttrReader expects to potentially see many variable tables; this could be simplified
-            subclass.addMethod(context, sym.idString(), new AttrReaderMethod(subclass, Visibility.PUBLIC, accessor));
-        }
 
         return subclass;
     }
