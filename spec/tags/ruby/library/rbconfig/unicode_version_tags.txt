@@ -1,0 +1,1 @@
+fails(not updated unicode yet, https://github.com/jruby/jruby/issues/9250):RbConfig::CONFIG['UNICODE_VERSION'] is 17.0.0
