@@ -300,9 +300,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                     if (getStatus() == Status.SLEEP) exitSleep();
 
                     // if it's a Ruby exception, force the cause through
-                    IRubyObject[] args = err instanceof RubyException exc ?
-                            Helpers.arrayOf(err, RubyHash.newKwargs(runtime, "cause", exc.cause(context))) :
-                            Helpers.arrayOf(err);
+                    IRubyObject[] args;
+                    if (err instanceof RubyException exc ) {
+                        context.callInfo = ThreadContext.CALL_KEYWORD;
+                        args = Helpers.arrayOf(err, RubyHash.newKwargs(runtime, "cause", exc.cause(context)));
+                    } else {
+                        args = Helpers.arrayOf(err);
+                    }
                     RubyKernel.raise(context, this, args, Block.NULL_BLOCK);
                 }
             }
@@ -1492,10 +1496,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return genericRaise(context, context.getThread(), exception, message);
     }
 
-    @JRubyMethod(optional = 4, checkArity = false)
+    @JRubyMethod(optional = 4, checkArity = false, keywords = true)
     public IRubyObject raise(ThreadContext context, IRubyObject[] args, Block block) {
-        Arity.checkArgumentCount(context, args, 0, 4);
-
         return genericRaise(context, context.getThread(), args);
     }
 
@@ -1521,7 +1523,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     private IRubyObject genericRaise(ThreadContext context, RubyThread currentThread, IRubyObject... args) {
-        if (!isAlive()) return context.nil;
+        if (!isAlive()) {
+            ThreadContext.resetCallInfo(context);
+            return context.nil;
+        }
 
         pendingInterruptEnqueue(prepareRaiseException(context, args));
         interrupt();
@@ -1534,14 +1539,14 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     public static IRubyObject prepareRaiseException(ThreadContext context, IRubyObject[] args) {
+        int argc = args.length;
         IRubyObject errorInfo = context.getErrorInfo();
-
-        int argc = Arity.checkArgumentCount(context, args, 0, 4);
         IRubyObject tmp =  context.nil;
 
         // semi extract_raise_opts, duplicated from RubyKernel.raise
+        int callInfo = ThreadContext.resetCallInfo(context);
         IRubyObject cause = null;
-        if (argc > 0) {
+        if (ThreadContext.hasNonemptyKeywords(callInfo) && argc > 0) {
             IRubyObject last = args[argc - 1];
             if (last instanceof RubyHash opt) {
                 RubySymbol key;
@@ -1553,6 +1558,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                 }
             }
         }
+        Arity.checkArgumentCount(context, argc, 0, 3);
 
         switch (argc) {
             case 0:
