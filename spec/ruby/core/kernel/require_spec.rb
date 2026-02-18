@@ -26,8 +26,13 @@ describe "Kernel#require" do
     out = ruby_exe("puts $LOADED_FEATURES", options: '--disable-gems --disable-did-you-mean')
     features = out.lines.map { |line| File.basename(line.chomp, '.*') }
 
-    # Ignore CRuby internals
-    features -= %w[encdb transdb windows_1252 windows_31j]
+    # Ignore engine-specific internals
+    case RUBY_ENGINE
+    when "jruby"
+      features -= %w[java util]
+    else
+      features -= %w[encdb transdb windows_1252 windows_31j]
+    end
     features.reject! { |feature| feature.end_with?('-fake') }
 
     features.sort.should == provided.sort
