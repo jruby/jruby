@@ -64,4 +64,8 @@ public class IndyBranchCompiler implements BranchCompiler {
                 CheckArityBootstrap.CHECK_ARITY_SPECIFIC_ARGS,
                 required, opt, rest ? 1 : 0, restKey);
     }
+
+    public void raiseTypeError(String message) {
+        normalCompiler.raiseTypeError(message);
+    }
 }

@@ -29,6 +29,7 @@
 package org.jruby;
 
 import org.jruby.anno.JRubyClass;
+import org.jruby.api.Error;
 import org.jruby.exceptions.CatchThrow;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
@@ -91,9 +92,7 @@ public class RubyContinuation extends RubyObject {
     @Deprecated(since = "9.2.6.0")
     public IRubyObject call(ThreadContext context, IRubyObject[] args) {
         if (disabled) {
-            RubyKernel.raise(context, context.runtime.getThreadError(),
-                    new IRubyObject[]{newString(context, "continuations can not be called from outside their scope")},
-                    Block.NULL_BLOCK);
+            throw Error.typeError(context, "continuations can not be called from outside their scope");
         }
         continuation.args = args;
         throw continuation;
