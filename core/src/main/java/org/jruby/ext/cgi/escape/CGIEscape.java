@@ -38,6 +38,7 @@ import org.jruby.RubyEncoding;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.api.Define;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
@@ -506,12 +507,17 @@ public class CGIEscape implements Library {
     }
 
     public void load(Ruby runtime, boolean wrap) {
-        RubyClass rb_cCGI = runtime.defineClass("CGI", runtime.getObject(), runtime.getObject().getAllocator());
-        RubyModule rb_mEscape = rb_cCGI.defineModuleUnder("Escape");
-        RubyModule rb_mUtil = rb_cCGI.defineModuleUnder("Util");
-        rb_mEscape.defineAnnotatedMethods(CGIEscape.class);
-        rb_mUtil.prependModule(rb_mEscape);
-        rb_mEscape.extend_object(rb_cCGI);
+        ThreadContext context = runtime.getCurrentContext();
+
+        RubyClass rb_cCGI = Define.defineClass(context, "CGI", runtime.getObject(), runtime.getObject().getAllocator());
+
+        RubyModule rb_mEscapeExt =
+                Define.defineModuleUnder(context, rb_cCGI, "EscapeExt")
+                        .defineMethods(context, CGIEscape.class)
+                        .extendObject(context, rb_cCGI);
+
+        Define.defineModuleUnder(context, rb_cCGI, "Escape")
+                .prependModule(context, rb_mEscapeExt);
     }
 
     // PORTED FROM OTHER FILES IN MRI

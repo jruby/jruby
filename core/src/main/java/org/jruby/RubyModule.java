@@ -3857,6 +3857,13 @@ public class RubyModule extends RubyObject {
         return obj;
     }
 
+    @JRubyAPI
+    public RubyModule extendObject(ThreadContext context, IRubyObject obj) {
+        extend_object(context, obj);
+
+        return this;
+    }
+
     @Deprecated(since = "10.0.0.0")
     public RubyModule include(IRubyObject[] modules) {
         return include(getCurrentContext(), modules);
