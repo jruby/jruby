@@ -20,3 +20,8 @@ fails:IO::Buffer.map with flags argument when READONLY flag is specified causes 
 fails:IO::Buffer.map with flags argument when PRIVATE is specified sets private flag on the buffer, making it freely modifiable
 fails:IO::Buffer.map with flags argument when PRIVATE is specified allows mapping read-only files and modifying the buffer
 fails:IO::Buffer.map with flags argument when PRIVATE is specified is not shared across processes
+fails(native files cannot be mapped yet, https://github.com/jruby/jruby/issues/8714):IO::Buffer.map with an empty file raises ArgumentError
+fails(native files cannot be mapped yet, https://github.com/jruby/jruby/issues/8714):IO::Buffer.map with size argument raises ArgumentError if size is larger than file size
+fails(native files cannot be mapped yet, https://github.com/jruby/jruby/issues/8714):IO::Buffer.map with size argument if size is 0 raises ArgumentError
+fails(native files cannot be mapped yet, https://github.com/jruby/jruby/issues/8714):IO::Buffer.map with size and offset arguments raises ArgumentError if offset+size is larger than file size
+fails(native files cannot be mapped yet, https://github.com/jruby/jruby/issues/8714):IO::Buffer.map with size and offset arguments raises ArgumentError if offset is negative
