@@ -443,7 +443,7 @@ public class RubyData {
         if (selfObj == otherObj) return context.tru;
         RubyClass metaClass = otherObj.getMetaClass();
         if (!metaClass.isKindOfModule(context.runtime.getData())) return context.fals;
-        if (metaClass != selfObj.getMetaClass()) return context.fals;
+        if (metaClass.getRealClass() != selfObj.getMetaClass().getRealClass()) return context.fals;
 //        if (RSTRUCT_LEN(s) != RSTRUCT_LEN(s2)) {
 //            rb_bug("inconsistent struct"); /* should never happen */
 //        }
