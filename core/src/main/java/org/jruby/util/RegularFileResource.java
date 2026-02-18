@@ -214,7 +214,7 @@ class RegularFileResource implements FileResource {
     @Override
     public Channel openChannel(final int flags, int perm) throws IOException {
         final ModeFlags modeFlags = ModeFlags.createModeFlags(flags);
-        if (posix.isNative() && !Platform.IS_WINDOWS) {
+        if (posix != null && posix.isNative() && !Platform.IS_WINDOWS) {
             int fd = posix.open(absolutePath(), modeFlags.getFlags(), perm);
             if (fd < 0) throwFromErrno(posix.errno());
             posix.fcntlInt(fd, Fcntl.F_SETFD, posix.fcntl(fd, Fcntl.F_GETFD) | FcntlLibrary.FD_CLOEXEC);
