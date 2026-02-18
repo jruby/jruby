@@ -545,7 +545,7 @@ public class VariableTableManager {
         }
     }
 
-    public VariableTableManager duplicateForData(RubyClass newRealClass) {
+    public VariableTableManager duplicateFor(RubyClass newRealClass) {
         return new VariableTableManager(this, newRealClass);
     }
 

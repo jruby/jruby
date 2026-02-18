@@ -542,6 +542,7 @@ public class RubyClass extends RubyModule {
         return newClass(runtime.getCurrentContext(), superClass, name, allocator, parent, setParent, file, line);
     }
 
+    @Deprecated
     public static RubyClass newClass(ThreadContext context, RubyClass superClass, String name, ObjectAllocator allocator,
                                      RubyModule parent, boolean setParent, String file, int line) {
         assert superClass != null;
@@ -550,7 +551,6 @@ public class RubyClass extends RubyModule {
                 baseName(name);
         clazz.makeMetaClass(context, superClass.getMetaClass());
         if (setParent) clazz.setParent(parent);
-        clazz.copyVariableTableManagerForData(context, superClass);
         parent.setConstant(context, name, clazz, file, line);
         superClass.invokeInherited(context, superClass, clazz);
         return clazz;
@@ -1073,7 +1073,7 @@ public class RubyClass extends RubyModule {
         allocator = superClazz.allocator;
         makeMetaClass(context, superClazz.getMetaClass());
         superClazz.addSubclass(this);
-        copyVariableTableManagerForData(context, superClazz);
+        copyVariableTableManager(superClazz);
 
         marshal = superClazz.marshal;
 
@@ -1083,11 +1083,14 @@ public class RubyClass extends RubyModule {
         return this;
     }
 
-    private void copyVariableTableManagerForData(ThreadContext context, RubyClass superClazz) {
+    private void copyVariableTableManager(RubyClass superClazz) {
+        if (superClazz == runtime.getObject()) {
+            // don't copy variables from Object since it will accumulate random variables
+            return;
+        }
         VariableTableManager variableTableManager = superClazz.getVariableTableManager();
-        if (variableTableManager.getRealClass().superClass() == context.runtime.getData()) {
-            // duplicate data's variable table in subclasses
-            this.variableTableManager = variableTableManager.duplicateForData(this);
+        if (!variableTableManager.getVariableAccessorsForRead().isEmpty()) {
+            this.variableTableManager = variableTableManager.duplicateFor(this);
         }
     }
 
