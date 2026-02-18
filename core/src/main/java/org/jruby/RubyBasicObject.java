@@ -1029,15 +1029,19 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         MetaClass clone = new MetaClass(context.runtime, klass.getSuperClass(), attach);
         clone.flags = klass.flags;
 
-        clone.setMetaClass(this instanceof RubyClass ? clone : klass.getSingletonClassCloneAndAttach(context, null));
+        if (this instanceof RubyClass) {
+            clone.setMetaClass(clone);
+        } else {
+            MetaClass metaClone = (MetaClass) klass.getSingletonClassCloneAndAttach(context, null);
+            clone.setMetaClass(metaClone);
+            metaClone.setAttached(clone);
+        }
 
         if (klass.hasVariables()) clone.syncVariables(klass);
 
         clone.syncConstants(klass);
 
         klass.cloneMethods(context, clone);
-
-        ((MetaClass) clone.getMetaClass()).setAttached(clone);
 
         return clone;
     }
