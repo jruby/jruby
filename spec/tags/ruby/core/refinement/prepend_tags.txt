@@ -1,1 +1,0 @@
-fails:Refinement#prepend warns about deprecation
