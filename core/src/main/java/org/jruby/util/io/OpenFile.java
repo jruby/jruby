@@ -208,10 +208,18 @@ public class OpenFile implements Finalizable {
 
     public void setFD(ChannelFD fd) {
         this.fd = fd;
+        updateBlockingFromFD(fd);
     }
 
     public void setChannel(Channel fd) {
         this.fd = new ChannelFD(fd, runtime.getPosix(), runtime.getFilenoUtil());
+        updateBlockingFromFD(this.fd);
+    }
+
+    private void updateBlockingFromFD(ChannelFD fd) {
+        if (fd.chSelect != null ) {
+            this.nonblock = !fd.chSelect.isBlocking();
+        }
     }
 
     public int getMode() {

@@ -360,6 +360,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         ModeFlags modes = newModeFlags(runtime, ModeFlags.RDWR);
 
         openFile.setFD(newChannelFD(runtime, channel));
+        openFile.setBlocking(runtime, false);
         openFile.setMode(modes.getOpenFileFlags());
         openFile.setSync(true);
         openFile.setPath(path);

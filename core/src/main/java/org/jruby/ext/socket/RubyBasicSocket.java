@@ -902,6 +902,7 @@ public class RubyBasicSocket extends RubyIO {
         MakeOpenFile();
 
         openFile.setFD(fd);
+        openFile.setBlocking(getRuntime(), false);
         openFile.setMode(OpenFile.READWRITE | OpenFile.SYNC);
 
         // see rsock_init_sock in MRI; sockets are initialized to binary
