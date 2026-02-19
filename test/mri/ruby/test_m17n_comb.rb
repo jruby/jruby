@@ -1197,7 +1197,7 @@ class TestM17NComb < Test::Unit::TestCase
   def test_str_squeeze
     combination(STRINGS, STRINGS) {|s1, s2|
       if !s1.valid_encoding? || !s2.valid_encoding?
-        assert_raise(ArgumentError, Encoding::CompatibilityError, "#{encdump s1}.squeeze(#{encdump s2})") { s1.squeeze(s2) }
+        assert_raise(ArgumentError, Encoding::CompatibilityError, "#{encdump s1}.squeeze(#{encdump s2})") { s1.squeeze(s2); puts "failed: s1: #{s1.dump}, s2: #{s2.dump}, #{encdump s1}.squeeze(#{encdump s2}), squeeze returned #{s1.squeeze(s2).dump}" }
         next
       end
       if !s1.ascii_only? && !s2.ascii_only? && s1.encoding != s2.encoding
