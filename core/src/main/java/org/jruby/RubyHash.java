@@ -48,6 +48,7 @@ import org.jruby.api.Error;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ir.runtime.IRBreakJump;
+import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -535,8 +536,16 @@ public class RubyHash extends RubyObject implements Map {
     private static final boolean MRI_HASH = true;
     private static final boolean MRI_HASH_RESIZE = true;
 
-    protected final int hashValue(final IRubyObject key) {
-        final int h = isComparedByIdentity() ? System.identityHashCode(key) : key.hashCode();
+    protected final int hashValue(Object key) {
+        final int h;
+        if (isComparedByIdentity()) {
+            if (key instanceof JavaProxy) {
+                key = ((JavaProxy) key).getObject();
+            }
+            h = System.identityHashCode(key);
+        } else {
+            h = key.hashCode();
+        }
         return MRI_HASH ? MRIHashValue(h) : JavaSoftHashValue(h);
     }
 
@@ -636,8 +645,26 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     private boolean internalKeyExist(int entryHash, IRubyObject entryKey, int hash, IRubyObject key) {
-        return (entryHash == hash
-                && (entryKey == key || (!isComparedByIdentity() && key.eql(entryKey))));
+        if (entryHash == hash)
+            if (entryKey == key) {
+                // same key
+                return true;
+            } else {
+                if (isComparedByIdentity()) {
+                    // identity hash
+                    if (entryKey instanceof JavaProxy && key instanceof JavaProxy) {
+                        if (((JavaProxy) entryKey).getObject() == ((JavaProxy) key).getObject()) {
+                            // wrapped Java objects are identical
+                            return true;
+                        }
+                    }
+                } else if (key.eql(entryKey)) {
+                    // non identity but keys are ===
+                    return true;
+                }
+            }
+
+        return false;
     }
 
     // delete implementation
