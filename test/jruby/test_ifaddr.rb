@@ -9,7 +9,7 @@ class IfaddrTest < Test::Unit::TestCase
   # def test_create_with_interface_address ; end
   # def test_create_with_interface ; end
     
-  def test_addr 
+  def test_addr
     getifaddrs.each { |ifaddr| assert_instance_of(Addrinfo, ifaddr.addr) }
   end
 
@@ -19,9 +19,16 @@ class IfaddrTest < Test::Unit::TestCase
       # - ipv4 address except loopback
       # - packet address except on loopback inteface (00:00:00:00:00:00)
       # TODO: (gf) deal with point-to-point interfaces
-      if ( ifaddr.addr.ipv4? && ! ifaddr.addr.ipv4_loopback? ) ||
-         ( ifaddr.addr.afamily == Socket::AF_UNSPEC && ! ifaddr.addr.to_sockaddr.end_with?( "\x00\x00\x00\x00\x00\x00" ) )
-        assert_instance_of(Addrinfo, ifaddr.broadaddr)
+
+      #next if ifaddr.addr.ipv4_loopback?
+
+      if [Socket::AF_UNSPEC, Socket::AF_INET, Socket::AF_INET6].include?(ifaddr.addr.afamily)
+        if ifaddr.broadaddr.nil? # nil is okay with broadcast: 00:00:00:00:00:00
+          sockaddr = ifaddr.addr.to_sockaddr
+          assert(sockaddr.end_with?("\x00\x00\x00\x00\x00\x00"), "sockaddr: #{sockaddr.inspect}")
+        else
+          assert_instance_of(Addrinfo, ifaddr.broadaddr)
+        end
       else
         #assert_equal(nil, ifaddr.broadaddr) # Travis-CI point-to-point interfaces fail here
       end
@@ -48,9 +55,9 @@ class IfaddrTest < Test::Unit::TestCase
   def test_ifindex
     getifaddrs.each do |ifaddr|
       assert_instance_of(Integer, ifaddr.ifindex)
-      # NOTE: doesn't hold with NetworkManager e.g. docker0 (same under MRI)
-      # assert(ifaddr.ifindex <= getifaddrs.size) # is in expected range
-      assert(ifaddr.ifindex > 0) # lo == 1
+      ifindex = ifaddr.ifindex # is in expected range:
+      assert(ifindex <= getifaddrs.size, "ifindex: #{ifindex} (total: #{getifaddrs.size})")
+      assert(ifindex > 0, "ifindex: #{ifindex}") # lo == 1
     end
   end
 
