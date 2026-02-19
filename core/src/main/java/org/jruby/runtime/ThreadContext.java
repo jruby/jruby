@@ -718,6 +718,20 @@ public final class ThreadContext {
         }
     }
 
+    public static void pushBacktrace(ThreadContext context, RubyModule klass, String method, String file, int line) {
+        if (klass.isSingleton()) {
+            pushBacktrace(context, method, file, line);
+            return;
+        }
+
+        int index = ++context.backtraceIndex;
+        BacktraceElement[] stack = context.backtrace;
+        BacktraceElement.update(stack[index], klass.getRealModule().getName(context), Helpers.getSuperNameFromCompositeName(method), file, line);
+        if (index + 1 == stack.length) {
+            ThreadContext.expandBacktraceStack(context);
+        }
+    }
+
     public static void popBacktrace(ThreadContext context) {
         context.backtraceIndex--;
     }

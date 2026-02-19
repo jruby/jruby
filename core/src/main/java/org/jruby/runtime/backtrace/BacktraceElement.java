@@ -1,5 +1,7 @@
 package org.jruby.runtime.backtrace;
 
+import org.jruby.RubyModule;
+
 public final class BacktraceElement implements Cloneable {
 
     public static final BacktraceElement[] EMPTY_ARRAY = new BacktraceElement[0];
@@ -15,7 +17,12 @@ public final class BacktraceElement implements Cloneable {
 
     @Override
     public String toString() {
-        return method + " at " + filename + ':' + line;
+        return (klass == null ? "" : klass + "#")
+                + method
+                + " at "
+                + filename
+                + ':'
+                + line;
     }
 
     @Override
@@ -24,6 +31,13 @@ public final class BacktraceElement implements Cloneable {
     }
 
     public static void update(BacktraceElement backtrace, String method, String file, int line) {
+        backtrace.method = method;
+        backtrace.filename = file;
+        backtrace.line = line;
+    }
+
+    public static void update(BacktraceElement backtrace, String klass, String method, String file, int line) {
+        backtrace.klass = klass;
         backtrace.method = method;
         backtrace.filename = file;
         backtrace.line = line;
@@ -52,6 +66,16 @@ public final class BacktraceElement implements Cloneable {
     public void setMethod(String method) {
         this.method = method;
     }
+
+    public String getModule() {
+        return klass;
+    }
+
+    public void setModule(String klass) {
+        this.klass = klass;
+    }
+
+    public String klass;
     public String method;
     public String filename;
     public int line;
