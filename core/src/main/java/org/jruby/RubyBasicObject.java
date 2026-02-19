@@ -3119,6 +3119,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         metaClass.getVariableTableManager().deserializeVariables(this, ois);
     }
 
+    public boolean isShareable() {
+        return getFlag(ObjectFlags.SHAREABLE_F);
+    }
+
     /**
      * Retrieve the call sites for this class.
      *
