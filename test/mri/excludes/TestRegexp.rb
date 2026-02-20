@@ -32,6 +32,4 @@ exclude :test_timeout_nil, "times out without error on JRuby, adds 10s for no va
 exclude :test_to_s, "needs investigation"
 exclude :test_to_s_under_gc_compact_stress, "GC is not configurable"
 exclude :test_unescape, "needs investigation"
-exclude :test_unicode_age_15_1, "needs update to support unicode 15.1, 16 and 17, https://github.com/jruby/jruby/issues/9250"
-exclude :test_unicode_age_16_0, "needs update to support unicode 15.1, 16 and 17, https://github.com/jruby/jruby/issues/9250"
 exclude :test_union, "unfinished in initial 2.6 work, #6161"
