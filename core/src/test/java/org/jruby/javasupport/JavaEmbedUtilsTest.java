@@ -13,9 +13,15 @@ import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Create.newEmptyArray;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import org.jruby.Profile;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyString;
+import org.jruby.exceptions.NameError;
+import org.jruby.exceptions.SyntaxError;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.ThreadContext;
@@ -64,6 +70,55 @@ public class JavaEmbedUtilsTest {
         String expected = "uri:" + url; // File#toURI() adds a trailing '/' for directories
         if (expected.endsWith("/")) expected = expected.substring(0, expected.length() - 1);
         assertEquals(expected, result);
+    }
+
+    class CustomProfile implements Profile {
+        private List classAllow = List.of("String", "Fixnum", "Integer", "Numeric", "Hash", "Array",
+                "Thread", "ThreadGroup", "RubyError", "StopIteration", "LoadError", "ArgumentError", "Encoding",
+                "EncodingError", "StandardError", "Exception", "NameError", "SyntaxError", "ScriptError");
+        private List loadAllow = List.of("jruby/java.rb", "jruby/java/core_ext.rb", "jruby/java/java_ext.rb",
+                "jruby/java/core_ext/object.rb");
+
+        @Override
+        public boolean allowBuiltin(String name) {
+            return false;
+        }
+
+        @Override
+        public boolean allowClass(String name) {
+            return classAllow.contains(name);
+        }
+
+        @Override
+        public boolean allowModule(String name) {
+            return false;
+        }
+
+        @Override
+        public boolean allowLoad(String name) {
+            return loadAllow.contains(name);
+        }
+
+        @Override
+        public boolean allowRequire(String name) {
+            return false;
+        }
+    }
+
+    @Test
+    public void testRestrictedProfile() throws Exception {
+        RubyInstanceConfig config = new RubyInstanceConfig();
+        config.setDisableGems(true);
+        config.setProfile(new CustomProfile());
+
+        Ruby runtime = Ruby.newInstance(config);
+        assertEquals(20L, ((RubyFixnum) runtime.evalScriptlet("def double(a); a * 2; end; double(10)")).getValue());
+        assertThrows(NameError.class, () -> runtime.evalScriptlet("File.open('test.tmp')"));
+        assertThrows(NameError.class, () -> runtime.evalScriptlet("UDPSocket.new"));
+        assertEquals("cute_cats",((RubyString)runtime.evalScriptlet("\"cute_cats\"")).getValue());
+        assertEquals("cute_cat",((RubyString)runtime.evalScriptlet("\"cute_cats\".delete('s')")).getValue());
+        assertThrows(SyntaxError.class, () -> runtime.evalScriptlet("puts 'you shouldn't see this'"));
+        //assertThrows(NameError.class, () -> runtime.evalScriptlet("IO.sysopen('test.tmp')"));
     }
 
     @Test

@@ -515,13 +515,21 @@ public final class Ruby implements Constantizable {
         initExceptions(context);
 
         // Thread library utilities
-        mutexClass = Mutex.setup(context, threadClass, objectClass);
-        conditionVariableClass = ConditionVariable.setup(context, threadClass, objectClass);
-        queueClass = Queue.setup(context, threadClass, objectClass);
-        closedQueueError = Queue.setupError(context, queueClass, stopIteration, objectClass);
-        sizedQueueClass = SizedQueue.setup(context, threadClass, queueClass, objectClass);
-
-        fiberClass = new ThreadFiberLibrary().createFiberClass(context, objectClass);
+        if (profile.allowClass("Thread")) {
+            mutexClass = Mutex.setup(context, threadClass, objectClass);
+            conditionVariableClass = ConditionVariable.setup(context, threadClass, objectClass);
+            queueClass = Queue.setup(context, threadClass, objectClass);
+            closedQueueError = Queue.setupError(context, queueClass, stopIteration, objectClass);
+            sizedQueueClass = SizedQueue.setup(context, threadClass, queueClass, objectClass);
+            fiberClass = new ThreadFiberLibrary().createFiberClass(context, objectClass);
+        } else {
+            mutexClass = null;
+            conditionVariableClass = null;
+            queueClass = null;
+            closedQueueError = null;
+            sizedQueueClass = null;
+            fiberClass = null;
+        }
 
         dataClass = RubyData.createDataClass(context, objectClass);
 
@@ -1684,12 +1692,12 @@ public final class Ruby implements Constantizable {
         ifAllowed("KeyError",               (ruby) -> keyError = RubyKeyError.define(context, indexError));
         ifAllowed("DomainError",            (ruby) -> mathDomainError = RubyDomainError.define(context, argumentError, mathModule));
 
-        setRegexpTimeoutError(regexpClass.defineClassUnder(context, "TimeoutError", getRegexpError(), RubyRegexpError::new));
+        ifAllowed("Regex",                  (ruby) -> setRegexpTimeoutError(regexpClass.defineClassUnder(context, "TimeoutError", getRegexpError(), RubyRegexpError::new)));
 
         RubyClass runtimeError = this.runtimeError;
-        ObjectAllocator runtimeErrorAllocator = runtimeError.getAllocator();
 
-        if (Options.FIBER_SCHEDULER.load()) {
+        if (profile.allowClass("Thread") && Options.FIBER_SCHEDULER.load()) {
+            ObjectAllocator runtimeErrorAllocator = runtimeError.getAllocator();
             bufferLockedError = ioBufferClass.defineClassUnder(context, "LockedError", runtimeError, runtimeErrorAllocator);
             bufferAllocationError = ioBufferClass.defineClassUnder(context, "AllocationError", runtimeError, runtimeErrorAllocator);
             bufferAccessError = ioBufferClass.defineClassUnder(context, "AccessError", runtimeError, runtimeErrorAllocator);
@@ -1783,7 +1791,9 @@ public final class Ruby implements Constantizable {
 
     private void initRubyKernel() {
         // load Ruby parts of core
-        loadService.loadFromClassLoader(getClassLoader(), "jruby/kernel.rb", false);
+        if (profile.allowLoad("jruby/kernel")) {
+            loadService.loadFromClassLoader(getClassLoader(), "jruby/kernel.rb", false);
+        }
     }
 
     private void initRubyPreludes() {
@@ -1791,7 +1801,9 @@ public final class Ruby implements Constantizable {
         if (RubyInstanceConfig.DEBUG_PARSER) return;
 
         // load Ruby parts of core
-        loadService.loadFromClassLoader(getClassLoader(), "jruby/preludes.rb", false);
+        if (profile.allowLoad("jruby/preludes")) {
+            loadService.loadFromClassLoader(getClassLoader(), "jruby/preludes.rb", false);
+        }
     }
 
     public IRManager getIRManager() {

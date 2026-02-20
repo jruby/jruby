@@ -199,7 +199,9 @@ public class RubyGlobal {
         runtime.defineVariable(new LastlineGlobalVariable(runtime, "$_"), FRAME);
         runtime.defineVariable(new LastExitStatusVariable(runtime, "$?"), THREAD);
 
-        runtime.defineVariable(new ErrorInfoGlobalVariable(runtime, "$!", context.nil), THREAD);
+        if (runtime.getProfile().allowClass("Thread")) {
+            runtime.defineVariable(new ErrorInfoGlobalVariable(runtime, "$!", context.nil), THREAD);
+        }
         runtime.defineVariable(new NonEffectiveGlobalVariable(runtime, "$=", context.fals), GLOBAL);
 
         if(instanceConfig.getInputFieldSeparator() == null) {
