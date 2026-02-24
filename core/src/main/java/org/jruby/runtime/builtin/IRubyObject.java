@@ -471,4 +471,8 @@ public interface IRubyObject {
 
     @Deprecated(since = "9.4.0.0")
     IRubyObject infectBy(IRubyObject obj);
+
+    default boolean isShareable() {
+        return false;
+    }
 }

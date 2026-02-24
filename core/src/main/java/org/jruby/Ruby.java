@@ -50,6 +50,7 @@ import org.jruby.compiler.NotCompilableException;
 import org.jruby.exceptions.LocalJumpError;
 import org.jruby.exceptions.SystemExit;
 import org.jruby.ext.jruby.JRubyUtilLibrary;
+import org.jruby.ext.ractor.Ractor;
 import org.jruby.ext.thread.ConditionVariable;
 import org.jruby.ext.thread.Mutex;
 import org.jruby.ext.thread.Queue;
@@ -592,14 +593,16 @@ public final class Ruby implements Constantizable {
         // init Ruby-based kernel
         initRubyKernel();
 
+        if (this.config.isRactorEnabled()) loadService(context).load("jruby/kernel/ractor.rb", false);
+
         // Define blank modules for feature detection in preludes
-        if (!this.config.isDisableGems()) {
+        if (this.config.isGemsEnabled()) {
             Define.defineModule(context, "Gem");
-            if (!this.config.isDisableErrorHighlight()) {
+            if (this.config.isErrorHighlightEnabled()) {
                 warnings.warn("ErrorHighlight does not currently support JRuby and will not be loaded");
             }
-            if (!this.config.isDisableDidYouMean()) Define.defineModule(context, "DidYouMean");
-            if (!this.config.isDisableSyntaxSuggest()) Define.defineModule(context, "SyntaxSuggest");
+            if (this.config.isDidYouMeanEnabled()) Define.defineModule(context, "DidYouMean");
+            if (this.config.isSyntaxSuggestEnabled()) Define.defineModule(context, "SyntaxSuggest");
         }
 
         // Provide some legacy libraries

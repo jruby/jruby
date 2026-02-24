@@ -36,6 +36,7 @@ package org.jruby;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -804,8 +805,14 @@ public class RubyStruct extends RubyObject {
     }
 
     public IRubyObject eachInternal(ThreadContext context, Block block) {
+        visitValues(context, block);
+
+        return this;
+    }
+
+    public IRubyObject visitValues(ThreadContext context, BiFunction<ThreadContext, IRubyObject, IRubyObject> visitor) {
         for (int i = 0; i < values.length; i++) {
-            block.yield(context, values[i]);
+            visitor.apply(context, values[i]);
         }
 
         return this;

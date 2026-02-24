@@ -260,6 +260,7 @@ public class Options {
     public static final Option<Boolean> CLI_ERROR_HIGHLIGHT_ENABLE = bool(CLI, "cli.error_highlight.enable", false, "Ignored. ErrorHighlight does not currently support JRuby.");
     public static final Option<Boolean> CLI_SYNTAX_SUGGEST_ENABLE = bool(CLI, "cli.syntax_suggest.enable", true, "Enable/disable syntax_suggest.");
     public static final Option<Boolean> CLI_RUBYOPT_ENABLE = bool(CLI, "cli.rubyopt.enable", true, "Enable/disable RUBYOPT processing at start.");
+    public static final Option<Boolean> CLI_RACTOR_ENABLE = bool(CLI, "cli.ractor.enable", false, "Enable Ractor support.");
     public static final Option<Boolean> CLI_STRIP_HEADER = bool(CLI, "cli.strip.header", false, "Strip text before shebang in script. Same as -x.");
     public static final Option<Boolean> CLI_LOAD_GEMFILE = bool(CLI, "cli.load.gemfile", false, "Load a bundler Gemfile in cwd before running. Same as -G.");
 
