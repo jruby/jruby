@@ -1883,7 +1883,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
 
         first[0] = false;
 
-        context.safeRecurse(JOIN_RECURSIVE, new JoinRecursive.State(ary, outValue, sep, result, first), outValue, "join", true);
+        context.execRecursive(JOIN_RECURSIVE, new JoinRecursive.State(ary, outValue, sep, result, first), outValue, "join");
     }
 
     /** rb_ary_join
