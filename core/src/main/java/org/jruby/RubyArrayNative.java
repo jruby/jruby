@@ -1635,7 +1635,9 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
     /** inspect_ary
      *
      */
-    protected IRubyObject inspectAry(ThreadContext context) {
+    protected IRubyObject inspectAry(ThreadContext context, boolean recur) {
+        if (recur) return newSharedString(context, RECURSIVE_ARRAY_BL);
+
         RubyString str = RubyString.newStringLight(context.runtime, DEFAULT_INSPECT_STR_SIZE, USASCIIEncoding.INSTANCE);
         str.cat((byte) '[');
 
@@ -1661,14 +1663,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
     public RubyString inspect(ThreadContext context) {
         final Ruby runtime = context.runtime;
         if (realLength == 0) return newSharedString(context, EMPTY_ARRAY_BL);
-        if (runtime.isInspecting(this)) return newSharedString(context, RECURSIVE_ARRAY_BL);
-
-        try {
-            runtime.registerInspecting(this);
-            return (RubyString) inspectAry(context);
-        } finally {
-            runtime.unregisterInspecting(this);
-        }
+        return (RubyString) context.execRecursive((ctx, state, obj, recur) -> state.inspectAry(ctx, recur), this, this, "inspect");
     }
 
     // MRI: rb_ary_first

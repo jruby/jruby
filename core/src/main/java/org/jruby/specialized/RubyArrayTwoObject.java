@@ -149,8 +149,8 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
     }
 
     @Override
-    protected IRubyObject inspectAry(ThreadContext context) {
-        if (!packed()) return super.inspectAry(context);
+    protected IRubyObject inspectAry(ThreadContext context, boolean recur) {
+        if (recur || !packed()) return super.inspectAry(context, recur);
 
         final Ruby runtime = context.runtime;
         RubyString str = RubyString.newStringLight(runtime, DEFAULT_INSPECT_STR_SIZE, USASCIIEncoding.INSTANCE);
