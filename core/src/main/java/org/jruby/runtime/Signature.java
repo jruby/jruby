@@ -1,18 +1,25 @@
 package org.jruby.runtime;
 
 import org.jruby.Ruby;
+import org.jruby.RubySymbol;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgumentNode;
+import org.jruby.ast.AssignableNode;
 import org.jruby.ast.ForNode;
 import org.jruby.ast.IterNode;
+import org.jruby.ast.KeywordArgNode;
+import org.jruby.ast.KeywordRestArgNode;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.PostExeNode;
 import org.jruby.ast.PreExeNode;
 import org.jruby.ast.StarNode;
 import org.jruby.ast.UnnamedRestArgNode;
+import org.jruby.ast.types.INameNode;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
+
+import java.util.ArrayList;
 
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.runtime.Arity.UNLIMITED_ARGUMENTS;
@@ -20,7 +27,17 @@ import static org.jruby.runtime.Arity.UNLIMITED_ARGUMENTS;
 /**
  * A representation of a Ruby method signature (argument layout, min/max, keyword layout, rest args).
  */
-public class Signature {
+public record Signature(
+        short pre,
+        short opt,
+        short post,
+        Rest rest,
+        short kwargs,
+        short requiredKwargs,
+        int keyRest,
+        KeywordArgument[] keywordArguments,
+        int arityValue) {
+    
     public enum Rest {
         NONE, NORM, ANON, STAR;
 
@@ -32,6 +49,11 @@ public class Signature {
             }
             return VALUES[ordinal];
         }
+    }
+
+    public record KeywordArgument(String id, Type type) {
+        public static final KeywordArgument[] EMPTY_ARRAY = {};
+        public enum Type { OPTIONAL, REQUIRED, REST }
     }
 
     public static final Signature NO_ARGUMENTS = new Signature(0, 0, 0, Rest.NONE, 0, 0, -1);
@@ -46,24 +68,20 @@ public class Signature {
     public static final Signature FOUR_REQUIRED = new Signature(4, 0, 0, Rest.NORM, 0, 0, -1);
     public static final Signature ONE_OPT_ARGUMENT = new Signature(0, 1, 0, Rest.NONE, 0, 0, -1);
 
-    private final short pre;
-    private final short opt;
-    private final Rest rest;
-    private final short post;
-    private final short kwargs;
-    private final short requiredKwargs;
-    private final int arityValue;
-    private final int keyRest;
+    public Signature(short pre, short opt, short post, Rest rest, short kwargs, short requiredKwargs, int keyRest, KeywordArgument[] keywordArguments) {
+        this(pre, opt, post, rest, kwargs, requiredKwargs, keyRest, keywordArguments, calculateArity(pre, opt, rest, post, kwargs, requiredKwargs, keyRest));
+    }
+
+    public Signature(short pre, short opt, short post, Rest rest, short kwargs, short requiredKwargs, int keyRest) {
+        this(pre, opt, post, rest, kwargs, requiredKwargs, keyRest, KeywordArgument.EMPTY_ARRAY);
+    }
 
     public Signature(int pre, int opt, int post, Rest rest, int kwargs, int requiredKwargs, int keyRest) {
-        this.pre = (short) pre;
-        this.opt = (short) opt;
-        this.post = (short) post;
-        this.rest = rest;
-        this.kwargs = (short) kwargs;
-        this.requiredKwargs = (short) requiredKwargs;
-        this.keyRest = keyRest;
-        this.arityValue = calculateArityValue();
+        this((short) pre, (short) opt, (short) post, rest, (short) kwargs, (short) requiredKwargs, keyRest);
+    }
+
+    public Signature(int pre, int opt, int post, Rest rest, int kwargs, int requiredKwargs, int keyRest, KeywordArgument[] keywordArguments) {
+        this((short) pre, (short) opt, (short) post, rest, (short) kwargs, (short) requiredKwargs, keyRest, keywordArguments);
     }
 
     public int getRequiredKeywordForArityCount() {
@@ -74,13 +92,8 @@ public class Signature {
         return keyRest != -1;
     }
 
-    public int pre() { return pre; }
-    public int opt() { return opt; }
-    public Rest rest() { return rest; }
-    public int post() { return post; }
     public boolean hasKwargs() { return kwargs > 0 || restKwargs(); }
     public boolean hasRest() { return rest != Rest.NONE; }
-    public int keyRest() { return keyRest; }
 
     /**
      * The minimum number of parameters supplied which can fulfill a call to this signature.  This
@@ -101,14 +114,6 @@ public class Signature {
     public int max() {
         return rest != Rest.NONE && rest != Rest.ANON ?
                 -1 : required() + opt() + (kwargs() > 0 || restKwargs() ? 1 : 0);
-    }
-
-    /**
-     * Total number of keyword argument parameters.
-     * @return the number of kwarg parameters
-     */
-    public int kwargs() {
-        return kwargs;
     }
 
     /**
@@ -155,27 +160,28 @@ public class Signature {
         }
     }
 
+    @Deprecated
+    public int calculateArityValue() {
+        return calculateArity(pre, opt, rest, post, kwargs, requiredKwargs, keyRest);
+    }
+
     /**
      * Best attempt at breaking the code of arity values!  We figure out how many fixed/required parameters
      * must be supplied. Then we figure out if we need to mark the value as optional. Optional is indicated
      * by multiplying -1 * (fixed + 1). Keyword args optional and rest values can indicate this optional
      * condition but only if no required keyword arguments are present.
      */
-    public int calculateArityValue() {
+    private static int calculateArity(short pre, short opt, Rest rest, short post, short kwargs, short requiredKwargs, int keyRest) {
         int oneForKeywords = requiredKwargs > 0 ? 1 : 0;
-        int fixedValue = pre() + post() + oneForKeywords;
+        int fixedValue = pre + post + oneForKeywords;
         boolean hasOptionalKeywords = kwargs - requiredKwargs > 0;
-        boolean optionalFromRest = rest() != Rest.NONE && rest != Rest.ANON;
+        boolean optionalFromRest = rest != Rest.NONE && rest != Rest.ANON;
 
-        if (opt() > 0 || optionalFromRest || fixedValue == 0 && (hasOptionalKeywords || restKwargs())) {
+        if (opt > 0 || optionalFromRest || fixedValue == 0 && (hasOptionalKeywords || keyRest != -1)) {
             return -1 * (fixedValue + 1);
         }
 
         return fixedValue;
-    }
-
-    public int arityValue() {
-        return arityValue;
     }
 
     /**
@@ -225,7 +231,19 @@ public class Signature {
     }
 
     public static Signature from(int pre, int opt, int post, int kwargs, int requiredKwargs, Rest rest, int keyRest) {
-        if (opt == 0 && post == 0 && kwargs == 0 && keyRest == -1) {
+        return from(pre, opt, rest, post, kwargs, requiredKwargs, keyRest, KeywordArgument.EMPTY_ARRAY);
+    }
+
+    public static Signature from(int pre, int opt, Rest rest, int post, int kwargs, int requiredKwargs, int keyRest, KeywordArgument[] keywordArguments) {
+        if (kwargs == 0 && keyRest == -1) {
+            return positionalOnly(pre, opt, rest, post, kwargs, requiredKwargs, keyRest);
+        }
+
+        return new Signature(pre, opt, post, rest, kwargs, requiredKwargs, keyRest, keywordArguments);
+    }
+
+    private static Signature positionalOnly(int pre, int opt, Rest rest, int post, int kwargs, int requiredKwargs, int keyRest) {
+        if (opt == 0 && post == 0) {
             switch (pre) {
                 case 0:
                     switch (rest) {
@@ -268,9 +286,10 @@ public class Signature {
                     }
                     break;
             }
-        } else if (opt == 1 && pre == 0 && rest == Rest.NONE && post == 0 && kwargs == 0 && keyRest == -1) {
+        } else if (opt == 1 && pre == 0 && rest == Rest.NONE && post == 0) {
             return Signature.ONE_OPT_ARGUMENT;
         }
+
         return new Signature(pre, opt, post, rest, kwargs, requiredKwargs, keyRest);
     }
 
@@ -278,8 +297,18 @@ public class Signature {
         ArgumentNode restArg = args.getRestArgNode();
         Rest rest = restArg != null ? restFromArg(restArg) : Rest.NONE;
 
-        return Signature.from(args.getPreCount(), args.getOptionalArgsCount(), args.getPostCount(),
-                args.getKeywordCount(), args.getRequiredKeywordCount(),rest,args.hasKeyRest() ? args.getKeyRest().getIndex() : -1);
+        int keywordCount = args.getKeywordCount();
+        KeywordArgument[] keywordArguments = keywordArgumentsFromArgs(args);
+
+        return Signature.from(
+                args.getPreCount(),
+                args.getOptionalArgsCount(),
+                rest,
+                args.getPostCount(),
+                keywordCount,
+                args.getRequiredKeywordCount(),
+                args.hasKeyRest() ? args.getKeyRest().getIndex() : -1,
+                keywordArguments);
     }
 
     public static Signature from(IterNode iter) {
@@ -291,20 +320,48 @@ public class Signature {
     }
 
     private static Rest restFromArg(Node restArg) {
-        Rest rest;
-        if (restArg instanceof UnnamedRestArgNode) {
-            UnnamedRestArgNode anonRest = (UnnamedRestArgNode) restArg;
+        if (restArg == null) return Rest.NONE;
+
+        if (restArg instanceof UnnamedRestArgNode anonRest) {
             if (anonRest.isStar()) {
-                rest = Rest.STAR;
+                return Rest.STAR;
             } else {
-                rest = Rest.ANON;
+                return Rest.ANON;
             }
         } else if (restArg instanceof StarNode) {
-            rest = Rest.STAR;
+            return Rest.STAR;
         } else {
-            rest = Rest.NORM;
+            return Rest.NORM;
         }
-        return rest;
+    }
+
+    private static KeywordArgument[] keywordArgumentsFromArgs(ArgsNode args) {
+        int kwargs = args.getKeywordCount();
+        if (kwargs == 0) return KeywordArgument.EMPTY_ARRAY;
+
+        var keywordArguments = new ArrayList<KeywordArgument>();
+        for (Node keywordArg : args.getKeywords()) {
+            if (keywordArg instanceof KeywordArgNode kwargNode) {
+                AssignableNode assignable = kwargNode.getAssignable();
+                RubySymbol name;
+                if (!(assignable instanceof INameNode namedAssign)) {
+                    throw new RuntimeException("unexpected unnamed assignable");
+                }
+                name = namedAssign.getName();
+
+                if (assignable.getValueNode() != null) {
+                    keywordArguments.add(new KeywordArgument(name.idString(), KeywordArgument.Type.OPTIONAL));
+                } else {
+                    keywordArguments.add(new KeywordArgument(name.idString(), KeywordArgument.Type.REQUIRED));
+                }
+            }
+        }
+
+        if (args.getKeyRest() instanceof KeywordRestArgNode kwrestArg) {
+            keywordArguments.add(new KeywordArgument(kwrestArg.getName().idString(), KeywordArgument.Type.REST));
+        }
+
+        return keywordArguments.toArray(KeywordArgument[]::new);
     }
 
     public static Signature from(ForNode iter) {
