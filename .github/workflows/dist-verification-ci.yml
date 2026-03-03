@@ -10,15 +10,17 @@ permissions:
 
 jobs:
 
-  rake-test:
-    runs-on: windows-latest
+  rails-verification:
 
     strategy:
       matrix:
         java-version: ['21', '25']
+        runs-on: [windows-latest, macos-latest, ubuntu-latest]
       fail-fast: false
 
-    name: windows verification (Java ${{ matrix.java-version }})
+    runs-on: ${{ matrix.runs-on }}
+
+    name: dist verification on ${{ matrix.runs-on }} (Java ${{ matrix.java-version }})
 
     steps:
       - name: checkout
@@ -29,12 +31,20 @@ jobs:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
-      - name: bootstrap
-        run: mvn -ntp -Pbootstrap clean package
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
-      - name: jruby rails_runner
+      - name: build dist archive
+        run: mvn -ntp clean package -Pdist
+      - name: unpack dist and add to path
+        run: |
+          mkdir tmp
+          cd tmp
+          tar xzf ../maven/jruby-dist/target/jruby-dist*.tar.gz
+          cd tmp/jruby-*
+      - name: rails verification
         shell: cmd
         run: |
           set PATH=%CD%\bin;%PATH%
-          jruby tool/rails_runner
+          jruby ../../../tool/rails_runner
+      - name: stdlib verification
+        shell: cmd
+        run: |
+          jruby -rsyslog -e 1
