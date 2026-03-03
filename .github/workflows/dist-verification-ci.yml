@@ -38,25 +38,16 @@ jobs:
           mkdir tmp
           cd tmp
           tar xzf ../maven/jruby-dist/target/jruby-dist*-bin.tar.gz
-      - name: set PATH (windows)
+      - name: dist verification (windows)
         if: matrix.runs-on == 'windows-latest'
         run: |
-          cd tmp/jruby-*
+          cd tmp\jruby-*
           set PATH=%CD%\bin;%PATH%
-      - name: set PATH (unix)
+          jruby ..\..\tool\rails_runner
+      - name: dist verification (Unix)
         if: matrix.runs-on != 'windows-latest'
         run: |
           cd tmp/jruby-*
-          export PATH=$PWD\bin:$PATH
-          echo $PATH
-      - name: rails verification
-        run: |
-          echo $PATH
-          echo $PWD
-          cd jruby-*
+          export PATH=$PWD/bin:$PATH
           jruby ../../tool/rails_runner
-      - name: syslog verification
-        if: matrix.runs-on != 'windows-latest'
-        run: |
-          cd jruby-*
           jruby -rsyslog -e 1
