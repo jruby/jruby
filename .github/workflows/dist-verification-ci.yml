@@ -39,11 +39,11 @@ jobs:
           cd tmp
           tar xzf ../maven/jruby-dist/target/jruby-dist*-bin.tar.gz
           cd jruby-*
+          set PATH=%CD%\bin;%PATH%
       - name: rails verification
         shell: cmd
         run: |
-          set PATH=%CD%\bin;%PATH%
-          jruby ../../../tool/rails_runner
+          jruby ../../tool/rails_runner
       - name: syslog verification
         shell: cmd
         if: matrix.runs-on != 'windows-latest'
