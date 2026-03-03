@@ -48,11 +48,9 @@ jobs:
         run: |
           export PATH=$PWD\bin:$PATH
       - name: rails verification
-        shell: cmd
         run: |
           jruby ../../tool/rails_runner
       - name: syslog verification
-        shell: cmd
         if: matrix.runs-on != 'windows-latest'
         run: |
           jruby -rsyslog -e 1
