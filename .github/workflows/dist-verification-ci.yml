@@ -68,7 +68,7 @@ jobs:
         with:
           name: jruby-dist
       - name: unpack dist
-        run: tar xzf --strip-components=1 jruby-dist*-bin.tar.gz
+        run: tar --strip-components=1 xzf jruby-dist*-bin.tar.gz
       - name: dist verification (windows)
         if: matrix.runs-on == 'windows-latest'
         run: echo "%cd\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
