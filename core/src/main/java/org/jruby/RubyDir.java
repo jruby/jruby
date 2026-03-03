@@ -233,14 +233,15 @@ public class RubyDir extends RubyObject implements Closeable {
     // returns null (no kwargs present), "" kwargs but no base key, "something" kwargs with base key (which might be "").
     private static void globOptions(ThreadContext context, IRubyObject[] args, String[] keys, GlobOptions options) {
         Ruby runtime = context.runtime;
+        int callInfo = ThreadContext.resetCallInfo(context);
 
         if (args.length > 1) {
-            IRubyObject tmp = TypeConverter.checkHashType(runtime, args[args.length - 1]);
             boolean processFlags = keys == BASE_FLAGS_KEYWORDS;
-            if (tmp == context.nil) {
+            if (!ThreadContext.hasKeywords(callInfo)) {
                 if (processFlags) options.flags = toInt(context, args[1]);
             } else {
-                IRubyObject[] rets = ArgsUtil.extractKeywordArgs(context, (RubyHash) tmp, keys);
+                RubyHash tmp = (RubyHash) TypeConverter.checkHashType(runtime, args[args.length - 1]);
+                IRubyObject[] rets = ArgsUtil.extractKeywordArgs(context, tmp, keys);
 
                 if (args.length == 3 && processFlags) options.flags = toInt(context, args[1]);
                 if (processFlags && rets[2] != null) options.flags |= toInt(context, rets[2]);
@@ -321,7 +322,7 @@ public class RubyDir extends RubyObject implements Closeable {
      * with each filename is passed to the block in turn. In this case, Nil is
      * returned.
      */
-    @JRubyMethod(required = 1, optional = 2, checkArity = false, meta = true)
+    @JRubyMethod(required = 1, optional = 2, checkArity = false, meta = true, keywords = true)
     public static IRubyObject glob(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Arity.checkArgumentCount(context, args, 1, 3);
 
