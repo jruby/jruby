@@ -30,13 +30,14 @@ jobs:
           java-version: 21
           cache: 'maven'
       - name: build dist archive
-        run: mvn -ntp clean package -Pdist
+        run: |
+          mvn -ntp clean package -Pdist
+          mv maven/jruby-dist/target/jruby-dist*-bin.tar.gz jruby-dist-bin.tar.gz
       - name: cache dist
         uses: actions/upload-artifact@v4
         with:
           name: jruby-dist
-          path: |
-            maven/jruby-dist/target/jruby-dist*-bin.tar.gz
+          path: jruby-dist-bin.tar.gz
           retention-days: 1
 
   rails-verification:
@@ -68,17 +69,15 @@ jobs:
         with:
           name: jruby-dist
       - name: unpack dist
-        run: tar --strip-components=1 xzf jruby-dist*-bin.tar.gz
-      - name: dist verification (windows)
+        run: tar xzf jruby-dist-bin.tar.gz --strip-components=1
+      - name: dist verification (Windows)
         if: matrix.runs-on == 'windows-latest'
-        run: echo "%cd\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        run: echo "${{ github.workspace }}\bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
       - name: set up dist path (Unix)
         if: matrix.runs-on != 'windows-latest'
         run: echo "$(pwd)/bin" >> $GITHUB_PATH
       - name: rails verification
-        working-directory: tmp/jruby-*
         run: jruby jruby-src/tool/rails_runner
       - name: syslog verification (Unix)
-        working-directory: tmp/jruby-*
         if: matrix.runs-on != 'windows-latest'
         run: jruby -rsyslog -e 1
