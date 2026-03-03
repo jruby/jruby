@@ -33,13 +33,20 @@ jobs:
           cache: 'maven'
       - name: build dist archive
         run: mvn -ntp clean package -Pdist
-      - name: unpack dist and add to path
+      - name: unpack dist
         run: |
           mkdir tmp
           cd tmp
           tar xzf ../maven/jruby-dist/target/jruby-dist*-bin.tar.gz
           cd jruby-*
+      - name: set PATH (windows)
+        if: matrix.runs-on == 'windows-latest'
+        run: |
           set PATH=%CD%\bin;%PATH%
+      - name: set PATH (unix)
+        if: matrix.runs-on != 'windows-latest'
+        run: |
+          export PATH=$PWD\bin:$PATH
       - name: rails verification
         shell: cmd
         run: |
