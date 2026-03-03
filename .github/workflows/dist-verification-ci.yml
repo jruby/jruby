@@ -1,4 +1,4 @@
-name: JRuby CI
+name: Dist Verification CI
 
 on: [push, pull_request]
 
