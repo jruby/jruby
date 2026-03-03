@@ -44,7 +44,8 @@ jobs:
         run: |
           set PATH=%CD%\bin;%PATH%
           jruby ../../../tool/rails_runner
-      - name: stdlib verification
+      - name: syslog verification
         shell: cmd
+        if: matrix.runs-on != 'windows-latest'
         run: |
           jruby -rsyslog -e 1
