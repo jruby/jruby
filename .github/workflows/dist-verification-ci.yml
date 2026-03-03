@@ -47,6 +47,7 @@ jobs:
         if: matrix.runs-on != 'windows-latest'
         run: |
           export PATH=$PWD\bin:$PATH
+          echo $PATH
       - name: rails verification
         run: |
           jruby ../../tool/rails_runner
