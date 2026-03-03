@@ -37,8 +37,8 @@ jobs:
         run: |
           mkdir tmp
           cd tmp
-          tar xzf ../maven/jruby-dist/target/jruby-dist*.tar.gz
-          cd tmp/jruby-*
+          tar xzf ../maven/jruby-dist/target/jruby-dist*-bin.tar.gz
+          cd jruby-*
       - name: rails verification
         shell: cmd
         run: |
