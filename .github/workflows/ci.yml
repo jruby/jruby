@@ -31,7 +31,7 @@ jobs:
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
       - name: bootstrap
-        run: mvn -ntp -Pbootstrap clean package
+        run: ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake ${{ matrix.target }}
@@ -61,7 +61,7 @@ jobs:
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
       - name: bootstrap
-        run: mvn -ntp -Pbootstrap clean package
+        run: ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake ${{ matrix.target }}
@@ -87,7 +87,7 @@ jobs:
           java-version: '8'
           cache: 'maven'
       - name: bootstrap
-        run: mvn -ntp -Pbootstrap clean package
+        run: ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake ${{ matrix.target }}
@@ -114,7 +114,7 @@ jobs:
           java-version: '8'
           cache: 'maven'
       - name: bootstrap
-        run: mvn -ntp -Pbootstrap clean package
+        run: ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake ${{ matrix.target }}
@@ -139,7 +139,7 @@ jobs:
           java-version: 8
           cache: 'maven'
       - name: bootstrap
-        run: mvn -ntp -Pbootstrap clean package
+        run: ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake test:jruby
@@ -169,7 +169,7 @@ jobs:
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
       - name: bootstrap
-        run: mvn -ntp -Pbootstrap clean package
+        run: ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake ${{ matrix.target }}
@@ -196,7 +196,7 @@ jobs:
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
       - name: bootstrap
-        run: mvn -ntp -Pbootstrap clean package
+        run: ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: mvn package ${{ matrix.package-flags }}
@@ -226,7 +226,7 @@ jobs:
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
       - name: bootstrap
-        run: mvn -ntp -Pbootstrap clean package
+        run: ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: mvn package ${{ matrix.package-flags }}
@@ -253,7 +253,7 @@ jobs:
           java-version: 8
           cache: 'maven'
       - name: bootstrap
-        run: mvn -ntp -Pbootstrap clean package
+        run: ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake spec:regression
@@ -281,7 +281,7 @@ jobs:
           java-version: 11
           cache: 'maven'
       - name: bootstrap
-        run: mvn -ntp -Pbootstrap clean package
+        run: ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake test:jruby
@@ -289,7 +289,7 @@ jobs:
         env:
           JRUBY_OPTS: ''
       - name: mvn -P test
-        run: ./mvnw package -B -Ptest
+        run: ./mvnw -ntp package -Ptest
 
   dependency-check:
     runs-on: ubuntu-latest
@@ -369,7 +369,7 @@ jobs:
           java-version: 11
           cache: 'maven'
       - name: bootstrap
-        run: mvn -ntp -Pbootstrap clean package
+        run: ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: sequel
@@ -391,7 +391,7 @@ jobs:
           java-version: 8
           cache: 'maven'
       - name: bootstrap
-        run: mvn -ntp -Pbootstrap clean package
+        run: ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: concurrent-ruby
@@ -465,7 +465,7 @@ jobs:
           java-version: '17'
           cache: 'maven'
       - name: bootstrap
-        run: mvn -ntp -Pbootstrap clean package
+        run: ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby -S bundle install
       - name: test profile
@@ -506,7 +506,7 @@ jobs:
           java-version: '8'
           cache: 'maven'
       - name: bootstrap
-        run: mvn -ntp -Pbootstrap clean package
+        run: ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake ${{ matrix.target }}
