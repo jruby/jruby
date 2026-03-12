@@ -8,11 +8,11 @@ gem_version=${jar_version/-/.}
 
 rm -rf maven/*/target/*
 
-./mvnw install -Pbootstrap
-./mvnw -Pcomplete
-./mvnw -Pdist
-./mvnw -Pjruby-jars
-./mvnw -Pmain
+./mvnw -ntp install -Pbootstrap
+./mvnw -ntp -Pcomplete
+./mvnw -ntp -Pdist
+./mvnw -ntp -Pjruby-jars
+./mvnw -ntp -Pmain
 
 declare -a failed
 failed[0]=0

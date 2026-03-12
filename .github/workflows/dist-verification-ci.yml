@@ -31,7 +31,7 @@ jobs:
           cache: 'maven'
       - name: build dist archive
         run: |
-          mvn -ntp clean package -Pdist
+          ./mvnw -ntp clean package -Pdist
           mv maven/jruby-dist/target/jruby-dist*-bin.tar.gz jruby-dist-bin.tar.gz
       - name: cache dist
         uses: actions/upload-artifact@v4
