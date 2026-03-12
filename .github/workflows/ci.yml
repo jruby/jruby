@@ -70,9 +70,6 @@ jobs:
   repeat-specs:
     runs-on: ubuntu-latest
 
-    strategy:
-      fail-fast: false
-
     name: run specs repeatedly to test optimizations
 
     steps:
@@ -97,9 +94,6 @@ jobs:
 
   jruby-tests-dev:
     runs-on: ubuntu-latest
-
-    strategy:
-      fail-fast: false
 
     env:
       JRUBY_OPTS: '--dev'
@@ -220,9 +214,6 @@ jobs:
   regression-specs-jit:
     runs-on: ubuntu-latest
 
-    strategy:
-      fail-fast: false
-
     env:
       JRUBY_OPTS: '-Xjit.threshold=0'
 
@@ -246,9 +237,6 @@ jobs:
 
   mvn-test-windows:
     runs-on: windows-latest
-
-    strategy:
-      fail-fast: false
 
     name: mvn -Ptest, rake test:jruby (Windows, Java 21)
 
@@ -279,9 +267,6 @@ jobs:
   spec-ruby-language-windows:
     runs-on: windows-latest
 
-    strategy:
-      fail-fast: false
-
     name: language specs (Windows, Java 21)
 
     env:
@@ -310,9 +295,6 @@ jobs:
 
   spec-ruby-core-windows:
     runs-on: windows-latest
-
-    strategy:
-      fail-fast: false
 
     name: core specs (Windows, Java 21)
 
@@ -364,9 +346,6 @@ jobs:
   test-versions:
     runs-on: ubuntu-latest
 
-    strategy:
-      fail-fast: false
-
     name: Verify build artifacts
     steps:
       - name: checkout
@@ -386,9 +365,6 @@ jobs:
 
   sequel:
     runs-on: ubuntu-latest
-
-    strategy:
-      fail-fast: false
 
     services:
       postgres:
@@ -432,9 +408,6 @@ jobs:
 
   concurrent-ruby:
     runs-on: ubuntu-latest
-
-    strategy:
-      fail-fast: false
 
     steps:
       - name: checkout
