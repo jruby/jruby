@@ -22,9 +22,9 @@ jobs:
 
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
       - name: set up java 21
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: 21
@@ -34,11 +34,11 @@ jobs:
           ./mvnw -ntp clean package -Pdist
           mv maven/jruby-dist/target/jruby-dist*-bin.tar.gz jruby-dist-bin.tar.gz
       - name: cache dist
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: jruby-dist
           path: jruby-dist-bin.tar.gz
           retention-days: 1
+          archive: false
 
   rails-verification:
 
@@ -56,18 +56,18 @@ jobs:
 
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
         with:
           path: jruby-src
       - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
       - name: download cached dist
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
-          name: jruby-dist
+          name: jruby-dist-bin.tar.gz
       - name: unpack dist
         run: tar xzf jruby-dist-bin.tar.gz --strip-components=1
       - name: dist verification (Windows)
