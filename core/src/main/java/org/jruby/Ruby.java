@@ -3369,11 +3369,12 @@ public final class Ruby implements Constantizable {
             }
         }
 
-        // Shut down and replace thread service after all other hooks and finalizers have run
-        threadService.teardown();
-        threadService = new ThreadService(this);
-
-        // Release classloader resources
+        // Release classloader resources before tearing down the thread service.
+        // These steps must run while the current thread still has a valid ThreadContext in the
+        // thread service, because some of them (e.g. RubyArray.clear via loadedFeatures.clear)
+        // call getCurrentContext().  If they ran after the thread service is replaced they would
+        // trigger a spurious thread adoption on the fresh service, re-creating SoftRef/RubyThread
+        // entries that keep (ThreadContext → Ruby) alive after teardown.  (GH-9092)
         releaseClassLoader();
 
         // Tear down LoadService
@@ -3384,7 +3385,12 @@ public final class Ruby implements Constantizable {
         allModules.clear();
         constantNameInvalidators.clear();
         symbolTable.clear();
-        javaSupport = loadJavaSupport();
+        javaSupport = null;
+
+        // Shut down and replace thread service after all other hooks, finalizers, and cleanup
+        // steps that touch the thread service have run.
+        threadService.teardown();
+        threadService = new ThreadService(this);
     }
 
     private int userTeardown(ThreadContext context) {

@@ -32,11 +32,13 @@
 package org.jruby.internal.runtime;
 
 import java.lang.ref.SoftReference;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import java.util.WeakHashMap;
@@ -131,6 +133,12 @@ public class ThreadService extends ThreadLocal<SoftReference<ThreadContext>> {
 
     private final AtomicLong threadCount = new AtomicLong(0);
 
+    /**
+     * All SoftReferences ever stored into this ThreadLocal (one per thread that has entered Ruby
+     * space on this runtime).  Tracked so that teardown() can clear their referents even on
+     * threads we cannot schedule work on (adopted / pool threads).
+     */
+    private final List<SoftReference<ThreadContext>> trackedRefs = new CopyOnWriteArrayList<>();
     public ThreadService(final Ruby runtime) {
         this.runtime = runtime;
 
@@ -167,6 +175,29 @@ public class ThreadService extends ThreadLocal<SoftReference<ThreadContext>> {
 
         // clear thread map
         rubyThreadMap.clear();
+
+        // Clear every SoftReference<ThreadContext> that was ever stored into this ThreadLocal.
+        // This covers both the current thread and any adopted / pool threads that called into
+        // JRuby but are now idle and will never touch their ThreadLocalMap again.  Without this,
+        // each such thread's ThreadLocalMap retains the chain:
+        //   Thread (GC root) -> ThreadLocalMap -> SoftReference -> ThreadContext -> Ruby runtime
+        // which keeps the runtime (and its JRubyClassLoader with all loaded classes) alive until
+        // GC heap pressure forces soft-reference collection — which may never happen in a
+        // well-resourced long-lived process.  (see https://github.com/jruby/jruby/issues/9092)
+        for (SoftReference<ThreadContext> ref : trackedRefs) {
+            ref.clear();
+        }
+        trackedRefs.clear();
+
+        // Also call remove() on the current thread so the (now-cleared) SoftReference object
+        // is expelled from this thread's ThreadLocalMap immediately rather than lazily.
+        remove();
+    }
+
+    @Override
+    public void set(SoftReference<ThreadContext> value) {
+        super.set(value);
+        if (value != null) trackedRefs.add(value);
     }
 
     public void initMainThread() {

@@ -112,9 +112,9 @@ public abstract class JavaSupport {
     public JavaSupport(final Ruby runtime) {
         this.runtime = runtime;
 
-        this.javaClassCache = ClassValue.newInstance(klass -> new JavaClass(runtime, getJavaClassClass(), klass));
+        this.javaClassCache = ClassValue.newWeakInstance(klass -> new JavaClass(runtime, getJavaClassClass(), klass));
 
-        this.proxyClassCache = ClassValue.newInstance(this::computeProxyClass);
+        this.proxyClassCache = ClassValue.newWeakInstance(this::computeProxyClass);
 
         // Proxy creation is synchronized (see above) so a HashMap is fine for recursion detection.
         this.unfinishedProxies = new ConcurrentHashMap<>(8, 0.75f, 1);

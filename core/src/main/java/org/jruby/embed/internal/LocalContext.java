@@ -104,6 +104,12 @@ public class LocalContext {
         if (varMap != null) {
             synchronized(this) { varMap.clear(); }
         }
+        // Allow the Ruby runtime to be GC-eligible immediately after terminate().
+        // Without this, the strong reference chain
+        //   ScriptingContainer -> SingleThreadLocalContextProvider -> LocalContext -> Ruby
+        // keeps the runtime (and its JRubyClassLoader) alive until this LocalContext
+        // is itself collected, which may be delayed by ScriptingContainer.finalize().
+        runtime = null;
     }
 
     Ruby getRuntime() {
