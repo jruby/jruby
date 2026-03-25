@@ -41,8 +41,10 @@ import java.util.Set;
 
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
+import org.jruby.embed.AttributeName;
 import org.jruby.embed.LocalVariableBehavior;
 import org.jruby.embed.variable.BiVariable;
+import org.jruby.embed.variable.InstanceVariable;
 import org.jruby.embed.variable.VariableInterceptor;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -335,7 +337,9 @@ public class BiVariableMap implements Map<String, Object> {
         }
         else { // creates new value
             var = VariableInterceptor.getVariableInstance(provider.getLocalVariableBehavior(), robj, key, value);
-            if ( var != null ) update(key, var);
+            // for consistency, do not inject instance variables when they wouldn't be retrieverd from Ruby
+            if (var != null && (isSharingInstanceVariables() || !(var instanceof InstanceVariable)))
+                update(key, var);
         }
         return oldValue;
     }
@@ -571,6 +575,14 @@ public class BiVariableMap implements Map<String, Object> {
      */
     public boolean isLazy() {
         return lazy;
+    }
+
+    public boolean isSharingInstanceVariables() {
+        final Object sharing = provider.getAttributeMap().get(AttributeName.SHARING_INSTANCE_VARIABLES);
+        if ( sharing instanceof Boolean && ((Boolean) sharing).booleanValue() == true ) {
+            return true;
+        }
+        return false;
     }
 
     @Override
