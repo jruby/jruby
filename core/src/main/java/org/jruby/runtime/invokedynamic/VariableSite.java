@@ -122,7 +122,7 @@ public class VariableSite extends MutableCallSite {
         getValue = filterReturnValue(getValue, nullToNil);
 
         // prepare fallback
-        MethodHandle fallback = null;
+        MethodHandle fallback;
         if (chainCount() + 1 > Options.INVOKEDYNAMIC_MAXPOLY.load()) {
             if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(name() + "\tqet on type " + self.getMetaClass().id + " failed (polymorphic)" + extractSourceInfo());
             fallback = findVirtual(VariableSite.class, "ivarGetFail", methodType(IRubyObject.class, IRubyObject.class));
@@ -185,13 +185,14 @@ public class VariableSite extends MutableCallSite {
         }
 
         // prepare fallback
-        MethodHandle fallback = null;
+        MethodHandle fallback;
         if (chainCount() + 1 > Options.INVOKEDYNAMIC_MAXPOLY.load()) {
             if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(name() + "\tset on type " + self.getMetaClass().id + " failed (polymorphic)" + extractSourceInfo());
             fallback = findVirtual(VariableSite.class, "ivarSetFail", methodType(void.class, IRubyObject.class, IRubyObject.class));
             fallback = fallback.bindTo(this);
             setTarget(fallback);
             fallback.invokeExact(self, value);
+            return;
         } else {
             if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
                 if (direct) {
