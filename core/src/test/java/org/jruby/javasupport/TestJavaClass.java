@@ -4,6 +4,8 @@ import org.jruby.api.Access;
 import org.jruby.runtime.ThreadContext;
 import org.junit.Test;
 
+import java.lang.ref.WeakReference;
+
 import org.jruby.*;
 
 import static org.jruby.api.Access.enumerableModule;
@@ -21,6 +23,51 @@ public class TestJavaClass extends junit.framework.TestCase {
 
         JavaClass javaClass = JavaClass.get(runtime, String.class);
         assertSame(javaClass, JavaClass.get(runtime, String.class));
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testJavaClassCacheRetainsIdentityAcrossGcWhileRuntimeIsAlive() throws Exception {
+        Ruby runtime = Ruby.newInstance();
+        try {
+            var context = runtime.getCurrentContext();
+            requireJava(context);
+
+            JavaClass javaClass = JavaClass.get(runtime, String.class);
+            WeakReference<JavaClass> ref = new WeakReference<>(javaClass);
+
+            javaClass = null;
+            forceGc();
+
+            JavaClass cached = ref.get();
+            assertNotNull(cached);
+            assertSame(cached, JavaClass.get(runtime, String.class));
+        } finally {
+            runtime.tearDown(false);
+            Ruby.clearGlobalRuntime();
+        }
+    }
+
+    @Test
+    public void testProxyClassCacheRetainsIdentityAcrossGcWhileRuntimeIsAlive() throws Exception {
+        Ruby runtime = Ruby.newInstance();
+        try {
+            var context = runtime.getCurrentContext();
+            requireJava(context);
+
+            RubyModule proxy = runtime.getJavaSupport().getProxyClassFromCache(java.util.ArrayList.class);
+            WeakReference<RubyModule> ref = new WeakReference<>(proxy);
+
+            proxy = null;
+            forceGc();
+
+            RubyModule cached = ref.get();
+            assertNotNull(cached);
+            assertSame(cached, runtime.getJavaSupport().getProxyClassFromCache(java.util.ArrayList.class));
+        } finally {
+            runtime.tearDown(false);
+            Ruby.clearGlobalRuntime();
+        }
     }
 
     @Test
@@ -174,6 +221,15 @@ public class TestJavaClass extends junit.framework.TestCase {
 
     static void requireJava(ThreadContext context) {
         kernelModule(context).callMethod(context, "require", newString(context, "java"));
+    }
+
+    @SuppressWarnings({"deprecation", "removal"})
+    private static void forceGc() throws InterruptedException {
+        for (int i = 0; i < 5; i++) {
+            System.gc();
+            System.runFinalization();
+            Thread.sleep(100);
+        }
     }
 
 }
