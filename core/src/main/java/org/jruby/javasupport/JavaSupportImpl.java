@@ -133,6 +133,15 @@ public class JavaSupportImpl extends JavaSupport {
         return ((JavaSupportImpl) runtime.getJavaSupport()).saveJavaProxyClass(classKey, klass);
     }
 
+    @Override
+    public void tearDown() {
+        super.tearDown();
+
+        synchronized (javaProxyClasses) {
+            javaProxyClasses.clear();
+        }
+    }
+
     /**
      * <p>Note: Internal API - subject to change!</p>
      */

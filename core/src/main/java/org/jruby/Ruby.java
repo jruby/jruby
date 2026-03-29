@@ -3385,6 +3385,7 @@ public final class Ruby implements Constantizable {
         allModules.clear();
         constantNameInvalidators.clear();
         symbolTable.clear();
+        if (javaSupport != null) javaSupport.tearDown();
         javaSupport = null;
 
         // Shut down and replace thread service after all other hooks, finalizers, and cleanup

@@ -50,6 +50,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.Loader;
 import org.jruby.util.collections.ClassValue;
 import org.jruby.util.collections.ClassValueCalculator;
+import org.jruby.util.collections.MapBasedClassValue;
 
 import java.lang.reflect.Member;
 import java.util.Map;
@@ -66,8 +67,8 @@ public abstract class JavaSupport {
     protected final Ruby runtime;
 
     @Deprecated(since = "9.4.3.0")
-    private final ClassValue<JavaClass> javaClassCache;
-    private final ClassValue<RubyModule> proxyClassCache;
+    private final MapBasedClassValue<JavaClass> javaClassCache;
+    private final MapBasedClassValue<RubyModule> proxyClassCache;
 
     static final class UnfinishedProxy extends ReentrantLock {
         final RubyModule proxy;
@@ -112,9 +113,9 @@ public abstract class JavaSupport {
     public JavaSupport(final Ruby runtime) {
         this.runtime = runtime;
 
-        this.javaClassCache = ClassValue.newWeakInstance(klass -> new JavaClass(runtime, getJavaClassClass(), klass));
+        this.javaClassCache = new MapBasedClassValue<>(klass -> new JavaClass(runtime, getJavaClassClass(), klass));
 
-        this.proxyClassCache = ClassValue.newWeakInstance(this::computeProxyClass);
+        this.proxyClassCache = new MapBasedClassValue<>(this::computeProxyClass);
 
         // Proxy creation is synchronized (see above) so a HashMap is fine for recursion detection.
         this.unfinishedProxies = new ConcurrentHashMap<>(8, 0.75f, 1);
@@ -393,6 +394,12 @@ public abstract class JavaSupport {
         UnfinishedProxy up = unfinishedProxies.get(clazz);
         if (up != null && up.isHeldByCurrentThread()) return up.proxy;
         return null;
+    }
+
+    public void tearDown() {
+        javaClassCache.clear();
+        proxyClassCache.clear();
+        unfinishedProxies.clear();
     }
 
     RubyModule getProxyClassFromCache(Class clazz) {
