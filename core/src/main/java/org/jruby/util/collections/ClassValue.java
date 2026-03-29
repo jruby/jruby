@@ -54,17 +54,6 @@ public abstract class ClassValue<T> {
         return Options.JI_CLASS_VALUES.load().function.apply(calculator);
     }
 
-    /**
-     * Create a weak-valued ClassValue for caches whose computed values can retain a Ruby runtime.
-     *
-     * java.lang.ClassValue has historically caused retention cycles in OpenJDK when values are
-     * strongly held and those values reference JRuby runtime state. Using weak values here breaks
-     * that cycle while preserving class-keyed lookup semantics.
-     */
-    public static <T> ClassValue<T> newWeakInstance(ClassValueCalculator<T> calculator) {
-        return new Java7ClassValue<>(calculator);
-    }
-
     @Deprecated(since = "9.4.13.0")
     private static <T> ClassValue<T> newJava7Instance(ClassValueCalculator<T> calculator) {
         return new Java7ClassValue<>(calculator);
