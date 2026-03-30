@@ -44,6 +44,7 @@ import org.jruby.Ruby;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.WeakIdentityHashMap;
 import org.jruby.util.collections.ClassValue;
+import org.jruby.util.collections.MapBasedClassValue;
 import org.jruby.javasupport.binding.AssignedName;
 import org.jruby.javasupport.proxy.JavaProxyClass;
 
@@ -52,10 +53,10 @@ import org.jruby.javasupport.proxy.JavaProxyClass;
  */
 public class JavaSupportImpl extends JavaSupport {
 
-    private final ClassValue<Map<String, AssignedName>> staticAssignedNames =
-            ClassValue.newInstance(JavaSupportImpl::newAssignedNames);
-    private final ClassValue<Map<String, AssignedName>> instanceAssignedNames =
-            ClassValue.newInstance(JavaSupportImpl::newAssignedNames);
+    private final MapBasedClassValue<Map<String, AssignedName>> staticAssignedNames =
+            new MapBasedClassValue<>(JavaSupportImpl::newAssignedNames);
+    private final MapBasedClassValue<Map<String, AssignedName>> instanceAssignedNames =
+            new MapBasedClassValue<>(JavaSupportImpl::newAssignedNames);
 
     public JavaSupportImpl(final Ruby runtime) {
         super(runtime);
@@ -136,6 +137,9 @@ public class JavaSupportImpl extends JavaSupport {
     @Override
     public void tearDown() {
         super.tearDown();
+
+        staticAssignedNames.clear();
+        instanceAssignedNames.clear();
 
         synchronized (javaProxyClasses) {
             javaProxyClasses.clear();

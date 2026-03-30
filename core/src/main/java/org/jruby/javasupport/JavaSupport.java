@@ -400,6 +400,7 @@ public abstract class JavaSupport {
         javaClassCache.clear();
         proxyClassCache.clear();
         unfinishedProxies.clear();
+        objectProxyCache.clear();
     }
 
     RubyModule getProxyClassFromCache(Class clazz) {

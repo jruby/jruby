@@ -197,6 +197,12 @@ public abstract class ObjectProxyCache<T,A> {
        return size;
     }
 
+    public void clear() {
+        for (Segment<T,A> seg : segments) {
+            seg.clear();
+        }
+    }
+
     public String stats() {
         StringBuilder b = new StringBuilder();
         int n = 0;
@@ -308,6 +314,16 @@ public abstract class ObjectProxyCache<T,A> {
             threshold = (int)(capacity * DEFAULT_LOAD_FACTOR);
             entryTable = Entry.newArray(capacity);
             this.cache = cache;
+        }
+
+        void clear() {
+            lock();
+            try {
+                entryTable = Entry.newArray(entryTable.length);
+                tableSize = 0;
+            } finally {
+                unlock();
+            }
         }
 
         // must be called under lock
