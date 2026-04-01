@@ -155,19 +155,15 @@ public class PopenExecutor {
 
         prog = eargp.use_shell ? eargp.command_name : eargp.command_name;
 
-        if (eargp.chdirGiven) {
-            // we can'd do chdir with posix_spawn, so we should be set to use_shell and now
-            // just need to add chdir to the cmd
-            String script = "cd '" + eargp.chdir_dir + "'; ";
+        String progString;
 
-            // use exec to eliminate extra sh process if we do not need to run command as a shell script
-            if (!searchForMetaChars(prog)) {
-                script = script + "exec ";
-            }
+        if (eargp.chdirGiven) { // posix_spawn cannot chdir; run a guarded shell command instead
+            progString = chdirShellCommand(eargp.chdir_dir, prog, !searchForMetaChars(prog));
 
-            prog = (RubyString)prog.strDup(runtime).prepend(context, newString(runtime, script));
             eargp.chdir_dir = null;
             eargp.chdirGiven = false;
+        } else {
+            progString = prog.toString();
         }
 
         if (execargRunOptions(context, runtime, eargp, sarg, errmsg) < 0) {
@@ -182,11 +178,11 @@ public class PopenExecutor {
 //            }
         }
         if (eargp.use_shell) {
-            pid = procSpawnSh(runtime, prog.toString(), eargp);
+            pid = procSpawnSh(runtime, progString, eargp);
         }
         else {
             String[] argv = eargp.argv_str.argv;
-            pid = procSpawnCmd(runtime, argv, prog.toString(), eargp);
+            pid = procSpawnCmd(runtime, argv, progString, eargp);
         }
         if (pid == -1) {
             context.setLastExitStatus(new RubyProcess.RubyStatus(runtime, runtime.getProcStatus(), 0x7f << 8, 0));
@@ -588,9 +584,8 @@ public class PopenExecutor {
             cmd = StringSupport.checkEmbeddedNulls(runtime, prog).toString();
 
         if (eargp.chdirGiven) {
-            // we can'd do chdir with posix_spawn, so we should be set to use_shell and now
-            // just need to add chdir to the cmd
-            cmd = "cd '" + eargp.chdir_dir + "'; " + cmd;
+            // posix_spawn cannot chdir; run a guarded shell command instead.
+            cmd = chdirShellCommand(eargp.chdir_dir, cmd, false);
             eargp.chdir_dir = null;
             eargp.chdirGiven = false;
         }
@@ -1948,6 +1943,15 @@ public class PopenExecutor {
             }
             eargp.argv_str = argv_str;
         }
+    }
+
+    private static String chdirShellCommand(String dir, CharSequence command, boolean exec) {
+        final String script = "cd -- " + quotePosixShellWord(dir) + " && ";
+        return exec ? (script + "exec " + command) : (script + "eval " + quotePosixShellWord(command.toString()));
+    }
+
+    private static String quotePosixShellWord(String str) {
+        return '\'' + str.replace("'", "'\\''") + '\'';
     }
 
     /**
