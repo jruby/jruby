@@ -32,7 +32,6 @@
 package org.jruby.internal.runtime;
 
 import java.lang.ref.SoftReference;
-import java.lang.ref.WeakReference;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
@@ -135,15 +134,11 @@ public class ThreadService extends ThreadLocal<SoftReference<ThreadContext>> {
     private final AtomicLong threadCount = new AtomicLong(0);
 
     /**
-     * Weak references to every SoftReference ever stored into this ThreadLocal (one per thread
-     * that has entered Ruby space on this runtime).  Tracked so that teardown() can clear their
-     * referents even on threads we cannot schedule work on (adopted / pool threads).
-     *
-     * Wrapped in WeakReference so that SoftReference shells from threads that have already
-     * cleanly unregistered (which call ref.clear() themselves) can be collected before teardown
-     * rather than being held alive unnecessarily by this list.
+     * All SoftReferences ever stored into this ThreadLocal (one per thread that has entered Ruby
+     * space on this runtime).  Tracked so that teardown() can clear their referents even on
+     * threads we cannot schedule work on (adopted / pool threads).
      */
-    private final List<WeakReference<SoftReference<ThreadContext>>> trackedRefs = new CopyOnWriteArrayList<>();
+    private final List<SoftReference<ThreadContext>> trackedRefs = new CopyOnWriteArrayList<>();
     public ThreadService(final Ruby runtime) {
         this.runtime = runtime;
 
@@ -189,12 +184,8 @@ public class ThreadService extends ThreadLocal<SoftReference<ThreadContext>> {
         // which keeps the runtime (and its JRubyClassLoader with all loaded classes) alive until
         // GC heap pressure forces soft-reference collection — which may never happen in a
         // well-resourced long-lived process.  (see https://github.com/jruby/jruby/issues/9092)
-        //
-        // Threads that already cleanly unregistered will have cleared their SoftReference
-        // themselves; their WeakReference entry here may already be null, which we skip.
-        for (WeakReference<SoftReference<ThreadContext>> weakRef : trackedRefs) {
-            SoftReference<ThreadContext> ref = weakRef.get();
-            if (ref != null) ref.clear();
+        for (SoftReference<ThreadContext> ref : trackedRefs) {
+            ref.clear();
         }
         trackedRefs.clear();
 
@@ -206,7 +197,7 @@ public class ThreadService extends ThreadLocal<SoftReference<ThreadContext>> {
     @Override
     public void set(SoftReference<ThreadContext> value) {
         super.set(value);
-        if (value != null) trackedRefs.add(new WeakReference<>(value));
+        if (value != null) trackedRefs.add(value);
     }
 
     public void initMainThread() {
