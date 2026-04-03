@@ -49,11 +49,6 @@ final class StableClassValue<T> extends ClassValue<T> {
 
                 result = this.calculator.apply(input);
                 this.result = result;
-                // Null out the calculator so that StableValue no longer holds a reference
-                // chain back to the ClassValue identity (its own weak key in Class.classValueMap).
-                // Without this, the hard value in ClassValueMap would transitively retain the
-                // weak key, making the entry immortal and leaking the Ruby runtime. (GH-9092)
-                this.calculator = null;
             }
 
             return result;
