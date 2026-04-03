@@ -7,6 +7,7 @@ import java.util.function.Function;
  * occurs at most once.
  */
 final class StableClassValue<T> extends ClassValue<T> {
+    final Object lock = new Object();
 
     public StableClassValue(ClassValueCalculator<T> calculator) {
         super(calculator);
@@ -27,11 +28,13 @@ final class StableClassValue<T> extends ClassValue<T> {
      * @param <Input> input of the computation
      * @param <Result> result of the computation
      */
-    private class StableValue<Input, Result> {
-        private final Function<Input, Result> calculator;
+    private static class StableValue<Input, Result> {
+        private Function<Input, Result> calculator;
         private volatile Result result;
-        StableValue(Function<Input, Result> calculator) {
+        private final Object lock;
+        StableValue(Object lock, Function<Input, Result> calculator) {
             this.calculator = calculator;
+            this.lock = lock;
         }
         Result get(Input input) {
             Result result = this.result;
@@ -39,13 +42,18 @@ final class StableClassValue<T> extends ClassValue<T> {
             if (result != null) return result;
 
             // lock on the StableClassValue so there are not multiple locks potentially in different orders
-            synchronized (StableClassValue.this) {
+            synchronized (lock) {
                 result = this.result;
 
                 if (result != null) return result;
 
                 result = this.calculator.apply(input);
                 this.result = result;
+                // Null out the calculator so that StableValue no longer holds a reference
+                // chain back to the ClassValue identity (its own weak key in Class.classValueMap).
+                // Without this, the hard value in ClassValueMap would transitively retain the
+                // weak key, making the entry immortal and leaking the Ruby runtime. (GH-9092)
+                this.calculator = null;
             }
 
             return result;
@@ -55,7 +63,7 @@ final class StableClassValue<T> extends ClassValue<T> {
     private final java.lang.ClassValue<StableValue<Class<?>, T>> proxy = new java.lang.ClassValue<StableValue<Class<?>, T>>() {
         @Override
         protected StableValue<Class<?>, T> computeValue(Class<?> type) {
-            return new StableValue<>(calculator);
+            return new StableValue<>(lock, calculator);
         }
     };
 }

@@ -114,21 +114,28 @@ public abstract class JavaSupport {
 
         this.javaClassCache = ClassValue.newInstance(klass -> new JavaClass(runtime, getJavaClassClass(), klass));
 
-        this.proxyClassCache = ClassValue.newInstance(this::computeProxyClass);
+        this.proxyClassCache = ClassValue.newInstance(new ProxyComputer(runtime)::computeProxyClass);
 
         // Proxy creation is synchronized (see above) so a HashMap is fine for recursion detection.
         this.unfinishedProxies = new ConcurrentHashMap<>(8, 0.75f, 1);
     }
 
-    /**
-     * Because of the complexity of processing a given class and all its dependencies,
-     * we opt to synchronize this logic. Creation of all proxies goes through here,
-     * allowing us to skip some threading work downstream.
-     */
-    private synchronized RubyModule computeProxyClass(Class<?> klass) {
-        RubyModule proxyKlass = Java.createProxyClassForClass(runtime, klass);
-        JavaExtensions.define(runtime, klass, proxyKlass); // (lazy) load extensions
-        return proxyKlass;
+    private static class ProxyComputer {
+        private final Ruby runtime;
+
+        ProxyComputer(Ruby runtime) {
+            this.runtime = runtime;
+        }
+        /**
+         * Because of the complexity of processing a given class and all its dependencies,
+         * we opt to synchronize this logic. Creation of all proxies goes through here,
+         * allowing us to skip some threading work downstream.
+         */
+        private synchronized RubyModule computeProxyClass(Class<?> klass) {
+            RubyModule proxyKlass = Java.createProxyClassForClass(runtime, klass);
+            JavaExtensions.define(runtime, klass, proxyKlass); // (lazy) load extensions
+            return proxyKlass;
+        }
     }
 
     @Deprecated(since = "9.4.0.0")
