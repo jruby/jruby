@@ -28,37 +28,68 @@
 
 package org.jruby.parser;
 
+import java.io.PrintStream;
+
 /**
  * Stubbed out version of our own yydebug impl for debugging if we ever find the need.
  */
 public class YYDebug {
-    public void accept(Object a) {
+    private final PrintStream out;
+
+    public YYDebug() {
+        out = System.out;
     }
-    
-    public void discard(int a, int b, String c, Object d) {
+
+    public void accept(Object value) {
+        out.println("accept\tvalue " + value);
     }
-    
-    public void error(String a) {
+
+    public void discard(int state, int token, String name, Object value) {
+        out.println("discard\tstate " + state + "\ttoken(int) " + name + "(" + token + ")\tvalue " + value);
     }
-    
-    public void lex(int a, int b, String c,Object d) {
+
+    public void error(String message) {
+        out.println("error\t"+message);
     }
-    
-    public void pop(int a) {
+
+    public void lex(int state, int token, String name, Object value) {
+        out.println("lex\tstate " + state + "\treading " + name + "(" + token + ")\tvalue " + value);
     }
-    
-    public void push(int a, Object b) {        
+
+    public void pop(int state) {
+        out.println("pop\tstate " + state + "\ton error");
     }
-    
-    public void reduce(int a, int b, int c, String d, int e) {
+
+    public void push(int state, Object value) {
+        out.println("push\tstate " + state + "\tvalue " + value);
     }
-    
+
+    public void reduce(int from, int to, int rule, String text, int len) {
+        out.println("reduce\tstate " + from + "\tuncover " + to + "\trule (" + rule + ") " + text);
+    }
+
     public void reject() {
+        out.println("reject");
     }
-    
-    public void shift(int a, int b, int c) {
+
+    public void shift(int from, int to, int errorFlag) {
+        switch (errorFlag) {
+            default:                // normally
+                out.println("shift\tfrom state " + from + " to " + to);
+                break;
+            case 0:
+            case 1:
+            case 2:        // in error recovery
+                out.println("shift\tfrom state " + from + " to " + to
+                        + "\t" + errorFlag + " left to recover");
+                break;
+            case 3:                // normally
+                out.println("shift\tfrom state " + from + " to " + to + "\ton error");
+                break;
+        }
     }
-    
-    public void shift(int a, int b) {
+
+    public void shift(int from, int to) {
+        out.println("goto\tfrom state " + from + " to " + to);
     }
 }
