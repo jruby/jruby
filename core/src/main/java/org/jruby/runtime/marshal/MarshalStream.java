@@ -54,6 +54,7 @@ import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
+import org.jruby.RubyStringByteList;
 import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.ClassIndex;
@@ -471,7 +472,7 @@ public class MarshalStream extends FilterOutputStream {
             writeObjectData(context, context.tru);
         } else {
             writeAndRegisterSymbol(asSymbol(context, SYMBOL_ENCODING).getBytes());
-            RubyString encodingString = new RubyString(context.runtime, stringClass(context), encoding.getName());
+            RubyString encodingString = new RubyStringByteList(context.runtime, stringClass(context), encoding.getName());
             writeObjectData(context, encodingString);
         }
     }
