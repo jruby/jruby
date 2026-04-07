@@ -89,6 +89,7 @@ import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Create.newHash;
 import static org.jruby.api.Create.newSharedString;
 import static org.jruby.api.Create.newString;
+import static org.jruby.api.Create.newStringByteList;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.indexError;
@@ -1711,10 +1712,22 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return regsub(context, str, src, pattern, matcher.getRegion(), matcher.getBegin(), matcher.getEnd());
     }
 
-    // rb_reg_regsub
+    static RubyStringByteList regsub(ThreadContext context, RubyStringByteList str, RubyStringByteList src, Regex pattern, Matcher matcher) {
+        return regsub(context, str, src, pattern, matcher.getRegion(), matcher.getBegin(), matcher.getEnd());
+    }
+
     static RubyString regsub(ThreadContext context, RubyString str, RubyString src, Regex pattern, Region regs,
                              final int begin, final int end) {
-        RubyString val = null;
+        if (str instanceof RubyStringByteList strSBL && src instanceof RubyStringByteList srcSBL) {
+            return regsub(context, strSBL, srcSBL, pattern, regs, begin, end);
+        }
+        throw new RuntimeException("unknown string type: str=" + str.getClass() + ", src=" + src.getClass());
+    }
+
+    // rb_reg_regsub
+    static RubyStringByteList regsub(ThreadContext context, RubyStringByteList str, RubyStringByteList src, Regex pattern, Region regs,
+                             final int begin, final int end) {
+        RubyStringByteList val = null;
         int no = 0, clen[] = {0};
         Encoding strEnc = EncodingUtils.encGet(context, str);
         Encoding srcEnc = EncodingUtils.encGet(context, src);
@@ -1739,7 +1752,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
             if (c != '\\' || s == e) continue;
 
-            if (val == null) val = newString(context, new ByteList(ss - p));
+            if (val == null) val = newStringByteList(context, new ByteList(ss - p));
             EncodingUtils.encStrBufCat(context.runtime, val, sBytes, p, ss - p, strEnc);
 
             c = ASCGET(acompat, sBytes, s, e, clen, strEnc);

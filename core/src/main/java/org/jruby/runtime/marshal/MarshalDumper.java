@@ -51,6 +51,7 @@ import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
+import org.jruby.RubyStringByteList;
 import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -547,7 +548,7 @@ public class MarshalDumper {
             writeObjectData(context, out, context.tru);
         } else {
             writeAndRegisterSymbol(out, symbolTable.getEncodingSymbol());
-            RubyString encodingString = new RubyString(context.runtime, stringClass(context), encoding.getName());
+            RubyString encodingString = new RubyStringByteList(context.runtime, stringClass(context), encoding.getName());
             writeObjectData(context, out, encodingString);
         }
     }

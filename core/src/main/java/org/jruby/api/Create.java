@@ -288,7 +288,6 @@ public class Create {
         return RubyString.newString(context.runtime, bytes, start, length);
     }
 
-
     /**
      * Creates a new RubyString from the provided bytelist.
      *
@@ -298,6 +297,17 @@ public class Create {
      */
     public static RubyString newString(ThreadContext context, ByteList bytes) {
         return RubyString.newString(context.runtime, bytes);
+    }
+
+    /**
+     * Creates a new RubyStringByteList from the provided bytelist.
+     *
+     * @param context the current thread context
+     * @param bytes the bytes to become a string
+     * @return the new RubyString
+     */
+    public static RubyStringByteList newStringByteList(ThreadContext context, ByteList bytes) {
+        return new RubyStringByteList(context.runtime, context.runtime.getString(), bytes);
     }
 
     /**
@@ -407,6 +417,17 @@ public class Create {
      * @return the new string
      */
     public static RubyString dupString(ThreadContext context, RubyString string) {
+        return string.strDup(context.runtime, stringClass(context));
+    }
+
+    /**
+     * Duplicate the given string and return a String (original subclass of String is not preserved).
+     *
+     * @param context the current thread context
+     * @param string the string to be duplicated
+     * @return the new string
+     */
+    public static RubyStringByteList dupString(ThreadContext context, RubyStringByteList string) {
         return string.strDup(context.runtime, stringClass(context));
     }
 
