@@ -126,11 +126,6 @@ public class PartialDelegatingMethod extends DynamicMethod {
         return entry.method.getRealMethod();
     }
 
-    @Deprecated(since = "9.3.0.0") @Override
-    public Arity getArity() {
-        return entry.method.getArity();
-    }
-
     @Override
     public Signature getSignature() {
         return entry.method.getSignature();

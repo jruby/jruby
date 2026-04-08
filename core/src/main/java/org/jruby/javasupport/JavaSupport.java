@@ -237,11 +237,6 @@ public abstract class JavaSupport {
         return javaClass;
     }
 
-    @Deprecated(since = "9.1.0.0")
-    public void setObjectJavaClass(JavaClass objectJavaClass) {
-        // noop
-    }
-
     @Deprecated(since = "9.4.0.0")
     public RubyClass getJavaArrayClass() {
         RubyClass clazz;
@@ -272,11 +267,6 @@ public abstract class JavaSupport {
         RubyModule module;
         if ((module = javaInterfaceTemplate) != null) return module;
         return javaInterfaceTemplate = getModule(runtime.getCurrentContext(), "JavaInterfaceTemplate");
-    }
-
-    @Deprecated(since = "9.3.0.0")
-    public RubyModule getPackageModuleTemplate() {
-        return null; // no longer used + has been deprecated since ~ 9.1
     }
 
     public RubyClass getJavaProxyClass() {
@@ -366,12 +356,6 @@ public abstract class JavaSupport {
     abstract ClassValue<Map<String, AssignedName>> getStaticAssignedNames();
 
     abstract ClassValue<Map<String, AssignedName>> getInstanceAssignedNames();
-
-    @Deprecated(since = "9.4.3.0")
-    public abstract Map<String, JavaClass> getNameClassMap();
-
-    @Deprecated(since = "9.1.0.0") // internal API - no longer used
-    public abstract Map<Set<?>, JavaProxyClass> getJavaProxyClassCache();
 
     @Deprecated(since = "9.4.0.0") // internal API - no longer used (kept functional due deprecated JavaClass.get API)
     public JavaClass getJavaClassFromCache(Class clazz) {

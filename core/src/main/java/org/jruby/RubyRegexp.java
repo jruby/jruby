@@ -96,7 +96,7 @@ import static org.jruby.api.Error.runtimeError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.api.Warn.warn;
 import static org.jruby.api.Warn.warning;
-import static org.jruby.runtime.ThreadContext.resetCallInfo;
+import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.StringSupport.CR_7BIT;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
@@ -255,16 +255,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         } catch (InterruptedException e) {
             throw context.runtime.newInterruptedRegexpError("Regexp Interrupted");
         }
-    }
-
-    @Deprecated(since = "9.2.0.0") // not-used
-    public static int matcherSearch(Ruby runtime, Matcher matcher, int start, int range, int option) {
-        return matcherSearch(runtime.getCurrentContext(), matcher, start, range, option);
-    }
-
-    @Deprecated(since = "9.2.0.0") // not-used
-    public static int matcherMatch(Ruby runtime, Matcher matcher, int start, int range, int option) {
-        return matcherMatch(runtime.getCurrentContext(), matcher, start, range, option);
     }
 
     @Override
@@ -477,11 +467,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         RegexpSupport.preprocess(runtime, bytes, bytes.getEncoding(), new Encoding[]{null}, RegexpSupport.ErrorMode.RAISE);
     }
 
-    @Deprecated(since = "9.2.10.0") // not used
-    public static RubyString preprocessDRegexp(Ruby runtime, RubyString[] strings, int embeddedOptions) {
-        return preprocessDRegexp(runtime, strings, RegexpOptions.fromEmbeddedOptions(embeddedOptions));
-    }
-
     // rb_reg_preprocess_dregexp
     public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject[] strings, RegexpOptions options) {
         return preprocessDRegexp(runtime.getCurrentContext(), options, strings);
@@ -507,42 +492,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return processElementIntoResult(context, null, arg0, options, null, context.encodingHolder());
     }
 
-    @Deprecated(since = "9.2.10.0") // not used
-    public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject arg0, RegexpOptions options) {
-        var context = runtime.getCurrentContext();
-        return processElementIntoResult(context, null, arg0, options, null, context.encodingHolder());
-    }
-
     public static RubyString preprocessDRegexp(ThreadContext context, RegexpOptions options, IRubyObject arg0, IRubyObject arg1) {
-        return processElementIntoResult(context, null, arg0, arg1, options, null, context.encodingHolder());
-    }
-
-    @Deprecated(since = "9.2.10.0")
-    public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject arg0, IRubyObject arg1, RegexpOptions options) {
-        var context = runtime.getCurrentContext();
         return processElementIntoResult(context, null, arg0, arg1, options, null, context.encodingHolder());
     }
 
     public static RubyString preprocessDRegexp(ThreadContext context, RegexpOptions options, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         return processElementIntoResult(context, null, arg0, arg1, arg2, options, null, context.encodingHolder());
-    }
-
-    @Deprecated(since = "9.2.10.0")
-    public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, RegexpOptions options) {
-        var context = runtime.getCurrentContext();
-        return processElementIntoResult(context, null, arg0, arg1, arg2, options, null, context.encodingHolder());
-    }
-
-    @Deprecated(since = "9.2.10.0")
-    public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, RegexpOptions options) {
-        var context = runtime.getCurrentContext();
-        return processElementIntoResult(context, null, arg0, arg1, arg2, arg3, options, null, context.encodingHolder());
-    }
-
-    @Deprecated(since = "9.2.10.0")
-    public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, RegexpOptions options) {
-        var context = runtime.getCurrentContext();
-        return processElementIntoResult(context, null, arg0, arg1, arg2, arg3, arg4, options, null, context.encodingHolder());
     }
 
     private static RubyString processElementIntoResult(
@@ -941,7 +896,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, keywords = true)
     public IRubyObject initialize_m(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        boolean keywords = (resetCallInfo(context) & ThreadContext.CALL_KEYWORD) != 0;
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
 
         IRubyObject timeout;
         RegexpOptions regexpOptions;
@@ -968,7 +923,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, keywords = true)
     public IRubyObject initialize_m(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        boolean keywords = (resetCallInfo(context) & ThreadContext.CALL_KEYWORD) != 0;
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
 
         if (arg0 instanceof RubyRegexp && Options.PARSER_WARN_FLAGS_IGNORED.load()) {
             warn(context, "flags ignored");
@@ -1322,11 +1277,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
     }
 
-    @Deprecated(since = "9.3.0.0")
-    public final RubyBoolean startWithP(ThreadContext context, RubyString str) {
-        return startsWith(context, str) ? context.tru : context.fals;
-    }
-
     /**
      * Search the given string with this Regexp.
      *
@@ -1581,7 +1531,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         for (Iterator<NameEntry> i = pattern.namedBackrefIterator(); i.hasNext();) {
             NameEntry e = i.next();
             int[] backrefs = e.getBackRefs();
-            RubyArray ary = RubyArray.newBlankArrayInternal(context.runtime, backrefs.length);
+            RubyArray ary = RubyArrayNative.newBlankArrayInternal(context.runtime, backrefs.length);
 
             for (int idx = 0; idx<backrefs.length; idx++) {
                 ary.storeInternal(context, idx, asFixnum(context, backrefs[idx]));
@@ -1607,12 +1557,11 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     // MRI: reg_extract_args - This does not break the regexp into a String value since it will never used if the first
     // argument is a Regexp.  This also is true of MRI so I am not sure why they do the string part.
-    private static RegexpArgs extractRegexpArgs(ThreadContext context, IRubyObject[] args) {
-        int callInfo = resetCallInfo(context);
+    private static RegexpArgs extractRegexpArgs(ThreadContext context, final int callInfo, IRubyObject[] args) {
         int length = args.length;
 
         IRubyObject timeout = null;
-        if ((callInfo & ThreadContext.CALL_KEYWORD) != 0) {
+        if (hasKeywords(callInfo)) {
             length--;
             RubyHash opts = Convert.castAsHash(context, args[args.length - 1]);
             timeout = opts.fastARef(asSymbol(context, "timeout"));
@@ -1631,9 +1580,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return new RegexpArgs(string, opts, timeout);
     }
 
-    @JRubyMethod(name = "linear_time?", meta = true, required = 1, optional = 1)
+    @JRubyMethod(name = "linear_time?", meta = true, required = 1, optional = 1, keywords = true)
     public static IRubyObject linear_time_p(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        RegexpArgs regexpArgs = extractRegexpArgs(context, args);
+        final int callInfo = ThreadContext.resetCallInfo(context);
+        RegexpArgs regexpArgs = extractRegexpArgs(context, callInfo, args);
         RubyRegexp regexp = args[0] instanceof RubyRegexp reg ?
                 reg : newRegexpFromStr(context.runtime, regexpArgs.string, regexpArgs.options);
 
@@ -1940,22 +1890,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         if (regexp.getOptions(context).isFixed()) options |= RE_FIXED;
 
         output.writeByte(out, options);
-    }
-
-    @Deprecated(since = "9.3.0.0")
-    public final int search(ThreadContext context, RubyString str, int pos, boolean reverse, IRubyObject[] holder) {
-        int result = searchString(context, str, pos, reverse);
-        if (holder != null) {
-            holder[0] = context.getLocalMatchOrNil();
-        } else {
-            context.setBackRef(context.getLocalMatchOrNil());
-        }
-        return result;
-    }
-
-    @Deprecated(since = "9.3.0.0")
-    public static IRubyObject getBackRef(ThreadContext context) {
-        return context.getBackRef();
     }
 
     @Deprecated(since = "10.0.0.0")

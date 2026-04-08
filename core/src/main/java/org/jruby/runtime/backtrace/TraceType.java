@@ -813,15 +813,4 @@ public class TraceType {
     public static boolean isExcludedInternal(String filename) {
         return TraceType.isInternalFile(filename) || TraceType.hasInternalMarker(filename);
     }
-
-    @Deprecated(since = "9.2.7.0")
-    public RubyStackTraceElement getBacktraceElement(ThreadContext context, int uplevel) {
-        // NOTE: could be optimized not to walk the whole stack
-        RubyStackTraceElement[] elements = getBacktrace(context).getBacktrace(context.runtime);
-
-        // User can ask for level higher than stack
-        if (elements.length <= uplevel + 1) uplevel = -1;
-
-        return elements[uplevel + 1];
-    }
 }

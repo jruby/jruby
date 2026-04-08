@@ -35,6 +35,7 @@ import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 
+import org.jcodings.Config;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB.Entry;
 import org.jcodings.specific.ASCIIEncoding;
@@ -44,6 +45,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash.HashEntryIterator;
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.compiler.Constantizable;
 import org.jruby.runtime.ClassIndex;
@@ -77,12 +79,16 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     public static final ByteList INTERNAL = new ByteList(encodeISO("internal"), false);
     public static final ByteList BINARY_ASCII_NAME = new ByteList(encodeISO("BINARY (ASCII-8BIT)"), false);
 
+    @JRubyConstant("UNICODE_VERSION")
+    public static final String UNICODE_VERSION = Config.UNICODE_VERSION_STRING;
+
     public static RubyClass createEncodingClass(ThreadContext context, RubyClass Object) {
         return defineClass(context, "Encoding", Object, NOT_ALLOCATABLE_ALLOCATOR).
                 reifiedClass(RubyEncoding.class).
                 kindOf(new RubyModule.JavaClassKindOf(RubyEncoding.class)).
                 classIndex(ClassIndex.ENCODING).
                 defineMethods(context, RubyEncoding.class).
+                defineConstants(context, RubyEncoding.class).
                 tap(c -> c.singletonClass(context).undefMethods(context, "allocate"));
     }
 
@@ -151,13 +157,11 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         if (!(obj1 instanceof RubyString) && enc1 instanceof USASCIIEncoding) return enc2;
 
         if (!(obj1 instanceof RubyString)) {
-            IRubyObject objTmp = obj1; // swap1 obj1 & obj2
+            IRubyObject objTmp = obj1; // swap obj1 & obj2
             obj1 = obj2;
             obj2 = objTmp;
-
-            Encoding encTmp = enc1;  // swap their encodings
-            enc1 = enc2;
-            enc2 = encTmp;
+            // Note: enc1/enc2 are NOT swapped — they retain the
+            // original argument order, matching CRuby's rb_enc_compatible.
         }
 
         if (obj1 instanceof RubyString) {
@@ -679,31 +683,10 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         return encodingService(context).getDefaultInternal();
     }
 
-    @Deprecated(since = "9.0.0.0")
-    public static IRubyObject getDefaultInternal(IRubyObject recv) {
-        return getDefaultInternal(recv.getRuntime().getCurrentContext(), recv);
-    }
-
     @JRubyMethod(name = "default_internal=", meta = true)
     public static IRubyObject setDefaultInternal(ThreadContext context, IRubyObject recv, IRubyObject encoding) {
         if (context.runtime.isVerbose()) context.runtime.getWarnings().warning("setting Encoding.default_internal");
         EncodingUtils.rbEncSetDefaultInternal(context, encoding);
         return encoding;
-    }
-
-    /**
-     * @deprecated use {@link #decodeRaw(byte[], int, int)}
-     */
-    @Deprecated(since = "9.3.0.0")
-    public static String decodeISO(byte[] bytes, int start, int length) {
-        return decodeRaw(bytes, start, length);
-    }
-
-    /**
-     * @deprecated use {@link #decodeRaw(ByteList)}
-     */
-    @Deprecated(since = "9.3.0.0")
-    public static String decodeISO(ByteList byteList) {
-        return decodeRaw(byteList);
     }
 }

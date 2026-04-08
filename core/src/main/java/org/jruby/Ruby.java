@@ -50,6 +50,7 @@ import org.jruby.compiler.NotCompilableException;
 import org.jruby.exceptions.LocalJumpError;
 import org.jruby.exceptions.SystemExit;
 import org.jruby.ext.jruby.JRubyUtilLibrary;
+import org.jruby.ext.set.RubySet;
 import org.jruby.ext.thread.ConditionVariable;
 import org.jruby.ext.thread.Mutex;
 import org.jruby.ext.thread.Queue;
@@ -497,8 +498,6 @@ public final class Ruby implements Constantizable {
             producerClass = null;
         }
 
-        continuationClass = initContinuation(context);
-
         TracePoint.createTracePointClass(context, objectClass);
 
         warningCategories = config.getWarningCategories();
@@ -517,6 +516,8 @@ public final class Ruby implements Constantizable {
         fiberClass = new ThreadFiberLibrary().createFiberClass(context, objectClass);
 
         dataClass = RubyData.createDataClass(context, objectClass);
+
+        setClass = RubySet.createSetClass(context, objectClass, enumerableModule);
 
         // everything booted, so SizedQueue should be available; set up root fiber
         ThreadFiber.initRootFiber(context, context.getThread());
@@ -602,6 +603,8 @@ public final class Ruby implements Constantizable {
         loadService.provide("thread.rb");
         loadService.provide("fiber.rb");
         loadService.provide("ruby2_keywords.rb");
+        loadService.provide("set.rb");
+        loadService.provide("pathname.rb");
 
         // Load preludes
         initRubyPreludes();
@@ -1354,19 +1357,6 @@ public final class Ruby implements Constantizable {
     }
 
     /**
-     * Retrieve the class with the given name from the Object namespace. The
-     * module name must be an interned string, but this method will be faster
-     * than the non-interned version.
-     *
-     * @param internedName the name of the class; <em>must</em> be an interned String!
-     * @return
-     */
-    @Deprecated(since = "1.7.0")
-    public RubyClass fastGetClass(String internedName) {
-        return Access.getClass(getCurrentContext(), internedName);
-    }
-
-    /**
      * A variation of defineClass that allows passing in an array of supplementary
      * call sites for improving dynamic invocation performance.
      *
@@ -1582,7 +1572,7 @@ public final class Ruby implements Constantizable {
     }
 
     private void loadBundler() {
-        loadService.loadFromClassLoader(getClassLoader(), "jruby/bundler/startup.rb", false);
+        loadService.loadFromClassLoader("jruby/bundler/startup.rb", false);
     }
 
     @SuppressWarnings("ReturnValueIgnored")
@@ -1608,18 +1598,7 @@ public final class Ruby implements Constantizable {
         }
     }
 
-    @SuppressWarnings("deprecation")
-    private RubyClass initContinuation(ThreadContext context) {
-        // Bare-bones class for backward compatibility
-        if (profile.allowClass("Continuation")) {
-            // Some third-party code (racc's cparse ext, at least) uses RubyContinuation directly, so we need this.
-            // Most functionality lives in continuation.rb now.
-            return RubyContinuation.createContinuation(context, objectClass);
-        }
-        return null;
-    }
-
-    public static final int NIL_PREFILLED_ARRAY_SIZE = RubyArray.ARRAY_DEFAULT_SIZE * 8;
+    public static final int NIL_PREFILLED_ARRAY_SIZE = RubyArrayNative.ARRAY_DEFAULT_SIZE * 8;
     private final IRubyObject nilPrefilledArray[];
 
     public IRubyObject[] getNilPrefilledArray() {
@@ -1776,7 +1755,7 @@ public final class Ruby implements Constantizable {
 
     private void initRubyKernel() {
         // load Ruby parts of core
-        loadService.loadFromClassLoader(getClassLoader(), "jruby/kernel.rb", false);
+        loadService.loadFromClassLoader("jruby/kernel.rb", false);
     }
 
     private void initRubyPreludes() {
@@ -1784,7 +1763,7 @@ public final class Ruby implements Constantizable {
         if (RubyInstanceConfig.DEBUG_PARSER) return;
 
         // load Ruby parts of core
-        loadService.loadFromClassLoader(getClassLoader(), "jruby/preludes.rb", false);
+        loadService.loadFromClassLoader("jruby/preludes.rb", false);
     }
 
     public IRManager getIRManager() {
@@ -2188,10 +2167,6 @@ public final class Ruby implements Constantizable {
         this.defaultThreadGroup = defaultThreadGroup;
     }
 
-    public RubyClass getContinuation() {
-        return continuationClass;
-    }
-
     public RubyClass getStructClass() {
         return structClass;
     }
@@ -2508,6 +2483,10 @@ public final class Ruby implements Constantizable {
         return dataClass;
     }
 
+    public RubyClass getSet() {
+        return setClass;
+    }
+
     /** The default Ruby Random object for this runtime */
     private RubyRandom defaultRandom;
 
@@ -2621,7 +2600,7 @@ public final class Ruby implements Constantizable {
     }
 
     public static ClassLoader getClassLoader() {
-        // we try to getService the classloader that loaded JRuby, falling back on System
+        // we try to get the classloader that loaded JRuby, falling back on System
         ClassLoader loader = Ruby.class.getClassLoader();
         if (loader == null) {
             loader = ClassLoader.getSystemClassLoader();
@@ -4391,7 +4370,7 @@ public final class Ruby implements Constantizable {
     }
 
     public RaiseException newMathDomainError(String message) {
-        return newRaiseException(getMathDomainError(), "Numerical argument is out of domain - \"" + message + "\"");
+        return newRaiseException(getMathDomainError(), "Numerical argument is out of domain - " + message);
     }
 
     public RaiseException newEncodingError(String message){
@@ -4452,12 +4431,13 @@ public final class Ruby implements Constantizable {
      * @return a new RaiseException wrapping a new Ruby exception
      */
     public RaiseException newRaiseException(RubyClass exceptionClass, String message) {
-        IRubyObject cause = getCurrentContext().getErrorInfo();
+        ThreadContext context = getCurrentContext();
+        IRubyObject cause = context.getErrorInfo();
 
         RaiseException exception = RaiseException.from(this, exceptionClass, message);
 
         if (cause != null && !cause.isNil()) {
-            exception.getException().setCause(cause);
+            exception.getException().setCause(context, cause);
         }
 
         return exception;
@@ -4542,21 +4522,6 @@ public final class Ruby implements Constantizable {
 
     public void setAbortOnException(final boolean abortOnException) {
         this.abortOnException = abortOnException;
-    }
-
-    @Deprecated(since = "9.3.1.0")
-    public boolean isGlobalAbortOnExceptionEnabled() {
-        return abortOnException;
-    }
-
-    @Deprecated(since = "9.3.1.0")
-    public void setGlobalAbortOnExceptionEnabled(boolean enable) {
-        abortOnException = enable;
-    }
-
-    @Deprecated(since = "9.3.1.0")
-    public IRubyObject getReportOnException() {
-        return reportOnException ? getTrue() : getFalse();
     }
 
     public boolean isReportOnException() {
@@ -4800,7 +4765,7 @@ public final class Ruby implements Constantizable {
      *
      * @return the builtin bits array
      */
-    public short[] getBuiltinBits() {
+    public int[] getBuiltinBits() {
         return builtinBits;
     }
 
@@ -5076,7 +5041,6 @@ public final class Ruby implements Constantizable {
     public RubyThread getChdirThread() { return this.chdirCurrentThread; }
 
     public RubyStackTraceElement getChdirLocation() { return this.chdirLocation; }
-
     /**
      * Because RubyString.equals does not consider encoding, and MRI's logic for deduplication does need to consider
      * encoding, we use a wrapper object as the key. These wrappers need to be used on all get operations, so if we
@@ -5208,7 +5172,7 @@ public final class Ruby implements Constantizable {
     private ThreadService threadService;
 
     /** Bit flags tracking which builtin methods have been redefined (thread-local builtin tracking system) */
-    private final short[] builtinBits = Builtins.allocate();
+    private final int[] builtinBits = Builtins.allocate();
 
     private final POSIX posix;
     private POSIX nativePosix;
@@ -5305,7 +5269,6 @@ public final class Ruby implements Constantizable {
     private final RubyClass ioBufferClass;
     private final RubyClass threadClass;
     private final RubyClass threadGroupClass;
-    private final RubyClass continuationClass;
     private final RubyClass structClass;
     private final RubyClass exceptionClass;
     private final RubyClass dummyClass;
@@ -5316,6 +5279,7 @@ public final class Ruby implements Constantizable {
     private final RubyClass closedQueueError;
     private final RubyClass sizedQueueClass;
     private final RubyClass dataClass;
+    private final RubyClass setClass;
 
     private RubyClass tmsStruct;
     private RubyClass passwdStruct;
@@ -5757,11 +5721,6 @@ public final class Ruby implements Constantizable {
     transient RubyString tzVar;
 
     ParserManager parserManager;
-
-    @Deprecated(since = "9.3.0.0")
-    public RaiseException newErrnoEADDRFromBindException(BindException be) {
-        return newErrnoEADDRFromBindException(be, null);
-    }
 
     @Deprecated(since = "9.4.0.0")
     public RaiseException newFrozenError(String objectType) {

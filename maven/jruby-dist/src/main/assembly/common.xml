@@ -45,6 +45,13 @@
       </includes>
     </fileSet>
     <fileSet>
+      <directory>${project.build.directory}/rubygems-provided/extensions</directory>
+      <outputDirectory>/lib/ruby/gems/shared/extensions</outputDirectory>
+      <includes>
+        <include>**/*</include>
+      </includes>
+    </fileSet>
+    <fileSet>
       <directory>${project.build.directory}/rdoc/unpacked/usr</directory>
       <outputDirectory>/</outputDirectory>
       <includes>

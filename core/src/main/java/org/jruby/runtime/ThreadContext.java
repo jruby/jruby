@@ -43,7 +43,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
-import org.jruby.RubyContinuation;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyProc;
 import org.jruby.exceptions.CatchThrow;
@@ -112,7 +111,7 @@ public final class ThreadContext {
      *
      * Usage: Builtins.checkIntegerPlus(context) reads context.builtinBits[0]
      */
-    public final short[] builtinBits;
+    public final int[] builtinBits;
 
     // Thread#set_trace_func for specific threads events.  We need this because successive
     // Thread.set_trace_funcs will end up replacing the current one (as opposed to add_trace_func).
@@ -187,13 +186,6 @@ public final class ThreadContext {
     // (via IR instructions) for blocks.
     private Throwable savedExcInLambda;  // See handleBreakAndReturnsInLambda in IRRuntimeHelpers
 
-    /**
-     * This fields is no longer initialized, is null by default!
-     * @deprecated Use {@link #getSecureRandom()} instead.
-     */
-    @Deprecated(since = "9.1.0.0")
-    public transient SecureRandom secureRandom;
-
     private static boolean tryPreferredPRNG = true;
     private static boolean trySHA1PRNG = true;
 
@@ -202,38 +194,6 @@ public final class ThreadContext {
     public final JavaSites sites;
 
     private RubyMatchData matchData;
-
-    @SuppressWarnings("deprecation")
-    public SecureRandom getSecureRandom() {
-        SecureRandom secureRandom = this.secureRandom;
-
-        // Try preferred PRNG, which defaults to NativePRNGNonBlocking
-        if (secureRandom == null && tryPreferredPRNG) {
-            try {
-                secureRandom = SecureRandom.getInstance(Options.PREFERRED_PRNG.load());
-            } catch (Exception e) {
-                tryPreferredPRNG = false;
-            }
-        }
-
-        // Try SHA1PRNG
-        if (secureRandom == null && trySHA1PRNG) {
-            try {
-                secureRandom = SecureRandom.getInstance("SHA1PRNG");
-            } catch (Exception e) {
-                trySHA1PRNG = false;
-            }
-        }
-
-        // Just let JDK do whatever it does
-        if (secureRandom == null) {
-            secureRandom = new SecureRandom();
-        }
-
-        this.secureRandom = secureRandom;
-
-        return secureRandom;
-    }
 
     private Encoding[] encodingHolder;
 
@@ -449,11 +409,6 @@ public final class ThreadContext {
 
         System.arraycopy(catchStack, 0, newCatchStack, 0, catchStack.length);
         catchStack = newCatchStack;
-    }
-
-    @Deprecated(since = "9.2.6.0")
-    public void pushCatch(RubyContinuation.Continuation catchTarget) {
-        pushCatch((CatchThrow) catchTarget);
     }
 
     public void pushCatch(CatchThrow catchTarget) {
@@ -861,14 +816,6 @@ public final class ThreadContext {
     }
 
     /**
-     * Used by the evaluator and the compiler to look up a constant by name
-     */
-    @Deprecated(since = "1.7.2")
-    public IRubyObject getConstant(String internedName) {
-        return getCurrentStaticScope().getConstant(this, internedName);
-    }
-
-    /**
      * Render the current backtrace as a string to the given StringBuilder. This will honor the currently-configured
      * backtrace format and content.
      *
@@ -917,7 +864,7 @@ public final class ThreadContext {
      * @param length the length of the trace
      * @return an Array with the backtrace locations
      */
-    public IRubyObject createCallerLocations(int level, Integer length, Stream<StackWalker.StackFrame> stackStream) {
+    public IRubyObject createCallerLocations(int level, int length, Stream<StackWalker.StackFrame> stackStream) {
         runtime.incrementCallerCount();
 
         RubyStackTraceElement[] fullTrace = getPartialTrace(level, length, stackStream);
@@ -933,7 +880,7 @@ public final class ThreadContext {
     }
 
     /**
-     * Like {@link #createCallerLocations(int, Integer, Stream)} but accepts a lambda to yield each location and yields
+     * Like {@link #createCallerLocations(int, int, Stream)} but accepts a lambda to yield each location and yields
      * all stack elements until the loop ends or is broken early.
      *
      * @param stackStream the stream of StackFrame objects from JVM
@@ -943,8 +890,8 @@ public final class ThreadContext {
         eachPartialTrace(stackStream, (elt) -> consumer.accept(RubyThread.Location.newLocation(runtime, elt)));
     }
 
-    private RubyStackTraceElement[] getPartialTrace(int level, Integer length, Stream<StackWalker.StackFrame> stackStream) {
-        if (length != null && length == 0) return RubyStackTraceElement.EMPTY_ARRAY;
+    private RubyStackTraceElement[] getPartialTrace(int level, int length, Stream<StackWalker.StackFrame> stackStream) {
+        if (length == 0) return RubyStackTraceElement.EMPTY_ARRAY;
         return TraceType.Gather.CALLER.getBacktraceData(this, stackStream).getPartialBacktrace(runtime, level + length);
     }
 
@@ -956,7 +903,7 @@ public final class ThreadContext {
         return TraceType.Gather.WARN.getBacktraceData(this, stackStream).getPartialBacktrace(runtime, level + 1);
     }
 
-    private static int safeLength(int level, Integer length, RubyStackTraceElement[] trace) {
+    private static int safeLength(int level, int length, RubyStackTraceElement[] trace) {
         final int baseLength = trace.length - level;
         return Math.min(length, baseLength);
     }
@@ -1437,6 +1384,11 @@ public final class ThreadContext {
         IRubyObject call(ThreadContext context, T state, IRubyObject obj, boolean recur);
     }
 
+    // MRI: rb_exec_recursive
+    public <T> IRubyObject execRecursive(RecursiveFunctionEx<T> func, T state, IRubyObject obj, String name) {
+        return safeRecurse(func, state, obj, name, false);
+    }
+
     public <T> IRubyObject safeRecurse(RecursiveFunctionEx<T> func, T state, IRubyObject obj, String name, boolean outer) {
         Map<IRubyObject, IRubyObject> guards = safeRecurseGetGuards(name);
 
@@ -1589,6 +1541,7 @@ public final class ThreadContext {
      * Clear call info state (set to 0). This method is static to make it trivially
      * inlinable on most JVM JITs
      */
+    @JIT
     public static void clearCallInfo(ThreadContext context) {
         context.callInfo = 0;
     }
@@ -1597,10 +1550,11 @@ public final class ThreadContext {
         return (callInfo & CALL_KEYWORD) != 0;
     }
 
-    @Deprecated(since = "9.3.0.0")
-    public IRubyObject setBackRef(IRubyObject match) {
-        if (match.isNil()) return clearBackRef();
+    public static boolean hasNonemptyKeywords(int callInfo) {
+        return hasKeywords(callInfo) && !keywordsEmpty(callInfo);
+    }
 
-        return setBackRef((RubyMatchData) match);
+    public static boolean keywordsEmpty(int callInfo) {
+        return (callInfo & CALL_KEYWORD_EMPTY) != 0;
     }
 }

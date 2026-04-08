@@ -1,6 +1,5 @@
-exclude :test_AES, 'works - just need to enable JCE unlimited strength'
-exclude :test_AES_crush, 'needs investigation'
 exclude :test_aes_gcm, "work in progress"
+exclude :test_auth_tag_error_inheritance, "new failure with Ruby 4.0 tests, tested on MacOS, https://github.com/jruby/jruby/issues/9271"
 exclude :test_ciphers, "work in progress"
 exclude :test_crypt_after_key, "work in progress"
 exclude :test_key_iv_set, "work in progress"

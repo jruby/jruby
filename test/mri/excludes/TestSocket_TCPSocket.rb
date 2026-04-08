@@ -12,3 +12,4 @@ exclude :test_initialize_with_connection_failure_after_hostname_resolution_failu
 exclude :test_initialize_with_hostname_resolution_failure_after_connection_failure, "needs investigation"
 exclude :test_inspect, "missing socket information"
 exclude :test_recvfrom, "no addrinfo returned"
+exclude :test_tcp_initialize_open_timeout, "connection refused to localhost"

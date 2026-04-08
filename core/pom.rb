@@ -45,16 +45,16 @@ project 'JRuby Base' do
 
   # exclude jnr-ffi to avoid problems with shading and relocation of the asm packages
   jar 'com.github.jnr:jnr-netdb:1.2.0', exclusions: ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-enxio:0.32.19', exclusions: ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-unixsocket:0.38.24', exclusions: ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-posix:3.1.21', exclusions: ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-enxio:0.32.20', exclusions: ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-unixsocket:0.38.25', exclusions: ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-posix:3.1.22', exclusions: ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-constants:0.10.4', exclusions: ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-ffi:2.2.18'
+  jar 'com.github.jnr:jnr-ffi:2.2.19'
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
-  jar 'org.jruby.joni:joni:2.2.6'
-  jar 'org.jruby.jcodings:jcodings:1.0.63'
+  jar 'org.jruby.joni:joni:2.2.7'
+  jar 'org.jruby.jcodings:jcodings:1.0.64'
   jar 'org.jruby:dirgra:0.5'
 
   jar 'com.headius:invokebinder:1.16-SNAPSHOT'

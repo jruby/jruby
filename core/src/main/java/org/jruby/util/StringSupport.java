@@ -746,16 +746,6 @@ public final class StringSupport {
         return offset(str.getEncoding(), value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), pos);
     }
 
-    @Deprecated(since = "9.2.0.0")
-    public static int toLower(Encoding enc, int c) {
-        return Encoding.isAscii(c) ? AsciiTables.ToLowerCaseTable[c] : c;
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public static int toUpper(Encoding enc, int c) {
-        return Encoding.isAscii(c) ? AsciiTables.ToUpperCaseTable[c] : c;
-    }
-
     public static int caseCmp(byte[]bytes1, int p1, byte[]bytes2, int p2, int len) {
         int i = -1;
         for (; ++i < len && bytes1[p1 + i] == bytes2[p2 + i];) {}
@@ -908,6 +898,7 @@ public final class StringSupport {
         return 0;
     }
 
+    // Deprecated but still used by StringIO
     @Deprecated(since = "10.0.0.0")
     public static int memchr(byte[] ptr, int start, final int find, int len) {
         return Helpers.memchr(ptr, start, find, len);
@@ -2959,10 +2950,5 @@ public final class StringSupport {
         } catch (UnsupportedCharsetException e) {}
 
         return new String(bytes.unsafeBytes(), bytes.begin(), bytes.realSize());
-    }
-
-    @Deprecated(since = "9.1.16.0")
-    public static boolean isUnicode(Encoding enc) {
-        return enc.isUnicode();
     }
 }

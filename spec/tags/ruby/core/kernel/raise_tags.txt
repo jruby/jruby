@@ -6,3 +6,5 @@ fails:Kernel#raise re-raises a previously rescued exception without overwriting 
 fails:Kernel#raise re-raises a previously rescued exception that doesn't have a cause and is a cause of other exception (that wasn't raised explicitly) without setting a cause implicitly
 fails:Kernel#raise raises a TypeError when passed a message and an extra argument
 fails:Kernel#raise doesn't raise a TypeError when given cause is nil
+fails:Kernel#raise with previously rescued exception re-raises a previously rescued exception without overwriting the cause when it's explicitly specified with :cause option and has nil value
+fails:Kernel#raise with previously rescued exception re-raises a previously rescued exception that doesn't have a cause and is a cause of other exception (that wasn't raised explicitly) without setting a cause implicitly

@@ -192,6 +192,10 @@ public abstract class VariableAccessor {
         return "ivar:" + getName() + ":" + index;
     }
 
+    public VariableAccessor cloneFor(RubyClass newRealClass) {
+        throw new UnsupportedOperationException();
+    }
+
     /** a dummy accessor that will always return null */
     public static final VariableAccessor DUMMY_ACCESSOR = new VariableAccessor(null, null, -1, -1) {};
     

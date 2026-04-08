@@ -20,15 +20,15 @@ echo $JRUBY_VERSION > VERSION
 
 set -x
 
-mvn
-git add VERSION core/pom.xml lib/pom.xml  pom.xml shaded/pom.xml
+./mvnw -ntp
+git add VERSION core/pom.xml lib/pom.xml  pom.xml shaded/pom.xml bin/.jruby.release
 git commit -m "Version $JRUBY_VERSION updated for release"
 cd ..
 rm -rf release
 git clone $REPO release
 cd release
 pwd
-mvn clean deploy -Prelease
+./mvnw -ntp clean deploy -Prelease
 jruby -S rake post_process_artifacts
 
 cd release

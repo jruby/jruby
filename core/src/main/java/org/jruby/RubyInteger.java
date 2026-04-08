@@ -115,11 +115,6 @@ public abstract class RubyInteger extends RubyNumeric {
         super(runtime, rubyClass, useObjectSpace);
     }
 
-    @Deprecated(since = "1.7.0")
-    public RubyInteger(Ruby runtime, RubyClass rubyClass, boolean useObjectSpace, boolean canBeTainted) {
-        super(runtime, rubyClass, useObjectSpace, canBeTainted);
-    }
-
     @Override
     public RubyInteger convertToInteger() {
     	return this;
@@ -1158,16 +1153,6 @@ public abstract class RubyInteger extends RubyNumeric {
         return op_aref(getCurrentContext(), other);
     }
 
-    @Deprecated(since = "9.2.0.0") // no longer used
-    public IRubyObject op_lshift(IRubyObject other) {
-        return op_lshift(getCurrentContext(), other);
-    }
-
-    @Deprecated(since = "9.2.0.0") // no longer used
-    public IRubyObject op_rshift(IRubyObject other) {
-        return op_rshift(getCurrentContext(), other);
-    }
-
     @Deprecated(since = "10.0.0.0")
     public IRubyObject to_f() {
         return to_f(getCurrentContext());
@@ -1184,44 +1169,5 @@ public abstract class RubyInteger extends RubyNumeric {
 
     private static JavaSites.IntegerSites sites(ThreadContext context) {
         return context.sites.Integer;
-    }
-
-    /** rb_int_induced_from
-     *
-     */
-    @Deprecated(since = "9.0.0.0")
-    public static IRubyObject induced_from(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        if (other instanceof RubyFixnum || other instanceof RubyBignum) return other;
-
-        if (!(other instanceof RubyFloat) && !(other instanceof RubyRational)) {
-            throw typeError(context, "failed to convert ", other, " into Integer");
-        }
-
-        return other.callMethod(context, "to_i");
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject round() {
-        return this;
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject ceil(){
-        return this;
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject floor(){
-        return this;
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject truncate(){
-        return this;
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public final IRubyObject op_idiv(ThreadContext context, IRubyObject arg) {
-        return div(context, arg);
     }
 }

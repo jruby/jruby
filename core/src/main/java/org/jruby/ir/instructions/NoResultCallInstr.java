@@ -11,7 +11,6 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
-import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 
 public class NoResultCallInstr extends CallBase {
@@ -23,13 +22,6 @@ public class NoResultCallInstr extends CallBase {
         }
 
         return new NoResultCallInstr(scope, Operation.NORESULT_CALL, callType, name, receiver, args, closure, flags, isPotentiallyRefined);
-    }
-
-    // clone constructor
-    protected NoResultCallInstr(IRScope scope, Operation op, CallType callType, RubySymbol name, Operand receiver,
-                                Operand[] args, Operand closure, int flags, boolean potentiallyRefined,
-                                CallSite callSite, long callSiteId) {
-        super(scope, op, callType, name, receiver, args, closure, flags, potentiallyRefined, callSite, callSiteId);
     }
 
     // normal constructor
@@ -52,7 +44,7 @@ public class NoResultCallInstr extends CallBase {
         return new NoResultCallInstr(ii.getScope(), getOperation(), getCallType(), getName(),
                 getReceiver().cloneForInlining(ii), cloneCallArgs(ii),
                 getClosureArg().cloneForInlining(ii), getFlags(),
-                isPotentiallyRefined(), getCallSite(), getCallSiteId());
+                isPotentiallyRefined());
     }
 
     public static NoResultCallInstr decode(IRReaderDecoder d) {

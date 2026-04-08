@@ -193,11 +193,6 @@ public class RubyComplex extends RubyNumeric {
         return newComplexBang(context, clazz, x, RubyFixnum.zero(context.runtime));
     }
 
-    @Deprecated(since = "9.2.0.0")
-    public static RubyComplex newComplexBang(ThreadContext context, RubyClass clazz, IRubyObject x) {
-        return newComplexBang(context, clazz, (RubyNumeric) x);
-    }
-
     private IRubyObject real;
     private IRubyObject image;
     
@@ -252,19 +247,6 @@ public class RubyComplex extends RubyNumeric {
                                   RubyMath.sqrt(context, x, f_div(context, f_sub(context, a, complex.real), two)));
             }
         }
-    }
-
-    /** nucomp_s_new_bang
-     *
-     */
-    @Deprecated(since = "1.1.4")
-    public static IRubyObject newInstanceBang(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        switch (args.length) {
-            case 1: return newInstanceBang(context, recv, args[0]);
-            case 2: return newInstanceBang(context, recv, args[0], args[1]);
-        }
-        Arity.raiseArgumentError(context, args.length, 1, 2);
-        return null;
     }
 
     @JRubyMethod(name = "new!", meta = true, visibility = Visibility.PRIVATE)
@@ -339,24 +321,6 @@ public class RubyComplex extends RubyNumeric {
         }
     }
     
-    /** nucomp_s_new
-     * 
-     */
-    @Deprecated(since = "1.1.4")
-    public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        switch (args.length) {
-            case 1: return newInstance(context, recv, args[0]);
-            case 2: return newInstance(context, recv, args[0], args[1]);
-        }
-        Arity.raiseArgumentError(context, args.length, 1, 2);
-        return null;
-    }
-
-    @Deprecated(since = "9.2.0.0") // @JRubyMethod(name = "new", meta = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject newInstanceNew(ThreadContext context, IRubyObject recv, IRubyObject real) {
-        return newInstance(context, recv, real);
-    }
-
     @JRubyMethod(name = {"rect", "rectangular"}, meta = true)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject real) {
         return newInstance(context, recv, real, true);
@@ -365,11 +329,6 @@ public class RubyComplex extends RubyNumeric {
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject real, boolean raise) {
         if (!realCheck(context, real, raise)) return context.nil;
         return canonicalizeInternal(context, (RubyClass) recv, real, RubyFixnum.zero(context.runtime));
-    }
-
-    @Deprecated(since = "9.2.0.0") // @JRubyMethod(name = "new", meta = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject newInstanceNew(ThreadContext context, IRubyObject recv, IRubyObject real, IRubyObject image) {
-        return newInstance(context, recv, real, image);
     }
 
     @JRubyMethod(name = {"rect", "rectangular"}, meta = true)
@@ -426,16 +385,6 @@ public class RubyComplex extends RubyNumeric {
         return convert(context, context.runtime.getComplex(), x, y);
     }
 
-
-    @Deprecated(since = "1.1.4")
-    public static IRubyObject convert(ThreadContext context, IRubyObject clazz, IRubyObject[]args) {
-        switch (args.length) {
-            case 1: return convert(context, clazz, args[0]);
-            case 2: return convert(context, clazz, args[0], args[1]);
-        }
-        Arity.raiseArgumentError(context, args.length, 1, 2);
-        return null;
-    }
 
     /** nucomp_s_convert
      * 

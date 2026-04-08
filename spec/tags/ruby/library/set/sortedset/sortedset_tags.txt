@@ -1,1 +1,0 @@
-fails:SortedSet raises error including message that it has been extracted from the set stdlib

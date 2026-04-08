@@ -303,19 +303,4 @@ public class RubyTCPServer extends RubyTCPSocket {
     public IRubyObject gets(ThreadContext context, IRubyObject sep, IRubyObject limit) {
         throw context.runtime.newErrnoENOTCONNError();
     }
-
-    @Deprecated(since = "1.7.0")
-    public IRubyObject accept() {
-        return accept(getCurrentContext());
-    }
-
-    @Deprecated(since = "1.7.0")
-    public IRubyObject listen(IRubyObject backlog) {
-        return listen(((RubyBasicObject) backlog).getCurrentContext(), backlog);
-    }
-
-    @Deprecated(since = "1.7.0")
-    public static IRubyObject open(IRubyObject recv, IRubyObject[] args, Block block) {
-        return open(((RubyBasicObject) recv).getCurrentContext(), recv, args, block);
-    }
 }

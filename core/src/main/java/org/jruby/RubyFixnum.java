@@ -345,11 +345,6 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         return runtime.fixnumCache[value + CACHE_OFFSET];
     }
 
-    @Deprecated(since = "9.2.1.0") // not used
-    public final RubyFixnum newFixnum(long newValue) {
-        return newFixnum(getCurrentContext().runtime, newValue);
-    }
-
     public static RubyFixnum zero(Ruby runtime) {
         // using ShortFixnum until there's value in using ByteFixnum
         return CACHE_OFFSET > 0 ? runtime.fixnumCache[CACHE_OFFSET] : new ShortFixnum(runtime.getInteger(), (byte) 0);
@@ -548,17 +543,6 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         return base == 10 && value >= -256 && value < 256 ?
                 newSharedString(context, ConvertBytes.byteToSharedByteList((short) value), USASCIIEncoding.INSTANCE) :
                 newString(context, ConvertBytes.longToByteList(value, base), USASCIIEncoding.INSTANCE);
-    }
-
-    /** fix_to_sym
-     *
-     */
-    @Deprecated(since = "9.0.0.0")
-    public IRubyObject to_sym() {
-        var context = getCurrentContext();
-        RubySymbol symbol = RubySymbol.getSymbolLong(context.runtime, getValue());
-
-        return symbol != null ? symbol : context.nil;
     }
 
     /** fix_uminus
@@ -798,26 +782,11 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         return op_minus_one(context);
     }
 
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject idiv(ThreadContext context, IRubyObject other, String method) {
-        if (other instanceof RubyFixnum) {
-            return idivLong(context, getValue(), ((RubyFixnum) other).getValue());
-        }
-        return coerceBin(context, method, other);
-    }
-
     public IRubyObject idiv(ThreadContext context, IRubyObject other, CallSite site) {
         if (other instanceof RubyFixnum) {
             return idivLong(context, getValue(), ((RubyFixnum) other).getValue());
         }
         return coerceBin(context, site, other);
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject idiv(ThreadContext context, long y, String method) {
-        long x = getValue();
-
-        return idivLong(context, x, y);
     }
 
     private RubyInteger idivLong(ThreadContext context, long x, long y) {
@@ -1023,11 +992,6 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         if (negaFlg && (tmp != 0)) tmp -= mm;
 
         return asFixnum(context, tmp);
-    }
-
-    @Deprecated(since = "9.2.7.0")
-    protected IRubyObject intPowTmp2(ThreadContext context, IRubyObject y, final long mm, boolean negaFlg) {
-        return intPowTmp2(context, (RubyInteger) y, mm, negaFlg);
     }
 
     // MRI: int_pow_tmp2
@@ -1401,11 +1365,6 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         return asFixnum(context, getValue() << width);
     }
 
-    @Deprecated(since = "9.2.0.0") // no longer used
-    public IRubyObject op_lshift(long width) {
-        return op_lshift(getCurrentContext(), width);
-    }
-
     /** fix_rshift
      *
      */
@@ -1429,11 +1388,6 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
                 asFixnum(context, getValue() >> width);
     }
 
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject op_rshift(long width) {
-        return op_rshift(getCurrentContext(), width);
-    }
-
     /** fix_to_f
      *
      */
@@ -1454,11 +1408,6 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
     @Override
     public IRubyObject size(ThreadContext context) {
         return asFixnum(context, (long) ((BIT_SIZE + 7) / 8));
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject zero_p() {
-        return zero_p(getCurrentContext());
     }
 
     /** fix_zero_p
@@ -1607,7 +1556,7 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
     // MRI: rb_int_s_isqrt, Fixnum portion
     @Override
     public IRubyObject sqrt(ThreadContext context) {
-        if (isNegativeNumber(context)) throw context.runtime.newMathDomainError("Numerical argument is out of domain - isqrt");
+        if (isNegativeNumber(context)) throw context.runtime.newMathDomainError("isqrt");
 
         return asFixnum(context, floorSqrt(getValue()));
     }
@@ -1624,11 +1573,6 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
 
     private static JavaSites.FixnumSites sites(ThreadContext context) {
         return context.sites.Fixnum;
-    }
-
-    @Deprecated(since = "9.1.3.0")
-    public static IRubyObject induced_from(IRubyObject recv, IRubyObject other) {
-        return RubyNumeric.num2fix(recv.getRuntime().getCurrentContext(), other);
     }
 
     @Deprecated(since = "9.4.0.0")

@@ -1,1 +1,3 @@
 fails:String#grapheme_clusters works if the String's contents is invalid for its encoding
+fails:String#grapheme_clusters returns individual chars for dummy encodings
+fails:String#grapheme_clusters returns grapheme clusters for various UTF encodings

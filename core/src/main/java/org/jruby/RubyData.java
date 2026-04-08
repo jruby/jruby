@@ -40,9 +40,7 @@ import static org.jruby.ir.runtime.IRRuntimeHelpers.setCallInfo;
 import static org.jruby.runtime.Arity.checkArgumentCount;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
-import static org.jruby.runtime.ThreadContext.clearCallInfo;
-import static org.jruby.runtime.ThreadContext.hasKeywords;
-import static org.jruby.runtime.ThreadContext.resetCallInfo;
+import static org.jruby.runtime.ThreadContext.hasNonemptyKeywords;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import static org.jruby.util.RubyStringBuilder.str;
 
@@ -86,18 +84,20 @@ public class RubyData {
 
     @JRubyMethod(keywords = true, rest = true)
     public static void initialize(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        ThreadContext.resetCallInfo(context); // we don't directly use callInfo here
+
         RubyBasicObject selfObj = (RubyBasicObject) self;
+
         selfObj.checkFrozen();
         RubyArray<RubySymbol> members = getStructMembers(self);
         int numMembers = members.size();
-
-        // we don't directly use callInfo here
-        ThreadContext.clearCallInfo(context);
 
         if (args.length == 0) {
             if (numMembers > 0) {
                 throw keywordError(context, "missing", members);
             }
+
+            selfObj.setFrozen(true);
             return;
         }
 
@@ -121,7 +121,7 @@ public class RubyData {
             String keyString = toSymbol(context, k).idString();
             VariableAccessor variableAccessor = variableAccessors.get(keyString);
             if (variableAccessor != null) {
-                selfObj.setInternalVariable(keyString, v);
+                variableAccessor.set(self, v);
             } else {
                 RubyArray unknownKeywords = unknownKeywordsPtr[0];
                 if (unknownKeywords == null) {
@@ -241,7 +241,7 @@ public class RubyData {
     @JRubyMethod(keywords = true, optional = 1, checkArity = false)
     public static IRubyObject with(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         IRubyObject kwargs = IRRuntimeHelpers.receiveKeywords(context, args, false, true, false);
-        if (kwargs == UndefinedValue.UNDEFINED || kwargs.isNil()) {
+        if (!(kwargs instanceof RubyHash)) {
             checkArgumentCount(context, args.length, 0, 0);
             return self;
         }
@@ -251,7 +251,7 @@ public class RubyData {
         RubyHash kwargsHash = (RubyHash) kwargs;
         RubyHash h = to_h(context, self, Block.NULL_BLOCK);
         h.addAll(context, kwargsHash);
-        setCallInfo(context, CALL_KEYWORD);
+        context.callInfo = CALL_KEYWORD;
         return DataMethods.rbNew(context, self.getMetaClass(), h);
     }
 
@@ -279,7 +279,7 @@ public class RubyData {
 
             IRubyObject dataObject = klass.getAllocator().allocate(context.runtime, klass);
 
-            setCallInfo(context, ThreadContext.CALL_KEYWORD);
+            context.callInfo = ThreadContext.CALL_KEYWORD;
 
             // TODO: avoid initialize and hash overhead for known types
             dataObject.getMetaClass().getBaseCallSite(RubyClass.CS_IDX_INITIALIZE)
@@ -291,10 +291,9 @@ public class RubyData {
 
         @JRubyMethod(name = {"new", "[]"}, keywords = true)
         public static IRubyObject rbNew(ThreadContext context, IRubyObject self) {
+            ThreadContext.resetCallInfo(context);
+
             RubyClass klass = (RubyClass) self;
-
-            clearCallInfo(context);
-
             IRubyObject dataObject = klass.getAllocator().allocate(context.runtime, klass);
 
             dataObject.getMetaClass().getBaseCallSite(RubyClass.CS_IDX_INITIALIZE)
@@ -305,11 +304,11 @@ public class RubyData {
 
         @JRubyMethod(name = {"new", "[]"}, keywords = true)
         public static IRubyObject rbNew(ThreadContext context, IRubyObject self, IRubyObject hashOrElt) {
-            RubyClass klass = (RubyClass) self;
+            int callInfo = ThreadContext.resetCallInfo(context);
 
+            RubyClass klass = (RubyClass) self;
             RubyHash init;
-            int callInfo = resetCallInfo(context);
-            if (hasKeywords(callInfo)) {
+            if (hasNonemptyKeywords(callInfo)) {
                 if (!(hashOrElt instanceof RubyHash)) {
                     throw argumentError(context, 1, 0, 0);
                 }
@@ -329,7 +328,7 @@ public class RubyData {
 
             IRubyObject dataObject = klass.getAllocator().allocate(context.runtime, klass);
 
-            setCallInfo(context, callInfo);
+            context.callInfo = callInfo;
 
             // TODO: avoid initialize and hash overhead for known types
             dataObject.getMetaClass().getBaseCallSite(RubyClass.CS_IDX_INITIALIZE)
@@ -441,7 +440,7 @@ public class RubyData {
         if (selfObj == otherObj) return context.tru;
         RubyClass metaClass = otherObj.getMetaClass();
         if (!metaClass.isKindOfModule(context.runtime.getData())) return context.fals;
-        if (metaClass != selfObj.getMetaClass()) return context.fals;
+        if (metaClass.getRealClass() != selfObj.getMetaClass().getRealClass()) return context.fals;
 //        if (RSTRUCT_LEN(s) != RSTRUCT_LEN(s2)) {
 //            rb_bug("inconsistent struct"); /* should never happen */
 //        }

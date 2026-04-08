@@ -60,6 +60,7 @@ import static org.jruby.api.Create.newSmallHash;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.util.RubyStringBuilder.str;
 
 public class RubyWarnings implements IRubyWarnings, WarnCallback {
@@ -339,7 +340,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
     @JRubyMethod(keywords = true)
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
-        if ((ThreadContext.resetCallInfo(context) & ThreadContext.CALL_KEYWORD) == 0) {
+        if (!hasKeywords(ThreadContext.resetCallInfo(context))) {
             throw argumentError(context, 2, 1);
         }
 

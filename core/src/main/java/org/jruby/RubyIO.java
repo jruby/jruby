@@ -135,7 +135,7 @@ import static org.jruby.api.Error.typeError;
 import static org.jruby.api.Warn.warn;
 import static org.jruby.api.Warn.warnDeprecated;
 import static org.jruby.api.Warn.warningDeprecated;
-import static org.jruby.runtime.ThreadContext.*;
+import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.RubyStringBuilder.types;
@@ -533,6 +533,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         boolean locked2 = orig.lock(); // TODO: This WILL deadlock if two threads try to reopen the same IOs in opposite directions. Fix?
         try {
             fptr.setMode(orig.getMode() | (fptr.getMode() & (OpenFile.PREP | OpenFile.SYNC)));
+            fptr.encs = orig.encs;
             fptr.setProcess(orig.getProcess());
             fptr.setLineNumber(orig.getLineNumber());
             if (orig.getPath() != null) fptr.setPath(orig.getPath());
@@ -1292,11 +1293,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             }
         }
         return port;
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public static IRubyObject sysopen(IRubyObject recv, IRubyObject[] args, Block block) {
-        return sysopen(((RubyBasicObject) recv).getCurrentContext(), recv, args, block);
     }
 
     // rb_io_s_sysopen
@@ -2279,6 +2275,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             fptr.encs = orig.encs;
             fptr.setProcess(orig.getProcess());
             fptr.setLineNumber(orig.getLineNumber());
+            fptr.setTimeout(orig.getTimeout());
             if (orig.getPath() != null) fptr.setPath(orig.getPath());
             fptr.setFinalizer(orig.getFinalizer());
             // TODO: not using pipe_finalize yet
@@ -2683,21 +2680,21 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     // rb_io_gets_m
     @JRubyMethod(name = "gets", writes = LASTLINE, keywords = true)
     public IRubyObject gets(ThreadContext context, IRubyObject arg) {
-        boolean keywords = (resetCallInfo(context) & CALL_KEYWORD) != 0;
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
         return Getline.getlineCall(context, GETLINE, this, getReadEncoding(context), arg, keywords);
     }
 
     // rb_io_gets_m
     @JRubyMethod(name = "gets", writes = LASTLINE, keywords = true)
     public IRubyObject gets(ThreadContext context, IRubyObject rs, IRubyObject limit_arg) {
-        boolean keywords = (resetCallInfo(context) & CALL_KEYWORD) != 0;
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
         return Getline.getlineCall(context, GETLINE, this, getReadEncoding(context), rs, limit_arg, keywords);
     }
 
     // rb_io_gets_m
     @JRubyMethod(name = "gets", writes = LASTLINE, keywords = true)
     public IRubyObject gets(ThreadContext context, IRubyObject rs, IRubyObject limit_arg, IRubyObject opt) {
-        boolean keywords = (resetCallInfo(context) & CALL_KEYWORD) != 0;
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
         return Getline.getlineCall(context, GETLINE, this, getReadEncoding(context), rs, limit_arg, opt, keywords);
     }
 
@@ -3156,11 +3153,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         if (line == context.nil) throw context.runtime.newEOFError();
 
         return line;
-    }
-
-    @Deprecated(since = "9.2.1.0")
-    public IRubyObject getc() {
-        return getbyte(getCurrentContext());
     }
 
     /**
@@ -3687,11 +3679,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return fptr.fread(context, buffer, start, len);
     }
 
-    @Deprecated(since = "9.2.1.0")
-    public IRubyObject readchar() {
-        return readchar(getCurrentContext());
-    }
-
     @JRubyMethod
     public IRubyObject stat(ThreadContext context) {
         Ruby runtime = context.runtime;
@@ -3904,7 +3891,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @JRubyMethod(keywords = true)
     public IRubyObject each(final ThreadContext context, IRubyObject arg0, final Block block) {
-        boolean keywords = (resetCallInfo(context) & CALL_KEYWORD) != 0;
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
         if (!block.isGiven()) return enumeratorize(context.runtime, this, "each");
 
         return Getline.getlineCall(context, GETLINE_YIELD, this, getReadEncoding(context), arg0, block, keywords);
@@ -3912,7 +3899,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @JRubyMethod(keywords = true)
     public IRubyObject each(final ThreadContext context, IRubyObject arg0, IRubyObject arg1, final Block block) {
-        boolean keywords = (resetCallInfo(context) & CALL_KEYWORD) != 0;
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
         if (!block.isGiven()) return enumeratorize(context.runtime, this, "each");
 
         return Getline.getlineCall(context, GETLINE_YIELD, this, getReadEncoding(context), arg0, arg1, block, keywords);
@@ -3920,7 +3907,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @JRubyMethod(keywords = true)
     public IRubyObject each(final ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, final Block block) {
-        boolean keywords = (resetCallInfo(context) & CALL_KEYWORD) != 0;
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
         if (!block.isGiven()) return enumeratorize(context.runtime, this, "each");
 
         return Getline.getlineCall(context, GETLINE_YIELD, this, getReadEncoding(context), arg0, arg1, arg2, block, keywords);
@@ -3951,7 +3938,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @JRubyMethod(keywords = true)
     public IRubyObject each_line(final ThreadContext context, IRubyObject arg0, final Block block) {
-        boolean keywords = (resetCallInfo(context) & CALL_KEYWORD) != 0;
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
 
         if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line", arg0);
 
@@ -3960,7 +3947,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @JRubyMethod(keywords = true)
     public IRubyObject each_line(final ThreadContext context, IRubyObject arg0, IRubyObject arg1, final Block block) {
-        boolean keywords = (resetCallInfo(context) & CALL_KEYWORD) != 0;
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
 
         if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line", arg0, arg1);
 
@@ -3969,7 +3956,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @JRubyMethod(keywords = true)
     public IRubyObject each_line(final ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, final Block block) {
-        boolean keywords = (resetCallInfo(context) & CALL_KEYWORD) != 0;
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
 
         if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line", arg0, arg1, arg2);
 
@@ -4006,19 +3993,19 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @JRubyMethod(name = "readlines", keywords = true)
     public RubyArray readlines(ThreadContext context, IRubyObject arg0) {
-        boolean keywords = (resetCallInfo(context) & CALL_KEYWORD) != 0;
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
         return Getline.getlineCall(context, GETLINE_ARY, this, getReadEncoding(context), arg0, keywords);
     }
 
     @JRubyMethod(name = "readlines", keywords = true)
     public RubyArray readlines(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
-        boolean keywords = (resetCallInfo(context) & CALL_KEYWORD) != 0;
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
         return Getline.getlineCall(context, GETLINE_ARY, this, getReadEncoding(context), arg0, arg1, keywords);
     }
 
     @JRubyMethod(name = "readlines", keywords = true)
     public RubyArray readlines(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        boolean keywords = (resetCallInfo(context) & CALL_KEYWORD) != 0;
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
         return Getline.getlineCall(context, GETLINE_ARY, this, getReadEncoding(context), arg0, arg1, arg2, keywords);
     }
 
@@ -4090,7 +4077,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     @JRubyMethod(name = "foreach", required = 1, optional = 3, checkArity = false, meta = true, writes = LASTLINE, keywords = true)
     public static IRubyObject foreach(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
-        boolean keywords = (resetCallInfo(context) & CALL_KEYWORD) != 0;
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
 
         Arity.checkArgumentCount(context, args.length - (keywords ? 1 : 0), 1, 4);
 
@@ -4129,18 +4116,11 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 read = argv[0];
         }
         final Long timeout;
-        if (_timeout.isNil()) {
+        if (_timeout.isNil() || Numeric.isPositiveInfinity(_timeout)) {
             timeout = null;
         }
         else {
-            try { // MRI calls to_f even if not respond_to? (or respond_to_missing?) :to_f
-                _timeout = sites(context).to_f.call(context, _timeout, _timeout);
-            }
-            catch (RaiseException e) {
-                TypeConverter.handleUncoercibleObject(context.runtime, _timeout, floatClass(context), true);
-                throw e; // won't happen
-            }
-            final double t = _timeout.convertToFloat().asDouble(context);
+            double t = RubyTime.convertTimeInterval(context, _timeout);
             if ( t < 0 ) throw argumentError(context, "negative timeout");
             timeout = (long) (t * 1000); // ms
         }
@@ -4372,15 +4352,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     private static RubyIO ioOpenGeneric(ThreadContext context, IRubyObject recv, IRubyObject filename, int oflags, int fmode, IOEncodable convconfig, int perm) {
         if ((filename instanceof RubyString name) && name.isEmpty()) throw context.runtime.newErrnoENOENTError();
 
-        IRubyObject cmd;
-        if ((recv == ioClass(context)) && (cmd = PopenExecutor.checkPipeCommand(context, filename)) != context.nil) {
-            warnDeprecated(context, "IO process creation with a leading '|' is deprecated and will be removed in Ruby 4.0; use IO.popen instead");
-            if (PopenExecutor.nativePopenAvailable(context.runtime)) {
-                return (RubyIO) PopenExecutor.pipeOpen(context, cmd, OpenFile.ioOflagsModestr(context, oflags), fmode, convconfig);
-            } else {
-                throw argumentError(context, "pipe open is not supported without native subprocess logic");
-            }
-        }
         return (RubyIO) ((RubyFile) fileClass(context).allocate(context)).
                 fileOpenGeneric(context, filename, oflags, fmode, convconfig, perm);
     }
@@ -4708,13 +4679,15 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         int firstArg = 0;
 
-        if (argc > 0 && !TypeConverter.checkHashType(runtime, args[0]).isNil()) {
-            firstArg++;
+        // process trailing keyword arguments hash
+        if (argc > 0 && !(tmp = TypeConverter.checkHashType(runtime, args[argc - 1])).isNil()) {
+            options = (RubyHash)tmp;
             argc--;
         }
 
-        if (argc > 0 && !(tmp = TypeConverter.checkHashType(runtime, args[argc - 1])).isNil()) {
-            options = (RubyHash)tmp;
+        // process leading env hash
+        if (argc > 0 && !TypeConverter.checkHashType(runtime, args[0]).isNil()) {
+            firstArg++;
             argc--;
         }
 
@@ -5318,6 +5291,22 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         openFile.setPath(path);
     }
 
+    @JRubyMethod(name = "timeout")
+    public IRubyObject timeout_get(ThreadContext context) {
+        return getOpenFileInitialized().getTimeout();
+    }
+
+    @JRubyMethod(name = "timeout=")
+    public IRubyObject timeout_set(ThreadContext context, IRubyObject timeout) {
+        if (timeout.isTrue()) {
+            RubyTime.convertTimeInterval(context, timeout);
+        }
+
+        getOpenFileInitialized().setTimeout(timeout);
+
+        return this;
+    }
+
     /**
      * Add a thread to the list of blocking threads for this IO.
      *
@@ -5430,38 +5419,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         };
 
         ALL_SPAWN_OPTIONS = new HashSet<>(Arrays.asList(SPAWN_OPTIONS));
-    }
-
-    @Deprecated(since = "9.2.1.0")
-    public static void checkExecOptions(IRubyObject options) {
-        if (options instanceof RubyHash) {
-            RubyHash opts = (RubyHash) options;
-            ThreadContext context = opts.getRuntime().getCurrentContext();
-
-            checkValidSpawnOptions(context, opts);
-            checkUnsupportedOptions(context, opts, UNSUPPORTED_SPAWN_OPTIONS, "unsupported exec option");
-        }
-    }
-
-    @Deprecated(since = "9.2.1.0")
-    public static void checkSpawnOptions(IRubyObject options) {
-        if (options instanceof RubyHash) {
-            RubyHash opts = (RubyHash) options;
-            ThreadContext context = opts.getRuntime().getCurrentContext();
-
-            checkValidSpawnOptions(context, opts);
-            checkUnsupportedOptions(context, opts, UNSUPPORTED_SPAWN_OPTIONS, "unsupported spawn option");
-        }
-    }
-
-    @Deprecated(since = "9.2.1.0")
-    public static void checkPopenOptions(IRubyObject options) {
-        if (options instanceof RubyHash) {
-            RubyHash opts = (RubyHash) options;
-            ThreadContext context = opts.getRuntime().getCurrentContext();
-
-            checkUnsupportedOptions(context, opts, UNSUPPORTED_SPAWN_OPTIONS, "unsupported popen option");
-        }
     }
 
     static void checkUnsupportedOptions(ThreadContext context, RubyHash opts, String[] unsupported, String error) {
@@ -5582,11 +5539,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
-    @Deprecated(since = "1.6.0")
-    public IRubyObject readline(ThreadContext context, IRubyObject[] args) {
-        return args.length == 0 ? readline(context) : readline(context, args[0]);
-    }
-
     @Override
     public void setEnc2(Encoding enc2) {
         openFile.encs.enc2 = enc2;
@@ -5684,277 +5636,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     private static IOSites sites(ThreadContext context) {
         return context.sites.IO;
-    }
-
-    @Deprecated(since = "1.7.5")
-    public IRubyObject getline(Ruby runtime, ByteList separator) {
-        return getline(runtime.getCurrentContext(), runtime.newString(separator), -1);
-    }
-
-    @Deprecated(since = "1.7.5")
-    public IRubyObject getline(Ruby runtime, ByteList separator, long limit) {
-        return getline(runtime.getCurrentContext(), runtime.newString(separator), limit);
-    }
-
-    @Deprecated(since = "9.0.0.0")
-    public IRubyObject getline(ThreadContext context, ByteList separator) {
-        return getline(context, newString(context, separator), -1);
-    }
-
-    @Deprecated(since = "9.0.0.0")
-    public IRubyObject getline(ThreadContext context, ByteList separator, long limit) {
-        return getline(context, newString(context, separator), limit);
-    }
-
-    @Deprecated(since = "9.0.0.0")
-    public RubyIO(Ruby runtime, STDIO stdio) {
-        super(runtime, runtime.getIO());
-
-        RubyIO tmp = null;
-        switch (stdio) {
-            case IN:
-                tmp = prepStdio(runtime, runtime.getIn(), Channels.newChannel(runtime.getIn()), OpenFile.READABLE, runtime.getIO(), "<STDIN>");
-                break;
-            case OUT:
-                tmp = prepStdio(runtime, runtime.getOut(), Channels.newChannel(runtime.getOut()), OpenFile.WRITABLE, runtime.getIO(), "<STDOUT>");
-                break;
-            case ERR:
-                tmp = prepStdio(runtime, runtime.getErr(), Channels.newChannel(runtime.getErr()), OpenFile.WRITABLE | OpenFile.SYNC, runtime.getIO(), "<STDERR>");
-                break;
-        }
-
-        this.openFile = tmp.openFile;
-        tmp.openFile = null;
-    }
-
-    @Deprecated(since = "9.0.0.0")
-    public RubyIO(Ruby runtime, RubyClass cls, ShellLauncher.POpenProcess process, RubyHash options, IOOptions ioOptions) {
-        super(runtime, cls);
-        var context = runtime.getCurrentContext();
-
-        ioOptions = updateIOOptionsFromOptions(context, options, ioOptions);
-
-        openFile = MakeOpenFile();
-
-        setupPopen(context, ioOptions.getModeFlags(), process);
-    }
-
-    @Deprecated(since = "9.0.0.0")
-    public static ModeFlags getIOModes(Ruby runtime, String modesString) {
-        return newModeFlags(runtime, modesString);
-    }
-
-    @Deprecated(since = "9.0.0.0")
-    public static int getIOModesIntFromString(Ruby runtime, String modesString) {
-        try {
-            return ModeFlags.getOFlagsFromString(modesString);
-        } catch (InvalidValueException ive) {
-            throw argumentError(runtime.getCurrentContext(), "illegal access mode");
-        }
-    }
-
-    @Deprecated(since = "9.0.0.0")
-    public static IRubyObject writeStatic(ThreadContext context, IRubyObject recv, IRubyObject[] argv, Block unusedBlock) {
-        return write(context, recv, argv);
-    }
-
-    @Deprecated(since = "9.0.0.0")
-    @JRubyMethod(name = "popen3", rest = true, meta = true)
-    public static IRubyObject popen3(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        final Ruby runtime = context.runtime;
-
-        // TODO: handle opts
-        if (args.length > 0 && args[args.length - 1] instanceof RubyHash) {
-            args = ArraySupport.newCopy(args, args.length - 1);
-        }
-
-        final POpenTuple tuple = popenSpecial(context, args);
-        final long pid = ShellLauncher.getPidFromProcess(tuple.process);
-
-        // array trick to be able to reference enclosing RubyThread
-        final RubyThread[] waitThread = new RubyThread[1];
-        waitThread[0] = new RubyThread(
-                runtime,
-                (RubyClass) runtime.getProcess().getConstantAt(context, "WaitThread"), // Process::WaitThread
-                new ThreadedRunnable() {
-
-                    volatile Thread javaThread;
-
-                    @Override
-                    public Thread getJavaThread() {
-                        return javaThread;
-                    }
-
-                    @Override
-                    public void run() {
-                        javaThread = Thread.currentThread();
-                        RubyThread rubyThread;
-                        // spin a bit until this happens; should almost never spin
-                        while ((rubyThread = waitThread[0]) == null) {
-                            Thread.yield();
-                        }
-
-                        runtime.getThreadService().registerNewThread(rubyThread);
-
-                        rubyThread.op_aset(asSymbol(context, "pid"),  asFixnum(context, pid));
-
-                        try {
-                            int exitValue = tuple.process.waitFor();
-
-                            // RubyStatus uses real native status now, so we unshift Java's shifted exit status
-                            RubyProcess.RubyStatus status = RubyProcess.RubyStatus.newProcessStatus(
-                                    runtime,
-                                    exitValue << 8,
-                                    pid);
-
-                            rubyThread.cleanTerminate(status);
-                        } catch (Throwable t) {
-                            rubyThread.exceptionRaised(t);
-                        } finally {
-                            rubyThread.dispose();
-                        }
-                    }
-
-                });
-
-        RubyArray yieldArgs = RubyArray.newArrayLight(runtime,
-                tuple.output,
-                tuple.input,
-                tuple.error,
-                waitThread[0]);
-
-        if (block.isGiven()) {
-            try {
-                return block.yield(context, yieldArgs);
-            } finally {
-                cleanupPOpen(tuple);
-
-                IRubyObject status = waitThread[0].join(context);
-                context.setLastExitStatus(status);
-            }
-        }
-
-        return yieldArgs;
-    }
-
-    @Deprecated(since = "9.0.0.0")
-    public static IRubyObject popen4(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        Ruby runtime = context.runtime;
-
-        try {
-            POpenTuple tuple = popenSpecial(context, args);
-
-            RubyArray yieldArgs = RubyArray.newArrayLight(runtime,
-                    asFixnum(context, ShellLauncher.getPidFromProcess(tuple.process)),
-                    tuple.output,
-                    tuple.input,
-                    tuple.error);
-
-            if (block.isGiven()) {
-                try {
-                    return block.yield(context, yieldArgs);
-                } finally {
-                    cleanupPOpen(tuple);
-                    // RubyStatus uses real native status now, so we unshift Java's shifted exit status
-                    context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, tuple.process.waitFor() << 8, ShellLauncher.getPidFromProcess(tuple.process)));
-                }
-            }
-            return yieldArgs;
-        } catch (InterruptedException e) {
-            throw runtime.newThreadError("unexpected interrupt");
-        }
-    }
-
-    @Deprecated(since = "9.0.0.0")
-    private static void cleanupPOpen(POpenTuple tuple) {
-        if (tuple.input.openFile.isOpen()) {
-            try {
-                tuple.input.close();
-            } catch (RaiseException re) {}
-        }
-        if (tuple.output.openFile.isOpen()) {
-            try {
-                tuple.output.close();
-            } catch (RaiseException re) {}
-        }
-        if (tuple.error.openFile.isOpen()) {
-            try {
-                tuple.error.close();
-            } catch (RaiseException re) {}
-        }
-    }
-
-    @Deprecated(since = "9.0.0.0")
-    private static class POpenTuple {
-        public POpenTuple(RubyIO i, RubyIO o, RubyIO e, Process p) {
-            input = i; output = o; error = e; process = p;
-        }
-        public final RubyIO input;
-        public final RubyIO output;
-        public final RubyIO error;
-        public final Process process;
-    }
-
-    @Deprecated(since = "9.0.0.0")
-    public static POpenTuple popenSpecial(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-
-        try {
-            ShellLauncher.POpenProcess process = ShellLauncher.popen3(runtime, args, false);
-            RubyIO input = process.getInput() != null ?
-                    new RubyIO(runtime, process.getInput()) :
-                    new RubyIO(runtime, process.getInputStream());
-            RubyIO output = process.getOutput() != null ?
-                    new RubyIO(runtime, process.getOutput()) :
-                    new RubyIO(runtime, process.getOutputStream());
-            RubyIO error = process.getError() != null ?
-                    new RubyIO(runtime, process.getError()) :
-                    new RubyIO(runtime, process.getErrorStream());
-
-            // ensure the OpenFile knows it's a process; see OpenFile#finalize
-            input.getOpenFile().setProcess(process);
-            output.getOpenFile().setProcess(process);
-            error.getOpenFile().setProcess(process);
-
-            // set all streams as popenSpecial streams, so we don't shut down process prematurely
-            input.popenSpecial = true;
-            output.popenSpecial = true;
-            error.popenSpecial = true;
-
-            // process streams are not seekable
-//            input.getOpenFile().getMainStreamSafe().getDescriptor().
-//              setCanBeSeekable(false);
-//            output.getOpenFile().getMainStreamSafe().getDescriptor().
-//              setCanBeSeekable(false);
-//            error.getOpenFile().getMainStreamSafe().getDescriptor().
-//              setCanBeSeekable(false);
-
-            return new POpenTuple(input, output, error, process);
-//        } catch (BadDescriptorException e) {
-//            throw runtime.newErrnoEBADFError();
-        } catch (IOException e) {
-            throw runtime.newIOErrorFromException(e);
-        }
-    }
-
-    @Deprecated(since = "9.0.0.0")
-    public IRubyObject doWriteNonblock(ThreadContext context, IRubyObject[] argv, boolean useException) {
-        return write_nonblock(context, argv);
-    }
-
-    @Deprecated(since = "9.0.0.0")
-    public static IRubyObject select_static(ThreadContext context, Ruby runtime, IRubyObject[] args) {
-        return select(context, ioClass(context), args);
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public static RubyArray checkExecEnv(ThreadContext context, RubyHash hash) {
-        return PopenExecutor.checkExecEnv(context, hash, null);
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public static IRubyObject ioOpen(ThreadContext context, IRubyObject filename, IRubyObject vmode, IRubyObject vperm, IRubyObject opt) {
-        return ioOpen(context, ioClass(context), filename, vmode, vperm, opt);
     }
 
     @Deprecated(since = "9.4.6.0")

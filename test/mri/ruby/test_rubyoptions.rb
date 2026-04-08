@@ -8,9 +8,6 @@ require_relative '../lib/jit_support'
 require_relative '../lib/parser_support'
 
 class TestRubyOptions < Test::Unit::TestCase
-  def self.rjit_enabled? = defined?(RubyVM::RJIT) && RubyVM::RJIT.enabled?
-  def self.yjit_enabled? = defined?(RubyVM::YJIT) && RubyVM::YJIT.enabled?
-
   # Here we're defining our own RUBY_DESCRIPTION without "+PRISM". We do this
   # here so that the various tests that reference RUBY_DESCRIPTION don't have to
   # worry about it. The flag itself is tested in its own test.
@@ -22,10 +19,11 @@ class TestRubyOptions < Test::Unit::TestCase
     end
 
   NO_JIT_DESCRIPTION =
-    if rjit_enabled?
-      RUBY_DESCRIPTION.sub(/\+RJIT /, '')
-    elsif yjit_enabled?
-      RUBY_DESCRIPTION.sub(/\+YJIT( (dev|dev_nodebug|stats))? /, '')
+    case
+    when JITSupport.yjit_enabled?
+      RUBY_DESCRIPTION.sub(/\+YJIT( \w+)? /, '')
+    when JITSupport.zjit_enabled?
+      RUBY_DESCRIPTION.sub(/\+ZJIT( \w+)? /, '')
     else
       RUBY_DESCRIPTION
     end
@@ -173,21 +171,10 @@ class TestRubyOptions < Test::Unit::TestCase
     end
   private_constant :VERSION_PATTERN
 
-  VERSION_PATTERN_WITH_RJIT =
-    case RUBY_ENGINE
-    when 'ruby'
-      /^ruby #{q[RUBY_VERSION]}(?:[p ]|dev|rc).*? \+RJIT (\+MN )?(\+PRISM )?(\+GC)?(\[\w+\]\s|\s)?\[#{q[RUBY_PLATFORM]}\]$/
-    else
-      VERSION_PATTERN
-    end
-  private_constant :VERSION_PATTERN_WITH_RJIT
-
   def test_verbose
     assert_in_out_err([{'RUBY_YJIT_ENABLE' => nil}, "-vve", ""]) do |r, e|
       assert_match(VERSION_PATTERN, r[0])
-      if self.class.rjit_enabled? && !JITSupport.rjit_force_enabled?
-        assert_equal(NO_JIT_DESCRIPTION, r[0])
-      elsif self.class.yjit_enabled? && !JITSupport.yjit_force_enabled?
+      if (JITSupport.yjit_enabled? && !JITSupport.yjit_force_enabled?) || JITSupport.zjit_enabled?
         assert_equal(NO_JIT_DESCRIPTION, r[0])
       else
         assert_equal(RUBY_DESCRIPTION, r[0])
@@ -212,15 +199,12 @@ class TestRubyOptions < Test::Unit::TestCase
       assert_in_out_err(%w(--enable all -e) + [""], "", [], [])
       assert_in_out_err(%w(--enable-all -e) + [""], "", [], [])
       assert_in_out_err(%w(--enable=all -e) + [""], "", [], [])
-    elsif JITSupport.rjit_supported?
-      # Avoid failing tests by RJIT warnings
-      assert_in_out_err(%w(--enable all --disable rjit -e) + [""], "", [], [])
-      assert_in_out_err(%w(--enable-all --disable-rjit -e) + [""], "", [], [])
-      assert_in_out_err(%w(--enable=all --disable=rjit -e) + [""], "", [], [])
     end
     assert_in_out_err(%w(--enable foobarbazqux -e) + [""], "", [],
                       /unknown argument for --enable: 'foobarbazqux'/)
     assert_in_out_err(%w(--enable), "", [], /missing argument for --enable/)
+    assert_in_out_err(%w(-e) + ['p defined? Gem'], "", %w["constant"], [], gems: true)
+    assert_in_out_err(%w(-e) + ['p defined? Gem'], "", %w["constant"], [], gems: nil)
   end
 
   def test_disable
@@ -230,7 +214,7 @@ class TestRubyOptions < Test::Unit::TestCase
     assert_in_out_err(%w(--disable foobarbazqux -e) + [""], "", [],
                       /unknown argument for --disable: 'foobarbazqux'/)
     assert_in_out_err(%w(--disable), "", [], /missing argument for --disable/)
-    assert_in_out_err(%w(-e) + ['p defined? Gem'], "", ["nil"], [])
+    assert_in_out_err(%w(-e) + ['p defined? Gem'], "", ["nil"], [], gems: false)
     assert_in_out_err(%w(--disable-did_you_mean -e) + ['p defined? DidYouMean'], "", ["nil"], [])
     assert_in_out_err(%w(-e) + ['p defined? DidYouMean'], "", ["nil"], [])
   end
@@ -258,52 +242,12 @@ class TestRubyOptions < Test::Unit::TestCase
       assert_match(VERSION_PATTERN, r[0])
       if ENV['RUBY_YJIT_ENABLE'] == '1'
         assert_equal(NO_JIT_DESCRIPTION, r[0])
-      elsif self.class.rjit_enabled? || self.class.yjit_enabled? # checking -D(M|Y)JIT_FORCE_ENABLE
+      elsif JITSupport.yjit_enabled? || JITSupport.zjit_enabled? # checking -DYJIT_FORCE_ENABLE
         assert_equal(EnvUtil.invoke_ruby(['-e', 'print RUBY_DESCRIPTION'], '', true).first, r[0])
       else
         assert_equal(RUBY_DESCRIPTION, r[0])
       end
       assert_equal([], e)
-    end
-  end
-
-  def test_rjit_disabled_version
-    return unless JITSupport.rjit_supported?
-    return if JITSupport.yjit_force_enabled?
-
-    env = { 'RUBY_YJIT_ENABLE' => nil } # unset in children
-    [
-      %w(--version --rjit --disable=rjit),
-      %w(--version --enable=rjit --disable=rjit),
-      %w(--version --enable-rjit --disable-rjit),
-    ].each do |args|
-      assert_in_out_err([env] + args) do |r, e|
-        assert_match(VERSION_PATTERN, r[0])
-        assert_match(NO_JIT_DESCRIPTION, r[0])
-        assert_equal([], e)
-      end
-    end
-  end
-
-  def test_rjit_version
-    return unless JITSupport.rjit_supported?
-    return if JITSupport.yjit_force_enabled?
-
-    env = { 'RUBY_YJIT_ENABLE' => nil } # unset in children
-    [
-      %w(--version --rjit),
-      %w(--version --enable=rjit),
-      %w(--version --enable-rjit),
-    ].each do |args|
-      assert_in_out_err([env] + args) do |r, e|
-        assert_match(VERSION_PATTERN_WITH_RJIT, r[0])
-        if JITSupport.rjit_force_enabled?
-          assert_equal(RUBY_DESCRIPTION, r[0])
-        else
-          assert_equal(EnvUtil.invoke_ruby([env, '--rjit', '-e', 'print RUBY_DESCRIPTION'], '', true).first, r[0])
-        end
-        assert_equal([], e)
-      end
     end
   end
 
@@ -318,6 +262,8 @@ class TestRubyOptions < Test::Unit::TestCase
   end
 
   def test_parser_flag
+    omit if ENV["RUBYOPT"]&.include?("--parser=")
+
     assert_in_out_err(%w(--parser=prism -e) + ["puts :hi"], "", %w(hi), [])
     assert_in_out_err(%w(--parser=prism --dump=parsetree -e _=:hi), "", /"hi"/, [])
 
@@ -441,11 +387,15 @@ class TestRubyOptions < Test::Unit::TestCase
 
     assert_in_out_err(%W(-\r -e) + [""], "", [], [])
 
-    assert_in_out_err(%W(-\rx), "", [], /invalid option -[\r\n]  \(-h will show valid options\) \(RuntimeError\)/)
+    assert_in_out_err(%W(-\rx), "", [], /invalid option -\\r  \(-h will show valid options\) \(RuntimeError\)/)
 
-    assert_in_out_err(%W(-\x01), "", [], /invalid option -\x01  \(-h will show valid options\) \(RuntimeError\)/)
+    assert_in_out_err(%W(-\x01), "", [], /invalid option -\\x01  \(-h will show valid options\) \(RuntimeError\)/)
 
     assert_in_out_err(%w(-Z), "", [], /invalid option -Z  \(-h will show valid options\) \(RuntimeError\)/)
+
+    assert_in_out_err(%W(-\u{1f608}), "", [],
+                      /invalid option -(\\xf0|\u{1f608})  \(-h will show valid options\) \(RuntimeError\)/,
+                      encoding: Encoding::UTF_8)
   end
 
   def test_rubyopt
@@ -573,6 +523,8 @@ class TestRubyOptions < Test::Unit::TestCase
 
     assert_in_out_err(%w(- -#=foo), "#!ruby -s\n", [],
                       /invalid name for global variable - -# \(NameError\)/)
+
+    assert_in_out_err(['-s', '-e', 'GC.start; p $DEBUG', '--', '-DEBUG=x'], "", ['"x"'])
   end
 
   def test_option_missing_argument
@@ -839,14 +791,22 @@ class TestRubyOptions < Test::Unit::TestCase
     unless /mswin|mingw/ =~ RUBY_PLATFORM
       opts[:rlimit_core] = 0
     end
+    opts[:failed] = proc do |status, message = "", out = ""|
+      if (sig = status.termsig) && Signal.list["SEGV"] == sig
+        out = ""
+      end
+      Test::Unit::CoreAssertions::FailDesc[status, message]
+    end
     ExecOptions = opts.freeze
 
+    # The regexp list that should match the entire stderr output.
+    # see assert_pattern_list
     ExpectedStderrList = [
       %r(
-        -e:(?:1:)?\s\[BUG\]\sSegmentation\sfault.*\n
+        (?:-e:(?:1:)?\s)?\[BUG\]\sSegmentation\sfault.*\n
       )x,
       %r(
-        #{ Regexp.quote((TestRubyOptions.rjit_enabled? && !JITSupport.rjit_force_enabled?) ? NO_JIT_DESCRIPTION : RUBY_DESCRIPTION) }\n\n
+        #{ Regexp.quote(RUBY_DESCRIPTION) }\n\n
       )x,
       %r(
         (?:--\s(?:.+\n)*\n)?
@@ -886,20 +846,24 @@ class TestRubyOptions < Test::Unit::TestCase
   end
 
   def assert_segv(args, message=nil, list: SEGVTest::ExpectedStderrList, **opt, &block)
-    pend "macOS 15 is not working with this assertion" if macos?(15)
-
     # We want YJIT to be enabled in the subprocess if it's enabled for us
     # so that the Ruby description matches.
     env = Hash === args.first ? args.shift : {}
-    args.unshift("--yjit") if self.class.yjit_enabled?
+    args.unshift("--yjit") if JITSupport.yjit_enabled?
+    args.unshift("--zjit") if JITSupport.zjit_enabled?
     env.update({'RUBY_ON_BUG' => nil})
+    env['RUBY_CRASH_REPORT'] ||= nil # default to not passing down parent setting
     # ASAN registers a segv handler which prints out "AddressSanitizer: DEADLYSIGNAL" when
     # catching sigsegv; we don't expect that output, so suppress it.
-    env.update({'ASAN_OPTIONS' => 'handle_segv=0'})
+    env.update({'ASAN_OPTIONS' => 'handle_segv=0', 'LSAN_OPTIONS' => 'handle_segv=0'})
     args.unshift(env)
 
     test_stdin = ""
-    tests = [//, list] unless block
+    if !block
+      tests = [//, list, message]
+    elsif message
+      tests = [[], [], message]
+    end
 
     assert_in_out_err(args, test_stdin, *tests, encoding: "ASCII-8BIT",
                       **SEGVTest::ExecOptions, **opt, &block)
@@ -912,13 +876,12 @@ class TestRubyOptions < Test::Unit::TestCase
   def test_segv_loaded_features
     bug7402 = '[ruby-core:49573]'
 
-    status = assert_segv(['-e', "END {#{SEGVTest::KILL_SELF}}",
-                          '-e', 'class Bogus; def to_str; exit true; end; end',
-                          '-e', '$".clear',
-                          '-e', '$".unshift Bogus.new',
-                          '-e', '(p $"; abort) unless $".size == 1',
-                         ])
-    assert_not_predicate(status, :success?, "segv but success #{bug7402}")
+    assert_segv(['-e', "END {#{SEGVTest::KILL_SELF}}",
+                 '-e', 'class Bogus; def to_str; exit true; end; end',
+                 '-e', '$".clear',
+                 '-e', '$".unshift Bogus.new',
+                 '-e', '(p $"; abort) unless $".size == 1',
+                ], bug7402, success: false)
   end
 
   def test_segv_setproctitle
@@ -931,8 +894,6 @@ class TestRubyOptions < Test::Unit::TestCase
   end
 
   def assert_crash_report(path, cmd = nil, &block)
-    pend "macOS 15 is not working with this assertion" if macos?(15)
-
     Dir.mktmpdir("ruby_crash_report") do |dir|
       list = SEGVTest::ExpectedStderrList
       if cmd
@@ -986,6 +947,27 @@ class TestRubyOptions < Test::Unit::TestCase
     end
   end
 
+  def test_crash_report_pipe_script
+    omit "only runs on Linux" unless RUBY_PLATFORM.include?("linux")
+
+    Tempfile.create(["script", ".sh"]) do |script|
+      Tempfile.create("crash_report") do |crash_report|
+        script.write(<<~BASH)
+          #!/usr/bin/env bash
+
+          cat > #{crash_report.path}
+        BASH
+        script.close
+
+        FileUtils.chmod("+x", script)
+
+        assert_crash_report("| #{script.path}") do
+          assert_include(File.read(crash_report.path), "[BUG] Segmentation fault at")
+        end
+      end
+    end
+  end
+
   def test_DATA
     Tempfile.create(["test_ruby_test_rubyoption", ".rb"]) {|t|
       t.puts "puts DATA.read.inspect"
@@ -1032,7 +1014,7 @@ class TestRubyOptions < Test::Unit::TestCase
           pid = spawn(EnvUtil.rubybin, :in => s, :out => w)
           w.close
           assert_nothing_raised('[ruby-dev:37798]') do
-            result = EnvUtil.timeout(3) {r.read}
+            result = EnvUtil.timeout(10) {r.read}
           end
           Process.wait pid
         }
@@ -1328,17 +1310,12 @@ class TestRubyOptions < Test::Unit::TestCase
   end
 
   def test_toplevel_ruby
-    reserved = ["", [], /::Ruby is reserved/]
-    env = {"RUBYOPT"=>""}
-    args = %w[-e Ruby=1]
-    assert_in_out_err([env, *args])
-    assert_in_out_err([env, "-w", *args], *reserved)
-    assert_in_out_err([env, "-W:deprecated", *args], *reserved)
-    assert_in_out_err([env, "-w", "-W:no-deprecated", *args])
+    assert_instance_of Module, ::Ruby
+  end
 
-    args = ["-e", "class A; Ruby=1; end"]
-    assert_in_out_err([env, *args])
-    assert_in_out_err([env, "-w", *args])
-    assert_in_out_err([env, "-W:deprecated", *args])
+  def test_ruby_patchlevel
+    # We stopped bumping RUBY_PATCHLEVEL at Ruby 4.0.0.
+    # Released versions have RUBY_PATCHLEVEL 0, and un-released versions have -1.
+    assert_include [-1, 0], RUBY_PATCHLEVEL
   end
 end

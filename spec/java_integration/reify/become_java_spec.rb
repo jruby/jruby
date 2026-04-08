@@ -120,6 +120,42 @@ describe "JRuby class reification" do
     expect(TopRightOfTheJStack.new([:a, :b]).size).to eq (2+3)
   end
 
+  it "calls prepended and leaf initialize methods for Ruby classes rooted in a Java superclass" do
+    class PrependJavaBaseInitC < java.util.ArrayList
+      def initialize(trace)
+        trace << :c
+        super()
+      end
+    end
+
+    class PrependJavaBaseInitD < PrependJavaBaseInitC
+      def initialize(trace)
+        trace << :d
+        super
+      end
+    end
+
+    class PrependJavaBaseInitE < PrependJavaBaseInitD
+      def initialize(trace)
+        trace << :e
+        super
+      end
+    end
+
+    module PrependJavaBaseInitM
+      def initialize(trace)
+        trace << :m
+        super
+      end
+    end
+
+    PrependJavaBaseInitE.prepend(PrependJavaBaseInitM)
+
+    trace = []
+    PrependJavaBaseInitE.new(trace)
+    expect(trace).to eq([:m, :e, :d, :c])
+  end
+
   it "supports auto reifying a class hierarchy when class gets redefined" do
     class ASubList < java.util.ArrayList
       attr_reader :args

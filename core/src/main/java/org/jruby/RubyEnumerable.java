@@ -1877,7 +1877,7 @@ public class RubyEnumerable {
 
         if (block.isGiven()) {
             callEach(context, eachSite(context), self, (ctx, largs, unused) -> {
-                var array = RubyArray.newBlankArrayInternal(ctx.runtime, len);
+                var array = RubyArrayNative.newBlankArrayInternal(ctx.runtime, len);
                 int myIx = ix.getAndIncrement();
                 array.eltInternalSet(0, packEnumValues(ctx, largs));
                 for (int i = 0, j = args.length; i < j; i++) {
@@ -1891,7 +1891,7 @@ public class RubyEnumerable {
         } else {
             final var zip = newArray(context);
             callEach(context, eachSite(context), self, Signature.ONE_REQUIRED, (ctx, largs, unused) -> {
-                var array = RubyArray.newBlankArrayInternal(ctx.runtime, len);
+                var array = RubyArrayNative.newBlankArrayInternal(ctx.runtime, len);
                 int myIx = ix.getAndIncrement();
                 array.eltInternalSet(0, packEnumValues(ctx, largs));
                 for (int i = 0, j = args.length; i < j; i++) {
@@ -1981,7 +1981,7 @@ public class RubyEnumerable {
     public static IRubyObject group_by(ThreadContext context, IRubyObject self, final Block block) {
         if (!block.isGiven()) return enumeratorizeWithSize(context, self, "group_by", RubyEnumerable::size);
 
-        final RubyHash result = new RubyHash(context.runtime);
+        final RubyHash result = RubyHashLinkedBuckets.newLBHash(context.runtime);
 
         callEach(context, eachSite(context), self, Signature.OPTIONAL, (ctx, largs, blk) -> {
             IRubyObject larg = packEnumValues(ctx, largs);
@@ -2031,7 +2031,7 @@ public class RubyEnumerable {
 
     @JRubyMethod
     public static IRubyObject uniq(ThreadContext context, IRubyObject self, final Block block) {
-        final RubyHash hash = new RubyHash(context.runtime, 12, false);
+        final RubyHash hash = RubyHashLinkedBuckets.newLBHash(context.runtime, 12, false);
 
         final CachingCallSite each = eachSite(context);
         if (block.isGiven()) {
@@ -2046,7 +2046,7 @@ public class RubyEnumerable {
 
                     IRubyObject key = ary ? block.yieldArray(ctx, obj, null) : block.yield(ctx, obj);
 
-                    if (hash.getEntry(key) == RubyHash.NO_ENTRY) {
+                    if (!hash.hasKey(key)) {
                         hash.internalPut(key, obj);
                     }
                     return obj;
@@ -2054,7 +2054,7 @@ public class RubyEnumerable {
                 @Override
                 public IRubyObject call(ThreadContext ctx, IRubyObject obj, Block blk) {
                     IRubyObject key = block.yield(ctx, obj);
-                    if (hash.getEntry(key) == RubyHash.NO_ENTRY) {
+                    if (!hash.hasKey(key)) {
                         hash.internalPut(key, obj);
                     }
                     return obj;
@@ -2191,11 +2191,6 @@ public class RubyEnumerable {
 
         private final RubyArray result;
 
-        @Deprecated(since = "9.1.3.0")
-        public AppendBlockCallback(Ruby runtime, RubyArray result) {
-            this.result = result;
-        }
-
         AppendBlockCallback(final RubyArray result) {
             this.result = result;
         }
@@ -2219,18 +2214,6 @@ public class RubyEnumerable {
 
         private final RubyHash result;
         private final Block block;
-
-        @Deprecated(since = "9.1.3.0")
-        public PutKeyValueCallback(Ruby runtime, RubyHash result) {
-            this.result = result;
-            this.block = Block.NULL_BLOCK;
-        }
-
-        @Deprecated(since = "9.3.0.0")
-        public PutKeyValueCallback(Ruby runtime, RubyHash result, Block block) {
-            this.result = result;
-            this.block = block;
-        }
 
         PutKeyValueCallback(RubyHash result) {
             this.result = result;
@@ -2307,22 +2290,6 @@ public class RubyEnumerable {
             return context.nil;
         }
 
-    }
-
-    @Deprecated(since = "9.3.0.0")
-    public static IRubyObject callEach(ThreadContext context, IRubyObject self, IRubyObject[] args, Signature signature,
-                                       BlockCallback callback) {
-        return callEach(context, eachSite(context), self, args, signature, callback);
-    }
-
-    @Deprecated(since = "9.3.0.0")
-    public static IRubyObject callEach(ThreadContext context, IRubyObject self, BlockCallback callback) {
-        return callEach(context, eachSite(context), self, callback);
-    }
-
-    @Deprecated(since = "9.3.0.0")
-    public static IRubyObject each(ThreadContext context, IRubyObject self, BlockBody body) {
-        return each(context, eachSite(context), self, body);
     }
 
     protected static CachingCallSite eachSite(ThreadContext context) {

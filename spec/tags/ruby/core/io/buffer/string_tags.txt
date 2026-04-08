@@ -1,0 +1,2 @@
+fails:IO::Buffer.string creates a modifiable buffer for the duration of the block
+fails:IO::Buffer.string creates an external buffer

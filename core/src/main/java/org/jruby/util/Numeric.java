@@ -57,21 +57,24 @@ public class Numeric {
      *
      */
     public static IRubyObject f_add(ThreadContext context, IRubyObject x, IRubyObject y) {
-        if (Builtins.checkIntegerPlus(context)) {
-            if (x instanceof RubyInteger rint) {
+        switch (x) {
+            case RubyInteger rint when Builtins.checkIntegerPlus(context) -> {
                 if (fixnumZero(context, x)) return y;
                 if (fixnumZero(context, y)) return x;
                 return rint.op_plus(context, y);
-            } else if (x instanceof RubyFloat flote) {
+            }
+            case RubyFloat flote when Builtins.checkFloatPlus(context) -> {
                 if (fixnumZero(context, y)) return x;
                 return flote.op_plus(context, y);
-            } else if (x instanceof RubyRational rat) {
+            }
+            case RubyRational rat when Builtins.checkRationalPlus(context) -> {
                 if (fixnumZero(context, y)) return x;
                 return rat.op_plus(context, y);
             }
+            default -> {
+                return sites(context).op_plus.call(context, x, x, y);
+            }
         }
-
-        return sites(context).op_plus.call(context, x, x, y);
     }
 
     private static boolean fixnumZero(ThreadContext context, IRubyObject y) {
@@ -161,25 +164,24 @@ public class Numeric {
      *
      */
     public static IRubyObject f_mul(ThreadContext context, IRubyObject x, IRubyObject y) {
-        if (Builtins.checkIntegerMult(context)) {
-            if (x instanceof RubyInteger) {
-                if (fixnumZero(context, y)) return y;
-                if (fixnumZero(context, x) && y instanceof RubyInteger) return x;
-                if (fixnumOne(context, x)) return y;
-                if (fixnumOne(context, y)) return x;
-                return ((RubyInteger) x).op_mul(context, y);
-            } else if (x instanceof RubyFloat) {
-                if (fixnumOne(context, y)) return x;
-                return ((RubyFloat) x).op_mul(context, y);
-            } else if (x instanceof RubyRational) {
-                if (fixnumOne(context, y)) return x;
-                return ((RubyRational) x).op_mul(context, y);
-            } else {
-                if (fixnumOne(context, y)) return x;
+        return switch (x) {
+            case RubyInteger rint when Builtins.checkIntegerMult(context) -> {
+                if (fixnumZero(context, y)) yield y;
+                if (fixnumZero(context, x) && y instanceof RubyInteger) yield x;
+                if (fixnumOne(context, x)) yield y;
+                if (fixnumOne(context, y)) yield x;
+                yield rint.op_mul(context, y);
             }
-        }
-
-        return sites(context).op_times.call(context, x, x, y);
+            case RubyFloat rfloat when Builtins.checkFloatMult(context) -> {
+                if (fixnumOne(context, y)) yield x;
+                yield rfloat.op_mul(context, y);
+            }
+            case RubyRational rrat when Builtins.checkRationalMult(context) -> {
+                if (fixnumOne(context, y)) yield x;
+                yield rrat.op_mul(context, y);
+            }
+            default -> sites(context).op_times.call(context, x, x, y);
+        };
     }
 
     public static RubyInteger f_mul(ThreadContext context, RubyInteger x, RubyInteger y) {
@@ -202,11 +204,21 @@ public class Numeric {
      *
      */
     public static IRubyObject f_sub(ThreadContext context, IRubyObject x, IRubyObject y) {
-        if (Builtins.checkIntegerMinus(context) && fixnumZero(context, y)) {
-            return x;
-        }
-
-        return sites(context).op_minus.call(context, x, x, y);
+        return switch (x) {
+            case RubyInteger rint when Builtins.checkIntegerMinus(context) -> {
+                if (fixnumZero(context, y)) yield x;
+                yield rint.op_minus(context, y);
+            }
+            case RubyFloat rfloat when Builtins.checkFloatMinus(context) -> {
+                if (fixnumZero(context, y)) yield x;
+                yield rfloat.op_minus(context, y);
+            }
+            case RubyRational rrat when Builtins.checkRationalMinus(context) -> {
+                if (fixnumZero(context, y)) yield x;
+                yield rrat.op_minus(context, y);
+            }
+            default -> sites(context).op_minus.call(context, x, x, y);
+        };
     }
 
     public static RubyInteger f_sub(ThreadContext context, RubyInteger x, RubyInteger y) {
@@ -931,6 +943,15 @@ public class Numeric {
         }
 
         return x.op_eqq(context, y).isTrue();
+    }
+
+    // MRI: is_pos_inf
+    public static boolean isPositiveInfinity(IRubyObject x) {
+        double f;
+        if (!(x instanceof RubyFloat flote))
+            return false;
+        f = flote.getValue();
+        return Double.isInfinite(f) && 0 < f;
     }
 
     @Deprecated(since = "10.0.0.0")

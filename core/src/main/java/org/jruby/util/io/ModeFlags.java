@@ -215,37 +215,6 @@ public class ModeFlags implements Cloneable {
     }
 
     /**
-     * Build a set of mode flags using the specified channel's actual capabilities.
-     *
-     * @param channel the channel to examine for capabilities
-     * @return the mode flags
-     */
-    @Deprecated(since = "9.0.0.0")
-    public static ModeFlags getModesFromChannel(Channel channel) {
-        try {
-            ModeFlags modes;
-
-            if (channel instanceof ReadableByteChannel) {
-                if (channel instanceof WritableByteChannel) {
-                    modes = new ModeFlags(RDWR);
-                } else {
-                    modes = new ModeFlags(RDONLY);
-                }
-            } else if (channel instanceof WritableByteChannel) {
-                modes = new ModeFlags(WRONLY);
-            } else {
-                // FIXME: I don't like this
-                modes = new ModeFlags(RDWR);
-            }
-
-            return modes;
-        } catch (InvalidValueException ive) {
-            // should never happen, because all values above are valid
-            throw new RuntimeException(ive);
-        }
-    }
-
-    /**
      * Produce a Java IO mode string from the flags in this object.
      * 
      * @return A Java string suitable for opening files with RandomAccessFile

@@ -42,6 +42,7 @@ import java.util.stream.Stream;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.api.Warn;
 import org.jruby.exceptions.StopIteration;
 import org.jruby.javasupport.JavaPackage;
 import org.jruby.runtime.Arity;
@@ -137,8 +138,11 @@ public class RubyObjectSpace {
         return id2ref(((RubyBasicObject) recv).getCurrentContext(), recv, id);
     }
 
+    @Deprecated(since = "10.1.0.0")
     @JRubyMethod(name = "_id2ref", module = true, visibility = PRIVATE)
     public static IRubyObject id2ref(ThreadContext context, IRubyObject recv, IRubyObject id) {
+        Warn.warnDeprecated(context, "ObjectSpace._id2ref is deprecated");
+
         long longId = castAsFixnum(context, id).getValue();
         if (longId == 0) return context.fals;
         if (longId == 20) return context.tru;

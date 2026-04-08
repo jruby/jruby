@@ -24,7 +24,7 @@ import java.nio.channels.spi.AbstractInterruptibleChannel;
  * Seekable byte channel impl over a byte array stream.
  * @author kares
  */
-final class SeekableByteChannelImpl extends AbstractInterruptibleChannel
+public final class SeekableByteChannelImpl extends AbstractInterruptibleChannel
     implements ReadableByteChannel, SeekableByteChannel {
 
     private final ByteArrayInputStream in;
@@ -34,7 +34,7 @@ final class SeekableByteChannelImpl extends AbstractInterruptibleChannel
 
     private int truncatedBy = 0;
 
-    SeekableByteChannelImpl(ByteArrayInputStream in) {
+    public SeekableByteChannelImpl(ByteArrayInputStream in) {
         this.in = in;
         this.mark = mark(in);
         this.count = count(in);

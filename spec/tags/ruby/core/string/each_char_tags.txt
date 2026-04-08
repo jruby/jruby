@@ -1,0 +1,1 @@
+fails:String#each_char returns individual chars for dummy encodings

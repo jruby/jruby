@@ -1,0 +1,1 @@
+fails:Array.try_convert sends #to_ary to the argument and raises TypeError if it's not a kind of Array

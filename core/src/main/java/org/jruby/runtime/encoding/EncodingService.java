@@ -561,9 +561,4 @@ public final class EncodingService {
         if (e == null) return null;
         return findEncodingEntry(e.getName());
     }
-
-    @Deprecated(since = "9.1.1.0")
-    public Encoding getFileSystemEncoding(Ruby runtime) {
-        return getFileSystemEncoding();
-    }
 }

@@ -112,11 +112,6 @@ public class JRubyUtilLibrary implements Library {
         return asBoolean(context, context.runtime.getPosix().isNative());
     }
 
-    @Deprecated(since = "9.2.1.0")
-    public static IRubyObject getClassLoaderResources(IRubyObject recv, IRubyObject name) {
-        return class_loader_resources(((RubyBasicObject) recv).getCurrentContext(), recv, name);
-    }
-
     /**
      * Loads a (Java) class.
      * @param context
@@ -402,13 +397,6 @@ public class JRubyUtilLibrary implements Library {
             obj = ((ConcreteJavaProxy) arg).getObject();
         }
         return obj;
-    }
-
-    @Deprecated(since = "9.2.0.0") // since 9.2 only loaded with require 'core_ext/string.rb'
-    public static class StringUtils {
-        public static IRubyObject unseeded_hash(ThreadContext context, IRubyObject recv) {
-            return CoreExt.String.unseeded_hash(context, recv);
-        }
     }
 
     /**

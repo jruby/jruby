@@ -252,6 +252,7 @@ public class Builtins {
         CLASS_FLAGS.put(ClassIndex.PROC, PROC);
         CLASS_FLAGS.put(ClassIndex.RANGE, RANGE);
         CLASS_FLAGS.put(ClassIndex.STRUCT, STRUCT);
+        CLASS_FLAGS.put(ClassIndex.RATIONAL, RATIONAL);
 
         // ---------------------------------------------------------------------
         // Method mappings - map method names to BOP indices
@@ -307,8 +308,8 @@ public class Builtins {
      *
      * @return new short array sized for all BOP indices
      */
-    public static short[] allocate() {
-        return new short[BOP_LAST_];
+    public static int[] allocate() {
+        return new int[BOP_LAST_];
     }
 
     // =========================================================================
@@ -324,7 +325,7 @@ public class Builtins {
      * @param classIndex the ClassIndex of the class being modified
      * @param method the method name being defined
      */
-    public static void invalidateBuiltin(short[] bits, ClassIndex classIndex, String method) {
+    public static void invalidateBuiltin(int[] bits, ClassIndex classIndex, String method) {
         Integer classFlag = CLASS_FLAGS.get(classIndex);
         Integer methodId = METHOD_IDS.get(method);
 
@@ -408,7 +409,7 @@ public class Builtins {
 
     /** Check if all Integer comparison operators are still builtin */
     public static boolean checkIntegerCompare(ThreadContext ctx) {
-        short[] bits = ctx.builtinBits;
+        int[] bits = ctx.builtinBits;
         return (bits[BOP_LT] & INTEGER) == 0 &&
                (bits[BOP_LE] & INTEGER) == 0 &&
                (bits[BOP_GT] & INTEGER) == 0 &&
@@ -476,7 +477,7 @@ public class Builtins {
 
     /** Check if Float comparisons are still builtin */
     public static boolean checkFloatCompare(ThreadContext ctx) {
-        short[] bits = ctx.builtinBits;
+        int[] bits = ctx.builtinBits;
         return (bits[BOP_LT] & FLOAT) == 0 &&
                (bits[BOP_LE] & FLOAT) == 0 &&
                (bits[BOP_GT] & FLOAT) == 0 &&
@@ -509,7 +510,7 @@ public class Builtins {
 
     /** Check if String#length/size is still builtin */
     public static boolean checkStringLength(ThreadContext ctx) {
-        short[] bits = ctx.builtinBits;
+        int[] bits = ctx.builtinBits;
         return (bits[BOP_LENGTH] & STRING) == 0 &&
                (bits[BOP_SIZE] & STRING) == 0;
     }
@@ -560,7 +561,7 @@ public class Builtins {
 
     /** Check if Array#length/size is still builtin */
     public static boolean checkArrayLength(ThreadContext ctx) {
-        short[] bits = ctx.builtinBits;
+        int[] bits = ctx.builtinBits;
         return (bits[BOP_LENGTH] & ARRAY) == 0 &&
                (bits[BOP_SIZE] & ARRAY) == 0;
     }
@@ -611,7 +612,7 @@ public class Builtins {
 
     /** Check if Hash#length/size is still builtin */
     public static boolean checkHashLength(ThreadContext ctx) {
-        short[] bits = ctx.builtinBits;
+        int[] bits = ctx.builtinBits;
         return (bits[BOP_LENGTH] & HASH) == 0 &&
                (bits[BOP_SIZE] & HASH) == 0;
     }
@@ -727,7 +728,7 @@ public class Builtins {
 
     /** Check if Time comparisons are still builtin */
     public static boolean checkTimeCompare(ThreadContext ctx) {
-        short[] bits = ctx.builtinBits;
+        int[] bits = ctx.builtinBits;
         return (bits[BOP_LT] & TIME) == 0 &&
                (bits[BOP_LE] & TIME) == 0 &&
                (bits[BOP_GT] & TIME) == 0 &&
@@ -755,5 +756,20 @@ public class Builtins {
     /** Check if Rational#to_f is still builtin */
     public static boolean checkRationalToF(ThreadContext ctx) {
         return (ctx.builtinBits[BOP_TO_F] & RATIONAL) == 0;
+    }
+
+    /** Check if Rational#+ is still builtin */
+    public static boolean checkRationalPlus(ThreadContext ctx) {
+        return (ctx.builtinBits[BOP_PLUS] & RATIONAL) == 0;
+    }
+
+    /** Check if Rational#* is still builtin */
+    public static boolean checkRationalMult(ThreadContext ctx) {
+        return (ctx.builtinBits[BOP_MULT] & RATIONAL) == 0;
+    }
+
+    /** Check if Rational#- is still builtin */
+    public static boolean checkRationalMinus(ThreadContext ctx) {
+        return (ctx.builtinBits[BOP_MINUS] & RATIONAL) == 0;
     }
 }

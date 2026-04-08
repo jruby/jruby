@@ -1,1 +1,1 @@
-fails:Set#add? raises RuntimeError when called during iteration
+fails(we do not track iteration in progress in set or hash):Set#add? raises RuntimeError when called during iteration

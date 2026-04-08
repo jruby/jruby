@@ -66,37 +66,6 @@ public class OSGiIsolatedScriptingContainer extends IsolatedScriptingContainer {
         return bundle;
     }
 
-    @Deprecated(since = "9.0.1.0")
-    private String createUri(Bundle cl, String ref) {
-        URL url = cl.getResource(ref);
-        if ( url == null && ref.startsWith( "/" ) ) {
-            url = cl.getResource( ref.substring( 1 ) );
-        }
-        if ( url == null ) {
-            throw new RuntimeException( "reference " + ref + " not found on classloader " + cl );
-        }
-        return "uri:" + url.toString().replaceFirst( ref + "$", "" );
-    }
-    /**
-     * add the classloader from the given bundle to the LOAD_PATH
-     * @param bundle
-     */
-    @Deprecated(since = "9.0.1.0")
-    public void addBundleToLoadPath(Bundle bundle) {
-        addLoadPath(createUri(bundle, "/.jrubydir"));
-    }
-
-    /**
-     * add the classloader from the given bundle to the LOAD_PATH
-     * using the bundle symbolic name
-     * 
-     * @param symbolicName
-     */
-    @Deprecated(since = "9.0.1.0")
-    public void addBundleToLoadPath(String symbolicName) {
-        addBundleToLoadPath(toBundle(symbolicName));
-    }
-
     /**
      * add the classloader from the given bundle to the LOAD_PATH and the GEM_PATH
      * using the bundle symbolic name
@@ -112,26 +81,6 @@ public class OSGiIsolatedScriptingContainer extends IsolatedScriptingContainer {
      */
     public void addBundle(Bundle bundle) {
         getProvider().getRubyInstanceConfig().addLoader(new BundleGetResources(bundle));
-    }
-
-    /**
-     * add the classloader from the given bundle to the GEM_PATH
-     * @param bundle
-     */
-    @Deprecated(since = "9.0.1.0")
-    public void addBundleToGemPath(Bundle bundle) {
-        addGemPath(createUri(bundle, "/specifications/.jrubydir"));
-    }
-
-    /**
-     * add the classloader from the given bundle to the GEM_PATH
-     * using the bundle symbolic name
-     * 
-     * @param symbolicName
-     */
-    @Deprecated(since = "9.0.1.0")
-    public void addBundleToGemPath(String symbolicName) {
-        addBundleToGemPath(toBundle(symbolicName));
     }
 
     static class BundleGetResources implements Loader

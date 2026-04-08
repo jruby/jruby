@@ -495,6 +495,23 @@ public class RubyException extends RubyObject {
     }
 
     public void setCause(IRubyObject cause) {
+        setCause(getRuntime().getCurrentContext(), cause);
+    }
+
+    public void setCause(ThreadContext context, IRubyObject cause) {
+        if (cause == this) {
+            this.cause = context.nil;
+            return;
+        }
+
+        Object c = cause;
+        while (c instanceof RubyException causeException) {
+            if (c == this) {
+                throw argumentError(context, "circular causes");
+            }
+            c = causeException.getCause();
+        }
+
         this.cause = cause;
 
         // don't do anything to throwable for null/nil cause to avoid forcing backtrace
@@ -555,6 +572,7 @@ public class RubyException extends RubyObject {
         RubyException exception = (RubyException)clone;
         exception.backtrace.copy(backtrace);
         exception.message = message;
+        exception.cause = cause;
     }
 
     /**
@@ -642,10 +660,5 @@ public class RubyException extends RubyObject {
         if (backtrace.backtraceData == null) {
             backtrace.backtraceData = instanceConfig(context).getTraceType().getIntegratedBacktrace(context, javaTrace);
         }
-    }
-
-    @Deprecated(since = "9.3.0.0")
-    public static IRubyObject newException(ThreadContext context, RubyClass exceptionClass, IRubyObject message) {
-        return newException(context, exceptionClass, message.convertToString());
     }
 }

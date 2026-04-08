@@ -43,12 +43,18 @@ import org.jruby.ast.visitor.NodeVisitor;
 public class ArgumentNode extends Node implements INameNode {
     private final RubySymbol identifier;
     private final int location;
+    private final boolean implicit;
 
     public ArgumentNode(int line, RubySymbol identifier, int location) {
+        this(line, identifier, location, false);
+    }
+
+    public ArgumentNode(int line, RubySymbol identifier, int location, boolean implicit) {
         super(line, false);
 
         this.identifier = identifier;
         this.location = location; // All variables should be depth 0 in this case
+        this.implicit = implicit;
     }
 
     public NodeType getNodeType() {
@@ -85,5 +91,9 @@ public class ArgumentNode extends Node implements INameNode {
 
     public List<Node> childNodes() {
         return EMPTY_LIST;
+    }
+
+    public boolean isImplicit() {
+        return implicit;
     }
 }

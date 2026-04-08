@@ -1,0 +1,1 @@
+fails:IO::Buffer#not! modifies the buffer in place

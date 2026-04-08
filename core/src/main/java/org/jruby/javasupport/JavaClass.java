@@ -99,23 +99,10 @@ public class JavaClass extends JavaObject {
         return (RubyClass) getProxyModule();
     }
 
-    @Deprecated(since = "9.3.0.0")
+    // Deprecated in 9.3.0.0 but still used by methods deprecated in 9.4-
+    @Deprecated(since = "9.4-")
     public static JavaClass get(final Ruby runtime, final Class<?> klass) {
         return runtime.getJavaSupport().getJavaClassFromCache(klass);
-    }
-
-    @Deprecated(since = "9.0.0.0") // only been used package internally - a bit poorly named
-    public static RubyArray getRubyArray(Ruby runtime, Class<?>[] classes) {
-        return toRubyArray(runtime, classes);
-    }
-
-    @Deprecated(since = "9.3.0.0")
-    public static RubyArray toRubyArray(final Ruby runtime, final Class<?>[] classes) {
-        IRubyObject[] javaClasses = new IRubyObject[classes.length];
-        for ( int i = classes.length; --i >= 0; ) {
-            javaClasses[i] = get(runtime, classes[i]);
-        }
-        return RubyArray.newArrayMayCopy(runtime, javaClasses);
     }
 
     public final Class javaClass() {
@@ -165,50 +152,6 @@ public class JavaClass extends JavaObject {
             }
         }
         return java_class;
-    }
-
-    /**
-     * Resolves a Java class from a passed type parameter.
-     *
-     * Uisng the rules accepted by `to_java(type)` in Ruby land.
-     * @param context
-     * @param type
-     * @return resolved type or null if resolution failed
-     */
-    @Deprecated(since = "9.3.0.0")
-    public static JavaClass resolveType(final ThreadContext context, final IRubyObject type) {
-        RubyModule proxyClass = Java.resolveType(context, type);
-        return proxyClass == null ? null : get(context.runtime, JavaUtil.getJavaClass(proxyClass, null));
-    }
-
-    @Deprecated(since = "9.3.0.0")
-    public static JavaClass forNameVerbose(Ruby runtime, String className) {
-        Class<?> klass = null;
-        synchronized (JavaClass.class) {
-            if (klass == null) {
-                klass = runtime.getJavaSupport().loadJavaClassVerbose(className);
-            }
-            return JavaClass.get(runtime, klass);
-        }
-    }
-
-    @Deprecated(since = "9.3.0.0") // no longer used
-    public static JavaClass forNameQuiet(Ruby runtime, String className) {
-        synchronized (JavaClass.class) {
-            Class<?> klass = runtime.getJavaSupport().loadJavaClassQuiet(className);
-            return JavaClass.get(runtime, klass);
-        }
-    }
-
-    @Deprecated(since = "9.4.0.0")
-    @JRubyMethod(name = "for_name", meta = true)
-    public static JavaClass for_name(IRubyObject recv, IRubyObject name) {
-        return forNameVerbose(((RubyBasicObject) recv).getCurrentContext().getRuntime(), name.asJavaString());
-    }
-
-    @Deprecated(since = "10.0.0.0")
-    static JavaClass for_name(IRubyObject recv, String name) {
-        return forNameVerbose(((RubyBasicObject) recv).getCurrentContext().getRuntime(), name);
     }
 
     @Deprecated(since = "10.0.0.0")

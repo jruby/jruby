@@ -56,11 +56,6 @@ public class JavaProxyReflectionObject extends RubyObject {
         klass.getMetaClass().defineAlias(context, "__j_allocate", "allocate");
     }
 
-    @Deprecated(since = "1.7.20")
-    public IRubyObject op_equal(IRubyObject other) {
-        return op_eqq(getCurrentContext(), other);
-    }
-
     @Override
     @JRubyMethod(name = {"==", "eql?"})
     public RubyBoolean op_eqq(final ThreadContext context, IRubyObject obj) {
@@ -72,11 +67,6 @@ public class JavaProxyReflectionObject extends RubyObject {
             obj = (IRubyObject) wrappedObj;
         }
         return asBoolean(context, this.equals(obj));
-    }
-
-    @Deprecated(since = "1.7.20")
-    public IRubyObject same(IRubyObject other) {
-        return op_equal(getCurrentContext(), other);
     }
 
     @Override

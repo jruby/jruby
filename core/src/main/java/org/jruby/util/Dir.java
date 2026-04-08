@@ -945,12 +945,4 @@ public class Dir {
     private static byte[] getBytesInUTF8(final String str) {
         return RubyEncoding.encodeUTF8(str);
     }
-
-    /**
-     * @deprecated No replacement; not intended to be made public
-     */
-    @Deprecated(since = "9.3.0.0")
-    public static int range(byte[] _pat, int pat, int pend, char test, int flags) {
-        return new FilenameMatch(pat, 0, flags).helper(_pat, pend, new byte[] {(byte) test}, 1, ASCIIEncoding.INSTANCE);
-    }
 }

@@ -36,13 +36,13 @@ project 'JRuby Dist' do
           <ftp action="get" server="rsync.osuosl.org" passive="yes" userid="anonymous" password=""
                remotedir="/debian/pool/main/r/ruby3.4" depends="yes">
             <fileset dir="${project.build.directory}/rdoc/downloads">
-              <include name="ruby3.4-doc*.deb"/>
+              <include name="ruby3.4-doc_3.4.5*.deb"/>
             </fileset>
           </ftp>
 
           <!-- Move the .deb file to a simple name (should be only one or this will fail) -->
           <move tofile="${project.build.directory}/rdoc/downloads/rubydoc.deb">
-            <fileset dir="${project.build.directory}/rdoc/downloads" includes="ruby3.4-doc*.deb"/>
+            <fileset dir="${project.build.directory}/rdoc/downloads" includes="ruby3.4-doc_3.4.5*.deb"/>
           </move>
 
           <!-- Extract .deb using ar -->

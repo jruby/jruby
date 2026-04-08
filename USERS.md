@@ -72,38 +72,30 @@ AsciiDoc content to HTML 5, PDF and other formats That is implemented in Ruby.
 Additional content in the [JRuby Success Stories](https://github.com/jruby/jruby/wiki/SuccessStories#substitutealert-inc) wiki page.
 
 * **Desc:** We make SubAlert, the top rated substitute teacher app in the U.S. and Canada.
-
 * **Usage:** JRuby is used for scaling this highly parallel application in ways that CRuby can't match. Java integration with the Firebase library allows sending Android notifications, even though there's no official support for Ruby. The JRuby team has been amazingly responsive and we are really happy using JRuby for over 12 years at the time of this writing! 🎉
-
 * **Since:** 2013
-
 * **Links:** [https://www.subalert.com](https://www.subalert.com), [iPhone App](https://apps.apple.com/us/app/subalert-for-frontline-ed/id557785741), [Android App](https://play.google.com/store/apps/details?id=com.substitutealert)
-
-* **Contact:** @mohamedhafez83 
+* **Contact:** @mohamedhafez83
 
 ### eazyBI
 
 * **Desc:** eazyBI is a Business Intelligence application for creating reports, charts, and dashboards from many different data sources. eazyBI's most popular integration is with Atlassian Jira and other Jira apps. It is one of the top-selling third-party apps on the Atlassian Marketplace.
-
 * **Usage:** eazyBI is a Ruby on Rails application that runs on JRuby. JRuby allows embedding a Java-based Mondrian OLAP engine, integrating with Apache POI and Batik libraries, as well as packaging eazyBI as a Jira Data Center plugin (Java jar file).
 eazyBI is deployed both in the cloud as well as installed on thousands of customer servers running Linux or Windows and connecting to PostgreSQL, MySQL, Oracle, and Microsoft SQL Server databases.
 One of the eazyBI core components is [mondrian-olap](https://github.com/rsim/mondrian-olap) which provides JRuby DSL for using the Mondrian OLAP engine.
-
 * **Since:** 2011
-
 * **Links:** [eazyBI](https://eazybi.com)
-
 * **Contact:** @rsim
 
 ### GoCD (Go Continuous Delivery)
 
 * **Desc:** GoCD is an open-source self-hostable continuous delivery / integration automation
 server, automating the software build-test-release cycle to enable frequent and reliable
-software builds & deployments. It helps teams visualise and streamline complex development workflows 
+software builds & deployments. It helps teams visualise and streamline complex development workflows
 by allowing teams to visualize their entire delivery process through "pipelines as code"
 ensuring that software can be released at any time.
-* **Usage:** While originally used more widely within GoCD, JRuby/Rails/[JRuby-Rack](https://github.com/jruby/jruby-rack) is still used 
-via [Jetty](https://jetty.org/) for server-side rendering of various interfaces for users to interact with their pipeline job runs 
+* **Usage:** While originally used more widely within GoCD, JRuby/Rails/[JRuby-Rack](https://github.com/jruby/jruby-rack) is still used
+via [Jetty](https://jetty.org/) for server-side rendering of various interfaces for users to interact with their pipeline job runs
 and interoperate with the rest of the Java-based server.
 * **Since:** 2007
 * **Links:** [gocd.org](https://www.gocd.org/), [source](https://github.com/gocd/gocd), [docs](https://docs.gocd.org/current/)
@@ -112,5 +104,12 @@ and interoperate with the rest of the Java-based server.
 ### Zendesk
 
 * **Desc**: Zendesk is a leading customer support SaaS solution.
-* **Usage**: We use JRuby for the search indexer of our core support product to fetch data from different data stores and push it to our search engine. JRuby was chosen due to its multithreading capabilities and the Java library ecosystem. 
+* **Usage**: We use JRuby for the search indexer of our core support product to fetch data from different data stores and push it to our search engine. JRuby was chosen due to its multithreading capabilities and the Java library ecosystem.
 * **Link**: [Presentation slides with more context](https://www.slideshare.net/slideshow/50-000-processed-records-per-second-a-cruby-jruby-story/278760878)
+
+### openHAB
+
+* **Description**: A vendor and technology agnostic open-source home automation platform written in Java.
+* **Usage**: Leverages JRuby as one of several scripting engines (alongside JavaScript and Python) for its OSGi-based architecture, allowing users to write complex automation rules and logic via a [dedicated JRuby scripting add-on](https://github.com/openhab/openhab-addons/tree/main/bundles/org.openhab.automation.jrubyscripting).
+* **Since**: 2020
+* **Link**: [openHAB](https://www.openhab.org/)

@@ -179,13 +179,6 @@ public class RubyFileStat extends RubyObject {
         return asFixnum(context, stat.blockSize());
     }
 
-    @Deprecated(since = "9.0.4.0")
-    public RubyFixnum blksize() {
-        ThreadContext context = getCurrentContext();
-        checkInitialized(context);
-        return asFixnum(context, stat.blockSize());
-    }
-
     @JRubyMethod(name = "blockdev?")
     public IRubyObject blockdev_p(ThreadContext context) {
         checkInitialized(context);

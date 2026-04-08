@@ -91,6 +91,9 @@ public class CoverageData {
     public synchronized void coverLine(String filename, int line) {
         Map<String, IntList> coverage = this.coverage;
 
+        // negative lines are not included in coverage
+        if (line < 0) return;
+
         if (coverage != null) {
             IntList lines = coverage.get(filename);
 

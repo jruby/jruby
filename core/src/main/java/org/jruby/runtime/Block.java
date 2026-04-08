@@ -303,16 +303,6 @@ public class Block implements FunctionOneOrTwoOrThree<ThreadContext, IRubyObject
         return block;
     }
 
-    /**
-     * What is the arity of this block?
-     *
-     * @return the arity
-     */
-    @Deprecated(since = "9.0.0.0")
-    public Arity arity() {
-        return getSignature().arity();
-    }
-
     public Signature getSignature() {
         return body.getSignature();
     }

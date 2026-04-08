@@ -107,26 +107,6 @@ public class JavaMethod extends JavaCallable {
         return new JavaMethod(runtime, method);
     }
 
-    @Deprecated(since = "9.0.0.0") // no-longer used
-    public static JavaMethod create(Ruby runtime, Class<?> javaClass, String methodName, Class<?>[] argumentTypes) {
-        try {
-            return create(runtime, javaClass.getMethod(methodName, argumentTypes));
-        }
-        catch (NoSuchMethodException e) {
-            throw nameError(runtime.getCurrentContext(), undefinedMethodMessage(runtime, ids(runtime, methodName), ids(runtime, javaClass.getName()), false), methodName);
-        }
-    }
-
-    @Deprecated(since = "9.0.0.0") // no-longer used
-    public static JavaMethod createDeclared(Ruby runtime, Class<?> javaClass, String methodName, Class<?>[] argumentTypes) {
-        try {
-            return create(runtime, javaClass.getDeclaredMethod(methodName, argumentTypes));
-        }
-        catch (NoSuchMethodException e) {
-            throw nameError(runtime.getCurrentContext(), undefinedMethodMessage(runtime, ids(runtime, methodName), ids(runtime, javaClass.getName()), false), methodName);
-        }
-    }
-
     public static JavaMethod getMatchingDeclaredMethod(Ruby runtime, Class<?> javaClass, String methodName, Class<?>[] argumentTypes) {
         Method m = ClassUtils.getMatchingDeclaredMethod(javaClass, methodName, argumentTypes);
 

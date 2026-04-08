@@ -108,4 +108,31 @@ class TestHash < Test::Unit::TestCase
     assert_equal 2, hash[arr2]
   end
 
+  # GH-9340: Hash#rehash corrupts insertion-order linked list when
+  # deduplicating keys. After rehash removes a duplicate, new
+  # insertions would disconnect existing entries from iteration.
+  def test_rehash_dedup_preserves_insertion_order
+    a = [1]; b = [2]
+    h = { a => "a", b => "b" }
+    a[0] = 2  # a now equals b
+    h.rehash  # deduplicates, should keep b's value
+    h[[3]] = "c"
+
+    assert_equal 2, h.size
+    assert_equal [[2], [3]], h.keys
+    assert_equal ["b", "c"], h.values
+  end
+
+  def test_rehash_dedup_reverse_each
+    a = [1]; b = [2]; c = [3]
+    h = { a => "a", b => "b", c => "c" }
+    a[0] = 2
+    h.rehash
+    h[[10]] = "d"
+
+    result = []
+    h.reverse_each { |k, v| result << k }
+    assert_equal [[10], [3], [2]], result
+  end
+
 end

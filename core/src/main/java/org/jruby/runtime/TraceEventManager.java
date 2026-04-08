@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.jruby.api.Convert.asFixnum;
-import static org.jruby.api.Create.*;
+import static org.jruby.api.Create.newString;
 import static org.jruby.api.Warn.warn;
 
 public class TraceEventManager {
@@ -164,10 +164,11 @@ public class TraceEventManager {
     public void removeAllCallEventHooksFor(ThreadContext context) {
         if (eventHooks.length == 0) return;
 
+        int size = eventHooks.length;
         List<EventHook> hooks = new ArrayList<>(Arrays.asList(eventHooks));
 
         hooks = hooks.stream().filter(hook ->
-                !(hook instanceof CallTraceFuncHook) || !((CallTraceFuncHook) hook).getThread().equals(context)
+                !(hook instanceof CallTraceFuncHook ctfHook && ctfHook.getThread().equals(context))
         ).collect(Collectors.toList());
 
         EventHook[] newHooks = new EventHook[hooks.size()];
@@ -209,6 +210,10 @@ public class TraceEventManager {
 
     public boolean hasEventHooks() {
         return hasEventHooks;
+    }
+
+    public int[] eventHookStats() {
+        return new int[] {eventHooks.length, 0};
     }
 
     public static class CallTraceFuncHook extends EventHook {

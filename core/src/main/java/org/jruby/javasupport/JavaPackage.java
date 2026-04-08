@@ -381,9 +381,6 @@ public class JavaPackage extends RubyModule {
                 }
             }
 
-            @Deprecated(since = "9.3.0.0") @Override
-            public Arity getArity() { return Arity.NO_ARGUMENTS; }
-
             public Signature getSignature() {
                 return Signature.NO_ARGUMENTS;
             }

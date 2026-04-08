@@ -95,7 +95,4 @@ public abstract class Initializer {
 
     public abstract RubyModule initialize(ThreadContext context, RubyModule proxy);
 
-    @Deprecated(since = "9.2.9.0")
-    public static final ClassValue<Method[]> DECLARED_METHODS = MethodGatherer.DECLARED_METHODS;
-
 }

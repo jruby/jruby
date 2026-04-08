@@ -145,10 +145,10 @@ public class VariableSite extends MutableCallSite {
         MethodHandle test = findStatic(VariableSite.class, "testRealClass", methodType(boolean.class, int.class, IRubyObject.class));
         test = insertArguments(test, 0, accessor.getClassId());
 
-        getValue = guardWithTest(test, getValue, fallback);
+        MethodHandle guarded = guardWithTest(test, getValue, fallback);
 
         if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(name() + "\tget on class " + self.getMetaClass().id + " bound directly" + extractSourceInfo());
-        setTarget(getValue);
+        setTarget(guarded);
 
         return (IRubyObject)getValue.invokeExact(self);
     }
@@ -209,10 +209,10 @@ public class VariableSite extends MutableCallSite {
         test = insertArguments(test, 0, accessor.getClassId());
         test = dropArguments(test, 1, IRubyObject.class);
 
-        setValue = guardWithTest(test, setValue, fallback);
+        MethodHandle guarded = guardWithTest(test, setValue, fallback);
 
         if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) LOG.info(name() + "\tset on class " + self.getMetaClass().id + " bound directly" + extractSourceInfo());
-        setTarget(setValue);
+        setTarget(guarded);
 
         setValue.invokeExact(self, value);
     }

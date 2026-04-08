@@ -72,14 +72,6 @@ public final class IdUtil {
     }
     
     /**
-     * rb_is_local_id and is_local_id
-     */
-    @Deprecated(since = "9.3.0.0")
-    public static boolean isLocal(String id) {
-        return !isGlobal(id) && !isClassVariable(id) && !isInstanceVariable(id) && !isConstant(id) && !isPredicate(id) && !isSpecial(id);
-    }
-
-    /**
      * We store IR special variables (e.g. %block) in scope and we want reflective Ruby methods to
      * not see these since they are not real variables...they're special.
      */

@@ -141,20 +141,6 @@ public class Signature {
 
     public int required() { return pre + post; }
 
-    // We calculate this every time but no one should be using this any more
-    @Deprecated(since = "9.3.0.0")
-    public Arity arity() {
-        // NOTE: Some logic to *assign* variables still uses Arity, which treats Rest.ANON (the
-        //       |a,| form) as a rest arg for destructuring purposes. However ANON does *not*
-        //       permit more than required args to be passed to a lambda, so we do not consider
-        //       it a "true" rest arg for arity-checking purposes below in checkArity.
-        if (rest != Rest.NONE || opt != 0) {
-            return Arity.createArity(-(required() + 1));
-        } else {
-            return Arity.fixed(required() + getRequiredKeywordForArityCount());
-        }
-    }
-
     /**
      * Best attempt at breaking the code of arity values!  We figure out how many fixed/required parameters
      * must be supplied. Then we figure out if we need to mark the value as optional. Optional is indicated
@@ -202,23 +188,6 @@ public class Signature {
                 return negative ? Signature.TWO_REQUIRED : Signature.TWO_ARGUMENTS;
             case 3:
                 return negative ? Signature.THREE_REQUIRED : Signature.THREE_ARGUMENTS;
-        }
-
-        throw new UnsupportedOperationException("We do not know enough about the arity to convert it to a signature");
-    }
-
-    // Lossy conversion to half-support older signatures which externally use Arity but needs to be converted.
-    @Deprecated(since = "9.3.0.0")
-    public static Signature from(Arity arity) {
-        switch(arity.required()) {
-            case 0:
-                return arity.isFixed() ? Signature.NO_ARGUMENTS : Signature.OPTIONAL;
-            case 1:
-                return arity.isFixed() ? Signature.ONE_ARGUMENT : Signature.ONE_REQUIRED;
-            case 2:
-                return arity.isFixed() ? Signature.TWO_ARGUMENTS : Signature.TWO_REQUIRED;
-            case 3:
-                return arity.isFixed() ? Signature.THREE_ARGUMENTS : Signature.THREE_REQUIRED;
         }
 
         throw new UnsupportedOperationException("We do not know enough about the arity to convert it to a signature");

@@ -67,6 +67,7 @@ import org.jruby.util.io.RubyOutputStream;
 
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
+import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
@@ -91,6 +92,8 @@ public class MarshalDumper {
     private final HashMapInt<IRubyObject> linkCache = new HashMapInt<>(4, true);
     // lazy for simple cases that encounter no symbols
     private HashMapInt<RubySymbol> symbolCache;
+    // lazy unless userdef dumps are needed
+    private IdentityHashMap<IRubyObject, Object> activeUserdefs;
 
     public MarshalDumper(int depthLimit) {
         this.depthLimit = depthLimit >= 0 ? depthLimit : Integer.MAX_VALUE;
@@ -437,6 +440,10 @@ public class MarshalDumper {
         
         RubyString marshaled = castAsString(context, dumpResult);
 
+        if (activeUserdefs != null && activeUserdefs.containsKey(value)) {
+            throw runtimeError(context, "can't dump recursive object using _dump()");
+        }
+
         if (marshaled.hasVariables()) {
             var ivarAccessors = countVariables(marshaled);
             int size = variableCount;
@@ -448,7 +455,10 @@ public class MarshalDumper {
 
                 writeInt(out, size);
 
+                if (activeUserdefs == null) activeUserdefs = new IdentityHashMap<>();
+                activeUserdefs.put(value, null);
                 ivarAccessors.forEach(new VariableDumper(context, out, marshaled));
+                activeUserdefs.remove(value);
             } else {
                 dumpUserdefBase(context, out, klass, marshaled);
             }

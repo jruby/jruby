@@ -183,7 +183,7 @@ public class GlobalVariable extends AbstractVariable {
     @Override
     public void setJavaObject(Ruby runtime, Object javaObject) {
         updateByJavaObject(runtime, javaObject);
-        tryEagerInjection(runtime, null);
+        tryEagerInjection(null);
     }
 
     /**
@@ -193,11 +193,6 @@ public class GlobalVariable extends AbstractVariable {
     @Override
     public void inject() {
         // do nothing
-    }
-
-    @Deprecated(since = "1.7.20")
-    public void tryEagerInjection(Ruby runtime, IRubyObject receiver) {
-        tryEagerInjection(receiver);
     }
 
     /**

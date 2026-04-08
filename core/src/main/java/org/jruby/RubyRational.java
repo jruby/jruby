@@ -297,24 +297,6 @@ public class RubyRational extends RubyNumeric {
         return signum < 0;
     }
     
-    /** nurat_s_new
-     * 
-     */
-    @Deprecated(since = "1.1.4")
-    public static IRubyObject newInstance(ThreadContext context, IRubyObject clazz, IRubyObject[]args) {
-        switch (args.length) {
-            case 1: return newInstance(context, (RubyClass) clazz, args[0]);
-            case 2: return newInstance(context, (RubyClass) clazz, args[0], args[1]);
-        }
-        Arity.raiseArgumentError(context, args.length, 1, 1);
-        return null;
-    }
-
-    @Deprecated(since = "9.2.0.0") // confusing parameters
-    public static IRubyObject newInstance(ThreadContext context, IRubyObject clazz, IRubyObject num) {
-        return newInstance(context, (RubyClass) clazz, num);
-    }
-
     static IRubyObject newInstance(ThreadContext context, RubyClass clazz, IRubyObject num) {
         return newInstance(context, clazz, num, true);
     }
@@ -324,11 +306,6 @@ public class RubyRational extends RubyNumeric {
 
         if (maybeInt.isNil()) return maybeInt;
         return canonicalizeInternal(context, clazz, maybeInt.convertToInteger(), RubyFixnum.one(context.runtime));
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public static IRubyObject newInstance(ThreadContext context, IRubyObject clazz, IRubyObject num, IRubyObject den) {
-        return newInstance(context, (RubyClass) clazz, num, den);
     }
 
     static IRubyObject newInstance(ThreadContext context, RubyClass clazz, IRubyObject num, IRubyObject den) {
@@ -391,16 +368,6 @@ public class RubyRational extends RubyNumeric {
         return x;
     }
     
-    @Deprecated(since = "1.1.4")
-    public static IRubyObject convert(ThreadContext context, IRubyObject clazz, IRubyObject[]args) {
-        switch (args.length) {
-        case 1: return convert(context, clazz, args[0]);        
-        case 2: return convert(context, clazz, args[0], args[1]);
-        }
-        Arity.raiseArgumentError(context, args.length, 1, 1);
-        return null;
-    }
-
     /** nurat_s_convert
      * 
      */
@@ -714,9 +681,6 @@ public class RubyRational extends RubyNumeric {
         return f_addsub(context, getMetaClass(), num, den, other.num, other.den, true);
     }
 
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject op_add(ThreadContext context, IRubyObject other) { return op_plus(context, other); }
-
     /** nurat_sub */
     @JRubyMethod(name = "-")
     public IRubyObject op_minus(ThreadContext context, IRubyObject other) {
@@ -735,9 +699,6 @@ public class RubyRational extends RubyNumeric {
     public final RubyNumeric op_minus(ThreadContext context, RubyRational other) {
         return f_addsub(context, getMetaClass(), num, den, other.num, other.den, false);
     }
-
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject op_sub(ThreadContext context, IRubyObject other) { return op_minus(context, other); }
 
     @Override
     public IRubyObject op_uminus(ThreadContext context) {
@@ -1570,36 +1531,6 @@ public class RubyRational extends RubyNumeric {
 
         x = TypeConverter.convertToType(x, context.runtime.getRational(), "to_r");
         return ((RubyRational) x).op_div(context, y);
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject op_floor(ThreadContext context) {
-        return floor(context);
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject op_floor(ThreadContext context, IRubyObject n) {
-        return floor(context, n);
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject op_ceil(ThreadContext context) {
-        return ceil(context);
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject op_ceil(ThreadContext context, IRubyObject n) {
-        return ceil(context, n);
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject op_idiv(ThreadContext context, IRubyObject other) {
-        return idiv(context, other);
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject op_fdiv(ThreadContext context, IRubyObject other) {
-        return fdiv(context, other);
     }
 
     private static JavaSites.RationalSites sites(ThreadContext context) {

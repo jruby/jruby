@@ -8,11 +8,11 @@ gem_version=${jar_version/-/.}
 
 rm -rf maven/*/target/*
 
-./mvnw install -Pbootstrap
-./mvnw -Pcomplete
-./mvnw -Pdist
-./mvnw -Pjruby-jars
-./mvnw -Pmain
+./mvnw -ntp install -Pbootstrap
+./mvnw -ntp -Pcomplete
+./mvnw -ntp -Pdist
+./mvnw -ntp -Pjruby-jars
+./mvnw -ntp -Pmain
 
 declare -a failed
 failed[0]=0
@@ -61,10 +61,10 @@ function check {
 
 }
 
-check lib/target/jruby-stdlib-$jar_version.jar 19
-check maven/jruby-jars/pkg/jruby-jars-$gem_version.gem 33
+check lib/target/jruby-stdlib-$jar_version.jar 20
+check maven/jruby-jars/pkg/jruby-jars-$gem_version.gem 35
 check maven/jruby-jars/lib/jruby-core-$jar_version-complete.jar 17
-check maven/jruby-jars/lib/jruby-stdlib-$jar_version.jar 19
+check maven/jruby-jars/lib/jruby-stdlib-$jar_version.jar 20
 check maven/jruby-complete/target/jruby-complete-$jar_version.jar 36
 check maven/jruby/target/jruby-$jar_version.jar 9
 check maven/jruby-dist/target/jruby-dist-$jar_version-bin.tar.gz 45 jruby-$jar_version

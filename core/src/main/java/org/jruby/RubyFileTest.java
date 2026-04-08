@@ -298,11 +298,6 @@ public class RubyFileTest {
         return asFixnum(context, stat.st_size());
     }
 
-    @Deprecated(since = "9.2.1.0")
-    public static IRubyObject size_p(IRubyObject recv, IRubyObject filename) {
-        return size_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
-    }
-    
     @JRubyMethod(name = "size?", module = true)
     public static IRubyObject size_p(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         if (!(filename instanceof RubyFile) && filename.respondsTo("to_io")) {
@@ -361,11 +356,6 @@ public class RubyFileTest {
     @Deprecated(since = "10.0.0.0")
     public static RubyBoolean writable_p(IRubyObject recv, IRubyObject filename) {
         return writable_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
-    }
-
-    @Deprecated(since = "9.2.1.0")
-    public static RubyBoolean zero_p(IRubyObject recv, IRubyObject filename) {
-        return zero_p(((RubyBasicObject) recv).getCurrentContext(), recv, filename);
     }
 
     @JRubyMethod(name = {"empty?", "zero?"}, module = true)

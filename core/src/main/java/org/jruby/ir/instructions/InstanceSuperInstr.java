@@ -43,7 +43,6 @@ import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -53,16 +52,6 @@ import java.util.EnumSet;
 
 public class InstanceSuperInstr extends CallInstr {
     private final boolean isLiteralBlock;
-
-    // clone constructor
-    protected InstanceSuperInstr(IRScope scope, Variable result, Operand definingModule, RubySymbol name, Operand[] args,
-                                 Operand closure, int flags, boolean isPotentiallyRefined, CallSite callSite,
-                                 long callSiteId) {
-        super(scope, Operation.INSTANCE_SUPER, CallType.SUPER, result, name, definingModule, args, closure, flags,
-                isPotentiallyRefined, callSite, callSiteId);
-
-        isLiteralBlock = closure instanceof WrappedIRClosure;
-    }
 
     // normal constructor
     public InstanceSuperInstr(IRScope scope, Variable result, Operand definingModule, RubySymbol name, Operand[] args,
@@ -90,7 +79,7 @@ public class InstanceSuperInstr extends CallInstr {
         return new InstanceSuperInstr(ii.getScope(), ii.getRenamedVariable(getResult()),
                 getDefiningModule().cloneForInlining(ii), getName(), cloneCallArgs(ii),
                 getClosureArg().cloneForInlining(ii), getFlags(),
-                isPotentiallyRefined(), getCallSite(), getCallSiteId());
+                isPotentiallyRefined());
     }
 
     public static InstanceSuperInstr decode(IRReaderDecoder d) {

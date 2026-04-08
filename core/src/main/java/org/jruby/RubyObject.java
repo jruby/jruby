@@ -110,11 +110,6 @@ public class RubyObject extends RubyBasicObject {
         super(metaClass);
     }
 
-    @Deprecated(since = "1.7.0")
-    protected RubyObject(Ruby runtime, RubyClass metaClass, boolean useObjectSpace, boolean canBeTainted) {
-        super(runtime, metaClass, useObjectSpace, canBeTainted);
-    }
-
     /**
      * Path for objects who want to decide whether they don't want to be in
      * ObjectSpace even when it is on. (notably used by objects being
@@ -331,55 +326,6 @@ public class RubyObject extends RubyBasicObject {
 
     public final void callInit(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         metaClass.getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, arg0, arg1, arg2, block);
-    }
-
-    /*
-     * Tries to convert this object to the specified Ruby type, using
-     * a specific conversion method.
-     */
-    @Deprecated(since = "1.1.6")
-    public final IRubyObject convertToType(RubyClass target, int convertMethodIndex) {
-        throw new RuntimeException("Not supported; use the String versions");
-    }
-
-    /* specific_eval
-     *
-     * Evaluates the block or string inside of the context of this
-     * object, using the supplied arguments. If a block is given, this
-     * will be yielded in the specific context of this object. If no
-     * block is given then a String-like object needs to be the first
-     * argument, and this string will be evaluated. Second and third
-     * arguments in the args-array is optional, but can contain the
-     * filename and line of the string under evaluation.
-     */
-    @Deprecated(since = "1.1.2")
-    public IRubyObject specificEval(ThreadContext context, RubyModule mod, IRubyObject[] args, Block block, EvalType evalType) {
-        if (block.isGiven()) {
-            if (args.length > 0) throw argumentError(context, args.length, 0);
-
-            return yieldUnder(context, mod, block, evalType);
-        }
-
-        if (args.length == 0) throw argumentError(context, "block not supplied");
-        if (args.length > 3) {
-            String lastFuncName = context.getFrameName();
-            throw argumentError(context, "wrong number of arguments: " + lastFuncName + "(src) or " + lastFuncName + "{..}");
-        }
-
-        // We just want the TypeError if the argument doesn't convert to a String (JRUBY-386)
-        RubyString evalStr = args[0] instanceof RubyString str ? str : args[0].convertToString();
-
-        String file;
-        int line;
-        if (args.length > 1) {
-            file = args[1].convertToString().asJavaString();
-            line = args.length > 2 ? toInt(context, args[2]) - 1 : 0;
-        } else {
-            file = "(eval at " + context.getSingleBacktrace().getFileAndLine() + ")";
-            line = 0;
-        }
-
-        return evalUnder(context, mod, evalStr, file, line, evalType);
     }
 
     // Methods of the Object class (rb_obj_*):

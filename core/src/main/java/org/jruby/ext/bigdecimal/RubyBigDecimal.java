@@ -1278,9 +1278,9 @@ public class RubyBigDecimal extends RubyNumeric implements SimpleHash {
             // http://blade.nagaokaut.ac.jp/cgi-bin/scat.rb/ruby/ruby-core/17374
             // return callCoerced(context, op, b, true); -- this is MRI behavior.
             // We'll use ours for now, thus providing an ability to add Floats.
-            RubyBigDecimal ret = (RubyBigDecimal) callCoerced(context, sites(context).op_plus, b, true);
-            if (ret != null) {
-                ret.setResult(context, prec);
+            IRubyObject ret = callCoerced(context, sites(context).op_plus, b, true);
+            if (ret instanceof RubyBigDecimal bd) {
+                bd.setResult(context, prec);
             }
             return ret;
         }
@@ -1344,7 +1344,13 @@ public class RubyBigDecimal extends RubyNumeric implements SimpleHash {
     }
 
     private IRubyObject subInternal(ThreadContext context, RubyBigDecimal val, IRubyObject b, int prec) {
-        if (val == null) return ((RubyBigDecimal)callCoerced(context, sites(context).op_minus, b, true)).setResult(context, prec);
+        if (val == null) {
+            IRubyObject ret = callCoerced(context, sites(context).op_minus, b, true);
+            if (ret instanceof RubyBigDecimal bd) {
+                bd.setResult(context, prec);
+            }
+            return ret;
+        }
         RubyBigDecimal res = subSpecialCases(context, val);
         return res != null ? res : new RubyBigDecimal(context.runtime, value.subtract(val.value)).setResult(context, prec);
     }
@@ -1833,11 +1839,6 @@ public class RubyBigDecimal extends RubyNumeric implements SimpleHash {
         return isZero(context) ? context.nil : this;
     }
 
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject nonzero_p() {
-        return nonzero_p(getCurrentContext());
-    }
-
     @JRubyMethod
     public  IRubyObject n_significant_digits(ThreadContext context) {
         return value.equals(BigDecimal.ZERO) ?
@@ -1905,15 +1906,6 @@ public class RubyBigDecimal extends RubyNumeric implements SimpleHash {
         // e.g. "0.0000000000123456789" is represented as "0 .012345678 9 * 1000000000 ^ -1" in MRI BigDecimal internal.
         // so, in this case Prec becomes 2.
         return (value.unscaledValue().toString().length() + 8) / BASE_FIG;
-    }
-
-    @Deprecated(since = "9.4.3.0")
-    @JRubyMethod
-    public IRubyObject precs(ThreadContext context) {
-        warnDeprecated(context, "BigDecimal#precs is deprecated and will be removed in the future; use BigDecimal#precision instead.");
-        return newArray(context,
-                asFixnum(context, getSignificantDigits().length()),
-                asFixnum(context, ((getAllDigits().length() / 4) + 1) * 4));
     }
 
     @JRubyMethod(name = "round", optional = 2, checkArity = false)
@@ -2367,11 +2359,6 @@ public class RubyBigDecimal extends RubyNumeric implements SimpleHash {
         return engineeringValue(context, null).toString();
     }
 
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject to_s(IRubyObject[] args) {
-        return toStringImpl(getCurrentContext(), args.length == 0 ? null : (args[0].isNil() ? null : args[0].toString()));
-    }
-
     // Note: #fix has only no-arg form, but truncate allows optional parameter.
     @Deprecated(since = "10.0.0.0")
     public IRubyObject fix() {
@@ -2408,11 +2395,6 @@ public class RubyBigDecimal extends RubyNumeric implements SimpleHash {
     @JRubyMethod(name = "zero?")
     public IRubyObject zero_p(ThreadContext context) {
         return asBoolean(context, isZero(context));
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject zero_p() {
-        return zero_p(getCurrentContext());
     }
 
     @Override
@@ -2530,21 +2512,6 @@ public class RubyBigDecimal extends RubyNumeric implements SimpleHash {
         if (x instanceof RubyBignum bignum) return bignum.asBigInteger(context).testBit(0) == false; // 0-th bit -> 0
 
         return false;
-    }
-
-    @Deprecated(since = "9.3.0.0") // no longer used
-    public RubyBigDecimal(Ruby runtime, RubyBigDecimal rbd) {
-        this(runtime, Access.getClass(runtime.getCurrentContext(), "BigDecimal"), rbd);
-    }
-
-    @Deprecated(since = "9.3.0.0") // no longer used
-    public RubyBigDecimal(Ruby runtime, RubyClass klass, RubyBigDecimal rbd) {
-        super(runtime, klass);
-        this.isNaN = rbd.isNaN;
-        this.infinitySign = rbd.infinitySign;
-        this.zeroSign = rbd.zeroSign;
-        this.value = rbd.value;
-        this.setFrozen(true);
     }
 
     private static JavaSites.BigDecimalSites sites(ThreadContext context) {

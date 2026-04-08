@@ -246,6 +246,7 @@ public abstract class IRScope implements ParseResult {
 
     public void setIsMaybeUsingRefinements() {
         maybeUsingRefinements = true;
+        fullInterpreterContext = null;
     }
 
     public boolean parentMaybeUsingRefinements() {
@@ -386,18 +387,8 @@ public abstract class IRScope implements ParseResult {
         throw new IllegalArgumentException("This is only here because prism requires this in ParseResult");
     }
 
-    @Deprecated(since = "9.2.1.0")
-    public String getFileName() {
-        return getFile();
-    }
-
     public String getFile() {
         return getRootLexicalScope().getFile();
-    }
-
-    @Deprecated(since = "9.2.1.0")
-    public int getLineNumber() {
-        return lineNumber;
     }
 
     public int getLine() {
@@ -678,9 +669,9 @@ public abstract class IRScope implements ParseResult {
         if (RubyInstanceConfig.IR_DEBUG_IGV != null) {
             String spec = RubyInstanceConfig.IR_DEBUG_IGV;
 
-            if (spec.contains(":") && spec.equals(getFileName() + ":" + getLineNumber()) ||
-                    spec.equals(getFileName())) {
-                return new IGVDumper(getFullyQualifiedName() + "; line " + (getLineNumber() + 1), RubyInstanceConfig.IR_DEBUG_IGV_STDOUT);
+            if (spec.contains(":") && spec.equals(getFile() + ":" + getLine()) ||
+                    spec.equals(getFile())) {
+                return new IGVDumper(getFullyQualifiedName() + "; line " + (getLine() + 1), RubyInstanceConfig.IR_DEBUG_IGV_STDOUT);
             }
         }
 

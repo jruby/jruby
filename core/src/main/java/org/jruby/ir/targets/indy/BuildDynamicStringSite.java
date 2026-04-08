@@ -5,6 +5,7 @@ import org.jcodings.Encoding;
 import org.jruby.Appendable;
 import org.jruby.RubyString;
 import org.jruby.api.Convert;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -127,7 +128,9 @@ public class BuildDynamicStringSite extends MutableCallSite {
     private static MethodHandle constructGuardedToStringFilter() {
         // create an invoke site for the to_s call
         MethodType toSType = MethodType.methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class);
-        CallSite toS = SelfInvokeSite.bootstrap(MethodHandles.lookup(), "invokeFunctional:to_s", toSType, 0, 0, "", -1);
+        MethodHandles.Lookup lookup = MethodHandles.lookup();
+        InvokeSite site = new SelfInvokeSite(toSType, "to_s", CallType.FUNCTIONAL, CallType.NORMAL, false, 0, "", -1);
+        CallSite toS = InvokeSite.bootstrap(site, lookup);
         MethodHandle toS_handle = toS.dynamicInvoker();
 
         // Cast the result to RubyString, or else call anyToString on the original

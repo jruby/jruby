@@ -532,7 +532,9 @@ public class RubyDigest {
             from.checkFrozen();
 
             try {
-                this.algo = (MessageDigest) from.algo.clone();
+                synchronized (from) {
+                    this.algo = (MessageDigest) from.algo.clone();
+                }
             } catch (CloneNotSupportedException e) {
                 String name = from.algo.getAlgorithm();
                 throw typeError(context, "Could not initialize copy of digest (" + name + ")");
@@ -541,7 +543,7 @@ public class RubyDigest {
         }
 
         @JRubyMethod(name = {"update", "<<"})
-        public IRubyObject update(IRubyObject obj) {
+        public synchronized IRubyObject update(IRubyObject obj) {
             ByteList bytes = obj.convertToString().getByteList();
             algo.update(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getRealSize());
             return this;
@@ -553,7 +555,7 @@ public class RubyDigest {
         }
 
         @JRubyMethod()
-        public IRubyObject finish(ThreadContext context) {
+        public synchronized IRubyObject finish(ThreadContext context) {
             IRubyObject digest = RubyString.newStringNoCopy(context.runtime, algo.digest());
             algo.reset();
             return digest;
@@ -581,13 +583,13 @@ public class RubyDigest {
         }
 
         @JRubyMethod()
-        public IRubyObject reset() {
+        public synchronized IRubyObject reset() {
             algo.reset();
             return this;
         }
 
         @JRubyMethod()
-        public IRubyObject bubblebabble(ThreadContext context) {
+        public synchronized IRubyObject bubblebabble(ThreadContext context) {
             final byte[] digest = algo.digest();
             return newString(context, BubbleBabble.bubblebabble(digest, 0, digest.length));
         }

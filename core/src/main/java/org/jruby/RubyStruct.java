@@ -71,6 +71,7 @@ import static org.jruby.api.Warn.warn;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
+import static org.jruby.runtime.ThreadContext.hasNonemptyKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 import static org.jruby.RubyEnumerator.SizeFn;
@@ -237,6 +238,7 @@ public class RubyStruct extends RubyObject {
      */
     @JRubyMethod(name = "new", rest = true, checkArity = false, meta = true, keywords = true)
     public static RubyClass newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        ThreadContext.resetCallInfo(context);
         int argc = Arity.checkArgumentCount(context, args, 0, -1);
 
         String name = null;
@@ -298,8 +300,7 @@ public class RubyStruct extends RubyObject {
         }
 
         // set reified class to RubyStruct, for Java subclasses to use
-        newStruct.reifiedClass(RubyStruct.class).
-                classIndex(ClassIndex.STRUCT);
+        newStruct.reifiedClass(RubyStruct.class).classIndex(ClassIndex.STRUCT);
         newStruct.setInternalVariable(SIZE_VAR, member.length(context));
         newStruct.setInternalVariable(MEMBER_VAR, member);
         newStruct.setInternalVariable(KEYWORD_INIT_VAR, keywordInitValue);
@@ -479,24 +480,24 @@ public class RubyStruct extends RubyObject {
         if (length > values.length) throw argumentError(context, "struct size differs (" + length +" for " + values.length + ")");
     }
 
-    private void checkForKeywords(ThreadContext context, boolean keywordInit) {
-        if (hasKeywords(ThreadContext.resetCallInfo(context)) && !keywordInit) {
+    private void checkForKeywords(ThreadContext context, int callInfo, boolean keywordInit) {
+        if (hasKeywords(callInfo) && !keywordInit) {
             warn(context, "Passing only keyword arguments to Struct#initialize will behave differently from Ruby 3.2. Please use a Hash literal like .new({k: v}) instead of .new(k: v).");
         }
     }
 
     @JRubyMethod(rest = true, visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+        final int callInfo = ThreadContext.resetCallInfo(context);
         IRubyObject keywordInit = RubyStruct.getInternalVariable(context, classOf(), KEYWORD_INIT_VAR);
-        checkForKeywords(context, !keywordInit.isNil());
-        ThreadContext.resetCallInfo(context);
+        checkForKeywords(context, callInfo, !keywordInit.isNil());
         modify(context);
         checkSize(context, args.length);
 
         if (keywordInit.isTrue()) {
             if (args.length != 1) throw argumentError(context, args.length, 0);
 
-            return initialize(context, args[0]);
+            return initialize(context, args[0], callInfo);
         } else {
             System.arraycopy(args, 0, values, 0, args.length);
             Helpers.fillNil(context, values, args.length, values.length);
@@ -529,12 +530,16 @@ public class RubyStruct extends RubyObject {
         return initializeInternal(context, 0, nil, nil, nil);
     }
 
-    @JRubyMethod(visibility = PRIVATE)
+    @JRubyMethod(visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject arg0) {
-        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
+        return initialize(context, arg0, ThreadContext.resetCallInfo(context));
+    }
 
-        if (keywords) {
-            return setupStructValuesFromHash(context, (RubyHash) arg0);
+    private IRubyObject initialize(ThreadContext context, IRubyObject arg0, final int callInfo) {
+        final boolean keywords = hasNonemptyKeywords(callInfo);
+
+        if (keywords && arg0 instanceof RubyHash hash) {
+            return setupStructValuesFromHash(context, hash);
         } else if (RubyStruct.getInternalVariable(context, classOf(), KEYWORD_INIT_VAR).isTrue()) {
             if (!(arg0 instanceof RubyHash hash)) throw argumentError(context, 1, 0);
             return setupStructValuesFromHash(context, hash);
@@ -543,15 +548,17 @@ public class RubyStruct extends RubyObject {
         return initializeInternal(context, 1, arg0, context.nil, context.nil);
     }
 
-    @JRubyMethod(visibility = PRIVATE)
+    @JRubyMethod(visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        ThreadContext.resetCallInfo(context);
         IRubyObject keywordInit = RubyStruct.getInternalVariable(context, classOf(), KEYWORD_INIT_VAR);
         if (keywordInit.isTrue()) throw argumentError(context, 2, 0);
         return initializeInternal(context, 2, arg0, arg1, context.nil);
     }
 
-    @JRubyMethod(visibility = PRIVATE)
+    @JRubyMethod(visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        ThreadContext.resetCallInfo(context);
         IRubyObject keywordInit = RubyStruct.getInternalVariable(context, classOf(), KEYWORD_INIT_VAR);
         if (keywordInit.isTrue()) throw argumentError(context, 3, 0);
         return initializeInternal(context, 3, arg0, arg1, arg2);
@@ -759,11 +766,6 @@ public class RubyStruct extends RubyObject {
     @Override
     public RubyArray to_a(ThreadContext context) {
         return newArray(context, values);
-    }
-
-    @Deprecated(since = "9.3.0.0")
-    public RubyHash to_h(ThreadContext context) {
-        return to_h(context, Block.NULL_BLOCK);
     }
 
     @JRubyMethod
@@ -1169,12 +1171,6 @@ public class RubyStruct extends RubyObject {
 
     private static StructSites sites(ThreadContext context) {
         return context.sites.Struct;
-    }
-
-    @Deprecated(since = "9.4-")
-    @Override
-    public RubyArray to_a() {
-        return to_a(getCurrentContext());
     }
 
 }

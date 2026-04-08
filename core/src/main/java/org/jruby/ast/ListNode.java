@@ -228,6 +228,7 @@ public class ListNode extends Node implements Iterable<Node> {
         return properList;
     }
 
+    // Note: deprecated but no replacement and can't be deleted without deprecating super method
     @Deprecated(since = "9.0.0.0")
     public List<Node> childNodes() {
         Node single = this.single;

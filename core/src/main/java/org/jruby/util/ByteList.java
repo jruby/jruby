@@ -61,20 +61,15 @@ public class ByteList implements Comparable, CharSequence, Serializable {
 
     private static final Charset ISO_LATIN_1 = StandardCharsets.ISO_8859_1;
 
-    // NOTE: AR-JDBC (still) uses these fields directly in its ext .java parts  ,
-    // until there's new releases we shall keep them public and maybe review other exts using BL's API
-    @Deprecated(since = "9.2.1.0")
-    public byte[] bytes;
-    @Deprecated(since = "9.2.1.0")
-    public int begin;
-    @Deprecated(since = "9.2.1.0")
-    public int realSize;
+    private byte[] bytes;
+    private int begin;
+    private int realSize;
 
     private Encoding encoding = ASCIIEncoding.INSTANCE;
 
-    transient int hash;
+    private transient int hash;
 
-    transient String stringValue;
+    private transient String stringValue;
 
     private static final int DEFAULT_SIZE = 4;
 

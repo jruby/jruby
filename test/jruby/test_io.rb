@@ -153,6 +153,22 @@ class TestIO < Test::Unit::TestCase
     assert_nothing_raised { file.reopen(@file) }
   end
 
+  def test_reopen_copies_encoding
+    ensure_files @file, @file2
+    f1 = File.open(@file)
+    @to_close << f1
+    f1.set_encoding("EUC-JP:UTF-8")
+
+    f2 = File.open(@file2)
+    @to_close << f2
+    f2.set_encoding("ISO-8859-1:US-ASCII")
+
+    f1.reopen(f2)
+
+    assert_equal Encoding::ISO_8859_1, f1.external_encoding
+    assert_equal Encoding::US_ASCII, f1.internal_encoding
+  end
+
   def test_file_read
     ensure_files @file
     # test that read returns correct values
@@ -649,6 +665,37 @@ class TestIO < Test::Unit::TestCase
     after = fu.number_of_wrappers
 
     assert_equal before, after, "no wrappers should have been registered"
+  end
+
+  # https://github.com/jruby/jruby/issues/9324
+  def test_accept_on_closed_server_raises_ioerror
+    require 'socket'
+
+    # Concurrent threads create timing pressure needed to hit the race between one accept returning and the next start.
+    500.times do
+      tcp = TCPServer.new("127.0.0.1", 0)
+      port = tcp.connect_address.ip_port
+
+      thread = Thread.new do
+        Thread.current.abort_on_exception = false
+        Thread.current.report_on_exception = false
+        loop do
+          c = tcp.accept
+          c.close
+        end
+      rescue IOError, Errno::EBADF, Errno::EINVAL, Errno::ECONNABORTED, Errno::ENOTSOCK, Errno::ECONNRESET
+        # expected on shutdown — before the fix, NullPointerException/AssertionError escapes here
+      end
+
+      10.times { Thread.new { begin; TCPSocket.new("127.0.0.1", port).close; rescue; end } }
+      Thread.pass
+      tcp.close rescue nil
+
+      thread.join(2)
+      thread.kill if thread.alive?
+    end
+    # If we reach here, no AssertionError killed the process
+    assert true
   end
 
 end

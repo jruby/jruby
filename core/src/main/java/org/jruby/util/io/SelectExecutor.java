@@ -16,6 +16,7 @@ import java.nio.channels.Pipe;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
+import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -103,12 +104,11 @@ public class SelectExecutor {
     IRubyObject selectInternal(ThreadContext context) throws IOException {
         Ruby runtime = context.runtime;
         OpenFile fptr;
-        long i;
 
         RubyArray readAry = null;
         if (!read.isNil()) {
             readAry = read.convertToArray();
-            for (i = 0; i < readAry.size(); i++) {
+            for (int i = 0; i < readAry.size(); i++) {
                 fptr = TypeConverter.ioGetIO(runtime, readAry.eltOk(i)).getOpenFileChecked();
                 fdSetRead(context, fptr.fd(), readAry.size());
                 if (fptr.READ_DATA_PENDING() || fptr.READ_CHAR_PENDING()) { /* check for buffered data */
@@ -124,7 +124,7 @@ public class SelectExecutor {
         RubyArray writeAry = null;
         if (!write.isNil()) {
             writeAry = write.convertToArray();
-            for (i = 0; i < writeAry.size(); i++) {
+            for (int i = 0; i < writeAry.size(); i++) {
                 RubyIO write_io = TypeConverter.ioGetIO(runtime, writeAry.eltOk(i)).GetWriteIO();
                 fptr = write_io.getOpenFileChecked();
                 fdSetWrite(context, fptr.fd(), writeAry.size());
@@ -139,7 +139,7 @@ public class SelectExecutor {
             // This does not actually register anything because we do not have a way to select for error on JDK.
             // We make the calls for their side effects.
             exceptAry = except.convertToArray();
-            for (i = 0; i < exceptAry.size(); i++) {
+            for (int i = 0; i < exceptAry.size(); i++) {
                 RubyIO io = TypeConverter.ioGetIO(runtime, exceptAry.eltOk(i));
                 RubyIO write_io = io.GetWriteIO();
                 io.getOpenFileChecked();
@@ -159,7 +159,7 @@ public class SelectExecutor {
         } else {
             final int len = Math.min(n, maxReadReadySize());
             readReady = Create.allocArray(context, len);
-            for (i = 0; i < readAry.size(); i++) {
+            for (int i = 0; i < readAry.size(); i++) {
                 IRubyObject obj = readAry.eltOk(i);
                 RubyIO io = TypeConverter.ioGetIO(runtime, obj);
                 fptr = io.getOpenFileChecked();
@@ -177,13 +177,21 @@ public class SelectExecutor {
         } else {
             final int len = Math.min(n, maxWriteReadySize());
             writeReady = Create.allocArray(context, len);
-            for (i = 0; i < writeAry.size(); i++) {
+            for (int i = 0; i < writeAry.size(); i++) {
                 IRubyObject obj = writeAry.eltOk(i);
                 RubyIO io = TypeConverter.ioGetIO(runtime, obj);
                 RubyIO write_io = io.GetWriteIO();
                 fptr = write_io.getOpenFileChecked();
                 if (writeKeyList != null && fdIsSet(writeKeyList, fptr.fd(), WRITE_CONNECT_OPS) ||
                         (unselectableWriteFDs != null && unselectableWriteFDs.contains(fptr.fd()))) {
+
+                    // ensure any pending connections get finished
+                    if (writeKeyList != null && writeKeyList.get(i).isConnectable()) {
+                        if (fptr.fd().ch instanceof SocketChannel sock) {
+                            sock.finishConnect();
+                        }
+                    }
+
                     writeReady.push(context, obj);
                 }
             }
@@ -194,7 +202,7 @@ public class SelectExecutor {
             error = newEmptyArray(context);
         } else {
             error = Create.allocArray(context, exceptAry.size());
-            for (i = 0; i < exceptAry.size(); i++) {
+            for (int i = 0; i < exceptAry.size(); i++) {
                 IRubyObject obj = exceptAry.eltOk(i);
                 RubyIO io = TypeConverter.ioGetIO(runtime, obj);
                 RubyIO write_io = io.GetWriteIO();

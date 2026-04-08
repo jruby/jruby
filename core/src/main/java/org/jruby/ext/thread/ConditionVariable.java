@@ -117,19 +117,6 @@ public class ConditionVariable extends RubyObject {
         return context.sites.ConditionVariable;
     }
 
-    @Deprecated(since = "9.2.8.0")
-    public IRubyObject wait_ruby(ThreadContext context, IRubyObject[] args) {
-        switch (args.length) {
-            case 1:
-                return wait_ruby(context, args[0]);
-            case 2:
-                return wait_ruby(context, args[0], args[1]);
-            default:
-                Arity.raiseArgumentError(context, args.length, 1, 2);
-                return null; // not reached
-        }
-    }
-
     private final ConcurrentLinkedQueue<RubyThread> waiters = new ConcurrentLinkedQueue<>();
     
 }

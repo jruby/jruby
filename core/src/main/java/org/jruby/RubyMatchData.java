@@ -950,7 +950,7 @@ public class RubyMatchData extends RubyObject {
 
                 for (int b : entry.getBackRefs()) {
                     IRubyObject value = RubyRegexp.nth_match(context, b, this);
-                    if (value.isTrue()) hash.op_aset(context, key, value);
+                    hash.op_aset(context, key, value);
                 }
             });
         } else if (what instanceof RubyArray arr) {
@@ -966,8 +966,6 @@ public class RubyMatchData extends RubyObject {
                 if (index == -1) break;
 
                 IRubyObject value = RubyRegexp.nth_match(context, index, this);
-                if (!value.isTrue()) break;
-
                 hash.op_aset(context, requestedKey, value);
             }
         } else {
@@ -1030,22 +1028,6 @@ public class RubyMatchData extends RubyObject {
      */
     public int numRegs() {
         return regs == null ? 1 : regs.getNumRegs();
-    }
-
-    @Deprecated(since = "9.2.10.0")
-    @Override
-    public RubyArray to_a() {
-        return match_array(getCurrentContext(), 0);
-    }
-
-    @Deprecated(since = "9.2.10.0")
-    public IRubyObject op_aref(IRubyObject idx) {
-        return op_aref(getCurrentContext(), idx);
-    }
-
-    @Deprecated(since = "9.2.10.0")
-    public IRubyObject op_aref(IRubyObject idx, IRubyObject rest) {
-        return op_aref(getCurrentContext(), idx, rest);
     }
 
 }

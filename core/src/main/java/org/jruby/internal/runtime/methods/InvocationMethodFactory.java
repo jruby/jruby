@@ -846,6 +846,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         method.invokevirtual(p(JavaMethod.class), "returnTrace", sig(void.class, ThreadContext.class, boolean.class, String.class));
     }
 
+    // Deprecated but still in use and no replacement
     @Deprecated(since = "9.1.16.0")
     private static final Class[] RubyModule_and_Visibility = new Class[]{ RubyModule.class, Visibility.class };
 }

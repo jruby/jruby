@@ -42,6 +42,7 @@ import java.util.regex.Pattern;
 import org.jcodings.Config;
 import org.jruby.Ruby;
 import org.jruby.RubyHash;
+import org.jruby.RubyHashLinkedBuckets;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyModule;
@@ -112,6 +113,7 @@ public class RbConfigLibrary implements Library {
         if ("amd64".equals(architecture)) architecture = "x86_64";
         if ("aarch64".equals(architecture) && Platform.IS_MAC) architecture = "arm64";
         if ("loongarch64".equals(architecture)) architecture = "loongarch64";
+        if ("riscv64".equals(architecture)) architecture = "riscv64";
 
         return architecture;
     }
@@ -236,7 +238,7 @@ public class RbConfigLibrary implements Library {
                 defineConstant(context, "DESTDIR", destDir);                            // DESTDIR on make install.
 
         // The hash configurations stored.
-        final RubyHash CONFIG = new RubyHash(runtime, 48);
+        final RubyHash CONFIG = RubyHashLinkedBuckets.newLBHash(runtime, 48);
 
         CONFIG.fastASetCheckString(runtime, newString(context, "DESTDIR"), destDir);
 
@@ -392,7 +394,7 @@ public class RbConfigLibrary implements Library {
 
 
         // TODO CONFIG and MAKEFILE_CONFIG seems to be the same Hash in Ruby 2.5
-        final RubyHash mkmfHash = new RubyHash(runtime, 64);
+        final RubyHash mkmfHash = RubyHashLinkedBuckets.newLBHash(runtime, 64);
 
         setConfig(context, mkmfHash, "libdir", vendorDirGeneral);
         setConfig(context, mkmfHash, "arch", "java");

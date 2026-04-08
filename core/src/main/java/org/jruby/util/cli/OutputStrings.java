@@ -1,6 +1,7 @@
 package org.jruby.util.cli;
 
 import com.headius.options.Option;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Constants;
@@ -139,6 +140,36 @@ public class OutputStrings {
         return sb.append(Option.formatOptions(Options.PROPERTIES)).toString();
     }
 
+    /**
+     * Produce a version string based on the given configuration.
+     *
+     * @param config the configuraton
+     * @return a version string representing the given configuraton
+     */
+    public static String getVersionString(RubyInstanceConfig config) {
+        return String.format(
+                "jruby %s (%s) %s %s %s %s on %s%s%s [%s-%s]",
+                Constants.VERSION,
+                Constants.RUBY_VERSION,
+                Constants.COMPILE_DATE,
+                Constants.REVISION.substring(0, 10),
+                SafePropertyAccessor.getProperty("java.vm.name", "Unknown JVM"),
+                SafePropertyAccessor.getProperty("java.vm.version", "Unknown JVM version"),
+                SafePropertyAccessor.getProperty("java.runtime.version", SafePropertyAccessor.getProperty("java.version", "Unknown version")),
+                Options.COMPILE_INVOKEDYNAMIC.load() ? " +indy" : " -indy",
+                config.getCompileMode().shouldJIT() ? " +jit" : " -jit",
+                RbConfigLibrary.getArchitecture(),
+                RbConfigLibrary.getOSName()
+        );
+    }
+
+    /**
+     * Produce a version string containing only static values for JRuby and system properties.
+     *
+     * Use {@link #getVersionString(RubyInstanceConfig)} to reflect current runtime's parameters.
+     *
+     * @return a version string containing static information about the available JRuby version
+     */
     public static String getVersionString() {
         return String.format(
                 "jruby %s (%s) %s %s %s %s on %s%s%s [%s-%s]",

@@ -61,9 +61,6 @@ public interface JavaProxyMethod extends IRubyObject, ParameterTypes {
             IllegalAccessException, InvocationTargetException,
             NoSuchMethodException;
 
-    @Deprecated(since = "9.1.0.0") // not-used
-    Object defaultResult();
-
     String getName();
 
     Class<?> getReturnType();

@@ -140,6 +140,7 @@ ruby/test_require.rb
 ruby/test_rubyoptions.rb
 # accesses RubyVM during load
 #ruby/test_rubyvm.rb
+ruby/test_set.rb
 # launches many subprocesses, moved to extra
 #ruby/test_settracefunc.rb
 # depends on RubyVM::Shape

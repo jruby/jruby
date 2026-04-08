@@ -374,11 +374,6 @@ public class TypeConverter {
         return TypeConverter.convertToTypeWithCheck(context, obj, arrayClass(context), sites(context).to_ary_checked);
     }
 
-    @Deprecated(since = "9.2.5.0") // no longer used
-    public static IRubyObject checkArrayType(IRubyObject obj) {
-        return checkArrayType(obj.getRuntime().getCurrentContext(), obj);
-    }
-
     public static IRubyObject handleUncoercibleObject(boolean raise, IRubyObject obj, RubyClass target) {
         return handleUncoercibleObject(obj.getRuntime(), obj, target, raise);
     }
@@ -386,11 +381,6 @@ public class TypeConverter {
     public static IRubyObject handleUncoercibleObject(Ruby runtime, IRubyObject obj, RubyClass target, boolean raise) {
         if (raise) throw typeError(runtime.getCurrentContext(), str(runtime, "no implicit conversion of ", typeAsString(obj), " into " , target));
         return runtime.getNil();
-    }
-
-    @Deprecated(since = "9.2.0.0") // not-used
-    public static IRubyObject handleImplicitlyUncoercibleObject(boolean raise, IRubyObject obj, RubyClass target) {
-        return handleUncoercibleObject(obj.getRuntime(), obj, target, raise);
     }
 
     // rb_check_type and Check_Type
@@ -488,71 +478,6 @@ public class TypeConverter {
 
     public static TypeConverterSites sites(ThreadContext context) {
         return context.sites.TypeConverter;
-    }
-
-    @Deprecated(since = "9.0.0.0")
-    public static IRubyObject convertToType(IRubyObject obj, RubyClass target, int convertMethodIndex, String convertMethod, boolean raise) {
-        if (!obj.respondsTo(convertMethod)) return handleUncoercibleObject(raise, obj, target);
-
-        return obj.callMethod(obj.getRuntime().getCurrentContext(), convertMethod);
-    }
-
-    @Deprecated(since = "9.0.0.0")
-    public static IRubyObject convertToType(IRubyObject obj, RubyClass target, int convertMethodIndex, String convertMethod) {
-        if (target.isInstance(obj)) return obj;
-        IRubyObject val = convertToType(obj, target, convertMethod, true);
-        if (!target.isInstance(val)) {
-            Ruby runtime = obj.getRuntime();
-            throw typeError(runtime.getCurrentContext(), str(runtime, types(runtime, obj.getMetaClass()),
-                    "#" + convertMethod + " should return ", types(runtime, target)));
-        }
-        return val;
-    }
-
-    @Deprecated(since = "9.0.0.0")
-    public static IRubyObject convertToTypeWithCheck(IRubyObject obj, RubyClass target, int convertMethodIndex, String convertMethod) {
-        if (target.isInstance(obj)) return obj;
-        IRubyObject val = TypeConverter.convertToType(obj, target, convertMethod, false);
-        if (val.isNil()) return val;
-        if (!target.isInstance(val)) {
-            Ruby runtime = obj.getRuntime();
-            throw typeError(runtime.getCurrentContext(), str(runtime, types(runtime, obj.getMetaClass()),
-                    "#" + convertMethod + " should return ", types(runtime, target)));
-        }
-        return val;
-    }
-
-    @Deprecated(since = "9.0.3.0")
-    public static String convertToIdentifier(IRubyObject obj) {
-        // Assume Symbol already returns ISO8859-1/raw bytes from asJavaString()
-        // Assume all other objects cannot participate in providing raw bytes since we cannot
-        // grab it's string representation without calling a method which properly encodes
-        // the string.
-        if (obj instanceof RubyString) {
-            return RubyEncoding.decodeRaw(((RubyString) obj).getByteList()).intern();
-        }
-        return obj.asJavaString().intern();
-    }
-    /**
-     * Higher level conversion utility similar to convertToType but it can throw an
-     * additional TypeError during conversion (MRI: rb_check_convert_type).
-     *
-     * @param obj the object to convert
-     * @param target is the type we are trying to convert to
-     * @param convertMethod is the method to be called to try and convert to targeType
-     * @return the converted value
-     */
-    @Deprecated(since = "9.1.3.0") // no longer used
-    public static IRubyObject convertToTypeOrRaise(IRubyObject obj, RubyClass target, String convertMethod) {
-        if (target.isInstance(obj)) return obj;
-        IRubyObject val = TypeConverter.convertToType(obj, target, convertMethod, true);
-        if (val.isNil()) return val;
-        if (!target.isInstance(val)) {
-            Ruby runtime = obj.getRuntime();
-            throw typeError(runtime.getCurrentContext(), str(runtime, types(runtime, obj.getMetaClass()),
-                    "#" + convertMethod + " should return ", types(runtime, target)));
-        }
-        return val;
     }
 
     private static boolean isImplicitTypeError(String methodID) {

@@ -50,11 +50,6 @@ public class InheritanceSearchConstInstr extends OneOperandResultBaseInstr imple
         return constName;
     }
 
-    @Deprecated(since = "9.1.3.0")
-    public boolean isNoPrivateConsts() {
-        return false;
-    }
-
     @Override
     public Instr clone(CloneInfo ii) {
         return new InheritanceSearchConstInstr(ii.getRenamedVariable(result), getCurrentModule().cloneForInlining(ii), getName());

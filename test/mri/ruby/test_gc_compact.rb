@@ -324,7 +324,7 @@ class TestGCCompact < Test::Unit::TestCase
       }.resume
 
       stats = GC.verify_compaction_references(expand_heap: true, toward: :empty)
-      assert_operator(stats.dig(:moved_up, :T_ARRAY) || 0, :>=, ARY_COUNT - 10)
+      assert_operator(stats.dig(:moved_up, :T_ARRAY) || 0, :>=, ARY_COUNT - 15)
       refute_empty($arys.keep_if { |o| ObjectSpace.dump(o).include?('"embedded":true') })
     end;
   end
@@ -356,8 +356,24 @@ class TestGCCompact < Test::Unit::TestCase
 
       stats = GC.verify_compaction_references(expand_heap: true, toward: :empty)
 
-      assert_operator(stats.dig(:moved_up, :T_OBJECT) || 0, :>=, OBJ_COUNT - 10)
+      assert_operator(stats.dig(:moved_up, :T_OBJECT) || 0, :>=, OBJ_COUNT - 15)
       refute_empty($ary.keep_if { |o| ObjectSpace.dump(o).include?('"embedded":true') })
+    end;
+  end
+
+  def test_compact_objects_of_varying_sizes
+    omit if GC::INTERNAL_CONSTANTS[:SIZE_POOL_COUNT] == 1
+
+    assert_separately([], "#{<<~"begin;"}\n#{<<~"end;"}", timeout: 10)
+    begin;
+      $objects = []
+      160.times do |n|
+        obj = Class.new.new
+        n.times { |i| obj.instance_variable_set("@foo" + i.to_s, 0) }
+        $objects << obj
+      end
+
+      GC.verify_compaction_references(expand_heap: true, toward: :empty)
     end;
   end
 
@@ -377,7 +393,7 @@ class TestGCCompact < Test::Unit::TestCase
 
       stats = GC.verify_compaction_references(expand_heap: true, toward: :empty)
 
-      assert_operator(stats[:moved_up][:T_STRING], :>=, STR_COUNT - 10)
+      assert_operator(stats[:moved_up][:T_STRING], :>=, STR_COUNT - 15)
       refute_empty($ary.keep_if { |o| ObjectSpace.dump(o).include?('"embedded":true') })
     end;
   end
@@ -451,5 +467,22 @@ class TestGCCompact < Test::Unit::TestCase
 
       assert_raise(FrozenError) { a.set_a }
     end;
+  end
+
+  def test_moving_too_complex_generic_ivar
+    omit "not compiled with SHAPE_DEBUG" unless defined?(RubyVM::Shape)
+
+    assert_separately([], <<~RUBY)
+      RubyVM::Shape.exhaust_shapes
+
+      obj = []
+      obj.instance_variable_set(:@fixnum, 123)
+      obj.instance_variable_set(:@str, "hello")
+
+      GC.verify_compaction_references(expand_heap: true, toward: :empty)
+
+      assert_equal(123, obj.instance_variable_get(:@fixnum))
+      assert_equal("hello", obj.instance_variable_get(:@str))
+    RUBY
   end
 end

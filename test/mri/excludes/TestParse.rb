@@ -1,4 +1,5 @@
 exclude :test_assign_in_conditional, "needs investigation"
+exclude :test_call_command, "does not parse (https://github.com/jruby/jruby/issues/9270)"
 exclude :test_define_singleton_error, "work in progress"
 exclude :test_dynamic_constant_assignment, "needs investigation"
 exclude :test_embedded_rd, "work in progress"

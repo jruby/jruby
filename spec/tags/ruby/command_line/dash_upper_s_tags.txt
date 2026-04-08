@@ -1,1 +1,4 @@
 fails:The -S command line option runs launcher found in PATH, but only code after the first /#!.*ruby.*/-ish line in target file
+fails:The -S command line option runs launcher found in RUBYPATH, but only code after the first /#!.*ruby.*/-ish line in target file
+fails:The -S command line option runs launcher found in RUBYPATH
+fails:The -S command line option runs launcher found in RUBYPATH and sets the exit status to 1 if it fails

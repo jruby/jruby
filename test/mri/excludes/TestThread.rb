@@ -1,4 +1,5 @@
 exclude :test_abort_on_exception, "very sensitive to thread timing and parallelism"
+exclude :test_deadlock_backtrace, "JRuby does not do deadlock detection beyond what JVM provides"
 exclude :test_inspect_with_fiber, "Thread.current is known to reflect the fiber, not the thread, in JRuby"
 exclude :test_list, "JVM finalizer threads get adopted, randomly skewing the result (#4960)"
 exclude :test_machine_stack_size, "slow and unreliable"

@@ -672,7 +672,7 @@ public class JRubyEngineTest extends BaseTest {
         ScriptEngine instance = newScriptEngine();
         instance.eval("def trigger_npe\nraise java.lang.NullPointerException.new\nend");
         try {
-            ((Invocable) instance).invokeFunction("trigger_npe", null);
+            ((Invocable) instance).invokeFunction("trigger_npe");
             fail("Expected javax.script.ScriptException");
         } catch (javax.script.ScriptException sex) {
             // javax.script.ScriptException is expected

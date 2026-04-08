@@ -807,14 +807,6 @@ public class ArgumentProcessor {
         return null;
     }
 
-    @Deprecated(since = "9.1.3.0")
-    public String resolveScriptUsingClassLoader(String scriptName) {
-        if (RubyInstanceConfig.defaultClassLoader().getResourceAsStream("bin/" + scriptName) != null){
-            return "classpath:/bin/" + scriptName;
-        }
-        return null;
-    }
-
     private String grabValue(String errorMessage) {
         return grabValue(errorMessage, true);
     }

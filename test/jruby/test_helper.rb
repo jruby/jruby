@@ -79,7 +79,7 @@ module TestHelper
       args = args[0..-2]
     end
     options.each { |k,v| args.unshift "-J-D#{k}=\"#{v}\"" } unless RUBY =~ /-cp /
-    with_jruby_shell_spawning { sh "#{interpreter(options)} #{args.join(' ')}" }
+    sh "#{interpreter(options)} #{args.join(' ')}"
   end
 
   def jruby(*args)
@@ -98,7 +98,7 @@ module TestHelper
       args = args[0..-2]
     end
     options.each { |k,v| args.unshift "-J-D#{k}=\"#{v}\"" } unless RUBY =~ /-cp /
-    with_jruby_shell_spawning { sh "#{pipe} | #{interpreter(options)} #{args.join(' ')}" }
+    sh "#{pipe} | #{interpreter(options)} #{args.join(' ')}"
   end
 
   def sh(cmd)
@@ -107,14 +107,6 @@ module TestHelper
   end
 
   private
-
-  def with_jruby_shell_spawning
-    prev_in_process = JRuby.runtime.instance_config.run_ruby_in_process
-    JRuby.runtime.instance_config.run_ruby_in_process = false
-    yield
-  ensure
-    JRuby.runtime.instance_config.run_ruby_in_process = prev_in_process
-  end
 
   def quiet(&block)
     io = [STDOUT.dup, STDERR.dup]

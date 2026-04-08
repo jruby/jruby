@@ -905,6 +905,30 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
         return asFixnum(context, value.testBit((int)position) ? 1: 0);
     }
 
+    // MRI: rb_big_aref2
+    @Override
+    public IRubyObject op_aref(ThreadContext context, IRubyObject index, IRubyObject length) {
+        long shift = index.convertToInteger().asLong(context);
+        if (shift >= Integer.MAX_VALUE) {
+            throw rangeError(context, "offset too big");
+        }
+        if (shift <= Integer.MIN_VALUE) {
+            return RubyFixnum.zero(context.runtime);
+        }
+        BigInteger shifted = value.shiftRight((int) shift);
+        long bitLength = length.convertToInteger().asLong(context);
+        long len = bitLength;
+        if (value.signum() > 0) {
+            len = Math.min(bitLength, shifted.bitLength());
+        }
+        if (len >= Integer.MAX_VALUE) {
+            throw rangeError(context, "length too big");
+        }
+        BigInteger mask = BigInteger.ONE.shiftLeft((int) bitLength).subtract(BigInteger.ONE);
+        BigInteger slice = shifted.and(mask);
+        return bignorm(context.runtime, slice);
+    }
+
     private enum BIGNUM_OP_T {
         BIGNUM_OP_GT,
         BIGNUM_OP_GE,
@@ -921,7 +945,7 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
         } else if (other instanceof RubyFloat) {
             rel = float_cmp(context, (RubyFloat)other);
         } else {
-            CallSite site;
+            CallSite site = sites(context).op_gt;
             switch (op) {
                 case BIGNUM_OP_GT:
                     site = sites(context).op_gt;
@@ -936,7 +960,7 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
                     site = sites(context).op_le;
                     break;
             }
-            return coerceRelOp(context, sites(context).op_gt, other);
+            return coerceRelOp(context, site, other);
         }
 
         if (rel.isNil()) return context.fals;
@@ -1019,6 +1043,20 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
         return RubyFixnum.minus_one(runtime);
     }
 
+    // mri : rb_integer_float_eq
+    private boolean float_eq(ThreadContext context, RubyFloat y) {
+        double yd = y.value;
+
+        if (Double.isNaN(yd) || Double.isInfinite(yd)) return false;
+
+        // if yd has a fractional part, it can't equal an integer
+        if (Math.floor(yd) != yd) return false;
+
+        // compare as integers to avoid precision loss
+        IRubyObject rel = op_cmp(context, newBignorm(context.runtime, yd));
+        return rel instanceof RubyFixnum fix && fix.getLongValue() == 0;
+    }
+
     @Override
     public final int compareTo(IRubyObject other) {
         if (other instanceof RubyBignum bignum) return value.compareTo(bignum.value);
@@ -1047,9 +1085,7 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
         } else if (other instanceof RubyBignum big) {
             otherValue = big.value;
         } else if (other instanceof RubyFloat flt) {
-            return flt.isInfinite() ?
-                    asFixnum(context, flt.value > 0.0 ? -1 : 1) :
-                    dbl_cmp(context.runtime, big2dbl(this), flt.value);
+            return float_cmp(context, flt);
         } else {
             return coerceCmp(context, sites(context).op_cmp, other);
         }
@@ -1069,22 +1105,14 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
         } else if (other instanceof RubyBignum bignum) {
             otherValue = bignum.value;
         } else if (other instanceof RubyFloat flote) {
-            double a = flote.value;
-            if (Double.isNaN(a) || Double.isInfinite(a)) return context.fals;
-            return asBoolean(context, a == big2dbl(this));
+            return asBoolean(context, float_eq(context, flote));
         } else {
             return other.op_eqq(context, this);
         }
         return asBoolean(context, value.compareTo(otherValue) == 0);
     }
 
-    /** rb_big_eql
-     *
-     */
-    @Override
-    public IRubyObject eql_p(ThreadContext context, IRubyObject other) {
-        return op_equal(context, other);  // '==' and '===' are the same, but they differ from 'eql?'.
-    }
+    // eql_p inherited from RubyNumeric: type-strict check (getClass) + equalInternal
 
     // MRI: rb_big_hash
     public RubyFixnum hash(ThreadContext context) {
@@ -1107,11 +1135,6 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
     @Override
     public IRubyObject to_f(ThreadContext context) {
         return asFloat(context, asDouble(context));
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject abs() {
-        return abs(getCurrentContext());
     }
 
     /** rb_big_abs
@@ -1332,7 +1355,7 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
     // MRI: rb_int_s_isqrt, Fixnum portion
     @Override
     public IRubyObject sqrt(ThreadContext context) {
-        if (isNegativeNumber(context)) throw context.runtime.newMathDomainError("Numerical argument is out of domain - isqrt");
+        if (isNegativeNumber(context)) throw context.runtime.newMathDomainError("isqrt");
 
         return bignorm(context.runtime, floorSqrt(value));
     }
