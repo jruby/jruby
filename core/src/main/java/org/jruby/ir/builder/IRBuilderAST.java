@@ -2320,7 +2320,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     public Operand buildHash(HashNode hashNode) {
-        if (hashNode.isLiteral() || hashNode.hasRestKwarg()) {
+        if (hashNode.isLiteral() || hashNode.hasRestKwarg() || !hashNode.hasOnlySymbolKeys()) {
             // not kwargs or non-simple kwargs, build as a normal Hash
             return buildLiteralHash(hashNode);
         }
@@ -2377,7 +2377,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
 
         for (KeyValuePair<Node, Node> pair: hashNode.getPairs()) {
             Node key = pair.getKey();
-            assert key instanceof SymbolNode : "simple kwargs should only have symbol keys";
+            assert key instanceof SymbolNode : "simple kwargs should only have symbol keys: " + getFileName() + ":" + getLine(hashNode);
 
             args.add(new KeyValuePair<>(buildSymbol((SymbolNode) key), buildWithOrder(pair.getValue(), hasAssignments)));
         }
