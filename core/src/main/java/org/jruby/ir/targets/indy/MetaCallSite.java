@@ -75,7 +75,12 @@ public class MetaCallSite extends MutableCallSite {
             context = (ThreadContext) arguments[rubyArgsStart];
             rubyArgsStart++;
         }
-        if (callArguments[rubyArgsStart].type() == CallArgument.Type.RECEIVER) rubyArgsStart++;
+        if (callArguments[rubyArgsStart].type() == CallArgument.Type.CALLER) {
+            rubyArgsStart++;
+        }
+        if (callArguments[rubyArgsStart].type() == CallArgument.Type.RECEIVER) {
+            rubyArgsStart++;
+        }
 
         int rubyKwargsStart = rubyArgsStart;
         for (int i = rubyArgsStart; i < callArguments.length; i++) {
@@ -106,9 +111,11 @@ public class MetaCallSite extends MutableCallSite {
 
         binder = binder.collect(rubyKwargsStart, rubyKwargsCount, IRubyObject.class, hashBuilder);
 
-        CallSite specificSite = name.startsWith("invoke") ?
-                NormalInvokeSite.bootstrap(lookup, name, binder.type(), closureInt, flags, file, line) :
-                SelfInvokeSite.bootstrap(lookup, name, binder.type(), closureInt, flags, file, line);
+        CallSite specificSite = switch (name.split(":")[0]) {
+            case "callFunctional", "callVariable" -> SelfInvokeSite.bootstrap(lookup, name, binder.type(), closureInt, flags, file, line);
+            case "callNormal" -> NormalInvokeSite.bootstrap(lookup, name, binder.type(), closureInt, flags, file, line);
+            default -> throw new RuntimeException("invalid meta call type: " + name);
+        };
 
         var target = binder.invoke(specificSite.dynamicInvoker());
 

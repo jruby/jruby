@@ -1283,7 +1283,10 @@ public class JVMVisitor extends IRVisitor {
     private void compileCallCommon(IRBytecodeAdapter m, CallBase call) {
         Operand[] args = call.getCallArgs();
 
-        if (!CallBase.containsArgSplat(args) && ThreadContext.hasKeywords(call.getFlags()) && (call.getFlags() & ThreadContext.CALL_KEYWORD_REST) == 0) {
+        if (!CallBase.containsArgSplat(args) &&
+                ThreadContext.hasKeywords(call.getFlags()) &&
+                call.getCallType() != CallType.SUPER &&
+                (call.getFlags() & ThreadContext.CALL_KEYWORD_REST) == 0) {
             // only normal positional or keyword args, compile for pass-through
             compileCallWithKeywords(m, call);
             return;

@@ -158,7 +158,13 @@ public class IndyInvocationCompiler implements InvocationCompiler {
 
         int flags = call.getFlags();
 
-        String action = call.getCallType() == CallType.FUNCTIONAL ? "callFunctional" : "callVariable";
+        String action = switch (call.getCallType()) {
+            case FUNCTIONAL -> "callFunctional";
+            case VARIABLE -> "callVariable";
+            case NORMAL -> "callNormal";
+            case SUPER -> "callSuper";
+            case UNKNOWN -> "callUnknown";
+        };
         String callName = constructIndyCallName(action, id);
         String descriptor = CallArgument.encode(callArguments);
 
