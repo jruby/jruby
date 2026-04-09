@@ -55,6 +55,15 @@ public interface InvocationCompiler {
     void invokeSelf(String file, String scopeFieldName, CallBase call, int arity);
 
     /**
+     * Return whether this InvocationCompiler supports direct argument passing.
+     *
+     * As this feature typically requires some form of invokedynamic site, it is not supported by all modes.
+     *
+     * @return true if direct argument passing is supported, false otherwise
+     */
+    boolean supportsDirectArguments();
+
+    /**
      * Invoke a method dynamically.
      *
      * Stack required: context, caller, self, all arguments, block

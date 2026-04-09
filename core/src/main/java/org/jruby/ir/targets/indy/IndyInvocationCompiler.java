@@ -148,6 +148,11 @@ public class IndyInvocationCompiler implements InvocationCompiler {
     }
 
     @Override
+    public boolean supportsDirectArguments() {
+        return true;
+    }
+
+    @Override
     public void invoke(String file, String scopeFieldName, CallBase call, CallArgument[] callArguments) {
         String id = call.getId();
         if (callArguments.length > IRBytecodeAdapter.MAX_ARGUMENTS)

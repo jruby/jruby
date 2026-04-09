@@ -1283,11 +1283,17 @@ public class JVMVisitor extends IRVisitor {
     private void compileCallCommon(IRBytecodeAdapter m, CallBase call) {
         Operand[] args = call.getCallArgs();
 
-        if (!CallBase.containsArgSplat(args) &&
+        // narrow requirements for direct argument passing at this time
+        // * has keyword arguments
+        // * no splats or kwrest
+        // * no supers
+        // * no refinements
+        if (jvmMethod().invocationCompiler.supportsDirectArguments() &&
+                !CallBase.containsArgSplat(args) &&
                 ThreadContext.hasKeywords(call.getFlags()) &&
                 call.getCallType() != CallType.SUPER &&
+                !call.isPotentiallyRefined() &&
                 (call.getFlags() & ThreadContext.CALL_KEYWORD_REST) == 0) {
-            // only normal positional or keyword args, compile for pass-through
             compileCallWithKeywords(m, call);
             return;
         }

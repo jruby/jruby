@@ -14,6 +14,7 @@ import org.jruby.ir.targets.IRBytecodeAdapter;
 import org.jruby.ir.targets.InvocationCompiler;
 import org.jruby.ir.targets.JVM;
 import org.jruby.ir.targets.indy.IndyInvocationCompiler;
+import org.jruby.ir.targets.indy.MetaCallSite;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallArgument;
 import org.jruby.runtime.CallSite;
@@ -362,6 +363,12 @@ public class NormalInvocationCompiler implements InvocationCompiler {
         invoke(file, compiler.getLastLine(), scopeFieldName, call, arity);
     }
 
+    @Override
+    public boolean supportsDirectArguments() {
+        return false;
+    }
+
+    @Override
     public void invoke(String file, String scopeFieldName, CallBase call, CallArgument[] callArguments) {
         throw new NotCompilableException("unimplemented");
     }
