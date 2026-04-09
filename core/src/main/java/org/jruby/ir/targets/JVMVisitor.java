@@ -1369,7 +1369,7 @@ public class JVMVisitor extends IRVisitor {
 
         // compile keyword values, which will be all literals or loads
         for (int i = 0; i < keywords.pairs.length; i++) {
-            var pair = keywords.pairs[0];
+            var pair = keywords.pairs[i];
             callArguments.add(
                     new CallArgument(callArguments.size(), CallArgument.Type.KEYWORD, new Identifier(((Symbol) pair.getKey()).getSymbol().idString())));
             visit(pair.getValue());
