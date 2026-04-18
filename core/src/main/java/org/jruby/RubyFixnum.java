@@ -298,8 +298,13 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         return negate(context, getValue());
     }
 
+    private static final boolean USE_COMPACT_FIXNUMS = Options.USE_COMPACT_FIXNUMS.load();
+    private static final boolean USE_INT_FIXNUMS = Options.USE_INT_FIXNUMS.load();
+    private static final boolean USE_SHORT_FIXNUMS = Options.USE_SHORT_FIXNUMS.load();
+    private static final boolean USE_BYTE_FIXNUMS = Options.USE_BYTE_FIXNUMS.load();
+
     public static RubyFixnum newFixnum(Ruby runtime, long value) {
-        if (value > Integer.MAX_VALUE || value < Integer.MIN_VALUE) {
+        if (!USE_COMPACT_FIXNUMS || !USE_INT_FIXNUMS || value > Integer.MAX_VALUE || value < Integer.MIN_VALUE) {
             // long is never in cache range
             return new LongFixnum(runtime.getInteger(), value);
         }
@@ -307,7 +312,8 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
     }
 
     public static RubyFixnum newFixnum(Ruby runtime, int value) {
-        if (value > Short.MAX_VALUE || value < Short.MIN_VALUE) {
+        if (!USE_COMPACT_FIXNUMS) return new LongFixnum(runtime.getInteger(), value);
+        if (!USE_SHORT_FIXNUMS || value > Short.MAX_VALUE || value < Short.MIN_VALUE) {
             // integer is never in cache range
             // disabled to avoid polymorphism and because it doesn't save size (https://github.com/jruby/jruby/pull/9379)
             // return new IntFixnum(runtime.getInteger(), value);
@@ -317,27 +323,32 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
     }
 
     public static RubyFixnum newFixnum(Ruby runtime, short value) {
-        if (value > Byte.MAX_VALUE || value < Byte.MIN_VALUE) {
+        if (!USE_COMPACT_FIXNUMS) return new LongFixnum(runtime.getInteger(), value);
+        if (!USE_BYTE_FIXNUMS || value > Byte.MAX_VALUE || value < Byte.MIN_VALUE) {
             return USE_CACHE && isInCacheRange(value) ? cachedFixnum(runtime, value) : new ShortFixnum(runtime.getInteger(), value);
         }
         return newFixnum(runtime, (byte) value);
     }
 
     public static RubyFixnum newFixnum(Ruby runtime, byte value) {
-        // using ShortFixnum until there's value in using ByteFixnum
-        return USE_CACHE && isInCacheRange(value) ? cachedFixnum(runtime, value) : new ShortFixnum(runtime.getInteger(), value);
+        if (USE_CACHE && isInCacheRange(value)) return cachedFixnum(runtime, value);
+
+        if (!USE_COMPACT_FIXNUMS) return new LongFixnum(runtime.getInteger(), value);
+        if (!USE_BYTE_FIXNUMS) {
+            return new ShortFixnum(runtime.getInteger(), value);
+        }
+
+        return new ByteFixnum(runtime.getInteger(), value);
     }
 
     private static RubyFixnum newFixnumForCache(RubyClass fixnum, int value) {
-        if (value > Short.MAX_VALUE || value < Short.MIN_VALUE) {
-            // disabled to avoid polymorphism and because it doesn't save size (https://github.com/jruby/jruby/pull/9379)
-            //return new IntFixnum(fixnum, value);
-            return new LongFixnum(fixnum, value);
-        } else if (value > Byte.MAX_VALUE || value < Byte.MIN_VALUE) {
+        if (!USE_COMPACT_FIXNUMS) return new LongFixnum(fixnum, value);
+        if (!USE_SHORT_FIXNUMS || value > Short.MAX_VALUE || value < Short.MIN_VALUE) {
+            return new IntFixnum(fixnum, value);
+        } else if (!USE_BYTE_FIXNUMS || value > Byte.MAX_VALUE || value < Byte.MIN_VALUE) {
             return new ShortFixnum(fixnum, (short) value);
         }
-        // using ShortFixnum until there's value in using ByteFixnum
-        return new ShortFixnum(fixnum, (byte) value);
+        return new ByteFixnum(fixnum, (byte) value);
     }
 
     private static boolean isInCacheRange(int value) {
