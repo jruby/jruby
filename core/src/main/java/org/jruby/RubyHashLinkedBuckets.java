@@ -141,7 +141,6 @@ public class RubyHashLinkedBuckets extends RubyHash {
     private byte hashFlags;
     private IRubyObject ifNone;
 
-    private int generation = 0; // generation count for O(1) clears
     private final RubyHashLinkedBuckets.RubyHashEntry head = new RubyHashLinkedBuckets.RubyHashEntry();
 
     RubyHashLinkedBuckets(Ruby runtime, RubyClass klass, RubyHash other) {
@@ -267,7 +266,6 @@ public class RubyHashLinkedBuckets extends RubyHash {
     }
 
     private final void alloc() {
-        generation++;
         head.prevAdded = head.nextAdded = head;
         allocFirst();
     }
@@ -545,16 +543,10 @@ public class RubyHashLinkedBuckets extends RubyHash {
     }
 
     public <T> void visitAll(ThreadContext context, VisitorWithStateI visitor) {
-        int startGeneration = generation;
         long count = size;
         int index = 0;
         // visit not more than size entries
         for (RubyHashEntry entry = head.nextAdded; entry != head && count != 0; entry = entry.nextAdded) {
-            if (startGeneration != generation) {
-                startGeneration = generation;
-                entry = head.nextAdded;
-                if (entry == head) break;
-            }
             if (entry != null && entry.isLive()) {
                 visitor.visit(context, this, entry.key, entry.value, index++);
                 count--;
@@ -572,16 +564,10 @@ public class RubyHashLinkedBuckets extends RubyHash {
     }
 
     protected <T> void visitLimited(ThreadContext context, VisitorWithState visitor, long size, T state) {
-        int startGeneration = generation;
         long count = size;
         int index = 0;
         // visit not more than size entries
         for (RubyHashEntry entry = head.nextAdded; entry != head && count != 0; entry = entry.nextAdded) {
-            if (startGeneration != generation) {
-                startGeneration = generation;
-                entry = head.nextAdded;
-                if (entry == head) break;
-            }
             if (entry != null && entry.isLive()) {
                 visitor.visit(context, this, entry.key, entry.value, index++, state);
                 count--;
@@ -594,15 +580,9 @@ public class RubyHashLinkedBuckets extends RubyHash {
     }
 
     public <T> boolean allSymbols() {
-        int startGeneration = generation;
         // visit not more than size entries
         RubyHashEntry head = this.head;
         for (RubyHashEntry entry = head.nextAdded; entry != head; entry = entry.nextAdded) {
-            if (startGeneration != generation) {
-                startGeneration = generation;
-                entry = head.nextAdded;
-                if (entry == head) break;
-            }
             if (entry != null && entry.isLive()) {
                 if (!(entry.key instanceof RubySymbol)) return false;
             }
@@ -2606,16 +2586,11 @@ public class RubyHashLinkedBuckets extends RubyHash {
         public BaseIterator(EntryView view) {
             this.view = view;
             this.entry = head;
-            this.startGeneration = generation;
         }
 
         private void advance(boolean consume) {
             if (!peeking) {
                 do {
-                    if (startGeneration != generation) {
-                        startGeneration = generation;
-                        entry = head;
-                    }
                     entry = entry.nextAdded;
                 } while (entry != head && !entry.isLive());
             }
