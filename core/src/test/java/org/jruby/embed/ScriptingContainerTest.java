@@ -2664,4 +2664,98 @@ public class ScriptingContainerTest {
 //        }
 //    }
 
+    @Test
+    public void testCallMethod_kwargs() {
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        try {
+            String script =
+                "def greet(name:, greeting: 'Hello')\n" +
+                "  \"#{greeting}, #{name}!\"\n" +
+                "end\n" +
+                "self";
+            Object receiver = instance.runScriptlet(script);
+
+            Map<String, Object> kwargs = new HashMap<>();
+            kwargs.put("name", "World");
+            Object result = instance.callMethod(receiver, "greet", kwargs);
+            assertEquals("Hello, World!", result.toString());
+
+            kwargs.put("greeting", "Hi");
+            result = instance.callMethod(receiver, "greet", kwargs);
+            assertEquals("Hi, World!", result.toString());
+        } finally {
+            instance.terminate();
+        }
+    }
+
+    @Test
+    public void testCallMethod_positionalAndKwargs() {
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        try {
+            String script =
+                "def combine(a, b, separator: ', ')\n" +
+                "  \"#{a}#{separator}#{b}\"\n" +
+                "end\n" +
+                "self";
+            Object receiver = instance.runScriptlet(script);
+
+            Object[] args = {"foo", "bar"};
+            Map<String, Object> kwargs = new HashMap<>();
+            kwargs.put("separator", " - ");
+            String result = instance.callMethod(receiver, "combine", args, kwargs, String.class);
+            assertEquals("foo - bar", result);
+        } finally {
+            instance.terminate();
+        }
+    }
+
+    @Test
+    public void testCallMethod_kwargsWithReturnType() {
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        try {
+            String script = "def add(x:, y:)\n  x + y\nend\nself";
+            Object receiver = instance.runScriptlet(script);
+
+            Map<String, Object> kwargs = new HashMap<>();
+            kwargs.put("x", 3);
+            kwargs.put("y", 4);
+            Long result = instance.callMethod(receiver, "add", null, kwargs, Long.class);
+            assertEquals(Long.valueOf(7), result);
+        } finally {
+            instance.terminate();
+        }
+    }
+
+    @Test
+    public void testCallMethod_kwargsWithNullValue() {
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        try {
+            String script = "def check_nil(val: 'default')\n  val.nil?\nend\nself";
+            Object receiver = instance.runScriptlet(script);
+
+            Map<String, Object> kwargs = new HashMap<>();
+            kwargs.put("val", null);
+            Boolean result = instance.callMethod(receiver, "check_nil", null, kwargs, Boolean.class);
+            assertTrue(result);
+        } finally {
+            instance.terminate();
+        }
+    }
+
+    @Test
+    public void testCallMethod_emptyKwargs() {
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        try {
+            String script = "def double(a)\n  a * 2\nend\nself";
+            Object receiver = instance.runScriptlet(script);
+
+            Object[] args = {5};
+            Map<String, Object> kwargs = new HashMap<>();
+            Long result = instance.callMethod(receiver, "double", args, kwargs, Long.class);
+            assertEquals(Long.valueOf(10), result);
+        } finally {
+            instance.terminate();
+        }
+    }
+
 }
