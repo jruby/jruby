@@ -75,6 +75,14 @@ describe "Kernel#method" do
       name = mock("method-name")
       name.should_receive(:to_str).and_raise(NoMethodError)
       -> { Object.method(name) }.should raise_error(NoMethodError)
+
+      name = mock("method-name")
+      name.should_receive(:to_str).and_raise(NoMethodError)
+      begin
+        raise RuntimeError.new
+      rescue => cause
+        -> { Object.method(name) }.should raise_error(NoMethodError, cause:)
+      end
     end
   end
 end
