@@ -109,6 +109,8 @@ public class RubySet extends RubyObject implements Set {
         public void marshalTo(ThreadContext context, RubyOutputStream out, Object obj, RubyClass type, MarshalDumper marshalStream) {
             RubySet set = (RubySet) obj;
 
+            marshalStream.registerObject(set);
+
             // create dummy object with extra @hash ivar and dump variables from that
             RubyObject dummy = new RubyObject(context.runtime, type);
             dummy.setInstanceVariable("@hash", set.hash);
@@ -128,8 +130,10 @@ public class RubySet extends RubyObject implements Set {
         public Object unmarshalFrom(ThreadContext context, RubyInputStream in, RubyClass type, MarshalLoader loader) {
             RubySet set = new RubySet(context.runtime, type, false);
 
+            loader.entry(set);
+
             // unmarshal as dummy object and extra @hash ivar
-            RubyObject dummy = (RubyObject) loader.entry(new RubyObject(context.runtime, type));
+            RubyObject dummy = new RubyObject(context.runtime, type);
             loader.ivar(context, in, null, dummy, null);
 
             set.hash = (RubyHash) dummy.getInstanceVariables().removeInstanceVariable("@hash");

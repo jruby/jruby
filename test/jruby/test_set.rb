@@ -39,6 +39,20 @@ class TestSet < Test::Unit::TestCase
     assert_equal Set.new([1, 2]), set
   end
 
+  def test_marshal_object_links
+    shared = 'good'
+    loaded = Marshal.load Marshal.dump([Set.new, ['bad', shared], shared])
+
+    assert_equal 'good', loaded[2]
+    assert_same loaded[1][1], loaded[2]
+
+    set = Set.new
+    loaded = Marshal.load Marshal.dump([set, set])
+
+    assert_same Set, loaded[0].class
+    assert_same loaded[0], loaded[1]
+  end
+
   def test_yaml_dump; require 'yaml'
     str = YAML.dump(Set.new)
     assert_equal "--- !ruby/object:Set\nhash: {}\n", str
