@@ -212,17 +212,38 @@ describe "Invoking a method" do
       o.args.should == [1,2]
     end
 
-    it "raises NameError if invoked as a vcall" do
-      -> { no_such_method }.should raise_error NameError
+    describe "if invoked as a vcall" do
+      it "raises NameError" do
+        -> { no_such_method }.should raise_error NameError
+      end
+
+      it "raises NameError with $! as a cause" do
+        begin
+          raise RuntimeError.new
+        rescue => cause
+          -> { no_such_method }.should raise_error(NameError, cause:)
+        end
+      end
     end
 
     it "should omit the method_missing call from the backtrace for NameError" do
       -> { no_such_method }.should raise_error { |e| e.backtrace.first.should_not include("method_missing") }
     end
 
-    it "raises NoMethodError if invoked as an unambiguous method call" do
-      -> { no_such_method() }.should raise_error NoMethodError
-      -> { no_such_method(1,2,3) }.should raise_error NoMethodError
+    describe "if invoked as an unambiguous method call" do
+      it "raises NoMethodError" do
+        -> { no_such_method() }.should raise_error NoMethodError
+        -> { no_such_method(1,2,3) }.should raise_error NoMethodError
+      end
+
+      it "raises NoMethodError with $! as a cause" do
+        begin
+          raise
+        rescue => cause
+          -> { no_such_method() }.should raise_error(NoMethodError, cause:)
+          -> { no_such_method(1,2,3) }.should raise_error(NoMethodError, cause:)
+        end
+      end
     end
 
     it "should omit the method_missing call from the backtrace for NoMethodError" do
