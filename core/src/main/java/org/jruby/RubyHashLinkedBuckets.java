@@ -1362,7 +1362,12 @@ public class RubyHashLinkedBuckets extends RubyHash {
         if (value != null) return value;
         if (block.isGiven()) return block.yield(context, key);
 
-        throw context.runtime.newKeyError("key not found: " + key.inspect(context), this, key);
+        RubyString desc = (RubyString) key.inspect(context);
+        if (desc.size() > 65) {
+            desc = (RubyString) desc.substrEnc(context, 0, 62);
+            desc.cat("...".getBytes());
+        }
+        throw context.runtime.newKeyError("key not found: " + desc, this, key);
     }
 
     @JRubyMethod
