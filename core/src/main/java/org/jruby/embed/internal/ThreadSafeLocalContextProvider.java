@@ -29,47 +29,31 @@
  */
 package org.jruby.embed.internal;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicReference;
-import org.jruby.Ruby;
 import org.jruby.embed.LocalVariableBehavior;
 
 public class ThreadSafeLocalContextProvider extends AbstractLocalContextProvider {
-    private final ThreadLocalContext contextHolder = new ThreadLocalContext(this::getInstance);
+	private final ThreadLocalContext contextHolder = new ThreadLocalContext(this::createLocalContext);
 
-    public ThreadSafeLocalContextProvider(LocalVariableBehavior behavior) {
-        super(behavior);
-    }
+	public ThreadSafeLocalContextProvider(LocalVariableBehavior behavior) {
+		super(behavior);
+	}
 
-    public ThreadSafeLocalContextProvider(LocalVariableBehavior behavior, boolean lazy) {
-        super(behavior);
-        this.lazy = lazy;
-    }
+	public ThreadSafeLocalContextProvider(LocalVariableBehavior behavior, boolean lazy) {
+		super(behavior);
+		this.lazy = lazy;
+	}
 
-    @Override
-    public Ruby getRuntime() {
-        return contextHolder.get().getRuntime();
-    }
+	protected LocalContext createLocalContext() {
+		return new LocalContext(config, behavior, lazy);
+	}
 
-    @Override
-    public BiVariableMap getVarMap() {
-        return contextHolder.get().getVarMap(this);
-    }
+	@Override
+	protected LocalContext getLocalContext() {
+		return contextHolder.get();
+	}
 
-    @Override
-    public Map getAttributeMap() {
-        return contextHolder.get().getAttributeMap();
-    }
-
-    @Override
-    public boolean isRuntimeInitialized() {
-        return contextHolder.get().isInitialized();
-    }
-
-    @Override
-    public void terminate() {
-    	contextHolder.terminate();
-    }
-
+	@Override
+	public void terminate() {
+		contextHolder.terminate();
+	}
 }

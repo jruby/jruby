@@ -29,53 +29,36 @@
  */
 package org.jruby.embed.internal;
 
-import org.jruby.Ruby;
 import org.jruby.embed.LocalVariableBehavior;
 
+<<<<<<< HEAD
 import java.util.Map;
 
 public class SingleThreadLocalContextProvider extends AbstractLocalContextProvider {
+	private final LocalContext instance;
 
-    private final LocalContext instance;
+	public SingleThreadLocalContextProvider(LocalVariableBehavior behavior) {
+		super(behavior);
+		instance = getInstance();
+	}
 
-    public SingleThreadLocalContextProvider(LocalVariableBehavior behavior) {
-        super(behavior);
-        instance = getInstance();
-    }
+	public SingleThreadLocalContextProvider(LocalVariableBehavior behavior, boolean lazy) {
+		super(behavior);
+		this.lazy = lazy;
+		instance = getInstance();
+	}
 
-    public SingleThreadLocalContextProvider(LocalVariableBehavior behavior, boolean lazy) {
-        super(behavior);
-        this.lazy = lazy;
-        instance = getInstance();
-    }
+	protected LocalContext getInstance() {
+		return new LocalContext(config, behavior, lazy);
+	}
 
-    private LocalContext getLocalContext() {
-        return instance;
-    }
+	@Override
+	protected LocalContext getLocalContext() {
+		return instance;
+	}
 
-    @Override
-    public Ruby getRuntime() {
-        return getLocalContext().getRuntime();
-    }
-
-    @Override
-    public BiVariableMap getVarMap() {
-        return getLocalContext().getVarMap(this);
-    }
-
-    @Override
-    public Map getAttributeMap() {
-        return getLocalContext().getAttributeMap();
-    }
-
-    @Override
-    public boolean isRuntimeInitialized() {
-        return getLocalContext().isInitialized();
-    }
-
-    @Override
-    public void terminate() {
-        getLocalContext().remove();
-    }
-
+	@Override
+	public void terminate() {
+		instance.remove();
+	}
 }

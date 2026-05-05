@@ -29,60 +29,39 @@
  */
 package org.jruby.embed.internal;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicReference;
-import org.jruby.Ruby;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.embed.LocalVariableBehavior;
 
 /**
- * Concurrent type local context provider.
- * Ruby runtime returned from the getRuntime() method is a classloader-global runtime.
- * While variables (except global variables) and constants are thread local.
+ * Concurrent type local context provider. Ruby runtime returned from the
+ * getRuntime() method is a classloader-global runtime. While variables (except
+ * global variables) and constants are thread local.
  *
- * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
+ * @author Yoko Harada
+ *         &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class ConcurrentLocalContextProvider extends AbstractLocalContextProvider {
-    private final ThreadLocalContext contextHolder = new ThreadLocalContext(this::getInstance);
+	private final ThreadLocalContext contextHolder = new ThreadLocalContext(this::createGlobalContext);
 
-    public ConcurrentLocalContextProvider(LocalVariableBehavior behavior) {
-        super( getGlobalRuntimeConfigOrNew(), behavior );
-    }
+	public ConcurrentLocalContextProvider(LocalVariableBehavior behavior) {
+		super(getGlobalRuntimeConfigOrNew(), behavior);
+	}
 
-    public ConcurrentLocalContextProvider(LocalVariableBehavior behavior, boolean lazy) {
-        super( getGlobalRuntimeConfigOrNew(), behavior );
-        this.lazy = lazy;
-    }
+	public ConcurrentLocalContextProvider(LocalVariableBehavior behavior, boolean lazy) {
+		super(getGlobalRuntimeConfigOrNew(), behavior);
+		this.lazy = lazy;
+	}
 
-    @Override
-    public Ruby getRuntime() {
-        return getGlobalRuntime(this);
-    }
+	protected LocalContext createGlobalContext() {
+		return new GlobalContext(config, behavior, lazy);
+	}
 
-    @Override
-    public RubyInstanceConfig getRubyInstanceConfig() {
-        return getGlobalRuntimeConfig(this);
-    }
+	@Override
+	protected LocalContext getLocalContext() {
+		return contextHolder.get();
+	}
 
-    @Override
-    public BiVariableMap getVarMap() {
-        return contextHolder.get().getVarMap(this);
-    }
-
-    @Override
-    public Map getAttributeMap() {
-        return contextHolder.get().getAttributeMap();
-    }
-
-    @Override
-    public boolean isRuntimeInitialized() {
-        return Ruby.isGlobalRuntimeReady();
-    }
-
-    @Override
-    public void terminate() {
-    	contextHolder.terminate();
-    }
-
+	@Override
+	public void terminate() {
+		contextHolder.terminate();
+	}
 }

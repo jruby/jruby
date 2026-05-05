@@ -153,7 +153,7 @@ public class ConcurrentLocalContextProviderTest {
     /**
      * Test of getRuntime method, of class ConcurrentLocalContextProvider.
      */
-    //@Test
+    @Test
     public void testGetRuntime() {
         logger1.info("getRuntime");
         ConcurrentLocalContextProvider cook =
@@ -173,7 +173,7 @@ public class ConcurrentLocalContextProviderTest {
     /**
      * Test of getRubyInstanceConfig method, of class ConcurrentLocalContextProvider.
      */
-    //@Test
+    @Test
     public void testGetRubyInstanceConfig() {
         logger1.info("getRubyInstanceConfig");
         ConcurrentLocalContextProvider cook =
@@ -190,18 +190,16 @@ public class ConcurrentLocalContextProviderTest {
             // no need to test
         }
 
-        ConcurrentLocalContextProviderStub provider = new ConcurrentLocalContextProviderStub(LocalVariableBehavior.TRANSIENT);
-        provider.isGlobalRuntimeReady = false;
+        ConcurrentLocalContextProviderStub provider = new ConcurrentLocalContextProviderStub();
+        provider.stub.isGlobalRuntimeReady = false;
         assertNotNull( provider.getRubyInstanceConfig() );
-        assertFalse( provider.runtimeInitialized ); // make sure we do not call getRuntime()
-
-
+        assertFalse( provider.stub.runtimeInitialized ); // make sure we do not call getRuntime()
     }
 
     /**
      * Test of getVarMap method, of class ConcurrentLocalContextProvider.
      */
-    //@Test
+    @Test
     public void testGetVarMap() {
         logger1.info("getVarMap");
         ConcurrentLocalContextProvider cook =
@@ -223,7 +221,7 @@ public class ConcurrentLocalContextProviderTest {
     /**
      * Test of getAttributeMap method, of class ConcurrentLocalContextProvider.
      */
-    //@Test
+    @Test
     public void testGetAttributeMap() {
         logger1.info("getAttributeMap");
         ConcurrentLocalContextProvider cook =
@@ -244,7 +242,7 @@ public class ConcurrentLocalContextProviderTest {
     /**
      * Test of isRuntimeInitialized method, of class ConcurrentLocalContextProvider.
      */
-    //@Test
+    @Test
     public void testIsRuntimeInitialized() {
         logger1.info("isRuntimeInitialized");
         ConcurrentLocalContextProvider cook =
@@ -254,7 +252,7 @@ public class ConcurrentLocalContextProviderTest {
         else assertFalse(result);
     }
 
-    //@Test
+    @Test
     public void testTerminate() {
         logger1.info("isTerminate");
         ConcurrentLocalContextProvider cook =
@@ -266,34 +264,18 @@ public class ConcurrentLocalContextProviderTest {
         }
     }
 
+    // do not use this test stub for testing concurrency behavior!
+    // unlike the real class, it doesn't have per-thread variables etc
     private static class ConcurrentLocalContextProviderStub extends ConcurrentLocalContextProvider {
+    	private GlobalContextStub stub = new GlobalContextStub();
 
-        Boolean isGlobalRuntimeReady = null;
-
-        ConcurrentLocalContextProviderStub(LocalVariableBehavior behavior) {
-            super( behavior );
+        ConcurrentLocalContextProviderStub() {
+            super(LocalVariableBehavior.TRANSIENT, true);
         }
 
-        ConcurrentLocalContextProviderStub(LocalVariableBehavior behavior, boolean lazy) {
-            super( behavior, lazy );
-        }
-
-        boolean runtimeInitialized = false;
-
-        @Override
-        public Ruby getRuntime() {
-            runtimeInitialized = true;
-            return super.getRuntime();
-        }
-
-        @Override
-        boolean isGlobalRuntimeReady() {
-            if ( isGlobalRuntimeReady != null ) {
-                return isGlobalRuntimeReady.booleanValue();
-            }
-            return super.isGlobalRuntimeReady();
-        }
-
+		@Override
+		protected LocalContext createGlobalContext() {
+			return stub;
+		}
     }
-
 }

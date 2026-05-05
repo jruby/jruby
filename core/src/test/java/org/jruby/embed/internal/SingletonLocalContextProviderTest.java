@@ -28,43 +28,30 @@ public class SingletonLocalContextProviderTest {
             assertTrue(Ruby.getGlobalRuntime().getInstanceConfig() == provider.getRubyInstanceConfig());
         }
 
-        SingletonLocalContextProviderStub provider = newProviderStub();
-        provider.isGlobalRuntimeReady = false;
+        SingletonLocalContextProviderStub provider = new SingletonLocalContextProviderStub();
+        provider.stub.isGlobalRuntimeReady = false;
+        provider.stub.globalRuntimeHolder.set(null);
         assertNotNull( provider.getRubyInstanceConfig() );
-        assertFalse( provider.runtimeInitialized ); // make sure we do not call getRuntime()
+        assertFalse( provider.stub.runtimeInitialized ); // make sure we do not call getRuntime()
 
-        provider.isGlobalRuntimeReady = true;
+        provider.stub.isGlobalRuntimeReady = true;
+        provider.stub.globalRuntimeHolder.set(Ruby.getGlobalRuntime());
         assertNotNull( provider.getRubyInstanceConfig() );
         assertSame(Ruby.getGlobalRuntime().getInstanceConfig(), provider.getRubyInstanceConfig());
 
-        final AtomicReference<Ruby> globalRuntimeHolder = new AtomicReference<Ruby>();
-        provider = new SingletonLocalContextProviderStub() {
-
-            {
-                isGlobalRuntimeReady = false;
-            }
-
-            @Override
-            Ruby getGlobalRuntime(AbstractLocalContextProvider provider) {
-                if ( isGlobalRuntimeReady ) return globalRuntimeHolder.get();
-
-                final Ruby globalRuntime = super.getGlobalRuntime(provider);
-                isGlobalRuntimeReady = true;
-                globalRuntimeHolder.set(globalRuntime);
-                return globalRuntime;
-            }
-
-        };
+        provider = new SingletonLocalContextProviderStub();
+        provider.stub.isGlobalRuntimeReady = false;
+        provider.stub.globalRuntimeHolder.set(null);
 
         final RubyInstanceConfig config = provider.getRubyInstanceConfig();
         assertNotNull( config );
-        assertNull( globalRuntimeHolder.get() );
+        assertNull( provider.stub.globalRuntimeHolder.get() );
 
-        provider.getRuntime();
+        //provider.getRuntime();
         assertNotNull( provider.getRuntime() );
         assertSame( config, provider.getRubyInstanceConfig() );
-        assertNotNull( globalRuntimeHolder.get() );
-        assertSame( config, globalRuntimeHolder.get().getInstanceConfig() );
+        assertNotNull( provider.stub.globalRuntimeHolder.get() );
+        assertSame( config, provider.stub.globalRuntimeHolder.get().getInstanceConfig() );
     }
 
     @Test
@@ -92,48 +79,16 @@ public class SingletonLocalContextProviderTest {
         return new SingletonLocalContextProvider(LocalVariableBehavior.TRANSIENT, true);
     }
 
-    private SingletonLocalContextProviderStub newProviderStub() {
-        return new SingletonLocalContextProviderStub();
-    }
-
     private static class SingletonLocalContextProviderStub extends SingletonLocalContextProvider {
+		GlobalContextStub stub = new GlobalContextStub();
 
-        Boolean isGlobalRuntimeReady = null;
+		private SingletonLocalContextProviderStub() {
+			super(LocalVariableBehavior.TRANSIENT, true);
+		}
 
-        private SingletonLocalContextProviderStub() {
-            super( LocalVariableBehavior.TRANSIENT, true );
-        }
-
-        SingletonLocalContextProviderStub(LocalVariableBehavior behavior) {
-            super( behavior );
-        }
-
-        SingletonLocalContextProviderStub(LocalVariableBehavior behavior, boolean lazy) {
-            super( behavior, lazy );
-        }
-
-        boolean runtimeInitialized = false;
-
-        @Override
-        public Ruby getRuntime() {
-            runtimeInitialized = true;
-            return super.getRuntime();
-        }
-
-        @Override
-        boolean isGlobalRuntimeReady() {
-            if ( isGlobalRuntimeReady != null ) {
-                return isGlobalRuntimeReady.booleanValue();
-            }
-            return super.isGlobalRuntimeReady();
-        }
-
-        //@Override
-        //Ruby getGlobalRuntime(AbstractLocalContextProvider provider) {
-        //    if ( globalRuntime != null ) return globalRuntime;
-        //    return super.getGlobalRuntime(provider);
-        //}
-
-    }
-
+		@Override
+		protected LocalContext getLocalContext() {
+			return stub;
+		}
+	}
 }

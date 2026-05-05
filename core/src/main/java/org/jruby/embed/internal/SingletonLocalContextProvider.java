@@ -29,106 +29,77 @@
  */
 package org.jruby.embed.internal;
 
-import java.util.Map;
-import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.embed.LocalVariableBehavior;
 
 /**
- * Singleton type local context provider.
- * As of JRuby 1.5.0 Ruby runtime returned from the getRuntime() method is a
- * classloader-global runtime.
+ * Singleton type local context provider. As of JRuby 1.5.0 Ruby runtime
+ * returned from the getRuntime() method is a classloader-global runtime.
  *
- * @author Yoko Harada &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
+ * @author Yoko Harada
+ *         &lt;<a href="mailto:yokolet@gmail.com">yokolet@gmail.com</a>&gt;
  */
 public class SingletonLocalContextProvider extends AbstractLocalContextProvider {
+	private static volatile LocalContext localContext;
 
-    private static volatile LocalContext localContext;
+	public SingletonLocalContextProvider(LocalVariableBehavior behavior) {
+		super(getGlobalRuntimeConfigOrNew(), behavior);
+	}
 
-    public static SingletonLocalContextProvider getProvider(final LocalVariableBehavior behavior, final boolean lazy) {
-        if (localContext == null) initLocalContext(behavior, lazy);
-        return new SingletonLocalContextProvider(localContext.getLocalVariableBehavior(), lazy);
-    }
+	public SingletonLocalContextProvider(LocalVariableBehavior behavior, boolean lazy) {
+		this(getGlobalRuntimeConfigOrNew(), behavior, lazy);
+	}
 
-    private static void initLocalContext(final LocalVariableBehavior behavior, final boolean lazy) {
-        synchronized( SingletonLocalContextProvider.class ) {
-            if (localContext == null) {
-                localContext = new LocalContext(getGlobalRuntimeConfigOrNew(), behavior, lazy);
-            }
-        }
-    }
+	private SingletonLocalContextProvider(RubyInstanceConfig config, LocalVariableBehavior behavior, boolean lazy) {
+		super(config, behavior);
+		this.lazy = lazy;
+	}
 
-    private LocalContext sharedLocalContext() {
-        if (localContext == null) initLocalContext(behavior, lazy);
-        return localContext;
-    }
+	private static void initLocalContext(final LocalVariableBehavior behavior, final boolean lazy) {
+		synchronized (SingletonLocalContextProvider.class) {
+			if (localContext == null) {
+				localContext = new GlobalContext(getGlobalRuntimeConfigOrNew(), behavior, lazy);
+			}
+		}
+	}
+
+	public static SingletonLocalContextProvider getProvider(final LocalVariableBehavior behavior, final boolean lazy) {
+		if (localContext == null)
+			initLocalContext(behavior, lazy);
+		return new SingletonLocalContextProvider(localContext.getLocalVariableBehavior(), lazy);
+	}
+
+	@Override
+	protected LocalContext getLocalContext() {
+		if (localContext == null)
+			initLocalContext(behavior, lazy);
+		return localContext;
+	}
+
+	@Override
+	public void terminate() {
+		if (localContext != null) {
+			synchronized (SingletonLocalContextProvider.class) {
+				if (localContext != null) {
+					localContext.remove();
+					localContext = null;
+				}
+			}
+		}
+	}
+
+	@Deprecated(since = "9.0.0.0") // no longer used
+	public static LocalContext getLocalContextInstance(RubyInstanceConfig config, LocalVariableBehavior behavior,
+			boolean lazy) {
+		if (localContext == null)
+			initLocalContext(behavior, lazy);
+		return localContext;
+	}
 
     @Deprecated(since = "9.0.0.0") // no longer used
-    public static LocalContext getLocalContextInstance(RubyInstanceConfig config, LocalVariableBehavior behavior, boolean lazy) {
-        if (localContext == null) {
-            synchronized( SingletonLocalContextProvider.class ) {
-                if (localContext == null) {
-                    localContext = new LocalContext(config, behavior, lazy);
-                }
-            }
-        }
-        return localContext;
-    }
-
-    @Deprecated(since = "9.0.0.0") // no longer used
-    public static LocalVariableBehavior getLocalVariableBehaviorOrNull() {
-        if (localContext == null) return null;
-        return localContext.getLocalVariableBehavior();
-    }
-
-    public SingletonLocalContextProvider(LocalVariableBehavior behavior) {
-        super( getGlobalRuntimeConfigOrNew(), behavior );
-    }
-
-    public SingletonLocalContextProvider(LocalVariableBehavior behavior, boolean lazy) {
-        this( getGlobalRuntimeConfigOrNew(), behavior, lazy );
-    }
-
-    private SingletonLocalContextProvider(RubyInstanceConfig config, LocalVariableBehavior behavior, boolean lazy) {
-        super( config, behavior );
-        this.lazy = lazy;
-    }
-
-    @Override
-    public Ruby getRuntime() {
-        return getGlobalRuntime(this);
-    }
-
-    @Override
-    public RubyInstanceConfig getRubyInstanceConfig() {
-        return getGlobalRuntimeConfig(this);
-    }
-
-    @Override
-    public boolean isRuntimeInitialized() {
-        return Ruby.isGlobalRuntimeReady();
-    }
-
-    @Override
-    public BiVariableMap getVarMap() {
-        return sharedLocalContext().getVarMap(this);
-    }
-
-    @Override
-    public Map getAttributeMap() {
-        return sharedLocalContext().getAttributeMap();
-    }
-
-    @Override
-    public void terminate() {
-        if (localContext != null) {
-            synchronized( SingletonLocalContextProvider.class ) {
-                if (localContext != null) {
-                    localContext.remove();
-                    localContext = null;
-                }
-            }
-        }
-    }
-
+	public static LocalVariableBehavior getLocalVariableBehaviorOrNull() {
+		if (localContext == null)
+			return null;
+		return localContext.getLocalVariableBehavior();
+	}
 }

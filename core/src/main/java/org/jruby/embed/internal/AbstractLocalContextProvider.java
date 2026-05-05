@@ -29,67 +29,71 @@
  */
 package org.jruby.embed.internal;
 
+import java.util.Map;
+
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.embed.LocalVariableBehavior;
 
 public abstract class AbstractLocalContextProvider implements LocalContextProvider {
+	protected final RubyInstanceConfig config;
+	protected final LocalVariableBehavior behavior;
+	protected boolean lazy = true;
 
-    protected final RubyInstanceConfig config;
-    protected final LocalVariableBehavior behavior;
-    protected boolean lazy = true;
+	protected AbstractLocalContextProvider() {
+		this(new RubyInstanceConfig());
+	}
 
-    protected AbstractLocalContextProvider() {
-        this( new RubyInstanceConfig() );
-    }
+	protected AbstractLocalContextProvider(RubyInstanceConfig config) {
+		this.config = config;
+		this.behavior = LocalVariableBehavior.TRANSIENT;
+	}
 
-    protected AbstractLocalContextProvider(RubyInstanceConfig config) {
-        this.config = config; this.behavior = LocalVariableBehavior.TRANSIENT;
-    }
+	protected AbstractLocalContextProvider(RubyInstanceConfig config, LocalVariableBehavior behavior) {
+		this.config = config;
+		this.behavior = behavior;
+	}
 
-    protected AbstractLocalContextProvider(RubyInstanceConfig config, LocalVariableBehavior behavior) {
-        this.config = config; this.behavior = behavior;
-    }
+	protected AbstractLocalContextProvider(LocalVariableBehavior behavior) {
+		this.config = new RubyInstanceConfig();
+		this.behavior = behavior;
+	}
 
-    protected AbstractLocalContextProvider(LocalVariableBehavior behavior) {
-        this.config = new RubyInstanceConfig(); this.behavior = behavior;
-    }
+	protected abstract LocalContext getLocalContext();
 
-    protected LocalContext getInstance() {
-        return new LocalContext(config, behavior, lazy);
-    }
+	@Override
+	public RubyInstanceConfig getRubyInstanceConfig() {
+		return getLocalContext().getRubyInstanceConfig();
+	}
 
-    @Override
-    public RubyInstanceConfig getRubyInstanceConfig() {
-        return config;
-    }
+	@Override
+	public Ruby getRuntime() {
+		return getLocalContext().getRuntime();
+	}
 
-    @Override
-    public LocalVariableBehavior getLocalVariableBehavior() {
-        return behavior;
-    }
+	@Override
+	public BiVariableMap getVarMap() {
+		return getLocalContext().getVarMap(this);
+	}
 
-    boolean isGlobalRuntimeReady() { return Ruby.isGlobalRuntimeReady(); }
+	@Override
+	public Map getAttributeMap() {
+		return getLocalContext().getAttributeMap();
+	}
 
-    Ruby getGlobalRuntime(AbstractLocalContextProvider provider) {
-        if ( isGlobalRuntimeReady() ) {
-            return Ruby.getGlobalRuntime();
-        }
-        return Ruby.newInstance(provider.config);
-    }
+	@Override
+	public boolean isRuntimeInitialized() {
+		return getLocalContext().isInitialized();
+	}
 
-    RubyInstanceConfig getGlobalRuntimeConfig(AbstractLocalContextProvider provider) {
-        // make sure we do not yet initialize the runtime here
-        if ( isGlobalRuntimeReady() ) {
-            return getGlobalRuntime(provider).getInstanceConfig();
-        }
-        return provider.config;
-    }
+	@Override
+	public LocalVariableBehavior getLocalVariableBehavior() {
+		return behavior;
+	}
 
-    static RubyInstanceConfig getGlobalRuntimeConfigOrNew() {
-        return Ruby.isGlobalRuntimeReady() ?
-                Ruby.getGlobalRuntime().getInstanceConfig() :
-                    new RubyInstanceConfig();
-    }
-
+	static RubyInstanceConfig getGlobalRuntimeConfigOrNew() {
+		if (Ruby.isGlobalRuntimeReady())
+			return Ruby.getGlobalRuntime().getInstanceConfig();
+		return new RubyInstanceConfig();
+	}
 }

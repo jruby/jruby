@@ -29,6 +29,8 @@
  */
 package org.jruby.embed.internal;
 
+import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -46,8 +48,6 @@ import org.jruby.embed.variable.BiVariable;
 import org.jruby.embed.variable.VariableInterceptor;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.scope.ManyVarsDynamicScope;
-import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 
 /**
  * Ruby-Java bi-directional variable map implementation. Keys of this map
@@ -71,7 +71,7 @@ import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
  */
 public class BiVariableMap implements Map<String, Object> {
 
-    private final LocalContextProvider provider;
+    private final LocalContext context;
     private final boolean lazy;
 
     private List<String> varNames;
@@ -81,11 +81,11 @@ public class BiVariableMap implements Map<String, Object> {
      * Constructs an empty map. Users do not instantiate this map. The map is created
      * internally.
      *
-     * @param provider
+     * @param context
      * @param lazy
      */
-    public BiVariableMap(LocalContextProvider provider, boolean lazy) {
-        this.provider = provider;
+    public BiVariableMap(LocalContext context, boolean lazy) {
+        this.context = context;
         this.lazy = lazy;
     }
 
@@ -107,7 +107,7 @@ public class BiVariableMap implements Map<String, Object> {
         return variables == null ? variables = new ArrayList<BiVariable>() : variables;
     }
 
-    public Ruby getRuntime() { return provider.getRuntime(); }
+    public Ruby getRuntime() { return context.getRuntime(); }
 
     /**
      * Returns a local variable behavior
@@ -115,7 +115,7 @@ public class BiVariableMap implements Map<String, Object> {
      * @return a local variable behavior
      */
     public LocalVariableBehavior getLocalVariableBehavior() {
-        return provider.getLocalVariableBehavior();
+        return context.getLocalVariableBehavior();
     }
 
     /**
@@ -224,7 +224,7 @@ public class BiVariableMap implements Map<String, Object> {
         final RubyObject robj = getReceiverObject(receiver);
         // attemps to retrieve global variables
         if ( isLazy() ) {
-            VariableInterceptor.tryLazyRetrieval(provider.getLocalVariableBehavior(), this, robj, key);
+            VariableInterceptor.tryLazyRetrieval(context.getLocalVariableBehavior(), this, robj, key);
         }
         BiVariable var = getVariable(robj, (String) key);
         return var == null ? null : var.getJavaObject();
@@ -334,7 +334,7 @@ public class BiVariableMap implements Map<String, Object> {
             var.setJavaObject(robj.getRuntime(), value);
         }
         else { // creates new value
-            var = VariableInterceptor.getVariableInstance(provider.getLocalVariableBehavior(), robj, key, value);
+            var = VariableInterceptor.getVariableInstance(context.getLocalVariableBehavior(), robj, key, value);
             if ( var != null ) update(key, var);
         }
         return oldValue;

@@ -40,25 +40,24 @@ import org.jruby.embed.AttributeName;
 import org.jruby.embed.LocalVariableBehavior;
 
 public class LocalContext {
+	protected final RubyInstanceConfig config;
+	private final LocalVariableBehavior behavior;
+	private final boolean lazy;
 
-    private final RubyInstanceConfig config;
-    private final LocalVariableBehavior behavior;
-    private final boolean lazy;
+	private Ruby runtime;
 
-    private Ruby runtime = null;
+	private BiVariableMap varMap;
+	private Map<AttributeName, Object> attributes;
 
-    private BiVariableMap varMap;
-    private Map<AttributeName, Object> attributes;
+	public LocalContext(RubyInstanceConfig config, LocalVariableBehavior behavior) {
+		this(config, behavior, false);
+	}
 
-    public LocalContext(RubyInstanceConfig config, LocalVariableBehavior behavior) {
-        this(config, behavior, false);
-    }
-
-    public LocalContext(RubyInstanceConfig config, LocalVariableBehavior behavior, boolean lazy) {
-        this.config = config;
-        this.behavior = behavior;
-        this.lazy = lazy;
-    }
+	public LocalContext(RubyInstanceConfig config, LocalVariableBehavior behavior, boolean lazy) {
+		this.config = config;
+		this.behavior = behavior;
+		this.lazy = lazy;
+	}
 
     // This method is used only from ThreadLocalContextProvider.
     // Other providers should instantialte runtime in their own way.
@@ -67,56 +66,67 @@ public class LocalContext {
         return getRuntime();
     }
 
-    public BiVariableMap getVarMap(LocalContextProvider provider) {
-        if (varMap == null) {
-            synchronized(this) {
-                if (varMap == null) {
-                    varMap = new BiVariableMap(provider, lazy);
-                }
-            }
-        }
-        return varMap;
-    }
+	public BiVariableMap getVarMap(LocalContextProvider provider) {
+		if (varMap == null) {
+			synchronized (this) {
+				if (varMap == null) {
+					varMap = new BiVariableMap(this, lazy);
+				}
+			}
+		}
+		return varMap;
+	}
 
-    public LocalVariableBehavior getLocalVariableBehavior() {
-        return behavior;
-    }
+	public LocalVariableBehavior getLocalVariableBehavior() {
+		return behavior;
+	}
 
-    @SuppressWarnings("MapReplaceableByEnumMap")
-    public Map<?, Object> getAttributeMap() {
-        if (attributes == null) {
-            synchronized(this) {
-                if (attributes == null) {
-                    attributes = new HashMap<AttributeName, Object>();
-                    attributes.put(AttributeName.READER, new InputStreamReader(System.in));
-                    attributes.put(AttributeName.WRITER, new PrintWriter(System.out, true));
-                    attributes.put(AttributeName.ERROR_WRITER, new PrintWriter(System.err, true));
-                }
-            }
-        }
-        return attributes;
-    }
+	@SuppressWarnings("MapReplaceableByEnumMap")
+	public Map<?, Object> getAttributeMap() {
+		if (attributes == null) {
+			synchronized (this) {
+				if (attributes == null) {
+					attributes = new HashMap<AttributeName, Object>();
+					attributes.put(AttributeName.READER, new InputStreamReader(System.in));
+					attributes.put(AttributeName.WRITER, new PrintWriter(System.out, true));
+					attributes.put(AttributeName.ERROR_WRITER, new PrintWriter(System.err, true));
+				}
+			}
+		}
+		return attributes;
+	}
 
-    public void remove() {
-        if (attributes != null) {
-            synchronized(this) { attributes.clear(); }
-        }
-        if (varMap != null) {
-            synchronized(this) { varMap.clear(); }
-        }
-    }
+	public void remove() {
+		// FIXME this should probably close READER, WRITER, ERROR_WRITER, but only if
+		// they aren't stdio
+		if (attributes != null) {
+			synchronized (this) {
+				attributes.clear();
+			}
+		}
+		if (varMap != null) {
+			synchronized (this) {
+				varMap.clear();
+			}
+		}
+	}
 
-    Ruby getRuntime() {
-        if (runtime == null) {
-            synchronized(this) {
-                if (runtime == null) {
-                    runtime = Ruby.newInstance(config);
-                }
-            }
-        }
-        return runtime;
-    }
+	Ruby getRuntime() {
+		if (runtime == null) {
+			synchronized (this) {
+				if (runtime == null) {
+					runtime = Ruby.newInstance(config);
+				}
+			}
+		}
+		return runtime;
+	}
 
-    boolean isInitialized() { return runtime != null; }
+	boolean isInitialized() {
+		return runtime != null;
+	}
 
+	RubyInstanceConfig getRubyInstanceConfig() {
+		return getRuntime().getInstanceConfig();
+	}
 }
