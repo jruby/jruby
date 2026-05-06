@@ -68,6 +68,8 @@ import org.jruby.util.io.RubyInputStream;
 import org.jruby.util.io.RubyOutputStream;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
 import java.util.AbstractCollection;
 import java.util.AbstractSet;
@@ -140,6 +142,20 @@ public class RubyHashLinkedBuckets extends RubyHash {
     private IRubyObject ifNone;
 
     private final RubyHashLinkedBuckets.RubyHashEntry head = new RubyHashLinkedBuckets.RubyHashEntry();
+
+    @SuppressWarnings("unused")
+    private volatile short iteratorCount;
+
+    private static final VarHandle ITERATOR_UPDATER;
+    static {
+        VarHandle iterUp;
+        try {
+            iterUp = MethodHandles.lookup().findVarHandle(RubyHashLinkedBuckets.class, "iteratorCount", short.class);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+        ITERATOR_UPDATER = iterUp;
+    }
 
     RubyHashLinkedBuckets(Ruby runtime, RubyClass klass, RubyHash other) {
         super(runtime, klass, true, 0);
@@ -1380,41 +1396,12 @@ public class RubyHashLinkedBuckets extends RubyHash {
         return asBoolean(context, hasValue(context, expected));
     }
 
-    private volatile int iteratorCount;
-
-    private static final AtomicIntegerFieldUpdater<RubyHashLinkedBuckets> ITERATOR_UPDATER;
-    static {
-        AtomicIntegerFieldUpdater<RubyHashLinkedBuckets> iterUp = null;
-        try {
-            iterUp = AtomicIntegerFieldUpdater.newUpdater(RubyHashLinkedBuckets.class, "iteratorCount");
-        } catch (Exception e) {
-            // ignore, leave null
-        }
-        ITERATOR_UPDATER = iterUp;
-    }
-
     private void iteratorEntry() {
-        if (ITERATOR_UPDATER == null) {
-            iteratorEntrySync();
-            return;
-        }
-        ITERATOR_UPDATER.incrementAndGet(this);
+        ITERATOR_UPDATER.getAndAdd(this, (short) 1);
     }
 
     private void iteratorExit() {
-        if (ITERATOR_UPDATER == null) {
-            iteratorExitSync();
-            return;
-        }
-        ITERATOR_UPDATER.decrementAndGet(this);
-    }
-
-    private synchronized void iteratorEntrySync() {
-        ++iteratorCount;
-    }
-
-    private synchronized void iteratorExitSync() {
-        --iteratorCount;
+        ITERATOR_UPDATER.getAndAdd(this, (short) -1);
     }
 
     private void iteratorVisitAll(ThreadContext context, VisitorWithStateI visitor) {
