@@ -9,13 +9,13 @@ import org.jruby.RubyProc;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.java.proxies.BlockInterfaceTemplate;
 import org.jruby.javasupport.Java;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ASM;
 import org.jruby.util.ClassDefiningClassLoader;
 import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.collections.ConcurrentWeakHashMap;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Type;
-import org.objectweb.asm.commons.GeneratorAdapter;
 
 import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.getBoxType;
@@ -46,7 +46,7 @@ import static org.objectweb.asm.Opcodes.V11;
  *       public BlockInterfaceImpl$<hash>(RubyProc proc) { super(proc); }
  *
  *       public int compute(int a, String b) {
- *           Object result = __ruby_call(Integer.TYPE, Integer.valueOf(a), b);
+ *           Object result = __ruby_call(Integer.TYPE, coerce(a), coerce(b));
  *           return ((Number) result).intValue();
  *       }
  *       // compute2 is not overridden — the interface default is used
@@ -128,7 +128,7 @@ public final class BlockInterfaceGenerator {
                 new String[] { p(interfaceType) });
         cw.visitSource(pathName + ".gen", null);
 
-        defineConstructor(cw, pathName);
+        defineConstructor(cw);
         Method implMethod = Java.getFunctionalInterfaceMethod(interfaceType);
         if (implMethod != null) defineBridgeMethod(cw, implMethod);
 
@@ -143,9 +143,9 @@ public final class BlockInterfaceGenerator {
      *   public <implClass>(RubyProc proc) { super(proc); }
      * }</pre>
      */
-    private static void defineConstructor(ClassWriter cw, String pathName) {
+    private static void defineConstructor(final ClassWriter cw) {
         final SkinnyMethodAdapter init = new SkinnyMethodAdapter(cw, ACC_PUBLIC, "<init>",
-                sig(void.class, RubyProc.class), null, null);
+            sig(void.class, RubyProc.class), null, null);
         init.start();
         init.aload(0);
         init.aload(1);
@@ -155,51 +155,52 @@ public final class BlockInterfaceGenerator {
     }
 
     /**
-     * Emits a bridge method that calls {@code __ruby_call(returnType, boxedArgs...)} on the inherited
+     * Emits a bridge method that calls {@code __ruby_call(returnType, rubyArgs...)} on the inherited
      * {@link BlockInterfaceTemplate} and unboxes/casts the result to interface method's declared return type.
      *
      * <p>For a one-arg method {@code R accept(A a)}:
      * <pre>{@code
      *   public R accept(A a) {
-     *       Object result = __ruby_call(<returnClass>, box(a));
-     *       return (R) result;
+     *       IRubyObject result = __ruby_call(<returnClass>, coerce(a));
+     *       return (R) result.toJava(<returnClass>);
      *   }
      * }</pre>
      */
-    private static void defineBridgeMethod(ClassWriter cw, Method method) {
+    private static void defineBridgeMethod(final ClassWriter cw, final Method method) {
         final Class<?> returnType = method.getReturnType();
         final Class<?>[] paramTypes = method.getParameterTypes();
-        final SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw, ACC_PUBLIC, method.getName(), sig(returnType, paramTypes), null, null);
-        final GeneratorAdapter ga = RealClassGenerator.makeGenerator(mv);
+        final SkinnyMethodAdapter mv = new SkinnyMethodAdapter(cw, ACC_PUBLIC, method.getName(),
+            sig(returnType, paramTypes), null, null);
+
+        final int rubyIndex = nextLocalIndex(paramTypes);
 
         mv.start();
+        if (paramTypes.length > 0) {
+            mv.aload(0);
+            mv.getfield(p(BlockInterfaceTemplate.class), "runtime", ci(Ruby.class));
+            mv.astore(rubyIndex);
+        }
+
         // `this.__ruby_call(...)` - push receiver + the return-type class literal for every arity
         mv.aload(0);
         pushClassLiteral(mv, returnType);
 
         switch (paramTypes.length) {
             case 0: // __ruby_call(<returnClass>)
-                mv.invokevirtual(p(BlockInterfaceTemplate.class), "__ruby_call", sig(Object.class, Class.class));
+                mv.invokevirtual(p(BlockInterfaceTemplate.class), "__ruby_call", sig(IRubyObject.class, Class.class));
                 break;
-            case 1: // __ruby_call(<returnClass>, box(arg0))
-                loadBoxedArg(ga, 0, paramTypes[0]);
-                mv.invokevirtual(p(BlockInterfaceTemplate.class), "__ruby_call", sig(Object.class, Class.class, Object.class));
+            case 1: // __ruby_call(<returnClass>, coerce(arg0))
+                RealClassGenerator.coerceArgumentToRuby(mv, paramTypes[0], 1, rubyIndex);
+                mv.invokevirtual(p(BlockInterfaceTemplate.class), "__ruby_call", sig(IRubyObject.class, Class.class, IRubyObject.class));
                 break;
-            case 2: // __ruby_call(<returnClass>, box(arg0), box(arg1))
-                loadBoxedArg(ga, 0, paramTypes[0]);
-                loadBoxedArg(ga, 1, paramTypes[1]);
-                mv.invokevirtual(p(BlockInterfaceTemplate.class), "__ruby_call", sig(Object.class, Class.class, Object.class, Object.class));
+            case 2: // __ruby_call(<returnClass>, coerce(arg0), coerce(arg1))
+                int argIndex = RealClassGenerator.coerceArgumentToRuby(mv, paramTypes[0], 1, rubyIndex);
+                RealClassGenerator.coerceArgumentToRuby(mv, paramTypes[1], argIndex, rubyIndex);
+                mv.invokevirtual(p(BlockInterfaceTemplate.class), "__ruby_call", sig(IRubyObject.class, Class.class, IRubyObject.class, IRubyObject.class));
                 break;
-            default: // __ruby_call(<returnClass>, new Object[] { box(arg0), box(arg1), ... })
-                mv.pushInt(paramTypes.length);
-                mv.anewarray(p(Object.class));
-                for (int i = 0; i < paramTypes.length; i++) {
-                    mv.dup();
-                    mv.pushInt(i);
-                    loadBoxedArg(ga, i, paramTypes[i]);
-                    mv.aastore();
-                }
-                mv.invokevirtual(p(BlockInterfaceTemplate.class), "__ruby_call", sig(Object.class, Class.class, Object[].class));
+            default: // __ruby_call(<returnClass>, new IRubyObject[] { coerce(arg0), coerce(arg1), ... })
+                RealClassGenerator.coerceArgumentsToRuby(mv, paramTypes, rubyIndex);
+                mv.invokevirtual(p(BlockInterfaceTemplate.class), "__ruby_call", sig(IRubyObject.class, Class.class, IRubyObject[].class));
                 break;
         }
 
@@ -207,12 +208,12 @@ public final class BlockInterfaceGenerator {
         mv.end();
     }
 
-    /**
-     * Loads {@code argIndex} from the Java arg slots and boxes it if primitive.
-     */
-    private static void loadBoxedArg(GeneratorAdapter ga, int argIndex, Class<?> paramType) {
-        ga.loadArg(argIndex);
-        if (paramType.isPrimitive()) ga.box(Type.getType(paramType));
+    private static int nextLocalIndex(Class<?>[] paramTypes) {
+        int index = 1;
+        for (Class<?> paramType : paramTypes) {
+            index += RealClassGenerator.paramSlotSize(paramType);
+        }
+        return index;
     }
 
     /**
@@ -237,6 +238,11 @@ public final class BlockInterfaceGenerator {
     }
 
     private static void emitReturn(SkinnyMethodAdapter mv, Class<?> returnType) {
-        RealClassGenerator.coerceResultAndReturn(mv, returnType);
+        if (returnType == void.class) {
+            mv.pop();
+            mv.voidreturn();
+        } else {
+            RealClassGenerator.coerceResultAndReturn(mv, returnType);
+        }
     }
 }
