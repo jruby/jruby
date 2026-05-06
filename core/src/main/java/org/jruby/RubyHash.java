@@ -63,7 +63,6 @@ import static org.jruby.api.Access.hashClass;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.*;
-import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 // Design overview:
@@ -286,28 +285,56 @@ public class RubyHash extends RubyObject implements Map {
         this.state = state;
     }
 
-    public static final class RubyHashEntry implements Map.Entry {
-        final IRubyObject key;
-        IRubyObject value;
-        RubyHashEntry next;
-        RubyHashEntry prevAdded;
-        RubyHashEntry nextAdded;
-        final int hash;
+    public static class RubyHashEntryLink {
+        RubyHash.RubyHashEntryLink prevAdded;
+        RubyHash.RubyHashEntryLink nextAdded;
+
+        int hash() {
+            // should never be called
+            throw new RuntimeException("hash() should never be called on RubyHashEntryLink");
+        }
+
+        public IRubyObject key() {
+            // should never be called
+            throw new RuntimeException("key() should never be called on RubyHashEntryLink");
+        }
+
+        IRubyObject value() {
+            // should never be called
+            throw new RuntimeException("value() should never be called on RubyHashEntryLink");
+        }
+
+        IRubyObject value(IRubyObject value) {
+            // should never be called
+            throw new RuntimeException("value(IRubyObject) should never be called on RubyHashEntryLink");
+        }
+
+        public boolean isLive() {
+            // should never be called
+            throw new RuntimeException("value() should never be called on RubyHashEntryLink");
+        }
+    }
+
+    public static final class RubyHashEntry extends RubyHashEntryLink implements Map.Entry {
+        private final IRubyObject key;
+        private IRubyObject value;
+        private RubyHashEntry next;
+        private final int hash;
 
         RubyHashEntry() {
             key = NEVER;
             hash = -1;
         }
 
-        public RubyHashEntry(int h, IRubyObject k, IRubyObject v, RubyHashEntry e, RubyHashEntry head) {
+        public RubyHashEntry(int h, IRubyObject k, IRubyObject v, RubyHashEntry e, RubyHashEntryLink head) {
             key = k;
-            value = v;
-            next = e;
+            value(v);
+            next(e);
             hash = h;
 
             if (head != null) {
-                RubyHashEntry prevAdded = head.prevAdded;
-                RubyHashEntry nextAdded = head;
+                RubyHashEntryLink prevAdded = head.prevAdded;
+                RubyHashEntryLink nextAdded = head;
 
                 this.prevAdded = prevAdded;
                 prevAdded.nextAdded = this;
@@ -319,16 +346,16 @@ public class RubyHash extends RubyObject implements Map {
 
         public RubyHashEntry(RubyHashEntry oldEntry, int newHash) {
             this.hash = newHash;
-            this.key = oldEntry.key;
-            this.value = oldEntry.value;
-            this.next = oldEntry.next;
+            this.key = oldEntry.key();
+            this.value(oldEntry.value());
+            this.next(oldEntry.next());
 
             // prevAdded is never null
-            RubyHashEntry prevAdded = oldEntry.prevAdded;
+            RubyHashEntryLink prevAdded = oldEntry.prevAdded;
             this.prevAdded = prevAdded;
             prevAdded.nextAdded = this;
 
-            RubyHashEntry nextAdded = oldEntry.nextAdded;
+            RubyHashEntryLink nextAdded = oldEntry.nextAdded;
             if (nextAdded != null) {
                 this.nextAdded = nextAdded;
                 nextAdded.prevAdded = this;
@@ -349,19 +376,19 @@ public class RubyHash extends RubyObject implements Map {
 
         @Override
         public Object getKey() {
-            return key;
+            return key();
         }
 
         @Override
         public Object getValue() {
-            return value;
+            return value();
         }
 
         @Override
         public Object setValue(Object value) {
-            IRubyObject oldValue = this.value;
+            IRubyObject oldValue = this.value();
             if (value instanceof IRubyObject) {
-                this.value = (IRubyObject)value;
+                this.value((IRubyObject)value);
             } else {
                 throw new UnsupportedOperationException("directEntrySet() doesn't support setValue for non IRubyObject instance entries, convert them manually or use entrySet() instead");
             }
@@ -373,13 +400,39 @@ public class RubyHash extends RubyObject implements Map {
             if(!(other instanceof RubyHashEntry)) return false;
             RubyHashEntry otherEntry = (RubyHashEntry)other;
 
-            return (key == otherEntry.key || key.eql(otherEntry.key)) &&
-                    (value == otherEntry.value || value.equals(otherEntry.value));
+            return (key() == otherEntry.key() || key().eql(otherEntry.key())) &&
+                    (value() == otherEntry.value() || value().equals(otherEntry.value()));
         }
 
         @Override
         public int hashCode(){
-            return key.hashCode() ^ value.hashCode();
+            return key().hashCode() ^ value().hashCode();
+        }
+
+        public IRubyObject key() {
+            return key;
+        }
+
+        IRubyObject value() {
+            return value;
+        }
+
+        IRubyObject value(IRubyObject value) {
+            IRubyObject oldValue = this.value;
+            this.value = value;
+            return oldValue;
+        }
+
+        RubyHashEntry next() {
+            return next;
+        }
+
+        void next(RubyHashEntry next) {
+            this.next = next;
+        }
+
+        int hash() {
+            return hash;
         }
 
         @Deprecated(since = "10.1.1.0")

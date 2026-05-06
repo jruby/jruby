@@ -52,7 +52,6 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.TypeError;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.Builtins;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
@@ -60,7 +59,6 @@ import org.jruby.runtime.JavaSites.TimeSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.util.ByteList;
 import org.jruby.util.RubyDateFormatter;
 import org.jruby.util.RubyTimeParser;
@@ -102,7 +100,6 @@ import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 import static org.jruby.util.RubyStringBuilder.str;
-import static org.jruby.util.TypeConverter.typeAsString;
 
 /** The Time class.
  *
@@ -166,11 +163,11 @@ public class RubyTime extends RubyObject {
         }
         
         RubyHash.RubyHashEntry entry = context.runtime.getENV().getEntry(tz);
-        if (entry.key == null || entry.key == NEVER) return null; // NO_ENTRY
+        if (entry.key() == null || entry.key() == NEVER) return null; // NO_ENTRY
 
-        if (entry.key != tz) context.runtime.tzVar = (RubyString) entry.key;
+        if (entry.key() != tz) context.runtime.tzVar = (RubyString) entry.key();
 
-        return (entry.value instanceof RubyString) ? entry.value.asJavaString() : null;
+        return (entry.value() instanceof RubyString) ? entry.value().asJavaString() : null;
     }
 
     @Deprecated(since = "10.0.0.0")
