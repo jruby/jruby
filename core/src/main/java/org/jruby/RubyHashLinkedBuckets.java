@@ -92,7 +92,6 @@ import static org.jruby.api.Error.runtimeError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.api.Warn.warn;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
-import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.Inspector.EMPTY_HASH_BL;
 import static org.jruby.util.Inspector.RECURSIVE_HASH_BL;
@@ -135,8 +134,7 @@ import static org.jruby.util.Inspector.RECURSIVE_HASH_BL;
  */
 @JRubyClass(name = "Hash", include="Enumerable")
 public class RubyHashLinkedBuckets extends RubyHash {
-    protected int size = 0;
-    private int threshold;
+    protected int size;
 
     private byte hashFlags;
     private IRubyObject ifNone;
@@ -183,7 +181,6 @@ public class RubyHashLinkedBuckets extends RubyHash {
     protected RubyHashLinkedBuckets(Ruby runtime, RubyClass metaClass, IRubyObject defaultValue, RubyHashEntry[] initialTable, int threshold) {
         super(runtime, metaClass, true, 0);
         this.ifNone = defaultValue;
-        this.threshold = threshold;
         this.setTable(initialTable);
     }
 
@@ -214,7 +211,6 @@ public class RubyHashLinkedBuckets extends RubyHash {
 
     private static void copyFrom(RubyHashLinkedBuckets self, RubyHash other, boolean identity) {
         if (other instanceof RubyHashLinkedBuckets lbOther) {
-            self.threshold = lbOther.threshold;
             self.setTable(lbOther.internalCopyTable(self.head));
             self.size = other.size();
         }
@@ -254,18 +250,16 @@ public class RubyHashLinkedBuckets extends RubyHash {
         return (hashFlags & flag) != 0;
     }
 
-    private final void allocFirst() {
-        threshold = INITIAL_THRESHOLD;
-        setTable(new RubyHashEntry[MRI_HASH_RESIZE ? MRI_INITIAL_CAPACITY : JAVASOFT_INITIAL_CAPACITY]);
+    private void allocFirst() {
+        setTable(new RubyHashEntry[MRI_INITIAL_CAPACITY]);
     }
 
-    private final void allocFirst(int buckets) {
+    private void allocFirst(int buckets) {
         if (buckets <= 0) throw new ArrayIndexOutOfBoundsException("invalid bucket size: " + buckets);
-        threshold = INITIAL_THRESHOLD;
         setTable(new RubyHashEntry[buckets]);
     }
 
-    private final void alloc() {
+    private void alloc() {
         head.prevAdded = head.nextAdded = head;
         allocFirst();
     }
@@ -283,33 +277,18 @@ public class RubyHashLinkedBuckets extends RubyHash {
         134217728 + 29, 268435456 + 3, 536870912 + 11, 1073741824 + 85, 0
     };
 
-    private static final int JAVASOFT_INITIAL_CAPACITY = 8; // 16 ?
     private static final int MRI_INITIAL_CAPACITY = MRI_PRIMES[0];
 
-    private static final int INITIAL_THRESHOLD = JAVASOFT_INITIAL_CAPACITY - (JAVASOFT_INITIAL_CAPACITY >> 2);
-    private static final int MAXIMUM_CAPACITY = 1 << 30;
 
     { head.prevAdded = head.nextAdded = head; }
-
-    private static int JavaSoftHashValue(int h) {
-        h ^= (h >>> 20) ^ (h >>> 12);
-        return h ^ (h >>> 7) ^ (h >>> 4);
-    }
-
-    private static int JavaSoftBucketIndex(final int h, final int length) {
-        return h & (length - 1);
-    }
 
     private static int MRIHashValue(int h) {
         return h & HASH_SIGN_BIT_MASK;
     }
 
     private static final int HASH_SIGN_BIT_MASK = ~(1 << 31);
-    private static int MRIBucketIndex(final int h, final int length) {
-        return ((h & HASH_SIGN_BIT_MASK) % length);
-    }
 
-    private final synchronized void resize(int newCapacity) {
+    private synchronized void resize(int newCapacity) {
         final RubyHashEntry[] oldTable = getTable();
         final RubyHashEntry[] newTable = new RubyHashEntry[newCapacity];
 
@@ -329,30 +308,19 @@ public class RubyHashLinkedBuckets extends RubyHash {
         setTable(newTable);
     }
 
-    private final void JavaSoftCheckResize() {
-        if (overThreshold()) {
-            RubyHashEntry[] tbl = getTable();
-            if (tbl.length == MAXIMUM_CAPACITY) {
-                threshold = Integer.MAX_VALUE;
-                return;
-            }
-            resizeAndAdjustThreshold(getTable());
-        }
-    }
-
-    private boolean overThreshold() {
-        return size > threshold;
-    }
-
-    private void resizeAndAdjustThreshold(RubyHashEntry[] oldTable) {
-        int newCapacity = oldTable.length << 1;
-        resize(newCapacity);
-        threshold = newCapacity - (newCapacity >> 2);
-    }
-
     private static final int MIN_CAPA = 8;
     private static final int ST_DEFAULT_MAX_DENSITY = 2;
-    private final void MRICheckResize() {
+
+    protected final int hashValue(final IRubyObject key) {
+        final int h = isComparedByIdentity() ? System.identityHashCode(key) : key.hashCode();
+        return MRIHashValue(h);
+    }
+
+    private static int bucketIndex(final int h, final int length) {
+        return ((h & HASH_SIGN_BIT_MASK) % length);
+    }
+
+    private void checkResize() {
         if (size / getTable().length > ST_DEFAULT_MAX_DENSITY) {
             int forSize = getTable().length + 1; // size + 1;
             for (int i=0, newCapacity = MIN_CAPA; i < MRI_PRIMES.length; i++, newCapacity <<= 1) {
@@ -361,24 +329,8 @@ public class RubyHashLinkedBuckets extends RubyHash {
                     return;
                 }
             }
-            return; // suboptimal for large hashes (> 1073741824 + 85 entries) not very likely to happen
+            // suboptimal for large hashes (> 1073741824 + 85 entries) not very likely to happen
         }
-    }
-    // ------------------------------
-    private static final boolean MRI_HASH = true;
-    private static final boolean MRI_HASH_RESIZE = true;
-
-    protected final int hashValue(final IRubyObject key) {
-        final int h = isComparedByIdentity() ? System.identityHashCode(key) : key.hashCode();
-        return MRI_HASH ? MRIHashValue(h) : JavaSoftHashValue(h);
-    }
-
-    private static int bucketIndex(final int h, final int length) {
-        return MRI_HASH ? MRIBucketIndex(h, length) : JavaSoftBucketIndex(h, length);
-    }
-
-    private void checkResize() {
-        if (MRI_HASH_RESIZE) MRICheckResize(); else JavaSoftCheckResize();
     }
 
     protected final void checkIterating() {

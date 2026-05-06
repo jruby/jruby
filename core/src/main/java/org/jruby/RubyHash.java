@@ -351,16 +351,10 @@ public class RubyHash extends RubyObject implements Map {
         public Object getKey() {
             return key;
         }
-        public Object getJavaifiedKey(){
-            return key.toJava(Object.class);
-        }
 
         @Override
         public Object getValue() {
             return value;
-        }
-        public Object getJavaifiedValue() {
-            return value.toJava(Object.class);
         }
 
         @Override
@@ -386,6 +380,16 @@ public class RubyHash extends RubyObject implements Map {
         @Override
         public int hashCode(){
             return key.hashCode() ^ value.hashCode();
+        }
+
+        @Deprecated(since = "10.1.1.0")
+        public Object getJavaifiedKey(){
+            return key.toJava(Object.class);
+        }
+
+        @Deprecated(since = "10.1.1.0")
+        public Object getJavaifiedValue() {
+            return value.toJava(Object.class);
         }
     }
 
