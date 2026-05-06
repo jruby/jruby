@@ -2,8 +2,6 @@ package org.jruby.java.codegen;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
 import java.util.concurrent.ConcurrentMap;
 
 import org.jruby.Ruby;
@@ -238,73 +236,7 @@ public final class BlockInterfaceGenerator {
         }
     }
 
-    /**
-     * Emits the tail of a bridge method that unboxes / casts the {@code Object} returned by
-     * {@code __ruby_call(...)} to the interface method's declared return type.
-     *
-     * <p>For {@code void} methods the {@code Object} on the stack is discarded (it's always null
-     * for the void-return {@code __ruby_call} helpers):
-     * <pre>{@code
-     *   Object result = __ruby_call(Void.TYPE, ...);
-     *   return;
-     * }</pre>
-     *
-     * <p>For reference returns emit {@code (ReturnType) result; return result;}.
-     */
     private static void emitReturn(SkinnyMethodAdapter mv, Class<?> returnType) {
-        if (returnType == void.class) {
-            // drop the Object result and `return;`
-            mv.pop();
-            mv.voidreturn();
-            return;
-        }
-
-        if (returnType.isPrimitive()) {
-            if (returnType == boolean.class) {
-                // ((Boolean) result).booleanValue()
-                mv.checkcast(p(Boolean.class));
-                mv.invokevirtual(p(Boolean.class), "booleanValue", sig(boolean.class));
-                mv.ireturn();
-            } else if (returnType == char.class) {
-                // ((Character) result).charValue()
-                mv.checkcast(p(Character.class));
-                mv.invokevirtual(p(Character.class), "charValue", sig(char.class));
-                mv.ireturn();
-            } else if (returnType == byte.class) {
-                // ((Number) result).byteValue()
-                mv.checkcast(p(Number.class));
-                mv.invokevirtual(p(Number.class), "byteValue", sig(byte.class));
-                mv.ireturn();
-            } else if (returnType == short.class) {
-                // ((Number) result).shortValue()
-                mv.checkcast(p(Number.class));
-                mv.invokevirtual(p(Number.class), "shortValue", sig(short.class));
-                mv.ireturn();
-            } else if (returnType == int.class) {
-                // ((Number) result).intValue()
-                mv.checkcast(p(Number.class));
-                mv.invokevirtual(p(Number.class), "intValue", sig(int.class));
-                mv.ireturn();
-            } else if (returnType == long.class) {
-                // ((Number) result).longValue()
-                mv.checkcast(p(Number.class));
-                mv.invokevirtual(p(Number.class), "longValue", sig(long.class));
-                mv.lreturn();
-            } else if (returnType == float.class) {
-                // ((Number) result).floatValue()
-                mv.checkcast(p(Number.class));
-                mv.invokevirtual(p(Number.class), "floatValue", sig(float.class));
-                mv.freturn();
-            } else if (returnType == double.class) {
-                // ((Number) result).doubleValue()
-                mv.checkcast(p(Number.class));
-                mv.invokevirtual(p(Number.class), "doubleValue", sig(double.class));
-                mv.dreturn();
-            }
-        } else {
-            // return (ReturnType) result;
-            mv.checkcast(p(returnType));
-            mv.areturn();
-        }
+        RealClassGenerator.coerceResultAndReturn(mv, returnType);
     }
 }
