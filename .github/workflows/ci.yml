@@ -377,6 +377,70 @@ jobs:
         env:
           JRUBY_OPTS: -Xjit.threshold=0
 
+  spec-ruby-freebsd:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        rubyspec-target: ['language', 'core']
+
+    name: ${{ matrix.rubyspec-target }} specs (FreeBSD, Java 21)
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: set up java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'zulu'
+          java-version: 21
+          cache: 'maven'
+      - name: pre-build JRuby
+        run: |
+          ./mvnw -ntp -Pbootstrap clean package
+          bin/jruby --dev -S bundle install
+      - name: run in FreeBSD
+        uses: vmactions/freebsd-vm@v1
+        with:
+          prepare: |
+            pkg install -y openjdk21
+          run: |
+            export JAVA_HOME="/usr/local/openjdk21"
+            bin/jruby spec/mspec/bin/mspec ci :${{ matrix.rubyspec-target }}
+
+  spec-ruby-openbsd:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        rubyspec-target: ['language', 'core']
+
+    name: ${{ matrix.rubyspec-target }} specs (OpenBSD, Java 21)
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: set up java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'zulu'
+          java-version: 21
+          cache: 'maven'
+      - name: pre-build JRuby
+        run: |
+          ./mvnw -ntp -Pbootstrap clean package
+          bin/jruby --dev -S bundle install
+      - name: run in OpenBSD
+        uses: vmactions/openbsd-vm@v1
+        with:
+          prepare: |
+            pkg_add jdk--%21
+          run: |
+            export JAVA_HOME="/usr/local/jdk-21"
+            bin/jruby spec/mspec/bin/mspec ci :${{ matrix.rubyspec-target }}
+
   dependency-check:
     runs-on: ubuntu-latest
 
