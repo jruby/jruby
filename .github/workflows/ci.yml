@@ -23,15 +23,15 @@ jobs:
 
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
       - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
       - name: bootstrap
-        run: mvn -ntp -Pbootstrap clean package
+        run: ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake ${{ matrix.target }}
@@ -53,15 +53,15 @@ jobs:
 
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
       - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
       - name: bootstrap
-        run: mvn -ntp -Pbootstrap clean package
+        run: ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake ${{ matrix.target }}
@@ -79,15 +79,15 @@ jobs:
 
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
       - name: set up java 8
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: '8'
           cache: 'maven'
       - name: bootstrap
-        run: mvn -ntp -Pbootstrap clean package
+        run: ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake ${{ matrix.target }}
@@ -106,15 +106,15 @@ jobs:
 
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
       - name: set up java 8
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: '8'
           cache: 'maven'
       - name: bootstrap
-        run: mvn -ntp -Pbootstrap clean package
+        run: ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake ${{ matrix.target }}
@@ -123,23 +123,20 @@ jobs:
   jruby-tests-dev:
     runs-on: ubuntu-latest
 
-    strategy:
-      fail-fast: false
-
     env:
       JRUBY_OPTS: '--dev'
 
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
       - name: set up java 8
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: 8
           cache: 'maven'
       - name: bootstrap
-        run: mvn -ntp -Pbootstrap clean package
+        run: ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake test:jruby
@@ -161,15 +158,15 @@ jobs:
 
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
       - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
       - name: bootstrap
-        run: mvn -ntp -Pbootstrap clean package
+        run: ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake ${{ matrix.target }}
@@ -188,15 +185,15 @@ jobs:
 
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
       - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
       - name: bootstrap
-        run: mvn -ntp -Pbootstrap clean package
+        run: ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: mvn package ${{ matrix.package-flags }}
@@ -218,15 +215,15 @@ jobs:
 
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
       - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
       - name: bootstrap
-        run: mvn -ntp -Pbootstrap clean package
+        run: ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: mvn package ${{ matrix.package-flags }}
@@ -237,23 +234,20 @@ jobs:
   regression-specs-jit:
     runs-on: ubuntu-latest
 
-    strategy:
-      fail-fast: false
-
     env:
       JRUBY_OPTS: '-Xjit.threshold=0'
 
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
       - name: set up java 8
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: 8
           cache: 'maven'
       - name: bootstrap
-        run: mvn -ntp -Pbootstrap clean package
+        run: ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake spec:regression
@@ -261,9 +255,6 @@ jobs:
 
   mvn-test-windows:
     runs-on: windows-latest
-
-    strategy:
-      fail-fast: false
 
     name: mvn -Ptest, rake test:jruby (Windows, Java 11)
 
@@ -273,15 +264,15 @@ jobs:
 
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
       - name: set up java 11
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: 11
           cache: 'maven'
       - name: bootstrap
-        run: mvn -ntp -Pbootstrap clean package
+        run: ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake test:jruby
@@ -289,7 +280,7 @@ jobs:
         env:
           JRUBY_OPTS: ''
       - name: mvn -P test
-        run: ./mvnw package -B -Ptest
+        run: ./mvnw -ntp package -Ptest
 
   dependency-check:
     runs-on: ubuntu-latest
@@ -298,9 +289,9 @@ jobs:
 
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
       - name: set up java 8
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: '8'
@@ -313,15 +304,12 @@ jobs:
   test-versions:
     runs-on: ubuntu-latest
 
-    strategy:
-      fail-fast: false
-
     name: Verify build artifacts
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
       - name: set up java 8
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: 8
@@ -333,9 +321,6 @@ jobs:
 
   sequel:
     runs-on: ubuntu-latest
-
-    strategy:
-      fail-fast: false
 
     services:
       postgres:
@@ -361,15 +346,15 @@ jobs:
 
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
       - name: set up java
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: 11
           cache: 'maven'
       - name: bootstrap
-        run: mvn -ntp -Pbootstrap clean package
+        run: ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: sequel
@@ -378,20 +363,17 @@ jobs:
   concurrent-ruby:
     runs-on: ubuntu-latest
 
-    strategy:
-      fail-fast: false
-
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
       - name: set up java 8
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: 8
           cache: 'maven'
       - name: bootstrap
-        run: mvn -ntp -Pbootstrap clean package
+        run: ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: concurrent-ruby
@@ -411,9 +393,9 @@ jobs:
 #
 #    steps:
 #      - name: checkout
-#        uses: actions/checkout@v3
+#        uses: actions/checkout@v6
 #      - name: set up java ${{ matrix.java-version }}
-#        uses: actions/setup-java@v3
+#        uses: actions/setup-java@v5
 #        with:
 #          distribution: 'zulu'
 #          java-version: ${{ matrix.java-version }}
@@ -440,7 +422,7 @@ jobs:
 #      - name: Bootstrap build
 #        uses: jruby/jruby-ci-build@v1
 #      - name: set up java ${{ matrix.java-version }}
-#        uses: actions/setup-java@v3
+#        uses: actions/setup-java@v5
 #        with:
 #          distribution: 'zulu'
 #          java-version: ${{ matrix.java-version }}
@@ -457,15 +439,15 @@ jobs:
 
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
       - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v5
         with:
           distribution: 'semeru'
           java-version: '17'
           cache: 'maven'
       - name: bootstrap
-        run: mvn -ntp -Pbootstrap clean package
+        run: ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby -S bundle install
       - name: test profile
@@ -480,7 +462,7 @@ jobs:
 
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
       - name: install shellcheck
         run: sudo apt install shellcheck
       - name: run shellcheck
@@ -498,15 +480,15 @@ jobs:
 
     steps:
       - name: checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
       - name: set up java 8
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v5
         with:
           distribution: 'zulu'
           java-version: '8'
           cache: 'maven'
       - name: bootstrap
-        run: mvn -ntp -Pbootstrap clean package
+        run: ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
         run: bin/jruby --dev -S bundle install
       - name: rake ${{ matrix.target }}

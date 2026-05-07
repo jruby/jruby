@@ -1,4 +1,4 @@
-# gets run from 'mvn -P jruby_complete_jar_extended' which ensures that a complete jar is built first
+# gets run from './mvnw -Pjruby_complete_jar_extended' which ensures that a complete jar is built first
 
 require 'test/unit'
 require 'rbconfig'
