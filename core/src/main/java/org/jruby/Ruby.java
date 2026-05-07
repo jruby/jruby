@@ -4243,6 +4243,9 @@ public final class Ruby implements Constantizable {
         IRubyObject msg = new RubyNameError.RubyNameErrorMessage(this, message, recv, nameStr);
         RubyException err = RubyNoMethodError.newNoMethodError(getNoMethodError(), msg, nameStr, args, privateCall);
 
+        // set cause since we are preparing to raise
+        err.setCause(getCurrentContext().getErrorInfo());
+
         return err.toThrowable();
     }
 

@@ -61,10 +61,10 @@ describe "Exception#dup" do
 
   it "does copy the cause" do
     begin
-      raise StandardError, "the cause"
+      raise StandardError
     rescue StandardError => cause
       begin
-        raise RuntimeError, "the consequence"
+        raise RuntimeError
       rescue RuntimeError => e
         e.cause.should equal(cause)
         e.dup.cause.should equal(cause)
