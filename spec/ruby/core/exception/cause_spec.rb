@@ -7,7 +7,7 @@ describe "Exception#cause" do
     rescue Exception => cause
       -> {
         raise RuntimeError, "the consequence"
-      }.should raise_error(RuntimeError, "the consequence", cause:)
+      }.should.raise(RuntimeError, "the consequence", cause:)
     end
   end
 
@@ -15,7 +15,7 @@ describe "Exception#cause" do
     begin
       1 / 0
     rescue => cause
-      -> { raise "foo" }.should raise_error(RuntimeError, cause:)
+      -> { raise "foo" }.should.raise(RuntimeError, cause:)
     end
   end
 
@@ -24,7 +24,7 @@ describe "Exception#cause" do
     begin
       raise cause
     rescue
-      -> { 1 / 0 }.should raise_error(ZeroDivisionError, cause:)
+      -> { 1 / 0 }.should.raise(ZeroDivisionError, cause:)
     end
   end
 
@@ -32,7 +32,7 @@ describe "Exception#cause" do
     begin
       raise RuntimeError
     rescue RuntimeError => e
-      -> { raise e }.should raise_error(RuntimeError, cause: nil)
+      -> { raise e }.should.raise(RuntimeError, cause: nil)
     end
   end
 end
