@@ -450,6 +450,137 @@ describe "Ruby block passed as a Java functional-interface" do
     expect(list.to_a).to eq [1, 3, 5]
   end
 
+  it "primitive consumers via Optional*#ifPresent (arity 1, primitive argument, void return)" do
+    seen = []
+    java.util.OptionalInt.of(42).ifPresent { |i| seen << i }
+    java.util.OptionalLong.of(1_234_567_890_123).ifPresent { |l| seen << l }
+    java.util.OptionalDouble.of(1.25).ifPresent { |d| seen << d }
+    expect(seen).to eq [42, 1_234_567_890_123, 1.25]
+  end
+
+  it "java.util.function.IntBinaryOperator via IntStream#reduce (arity 2, primitive arguments)" do
+    ints = [1, 2, 3].to_java(:int)
+    sum = java.util.stream.IntStream.of(ints).reduce(0) { |a, b| a + b }
+    expect(sum).to eq 6
+  end
+
+  it "IntSupplier via OptionalInt#orElseGet (arity 0, primitive int return)" do
+    expect(java.util.OptionalInt.empty.orElseGet { 7 }).to eq 7
+  end
+
+  it "LongSupplier via OptionalLong#orElseGet (arity 0, primitive long return)" do
+    expect(java.util.OptionalLong.empty.orElseGet { 1 << 40 }).to eq(1 << 40)
+  end
+
+  it "DoubleSupplier via OptionalDouble#orElseGet (arity 0, primitive double return)" do
+    expect(java.util.OptionalDouble.empty.orElseGet { 3.14 }).to eq 3.14
+  end
+
+  it "IntUnaryOperator via IntStream#map (int -> int)" do
+    ints = [1, 2, 3].to_java(:int)
+    result = java.util.stream.IntStream.of(ints).map { |i| i * 10 }.toArray.to_a
+    expect(result).to eq [10, 20, 30]
+  end
+
+  it "IntPredicate via IntStream#filter (int -> boolean)" do
+    ints = [1, 2, 3, 4].to_java(:int)
+    result = java.util.stream.IntStream.of(ints).filter { |i| i.even? }.toArray.to_a
+    expect(result).to eq [2, 4]
+  end
+
+  it "IntFunction via IntStream#mapToObj (int -> reference)" do
+    ints = [1, 2, 3].to_java(:int)
+    result = java.util.stream.IntStream.of(ints).mapToObj { |i| "n=#{i}" }.toArray.to_a
+    expect(result).to eq ['n=1', 'n=2', 'n=3']
+  end
+
+  it "IntToLongFunction via IntStream#mapToLong (int -> long)" do
+    ints = [1, 2].to_java(:int)
+    result = java.util.stream.IntStream.of(ints).mapToLong { |i| i * (1 << 32) }.toArray.to_a
+    expect(result).to eq [1 * (1 << 32), 2 * (1 << 32)]
+  end
+
+  it "IntToDoubleFunction via IntStream#mapToDouble (int -> double)" do
+    ints = [2, 4].to_java(:int)
+    result = java.util.stream.IntStream.of(ints).mapToDouble { |i| i + 0.5 }.toArray.to_a
+    expect(result).to eq [2.5, 4.5]
+  end
+
+  it "LongUnaryOperator via LongStream#map (long -> long)" do
+    result = java.util.stream.LongStream.of([10, 20].to_java(:long)).map { |l| l + 1 }.toArray.to_a
+    expect(result).to eq [11, 21]
+  end
+
+  it "LongPredicate via LongStream#filter (long -> boolean)" do
+    result = java.util.stream.LongStream.of([1, 2, 3, 4].to_java(:long)).filter { |l| l > 2 }.toArray.to_a
+    expect(result).to eq [3, 4]
+  end
+
+  it "LongFunction via LongStream#mapToObj (long -> reference)" do
+    result = java.util.stream.LongStream.of([100, 200].to_java(:long)).mapToObj { |l| "L#{l}" }.toArray.to_a
+    expect(result).to eq ['L100', 'L200']
+  end
+
+  it "LongToIntFunction via LongStream#mapToInt (long -> int)" do
+    result = java.util.stream.LongStream.of([1000, 2000].to_java(:long)).mapToInt { |l| (l / 100).to_i }.toArray.to_a
+    expect(result).to eq [10, 20]
+  end
+
+  it "LongToDoubleFunction via LongStream#mapToDouble (long -> double)" do
+    result = java.util.stream.LongStream.of([3, 7].to_java(:long)).mapToDouble { |l| l / 2.0 }.toArray.to_a
+    expect(result).to eq [1.5, 3.5]
+  end
+
+  it "DoubleUnaryOperator via DoubleStream#map (double -> double)" do
+    result = java.util.stream.DoubleStream.of([1.5, 2.5].to_java(:double)).map { |d| d * 2 }.toArray.to_a
+    expect(result).to eq [3.0, 5.0]
+  end
+
+  it "DoublePredicate via DoubleStream#filter (double -> boolean)" do
+    result = java.util.stream.DoubleStream.of([0.5, 1.5, 2.5].to_java(:double)).filter { |d| d > 1.0 }.toArray.to_a
+    expect(result).to eq [1.5, 2.5]
+  end
+
+  it "DoubleFunction via DoubleStream#mapToObj (double -> reference)" do
+    result = java.util.stream.DoubleStream.of([1.5].to_java(:double)).mapToObj { |d| "d=#{d}" }.toArray.to_a
+    expect(result).to eq ['d=1.5']
+  end
+
+  it "DoubleToIntFunction via DoubleStream#mapToInt (double -> int)" do
+    result = java.util.stream.DoubleStream.of([3.7, 1.2].to_java(:double)).mapToInt { |d| d.floor }.toArray.to_a
+    expect(result).to eq [3, 1]
+  end
+
+  it "DoubleToLongFunction via DoubleStream#mapToLong (double -> long)" do
+    result = java.util.stream.DoubleStream.of([9.9].to_java(:double)).mapToLong { |d| d.floor }.toArray.to_a
+    expect(result).to eq [9]
+  end
+
+  it "ToIntFunction via Stream#mapToInt (reference -> int)" do
+    result = java.util.Arrays.stream(['ab', 'cdef'].to_java(:string)).mapToInt { |s| s.length }.toArray.to_a
+    expect(result).to eq [2, 4]
+  end
+
+  it "ToLongFunction via Stream#mapToLong (reference -> long)" do
+    result = java.util.Arrays.stream(['a', 'bb'].to_java(:string)).mapToLong { |s| s.length }.toArray.to_a
+    expect(result).to eq [1, 2]
+  end
+
+  it "ToDoubleFunction via Stream#mapToDouble (reference -> double)" do
+    result = java.util.Arrays.stream(['abc'].to_java(:string)).mapToDouble { |s| s.length * 1.0 }.toArray.to_a
+    expect(result).to eq [3.0]
+  end
+
+  it "LongBinaryOperator via LongStream#reduce (long,long -> long)" do
+    sum = java.util.stream.LongStream.of([1, 2, 3].to_java(:long)).reduce(0) { |a, b| a + b }
+    expect(sum).to eq 6
+  end
+
+  it "DoubleBinaryOperator via DoubleStream#reduce (double,double -> double)" do
+    sum = java.util.stream.DoubleStream.of([1.5, 2.5].to_java(:double)).reduce(0.0) { |a, b| a + b }
+    expect(sum).to eq 4.0
+  end
+
   it "java.util.function.UnaryOperator<T> via List#replaceAll (arity 1, reference return)" do
     list = java.util.ArrayList.new
     ['a', 'b', 'c'].each { |s| list.add(s) }
