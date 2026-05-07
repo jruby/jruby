@@ -183,4 +183,22 @@ class TestArray < Test::Unit::TestCase
     assert_equal([], rules)
   end
 
+  # 2-element arrays use the RubyArrayTwoObject specialization.
+  def test_reverse_bang_two_element_frozen
+    assert_raise(FrozenError) { [1, 2].freeze.reverse! }
+  end
+
+  def test_sort_bang_two_element_freeze_in_block
+    array = [1, 2]
+    assert_raise(FrozenError) do
+      array.sort! { |_a, _b| array.freeze; -1 }
+    end
+  end
+
+  def test_sort_bang_two_element_freeze_in_cmp
+    o1, o2 = Object.new, Object.new
+    array = [o1, o2]
+    o1.define_singleton_method(:<=>) { |_| array.freeze; -1 }
+    assert_raise(FrozenError) { array.sort! }
+  end
 end
