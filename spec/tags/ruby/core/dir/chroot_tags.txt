@@ -1,3 +1,8 @@
-fails:Dir.chroot as regular user raises an Errno::EPERM exception if the directory exists
-fails:Dir.chroot as regular user raises a SystemCallError if the directory doesn't exist
-fails:Dir.chroot as regular user calls #to_path on non-String argument
+fails(unsupported):Dir.chroot as regular user raises an Errno::EPERM exception if the directory exists
+fails(unsupported):Dir.chroot as regular user raises a SystemCallError if the directory doesn't exist
+fails(unsupported):Dir.chroot as regular user calls #to_path on non-String argument
+fails(unsupported):Dir.chroot as root can be used to change the process' root directory
+fails(unsupported):Dir.chroot as root returns 0 if successful
+fails(unsupported):Dir.chroot as root raises an Errno::ENOENT exception if the directory doesn't exist
+fails(unsupported):Dir.chroot as root can be escaped from with ../
+fails(unsupported):Dir.chroot as root calls #to_path on non-String argument
