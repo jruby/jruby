@@ -183,8 +183,9 @@ class TestArray < Test::Unit::TestCase
     assert_equal([], rules)
   end
 
-  # 2-element arrays use the RubyArrayTwoObject specialization.
+  # 1- and 2-element arrays use the RubyArrayOneObject and RubyArrayTwoObject specializations.
   def test_reverse_bang_two_element_frozen
+    assert_raise(FrozenError) { [1].freeze.reverse! }
     assert_raise(FrozenError) { [1, 2].freeze.reverse! }
   end
 
