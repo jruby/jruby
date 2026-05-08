@@ -21,9 +21,6 @@ public interface InternalVariables {
      */
     boolean hasInternalVariable(String name);
 
-    @Deprecated(since = "1.7.0")
-    boolean fastHasInternalVariable(String internedName);
-    
     /**
      * Returns the named internal variable if present, else null.  Use only
      * for internal variables (not ivar/cvar/constant).
@@ -33,9 +30,6 @@ public interface InternalVariables {
      */
     Object getInternalVariable(String name);
 
-    @Deprecated(since = "1.7.0")
-    Object fastGetInternalVariable(String internedNaem);
-    
     /**
      * Sets the named internal variable to the specified value.  Use only
      * for internal variables (not ivar/cvar/constant).
@@ -45,9 +39,6 @@ public interface InternalVariables {
      */
     void setInternalVariable(String name, Object value);
 
-    @Deprecated(since = "1.7.0")
-    void fastSetInternalVariable(String internedName, Object value);
-    
     /**
      * Removes the named internal variable, if present, returning its
      * value.  Use only for internal variables (not ivar/cvar/constant).

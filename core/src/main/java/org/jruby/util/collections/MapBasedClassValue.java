@@ -30,6 +30,10 @@ public final class MapBasedClassValue<T> extends ClassValue<T> {
         return obj;
     }
 
+    public void clear() {
+        cache.clear();
+    }
+
     // There's not a compelling reason to keep JavaClass instances in a weak map
     // (any proxies created are [were] kept in a non-weak map, so in most cases they will
     // stick around anyway), and some good reasons not to (JavaClass creation is

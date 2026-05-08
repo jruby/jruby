@@ -3,6 +3,7 @@ package org.jruby.specialized;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyArrayNative;
 import org.jruby.RubyClass;
 import org.jruby.RubyComparable;
 import org.jruby.RubyFixnum;
@@ -10,6 +11,7 @@ import org.jruby.RubyString;
 import org.jruby.api.Create;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Builtins;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -73,7 +75,7 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
     }
 
     @Override
-    public RubyArray<?> aryDup() {
+    public RubyArrayNative<?> aryDup() {
         if (!packed()) return super.aryDup();
         return new RubyArrayTwoObject(getRuntime().getArray(), this);
     }
@@ -118,7 +120,7 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
     }
 
     @Override
-    protected RubyArray<?> dupImpl(Ruby runtime, RubyClass metaClass) {
+    protected RubyArrayNative<?> dupImpl(Ruby runtime, RubyClass metaClass) {
         if (!packed()) return super.dupImpl(runtime, metaClass);
         return new RubyArrayTwoObject(metaClass, this);
     }
@@ -266,9 +268,9 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
         IRubyObject o2 = cdr;
 
         int compare;
-        if (isFixnumBypass(runtime, sites, honorOverride) && o1 instanceof RubyFixnum && o2 instanceof RubyFixnum) {
+        if (isFixnumBypass(context, honorOverride) && o1 instanceof RubyFixnum && o2 instanceof RubyFixnum) {
             compare = compareFixnums((RubyFixnum) o1, (RubyFixnum) o2);
-        } else if (isStringBypass(runtime, sites, honorOverride) && o1 instanceof RubyString && o2 instanceof RubyString) {
+        } else if (isStringBypass(context, honorOverride) && o1 instanceof RubyString && o2 instanceof RubyString) {
             compare = ((RubyString) o1).op_cmp((RubyString) o2);
         } else {
             compare = compareOthers(context, o1, o2);
@@ -279,12 +281,12 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
         return this;
     }
 
-    private boolean isStringBypass(Ruby runtime, JavaSites.Array2Sites sites, boolean honorOverride) {
-        return !honorOverride || sites.op_cmp_string.isBuiltin(runtime.getString());
+    private boolean isStringBypass(ThreadContext context, boolean honorOverride) {
+        return !honorOverride || Builtins.checkStringCmp(context);
     }
 
-    private boolean isFixnumBypass(Ruby runtime, JavaSites.Array2Sites sites, boolean honorOverride) {
-        return !honorOverride || sites.op_cmp_fixnum.isBuiltin(runtime.getFixnum());
+    private boolean isFixnumBypass(ThreadContext context, boolean honorOverride) {
+        return !honorOverride || Builtins.checkIntegerCmp(context);
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -313,7 +315,7 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
 
         if (beg > 2 || beg < 0 || len < 0) return runtime.getNil();
 
-        if (len == 0 || beg == 2) return new RubyArray<>(runtime, metaClass, IRubyObject.NULL_ARRAY);
+        if (len == 0 || beg == 2) return RubyArray.newEmptyArray(runtime, metaClass);
 
         if (beg == 0) {
             if (len == 1) return new RubyArrayOneObject(metaClass, car);
@@ -379,7 +381,7 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
     }
 
     @Override
-    protected RubyArray<?> makeShared() {
+    protected RubyArrayNative<?> makeShared() {
         if (!packed()) return super.makeShared();
 
         return new RubyArrayTwoObject(this);

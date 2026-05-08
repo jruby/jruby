@@ -281,42 +281,6 @@ public class Binding {
         return evalScopeBinding.evalScope;
     }
 
-    @Deprecated(since = "9.0.0.0")
-    public Binding(IRubyObject self, Frame frame,
-                   Visibility visibility, DynamicScope dynamicScope, BacktraceElement backtrace) {
-        this.self = self;
-        this.frame = frame;
-        this.visibility = visibility;
-        this.dynamicScope = dynamicScope;
-        this.method = backtrace.method;
-        this.filename = backtrace.filename;
-        this.line = backtrace.line;
-    }
-
-    @Deprecated(since = "9.0.0.0")
-    public Binding(Frame frame, DynamicScope dynamicScope, BacktraceElement backtrace) {
-        this.self = frame.getSelf();
-        this.frame = frame;
-        this.visibility = frame.getVisibility();
-        this.dynamicScope = dynamicScope;
-        this.method = backtrace.method;
-        this.filename = backtrace.filename;
-        this.line = backtrace.line;
-    }
-
-    @Deprecated(since = "9.0.0.0")
-    public BacktraceElement getBacktrace() {
-        return new BacktraceElement(method, filename, line);
-    }
-
-    @Deprecated(since = "9.2.8.0")
-    public static final Binding DUMMY =
-            new Binding(
-                    RubyBasicObject.NEVER,
-                    // Can't use Frame.DUMMY because of circular static init seeing it before it's assigned
-                    new Frame(),
-                    Visibility.PUBLIC);
-
     /**
      * Duplicate this binding and setup the proper cloned instance of the eval scope so that any previously
      * captured variables still exist but are not shared with the original binding.

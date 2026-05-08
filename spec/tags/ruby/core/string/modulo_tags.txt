@@ -5,3 +5,6 @@ fails:String#% behaves as if calling Kernel#Float for %g arguments, when the pas
 fails:String#% behaves as if calling Kernel#Float for %G arguments, when the passed argument does not respond to #to_ary
 fails(https://github.com/jruby/jruby/issues/8739):String#% other formats c displays no characters if argument is an empty string
 fails(https://github.com/jruby/jruby/issues/8739):String#% raises an ArgumentError if absolute argument specifier is followed by a conversion specifier
+fails:String#% other formats c raises TypeError if argument is nil
+fails:String#% other formats c raises TypeError if converting to String with to_str returns non-String
+fails:String#% other formats c raises TypeError if converting to Integer with to_int returns non-Integer

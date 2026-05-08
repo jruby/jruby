@@ -47,12 +47,6 @@ public final class ConstructorInvoker extends RubyToJavaInvoker {
     }
 
     @Override
-    @Deprecated(since = "9.1.6.0")
-    protected boolean isMemberVarArgs(Member member) {
-        return ((Constructor) member).isVarArgs();
-    }
-
-    @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
         JavaProxy proxy = castJavaProxy(self);
         JavaConstructor constructor = (JavaConstructor) findCallable(self, name, args, args.length);

@@ -100,7 +100,6 @@ public class RubyInstanceConfig {
             }
 
             managementEnabled = Options.MANAGEMENT_ENABLED.load();
-            runRubyInProcess = Options.LAUNCH_INPROC.load();
             compileMode = Options.COMPILE_MODE.load();
 
             jitLogging = Options.JIT_LOGGING.load();
@@ -125,7 +124,6 @@ public class RubyInstanceConfig {
         jitMax = parentConfig.jitMax;
         jitMaxSize = parentConfig.jitMaxSize;
         managementEnabled = parentConfig.managementEnabled;
-        runRubyInProcess = parentConfig.runRubyInProcess;
         excludedMethods = parentConfig.excludedMethods;
         updateNativeENVEnabled = parentConfig.updateNativeENVEnabled;
 
@@ -582,20 +580,6 @@ public class RubyInstanceConfig {
      */
     public boolean isJitEnabled() {
         return getJitThreshold() >= 0 && getCompileMode().shouldJIT();
-    }
-
-    /**
-     * @see Options#LAUNCH_INPROC
-     */
-    public boolean isRunRubyInProcess() {
-        return runRubyInProcess;
-    }
-
-    /**
-     * @see Options#LAUNCH_INPROC
-     */
-    public void setRunRubyInProcess(boolean flag) {
-        this.runRubyInProcess = flag;
     }
 
     public void setInput(InputStream newInput) {
@@ -1735,9 +1719,6 @@ public class RubyInstanceConfig {
      */
     public static final boolean NATIVE_ENABLED = Options.NATIVE_ENABLED.load();
 
-    @Deprecated(since = "9.0.0.0")
-    public final static boolean CEXT_ENABLED = false;
-
     /**
      * Whether to reify (pre-compile and generate) a Java class per Ruby class.
      *
@@ -1841,207 +1822,4 @@ public class RubyInstanceConfig {
                 return Opcodes.V21;
         }
     }
-
-    @Deprecated(since = "1.7.0")
-    public void setSafeLevel(int safeLevel) {
-    }
-
-    @Deprecated(since = "1.7.0")
-    public String getInPlaceBackupExtention() {
-        return inPlaceBackupExtension;
-    }
-
-    @Deprecated(since = "1.7.5")
-    public String getBasicUsageHelp() {
-        return OutputStrings.getBasicUsageHelp();
-    }
-
-    @Deprecated(since = "1.7.5")
-    public String getExtendedHelp() {
-        return OutputStrings.getExtendedHelp();
-    }
-
-    @Deprecated(since = "1.7.5")
-    public String getPropertyHelp() {
-        return OutputStrings.getPropertyHelp();
-    }
-
-    @Deprecated(since = "1.7.5")
-    public String getVersionString() {
-        return OutputStrings.getVersionString();
-    }
-
-    @Deprecated(since = "1.7.5")
-    public String getCopyrightString() {
-        return OutputStrings.getCopyrightString();
-    }
-
-    @Deprecated(since = "1.7.5")
-    public Collection<String> requiredLibraries() {
-        return requiredLibraries;
-    }
-
-    @Deprecated(since = "1.7.5")
-    public List<String> loadPaths() {
-        return loadPaths;
-    }
-
-    @Deprecated(since = "1.7.5")
-    public boolean shouldPrintUsage() {
-        return shouldPrintUsage;
-    }
-
-    @Deprecated(since = "1.7.5")
-    public boolean shouldPrintProperties() {
-        return shouldPrintProperties;
-    }
-
-    @Deprecated(since = "1.7.5")
-    public Boolean getVerbose() {
-        return isVerbose();
-    }
-
-    @Deprecated(since = "1.7.5")
-    public boolean shouldRunInterpreter() {
-        return isShouldRunInterpreter();
-    }
-
-    @Deprecated(since = "1.7.5")
-    public boolean isShouldRunInterpreter() {
-        return shouldRunInterpreter;
-    }
-
-    @Deprecated(since = "1.7.5")
-    public boolean isxFlag() {
-        return xFlag;
-    }
-
-    /**
-     * The max count of active methods eligible for JIT-compilation.
-     */
-    @Deprecated(since = "1.7.5")
-    public static final int JIT_MAX_METHODS_LIMIT = Constants.JIT_MAX_METHODS_LIMIT;
-
-    /**
-     * The max size of JIT-compiled methods (full class size) allowed.
-     */
-    @Deprecated(since = "1.7.5")
-    public static final int JIT_MAX_SIZE_LIMIT = Constants.JIT_MAX_SIZE_LIMIT;
-
-    /**
-     * The JIT threshold to the specified method invocation count.
-     */
-    @Deprecated(since = "1.7.5")
-    public static final int JIT_THRESHOLD = Constants.JIT_THRESHOLD;
-
-    /**
-     * Default size for chained compilation.
-     */
-    @Deprecated(since = "1.7.5")
-    public static final int CHAINED_COMPILE_LINE_COUNT_DEFAULT = Constants.CHAINED_COMPILE_LINE_COUNT_DEFAULT;
-
-    @Deprecated(since = "1.7.5")
-    public static final boolean nativeEnabled = NATIVE_ENABLED;
-
-    @Deprecated(since = "1.7.5")
-    public boolean isSamplingEnabled() {
-        return false;
-    }
-
-    @Deprecated(since = "1.7.5")
-    public void setBenchmarking(boolean benchmarking) {
-    }
-
-    @Deprecated(since = "1.7.5")
-    public boolean isBenchmarking() {
-        return false;
-    }
-
-    @Deprecated(since = "9.0.0.0")
-    public void setCextEnabled(boolean b) {
-    }
-
-    @Deprecated(since = "9.0.0.0")
-    public boolean isCextEnabled() {
-        return false;
-    }
-
-    @Deprecated(since = "1.7.22") public static final String JIT_CODE_CACHE = "";
-
-    @Deprecated(since = "9.3.0.0")
-    public boolean isJitDumping() {
-        return jitDumping;
-    }
-
-    @Deprecated(since = "9.3.0.0")
-    public String getThreadDumpSignal() {
-        return threadDumpSignal;
-    }
-
-    @Deprecated(since = "9.3.0.0")
-    public boolean isGlobalRequireLock() {
-        return globalRequireLock;
-    }
-
-    @Deprecated(since = "9.3.0.0")
-    public void setGlobalRequireLock(boolean globalRequireLock) {
-        this.globalRequireLock = globalRequireLock;
-    }
-
-    @Deprecated(since = "9.2.6.0")
-    public static final boolean NATIVE_NET_PROTOCOL = Options.NATIVE_NET_PROTOCOL.load();
-
-    @Deprecated(since = "9.2.9.0")
-    public static final boolean CAN_SET_ACCESSIBLE = Options.JI_SETACCESSIBLE.load();
-
-    @Deprecated(since = "9.3.0.0")
-    public static boolean THREADLESS_COMPILE_ENABLED = false;
-
-    @Deprecated(since = "9.3.0.0")
-    public static final int CHAINED_COMPILE_LINE_COUNT = 500;
-
-    @Deprecated(since = "9.3.0.0")
-    public static final boolean PEEPHOLE_OPTZ = true;
-
-    @Deprecated(since = "9.3.0.0")
-    public static boolean NOGUARDS_COMPILE_ENABLED = false;
-
-    @Deprecated(since = "9.3.0.0")
-    public static final boolean FASTEST_COMPILE_ENABLED = false;
-
-    @Deprecated(since = "9.3.0.0")
-    public static boolean FASTSEND_COMPILE_ENABLED = false;
-
-    @Deprecated(since = "9.3.0.0")
-    public static boolean FAST_MULTIPLE_ASSIGNMENT = false;
-
-    @Deprecated(since = "9.3.0.0")
-    private final boolean jitDumping = false;
-
-    @Deprecated(since = "9.3.0.0")
-    public static final boolean JIT_LOADING_DEBUG = false;
-
-    @Deprecated(since = "9.3.0.0")
-    public static final boolean JIT_CACHE_ENABLED = false;
-
-    @Deprecated(since = "9.3.0.0")
-    private boolean runRubyInProcess = true;
-
-    @Deprecated(since = "9.3.0.0")
-    public static final boolean REFLECTED_HANDLES = false;
-
-    @Deprecated(since = "9.3.0.0")
-    private String threadDumpSignal = null;
-
-    @Deprecated(since = "9.3.0.0")
-    public static final boolean COROUTINE_FIBERS = false;
-
-    @Deprecated(since = "9.3.0.0")
-    private boolean globalRequireLock = false;
-
-    @Deprecated(since = "9.3.0.0")
-    public static final boolean USE_GENERATED_HANDLES = false;
-
-    @Deprecated(since = "9.4.3.0")
-    public static final boolean FASTOPS_COMPILE_ENABLED = Options.COMPILE_FASTOPS.load();
 }

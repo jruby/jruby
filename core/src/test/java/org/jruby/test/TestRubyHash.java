@@ -34,6 +34,8 @@ package org.jruby.test;
 
 import org.jruby.Ruby;
 import org.jruby.RubyHash;
+import org.jruby.RubyHashLinkedBuckets;
+import org.jruby.api.Create;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -185,7 +187,7 @@ public class TestRubyHash extends Base {
     }
     
     public void testGet() {
-        RubyHash rubyHash = new RubyHash(Ruby.getGlobalRuntime());
+        RubyHash rubyHash = Create.newHash(Ruby.getGlobalRuntime().getCurrentContext());
         assertEquals(null, rubyHash.get("Non matching key"));
     }
 

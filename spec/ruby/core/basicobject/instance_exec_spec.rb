@@ -36,6 +36,12 @@ describe "BasicObject#instance_exec" do
     Object.new.instance_exec(1,2) {|one, two| one + two}.should == 3
   end
 
+  describe "with optional argument" do
+    it "does not destructure a single array argument" do
+      Object.new.instance_exec([1, 2, 3]) { |a = 99| a }.should == [1, 2, 3]
+    end
+  end
+
   it "only binds the exec to the receiver" do
     f = Object.new
     f.instance_exec do

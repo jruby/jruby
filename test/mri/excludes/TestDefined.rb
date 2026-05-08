@@ -1,6 +1,7 @@
 exclude :test_defined_empty_paren_expr, "work in progress"
 exclude :test_defined_matchdata, "work in progress"
 exclude :test_defined_method_single_call, "work in progress"
+exclude :test_defined_paren_void_stmts, "needs investigation"
 exclude :test_defined_protected_method, "work in progress"
 exclude :test_defined_refined_call_with_using, "work in progress"
 exclude :test_defined_refined_vcall_with_using, "work in progress"

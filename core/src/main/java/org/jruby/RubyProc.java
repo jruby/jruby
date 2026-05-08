@@ -63,7 +63,7 @@ import static org.jruby.api.Warn.warn;
 import static org.jruby.runtime.Block.Type.LAMBDA;
 import static org.jruby.runtime.Block.Type.PROC;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
-import static org.jruby.runtime.ThreadContext.resetCallInfo;
+import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.util.RubyStringBuilder.types;
 
 @JRubyClass(name="Proc")
@@ -158,11 +158,6 @@ public class RubyProc extends RubyObject implements DataType {
     }
 
     // Proc class
-
-    @Deprecated(since = "1.6.0")
-    public static RubyProc newProc(Ruby runtime, Block.Type type) {
-        throw runtime.newRuntimeError("deprecated RubyProc.newProc with no block; do not use");
-    }
 
     public static RubyProc newProc(Ruby runtime, Block block, Block.Type type) {
         // The three valid types of execution here are PROC/LAMBDA/THREAD.  NORMAL should not normally
@@ -299,10 +294,10 @@ public class RubyProc extends RubyObject implements DataType {
         BlockBody body = block.getBody();
         if (body.isRubyBlock()) {
             Signature signature = body.getSignature();
-            if (signature.hasRest() && !signature.hasKwargs()) {
+            if (signature.hasRest() && !signature.hasKwargs() && signature.post() == 0) {
                 ((IRBlockBody) body).getScope().setRuby2Keywords();
             } else {
-                warn(context, "Skipping set of ruby2_keywords flag for proc (proc accepts keywords or proc does not accept argument splat)");
+                warn(context, "Skipping set of ruby2_keywords flag for proc (proc accepts keywords or post arguments or proc does not accept argument splat)");
             }
 
         } else {
@@ -327,21 +322,6 @@ public class RubyProc extends RubyObject implements DataType {
         if (type != other.type) return context.fals;
 
         return asBoolean(context, getBlock().equals(other.block));
-    }
-
-    /**
-     * For non-lambdas transforms the given arguments appropriately for the given arity (i.e. trimming to one arg for fixed
-     * arity of one, etc.)
-     *
-     * Note: nothing should be calling this any more.
-     */
-    @Deprecated(since = "9.3.0.0")
-    public static IRubyObject[] prepareArgs(ThreadContext context, Block.Type type, BlockBody blockBody, IRubyObject[] args) {
-        if (type == Block.Type.LAMBDA) return args;
-
-        int arityValue = blockBody.getSignature().arityValue();
-        if (args.length == 1 && (arityValue < -1 || arityValue > 1)) args = IRRuntimeHelpers.toAry(context, args);
-        return args;
     }
 
     private static IRubyObject[] checkArityForLambda(ThreadContext context, Block.Type type, BlockBody blockBody, IRubyObject... args) {
@@ -461,16 +441,15 @@ public class RubyProc extends RubyObject implements DataType {
 
     @JRubyMethod(keywords = true)
     public IRubyObject parameters(ThreadContext context, IRubyObject opts) {
-        int callInfo = resetCallInfo(context);
-        boolean isLambda = isLambda();
+        final int callInfo = ThreadContext.resetCallInfo(context);
 
         IRubyObject lambdaOpt = ArgsUtil.extractKeywordArg(context, (RubyHash) opts, "lambda");
-
+        boolean isLambda;
         // ignore option if nil
         if (!lambdaOpt.isNil()) {
-            isLambda = (callInfo & ThreadContext.CALL_KEYWORD) != 0 ?
-                    lambdaOpt.isTrue() :
-                    isLambda();
+            isLambda = hasKeywords(callInfo) ? lambdaOpt.isTrue() : isLambda();
+        } else {
+            isLambda = isLambda();
         }
 
         return parametersCommon(context, isLambda);
@@ -505,11 +484,6 @@ public class RubyProc extends RubyObject implements DataType {
 
     private static JavaSites.ProcSites sites(ThreadContext context) {
         return context.sites.Proc;
-    }
-
-    @Deprecated(since = "9.2.10.0")
-    public final IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject self, Block passedBlock) {
-        return block.call(context, args, passedBlock);
     }
 
     @Deprecated(since = "10.0.0.0")

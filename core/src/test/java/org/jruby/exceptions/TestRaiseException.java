@@ -92,17 +92,6 @@ public class TestRaiseException extends Base {
         assertEquals( 0, ex.getException().getBacktraceElements().length );
     }
 
-    public void testFromLegacyOnlyPreRaisesOnce() {
-        final int count = context.runtime.getExceptionCount();
-
-        final IRubyObject ex = runtimeErrorClass(context).newInstance(context, Block.NULL_BLOCK);
-        RaiseException.from((RubyException) ex, RubyArray.newArrayLight(context.runtime));
-
-        assertEquals( count + 1, context.runtime.getExceptionCount() );
-
-        assertEquals( 0, ((RubyException) ex).getBacktraceElements().length );
-    }
-
     public void testFromJavaGeneratedBacktrace() {
         final int count = context.runtime.getBacktraceCount();
 
@@ -318,12 +307,12 @@ public class TestRaiseException extends Base {
 
         boolean hash_default = false;
         for ( Object element : trace ) {
-            if ( element.toString().contains("org.jruby.RubyHash.default")) {
+            if ( element.toString().contains("org.jruby.RubyHashLinkedBuckets.default")) {
                 if ( hash_default ) fail("duplicate " + element + " in : \n" + fullTrace);
                 hash_default = true;
             }
         }
-        assertTrue("missing org.jruby.RubyHash.default ... in : \n" + fullTrace, hash_default);
+        assertTrue("missing org.jruby.RubyHashLinkedBuckets.default ... in : \n" + fullTrace, hash_default);
     }
 
     public void testRubyExceptionUsingEmbedAdapter() {

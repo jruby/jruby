@@ -46,7 +46,11 @@ public class ArgumentDescriptor {
     }
 
     public final RubyArray toArrayForm(ThreadContext context, boolean isLambda) {
-        ArgumentType argType = type == ArgumentType.req && !isLambda ? ArgumentType.opt : type;
+        ArgumentType argType = type;
+        if (!isLambda) {
+            if (argType == ArgumentType.req) argType = ArgumentType.opt;
+            if (argType == ArgumentType.anonreq) argType = ArgumentType.anonopt;
+        }
         RubySymbol name = this.name;
 
         // FIXME: When consolidating block and method parameter arg descriptors eliminate this special *,** handling.

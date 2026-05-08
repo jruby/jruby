@@ -107,10 +107,6 @@ class MSpecScript
   instance_config = JRuby.runtime.instance_config
 
   if WINDOWS
-    # Some specs on Windows will fail in we launch JRuby via
-    # ruby_exe() in-process (see core/argf/gets_spec.rb)
-    instance_config.run_ruby_in_process = false
-
     # exclude specs tagged with 'windows' keyword
     get(:ci_xtags) << 'windows'
   end

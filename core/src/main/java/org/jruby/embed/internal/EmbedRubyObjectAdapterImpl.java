@@ -65,15 +65,6 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
     private final ScriptingContainer container;
     private final boolean wrapExceptions;
 
-    @Deprecated(since = "9.3.0.0") // not used
-    public enum MethodType {
-        CALLMETHOD,
-        CALLSUPER,
-        CALLMETHOD_NOARG,
-        CALLMETHOD_WITHBLOCK,
-        CALLSUPER_WITHBLOCK,
-    }
-
     public EmbedRubyObjectAdapterImpl(ScriptingContainer container) {
         this(container, false);
     }

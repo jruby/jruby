@@ -111,7 +111,6 @@ public interface NodeVisitor<T> {
     T visitMatch3Node(Match3Node iVisited);
     T visitMatchNode(MatchNode iVisited);
     T visitModuleNode(ModuleNode iVisited);
-    T visitNewlineNode(NewlineNode iVisited);
     T visitNextNode(NextNode iVisited);
     T visitNilNode(NilNode iVisited);
     T visitNilRestArgNode(NilRestArgNode iVisited);
@@ -157,7 +156,4 @@ public interface NodeVisitor<T> {
     T visitZArrayNode(ZArrayNode iVisited);
     T visitZSuperNode(ZSuperNode iVisited);
     T visitOther(Node iVisited);
-
-    @Deprecated(since = "9.2.0.0")
-    default T visitClassVarDeclNode(ClassVarDeclNode iVisited) { return null; }
 }

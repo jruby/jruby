@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Interp;
 import org.jruby.ir.Operation;
@@ -22,14 +23,14 @@ public class YieldInstr extends TwoOperandResultBaseInstr implements FixedArityI
     private final int flags;
     private long callSiteId;
 
-    public YieldInstr(Variable result, Operand block, Operand arg, int flags, boolean unwrapArray) {
+    public YieldInstr(IRScope scope, Variable result, Operand block, Operand arg, int flags, boolean unwrapArray) {
         super(Operation.YIELD, result, block, arg == null ? UndefinedValue.UNDEFINED : arg);
 
         assert result != null: "YieldInstr result is null";
 
         this.flags = flags;
         this.unwrapArray = unwrapArray;
-        this.callSiteId = CallBase.callSiteCounter++;
+        this.callSiteId = scope.getManager().nextCallSiteID();
     }
 
     public Operand getBlockArg() {
@@ -49,7 +50,7 @@ public class YieldInstr extends TwoOperandResultBaseInstr implements FixedArityI
         // FIXME: Is it necessary to clone a yield instruction in a method
         // that is being inlined, i.e. in METHOD_INLINE clone mode?
         // Fix BasicBlock.java:clone!!
-        return new YieldInstr(ii.getRenamedVariable(result), getBlockArg().cloneForInlining(ii),
+        return new YieldInstr(ii.getScope(), ii.getRenamedVariable(result), getBlockArg().cloneForInlining(ii),
                 getYieldArg().cloneForInlining(ii), flags, unwrapArray);
     }
 
@@ -72,7 +73,7 @@ public class YieldInstr extends TwoOperandResultBaseInstr implements FixedArityI
     }
 
     public static YieldInstr decode(IRReaderDecoder d) {
-        return new YieldInstr(d.decodeVariable(), d.decodeOperand(), d.decodeOperand(), d.decodeInt(), d.decodeBoolean());
+        return new YieldInstr(d.getCurrentScope(), d.decodeVariable(), d.decodeOperand(), d.decodeOperand(), d.decodeInt(), d.decodeBoolean());
     }
 
     @Interp

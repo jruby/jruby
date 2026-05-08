@@ -267,7 +267,7 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
 %type <DefHolder> def_name defn_head defs_head
 %type <NodeExits> block_open k_while k_until k_for allow_exits
 %type <@@prod_type@@> top_compstmt top_stmts top_stmt begin_block endless_arg endless_command
-%type <@@prod_type@@> bodystmt compstmt stmts stmt_or_begin stmt expr arg primary command command_call method_call
+%type <@@prod_type@@> bodystmt compstmt stmts stmt_or_begin stmt expr arg primary command command_call command_call_value method_call
 %type <@@prod_type@@> expr_value expr_value_do arg_value primary_value
 %type <@@prod_type@@> rel_expr
 %type <@@prod_fcall_type@@> fcall
@@ -673,9 +673,8 @@ stmt            : keyword_alias fitem {
                     /*% ripper: END!($4) %*/
                 }
                 | command_asgn
-                | mlhs '=' lex_ctxt command_call {
+                | mlhs '=' lex_ctxt command_call_value {
                     /*%%%*/
-                    p.value_expr($4);
                     $$ = node_assign($1, $4, $3);
                     /*% %*/
                     /*% ripper: massign!($1, $4) %*/
@@ -737,13 +736,6 @@ command_asgn    : lhs '=' lex_ctxt command_rhs {
                     /*% %*/
                     /*% ripper: opassign!(field!($1, $2, $3), $4, $6) %*/
                 }
-                | primary_value tCOLON2 tCONSTANT tOP_ASGN lex_ctxt command_rhs {
-                    /*%%%*/
-                    int line = @1.start();
-                    $$ = p.new_const_op_assign(line, p.new_colon2(line, $1, $3), $4, $6, $5);
-                    /*% %*/
-                    /*% ripper: opassign!(const_path_field!($1, $3), $4, $6) %*/
-                }
                 | primary_value tCOLON2 tIDENTIFIER tOP_ASGN lex_ctxt command_rhs {
                     /*%%%*/
                     p.value_expr($6);
@@ -751,6 +743,26 @@ command_asgn    : lhs '=' lex_ctxt command_rhs {
                     /*% %*/
                     /*% ripper: opassign!(field!($1, ID2VAL(idCOLON2), $3), $4, $6) %*/
                 }
+                | primary_value tCOLON2 tCONSTANT tOP_ASGN lex_ctxt command_rhs {
+                    /*%%%*/
+                    int line = @1.start();
+                    $$ = p.new_const_op_assign(line, p.new_colon2(line, $1, $3), $4, $6, $5);
+                    /*% %*/
+                    /*% ripper: opassign!(const_path_field!($1, $3), $4, $6) %*/
+                }
+                | tCOLON3 tCONSTANT tOP_ASGN lex_ctxt command_rhs {
+                    /*%%%*/
+                    Integer pos = p.src_line();
+                    $$ = p.new_const_op_assign(pos, new Colon3Node(pos, p.symbolID($2)), $3, $5, $4);
+                    /*% %*/
+                    /*% ripper: opassign!(top_const_field!($2), $3, $5) %*/
+                }
+                | backref tOP_ASGN lex_ctxt command_rhs {
+                    /*%%%*/
+                    p.backref_error($1);
+                    /*% %*/
+                    /*% ripper[error]: backref_error(p, RNODE($1), assign!(var_field(p, $1), $4)) %*/
+                };
  		| defn_head f_opt_paren_args '=' endless_command {
                     p.endless_method_name($1, @1);
                     p.restore_defun($1);
@@ -769,12 +781,6 @@ command_asgn    : lhs '=' lex_ctxt command_rhs {
                     /*% %*/                    
                     /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, bodystmt!($4, Qnil, Qnil, Qnil)) %*/
                     p.popCurrentScope();
-                }
-                | backref tOP_ASGN lex_ctxt command_rhs {
-                    /*%%%*/
-                    p.backref_error($1);
-                    /*% %*/
-                    /*% ripper[error]: backref_error(p, RNODE($1), assign!(var_field(p, $1), $4)) %*/
                 };
 
 endless_command : command
@@ -786,15 +792,15 @@ endless_command : command
                     /*% ripper: rescue_mod!($:1, $:4) %*/
                 }
                 | keyword_not opt_nl endless_command {
+                    /*%%%/
                     $$ = p.call_uni_op(p.method_cond($3), NOT);
                     /*% ripper: unary!(ID2VAL(idNOT), $:3) %*/
                 };
 
-command_rhs     : command_call %prec tOP_ASGN {
-                    p.value_expr($1);
+command_rhs     : command_call_value %prec tOP_ASGN {
                     $$ = $1;
                 }
-		| command_call modifier_rescue after_rescue stmt {
+		| command_call_value modifier_rescue after_rescue stmt {
                     /*%%%*/
                     p.getLexContext().in_rescue = $3.in_rescue;
                     p.value_expr($1);
@@ -912,6 +918,11 @@ expr_value_do   : {
 // Node:command - call with or with block on end [!null]
 command_call    : command
                 | block_command
+
+command_call_value : command_call {
+                       p.value_expr($1);
+                       $$ = $1;
+                   };
 
 // Node:block_command - A call with a block (foo.bar {...}, foo::bar {...}, bar {...}) [!null]
 block_command   : block_call
@@ -1716,7 +1727,7 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     $$ = node_assign($1, $4, $3);
                     /*% %*/
                     /*% ripper: assign!($1, $4) %*/
-                }
+                } 
                 | var_lhs tOP_ASGN lex_ctxt arg_rhs {
                     /*%%%*/
                     $$ = p.new_op_assign($1, $2, $4, $3);
@@ -1902,13 +1913,6 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     p.getLexContext().in_defined = false;                    
                     $$ = p.new_defined(@1.start(), $4);
                 }
-                | arg '?' arg opt_nl ':' arg {
-                    /*%%%*/
-                    p.value_expr($1);
-                    $$ = p.new_if(@1.start(), $1, $3, $6);
-                    /*% %*/
-                    /*% ripper: ifop!($1, $3, $6) %*/
-                }
                 | defn_head f_opt_paren_args '=' endless_arg {
                     p.endless_method_name($1, @1);
                     p.restore_defun($1);
@@ -1930,10 +1934,18 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, bodystmt!($4, Qnil, Qnil, Qnil)) %*/
                     p.popCurrentScope();
 		}
+                | arg '?' arg opt_nl ':' arg {
+                    /*%%%*/
+                    p.value_expr($1);
+                    $$ = p.new_if(@1.start(), $1, $3, $6);
+                    /*% %*/
+                    /*% ripper: ifop!($1, $3, $6) %*/
+                }
                 | primary {
                     $$ = $1;
                 };
 
+ 
 endless_arg     : arg %prec modifier_rescue
                 | endless_arg modifier_rescue after_rescue arg {
                     p.getLexContext().in_rescue = $3.in_rescue;
@@ -2073,6 +2085,27 @@ call_args       : command {
                     /*% %*/
                     /*% ripper: args_add!(args_new!, $1) %*/
                 }
+                | defn_head f_opt_paren_args '=' endless_command {
+                    p.endless_method_name($1, @1);
+                    p.restore_defun($1);
+                    /*%%%*/
+                    $$ = new DefnNode($1.line, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), @4.end());
+                    if (p.isNextBreak) $<DefnNode>$.setContainsNextBreak();
+                    // Changed from MRI (combined two stmts)
+                    /*% %*/
+                    /*% ripper: def!(get_value($1), $2, bodystmt!($4, Qnil, Qnil, Qnil)) %*/
+                    p.popCurrentScope();
+		}
+                | defs_head f_opt_paren_args '=' endless_command {
+                    p.endless_method_name($1, @1);
+                    p.restore_defun($1);
+                    /*%%%*/
+                    $$ = new DefsNode($1.line, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), @4.end());
+                    if (p.isNextBreak) $<DefsNode>$.setContainsNextBreak();
+                    /*% %*/
+                    /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, bodystmt!($4, Qnil, Qnil, Qnil)) %*/
+                    p.popCurrentScope();
+		}
                 | args opt_block_arg {
                     /*%%%*/
                     $$ = arg_blk_pass($1, $2);

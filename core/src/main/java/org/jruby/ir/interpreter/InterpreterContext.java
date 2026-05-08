@@ -275,9 +275,17 @@ public class InterpreterContext {
         StringBuilder b = new StringBuilder();
         int length = instructions.length;
 
+        var indent = 0;
         for (int i = 0; i < length; i++) {
             if (i > 0) b.append("\n");
-            b.append(String.format("%6d",i)).append('\t').append(instructions[i]);
+            var instr = instructions[i];
+            if (instr instanceof ExceptionRegionEndMarkerInstr) {
+                indent -= 1;
+            }
+            b.append(String.format("%6d",i+1)).append('\t').append("  ".repeat(indent)).append(instr);
+            if (instr instanceof ExceptionRegionStartMarkerInstr) {
+                indent += 1;
+            }
         }
 
         /* ENEBO: I this this is too much output espectially for ic and not fic

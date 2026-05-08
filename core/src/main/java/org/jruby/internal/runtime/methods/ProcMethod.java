@@ -73,11 +73,6 @@ public class ProcMethod extends DynamicMethod implements PositionAware, IRMethod
         return ((ProcMethod) method).proc == proc;
     }
 
-    @Deprecated(since = "9.3.0.0") @Override
-    public Arity getArity() {
-        return getSignature().arity();
-    }
-
     public String getFile() {
         return proc.getBlock().getBody().getFile();
     }

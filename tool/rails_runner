@@ -41,6 +41,6 @@ Dir.chdir(rails_app) do
   jruby_command("rails", "generate scaffold person name:string")
   jruby_command("rake", "db:migrate")
 #  jruby_command("rails", "webpacker:install")
-  jruby_command("rails", "server")
+#  jruby_command("rails", "server")
 end
 puts "Done"

@@ -106,7 +106,8 @@ public class Mutex extends RubyObject implements DataType {
 
         checkRelocking(context);
 
-        if (this.lockingThread == parentThread) {
+        RubyThread lockingThread = this.lockingThread;
+        if (lockingThread == parentThread && context.getFiber() != lockingThread.getContext().getFiber()) {
             throw context.runtime.newThreadError("deadlock; lock already owned by another fiber belonging to the same thread");
         }
 
@@ -123,8 +124,6 @@ public class Mutex extends RubyObject implements DataType {
             }
         }
 
-        this.lockingThread = thread;
-
         // always check for thread interrupts after acquiring lock
         try {
             thread.pollThreadEvents(context);
@@ -135,6 +134,9 @@ public class Mutex extends RubyObject implements DataType {
             }
             Helpers.throwException(t);
         }
+
+        // set locking thread once successfully locked with no interrupts
+        this.lockingThread = parentThread;
 
         return this;
     }
@@ -204,7 +206,7 @@ public class Mutex extends RubyObject implements DataType {
 
     private void checkRelocking(ThreadContext context) {
         if (lock.isHeldByCurrentThread()) {
-            throw context.runtime.newThreadError("Mutex relocking by same thread");
+            throw context.runtime.newThreadError("deadlock; recursive locking");
         }
     }
 

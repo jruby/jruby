@@ -25,7 +25,6 @@ import java.util.Set;
 import static org.jruby.ir.IRFlags.*;
 
 public abstract class CallBase extends NOperandInstr implements ClosureAcceptingInstr, Site {
-    public static long callSiteCounter = 1;
     private static final EnumSet<FrameField> ALL = EnumSet.allOf(FrameField.class);
 
     public transient long callSiteId;
@@ -49,29 +48,25 @@ public abstract class CallBase extends NOperandInstr implements ClosureAccepting
     // main constructor
     protected CallBase(IRScope scope, Operation op, CallType callType, RubySymbol name, Operand receiver,
                        Operand[] args, Operand closure, int flags, boolean potentiallyRefined) {
-        this(scope, op, callType, name, receiver, args, closure, flags, potentiallyRefined, null, callSiteCounter++);
-    }
-
-    // clone constructor
-    protected CallBase(IRScope scope, Operation op, CallType callType, RubySymbol name, Operand receiver,
-                       Operand[] args, Operand closure, int flags, boolean potentiallyRefined, CallSite callSite,
-                       long callSiteId) {
         super(op, arrayifyOperands(receiver, args, closure));
 
         this.flags = flags;
-        this.callSiteId = callSiteId;
+        this.callSiteId = scope.getManager().nextCallSiteID();
         argsCount = args.length;
         hasClosure = closure != NullBlock.INSTANCE;
         this.name = name;
         this.callType = callType;
-        this.callSite = callSite == null ? getCallSiteFor(scope, callType, name.idString(), callSiteId, hasLiteralClosure(), potentiallyRefined) : callSite;
+
+        boolean effectivelyRefined = potentiallyRefined || (scope != null && scope.maybeUsingRefinements());
+        this.callSite = getCallSiteFor(scope, callType, name.idString(), callSiteId, hasLiteralClosure(), effectivelyRefined);
+
         splatMap = IRRuntimeHelpers.buildSplatMap(args);
         flagsComputed = false;
         canBeEval = true;
         targetRequiresCallersBinding = true;
         targetRequiresCallersFrame = true;
         dontInline = false;
-        this.potentiallyRefined = potentiallyRefined;
+        this.potentiallyRefined = effectivelyRefined;
 
         captureFrameReadsAndWrites();
     }

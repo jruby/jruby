@@ -78,8 +78,7 @@ import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Warn.warn;
-import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
-import static org.jruby.runtime.ThreadContext.resetCallInfo;
+import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 public class RubyArgsFile extends RubyObject {
@@ -160,11 +159,6 @@ public class RubyArgsFile extends RubyObject {
             this.currentFile = runtime.getNil();
         }
 
-        @Deprecated(since = "9.1.8.0")
-        public void setCurrentLineNumber(Ruby runtime, int linenumber) {
-            runtime.setCurrentLine(linenumber);
-        }
-
         // ARGF.class.new
         void setArgs(RubyArray argv) {
             inited = false;
@@ -239,11 +233,6 @@ public class RubyArgsFile extends RubyObject {
             return (ArgsFileData) runtime.getArgsFile().dataGetStruct();
         }
 
-        @Deprecated(since = "9.1.8.0")
-        public static ArgsFileData getDataFrom(IRubyObject recv) {
-            return getArgsFileData(((RubyBasicObject) recv).getCurrentContext().runtime);
-        }
-
         private void createNewFile(File file) {
             try {
                 file.createNewFile();
@@ -300,11 +289,6 @@ public class RubyArgsFile extends RubyObject {
         public boolean isCurrentFile(RubyIO io) {
             return currentFile == io;
         }
-    }
-
-    @Deprecated(since = "9.1.8.0")
-    public static void setCurrentLineNumber(IRubyObject recv, int newLineNumber) {
-        ((RubyBasicObject) recv).getCurrentContext().runtime.setCurrentLine(newLineNumber);
     }
 
     @JRubyMethod
@@ -389,9 +373,7 @@ public class RubyArgsFile extends RubyObject {
     }
 
     // MRI: argf_getline
-    private static IRubyObject argf_getline(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        int callInfo = resetCallInfo(context);
-        boolean keywords = (callInfo & CALL_KEYWORD) != 0;
+    private static IRubyObject argf_getline(ThreadContext context, final int callInfo, IRubyObject[] args) {
         IRubyObject line;
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
 
@@ -401,14 +383,13 @@ public class RubyArgsFile extends RubyObject {
             RubyIO currentFile = (RubyIO) data.currentFile;
 
             if (isGenericInput(context, data)) {
-                // restore callInfo for kwargs
-                context.callInfo = callInfo;
+                context.callInfo = callInfo; // restore callInfo for kwargs
                 line = data.currentFile.callMethod(context, "gets", args);
             } else {
                 if (args.length == 0 && context.runtime.getRecordSeparatorVar().get() == globalVariables(context).getDefaultSeparator()) {
                     line = (currentFile).gets(context);
                 } else {
-                    line = Getline.getlineCall(context, GETLINE, currentFile, currentFile.getReadEncoding(), keywords, args);
+                    line = Getline.getlineCall(context, GETLINE, currentFile, currentFile.getReadEncoding(), hasKeywords(callInfo), args);
                 }
 
                 if (line.isNil() && data.next_p != Stream) {
@@ -436,9 +417,10 @@ public class RubyArgsFile extends RubyObject {
      */
     @JRubyMethod(name = "gets", optional = 1, keywords = true, checkArity = false, writes = LASTLINE)
     public static IRubyObject gets(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        final int callInfo = ThreadContext.resetCallInfo(context);
         Arity.checkArgumentCount(context, args, 0, 1);
 
-        return context.setLastLine(argf_getline(context, recv, args));
+        return context.setLastLine(argf_getline(context, callInfo, args));
     }
 
     /** Read a line.
@@ -455,34 +437,24 @@ public class RubyArgsFile extends RubyObject {
 
     @JRubyMethod(optional = 1, keywords = true, checkArity = false)
     public static IRubyObject readlines(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        final int callInfo = ThreadContext.resetCallInfo(context);
         Arity.checkArgumentCount(context, args, 0, 1);
 
-        int callInfo = context.callInfo;
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
 
         if (!data.next_argv(context)) return newEmptyArray(context);
 
-        if (!(data.currentFile instanceof RubyIO)) return data.currentFile.callMethod(context, "readlines", args);
+        if (!(data.currentFile instanceof RubyIO)) {
+            // TODO do we need to restore callInfo here?
+            return data.currentFile.callMethod(context, "readlines", args);
+        }
 
         var ary = newArray(context);
         IRubyObject line;
-        while(!(line = argfGetlineLoopWithKeywords(context, recv, args, callInfo)).isNil()) {
+        while(!(line = argf_getline(context, callInfo, args)).isNil()) {
             ary.append(context, line);
         }
         return ary;
-    }
-
-    /**
-     * Call argf_getline as in a loop, providing the given keywords state between calls.
-     *
-     * @param context
-     * @param recv
-     * @param args
-     * @return
-     */
-    private static IRubyObject argfGetlineLoopWithKeywords(ThreadContext context, IRubyObject recv, IRubyObject[] args, int callInfo) {
-        context.callInfo = callInfo;
-        return argf_getline(context, recv, args);
     }
 
     @JRubyMethod(optional = 1, checkArity = false)
@@ -496,7 +468,7 @@ public class RubyArgsFile extends RubyObject {
 
         var ary = newArray(context);
         IRubyObject line;
-        while ((line = argf_getline(context, recv, args)) != context.nil) {
+        while ((line = argf_getline(context, 0, args)) != context.nil) {
             ary.append(context, line);
         }
         return ary;
@@ -601,9 +573,9 @@ public class RubyArgsFile extends RubyObject {
     public static IRubyObject each_line(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         if (!block.isGiven()) return enumeratorize(context.runtime, recv, "each_line", args);
 
+        final int callInfo = ThreadContext.resetCallInfo(context);
         Arity.checkArgumentCount(context, args, 0, 1);
 
-        int callInfo = context.callInfo;
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
 
         if (!data.next_argv(context)) return context.nil;
@@ -616,7 +588,7 @@ public class RubyArgsFile extends RubyObject {
         }
 
         IRubyObject str;
-        while ((str = argfGetlineLoopWithKeywords(context, recv, args, callInfo)) != context.nil) {
+        while ((str = argf_getline(context, callInfo, args)) != context.nil) {
         	block.yield(context, str);
         }
 

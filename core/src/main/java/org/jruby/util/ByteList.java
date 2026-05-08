@@ -61,20 +61,15 @@ public class ByteList implements Comparable, CharSequence, Serializable {
 
     private static final Charset ISO_LATIN_1 = StandardCharsets.ISO_8859_1;
 
-    // NOTE: AR-JDBC (still) uses these fields directly in its ext .java parts  ,
-    // until there's new releases we shall keep them public and maybe review other exts using BL's API
-    @Deprecated(since = "9.2.1.0")
-    public byte[] bytes;
-    @Deprecated(since = "9.2.1.0")
-    public int begin;
-    @Deprecated(since = "9.2.1.0")
-    public int realSize;
+    private byte[] bytes;
+    private int begin;
+    private int realSize;
 
     private Encoding encoding = ASCIIEncoding.INSTANCE;
 
-    transient int hash;
+    private transient int hash;
 
-    transient String stringValue;
+    private transient String stringValue;
 
     private static final int DEFAULT_SIZE = 4;
 
@@ -220,7 +215,8 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     public ByteList(byte[] wrap, int index, int len, Encoding encoding, boolean copy) {
         assert wrap != null : "'wrap' must not be null";
         assert index >= 0 && index <= wrap.length : "'index' is not without bounds of 'wrap' array";
-        assert wrap.length >= index + len : "'index' + 'len' is longer than the 'wrap' array";
+        assert len >= 0 : "'len' must be non-negative";
+        assert wrap.length - index >= len : "'len' extends beyond the 'wrap' array";
 
         if (copy) {
             bytes = new byte[len];
@@ -255,8 +251,9 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      * @param len number of bytes to delete
      */
     public void delete(int start, int len) {
-        assert start >= begin && start < realSize : "'start' is at invalid index";
-        assert len >= 0 : "'len' must be positive";
+        assert start >= begin : "'start' is at invalid index (< begin)";
+        assert start < begin + realSize : "'start' is at invalid index (>= end)";
+        assert len >= 0 : "'len' must be non-negative";
         assert start + len <= begin + realSize : "too many bytes requested";
 
         realSize -= len;
@@ -627,7 +624,8 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      * @return the byte retreived
      */
     public int get(int index) {
-        assert index >= 0 : "index must be positive";
+        assert index >= 0 : "index must be non-negative";
+        assert begin + index < begin + realSize : "index is too large";
 
         return bytes[begin + index] & 0xFF;
     }
@@ -649,7 +647,7 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      * @param b is the new value.
      */
     public void set(int index, int b) {
-        assert index >= 0 : "index must be positive";
+        assert index >= 0 : "index must be non-negative";
         assert begin + index < begin + realSize : "index is too large";
 
         bytes[begin + index] = (byte)b;
@@ -1226,7 +1224,8 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      */
     public static char[] plain(byte[] b, int start, int length) {
         assert b != null : "byte array cannot be null";
-        assert start >= 0 && start + length <= b.length : "Invalid start or start+length too long";
+        assert length >= 0 : "length must be non-negative";
+        assert start >= 0 && start + length <= b.length : "invalid start index";
 
         char[] chars = new char[length];
         for (int i = 0; i < length; i++) {
@@ -1243,12 +1242,7 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      */
     public static char[] plain(byte[] b) {
         assert b != null : "byte array cannot be null";
-
-        char[] chars = new char[b.length];
-        for (int i = 0; i < b.length; i++) {
-            chars[i] = (char) (b[i] & 0xFF);
-        }
-        return chars;
+        return plain(b, 0, b.length);
     }
 
     // Work around bad charset handling in JDK. See
@@ -1433,7 +1427,6 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      * @param encoding the encoding to set
      */
     public void setEncoding(Encoding encoding) {
-        assert encoding != null;
         this.encoding = safeEncoding(encoding);
         invalidate();
     }

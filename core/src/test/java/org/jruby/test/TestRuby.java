@@ -112,7 +112,6 @@ public class TestRuby extends Base {
     @SuppressWarnings("deprecation")
     public void testRequireCextNotAllowedWhenCextIsDisabledGlobally() throws Exception {
         RubyInstanceConfig cfg = new RubyInstanceConfig();
-        cfg.setCextEnabled(false);
         var runtime = Ruby.newInstance(cfg);
         
         String extensionSuffix;

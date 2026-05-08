@@ -5,6 +5,7 @@ import org.jcodings.Encoding;
 import org.jruby.Appendable;
 import org.jruby.RubyString;
 import org.jruby.api.Convert;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -127,7 +128,9 @@ public class BuildDynamicStringSite extends MutableCallSite {
     private static MethodHandle constructGuardedToStringFilter() {
         // create an invoke site for the to_s call
         MethodType toSType = MethodType.methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class);
-        CallSite toS = SelfInvokeSite.bootstrap(MethodHandles.lookup(), "invokeFunctional:to_s", toSType, 0, 0, "", -1);
+        MethodHandles.Lookup lookup = MethodHandles.lookup();
+        InvokeSite site = new SelfInvokeSite(toSType, "to_s", CallType.FUNCTIONAL, CallType.NORMAL, false, 0, "", -1);
+        CallSite toS = InvokeSite.bootstrap(site, lookup);
         MethodHandle toS_handle = toS.dynamicInvoker();
 
         // Cast the result to RubyString, or else call anyToString on the original
@@ -501,10 +504,12 @@ public class BuildDynamicStringSite extends MutableCallSite {
         int firstStringCR = firstString.cr;
 
         // copy element bytes into a buffer initialSize wide, zeroing out the begin offset
-        byte[] bufferArray = Arrays.copyOfRange(firstStringByteList.unsafeBytes(), firstStringByteList.begin(), initialSize);
+        int firstSize = firstStringByteList.realSize();
+        byte[] bufferArray = new byte[firstSize + initialSize];
+        System.arraycopy(firstStringByteList.unsafeBytes(), firstStringByteList.begin(), bufferArray, 0, firstSize);
 
         // use element realSize for starting buffer realSize
-        ByteList bufferByteList = new ByteList(bufferArray, 0, firstStringByteList.realSize(), firstStringByteList.getEncoding(), false);
+        ByteList bufferByteList = new ByteList(bufferArray, 0, firstSize, firstStringByteList.getEncoding(), false);
 
         buffer = RubyString.newString(context.runtime, bufferByteList, firstStringCR);
         return buffer;

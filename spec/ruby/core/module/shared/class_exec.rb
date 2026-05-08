@@ -26,4 +26,10 @@ describe :module_class_exec, shared: true do
     a = ModuleSpecs::Subclass
     a.send(@method, 1) { |b| b }.should equal(1)
   end
+
+  describe "with optional argument" do
+    it "does not destructure a single array argument" do
+      ModuleSpecs::Subclass.send(@method, [1, 2, 3]) { |a = 99| a }.should == [1, 2, 3]
+    end
+  end
 end

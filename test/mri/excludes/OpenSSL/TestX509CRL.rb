@@ -1,5 +1,7 @@
+exclude :test_basic, "new failure with Ruby 4.0 tests, tested on MacOS, https://github.com/jruby/jruby/issues/9271"
 exclude :test_eq, "work in progress"
 exclude :test_extension, "work in progress"
 exclude :test_marshal, "work in progress"
 exclude :test_revoked_to_der, "work in progress"
 exclude :test_sign_and_verify_ed25519, "work in progress"
+exclude :test_sign_and_verify_nil_digest, "new failure with Ruby 4.0 tests, tested on MacOS, https://github.com/jruby/jruby/issues/9271"

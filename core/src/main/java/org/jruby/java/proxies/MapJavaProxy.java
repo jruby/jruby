@@ -36,6 +36,7 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
+import org.jruby.RubyHashLinkedBuckets;
 import org.jruby.RubyProc;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
@@ -94,7 +95,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         return wrappedMap;
     }
 
-    private static final class RubyHashMap extends RubyHash {
+    private static final class RubyHashMap extends RubyHashLinkedBuckets {
         static final RubyHashEntry[] EMPTY_TABLE = new RubyHashEntry[0];
         private static final Map.Entry[] NULL_MAP_ENTRY = new Map.Entry[0];
 
@@ -217,7 +218,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
                 return new RubyHashEntry(key.hashCode(), key, JavaUtil.convertJavaToUsableRubyObject(getRuntime(), value), null, null);
             }
 
-            return NO_ENTRY;
+            return NULL_ENTRY;
         }
 
         @Override
@@ -230,7 +231,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
                 map.remove(convertedKey);
                 return new RubyHashEntry(key.hashCode(), key, JavaUtil.convertJavaToUsableRubyObject(getRuntime(), value), null, null);
             }
-            return NO_ENTRY;
+            return NULL_ENTRY;
         }
 
         @Override // NOTE: likely won't be called
@@ -243,7 +244,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
                 return entry;
             }
 
-            return NO_ENTRY;
+            return NULL_ENTRY;
         }
 
         @Override
@@ -344,7 +345,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         @Override
         public RubyHash to_hash(ThreadContext context) {
             final Ruby runtime = context.runtime;
-            final RubyHash hash = new RubyHash(runtime);
+            final RubyHash hash = RubyHashLinkedBuckets.newLBHash(runtime);
             @SuppressWarnings("unchecked")
             Set<Map.Entry> entries = mapDelegate().entrySet();
             for ( Map.Entry entry : entries ) {
@@ -376,12 +377,6 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         @Override
         protected void replaceWith(ThreadContext context, RubyHash otherHash) {
             replaceExternally(context, otherHash);
-        }
-
-        @Deprecated(since = "9.4.6.0")
-        @Override
-        public IRubyObject any_p(ThreadContext context, IRubyObject[] args, Block block) {
-            return super.any_p(context, args, block);
         }
 
     }
@@ -709,22 +704,12 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         return getOrCreateRubyHashMap(context.runtime).invert(context);
     }
 
-    @Deprecated(since = "9.3.0.0")
-    public RubyHash merge_bang(final ThreadContext context, final IRubyObject other, final Block block) {
-        return merge_bang(context, new IRubyObject[]{other}, block);
-    }
-
     /** rb_hash_merge_bang
      *
      */
     @JRubyMethod(name = { "merge!", "update" }, rest = true)
     public RubyHash merge_bang(final ThreadContext context, final IRubyObject[] others, final Block block) {
         return getOrCreateRubyHashMap(context.runtime).merge_bang(context, others, block);
-    }
-
-    @Deprecated(since = "9.3.0.0")
-    public RubyHash merge(ThreadContext context, IRubyObject other, Block block) {
-        return merge(context, new IRubyObject[]{other}, block);
     }
 
     /** rb_hash_merge
@@ -857,16 +842,6 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
     @Override
     public final RubyHash convertToHash() {
         return getOrCreateRubyHashMap(getRuntime());
-    }
-
-    @Deprecated(since = "9.1.6.0")
-    public IRubyObject sort(ThreadContext context, Block block) {
-        return getOrCreateRubyHashMap(context.runtime).sort(context, block);
-    }
-
-    @Deprecated(since = "9.4.6.0")
-    public IRubyObject any_p(ThreadContext context, IRubyObject[] args, Block block) {
-        return getOrCreateRubyHashMap(context.runtime).any_p(context, args, block);
     }
 
 }

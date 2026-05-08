@@ -73,11 +73,6 @@ public class RubyRunnable implements ThreadedRunnable {
         this.creatorContext = creatorContext;
     }
 
-    @Deprecated(since = "1.7.5")
-    public RubyThread getRubyThread() {
-        return rubyThread;
-    }
-
     public Thread getJavaThread() {
         return javaThread;
     }
@@ -111,6 +106,7 @@ public class RubyRunnable implements ThreadedRunnable {
         // uber-ThreadKill catcher, since it should always just mean "be dead"
         try {
             // Push a frame for the toplevel of the thread
+            context.pushFrame();
 
             // Call the thread's code
             Block threadBlock = proc.getBlock();

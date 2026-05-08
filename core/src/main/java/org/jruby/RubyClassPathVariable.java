@@ -54,11 +54,6 @@ public class RubyClassPathVariable extends RubyObject {
         super(context.runtime, Object);
     }
     
-    @Deprecated(since = "1.7.0")
-    public IRubyObject append(IRubyObject obj) {
-        return append(obj.getRuntime().getCurrentContext(), obj);
-    }
-
     @JRubyMethod(name = {"append", "<<"})
     public IRubyObject append(ThreadContext context, IRubyObject obj) {
         IRubyObject[] paths;

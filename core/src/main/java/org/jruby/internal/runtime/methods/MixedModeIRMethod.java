@@ -65,6 +65,11 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         return actualMethod;
     }
 
+    public void reset() {
+        this.callCount = 0;
+        this.actualMethod = null;
+    }
+
     protected void post(InterpreterContext ic, ThreadContext context) {
         // update call stacks (pop: ..)
         context.popFrame();

@@ -227,7 +227,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         throw runtime.newFiberError("fiber called across threads");
     }
 
-    @JRubyMethod(rest = true)
+    @JRubyMethod(optional = 4, checkArity = false, keywords = true)
     public IRubyObject raise(ThreadContext context, IRubyObject[] args) {
         return raise(context, RubyThread.prepareRaiseException(context, args));
     }
@@ -406,11 +406,9 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         try {
             result = exchangeWithFiber(context, currentFiberData, data, val);
         } finally {
-            if (result == null) {
-                // exception raised, mark transfer as completed
-                data.prev = null;
-                currentFiberData.transferred = false;
-            }
+                // exception transferred, mark as completed
+            data.prev = null;
+            currentFiberData.transferred = false;
         }
 
         if (result.type == RequestType.RAISE) {

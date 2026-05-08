@@ -228,16 +228,6 @@ public abstract class BlockBody {
     public abstract void setStaticScope(StaticScope newScope);
 
     /**
-     * What is the arity of this block?
-     *
-     * @return the arity
-     */
-    @Deprecated(since = "9.0.0.0")
-    public Arity arity() {
-        return signature.arity();
-    }
-
-    /**
      * Is the current block a real yield'able block instead a null one
      *
      * @return true if this is a valid block or false otherwise

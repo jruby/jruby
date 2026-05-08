@@ -216,7 +216,8 @@ public class PosixShim {
 
         int real_fd = fd.realFileno;
 
-        if (posix.isNative() && real_fd != -1 && real_fd < FilenoUtil.FIRST_FAKE_FD && !Platform.IS_SOLARIS) {
+        if (!Platform.IS_SOLARIS && !Platform.IS_WINDOWS &&
+                posix.isNative() && real_fd != -1 && real_fd < FilenoUtil.FIRST_FAKE_FD) {
             // we have a real fd and not on Solaris...try native flocking
             // see jruby/jruby#3254 and jnr/jnr-posix#60
             int result = posix.flock(real_fd, lockMode);
@@ -492,16 +493,6 @@ public class PosixShim {
     // no longer used
     public Channel open(String cwd, String path, ModeFlags flags, int perm) {
         return open(cwd, path, flags.getFlags(), perm);
-    }
-
-    @Deprecated(since = "9.0.0.0") // special case is already handled with JRubyFile.createResource
-    public Channel open(String cwd, String path, ModeFlags flags, int perm, ClassLoader classLoader) {
-        if (path.startsWith("classpath:/") && classLoader != null) {
-            path = path.substring("classpath:/".length());
-            return Channels.newChannel(classLoader.getResourceAsStream(path));
-        }
-
-        return open(cwd, path, flags, perm);
     }
 
     /**

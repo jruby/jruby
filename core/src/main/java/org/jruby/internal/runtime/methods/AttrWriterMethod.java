@@ -85,10 +85,4 @@ public class AttrWriterMethod extends JavaMethodOne {
     public Collection<String> getInstanceVariableNames() {
         return Collections.singletonList(variableName);
     }
-
-    // Used by racc extension, needed for backward-compat with 1.7.
-    @Deprecated(since = "9.0.3.0")
-    public AttrWriterMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfiguration, String variableName) {
-        this(implementationClass, visibility, variableName);
-    }
 }

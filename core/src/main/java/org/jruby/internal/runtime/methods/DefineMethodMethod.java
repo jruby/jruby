@@ -22,6 +22,10 @@ public class DefineMethodMethod extends MixedModeIRMethod {
         this.capturedBlock = capturedBlock;
     }
 
+    public Block getCapturedBlock() {
+        return capturedBlock;
+    }
+
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         return super.call(context, self, clazz, name, args, capturedBlock);

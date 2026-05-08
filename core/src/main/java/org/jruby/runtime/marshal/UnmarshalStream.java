@@ -776,11 +776,6 @@ public class UnmarshalStream extends InputStream {
         }
     }
 
-    @Deprecated(since = "9.0.0.0")
-    public UnmarshalStream(Ruby runtime, InputStream in, IRubyObject proc, boolean taint, boolean untrust) throws IOException {
-        this(runtime, in, proc);
-    }
-
     @Deprecated(since = "9.4.0.0")
     public UnmarshalStream(Ruby runtime, InputStream in, IRubyObject proc, boolean taint) throws IOException {
         this(runtime, in, proc);

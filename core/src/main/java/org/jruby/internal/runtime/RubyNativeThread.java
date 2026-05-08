@@ -100,6 +100,7 @@ public class RubyNativeThread implements ThreadLike {
         updateName();
     }
 
+    // Deprecated in subclass but not in interface
     @Override
     @Deprecated(since = "9.2.0.0")
     public String getRubyName() {

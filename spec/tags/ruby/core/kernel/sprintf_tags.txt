@@ -1,2 +1,8 @@
 fails(https://github.com/jruby/jruby/issues/8739):Kernel#sprintf other formats c displays no characters if argument is an empty string
 fails(https://github.com/jruby/jruby/issues/8739):Kernel.sprintf other formats c displays no characters if argument is an empty string
+fails:Kernel#sprintf other formats c raises TypeError if argument is nil
+fails:Kernel#sprintf other formats c raises TypeError if converting to String with to_str returns non-String
+fails:Kernel#sprintf other formats c raises TypeError if converting to Integer with to_int returns non-Integer
+fails:Kernel.sprintf other formats c raises TypeError if argument is nil
+fails:Kernel.sprintf other formats c raises TypeError if converting to String with to_str returns non-String
+fails:Kernel.sprintf other formats c raises TypeError if converting to Integer with to_int returns non-Integer

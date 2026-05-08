@@ -41,11 +41,6 @@ import static org.jruby.api.Error.typeError;
 
 public final class MetaClass extends RubyClass {
 
-    @Deprecated(since = "9.2.1.0")
-    public MetaClass(Ruby runtime, RubyClass superClass, IRubyObject attached) {
-        this(runtime, superClass, (RubyBasicObject) attached);
-    }
-
     /**
      * rb_class_boot for meta classes ({@link #makeMetaClass(ThreadContext, RubyClass)})
      */

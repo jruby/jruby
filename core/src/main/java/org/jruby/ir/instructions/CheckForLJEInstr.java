@@ -27,11 +27,6 @@ public class CheckForLJEInstr extends NoOperandInstr {
         this.definedWithinMethod = notDefinedWithinMethod;
     }
 
-    @Deprecated(since = "9.1.9.0")
-    public boolean maybeLambda() {
-        return !definedWithinMethod;
-    }
-
     public boolean isDefinedWithinMethod() {
         return definedWithinMethod;
     }

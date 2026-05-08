@@ -2,6 +2,7 @@ package org.jruby.specialized;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyArrayNative;
 import org.jruby.RubyClass;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
@@ -39,7 +40,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * RubyArray{@link #toJavaArray(ThreadContext)}
  * RubyArray{@link #uniq(org.jruby.runtime.ThreadContext)}
  */
-public abstract class RubyArraySpecialized extends RubyArray {
+public abstract class RubyArraySpecialized extends RubyArrayNative {
     public static final int MAX_PACKED_SIZE = 2;
 
     public RubyArraySpecialized(Ruby runtime, boolean light) {

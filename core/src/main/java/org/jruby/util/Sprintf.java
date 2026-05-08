@@ -246,44 +246,6 @@ public class Sprintf {
             positionIndex = -2;
         }
 
-        @Deprecated(since = "9.1.8.0")
-        IRubyObject next(ByteList name) {
-            // for 1.9 hash args
-            if (name != null) {
-                if (rubyHash == null && positionIndex == -1) raiseArgumentError("positional args mixed with named args");
-
-                RubySymbol nameSym = runtime.newSymbol(name);
-                IRubyObject object = rubyHash.fastARef(nameSym);
-
-                // if not found, try dispatching to pick up default hash value
-                // MRI: spliced together bits from rb_hash_default_value
-                if (object == null) {
-                    object = rubyHash.getIfNone();
-                    if (object == RubyBasicObject.UNDEF) {
-                        RubyString nameStr = RubyString.newString(runtime, name);
-                        raiseKeyError("key<" + name + "> not found", rubyHash, nameSym);
-                    } else if (rubyHash.hasDefaultProc()) {
-                        object = object.callMethod(runtime.getCurrentContext(), "call", nameSym);
-                    }
-
-                    if (object.isNil()) {
-                        throw runtime.newKeyError("key " + nameSym + " not found", rubyHash, nameSym);
-                    }
-                }
-
-                return object;
-            } else if (rubyHash != null) {
-                raiseArgumentError("positional args mixed with named args");
-            }
-
-            // this is the order in which MRI does these two tests
-            if (positionIndex == -1) raiseArgumentError("unnumbered" + (positionIndex + 1) + "mixed with numbered");
-            if (positionIndex >= length) raiseArgumentError("too few arguments");
-            IRubyObject object = rubyArray == null ? rubyObject : rubyArray.eltInternal(positionIndex);
-            positionIndex++;
-            return object;
-        }
-
         int intValue(ThreadContext context, IRubyObject obj) {
             if (obj instanceof RubyNumeric num) return num.asInt(context);
 

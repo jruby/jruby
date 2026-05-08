@@ -31,6 +31,8 @@ package org.jruby.embed.internal;
 
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -50,6 +52,19 @@ public class LocalContext {
     private BiVariableMap varMap;
     private Map<AttributeName, Object> attributes;
 
+    /**
+     * Termination mark for removed LocalContext instances.
+     */
+    private volatile boolean terminated;
+    private static final VarHandle TERMINATED;
+    static {
+        try {
+            TERMINATED = MethodHandles.lookup().findVarHandle(LocalContext.class, "terminated", boolean.class);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public LocalContext(RubyInstanceConfig config, LocalVariableBehavior behavior) {
         this(config, behavior, false);
     }
@@ -60,14 +75,9 @@ public class LocalContext {
         this.lazy = lazy;
     }
 
-    // This method is used only from ThreadLocalContextProvider.
-    // Other providers should instantialte runtime in their own way.
-    @Deprecated(since = "1.7.20")
-    public Ruby getThreadSafeRuntime() {
-        return getRuntime();
-    }
-
     public BiVariableMap getVarMap(LocalContextProvider provider) {
+        checkTerminated();
+
         if (varMap == null) {
             synchronized(this) {
                 if (varMap == null) {
@@ -84,6 +94,8 @@ public class LocalContext {
 
     @SuppressWarnings("MapReplaceableByEnumMap")
     public Map<?, Object> getAttributeMap() {
+        checkTerminated();
+
         if (attributes == null) {
             synchronized(this) {
                 if (attributes == null) {
@@ -98,15 +110,25 @@ public class LocalContext {
     }
 
     public void remove() {
+        // Ensure the context is terminated only once
+        if (!TERMINATED.compareAndSet(this, false, true)) {
+            throw terminatedException();
+        }
+
         if (attributes != null) {
             synchronized(this) { attributes.clear(); }
         }
         if (varMap != null) {
             synchronized(this) { varMap.clear(); }
         }
+
+        // Clear the runtime reference to assist GC
+        runtime = null;
     }
 
     Ruby getRuntime() {
+        checkTerminated();
+
         if (runtime == null) {
             synchronized(this) {
                 if (runtime == null) {
@@ -117,6 +139,29 @@ public class LocalContext {
         return runtime;
     }
 
+    /**
+     * Check if this LocalContext has been terminated and raise error if so.
+     */
+    private void checkTerminated() {
+        if (isTerminated()) throw terminatedException();
+    }
+
+    /**
+     * Construct an exception to indicate this LocalContext has been terminated.
+     *
+     * @return the exception
+     */
+    private static IllegalStateException terminatedException() {
+        return new IllegalStateException("LocalContext is terminated");
+    }
+
     boolean isInitialized() { return runtime != null; }
+
+    /**
+     * Return the termination state of this LocalContext.
+     *
+     * @return true if terminated, false otherise
+     */
+    boolean isTerminated() { return terminated; }
 
 }

@@ -61,13 +61,14 @@ public class JavaSupportImpl extends JavaSupport {
         super(runtime);
     }
 
-    private static Map<String, AssignedName> newAssignedNames(Class<?> klass) {
-        return new HashMap<>(8, 1);
+    public void tearDown() {
+        super.tearDown();
+        staticAssignedNames.clear();
+        instanceAssignedNames.clear();
     }
 
-    @Deprecated(since = "9.3.0.0")
-    public Map<String, JavaClass> getNameClassMap() {
-        return Collections.emptyMap();
+    private static Map<String, AssignedName> newAssignedNames(Class<?> klass) {
+        return new HashMap<>(8, 1);
     }
 
     public ClassValue<Map<String, AssignedName>> getStaticAssignedNames() {
@@ -76,27 +77,6 @@ public class JavaSupportImpl extends JavaSupport {
 
     public ClassValue<Map<String, AssignedName>> getInstanceAssignedNames() {
         return instanceAssignedNames;
-    }
-
-    @Deprecated(since = "9.1.0.0")
-    public Map<Set<?>, JavaProxyClass> getJavaProxyClassCache() {
-        Map<Set<?>, JavaProxyClass> javaProxyClassCache = new HashMap<>(javaProxyClasses.size());
-        synchronized (javaProxyClasses) {
-            for ( Map.Entry<ProxyClassKey, JavaProxyClass> entry : javaProxyClasses.entrySet() ) {
-                final ProxyClassKey key = entry.getKey();
-                final Set<Object> cacheKey = new HashSet<>();
-                cacheKey.add(key.superClass);
-                for (int i = 0; i < key.interfaces.length; i++) {
-                    cacheKey.add(key.interfaces[i]);
-                }
-                // add (potentially) overridden names to the key.
-                if ( ! key.names.isEmpty() ) cacheKey.addAll(key.names);
-
-                javaProxyClassCache.put(cacheKey, entry.getValue());
-            }
-        }
-
-        return Collections.unmodifiableMap(javaProxyClassCache);
     }
 
     // cache of all JavaProxyClass objects created for this runtime
@@ -189,47 +169,6 @@ public class JavaSupportImpl extends JavaSupport {
                 hash += interfaces[i].hashCode();
             }
             return this.hash = (hash * superClass.hashCode()) ^ this.names.hashCode();
-        }
-    }
-
-    @Deprecated(since = "9.0.0.0")
-    private volatile Map<Object, Object[]> javaObjectVariables;
-
-    @Deprecated(since = "9.0.0.0")
-    public Object getJavaObjectVariable(Object o, int i) {
-        if (i == -1) return null;
-
-        Map<Object, Object[]> variables = javaObjectVariables;
-        if (variables == null) return null;
-
-        synchronized (this) {
-            Object[] vars = variables.get(o);
-            if (vars == null || vars.length <= i) return null;
-            return vars[i];
-        }
-    }
-
-    @Deprecated(since = "9.0.0.0")
-    public void setJavaObjectVariable(Object o, int i, Object v) {
-        if (i == -1) return;
-
-        synchronized (this) {
-            Map<Object, Object[]> variables = javaObjectVariables;
-
-            if (variables == null) {
-                variables = javaObjectVariables = new WeakIdentityHashMap();
-            }
-
-            Object[] vars = variables.get(o);
-            if (vars == null) {
-                vars = new Object[i + 1];
-                variables.put(o, vars);
-            }
-            else if (vars.length <= i) {
-                vars = ArraySupport.newCopy(vars, i + 1);
-                variables.put(o, vars);
-            }
-            vars[i] = v;
         }
     }
 

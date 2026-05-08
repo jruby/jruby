@@ -442,26 +442,6 @@ public class RubyRandom extends RubyRandomBase {
         }
     }
 
-    @Deprecated(since = "9.3.0.0")
-    static IRubyObject randKernel(ThreadContext context, IRubyObject[] args) {
-        RandomType random = getDefaultRand(context);
-        if (args.length == 0) {
-            return randFloat(context, random);
-        }
-
-        IRubyObject arg = args[0];
-        return randKernel(context, context.runtime.getRandomClass(), arg);
-    }
-
-    @Deprecated(since = "9.3.0.0")
-    public static IRubyObject rand(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return switch (args.length) {
-            case 0 -> randDefault(context, recv);
-            case 1 -> randDefault(context, recv, args[0]);
-            default -> throw argumentError(context, args.length, 0, 1);
-        };
-    }
-
     @Deprecated(since = "9.4.0.0")
     public IRubyObject randObj(ThreadContext context, IRubyObject[] args) {
         return (args.length == 0) ? rand(context) : rand(context, args[0]);

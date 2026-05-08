@@ -43,6 +43,20 @@ public class Define {
     }
 
     /**
+     * Define a new module under the given namespace. Roughly equivalent to
+     * rb_define_module_under in MRI.  Note: If a module already exists for this name
+     * it returns it or errors if it is not a Module at all.
+     *
+     * @param context the current context
+     * @param parent the parent module
+     * @param name The name of the new module
+     * @return The new module or existing one if it has already been defined.
+     */
+    public static RubyModule defineModuleUnder(ThreadContext context, RubyModule parent, String name) {
+        return context.runtime.defineModuleUnder(context, name, parent);
+    }
+
+    /**
      * There are times when an anonymous module is needed.  It is up to the caller
      * to set it up as a constant or include methods or whatever else is needed.
      *

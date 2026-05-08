@@ -36,5 +36,5 @@ def jruby_version
   Dir[File.join(DIST_FILES_DIR, "jruby-dist-*.zip")].each do |f|
     return $1 if f =~ /jruby-dist-(.*)-bin.zip/
   end
-  raise ArgumentError "mvn release:prepare has not been run"
+  raise ArgumentError "./mvnw release:prepare has not been run"
 end

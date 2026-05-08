@@ -6,6 +6,7 @@ import org.jruby.RubyFrozenError;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.ArgumentError;
 import org.jruby.exceptions.EOFError;
+import org.jruby.exceptions.EncodingError;
 import org.jruby.exceptions.IOError;
 import org.jruby.exceptions.NotImplementedError;
 import org.jruby.exceptions.RaiseException;
@@ -275,5 +276,9 @@ public class Error {
 
     public static EOFError eofError(ThreadContext context, String message) {
         return (EOFError) context.runtime.newEOFError(message);
+    }
+
+    public static EncodingError.CompatibilityError encodingCompatibilityError(ThreadContext context, String s) {
+        return (EncodingError.CompatibilityError) context.runtime.newEncodingCompatibilityError(s);
     }
 }

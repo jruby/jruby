@@ -162,11 +162,6 @@ public abstract class DelegatingDynamicMethod extends DynamicMethod {
         return delegate.isImplementedBy(other);
     }
 
-    @Deprecated(since = "9.3.0.0") @Override
-    public Arity getArity() {
-        return delegate.getArity();
-    }
-
     @Override
     public Signature getSignature() {
         return delegate.getSignature();

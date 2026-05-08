@@ -671,6 +671,11 @@ for j in "$JRUBY_HOME"/lib/jruby.jar "$JRUBY_HOME"/lib/jruby-complete.jar; do
     fi
     jruby_jar="$j"
 done
+
+if [ -z "${jruby_jar-}" ]; then
+    echo "JRUBY_HOME at ${JRUBY_HOME} contains no lib/jruby.jar, exiting."
+    exit 1
+fi
 readonly jruby_jar
 
 if $cygwin; then
@@ -844,7 +849,15 @@ JAVA_OPTS="$JAVA_OPTS ${JAVA_MEM-} ${JAVA_STACK-}"
 
 JFFI_OPTS="-Djffi.boot.library.path=$JRUBY_HOME/lib/jni"
 
-CLASSPATH="${CP-}${CP_DELIMITER}${CLASSPATH-}"
+if [ -n "${CP-}" ]; then
+    if [ -n "${CLASSPATH-}" ]; then
+        CLASSPATH="${CP-}${CP_DELIMITER}${CLASSPATH-}"
+    else
+        CLASSPATH="${CP-}"
+    fi
+else
+    CLASSPATH="${CLASSPATH-}"
+fi
 
 # ----- Module and Class Data Sharing flags for Java 9+ -----------------------
 
@@ -984,17 +997,22 @@ fi
 
 prepend java_args "$JAVACMD"
 
+classpath_value=$CLASSPATH
 if $NO_BOOTCLASSPATH || $VERIFY_JRUBY; then
     if $use_modules; then
         # Use module path instead of classpath for the jruby libs
-        append java_args --module-path "$JRUBY_CP" -classpath "$CLASSPATH"
+        append java_args --module-path "$JRUBY_CP"
     else
-        append java_args -classpath "$JRUBY_CP$CP_DELIMITER$CLASSPATH"
+        classpath_value="$JRUBY_CP$CP_DELIMITER$classpath_value"
+        # Trim extra delimiter we might have appended
+        classpath_value="${classpath_value%"$CP_DELIMITER"}"
     fi
 else
     append java_args -Xbootclasspath/a:"$JRUBY_CP"
-    append java_args -classpath "$CLASSPATH"
-    append java_args -Djruby.home="$JRUBY_HOME"
+fi
+
+if [ -n "$classpath_value" ]; then
+    append java_args -classpath "$classpath_value"
 fi
 
 append java_args -Djruby.home="$JRUBY_HOME" \

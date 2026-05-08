@@ -1794,28 +1794,6 @@ public class ScriptingContainerTest {
     }
 
     /**
-     * Test of setRunRubyInProcess method, of class ScriptingContainer.
-     */
-    @Test
-    public void testSetRunRubyInProcess() {
-        logger1.info("setRunRubyInProcess");
-        boolean inprocess = false;
-        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
-        instance.setError(pstream);
-        instance.setOutput(pstream);
-        instance.setWriter(writer);
-        instance.setErrorWriter(writer);
-        instance.setRunRubyInProcess(inprocess);
-        assertEquals(inprocess, instance.isRunRubyInProcess());
-
-        inprocess = true;
-        instance.setRunRubyInProcess(inprocess);
-        assertEquals(inprocess, instance.isRunRubyInProcess());
-
-        instance.terminate();
-    }
-
-    /**
      * Test of isObjectSpaceEnabled method, of class ScriptingContainer.
      */
     @Test

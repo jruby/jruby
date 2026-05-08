@@ -29,14 +29,11 @@ class TestLoadCompiledRubyClassFromClasspath < Test::Unit::TestCase
 
     # This line means we assume the test is running from the jruby root directory
     @jruby_home = Dir.pwd
-    @in_process = JRuby.runtime.instance_config.run_ruby_in_process
-    JRuby.runtime.instance_config.run_ruby_in_process = false
   end
 
   def teardown
     remove_test_artifacts
     ENV["CLASSPATH"] = @@ENV_CLASSPATH
-    JRuby.runtime.instance_config.run_ruby_in_process = @in_process
   end
 
   def test_loading_compiled_ruby_class_from_classpath

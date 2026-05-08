@@ -49,10 +49,10 @@ import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.RESET_GVAR_UND
  * run the stack of ensure blocks in the right order.
  * ----------------------------------------------------------------------------------- */
 class EnsureBlockInfo {
-    final Label regionStart;
-    final Label    start;
-    final Label    end;
-    final Label    dummyRescueBlockLabel;
+    final Label start;         // Beginning of this ensure region
+    final Label bodyStart;     // Beginning of any actual instrs in the ensure body (will not be emitted if none)
+    final Label end;           // End of this ensure region
+    final Label ensureRescue;  // Where exceptions in an ensure flow through
     Variable savedGlobalException;
     boolean needsBacktrace;
 
@@ -65,13 +65,13 @@ class EnsureBlockInfo {
     // This ensure block's instructions
     final List<Instr> instrs;
 
-    public EnsureBlockInfo(IRScope s, IRLoop l, Label bodyRescuer) {
+    public EnsureBlockInfo(IRScope s, IRLoop l, Label bodyRescuer, int sourceLine) {
         // this technically may be any block and not specifically rescue but for the sake of looking at the CFG
         // it is more or less a begin block with exception handling around it.
-        regionStart = s.getNewLabel("BEGIN");
-        start       = s.getNewLabel("RESC_START");
-        end         = s.getNewLabel("AFTER_RESC");
-        dummyRescueBlockLabel = s.getNewLabel("RESC_DUMMY");
+        start = s.getNewLabel("ENSURE_BEGIN_@" + sourceLine);
+        bodyStart = s.getNewLabel("ENSURE_BODY_:@" + sourceLine);
+        end = s.getNewLabel("ENSURE_END_:@" + sourceLine);
+        ensureRescue = s.getNewLabel("ENSURE_CATCH_@" + sourceLine);
         instrs = new ArrayList<>(4);
         savedGlobalException = null;
         innermostLoop = l;
@@ -87,10 +87,14 @@ class EnsureBlockInfo {
         instrs.add(0, i);
     }
 
-    public void emitBody(IRBuilder b) {
-        b.addInstr(new LabelInstr(start));
+    /**
+     * Emit the saved instrs for the ensure body into the current location in the provided builder.
+     * @param builder
+     */
+    public void emitEnsureBody(IRBuilder builder) {
+        builder.addInstr(new LabelInstr(bodyStart));
         for (Instr i: instrs) {
-            b.addInstr(i);
+            builder.addInstr(i);
         }
     }
 
@@ -106,20 +110,20 @@ class EnsureBlockInfo {
         // there are no actual instrs pushed yet (but ebi has reserved a frame for it -- e.g. the rescue/ensure
         // the next is in).  Since it is doing nothing we have nothing to clone.  By skipping this we prevent
         // setting exception regions and simplify CFG construction.
-        if (instrs.size() == 0) return;
+        if (instrs.isEmpty()) return;
 
         SimpleCloneInfo ii = new SimpleCloneInfo(builder.scope, true);
 
         // Clone required labels.
         // During normal cloning below, labels not found in the rename map
         // are not cloned.
-        ii.renameLabel(start);
+        ii.renameLabel(bodyStart);
         for (Instr i: instrs) {
             if (i instanceof LabelInstr) ii.renameLabel(((LabelInstr)i).getLabel());
         }
 
         // Clone instructions now
-        builder.addInstr(new LabelInstr(ii.getRenamedLabel(start)));
+        builder.addInstr(new LabelInstr(ii.getRenamedLabel(bodyStart)));
         builder.addInstr(new ExceptionRegionStartMarkerInstr(bodyRescuer));
         for (Instr instr: instrs) {
             Instr clonedInstr = instr.clone(ii);

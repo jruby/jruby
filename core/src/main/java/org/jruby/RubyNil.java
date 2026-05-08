@@ -199,11 +199,6 @@ public class RubyNil extends RubyObject implements Constantizable, SimpleHash {
         return context.tru;
     }
 
-    @Deprecated(since = "9.3.0.0")
-    public IRubyObject nil_p() {
-        return nil_p(getCurrentContext());
-    }
-
     @JRubyMethod
     public RubyFixnum hash(ThreadContext context) {
         return context.runtime.getNilHash();
@@ -277,7 +272,4 @@ public class RubyNil extends RubyObject implements Constantizable, SimpleHash {
     public IRubyObject taint(ThreadContext context) {
         return this;
     }
-
-    @Deprecated(since = "9.3.0.0")
-    public static final ObjectAllocator NIL_ALLOCATOR = NOT_ALLOCATABLE_ALLOCATOR;
 }

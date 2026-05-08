@@ -193,6 +193,13 @@ public class Options {
     public static final Option<String> GEM_HOME = string(MISCELLANEOUS, "gem.home", "The home dir where Ruby gems will be installed.");
     public static final Option<String> GEM_PATH = string(MISCELLANEOUS, "gem.path", "The path containing all dirs to search for installed Ruby gems.");
 
+    public static final Option<Boolean> USE_COMPACT_FIXNUMS = bool(MISCELLANEOUS, "fixnum.compact", true, "Allocate fixnums compactly.");
+    // int fixnums don't pack any tighter than long with current JVMs
+    public static final Option<Boolean> USE_INT_FIXNUMS = bool(MISCELLANEOUS, "fixnum.int", false, "Allocate int-range fixnums compactly.");
+    public static final Option<Boolean> USE_SHORT_FIXNUMS = bool(MISCELLANEOUS, "fixnum.short", true, "Allocate short-range fixnums compactly.");
+    // byte fixnums don't pack any tighter than short with current JVMs
+    public static final Option<Boolean> USE_BYTE_FIXNUMS = bool(MISCELLANEOUS, "fixnum.byte", false, "Allocate byte-range fixnums compactly.");
+
     public static final Option<Boolean> DEBUG_LOADSERVICE = bool(DEBUG, "debug.loadService", false, "Log require/load file searches.");
     public static final Option<Boolean> DEBUG_LOADSERVICE_TIMING = bool(DEBUG, "debug.loadService.timing", false, "Log require/load parse+evaluate times.");
     public static final Option<Boolean> DEBUG_LAUNCH = bool(DEBUG, "debug.launch", false, "Log externally-launched processes.");
@@ -251,7 +258,7 @@ public class Options {
     public static final Option<String> CLI_ENCODING_INTERNAL = string(CLI, "cli.encoding.internal", "Encoding name to use internally.");
     public static final Option<String> CLI_ENCODING_EXTERNAL = string(CLI, "cli.encoding.external", "Encoding name to treat external data.");
     public static final Option<String> CLI_ENCODING_SOURCE = string(CLI, "cli.encoding.source", "Encoding name to treat source code.");
-    public static final Option<String> CLI_RECORD_SEPARATOR = string(CLI, "cli.record.separator", "\n", "Default record separator.");
+    public static final Option<String> CLI_RECORD_SEPARATOR = string(CLI, "cli.record.separator", "\n", "Configurable record separator.");
     public static final Option<String> CLI_BACKUP_EXTENSION = string(CLI, "cli.backup.extension", "Backup extension for in-place ARGV files. Same as -i.");
     public static final Option<ProfilingMode> CLI_PROFILING_MODE = enumeration(CLI, "cli.profiling.mode", ProfilingMode.class, ProfilingMode.OFF, "Enable instrumented profiling modes.");
     public static final Option<String> CLI_PROFILING_SERVICE = string(CLI, "cli.profiling.service", "Profiling service class to use.");
@@ -365,112 +372,6 @@ public class Options {
             propertyNames.add(option.propertyName());
         }
     }
-
-    @Deprecated(since = "9.3.0.0")
-    public static final Option<Boolean> PARSER_WARN_GROUPED_EXPRESSIONS = bool(PARSER, "parser.warn.grouped_expressions", true, "Warn about interpreting (...) as a grouped expression.");
-
-    @Deprecated(since = "9.3.0.0")
-    public static final Option<Boolean> COMPILE_FASTOPS = bool(COMPILER, "compile.fastops", true, "Turn on fast operators for Fixnum and Float.");
-
-    @Deprecated(since = "9.3.0.0")
-    public static final Option<Boolean> COMPILE_THREADLESS = bool(COMPILER, "compile.threadless", false, "(EXPERIMENTAL) Turn on compilation without polling for \"unsafe\" thread events.");
-
-    @Deprecated(since = "9.3.0.0")
-    public static final Option<Integer> COMPILE_CHAINSIZE = integer(COMPILER, "compile.chainsize", Constants.CHAINED_COMPILE_LINE_COUNT_DEFAULT, "Set the number of lines at which compiled bodies are \"chained\".");
-
-    @Deprecated(since = "9.3.0.0")
-    public static final Option<Boolean> COMPILE_PEEPHOLE = bool(COMPILER, "compile.peephole", true, "Enable or disable peephole optimizations.");
-
-    @Deprecated(since = "9.3.0.0")
-    public static final Option<Boolean> COMPILE_NOGUARDS = bool(COMPILER, "compile.noguards", false, "Compile calls without guards, for experimentation.");
-
-    @Deprecated(since = "9.3.0.0")
-    public static final Option<Boolean> COMPILE_FASTEST = bool(COMPILER, "compile.fastest", false, "Compile with all \"mostly harmless\" compiler optimizations.");
-
-    @Deprecated(since = "9.3.0.0")
-    public static final Option<Boolean> COMPILE_FASTSEND = bool(COMPILER, "compile.fastsend", false, "Compile obj.__send__(<literal>, ...) as obj.<literal>(...).");
-
-    @Deprecated(since = "9.3.0.0")
-    public static final Option<Boolean> COMPILE_FASTMASGN = bool(COMPILER, "compile.fastMasgn", false, "Return true from multiple assignment instead of a new array.");
-
-    @Deprecated(since = "9.3.0.0")
-    public static final Option<Integer> COMPILE_OUTLINE_CASECOUNT = integer(COMPILER, "compile.outline.casecount", 50, "Outline when bodies when number of cases exceeds this value.");
-
-    @Deprecated(since = "9.3.0.0")
-    public static final Option<Boolean> INVOKEDYNAMIC_SAFE = bool(INVOKEDYNAMIC, "invokedynamic.safe", false, "Enable all safe (but maybe not fast) uses of invokedynamic.");
-
-    @Deprecated(since = "9.3.0.0")
-    public static final Option<Boolean> INVOKEDYNAMIC_INVOCATION = bool(INVOKEDYNAMIC, "invokedynamic.invocation", true, "Enable invokedynamic for method invocations.");
-
-    @Deprecated(since = "9.3.0.0")
-    public static final Option<Boolean> INVOKEDYNAMIC_INVOCATION_INDIRECT = bool(INVOKEDYNAMIC, "invokedynamic.invocation.indirect", true, "Also bind indirect method invokers to invokedynamic.");
-
-    @Deprecated(since = "9.3.0.0")
-    public static final Option<Boolean> INVOKEDYNAMIC_INVOCATION_JAVA = bool(INVOKEDYNAMIC, "invokedynamic.invocation.java", true, "Bind Ruby to Java invocations with invokedynamic.");
-
-    @Deprecated(since = "9.3.0.0")
-    public static final Option<Boolean> INVOKEDYNAMIC_INVOCATION_ATTR = bool(INVOKEDYNAMIC, "invokedynamic.invocation.attr", true, "Bind Ruby attribute invocations directly to invokedynamic.");
-
-    @Deprecated(since = "9.3.0.0")
-    public static final Option<Boolean> INVOKEDYNAMIC_INVOCATION_FFI = bool(INVOKEDYNAMIC, "invokedynamic.invocation.ffi", true, "Bind Ruby FFI invocations directly to invokedynamic.");
-
-    @Deprecated(since = "9.3.0.0")
-    public static final Option<Boolean> INVOKEDYNAMIC_INVOCATION_FASTOPS = bool(INVOKEDYNAMIC, "invokedynamic.invocation.fastops", true, "Bind Fixnum and Float math using optimized logic.");
-
-    @Deprecated(since = "9.3.0.0")
-    public static final Option<Boolean> INVOKEDYNAMIC_CACHE = bool(INVOKEDYNAMIC, "invokedynamic.cache", true, "Use invokedynamic to load cached values like literals and constants.");
-
-    @Deprecated(since = "9.3.0.0")
-    public static final Option<Boolean> INVOKEDYNAMIC_CACHE_CONSTANTS = bool(INVOKEDYNAMIC, "invokedynamic.cache.constants", true, "Use invokedynamic to load constants.");
-
-    @Deprecated(since = "9.3.0.0")
-    public static final Option<Boolean> INVOKEDYNAMIC_CACHE_LITERALS = bool(INVOKEDYNAMIC, "invokedynamic.cache.literals", true, "Use invokedynamic to load literals.");
-
-    @Deprecated(since = "9.3.0.0")
-    public static final Option<Boolean> INVOKEDYNAMIC_CACHE_IVARS = bool(INVOKEDYNAMIC, "invokedynamic.cache.ivars", true, "Use invokedynamic to get/set instance variables.");
-
-    @Deprecated(since = "9.3.0.0")
-    public static final Option<Boolean> JIT_CACHE = bool(JIT, "jit.cache", !COMPILE_INVOKEDYNAMIC.load(), "(DEPRECATED) Cache jitted method in-memory bodies across runtimes and loads.");    public static final Option<Boolean> INVOKEDYNAMIC_ALL = bool(INVOKEDYNAMIC, "invokedynamic.all", false, "Enable all possible uses of invokedynamic.");
-
-    @Deprecated(since = "9.3.0.0")
-    public static final Option<Boolean> JIT_DUMPING = bool(JIT, "jit.dumping", false, "Enable stdout dumping of JITed bytecode.");
-
-    @Deprecated(since = "9.3.0.0")
-    public static final Option<String>  IR_INLINE_COMPILER_PASSES = string(IR, "ir.inline_passes", "Specify comma delimeted list of passes to run after inlining a method.");
-
-    @Deprecated(since = "9.3.0.0")
-    public static final Option<Boolean> FFI_COMPILE_INVOKEDYNAMIC = bool(NATIVE, "ffi.compile.invokedynamic", false, "Use invokedynamic to bind FFI invocations.");
-
-    // internal IO mimics what this was doing, and this has been untested and unsupported for many years
-    @Deprecated(since = "9.3.0.0")
-    public static final Option<Boolean> NATIVE_NET_PROTOCOL = bool(MISCELLANEOUS, "native.net.protocol", false, "Use native impls for parts of net/protocol.");
-
-    @Deprecated(since = "9.3.0.0")
-    public static final Option<String> THREAD_DUMP_SIGNAL = string(MISCELLANEOUS, "thread.dump.signal", new String[]{"USR1", "USR2", "etc"}, "USR2", "Set the signal used for dumping thread stacks.");
-
-    @Deprecated(since = "9.3.0.0")
-    public static final Option<Boolean> FIBER_COROUTINES = bool(MISCELLANEOUS, "fiber.coroutines", false, "Use JVM coroutines for Fiber.");
-
-    @Deprecated(since = "9.3.0.0")
-    public static final Option<Boolean> GLOBAL_REQUIRE_LOCK = bool(MISCELLANEOUS, "global.require.lock", false, "Use a single global lock for requires.");
-
-    @Deprecated(since = "9.3.0.0")
-    public static final Option<Boolean> REFLECTED_HANDLES = bool(MISCELLANEOUS, "reflected.handles", false, "Use reflection for binding methods, not generated bytecode.");
-
-    @Deprecated(since = "9.3.0.0")
-    public static final Option<Boolean> ENUMERATOR_LIGHTWEIGHT = bool(MISCELLANEOUS, "enumerator.lightweight", true, "Use lightweight Enumerator#next logic when possible.");
-
-    @Deprecated(since = "9.3.0.0")
-    public static final Option<Boolean> FCNTL_LOCKING = bool(MISCELLANEOUS, "file.flock.fcntl", true, "Use fcntl rather than flock for File#flock");
-
-    @Deprecated(since = "9.3.0.0")
-    public static final Option<Boolean> RECORD_LEXICAL_HIERARCHY = bool(MISCELLANEOUS, "record.lexical.hierarchy", false, "Maintain children static scopes to support scope dumping.");
-
-    @Deprecated(since = "9.3.0.0")
-    public static final Option<Boolean> JI_LOGCANSETACCESSIBLE = bool(JAVA_INTEGRATION, "ji.logCanSetAccessible", false, "Log whether setAccessible is working.");
-
-    @Deprecated(since = "9.3.0.0")
-    public static final Option<Boolean> JAVA_HANDLES = bool(JAVA_INTEGRATION, "java.handles", false, "Use generated handles instead of reflection for calling Java.");
 
     @Deprecated(since = "10.0.0.0")
     public static final Option<Boolean> NAME_ERROR_INSPECT_OBJECT = bool(MISCELLANEOUS, "nameError.inspect.object", true, "Inspect the target object for display in NameError messages.");

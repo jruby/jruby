@@ -139,7 +139,7 @@ public class Java implements Library {
         RubyClass objectClass = (RubyClass) getProxyClass(context, java.lang.Object.class);
 
         // load Ruby parts of the 'java' library
-        loadService(context).load("jruby/java.rb", false);
+        loadService(context).loadFromClassLoader("jruby/java.rb", false);
 
         // rewire ArrayJavaProxy superclass to point at Object, so it inherits Object behaviors
         Access.getClass(context, "ArrayJavaProxy").
@@ -218,11 +218,6 @@ public class Java implements Library {
     }
 
     public static class OldStyleExtensionInherited {
-        @Deprecated(since = "9.1.0.0")
-        public static IRubyObject inherited(IRubyObject self, IRubyObject subclass) {
-            return inherited(((RubyBasicObject) self).getCurrentContext(), self, subclass);
-        }
-
         @JRubyMethod
         public static IRubyObject inherited(ThreadContext context, IRubyObject self, IRubyObject subclass) {
             return invokeProxyClassInherited(context, self, subclass);
@@ -230,11 +225,6 @@ public class Java implements Library {
     };
 
     public static class NewStyleExtensionInherited {
-        @Deprecated(since = "9.1.0.0")
-        public static IRubyObject inherited(IRubyObject self, IRubyObject subclass) {
-            return inherited(((RubyBasicObject) self).getCurrentContext(), self, subclass);
-        }
-
         @JRubyMethod
         public static IRubyObject inherited(ThreadContext context, IRubyObject self, IRubyObject subclass) {
             JavaInterfaceTemplate.addRealImplClassNew(castAsClass(context, subclass));
@@ -608,11 +598,6 @@ public class Java implements Library {
             return RubyString.newStringLight(context.runtime, bytes);
         }
 
-    }
-
-    @Deprecated(since = "9.1.0.0")
-    public static IRubyObject concrete_proxy_inherited(final IRubyObject clazz, final IRubyObject subclazz) {
-        return invokeProxyClassInherited(((RubyBasicObject) clazz).getCurrentContext(), clazz, subclazz);
     }
 
     private static IRubyObject invokeProxyClassInherited(final ThreadContext context,
@@ -1218,10 +1203,6 @@ public class Java implements Library {
         public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
             return this.packageOrClass;
         }
-
-        @Deprecated(since = "9.4.3.0") @Override
-        public Arity getArity() { return Arity.noArguments(); }
-
     }
 
     static final class ProcToInterface extends org.jruby.internal.runtime.methods.DynamicMethod {
@@ -1371,37 +1352,6 @@ public class Java implements Library {
     @Deprecated(since = "9.4.0.0")
     public static IRubyObject wrap(Ruby runtime, IRubyObject java_object) {
         return getInstance(runtime, ((JavaObject) java_object).getValue());
-    }
-
-    /**
-     * High-level object conversion utility function 'java_to_primitive' is the low-level version
-     */
-    @Deprecated(since = "1.4.0")
-    @JRubyMethod(module = true, visibility = PRIVATE)
-    public static IRubyObject java_to_ruby(IRubyObject recv, IRubyObject object, Block unusedBlock) {
-        var context = ((RubyBasicObject) recv).getCurrentContext();
-        try {
-            return JavaUtil.java_to_ruby(context.runtime, object);
-        } catch (RuntimeException e) {
-            context.runtime.getJavaSupport().handleNativeException(e, null);
-            // This point is only reached if there was an exception handler installed.
-            return context.nil;
-        }
-    }
-
-    /**
-     * High-level object conversion utility.
-     */
-    @Deprecated(since = "1.4.0")
-    @JRubyMethod(module = true, visibility = PRIVATE)
-    public static IRubyObject ruby_to_java(final IRubyObject recv, IRubyObject object, Block unusedBlock) {
-        return JavaUtil.ruby_to_java(recv, object, unusedBlock);
-    }
-
-    @Deprecated(since = "1.4.0")
-    @JRubyMethod(module = true, visibility = PRIVATE)
-    public static IRubyObject java_to_primitive(IRubyObject recv, IRubyObject object, Block unusedBlock) {
-        return JavaUtil.java_to_primitive(recv, object, unusedBlock);
     }
 
     @Deprecated(since = "10.0.0.0")

@@ -35,6 +35,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.jruby.ir.passes.DeadCodeElimination;
 import org.jruby.ir.passes.OptimizeDelegationPass;
 import org.jruby.ir.passes.OptimizeDynScopesPass;
@@ -94,6 +96,7 @@ public class IRManager {
     private final RubyInstanceConfig config;
     public final Ruby runtime;
     private IRBuilderFactory builderFactory;
+    private AtomicLong callSiteCounter = new AtomicLong(1);
 
     public IRManager(Ruby runtime, RubyInstanceConfig config) {
         this.runtime = runtime;
@@ -444,5 +447,9 @@ public class IRManager {
 
     public BuiltinClass getSymbolClass() {
         return symbolClass;
+    }
+
+    public long nextCallSiteID() {
+        return callSiteCounter.incrementAndGet();
     }
 }

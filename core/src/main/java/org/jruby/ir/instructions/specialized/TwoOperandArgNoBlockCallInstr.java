@@ -11,21 +11,12 @@ import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class TwoOperandArgNoBlockCallInstr  extends CallInstr  {
-    // clone constructor
-    protected TwoOperandArgNoBlockCallInstr(IRScope scope, CallType callType, Variable result, RubySymbol name,
-                                            Operand receiver, Operand[] args, int flags, boolean isPotentiallyRefined,
-                                            CallSite callSite, long callSiteId) {
-        super(scope, Operation.CALL_2O, callType, result, name, receiver, args, NullBlock.INSTANCE, flags, isPotentiallyRefined,
-                callSite, callSiteId);
-    }
-
     // normal constructor
     public TwoOperandArgNoBlockCallInstr(IRScope scope, CallType callType, Variable result, RubySymbol name,
                                          Operand receiver, Operand[] args, int flags, boolean isPotentiallyRefined) {
@@ -35,8 +26,8 @@ public class TwoOperandArgNoBlockCallInstr  extends CallInstr  {
     @Override
     public Instr clone(CloneInfo ii) {
         return new TwoOperandArgNoBlockCallInstr(ii.getScope(), getCallType(), ii.getRenamedVariable(result), getName(),
-                getReceiver().cloneForInlining(ii), cloneCallArgs(ii), getFlags(), isPotentiallyRefined(),
-                getCallSite(), getCallSiteId());
+                getReceiver().cloneForInlining(ii), cloneCallArgs(ii), getFlags(), isPotentiallyRefined()
+        );
     }
 
     public Operand getArg2() {

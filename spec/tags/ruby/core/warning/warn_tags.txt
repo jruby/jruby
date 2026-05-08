@@ -5,3 +5,4 @@ fails:Warning.warn doesn't print message when category is :strict_unused_block b
 windows:Warning.warn does not add a newline
 windows:Warning.warn returns nil
 windows:Warning.warn can be overridden
+fails:Warning.warn is called by parser warnings

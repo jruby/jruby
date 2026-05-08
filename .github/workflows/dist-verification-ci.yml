@@ -1,0 +1,83 @@
+name: Dist Verification CI
+
+on: [push, pull_request]
+
+env:
+  JAVA_OPTS: '-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xms60M -Xmx1G -XX:InitialCodeCacheSize=40M -XX:ReservedCodeCacheSize=120M'
+
+permissions:
+  contents: read
+
+jobs:
+  build-dist:
+
+    strategy:
+      matrix:
+        java-version: ['21']
+      fail-fast: false
+
+    runs-on: ubuntu-latest
+
+    name: Build JRuby dist archive
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v6
+      - name: set up java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'zulu'
+          java-version: 21
+          cache: 'maven'
+      - name: build dist archive
+        run: |
+          ./mvnw -ntp clean package -Pdist
+          mv maven/jruby-dist/target/jruby-dist*-bin.tar.gz jruby-dist-bin.tar.gz
+      - name: cache dist
+        uses: actions/upload-artifact@v7
+        with:
+          path: jruby-dist-bin.tar.gz
+          retention-days: 1
+          archive: false
+
+  rails-verification:
+
+    needs: build-dist
+
+    strategy:
+      matrix:
+        java-version: ['21', '25']
+        runs-on: [windows-latest, macos-latest, ubuntu-latest]
+      fail-fast: false
+
+    runs-on: ${{ matrix.runs-on }}
+
+    name: dist verification on ${{ matrix.runs-on }} (Java ${{ matrix.java-version }})
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v6
+        with:
+          path: jruby-src
+      - name: set up java ${{ matrix.java-version }}
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'zulu'
+          java-version: ${{ matrix.java-version }}
+      - name: download cached dist
+        uses: actions/download-artifact@v8
+        with:
+          name: jruby-dist-bin.tar.gz
+      - name: unpack dist
+        run: tar xzf jruby-dist-bin.tar.gz --strip-components=1
+      - name: dist verification (Windows)
+        if: matrix.runs-on == 'windows-latest'
+        run: echo "${{ github.workspace }}\bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
+      - name: set up dist path (Unix)
+        if: matrix.runs-on != 'windows-latest'
+        run: echo "$(pwd)/bin" >> $GITHUB_PATH
+      - name: rails verification
+        run: jruby jruby-src/tool/rails_runner
+      - name: syslog verification (Unix)
+        if: matrix.runs-on != 'windows-latest'
+        run: jruby -rsyslog -e 1

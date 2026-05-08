@@ -300,6 +300,14 @@ describe "IO.copy_stream" do
       @io.should_not_receive(:pos)
       IO.copy_stream(@io, @to_name)
     end
+
+    it "does not call #read on the source or #write on the destination if zero length is given" do
+      from = mock("io_copy_stream_to_object_zero_length_read")
+      to = mock("io_copy_stream_to_object_zero_length_write")
+      from.should_not_receive(:read)
+      to.should_not_receive(:write)
+      IO.copy_stream(from, to, 0)
+    end
   end
 
   describe "with a destination that does partial reads" do

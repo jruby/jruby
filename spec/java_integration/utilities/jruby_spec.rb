@@ -23,7 +23,7 @@ describe "JRuby#compile_ir" do
     require 'jruby'
     compiled = JRuby.compile_ir("foo = 1; bar = 2", 'foobar.rbx')
 
-    expect(compiled.file_name).to eql 'foobar.rbx'
+    expect(compiled.file).to eql 'foobar.rbx'
   end
 end
 

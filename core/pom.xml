@@ -12,7 +12,7 @@ DO NOT MODIFY - GENERATED CODE
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>10.1.0.0-SNAPSHOT</version>
+    <version>10.1.1.0-SNAPSHOT</version>
   </parent>
   <artifactId>jruby-base</artifactId>
   <name>JRuby Base</name>
@@ -55,9 +55,9 @@ DO NOT MODIFY - GENERATED CODE
     <test.results.dir>${build.dir}/test-results</test.results.dir>
     <tzdata.scope>provided</tzdata.scope>
     <tzdata.version>2019c</tzdata.version>
-    <version.ruby>3.4.5</version.ruby>
-    <version.ruby.major>3.4</version.ruby.major>
-    <version.ruby.minor>5</version.ruby.minor>
+    <version.ruby>4.0.0</version.ruby>
+    <version.ruby.major>4.0</version.ruby.major>
+    <version.ruby.minor>0</version.ruby.minor>
   </properties>
   <dependencies>
     <dependency>
@@ -89,7 +89,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-enxio</artifactId>
-      <version>0.32.19</version>
+      <version>0.32.20</version>
       <exclusions>
         <exclusion>
           <groupId>com.github.jnr</groupId>
@@ -100,7 +100,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-unixsocket</artifactId>
-      <version>0.38.24</version>
+      <version>0.38.25</version>
       <exclusions>
         <exclusion>
           <groupId>com.github.jnr</groupId>
@@ -111,7 +111,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-posix</artifactId>
-      <version>3.1.21</version>
+      <version>3.1.22</version>
       <exclusions>
         <exclusion>
           <groupId>com.github.jnr</groupId>
@@ -133,7 +133,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-ffi</artifactId>
-      <version>2.2.18</version>
+      <version>2.2.19</version>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
@@ -149,12 +149,12 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>org.jruby.joni</groupId>
       <artifactId>joni</artifactId>
-      <version>2.2.6</version>
+      <version>2.2.7</version>
     </dependency>
     <dependency>
       <groupId>org.jruby.jcodings</groupId>
       <artifactId>jcodings</artifactId>
-      <version>1.0.63</version>
+      <version>1.0.64</version>
     </dependency>
     <dependency>
       <groupId>org.jruby</groupId>
@@ -236,6 +236,11 @@ DO NOT MODIFY - GENERATED CODE
       <groupId>org.crac</groupId>
       <artifactId>crac</artifactId>
       <version>1.5.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jruby</groupId>
+      <artifactId>jruby-prism</artifactId>
+      <version>2.0.2</version>
     </dependency>
     <dependency>
       <groupId>ch.randelshofer</groupId>
@@ -706,7 +711,7 @@ DO NOT MODIFY - GENERATED CODE
                     <path>
                       <groupId>org.jruby</groupId>
                       <artifactId>jruby-base</artifactId>
-                      <version>10.1.0.0-SNAPSHOT</version>
+                      <version>10.1.1.0-SNAPSHOT</version>
                     </path>
                   </annotationProcessorPaths>
                 </configuration>

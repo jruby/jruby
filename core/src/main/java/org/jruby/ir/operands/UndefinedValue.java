@@ -59,10 +59,6 @@ public class UndefinedValue extends Operand implements IRubyObject {
     }
 
     @Override
-    @Deprecated(since = "1.7.0")
-    public IRubyObject callSuper(ThreadContext context, IRubyObject[] args, Block block) { throw undefinedOperation(); }
-
-    @Override
     public IRubyObject callMethod(ThreadContext context, String name) { throw undefinedOperation(); }
     @Override
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject arg) { throw undefinedOperation(); }
@@ -70,11 +66,6 @@ public class UndefinedValue extends Operand implements IRubyObject {
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args) { throw undefinedOperation(); }
     @Override
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args, Block block) { throw undefinedOperation(); }
-
-    @Deprecated(since = "1.7.0")
-    public IRubyObject callMethod(ThreadContext context, int methodIndex, String name) { throw undefinedOperation(); }
-    @Deprecated(since = "1.7.0")
-    public IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject arg) { throw undefinedOperation(); }
 
     @Override
     public IRubyObject checkCallMethod(ThreadContext context, String name) { throw undefinedOperation(); }
@@ -254,13 +245,6 @@ public class UndefinedValue extends Operand implements IRubyObject {
     public boolean hasVariables() { throw undefinedOperation(); }
 
     @Override
-    public int getVariableCount() { throw undefinedOperation(); }
-
-    @Override
-    @Deprecated(since = "1.7.0")
-    public void syncVariables(List<Variable<Object>> variables) { throw undefinedOperation(); }
-
-    @Override
     public void syncVariables(IRubyObject source) { throw undefinedOperation(); }
 
     @Override
@@ -302,10 +286,6 @@ public class UndefinedValue extends Operand implements IRubyObject {
     }
 
     @Override
-    @Deprecated(since = "9.2.0.0")
-    public Object dataGetStructChecked() { throw undefinedOperation(); }
-
-    @Override
     @Deprecated(since = "9.4.0.0")
     public boolean isTaint() { throw undefinedOperation(); }
 
@@ -316,12 +296,4 @@ public class UndefinedValue extends Operand implements IRubyObject {
     @Override
     @Deprecated(since = "9.4.0.0")
     public IRubyObject infectBy(IRubyObject obj) { throw undefinedOperation(); }
-
-    @Override
-    @Deprecated(since = "9.4.0.0")
-    public boolean isUntrusted() { throw undefinedOperation(); }
-
-    @Override
-    @Deprecated(since = "9.4.0.0")
-    public void setUntrusted(boolean b) { throw undefinedOperation(); }
 }

@@ -137,12 +137,6 @@ public class PrependedModule extends RubyClass implements DelegatedModule {
         return origin;
     }
 
-    @Deprecated(since = "9.3.0.0")
-    @Override
-    public RubyModule getNonIncludedClass() {
-        return origin;
-    }
-
     @Deprecated(since = "10.0.3.0")
     @Override
     public IRubyObject id() {

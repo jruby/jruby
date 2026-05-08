@@ -21,6 +21,7 @@ import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.AttrReaderMethod;
 import org.jruby.internal.runtime.methods.AttrWriterMethod;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
+import org.jruby.internal.runtime.methods.DefineMethodMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.HandleMethod;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
@@ -94,6 +95,7 @@ public abstract class InvokeSite extends MutableCallSite {
     public final Signature fullSignature;
     public final int arity;
     protected final String methodName;
+    protected final CallType visibilityCallType;
     final MethodHandle fallback;
     private final SiteTracker tracker = new SiteTracker();
     private final long siteID = SITE_ID.getAndIncrement();
@@ -360,8 +362,8 @@ public abstract class InvokeSite extends MutableCallSite {
         return setValue;
     }
 
-    MethodHandle buildJittedHandle(CacheEntry entry, boolean blockGiven) {
-        MethodHandle mh = null;
+    MethodHandle buildJittedHandle(final CacheEntry entry, final boolean blockGiven) {
+        MethodHandle mh;
         SmartBinder binder;
         CompiledIRMethod compiledIRMethod = null;
         DynamicMethod method = entry.method;
@@ -409,7 +411,12 @@ public abstract class InvokeSite extends MutableCallSite {
                 }
             }
 
-            if (!blockGiven) {
+            if (method instanceof DefineMethodMethod defineMethod) {
+                // DefineMethodMethod captures the block from define_method's enclosing scope;
+                // always use that captured block for yield, regardless of caller's block
+                if (blockGiven) binder = binder.drop("block");
+                binder = binder.append("block", Block.class, defineMethod.getCapturedBlock());
+            } else if (!blockGiven) {
                 binder = binder.append("block", Block.class, Block.NULL_BLOCK);
             }
 
@@ -423,6 +430,8 @@ public abstract class InvokeSite extends MutableCallSite {
             if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
                 LOG.info(name() + "\tbound directly to jitted method " + Bootstrap.logMethod(method));
             }
+        } else {
+            mh = null;
         }
 
         return mh;
@@ -695,12 +704,14 @@ public abstract class InvokeSite extends MutableCallSite {
         return methodName;
     }
 
-    public final CallType callType;
-
     public InvokeSite(MethodType type, String name, CallType callType, boolean literalClosure, int flags, String file, int line) {
+        this(type, name, callType, callType, literalClosure, flags, file, line);
+    }
+
+    protected InvokeSite(MethodType type, String name, CallType structuralCallType, CallType visibilityCallType, boolean literalClosure, int flags, String file, int line) {
         super(type);
         this.methodName = name;
-        this.callType = callType;
+        this.visibilityCallType = visibilityCallType;
         this.literalClosure = literalClosure;
         this.file = file;
         this.line = line;
@@ -708,12 +719,12 @@ public abstract class InvokeSite extends MutableCallSite {
 
         Signature startSig;
 
-        if (callType == CallType.SUPER) {
+        if (structuralCallType == CallType.SUPER) {
             // super calls receive current class argument, so offsets and signature are different
             startSig = JRubyCallSite.STANDARD_SUPER_SIG;
             functional = false;
             argOffset = 4;
-        } else if (callType == CallType.FUNCTIONAL || callType == CallType.VARIABLE) {
+        } else if (structuralCallType == CallType.FUNCTIONAL || structuralCallType == CallType.VARIABLE) {
             startSig = JRubyCallSite.STANDARD_FSITE_SIG;
             functional = true;
             argOffset = 2;
@@ -818,7 +829,7 @@ public abstract class InvokeSite extends MutableCallSite {
             logMethodMissing();
         }
         Visibility visibility = entry.method.getVisibility();
-        return Helpers.createMethodMissingEntry(context, selfClass, callType, visibility, entry.token, methodName);
+        return Helpers.createMethodMissingEntry(context, selfClass, visibilityCallType, visibility, entry.token, methodName);
     }
 
     private void finishBinding(CacheEntry entry, MethodHandle mh, IRubyObject self, RubyClass selfClass, SwitchPoint switchPoint) {
@@ -916,7 +927,7 @@ public abstract class InvokeSite extends MutableCallSite {
         entry = selfClass.searchWithCache(name);
 
         if (methodMissing(entry, caller)) {
-            return callMethodMissing(entry, callType, context, self, selfClass, name, args, block);
+            return callMethodMissing(entry, visibilityCallType, context, self, selfClass, name, args, block);
         }
 
         cache = entry;
@@ -941,7 +952,7 @@ public abstract class InvokeSite extends MutableCallSite {
         entry = selfClass.searchWithCache(name);
 
         if (methodMissing(entry)) {
-            return callMethodMissing(entry, callType, context, self, selfClass, name, args, block);
+            return callMethodMissing(entry, visibilityCallType, context, self, selfClass, name, args, block);
         }
 
         cache = entry;
@@ -980,7 +991,7 @@ public abstract class InvokeSite extends MutableCallSite {
         entry = selfClass.searchWithCache(name);
 
         if (methodMissing(entry, caller)) {
-            return callMethodMissing(entry, callType, context, self, selfClass, name, arg0, block);
+            return callMethodMissing(entry, visibilityCallType, context, self, selfClass, name, arg0, block);
         }
 
         cache = entry;
@@ -1005,7 +1016,7 @@ public abstract class InvokeSite extends MutableCallSite {
         entry = selfClass.searchWithCache(name);
 
         if (methodMissing(entry)) {
-            return callMethodMissing(entry, callType, context, self, selfClass, name, arg0, block);
+            return callMethodMissing(entry, visibilityCallType, context, self, selfClass, name, arg0, block);
         }
 
         cache = entry;
@@ -1030,7 +1041,7 @@ public abstract class InvokeSite extends MutableCallSite {
         entry = selfClass.searchWithCache(name);
 
         if (methodMissing(entry, caller)) {
-            return callMethodMissing(entry, callType, context, self, selfClass, name, arg0, arg1, block);
+            return callMethodMissing(entry, visibilityCallType, context, self, selfClass, name, arg0, arg1, block);
         }
 
         cache = entry;
@@ -1055,7 +1066,7 @@ public abstract class InvokeSite extends MutableCallSite {
         entry = selfClass.searchWithCache(name);
 
         if (methodMissing(entry)) {
-            return callMethodMissing(entry, callType, context, self, selfClass, name, arg0, arg1, block);
+            return callMethodMissing(entry, visibilityCallType, context, self, selfClass, name, arg0, arg1, block);
         }
 
         cache = entry;
@@ -1080,7 +1091,7 @@ public abstract class InvokeSite extends MutableCallSite {
         entry = selfClass.searchWithCache(name);
 
         if (methodMissing(entry, caller)) {
-            return callMethodMissing(entry, callType, context, self, selfClass, name, arg0, arg1, arg2, block);
+            return callMethodMissing(entry, visibilityCallType, context, self, selfClass, name, arg0, arg1, arg2, block);
         }
 
         cache = entry;
@@ -1105,7 +1116,7 @@ public abstract class InvokeSite extends MutableCallSite {
         entry = selfClass.searchWithCache(name);
 
         if (methodMissing(entry)) {
-            return callMethodMissing(entry, callType, context, self, selfClass, name, arg0, arg1, arg2, block);
+            return callMethodMissing(entry, visibilityCallType, context, self, selfClass, name, arg0, arg1, arg2, block);
         }
 
         cache = entry;
@@ -1323,22 +1334,22 @@ public abstract class InvokeSite extends MutableCallSite {
         if (method instanceof PartialDelegatingMethod delegate) {
             DynamicMethod innerMethod = delegate.getRealMethod();
             mh = getHandle(context, self, new CacheEntry(innerMethod, entry.sourceModule, entry.token));
-        } else if (method instanceof AliasMethod alias) {
-            DynamicMethod innerMethod = alias.getRealMethod();
-            String name = alias.getName();
-
-            // Use a second site to mimic invocation from AliasMethod
-            MethodType type = type();
-            if (!functional) type = type.dropParameterTypes(1, 2);
-            InvokeSite innerSite = (InvokeSite) SelfInvokeSite.bootstrap(LOOKUP, "callFunctional:" + name, type, literalClosure ? 1 : 0, flags, file, line);
-            mh = innerSite.getHandle(context, self, new CacheEntry(innerMethod, entry.sourceModule, entry.token));
-            if (!functional) mh = MethodHandles.dropArguments(mh, 1, IRubyObject.class);
-
-            alias.setHandle(mh);
-
-            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
-                LOG.info(name() + "\tbound directly through alias to " + Bootstrap.logMethod(method));
-            }
+//        } else if (method instanceof AliasMethod alias) {
+//            DynamicMethod innerMethod = alias.getRealMethod();
+//            String name = alias.getName();
+//
+//            // Use a second site to mimic invocation from AliasMethod
+//            MethodType type = type();
+//            if (!functional) type = type.dropParameterTypes(1, 2);
+//            InvokeSite innerSite = (InvokeSite) SelfInvokeSite.bootstrap(LOOKUP, "callFunctional:" + name, type, literalClosure ? 1 : 0, flags, file, line);
+//            mh = innerSite.getHandle(context, self, new CacheEntry(innerMethod, entry.sourceModule, entry.token));
+//            if (!functional) mh = MethodHandles.dropArguments(mh, 1, IRubyObject.class);
+//
+//            alias.setHandle(mh);
+//
+//            if (Options.INVOKEDYNAMIC_LOG_BINDING.load()) {
+//                LOG.info(name() + "\tbound directly through alias to " + Bootstrap.logMethod(method));
+//            }
         }
 
         return mh;
@@ -1537,7 +1548,7 @@ public abstract class InvokeSite extends MutableCallSite {
     public boolean methodMissing(CacheEntry entry, IRubyObject caller) {
         DynamicMethod method = entry.method;
 
-        return method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(caller, callType));
+        return method.isUndefined() || (!methodName.equals("method_missing") && !method.isCallableFrom(caller, visibilityCallType));
     }
 
     public boolean methodMissing(CacheEntry entry) {

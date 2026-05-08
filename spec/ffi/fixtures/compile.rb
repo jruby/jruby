@@ -20,6 +20,8 @@ module TestLibrary
       "x86_64"
     when /loongarch64/
       "loongarch64"
+    when /riscv64/
+      "riscv64"
     when /ppc64|powerpc64/
       "powerpc64"
     when /ppc|powerpc/

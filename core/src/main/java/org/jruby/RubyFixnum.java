@@ -45,6 +45,7 @@ import org.jruby.api.Create;
 import org.jruby.api.JRubyAPI;
 import org.jruby.compiler.Constantizable;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Builtins;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
@@ -297,56 +298,244 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         return negate(context, getValue());
     }
 
-    public static RubyFixnum newFixnum(Ruby runtime, long value) {
-        if (value > Integer.MAX_VALUE || value < Integer.MIN_VALUE) {
-            // long is never in cache range
+    private static final boolean USE_COMPACT_FIXNUMS = Options.USE_COMPACT_FIXNUMS.load();
+    private static final boolean USE_INT_FIXNUMS = Options.USE_INT_FIXNUMS.load();
+    private static final boolean USE_SHORT_FIXNUMS = Options.USE_SHORT_FIXNUMS.load();
+    private static final boolean USE_BYTE_FIXNUMS = Options.USE_BYTE_FIXNUMS.load();
+
+    private static final FixnumFactory FIXNUM_FACTORY;
+    static {
+        if (USE_INT_FIXNUMS || USE_BYTE_FIXNUMS) {
+            // fallback handles all configurations at runtime
+            FIXNUM_FACTORY = new FallbackFixnumFactory();
+        } else if (USE_COMPACT_FIXNUMS && USE_SHORT_FIXNUMS) {
+            if (USE_CACHE) {
+                FIXNUM_FACTORY = new LongShortCachedFixnumFactory();
+            } else {
+                FIXNUM_FACTORY = new LongShortUncachedFixnumFactory();
+            }
+        } else {
+            if (USE_CACHE) {
+                FIXNUM_FACTORY = new LongCachedFixnumFactory();
+            } else {
+                FIXNUM_FACTORY = new LongUncachedFixnumFactory();
+            }
+        }
+    }
+
+    private interface FixnumFactory {
+        RubyFixnum newFixnum(Ruby runtime, long value);
+        RubyFixnum newFixnum(Ruby runtime, int value);
+        RubyFixnum newFixnum(Ruby runtime, short value);
+        RubyFixnum newFixnum(Ruby runtime, byte value);
+        RubyFixnum newFixnumForCache(RubyClass fixnum, int value);
+    }
+
+    private static final class LongCachedFixnumFactory implements FixnumFactory {
+        public RubyFixnum newFixnum(Ruby runtime, long value) {
+            if (isInCacheRange(value)) {
+                return cachedFixnum(runtime, value);
+            }
             return new LongFixnum(runtime.getInteger(), value);
         }
-        return newFixnum(runtime, (int) value);
+
+        public RubyFixnum newFixnum(Ruby runtime, int value) {
+            if (isInCacheRange(value)) {
+                return cachedFixnum(runtime, value);
+            }
+            return new LongFixnum(runtime.getInteger(), value);
+        }
+
+        public RubyFixnum newFixnum(Ruby runtime, short value) {
+            if (isInCacheRange(value)) {
+                return cachedFixnum(runtime, value);
+            }
+            return new LongFixnum(runtime.getInteger(), value);
+        }
+
+        public RubyFixnum newFixnum(Ruby runtime, byte value) {
+            if (isInCacheRange(value)) {
+                return cachedFixnum(runtime, value);
+            }
+            return new LongFixnum(runtime.getInteger(), value);
+        }
+
+        public RubyFixnum newFixnumForCache(RubyClass fixnum, int value) {
+            return new LongFixnum(fixnum, value);
+        }
+    }
+
+    private static final class LongUncachedFixnumFactory implements FixnumFactory {
+        public RubyFixnum newFixnum(Ruby runtime, long value) {
+            return new LongFixnum(runtime.getInteger(), value);
+        }
+
+        public RubyFixnum newFixnum(Ruby runtime, int value) {
+            return new LongFixnum(runtime.getInteger(), value);
+        }
+
+        public RubyFixnum newFixnum(Ruby runtime, short value) {
+            return new LongFixnum(runtime.getInteger(), value);
+        }
+
+        public RubyFixnum newFixnum(Ruby runtime, byte value) {
+            return new LongFixnum(runtime.getInteger(), value);
+        }
+
+        public RubyFixnum newFixnumForCache(RubyClass fixnum, int value) {
+            return new LongFixnum(fixnum, value);
+        }
+    }
+    
+    private static final class LongShortCachedFixnumFactory implements FixnumFactory {
+        public RubyFixnum newFixnum(Ruby runtime, long value) {
+            short shortValue = (short) value;
+            if (shortValue == value) {
+                if (isInCacheRange(shortValue)) {
+                    return cachedFixnum(runtime, shortValue);
+                }
+                return new ShortFixnum(runtime.getInteger(), shortValue);
+            }
+            return new LongFixnum(runtime.getInteger(), value);
+        }
+
+        public RubyFixnum newFixnum(Ruby runtime, int value) {
+            short shortValue = (short) value;
+            if (shortValue == value) {
+                if (isInCacheRange(shortValue)) {
+                    return cachedFixnum(runtime, shortValue);
+                }
+                return new ShortFixnum(runtime.getInteger(), shortValue);
+            }
+            return new LongFixnum(runtime.getInteger(), value);
+        }
+
+        public RubyFixnum newFixnum(Ruby runtime, short value) {
+            if (isInCacheRange(value)) {
+                return cachedFixnum(runtime, value);
+            }
+            return new ShortFixnum(runtime.getInteger(), value);
+        }
+
+        public RubyFixnum newFixnum(Ruby runtime, byte value) {
+            if (isInCacheRange(value)) {
+                return cachedFixnum(runtime, value);
+            }
+            return new ShortFixnum(runtime.getInteger(), value);
+        }
+
+        public RubyFixnum newFixnumForCache(RubyClass fixnum, int value) {
+            return new ShortFixnum(fixnum, (short) value);
+        }
+    }
+
+    private static final class LongShortUncachedFixnumFactory implements FixnumFactory {
+        public RubyFixnum newFixnum(Ruby runtime, long value) {
+            short shortValue = (short) value;
+            if (shortValue == value) {
+                return newFixnum(runtime, shortValue);
+            }
+            return new LongFixnum(runtime.getInteger(), value);
+        }
+
+        public RubyFixnum newFixnum(Ruby runtime, int value) {
+            short shortValue = (short) value;
+            if (shortValue == value) {
+                return newFixnum(runtime, shortValue);
+            }
+            return new LongFixnum(runtime.getInteger(), value);
+        }
+
+        public RubyFixnum newFixnum(Ruby runtime, short value) {
+            return new ShortFixnum(runtime.getInteger(), value);
+        }
+
+        public RubyFixnum newFixnum(Ruby runtime, byte value) {
+            return new ShortFixnum(runtime.getInteger(), value);
+        }
+
+        public RubyFixnum newFixnumForCache(RubyClass fixnum, int value) {
+            return new ShortFixnum(fixnum, (short) value);
+        }
+    }
+    
+    private static final class FallbackFixnumFactory implements FixnumFactory {
+        public RubyFixnum newFixnum(Ruby runtime, long value) {
+            if (!USE_COMPACT_FIXNUMS || !USE_INT_FIXNUMS || value > Integer.MAX_VALUE || value < Integer.MIN_VALUE) {
+                // long is never in cache range
+                return new LongFixnum(runtime.getInteger(), value);
+            }
+            return newFixnum(runtime, (int) value);
+        }
+
+        public RubyFixnum newFixnum(Ruby runtime, int value) {
+            if (!USE_COMPACT_FIXNUMS) return new LongFixnum(runtime.getInteger(), value);
+            if (!USE_SHORT_FIXNUMS || value > Short.MAX_VALUE || value < Short.MIN_VALUE) {
+                // integer is never in cache range
+                // disabled to avoid polymorphism and because it doesn't save size (https://github.com/jruby/jruby/pull/9379)
+                // return new IntFixnum(runtime.getInteger(), value);
+                return new LongFixnum(runtime.getInteger(), value);
+            }
+            return newFixnum(runtime, (short) value);
+        }
+
+        public RubyFixnum newFixnum(Ruby runtime, short value) {
+            if (!USE_COMPACT_FIXNUMS) return new LongFixnum(runtime.getInteger(), value);
+            if (!USE_BYTE_FIXNUMS || value > Byte.MAX_VALUE || value < Byte.MIN_VALUE) {
+                return USE_CACHE && isInCacheRange(value) ? cachedFixnum(runtime, value) : new ShortFixnum(runtime.getInteger(), value);
+            }
+            return newFixnum(runtime, (byte) value);
+        }
+
+        public RubyFixnum newFixnum(Ruby runtime, byte value) {
+            if (USE_CACHE && isInCacheRange(value)) return cachedFixnum(runtime, value);
+
+            if (!USE_COMPACT_FIXNUMS) return new LongFixnum(runtime.getInteger(), value);
+            if (!USE_BYTE_FIXNUMS) {
+                return new ShortFixnum(runtime.getInteger(), value);
+            }
+
+            return new ByteFixnum(runtime.getInteger(), value);
+        }
+
+        public RubyFixnum newFixnumForCache(RubyClass fixnum, int value) {
+            if (!USE_COMPACT_FIXNUMS) return new LongFixnum(fixnum, value);
+            if (!USE_SHORT_FIXNUMS || value > Short.MAX_VALUE || value < Short.MIN_VALUE) {
+                return new IntFixnum(fixnum, value);
+            } else if (!USE_BYTE_FIXNUMS || value > Byte.MAX_VALUE || value < Byte.MIN_VALUE) {
+                return new ShortFixnum(fixnum, (short) value);
+            }
+            return new ByteFixnum(fixnum, (byte) value);
+        }
+    }
+
+    public static RubyFixnum newFixnum(Ruby runtime, long value) {
+        return FIXNUM_FACTORY.newFixnum(runtime, value);
     }
 
     public static RubyFixnum newFixnum(Ruby runtime, int value) {
-        if (value > Short.MAX_VALUE || value < Short.MIN_VALUE) {
-            // integer is never in cache range
-            return new IntFixnum(runtime.getInteger(), value);
-        }
-        return newFixnum(runtime, (short) value);
+        return FIXNUM_FACTORY.newFixnum(runtime, value);
     }
 
     public static RubyFixnum newFixnum(Ruby runtime, short value) {
-        if (value > Byte.MAX_VALUE || value < Byte.MIN_VALUE) {
-            return USE_CACHE && isInCacheRange(value) ? cachedFixnum(runtime, value) : new ShortFixnum(runtime.getInteger(), value);
-        }
-        return newFixnum(runtime, (byte) value);
+        return FIXNUM_FACTORY.newFixnum(runtime, value);
     }
 
     public static RubyFixnum newFixnum(Ruby runtime, byte value) {
-        // using ShortFixnum until there's value in using ByteFixnum
-        return USE_CACHE && isInCacheRange(value) ? cachedFixnum(runtime, value) : new ShortFixnum(runtime.getInteger(), value);
+        return FIXNUM_FACTORY.newFixnum(runtime, value);
     }
 
     private static RubyFixnum newFixnumForCache(RubyClass fixnum, int value) {
-        if (value > Short.MAX_VALUE || value < Short.MIN_VALUE) {
-            return new IntFixnum(fixnum, value);
-        } else if (value > Byte.MAX_VALUE || value < Byte.MIN_VALUE) {
-            return new ShortFixnum(fixnum, (short) value);
-        }
-        // using ShortFixnum until there's value in using ByteFixnum
-        return new ShortFixnum(fixnum, (byte) value);
+        return FIXNUM_FACTORY.newFixnumForCache(fixnum, value);
     }
 
-    private static boolean isInCacheRange(int value) {
+    private static boolean isInCacheRange(long value) {
         return value <= CACHE_OFFSET - 1 && value >= -CACHE_OFFSET;
     }
 
-    private static RubyFixnum cachedFixnum(Ruby runtime, int value) {
+    private static RubyFixnum cachedFixnum(Ruby runtime, long value) {
         // This truncates to int but we determine above that it's in cache range
-        return runtime.fixnumCache[value + CACHE_OFFSET];
-    }
-
-    @Deprecated(since = "9.2.1.0") // not used
-    public final RubyFixnum newFixnum(long newValue) {
-        return newFixnum(getCurrentContext().runtime, newValue);
+        return runtime.fixnumCache[(int) value + CACHE_OFFSET];
     }
 
     public static RubyFixnum zero(Ruby runtime) {
@@ -549,17 +738,6 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
                 newString(context, ConvertBytes.longToByteList(value, base), USASCIIEncoding.INSTANCE);
     }
 
-    /** fix_to_sym
-     *
-     */
-    @Deprecated(since = "9.0.0.0")
-    public IRubyObject to_sym() {
-        var context = getCurrentContext();
-        RubySymbol symbol = RubySymbol.getSymbolLong(context.runtime, getValue());
-
-        return symbol != null ? symbol : context.nil;
-    }
-
     /** fix_uminus
      *
      */
@@ -579,6 +757,12 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
      */
     @Override
     public IRubyObject op_plus(ThreadContext context, IRubyObject other) {
+        // TODO: Add builtin check for production use:
+        // if (!Builtins.checkIntegerPlus(context)) {
+        //     return RuntimeHelpers.invokeSuper(context, this, other, Block.NULL_BLOCK);
+        // }
+        // This provides 5x faster method dispatch when Integer#+ is not redefined.
+
         if (other instanceof RubyFixnum fixnum) {
             return op_plus(context, fixnum.getValue());
         }
@@ -791,26 +975,11 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         return op_minus_one(context);
     }
 
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject idiv(ThreadContext context, IRubyObject other, String method) {
-        if (other instanceof RubyFixnum) {
-            return idivLong(context, getValue(), ((RubyFixnum) other).getValue());
-        }
-        return coerceBin(context, method, other);
-    }
-
     public IRubyObject idiv(ThreadContext context, IRubyObject other, CallSite site) {
         if (other instanceof RubyFixnum) {
             return idivLong(context, getValue(), ((RubyFixnum) other).getValue());
         }
         return coerceBin(context, site, other);
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject idiv(ThreadContext context, long y, String method) {
-        long x = getValue();
-
-        return idivLong(context, x, y);
     }
 
     private RubyInteger idivLong(ThreadContext context, long x, long y) {
@@ -1016,11 +1185,6 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         if (negaFlg && (tmp != 0)) tmp -= mm;
 
         return asFixnum(context, tmp);
-    }
-
-    @Deprecated(since = "9.2.7.0")
-    protected IRubyObject intPowTmp2(ThreadContext context, IRubyObject y, final long mm, boolean negaFlg) {
-        return intPowTmp2(context, (RubyInteger) y, mm, negaFlg);
     }
 
     // MRI: int_pow_tmp2
@@ -1394,11 +1558,6 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         return asFixnum(context, getValue() << width);
     }
 
-    @Deprecated(since = "9.2.0.0") // no longer used
-    public IRubyObject op_lshift(long width) {
-        return op_lshift(getCurrentContext(), width);
-    }
-
     /** fix_rshift
      *
      */
@@ -1422,11 +1581,6 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
                 asFixnum(context, getValue() >> width);
     }
 
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject op_rshift(long width) {
-        return op_rshift(getCurrentContext(), width);
-    }
-
     /** fix_to_f
      *
      */
@@ -1447,11 +1601,6 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
     @Override
     public IRubyObject size(ThreadContext context) {
         return asFixnum(context, (long) ((BIT_SIZE + 7) / 8));
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject zero_p() {
-        return zero_p(getCurrentContext());
     }
 
     /** fix_zero_p
@@ -1557,20 +1706,18 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
 
     @Override
     public IRubyObject isNegative(ThreadContext context) {
-        CachingCallSite op_lt_site = sites(context).basic_op_lt;
-        if (op_lt_site.isBuiltin(metaClass)) {
+        if (Builtins.checkIntegerLt(context)) {
             return asBoolean(context, getValue() < 0);
         }
-        return op_lt_site.call(context, this, this, asFixnum(context, 0));
+        return sites(context).basic_op_lt.call(context, this, this, asFixnum(context, 0));
     }
 
     @Override
     public IRubyObject isPositive(ThreadContext context) {
-        CachingCallSite op_gt_site = sites(context).basic_op_gt;
-        if (op_gt_site.isBuiltin(metaClass)) {
+        if (Builtins.checkIntegerGt(context)) {
             return asBoolean(context, getValue() > 0);
         }
-        return op_gt_site.call(context, this, this, asFixnum(context, 0));
+        return sites(context).basic_op_gt.call(context, this, this, asFixnum(context, 0));
     }
 
     @Override
@@ -1602,7 +1749,7 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
     // MRI: rb_int_s_isqrt, Fixnum portion
     @Override
     public IRubyObject sqrt(ThreadContext context) {
-        if (isNegativeNumber(context)) throw context.runtime.newMathDomainError("Numerical argument is out of domain - isqrt");
+        if (isNegativeNumber(context)) throw context.runtime.newMathDomainError("isqrt");
 
         return asFixnum(context, floorSqrt(getValue()));
     }
@@ -1619,11 +1766,6 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
 
     private static JavaSites.FixnumSites sites(ThreadContext context) {
         return context.sites.Fixnum;
-    }
-
-    @Deprecated(since = "9.1.3.0")
-    public static IRubyObject induced_from(IRubyObject recv, IRubyObject other) {
-        return RubyNumeric.num2fix(recv.getRuntime().getCurrentContext(), other);
     }
 
     @Deprecated(since = "9.4.0.0")

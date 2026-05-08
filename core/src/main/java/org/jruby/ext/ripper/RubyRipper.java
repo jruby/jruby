@@ -33,6 +33,7 @@ import java.io.IOException;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
+import org.jruby.RubyHashLinkedBuckets;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
@@ -72,7 +73,7 @@ public class RubyRipper extends RubyObject {
     
     // Creates mapping table of token to arity for on_* method calls for the scanner support
     private static RubyHash createScannerEventTable(ThreadContext context) {
-        RubyHash hash = new RubyHash(context.runtime);
+        RubyHash hash = RubyHashLinkedBuckets.newLBHash(context.runtime);
 
         hash.fastASet(asSymbol(context, "CHAR"), asFixnum(context, 1));
         hash.fastASet(asSymbol(context, "__end__"), asFixnum(context, 1));
@@ -131,7 +132,7 @@ public class RubyRipper extends RubyObject {
     
     // Creates mapping table of token to arity for on_* method calls for the parser support    
     private static RubyHash createParserEventTable(ThreadContext context) {
-        RubyHash hash = new RubyHash(context.runtime);
+        RubyHash hash = RubyHashLinkedBuckets.newLBHash(context.runtime);
 
         hash.fastASet(asSymbol(context, "BEGIN"), asFixnum(context, 1));
         hash.fastASet(asSymbol(context, "END"), asFixnum(context, 1));

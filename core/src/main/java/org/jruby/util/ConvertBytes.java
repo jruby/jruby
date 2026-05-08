@@ -38,11 +38,6 @@ public class ConvertBytes {
         this.base = base;
     }
 
-    @Deprecated(since = "9.2.0.0")
-    public ConvertBytes(Ruby runtime, ByteList str, int base, boolean badcheck, boolean is19) {
-        this(runtime, str, base, badcheck);
-    }
-
     public static final byte[] intToBinaryBytes(int i) {
         return intToUnsignedByteList(i, 1, LOWER_DIGITS).bytes();
     }

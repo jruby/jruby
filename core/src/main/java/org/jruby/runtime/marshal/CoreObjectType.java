@@ -30,18 +30,6 @@ import org.jruby.runtime.ClassIndex;
 
 public interface CoreObjectType {
     /**
-     * Return the ClassIndex value for the native type this object was
-     * constructed from. Particularly useful for determining marshalling
-     * format. All instances of subclasses of Hash, for example
-     * are of Java type RubyHash, and so should utilize RubyHash marshalling
-     * logic in addition to user-defined class marshalling logic.
-     *
-     * @return the ClassIndex of the native type this object was constructed from
-     */
-    @Deprecated(since = "9.0.0.0")
-    int getNativeTypeIndex();
-    
-    /**
      * Return the ClassIndex for the native type this object was constructed
      * from.
      * @return the ClassIndex of the native type this object was constructed from

@@ -18,6 +18,12 @@ class TestSocket_TCPSocket < Test::Unit::TestCase
   end
 
   def test_initialize_failure
+    assert_raise(Socket::ResolutionError) do
+      t = TCPSocket.open(nil, nil)
+    ensure
+      t&.close
+    end
+
     # These addresses are chosen from TEST-NET-1, TEST-NET-2, and TEST-NET-3.
     # [RFC 5737]
     # They are chosen because probably they are not used as a host address.
@@ -43,16 +49,14 @@ class TestSocket_TCPSocket < Test::Unit::TestCase
     server_addr = '127.0.0.1'
     server_port = 80
 
-    begin
+    e = assert_raise_kind_of(SystemCallError) do
       # Since client_addr is not an IP address of this host,
       # bind() in TCPSocket.new should fail as EADDRNOTAVAIL.
       t = TCPSocket.new(server_addr, server_port, client_addr, client_port)
-      flunk "expected SystemCallError"
-    rescue SystemCallError => e
-      assert_match "for \"#{client_addr}\" port #{client_port}", e.message
+    ensure
+      t&.close
     end
-  ensure
-    t.close if t && !t.closed?
+    assert_include e.message, "for \"#{client_addr}\" port #{client_port}"
   end
 
   def test_initialize_resolv_timeout
@@ -66,6 +70,30 @@ class TestSocket_TCPSocket < Test::Unit::TestCase
       th.join
     ensure
       s.close()
+    end
+  end
+
+  def test_tcp_initialize_open_timeout
+    return if RUBY_PLATFORM =~ /mswin|mingw|cygwin/
+
+    server = TCPServer.new("127.0.0.1", 0)
+    port = server.connect_address.ip_port
+    server.close
+
+    assert_raise(IO::TimeoutError) do
+      TCPSocket.new(
+        "localhost",
+        port,
+        open_timeout: 0.01,
+        fast_fallback: true,
+        test_mode_settings: { delay: { ipv4: 1000 } }
+      )
+    end
+  end
+
+  def test_initialize_open_timeout_with_other_timeouts
+    assert_raise(ArgumentError) do
+      TCPSocket.new("localhost", 12345, open_timeout: 0.01, resolv_timeout: 0.01)
     end
   end
 
@@ -293,7 +321,7 @@ class TestSocket_TCPSocket < Test::Unit::TestCase
     port = server.connect_address.ip_port
     server.close
 
-    assert_raise(Errno::ETIMEDOUT) do
+    assert_raise(IO::TimeoutError) do
       TCPSocket.new(
         "localhost",
         port,

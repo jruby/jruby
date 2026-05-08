@@ -1,1 +1,4 @@
 fails(https://github.com/jruby/jruby/issues/8739):StringIO#printf formatting other formats c displays no characters if argument is an empty string
+fails:StringIO#printf formatting other formats c raises TypeError if argument is nil
+fails:StringIO#printf formatting other formats c raises TypeError if converting to String with to_str returns non-String
+fails:StringIO#printf formatting other formats c raises TypeError if converting to Integer with to_int returns non-Integer

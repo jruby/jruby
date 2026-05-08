@@ -229,6 +229,7 @@ public class JRubyClassLoader extends ClassDefiningJRubyClassLoader {
         });
     }
 
+    // Deprecated in 1.7.22 but still no replacement available
     @Deprecated(since = "1.7.22")
     public synchronized Runnable getJDBCDriverUnloader() {
         if (unloader == null) {

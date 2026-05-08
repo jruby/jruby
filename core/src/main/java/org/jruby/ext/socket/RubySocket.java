@@ -519,18 +519,24 @@ public class RubySocket extends RubyBasicSocket {
 
                     while (true) {
                         boolean result = true;
-                        if (channel instanceof SocketChannel) {
+                        if (channel instanceof UnixSocketChannel unix) {
+                            if (unix.isConnectionPending()) {
+                                // connection initiated but not finished
+                                result = unix.finishConnect();
+                            } else {
+                                result = unix.connect(addr);
+                            }
+                        } else if (channel instanceof SocketChannel) {
                             SocketChannel socket = (SocketChannel) channel;
 
-                            if (socket.isConnectionPending()) {
+                            if (socket.isConnected()) {
+                                return true;
+                            } else if (socket.isConnectionPending()) {
                                 // connection initiated but not finished
                                 result = socket.finishConnect();
                             } else {
                                 result = socket.connect(addr);
                             }
-                        } else if (channel instanceof UnixSocketChannel) {
-                            result = ((UnixSocketChannel) channel).connect((UnixSocketAddress) addr);
-
                         } else if (channel instanceof DatagramChannel datagram) {
                             datagram.connect(addr);
                         } else {
@@ -711,11 +717,6 @@ public class RubySocket extends RubyBasicSocket {
         Channel channel = getChannel();
 
         return SocketType.forChannel(channel).getLocalSocketAddress(channel);
-    }
-
-    @Deprecated(since = "1.7.0")
-    public static RuntimeException sockerr(Ruby runtime, String msg) {
-        return SocketUtils.sockerr(runtime, msg);
     }
 
     private static final Pattern ALREADY_BOUND_PATTERN = Pattern.compile("[Aa]lready.*bound");

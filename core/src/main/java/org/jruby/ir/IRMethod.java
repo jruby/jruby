@@ -193,15 +193,6 @@ public class IRMethod extends IRScope {
         return ExitableInterpreterContext.NULL;
     }
 
-    /**
-     * This method was renamed (due a typo).
-     * @see #builtInterpreterContextForJavaConstructor()
-     */
-    @Deprecated(since = "9.3.11.0")
-    public ExitableInterpreterContext builtInterperterContextForJavaConstructor() {
-        return builtInterpreterContextForJavaConstructor();
-    }
-
     public final InterpreterContext lazilyAcquireInterpreterContext() {
         if (!hasBeenBuilt()) buildMethodImpl();
 

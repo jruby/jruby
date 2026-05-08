@@ -79,43 +79,6 @@ public class JavaInterfaceTemplate {
         return JavaProxy.getJavaClass((RubyModule) self);
     }
 
-    @Deprecated(since = "9.1.0.0") // not used - should go away in >= 9.2
-    // not intended to be called directly by users (private)
-    // OLD TODO from Ruby code:
-    // This should be implemented in JavaClass.java, where we can
-    // check for reserved Ruby names, conflicting methods, etc.
-    @JRubyMethod(visibility = Visibility.PRIVATE)
-    public static IRubyObject implement(ThreadContext context, IRubyObject self, IRubyObject clazz) {
-        final RubyModule targetModule = Convert.castAsModule(context, self);
-        final IRubyObject javaClass = JavaProxy.getJavaClass((RubyModule) self);
-        Class<?> klass = JavaUtil.unwrapJavaObject(javaClass);
-        final Method[] javaInstanceMethods = klass.getMethods();
-        final DynamicMethod dummyMethodImpl = new DummyMethodImpl(targetModule);
-
-        for (int i = 0; i < javaInstanceMethods.length; i++) {
-            final Method javaMethod = javaInstanceMethods[i];
-            final String name = javaMethod.getName();
-            if ( targetModule.searchMethod(name).isUndefined() ) {
-                targetModule.addMethod(context, name, dummyMethodImpl); // only those not-defined
-            }
-        }
-
-        return context.nil;
-    }
-
-    private static class DummyMethodImpl extends org.jruby.internal.runtime.methods.JavaMethod {
-
-        DummyMethodImpl(RubyModule targetModule) {
-            super(targetModule, Visibility.PUBLIC, ""); // NOTE: maybe dummy method should not be shared
-        }
-
-        @Override
-        public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            return context.nil; // dummy bodies for default impls
-        }
-
-    }
-
     @JRubyMethod(frame = true) // framed for invokeSuper
     public static IRubyObject append_features(ThreadContext context, IRubyObject self, IRubyObject clazz, Block block) {
         if (clazz instanceof RubyClass) {

@@ -50,9 +50,6 @@ public final class Constants {
     public static final String JODA_TIME_VERSION = "@joda.time.version@";
     public static final String TZDATA_VERSION = "@tzdata.version@";
 
-    @Deprecated(since = "9.1.7.0")
-    public static final String DEFAULT_RUBY_VERSION = RUBY_MAJOR_VERSION;
-    
     /**
      * Default size for chained compilation.
      */
@@ -63,12 +60,6 @@ public final class Constants {
      * After this numbers of JIT-ed classes the compiler stops compiling.
      */
     public static final int JIT_MAX_LIMIT = 10000;
-
-    /**
-     * The max count of active methods eligible for JIT-compilation.
-     */
-    @Deprecated(since = "9.2.9.0")
-    public static final int JIT_MAX_METHODS_LIMIT = JIT_MAX_LIMIT;
 
     /**
      * The max size of JIT-compiled methods (full class size) allowed.
@@ -87,9 +78,6 @@ public final class Constants {
     
     private static String jruby_revision = "@jruby.revision@";
 
-    @Deprecated(since = "1.6.0")
-    public static final String JRUBY_PROPERTIES = "/org/jruby/jruby.properties";
-
     public static final String BOGUS_REVISION = "ffffffffff";
 
     static {
@@ -104,10 +92,4 @@ public final class Constants {
     }
 
     private Constants() {}
-
-    @Deprecated(since = "9.0.0.0")
-    public static final int    RUBY_PATCHLEVEL = 0;
-
-    @Deprecated(since = "9.4.0.0")
-    public static final int    RUBY_REVISION = 1;
 }

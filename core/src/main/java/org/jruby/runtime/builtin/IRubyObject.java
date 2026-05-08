@@ -64,17 +64,10 @@ public interface IRubyObject {
 
     IRubyObject[] NULL_ARRAY = new IRubyObject[0];
 
-    @Deprecated(since = "1.1.5")
-    public IRubyObject callSuper(ThreadContext context, IRubyObject[] args, Block block);
-
     public IRubyObject callMethod(ThreadContext context, String name);
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject arg);
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args);
     public IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args, Block block);
-    @Deprecated(since = "1.1.5")
-    public IRubyObject callMethod(ThreadContext context, int methodIndex, String name);
-    @Deprecated(since = "1.1.6")
-    public IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject arg);
 
     public IRubyObject checkCallMethod(ThreadContext context, String name);
 
@@ -107,18 +100,6 @@ public interface IRubyObject {
      */
     void setFrozen(boolean b);
 
-    /**
-     * RubyMethod isUntrusted.
-     * @return boolean
-     */
-    boolean isUntrusted();
-
-    /**
-     * RubyMethod setUntrusted.
-     * @param b boolean
-     */
-    void setUntrusted(boolean b);
-    
     /**
      * Is this an immediate object
      * @return boolean
@@ -332,9 +313,6 @@ public interface IRubyObject {
      */
     Object dataGetStruct();
 
-    @Deprecated(since = "9.2.0.0") // not used at all
-    Object dataGetStructChecked();
-
     @Deprecated
     IRubyObject id();
 
@@ -374,22 +352,6 @@ public interface IRubyObject {
      * @return true if object has any variables, else false
      */
     boolean hasVariables();
-
-    /**
-     * how many variables?
-     * @return the count of all variables (ivar/cvar/constant/internal)
-     */
-    int getVariableCount();
-    
-    /**
-     * Sets object's variables to those in the supplied list,
-     * removing/replacing any previously defined variables.  Applies
-     * to all variable types (ivar/cvar/constant/internal).
-     * 
-     * @param variables the variables to be set for object 
-     */
-    @Deprecated(since = "1.6.0")
-    void syncVariables(List<Variable<Object>> variables);
 
     /**
      * Sets object's variables to those in the supplied object,
@@ -449,18 +411,6 @@ public interface IRubyObject {
     @Deprecated(since = "10.0.0.0")
     default IRubyObject checkStringType19() {
         return checkStringType();
-    }
-
-    /**
-     * convert this object to an integer
-     * @param convertMethod conversion method name
-     * @param convertMethodIndex index
-     * @see #convertToInteger(String)
-     * @return integer
-     */
-    @Deprecated(since = "9.2.0.0")
-    default RubyInteger convertToInteger(int convertMethodIndex, String convertMethod) {
-        return convertToInteger(convertMethod);
     }
 
     @Deprecated(since = "9.4.0.0")

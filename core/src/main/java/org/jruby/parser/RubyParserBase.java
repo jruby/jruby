@@ -205,7 +205,7 @@ public abstract class RubyParserBase {
             args = new_args(lexer.getRubySourceline(), pre, null, null, null, null);
         } else if (itNode != null) {
             DVarNode dvar = (DVarNode) itNode;
-            Node arg = new ArgumentNode(dvar.getLine(), dvar.getName(), dvar.getDepth());
+            Node arg = new ArgumentNode(dvar.getLine(), dvar.getName(), dvar.getDepth(), true);
             args = new_args(lexer.getRubySourceline(), newArrayNode(arg.getLine(), arg), null, null, null, null);
         }
         return args;
@@ -216,7 +216,7 @@ public abstract class RubyParserBase {
 
         for (int i = 1; i <= paramCount; i++) {
             RubySymbol name = symbolID(new ByteList(("_" + i).getBytes()));
-            list.add(new ArgumentNode(lexer.getRubySourceline(), name, getCurrentScope().addVariableThisScope(name.idString())));
+            list.add(new ArgumentNode(lexer.getRubySourceline(), name, getCurrentScope().addImplicitVariableThisScope(name.idString())));
         }
 
         return list;
@@ -397,15 +397,28 @@ public abstract class RubyParserBase {
             node = new LocalVarNode(lexer.tokline, slot, name);
         } else if (dyna_in_block() && id.equals("it")) {
             if (!hasArguments()) {
-                int existing = currentScope.isDefined(id);
-                slot = existing == -1 ?
-                        currentScope.addVariable(id) : existing;
+                int existing = currentScope.isDefinedOrImplicit(id);
+                boolean newIt = false;
+
+                if (existing == -1) {
+                    slot = currentScope.addVariable(id);
+                    newIt = true;
+                } else if (existing == -2) { // We found an it either in this scope or above it
+                    if (it_id() != null) {   // It is the current scope
+                        slot = currentScope.isDefined(id);   // Get location of it
+                    } else {
+                        slot = currentScope.addVariable(id); // Was above this scope so make one for it.
+                        newIt = true;
+                    }
+                } else {
+                    slot = existing;
+                }
                 node = new DVarNode(lexer.tokline, slot, name);
-                if (existing == -1) set_it_id(node);
+                if (newIt) set_it_id(node);
             } else {
-                slot = currentScope.isDefined(id);
+                slot = currentScope.isDefinedOrImplicit(id);
                 // A special it cannot exist without being marked as a special it.
-                if (it_id() == null && slot == -1) compile_error("`it` is not allowed when an ordinary parameter is defined");
+                if (it_id() != null) compile_error("`it` is not allowed when an ordinary parameter is defined");
 
                 node = currentScope.declare(lexer.tokline, name);
             }
@@ -430,6 +443,16 @@ public abstract class RubyParserBase {
         numparam_name(byteName);
 
         if (warnOnUnusedVariables) addOrMarkVariable(name, currentScope.isDefined(name.idString()));
+
+        String id = name.idString();
+        // This differs from MRI annd it is a special branch because I do not want to infect staticscope with 'it'
+        // logic since it likely will be done differently in Prism (This will play out more once 10.1 updates
+        // to latest Prism).  If it is the same then we can reconsider whether this should be in staticscope or not.
+        if (id.equals("it") && currentScope.exists(id) == -1) { // case: foo { it.bar { <<it = something>> } it }
+            // we are assigning and there is no 'it' here so make it as a normal local
+            int slot = currentScope.addVariableName(id);
+            return new DAsgnNode(lexer.getRubySourceline(), name, slot, value);
+        }
 
         return currentScope.assign(lexer.getRubySourceline(), name, makeNullNil(value));
     }
@@ -519,7 +542,10 @@ public abstract class RubyParserBase {
     public AssignableNode assignableInCurr(ByteList nameBytes, Node value) {
         RubySymbol name = symbolID(nameBytes);
         currentScope.addVariableThisScope(name.idString());
-        if (warnOnUnusedVariables) scopedParserState.addDefinedVariable(name, lexer.getRubySourceline());
+        if (warnOnUnusedVariables) {
+            scopedParserState.addDefinedVariable(name, lexer.getRubySourceline());
+            scopedParserState.markUsedVariable(name, 0);
+        }
         return currentScope.assign(lexer.getRubySourceline(), name, makeNullNil(value));
     }
 
@@ -947,13 +973,13 @@ public abstract class RubyParserBase {
      * assign_in_cond
 	 **/
     private boolean checkAssignmentInCondition(Node node) {
-        if (node instanceof MultipleAsgnNode || node instanceof LocalAsgnNode || node instanceof DAsgnNode || node instanceof GlobalAsgnNode || node instanceof InstAsgnNode) {
+        if (node instanceof MultipleAsgnNode || node instanceof LocalAsgnNode || node instanceof DAsgnNode || node instanceof GlobalAsgnNode || node instanceof InstAsgnNode || node instanceof ClassVarAsgnNode || node instanceof ConstDeclNode) {
             Node valueNode = ((AssignableNode) node).getValueNode();
             if (isStaticContent(valueNode)) {
                 warning(ID.ASSIGNMENT_IN_CONDITIONAL, lexer.getFile(), valueNode.getLine(), "found '= literal' in conditional, should be ==");
             }
             return true;
-        } 
+        }
 
         return false;
     }
@@ -1378,6 +1404,14 @@ public abstract class RubyParserBase {
         if (node == null || orig == null) return;
 
         node.setLine(orig.getLine());
+
+        // Detect IfNode and propagate newline to the bodies.
+        // This is a bit of a form-fitted fix, but the full reduce_nodes logic from CRuby
+        // defied an initial porting attempt. See jruby/jruby#9293.
+        if (node.isNewline() && node instanceof IfNode ifNode) {
+            if (ifNode.getThenBody() instanceof Node thenNode) thenNode.setNewline();
+            if (ifNode.getElseBody() instanceof Node elseNode) elseNode.setNewline();
+        }
     }
 
     public Node new_fcall(ByteList operation) {
@@ -1693,11 +1727,6 @@ public abstract class RubyParserBase {
         return RubyLexer.isIdentifierChar(name.charAt(0));
     }
 
-    @Deprecated(since = "9.2.0.0")
-    public boolean is_local_id(String name) {
-        return RubyLexer.isIdentifierChar(name.charAt(0));
-    }
-
     // 1.9
     public ListNode list_append(Node list, Node item) {
         if (list == null) return new ArrayNode(item.getLine(), item);
@@ -1977,11 +2006,6 @@ public abstract class RubyParserBase {
     }
 
     public static final ByteList INTERNAL_ID = new ByteList(new byte[] {}, USASCIIEncoding.INSTANCE);
-
-    @Deprecated(since = "9.2.0.0")
-    public String internalId() {
-        return INTERNAL_ID.toString();
-    }
 
     protected void begin_definition(String name) {
         LexContext ctxt = getLexContext();
@@ -2465,6 +2489,9 @@ public abstract class RubyParserBase {
     }
 
     protected void set_it_id(Node node) {
+        if (node != null) {
+            currentScope.markImplicitVariable(((DVarNode) node).getIndex());
+        }
         this.itId = node;
     }
 

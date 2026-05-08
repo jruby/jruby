@@ -44,6 +44,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Builtins;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
@@ -116,11 +117,6 @@ public class RubyNumeric extends RubyObject {
 
     public RubyNumeric(Ruby runtime, RubyClass metaClass, boolean useObjectSpace) {
         super(runtime, metaClass, useObjectSpace);
-    }
-
-    @Deprecated(since = "1.7.0")
-    public RubyNumeric(Ruby runtime, RubyClass metaClass, boolean useObjectSpace, boolean canBeTainted) {
-        super(runtime, metaClass, useObjectSpace, canBeTainted);
     }
 
     public static RoundingMode getRoundingMode(ThreadContext context, IRubyObject opts) {
@@ -299,7 +295,7 @@ public class RubyNumeric extends RubyObject {
     @Deprecated(since = "10.0.0.0")
     public static long float2long(RubyFloat flt) {
         final double aFloat = flt.value;
-        if (aFloat <= (double) Long.MAX_VALUE && aFloat >= (double) Long.MIN_VALUE) {
+        if (aFloat < (double) Long.MAX_VALUE && aFloat >= (double) Long.MIN_VALUE) {
             return (long) aFloat;
         }
         // TODO: number formatting here, MRI uses "%-.10g", 1.4 API is a must?
@@ -526,7 +522,12 @@ public class RubyNumeric extends RubyObject {
         var context = runtime.getCurrentContext();
         try {
             ByteList bytes = arg.getByteList();
-            double value = ConvertDouble.byteListToDouble(bytes, strict);
+            double value;
+            if (arg.getCodeRange() == StringSupport.CR_7BIT && bytes.indexOf('_') == -1) {
+                value = ConvertDouble.fastByteListToDouble(bytes);
+            } else {
+                value = ConvertDouble.byteListToDouble(bytes, strict);
+            }
             return asFloat(context, value);
         } catch (NumberFormatException e) {
             if (strict) {
@@ -627,15 +628,6 @@ public class RubyNumeric extends RubyObject {
         throw typeError(context, str(context.runtime, other, " can't be coerced into ", getMetaClass()));
     }
 
-    /** rb_num_coerce_bin
-     *  coercion taking two arguments
-     */
-    @Deprecated(since = "9.2.0.0")
-    protected final IRubyObject coerceBin(ThreadContext context, String method, IRubyObject other) {
-        RubyArray ary = doCoerce(context, other, true);
-        return (ary.eltInternal(0)).callMethod(context, method, ary.eltInternal(1));
-    }
-
     protected final IRubyObject coerceBin(ThreadContext context, CallSite site, IRubyObject other) {
         RubyArray ary = doCoerce(context, other, true);
         IRubyObject car = ary.eltInternal(0);
@@ -681,19 +673,6 @@ public class RubyNumeric extends RubyObject {
         return getMetaClass(x).finvokeChecked(context, x, site, y);
     }
 
-    /** rb_num_coerce_cmp
-     *  coercion used for comparisons
-     */
-
-    @Deprecated(since = "9.2.0.0") // no longer used
-    protected final IRubyObject coerceCmp(ThreadContext context, String method, IRubyObject other) {
-        RubyArray ary = doCoerce(context, other, false);
-        if (ary == null) {
-            return context.nil; // MRI does it!
-        }
-        return (ary.eltInternal(0)).callMethod(context, method, ary.eltInternal(1));
-    }
-
     protected final IRubyObject coerceCmp(ThreadContext context, CallSite site, IRubyObject other) {
         RubyArray ary = doCoerce(context, other, false);
         if (ary == null) {
@@ -701,17 +680,6 @@ public class RubyNumeric extends RubyObject {
         }
         IRubyObject car = ary.eltInternal(0);
         return site.call(context, car, car, ary.eltInternal(1));
-    }
-
-    /** rb_num_coerce_relop
-     *  coercion used for relative operators
-     */
-
-    @Deprecated(since = "9.2.0.0") // no longer used
-    protected final IRubyObject coerceRelOp(ThreadContext context, String method, IRubyObject other) {
-        RubyArray ary = doCoerce(context, other, false);
-
-        return ary == null ? RubyComparable.cmperr(context, this, other) : unwrapCoerced(context, method, other, ary);
     }
 
     protected final IRubyObject coerceRelOp(ThreadContext context, CallSite site, IRubyObject other) {
@@ -937,15 +905,8 @@ public class RubyNumeric extends RubyObject {
     public static boolean positiveInt(ThreadContext context, IRubyObject num) {
         JavaSites.CheckedSites gt = sites(context).op_gt_checked;
 
-        if (num instanceof RubyFixnum) {
-            if (gt.site.retrieveCache(num).method.isBuiltin()) {
-                return ((RubyFixnum) num).signum(context) == 1;
-            }
-        }
-        else if (num instanceof RubyBignum) {
-            if (gt.site.retrieveCache(num).method.isBuiltin()) {
-                return ((RubyBignum) num).signum() == 1;
-            }
+        if (num instanceof RubyInteger integer && Builtins.checkIntegerGt(context)) {
+            return integer.signum(context) == 1;
         }
         return compareNumberWithZero(context, num, gt).isTrue();
     }
@@ -954,15 +915,8 @@ public class RubyNumeric extends RubyObject {
     public static boolean negativeInt(ThreadContext context, IRubyObject num) {
         JavaSites.CheckedSites lt = sites(context).op_lt_checked;
 
-        if (num instanceof RubyFixnum) {
-            if (lt.site.retrieveCache(num).method.isBuiltin()) {
-                return ((RubyFixnum) num).signum(context) == -1;
-            }
-        }
-        else if (num instanceof RubyBignum) {
-            if (lt.site.retrieveCache(num).method.isBuiltin()) {
-                return ((RubyBignum) num).signum() == -1;
-            }
+        if (num instanceof RubyInteger integer && Builtins.checkIntegerLt(context)) {
+            return integer.signum(context) == -1;
         }
         return compareNumberWithZero(context, num, lt).isTrue();
     }
@@ -1011,11 +965,6 @@ public class RubyNumeric extends RubyObject {
     }
 
     public boolean isReal() { return true; } // only RubyComplex isn't real
-
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject scalar_p() {
-        return asBoolean(getCurrentContext(), isReal());
-    }
 
     @Deprecated(since = "10.0.0.0")
     public IRubyObject integer_p() {
@@ -1193,7 +1142,7 @@ public class RubyNumeric extends RubyObject {
 
     // MRI: num_step_negative_p
     private static boolean numStepNegative(ThreadContext context, IRubyObject num) {
-        if (num instanceof RubyInteger in && context.sites.Integer.op_lt.isBuiltin(num)) return in.isNegativeNumber(context);
+        if (num instanceof RubyInteger in && Builtins.checkIntegerLt(context)) return in.isNegativeNumber(context);
 
         RubyFixnum zero = asFixnum(context, 0);
         IRubyObject r = getMetaClass(num).finvokeChecked(context, num, sites(context).op_gt_checked, zero);
@@ -1549,37 +1498,6 @@ public class RubyNumeric extends RubyObject {
         return JavaUtil.getNumericConverter(target).coerce(getRuntime().getCurrentContext(), this, target);
     }
 
-    @Deprecated(since = "9.2.0.0") // not-used
-    public static class InvalidIntegerException extends NumberFormatException {
-        private static final long serialVersionUID = 55019452543252148L;
-
-        public InvalidIntegerException() {
-            super();
-        }
-        public InvalidIntegerException(String message) {
-            super(message);
-        }
-        @Override
-        public Throwable fillInStackTrace() {
-            return this;
-        }
-    }
-
-    @Deprecated(since = "9.2.0.0") // not-used
-    public static class NumberTooLargeException extends NumberFormatException {
-        private static final long serialVersionUID = -1835120694982699449L;
-        public NumberTooLargeException() {
-            super();
-        }
-        public NumberTooLargeException(String message) {
-            super(message);
-        }
-        @Override
-        public Throwable fillInStackTrace() {
-            return this;
-        }
-    }
-
     /** num_negative_p
      *
      */
@@ -1637,16 +1555,6 @@ public class RubyNumeric extends RubyObject {
     @JRubyMethod(name = "infinite?")
     public IRubyObject infinite_p(ThreadContext context) {
         return context.nil;
-    }
-
-    @Deprecated(since = "9.2.5.0")
-    public final IRubyObject rbClone(IRubyObject[] args) {
-        ThreadContext context = metaClass.runtime.getCurrentContext();
-        switch (args.length) {
-            case 0: return rbClone(context);
-            case 1: return rbClone(context, args[0]);
-        }
-        throw argumentError(context, "wrong number of arguments (given " + args.length + ", expected 0)");
     }
 
     @JRubyMethod(name = "clone")
@@ -1740,29 +1648,6 @@ public class RubyNumeric extends RubyObject {
     // MRI: macro NEGFIXABLE, RB_NEGFIXABLE
     public static boolean negFixable(double l) {
         return l >= RubyFixnum.MIN;
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject floor() {
-        return floor(getCurrentContext());
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject ceil() {
-        return ceil(getCurrentContext());
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject round() {
-        return round(getCurrentContext());
-    }
-
-    /** num_truncate
-     *
-     */
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject truncate() {
-        return truncate(getCurrentContext());
     }
 
     private static JavaSites.NumericSites sites(ThreadContext context) {

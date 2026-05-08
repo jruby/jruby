@@ -252,53 +252,14 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
      *  ================
      */
 
-    /** rb_flo_induced_from
-     *
-     */
-    @Deprecated(since = "9.0.0.0")
-    public static IRubyObject induced_from(ThreadContext context, IRubyObject recv, IRubyObject number) {
-        if (number instanceof RubyFixnum || number instanceof RubyBignum || number instanceof RubyRational) {
-            return number.callMethod(context, "to_f");
-        }
-
-        if (!(number instanceof RubyFloat)) throw typeError(context, "failed to convert ", number, " into Float");
-        return number;
-    }
-
     /** flo_to_s
      *
      */
     @JRubyMethod(name = {"to_s", "inspect"})
     @Override
     public IRubyObject to_s(ThreadContext context) {
-        if (Double.isInfinite(value)) {
-            return newSharedString(context, value < 0 ? NEGATIVE_INFINITY_TO_S_BYTELIST : POSITIVE_INFINITY_TO_S_BYTELIST);
-        }
-        if (Double.isNaN(value)) return newSharedString(context, NAN_TO_S_BYTELIST);
-
-        ByteList buf = new ByteList();
-        // Under 1.9, use full-precision float formatting (JRUBY-4846).
-        // Double-precision can represent around 16 decimal digits;
-        // we use 20 to ensure full representation.
-        Sprintf.sprintf(buf, Locale.US, "%#.20g", this);
-        int e = buf.indexOf('e');
-        if (e == -1) e = buf.getRealSize();
-        ASCIIEncoding ascii = ASCIIEncoding.INSTANCE;
-
-        if (!ascii.isDigit(buf.get(e - 1))) {
-            buf.setRealSize(0);
-            Sprintf.sprintf(buf, Locale.US, "%#.14e", this);
-            e = buf.indexOf('e');
-            if (e == -1) e = buf.getRealSize();
-        }
-
-        int p = e;
-        while (buf.get(p - 1) == '0' && ascii.isDigit(buf.get(p - 2))) p--;
-        System.arraycopy(buf.getUnsafeBytes(), e, buf.getUnsafeBytes(), p, buf.getRealSize() - e);
-        buf.setRealSize(p + buf.getRealSize() - e);
-
-        buf.setEncoding(USASCIIEncoding.INSTANCE);
-
+        ByteList buf = new ByteList(24);
+        formatFloat(this, buf);
         return newString(context, buf);
     }
 
@@ -319,11 +280,6 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
     @Override
     public IRubyObject op_uminus(ThreadContext context) {
         return asFloat(context, -value);
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject op_uminus() {
-        return op_uminus(getCurrentContext());
     }
 
     /** flo_plus
@@ -802,7 +758,7 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
 
             RubyInteger two_times_f = (RubyInteger) rf.op_mul(context, 2);
             den = (RubyInteger) one.op_lshift(context, one.op_minus(context, n));
-            
+
             a = RubyRational.newRationalRaw(runtime, two_times_f.op_minus(context, 1), den);
             b = RubyRational.newRationalRaw(runtime, two_times_f.op_plus(context, 1), den);
         }
@@ -1141,6 +1097,47 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
         return byteList;
     }
 
+    public static ByteList formatFloat(RubyFloat self, ByteList buf) {
+      buf.setRealSize(0);
+
+      double value = self.value;
+
+      if (Double.isInfinite(value)) {
+          buf.append(value < 0
+              ? NEGATIVE_INFINITY_TO_S_BYTELIST
+              : POSITIVE_INFINITY_TO_S_BYTELIST);
+          buf.setEncoding(USASCIIEncoding.INSTANCE);
+          return buf;
+      }
+
+      if (Double.isNaN(value)) {
+          buf.append(NAN_TO_S_BYTELIST);
+          buf.setEncoding(USASCIIEncoding.INSTANCE);
+          return buf;
+      }
+
+      Sprintf.sprintf(buf, Locale.US, "%#.20g", self);
+
+      int e = buf.indexOf('e');
+      if (e == -1) e = buf.getRealSize();
+      ASCIIEncoding ascii = ASCIIEncoding.INSTANCE;
+
+      if (!ascii.isDigit(buf.get(e - 1))) {
+          buf.setRealSize(0);
+          Sprintf.sprintf(buf, Locale.US, "%#.14e", self);
+          e = buf.indexOf('e');
+          if (e == -1) e = buf.getRealSize();
+      }
+
+      int p = e;
+      while (buf.get(p - 1) == '0' && ascii.isDigit(buf.get(p - 2))) p--;
+      System.arraycopy(buf.getUnsafeBytes(), e, buf.getUnsafeBytes(), p, buf.getRealSize() - e);
+      buf.setRealSize(p + buf.getRealSize() - e);
+
+      buf.setEncoding(USASCIIEncoding.INSTANCE);
+      return buf;
+    }
+
     @Deprecated(since = "10.0.0.0", forRemoval = true)
     @SuppressWarnings("removal")
     public static void marshalTo(RubyFloat aFloat, org.jruby.runtime.marshal.MarshalStream output) throws java.io.IOException {
@@ -1166,7 +1163,7 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
         } else if (value.equals(INFINITY_BYTELIST)) {
             return RubyFloat.newFloat(input.getRuntime(), Double.POSITIVE_INFINITY);
         } else {
-            return RubyFloat.newFloat(input.getRuntime(), ConvertDouble.byteListToDouble(value, false));
+            return RubyFloat.newFloat(input.getRuntime(), ConvertDouble.fastByteListToDouble(value));
         }
     }
 
@@ -1180,7 +1177,7 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
         } else if (value.equals(INFINITY_BYTELIST)) {
             return RubyFloat.newFloat(context.runtime, Double.POSITIVE_INFINITY);
         } else {
-            return RubyFloat.newFloat(context.runtime, ConvertDouble.byteListToDouble(value, false));
+            return RubyFloat.newFloat(context.runtime, ConvertDouble.fastByteListToDouble(value));
         }
     }
 
@@ -1312,28 +1309,9 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
         target.catWithCodeRange((RubyString) to_s(getRuntime().getCurrentContext()));
     }
 
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject zero_p() {
-        return zero_p(getCurrentContext());
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject floor(ThreadContext context, IRubyObject[] args) {
-        return switch (args.length) {
-            case 0 -> floor(context);
-            case 1 -> floor(context, args[0]);
-            default -> throw argumentError(context, args.length, 1);
-        };
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject round(ThreadContext context, IRubyObject[] args) {
-        return switch (args.length) {
-            case 0 -> round(context);
-            case 1 -> round(context, args[0]);
-            case 2 -> round(context, args[0], args[1]);
-            default -> throw argumentError(context, args.length, 2);
-        };
+    @Override
+    public boolean isImmediate() {
+        return true;
     }
 
     private static FloatSites sites(ThreadContext context) {

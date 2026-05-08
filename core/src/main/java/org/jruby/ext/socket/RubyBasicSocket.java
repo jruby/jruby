@@ -975,41 +975,6 @@ public class RubyBasicSocket extends RubyIO {
         return "bind(2) for " + host.inspect(context) + " port " + port;
     }
 
-    @Deprecated(since = "1.7.0")
-    public IRubyObject recv(IRubyObject[] args) {
-        return recv(getCurrentContext(), args);
-    }
-
-    @Deprecated(since = "1.7.0")
-    public IRubyObject getsockopt(IRubyObject lev, IRubyObject optname) {
-        return getsockopt(getCurrentContext(), lev, optname);
-    }
-
-    @Deprecated(since = "1.7.0")
-    public IRubyObject setsockopt(IRubyObject lev, IRubyObject optname, IRubyObject val) {
-        return setsockopt(getCurrentContext(), lev, optname, val);
-    }
-
-    @Deprecated(since = "1.7.0")
-    public IRubyObject getsockname() {
-        return getsockname(getCurrentContext());
-    }
-
-    @Deprecated(since = "1.7.0")
-    public IRubyObject getpeername() {
-        return getpeername(getCurrentContext());
-    }
-
-    @Deprecated(since = "1.7.0")
-    public static IRubyObject do_not_reverse_lookup(IRubyObject recv) {
-        return do_not_reverse_lookup(((RubyBasicObject) recv).getCurrentContext(), recv);
-    }
-
-    @Deprecated(since = "1.7.0")
-    public static IRubyObject set_do_not_reverse_lookup(IRubyObject recv, IRubyObject flag) {
-        return set_do_not_reverse_lookup(((RubyBasicObject) recv).getCurrentContext(), recv, flag);
-    }
-
     @Deprecated(since = "9.4.6.0")
     @Override
     public IRubyObject read_nonblock(ThreadContext context, IRubyObject[] args) {

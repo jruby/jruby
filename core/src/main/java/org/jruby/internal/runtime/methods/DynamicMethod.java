@@ -423,18 +423,6 @@ public abstract class DynamicMethod {
     }
 
     /**
-     * Retrieve the arity of this method, used for reporting arity to Ruby
-     * code. This arity may or may not reflect the actual specific or variable
-     * arities of the referenced method.
-     *
-     * @return The arity of the method, as reported to Ruby consumers.
-     */
-    @Deprecated(since = "9.3.0.0")
-    public Arity getArity() {
-        return Arity.optional();
-    }
-
-    /**
      * Retrieve the signature of this method.
      *
      * @return the signature
@@ -642,40 +630,6 @@ public abstract class DynamicMethod {
 
     public boolean isRefined() {
         return false;
-    }
-
-    @Deprecated(since = "9.0.1.0")
-    protected DynamicMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
-        this(implementationClass, visibility);
-    }
-
-    @Deprecated(since = "9.0.1.0")
-    protected DynamicMethod(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig, String name) {
-        this(implementationClass, visibility, name);
-    }
-
-    @Deprecated(since = "9.0.1.0")
-    protected void init(RubyModule implementationClass, Visibility visibility, CallConfiguration callConfig) {
-        init(implementationClass, visibility);
-    }
-
-    @Deprecated(since = "9.0.1.0")
-    public CallConfiguration getCallConfig() {
-        return CallConfiguration.FrameNoneScopeNone;
-    }
-
-    @Deprecated(since = "9.0.1.0")
-    public void setCallConfig(CallConfiguration callConfig) {
-    }
-
-    /**
-     * @param implementationClass of the method
-     * @param visibility of the method
-     * @deprecated Use {@link DynamicMethod#DynamicMethod(RubyModule, Visibility, String)}
-     */
-    @Deprecated(since = "9.1.16.0")
-    protected DynamicMethod(RubyModule implementationClass, Visibility visibility) {
-        this(implementationClass, visibility, "(anonymous)");
     }
 
     public void adjustAliasCount(int delta) {

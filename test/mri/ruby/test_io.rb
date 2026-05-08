@@ -467,6 +467,24 @@ class TestIO < Test::Unit::TestCase
     }
   end
 
+  def test_each_codepoint_with_ungetc
+    bug21562 = '[ruby-core:123176] [Bug #21562]'
+    with_read_pipe("") {|p|
+      p.binmode
+      p.ungetc("aa")
+      a = ""
+      p.each_codepoint { |c| a << c }
+      assert_equal("aa", a, bug21562)
+    }
+    with_read_pipe("") {|p|
+      p.set_encoding("ascii-8bit", universal_newline: true)
+      p.ungetc("aa")
+      a = ""
+      p.each_codepoint { |c| a << c }
+      assert_equal("aa", a, bug21562)
+    }
+  end
+
   def test_rubydev33072
     t = make_tempfile
     path = t.path
@@ -681,7 +699,6 @@ class TestIO < Test::Unit::TestCase
 
   if have_nonblock?
     def test_copy_stream_no_busy_wait
-      omit "RJIT has busy wait on GC. This sometimes fails with --jit." if defined?(RubyVM::RJIT) && RubyVM::RJIT.enabled?
       omit "multiple threads already active" if Thread.list.size > 1
 
       msg = 'r58534 [ruby-core:80969] [Backport #13533]'
@@ -1140,6 +1157,34 @@ class TestIO < Test::Unit::TestCase
       IO.copy_stream(src, dst)
       assert_equal("ok", IO.read("dst"), bug11199)
     }
+  end
+
+  def test_copy_stream_dup_buffer
+    bug21131 = '[ruby-core:120961] [Bug #21131]'
+    mkcdtmpdir do
+      dst_class = Class.new do
+        def initialize(&block)
+          @block = block
+        end
+
+        def write(data)
+          @block.call(data.dup)
+          data.bytesize
+        end
+      end
+
+      rng = Random.new(42)
+      body = Tempfile.new("ruby-bug", binmode: true)
+      body.write(rng.bytes(16_385))
+      body.rewind
+
+      payload = []
+      IO.copy_stream(body, dst_class.new{payload << it})
+      body.rewind
+      assert_equal(body.read, payload.join, bug21131)
+    ensure
+      body&.close
+    end
   end
 
   def test_copy_stream_write_in_binmode
@@ -1705,7 +1750,6 @@ class TestIO < Test::Unit::TestCase
   end if have_nonblock?
 
   def test_read_nonblock_no_exceptions
-    omit '[ruby-core:90895] RJIT worker may leave fd open in a forked child' if defined?(RubyVM::RJIT) && RubyVM::RJIT.enabled? # TODO: consider acquiring GVL from RJIT worker.
     with_pipe {|r, w|
       assert_equal :wait_readable, r.read_nonblock(4096, exception: false)
       w.puts "HI!"
@@ -2515,10 +2559,6 @@ class TestIO < Test::Unit::TestCase
   end
 
   def test_autoclose_true_closed_by_finalizer
-    # http://ci.rvm.jp/results/trunk-rjit@silicon-docker/1465760
-    # http://ci.rvm.jp/results/trunk-rjit@silicon-docker/1469765
-    omit 'this randomly fails with RJIT' if defined?(RubyVM::RJIT) && RubyVM::RJIT.enabled?
-
     feature2250 = '[ruby-core:26222]'
     pre = 'ft2250'
     t = Tempfile.new(pre)
@@ -2579,36 +2619,15 @@ class TestIO < Test::Unit::TestCase
     assert_equal({:a=>1}, open(o, {a: 1}))
   end
 
-  def test_open_pipe
-    assert_deprecated_warning(/Kernel#open with a leading '\|'/) do # https://bugs.ruby-lang.org/issues/19630
-      open("|" + EnvUtil.rubybin, "r+") do |f|
-        f.puts "puts 'foo'"
-        f.close_write
-        assert_equal("foo\n", f.read)
-      end
-    end
-  end
+  def test_path_with_pipe
+    mkcdtmpdir do
+      cmd = "|echo foo"
+      assert_file.not_exist?(cmd)
 
-  def test_read_command
-    assert_deprecated_warning(/IO process creation with a leading '\|'/) do # https://bugs.ruby-lang.org/issues/19630
-      assert_equal("foo\n", IO.read("|echo foo"))
-    end
-    assert_raise(Errno::ENOENT, Errno::EINVAL) do
-      File.read("|#{EnvUtil.rubybin} -e puts")
-    end
-    assert_raise(Errno::ENOENT, Errno::EINVAL) do
-      File.binread("|#{EnvUtil.rubybin} -e puts")
-    end
-    assert_raise(Errno::ENOENT, Errno::EINVAL) do
-      Class.new(IO).read("|#{EnvUtil.rubybin} -e puts")
-    end
-    assert_raise(Errno::ENOENT, Errno::EINVAL) do
-      Class.new(IO).binread("|#{EnvUtil.rubybin} -e puts")
-    end
-    assert_raise(Errno::ESPIPE) do
-      assert_deprecated_warning(/IO process creation with a leading '\|'/) do # https://bugs.ruby-lang.org/issues/19630
-        IO.read("|#{EnvUtil.rubybin} -e 'puts :foo'", 1, 1)
-      end
+      pipe_errors = [Errno::ENOENT, Errno::EINVAL, Errno::EACCES, Errno::EPERM]
+      assert_raise(*pipe_errors) { open(cmd, "r+") }
+      assert_raise(*pipe_errors) { IO.read(cmd) }
+      assert_raise(*pipe_errors) { IO.foreach(cmd) {|x| assert false } }
     end
   end
 
@@ -2813,19 +2832,6 @@ class TestIO < Test::Unit::TestCase
   end
 
   def test_foreach
-    a = []
-
-    assert_deprecated_warning(/IO process creation with a leading '\|'/) do # https://bugs.ruby-lang.org/issues/19630
-      IO.foreach("|" + EnvUtil.rubybin + " -e 'puts :foo; puts :bar; puts :baz'") {|x| a << x }
-    end
-    assert_equal(["foo\n", "bar\n", "baz\n"], a)
-
-    a = []
-    assert_deprecated_warning(/IO process creation with a leading '\|'/) do # https://bugs.ruby-lang.org/issues/19630
-      IO.foreach("|" + EnvUtil.rubybin + " -e 'puts :zot'", :open_args => ["r"]) {|x| a << x }
-    end
-    assert_equal(["zot\n"], a)
-
     make_tempfile {|t|
       a = []
       IO.foreach(t.path) {|x| a << x }
@@ -2901,10 +2907,10 @@ class TestIO < Test::Unit::TestCase
   end
 
   def test_print_separators
-    EnvUtil.suppress_warning {
-      $, = ':'
-      $\ = "\n"
-    }
+    assert_deprecated_warning(/non-nil '\$,'/) {$, = ":"}
+    assert_raise(TypeError) {$, = 1}
+    assert_deprecated_warning(/non-nil '\$\\'/) {$\ = "\n"}
+    assert_raise(TypeError) {$/ = 1}
     pipe(proc do |w|
       w.print('a')
       EnvUtil.suppress_warning {w.print('a','b','c')}
@@ -3804,7 +3810,7 @@ __END__
       end
 
       tempfiles = []
-      (0..fd_setsize+1).map {|i|
+      (0...fd_setsize).map {|i|
         tempfiles << Tempfile.create("test_io_select_with_many_files")
       }
 
@@ -4240,6 +4246,23 @@ __END__
     end
   end if Socket.const_defined?(:MSG_OOB)
 
+  def test_select_timeout
+    assert_equal(nil, IO.select(nil,nil,nil,0))
+    assert_equal(nil, IO.select(nil,nil,nil,0.0))
+    assert_raise(TypeError) { IO.select(nil,nil,nil,"invalid-timeout") }
+    assert_raise(ArgumentError) { IO.select(nil,nil,nil,-1) }
+    assert_raise(ArgumentError) { IO.select(nil,nil,nil,-0.1) }
+    assert_raise(ArgumentError) { IO.select(nil,nil,nil,-Float::INFINITY) }
+    assert_raise(RangeError) { IO.select(nil,nil,nil,Float::NAN) }
+    IO.pipe {|r, w|
+      w << "x"
+      ret = [[r], [], []]
+      assert_equal(ret, IO.select([r],nil,nil,0.1))
+      assert_equal(ret, IO.select([r],nil,nil,1))
+      assert_equal(ret, IO.select([r],nil,nil,Float::INFINITY))
+    }
+  end
+
   def test_recycled_fd_close
     dot = -'.'
     IO.pipe do |sig_rd, sig_wr|
@@ -4350,5 +4373,56 @@ __END__
         assert_equal("PIPE", Signal.signame(status.termsig) || status.termsig)
       end
     end
+  end
+
+  def test_blocking_timeout
+    assert_separately([], <<~'RUBY')
+      IO.pipe do |r, w|
+        trap(:INT) do
+          w.puts "INT"
+        end
+
+        main = Thread.current
+        thread = Thread.new do
+          # Wait until the main thread has entered `$stdin.gets`:
+          Thread.pass until main.status == 'sleep'
+
+          # Cause an interrupt while handling `$stdin.gets`:
+          Process.kill :INT, $$
+        end
+
+        r.timeout = 1
+        assert_equal("INT", r.gets.chomp)
+      rescue IO::TimeoutError
+        # Ignore - some platforms don't support interrupting `gets`.
+      ensure
+        thread&.join
+      end
+    RUBY
+  end
+
+  def test_fork_close
+    omit "fork is not supported" unless Process.respond_to?(:fork)
+
+    assert_separately([], <<~'RUBY')
+      r, w = IO.pipe
+
+      thread = Thread.new do
+        r.read
+      end
+
+      Thread.pass until thread.status == "sleep"
+
+      pid = fork do
+        r.close
+      end
+
+      w.close
+
+      status = Process.wait2(pid).last
+      thread.join
+
+      assert_predicate(status, :success?)
+    RUBY
   end
 end

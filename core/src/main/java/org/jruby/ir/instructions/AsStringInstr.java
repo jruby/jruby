@@ -1,6 +1,5 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
@@ -13,7 +12,6 @@ import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
-import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -38,23 +36,6 @@ public class AsStringInstr extends ZeroOperandArgNoBlockCallInstr {
         assert isPotentiallyRefined : "AsStringInstr should only be needed in refined scopes";
     }
 
-    private AsStringInstr(IRScope scope, Variable result, Operand source, boolean isPotentiallyRefined, CallSite callSite, long callSiteId) {
-        super(
-                scope,
-                Operation.AS_STRING,
-                CallType.FUNCTIONAL,
-                result,
-                scope.getManager().getRuntime().newSymbol(TO_S),
-                nonNull(source),
-                Operand.EMPTY_ARRAY,
-                0,
-                isPotentiallyRefined,
-                callSite,
-                callSiteId);
-
-        assert isPotentiallyRefined : "AsStringInstr should only be needed in refined scopes";
-    }
-
     private static Operand nonNull(Operand source) {
         return source == null ? MutableString.EMPTY_STRING : source;
     }
@@ -62,7 +43,7 @@ public class AsStringInstr extends ZeroOperandArgNoBlockCallInstr {
     @Override
     public Instr clone(CloneInfo ii) {
         return new AsStringInstr(ii.getScope(), (Variable) getResult().cloneForInlining(ii),
-                getReceiver().cloneForInlining(ii), isPotentiallyRefined(), getCallSite(), getCallSiteId());
+                getReceiver().cloneForInlining(ii), isPotentiallyRefined());
     }
 
     @Override

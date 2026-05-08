@@ -17,6 +17,22 @@ class TestDigest2 < Test::Unit::TestCase
     assert_equal(false, (a.eql?(b)))
   end
 
+  # Concurrent update on a shared Digest::Base instance should not raise.
+  # Without synchronization, java.security.MessageDigest corrupts its
+  # internal state under concurrent access, typically throwing
+  # ArrayIndexOutOfBoundsException from the JDK's digest implementation.
+  def test_concurrent_update
+    digest = Digest::SHA256.new
+
+    threads = 10.times.map do
+      Thread.new do
+        100.times { digest.update("hello") }
+      end
+    end
+
+    assert_nothing_raised { threads.each(&:join) }
+  end
+
   # JRUBY-5147
   def test_initialize_args
     assert_raises(ArgumentError) do

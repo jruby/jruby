@@ -52,18 +52,18 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.TypeError;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.Block;
+import org.jruby.runtime.Builtins;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaSites.TimeSites;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.util.ByteList;
 import org.jruby.util.RubyDateFormatter;
 import org.jruby.util.RubyTimeParser;
 import org.jruby.util.Sprintf;
+import org.jruby.util.TypeConverter;
 import org.jruby.util.time.TimeArgs;
 
 import java.io.Serializable;
@@ -100,7 +100,6 @@ import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 import static org.jruby.util.RubyStringBuilder.str;
-import static org.jruby.util.TypeConverter.typeAsString;
 
 /** The Time class.
  *
@@ -113,6 +112,7 @@ public class RubyTime extends RubyObject {
     private static final BigDecimal ONE_MILLION_BD = BigDecimal.valueOf(1000000);
     private static final BigDecimal ONE_BILLION_BD = BigDecimal.valueOf(1000000000);
     public static final int TIME_SCALE = 1_000_000_000;
+    public static final BigInteger TIME_SCALE_BI = BigInteger.valueOf(TIME_SCALE);
     public static final int TIME_SCALE_DIGITS = 9;
 
     private DateTime dt;
@@ -163,11 +163,11 @@ public class RubyTime extends RubyObject {
         }
         
         RubyHash.RubyHashEntry entry = context.runtime.getENV().getEntry(tz);
-        if (entry.key == null || entry.key == NEVER) return null; // NO_ENTRY
+        if (entry.key() == null || entry.key() == NEVER) return null; // NO_ENTRY
 
-        if (entry.key != tz) context.runtime.tzVar = (RubyString) entry.key;
+        if (entry.key() != tz) context.runtime.tzVar = (RubyString) entry.key();
 
-        return (entry.value instanceof RubyString) ? entry.value.asJavaString() : null;
+        return (entry.value() instanceof RubyString) ? entry.value().asJavaString() : null;
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -546,14 +546,6 @@ public class RubyTime extends RubyObject {
         this.zone = zone;
     }
 
-    /**
-     * Use {@link #setDateTime(DateTime)} instead.
-     */
-    @Deprecated(since = "9.2.0.0")
-    public void updateCal(DateTime dt) {
-        this.dt = dt;
-    }
-
     public static RubyTime newTime(Ruby runtime, long milliseconds) {
         return newTime(runtime, new DateTime(milliseconds));
     }
@@ -699,11 +691,6 @@ public class RubyTime extends RubyObject {
         return ((RubyTime) dup()).adjustTimeZone(context, dtz, false);
     }
 
-    @Deprecated(since = "9.2.0.0")
-    public RubyString strftime(IRubyObject format) {
-        return strftime(getRuntime().getCurrentContext(), format);
-    }
-
     @JRubyMethod
     public RubyString strftime(ThreadContext context, IRubyObject format) {
         final RubyDateFormatter rdf = context.getRubyDateFormatter();
@@ -774,7 +761,7 @@ public class RubyTime extends RubyObject {
             pos = fillDigitsAfterChar(buf, pos, ':', offset % 60, 2, 10);
         }
 
-        return newString(context, new ByteList(buf, false));
+        return newString(context, new ByteList(buf, USASCIIEncoding.INSTANCE, false));
     }
 
     private static int fillDigits(byte[] buf, int begin, int number, int size, int divisor) {
@@ -808,11 +795,10 @@ public class RubyTime extends RubyObject {
 
     private static int safeCmp(ThreadContext context, RubyTime self, IRubyObject other) {
         int cmpResult;
-        CachingCallSite cmp = sites(context).cmp;
-        if (cmp.isBuiltin(self)) {
+        if (self.metaClass == context.runtime.getTime() && Builtins.checkTimeCmp(context)) {
             cmpResult = self.cmp((RubyTime) other);
         } else {
-            cmpResult = toInt(context, cmp.call(context, self, self, other));
+            cmpResult = toInt(context, sites(context).cmp.call(context, self, self, other));
         }
         return cmpResult;
     }
@@ -1273,11 +1259,6 @@ public class RubyTime extends RubyObject {
         return asBoolean(context, (dt.getDayOfWeek() % 7) == 6);
     }
 
-    @Deprecated(since = "9.2.0.0")
-    public IRubyObject subsec() {
-        return subsec(getRuntime().getCurrentContext());
-    }
-
     @JRubyMethod
     public RubyNumeric subsec(final ThreadContext context) {
         long nanosec = dt.getMillisOfSecond() * 1_000_000 + this.nsec;
@@ -1415,18 +1396,6 @@ public class RubyTime extends RubyObject {
         return dump(context);
     }
 
-    @Deprecated(since = "9.2.0.0")
-    public RubyString dump(IRubyObject[] args, Block unusedBlock) {
-        RubyString str = (RubyString) mdump();
-        str.syncVariables(this);
-        return str;
-    }
-
-    @Deprecated(since = "9.2.0.0")
-    public RubyObject mdump() {
-        return mdump(getCurrentContext());
-    }
-
     private RubyString mdump(ThreadContext context) {
         DateTime dateTime = dt.toDateTime(DateTimeZone.UTC);
         byte dumpValue[] = new byte[8];
@@ -1544,25 +1513,6 @@ public class RubyTime extends RubyObject {
     }
 
     /* Time class methods */
-
-    /**
-     * @deprecated Use {@link #newInstance(ThreadContext, IRubyObject, IRubyObject[])}
-     */
-    @Deprecated(since = "9.2.0.0")
-    public static IRubyObject s_new(IRubyObject recv, IRubyObject[] args, Block block) {
-        Ruby runtime = recv.getRuntime();
-        RubyTime time = new RubyTime(runtime, (RubyClass) recv, new DateTime(getLocalTimeZone(runtime.getCurrentContext())));
-        time.callInit(args, block);
-        return time;
-    }
-
-    /**
-     * @deprecated Use {@link #newInstance(ThreadContext, IRubyObject, IRubyObject[])}
-     */
-    @Deprecated(since = "1.1.3")
-    public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        return newInstance(context, recv, args);
-    }
 
     @JRubyMethod(name = "now", meta = true, optional = 1, checkArity = false, keywords = true)
     public static RubyTime newInstance(ThreadContext context, IRubyObject recv, IRubyObject args[]) {
@@ -1996,12 +1946,6 @@ public class RubyTime extends RubyObject {
         return (RubyTime) recv.allocate(context);
     }
 
-    @Deprecated(since = "9.2.0.0")
-    public static RubyTime load(IRubyObject recv, IRubyObject from, Block block) {
-        var context = recv.getRuntime().getCurrentContext();
-        return s_mload(context, allocateInstance(context, (RubyClass) recv), from);
-    }
-
     @JRubyMethod(name = "_load", meta = true)
     public static RubyTime load(ThreadContext context, IRubyObject recv, IRubyObject from) {
         return s_mload(context, allocateInstance(context, (RubyClass) recv), from);
@@ -2161,27 +2105,31 @@ public class RubyTime extends RubyObject {
 
         // NOTE: we can probably do better here, but we're matching MRI behavior
         // this is for converting custom objects such as ActiveSupport::Duration
-        else if ( sites(context).respond_to_divmod.respondsTo(context, sec, sec) ) {
-            IRubyObject result = sites(context).divmod.call(context, sec, sec, 1);
-            if (!(result instanceof RubyArray arr)) throw typeError(context, "unexpected divmod result: into ", result, "");
+        else {
+            IRubyObject ary = Helpers.invokeChecked(context, sec, sites(context).divmod_checked, RubyFixnum.one(context.runtime));
+            RubyArray arr;
+            if (ary != null && !(ary = TypeConverter.checkArrayType(context, sites(context).to_a_checked, ary)).isNil()) {
+                arr = (RubyArray) ary;
+                seconds = ((RubyNumeric) arr.eltOk(0)).asDouble(context) + // div
+                        ((RubyNumeric) arr.eltOk(1)).asDouble(context); // mod
+            } else {
+                boolean raise = true;
+                seconds = 0;
 
-            seconds = ((RubyNumeric) arr.eltOk(0)).asDouble(context) + // div
-                    ((RubyNumeric) arr.eltOk(1)).asDouble(context); // mod
-        } else {
-            boolean raise = true;
-            seconds = 0;
+                if (sec instanceof JavaProxy) {
+                    try { // support java.lang.Number proxies
+                        seconds = sec.convertToFloat().value;
+                        raise = false;
+                    } catch (TypeError ex) { /* fallback bellow to raising a TypeError */ }
+                }
 
-            if (sec instanceof JavaProxy) {
-                try { // support java.lang.Number proxies
-                    seconds = sec.convertToFloat().value;
-                    raise = false;
-                } catch (TypeError ex) { /* fallback bellow to raising a TypeError */ }
+                if (raise) throw typeError(context, "can't convert ", sec, " into time interval");
             }
-
-            if (raise) throw typeError(context, "can't convert ", sec, " into time interval");
         }
 
         if (seconds < 0) throw argumentError(context,"time interval must not be negative");
+
+        if (Double.isNaN(seconds)) throw rangeError(context, seconds + " out of Time range");
 
         return seconds;
     }

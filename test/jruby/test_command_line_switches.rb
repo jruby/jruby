@@ -16,20 +16,16 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   end if IS_JAR_EXECUTION
 
   def test_dash_little_c_checks_syntax
-    with_jruby_shell_spawning do
-      with_temp_script("bad : code") do |s|
-        assert_match(/SyntaxError/, jruby("-c #{s.path} 2>&1"))
-        assert_not_equal 0, $?.exitstatus
-      end
+    with_temp_script("bad : code") do |s|
+      assert_match(/SyntaxError/, jruby("-c #{s.path} 2>&1"))
+      assert_not_equal 0, $?.exitstatus
     end
   end
 
   def test_dash_little_c_checks_syntax_only
-    with_jruby_shell_spawning do
-      with_temp_script(%q{ puts "a" }) do |s|
-        assert_match(/Syntax OK/, jruby(" -c #{s.path} 2>&1").chomp)
-        assert_equal 0, $?.exitstatus
-      end
+    with_temp_script(%q{ puts "a" }) do |s|
+      assert_match(/Syntax OK/, jruby(" -c #{s.path} 2>&1").chomp)
+      assert_equal 0, $?.exitstatus
     end
   end
 
@@ -158,20 +154,16 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   end
 
   def test_dash_little_w_turns_warnings_on
-    with_jruby_shell_spawning do
-      assert_match(/warning/, `#{RUBY} -v -e "defined? true" 2>&1`)
-      assert_equal 0, $?.exitstatus
-    end
+    assert_match(/warning/, `#{RUBY} -v -e "defined? true" 2>&1`)
+    assert_equal 0, $?.exitstatus
   end
 
   def test_dash_big_w_sets_warning_level
-    with_jruby_shell_spawning do
-      with_temp_script("defined? true") do |s|
-        assert_equal "", jruby("-W1 #{s.path} 2>&1")
-        assert_equal 0, $?.exitstatus
-        assert_match(/warning/, jruby("-W2 #{s.path} 2>&1"))
-        assert_equal 0, $?.exitstatus
-      end
+    with_temp_script("defined? true") do |s|
+      assert_equal "", jruby("-W1 #{s.path} 2>&1")
+      assert_equal 0, $?.exitstatus
+      assert_match(/warning/, jruby("-W2 #{s.path} 2>&1"))
+      assert_equal 0, $?.exitstatus
     end
   end
 
@@ -259,11 +251,9 @@ class TestCommandLineSwitches < Test::Unit::TestCase
              /test__/, /test_U_D/, /_P_U_S_D/]
 
     names.each_with_index do |name, idx|
-      with_jruby_shell_spawning do
-        with_temp_script('print __FILE__', name) do |s|
-          assert_match rgxes[idx], jruby("#{s.path}")
-          assert_equal 0, $?.exitstatus
-        end
+      with_temp_script('print __FILE__', name) do |s|
+        assert_match rgxes[idx], jruby("#{s.path}")
+        assert_equal 0, $?.exitstatus
       end
     end
   end
@@ -281,21 +271,17 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   # JRUBY-4288
   def test_case_insensitive_jruby
     weird_jruby = '"' + File.join([RbConfig::CONFIG['bindir'], 'jRuBy']) << RbConfig::CONFIG['EXEEXT'] + '"'
-    with_jruby_shell_spawning do
-      res = `cmd.exe /c #{weird_jruby} -e "puts 1"`.rstrip
-      assert_equal '1', res
-      assert_equal 0, $?.exitstatus
-    end
+    res = `cmd.exe /c #{weird_jruby} -e "puts 1"`.rstrip
+    assert_equal '1', res
+    assert_equal 0, $?.exitstatus
   end if WINDOWS
 
   # JRUBY-4289
   def test_uppercase_exe
     weird_jruby = '"' + File.join([RbConfig::CONFIG['bindir'], 'jRuBy']) << '.ExE' + '"'
-    with_jruby_shell_spawning do
-      res = `#{weird_jruby} -e "puts 1"`.rstrip
-      assert_equal '1', res
-      assert_equal 0, $?.exitstatus
-    end
+    res = `#{weird_jruby} -e "puts 1"`.rstrip
+    assert_equal '1', res
+    assert_equal 0, $?.exitstatus
   end if WINDOWS
 
   # JRUBY-4290

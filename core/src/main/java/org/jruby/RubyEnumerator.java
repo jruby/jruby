@@ -30,6 +30,7 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.StopIteration;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -52,6 +53,9 @@ import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.arrayOf;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
+import static org.jruby.runtime.ThreadContext.hasKeywords;
+import static org.jruby.runtime.ThreadContext.hasNonemptyKeywords;
+import static org.jruby.runtime.ThreadContext.resetCallInfo;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 /**
@@ -209,10 +213,9 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
     // and used internally to create enum from Enumerator::Lazy#eager
     @JRubyMethod(name = "__from", meta = true, required = 2, optional = 2, checkArity = false, visibility = PRIVATE, keywords = true)
     public static IRubyObject __from(ThreadContext context, IRubyObject klass, IRubyObject[] args) {
-        int argc = Arity.checkArgumentCount(context, args, 2, 4);
+        boolean keywords = hasNonemptyKeywords(ThreadContext.resetCallInfo(context));
 
-        boolean keywords = (context.callInfo & CALL_KEYWORD) != 0 && (context.callInfo & ThreadContext.CALL_KEYWORD_EMPTY) == 0;
-        ThreadContext.resetCallInfo(context);
+        int argc = Arity.checkArgumentCount(context, args, 2, 4);
 
         // Lazy.__from(enum, method, *args, size)
         IRubyObject object = args[0];
@@ -328,8 +331,15 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
     private IRubyObject __each__(ThreadContext context, final Block block) {
         if (methodArgsHasKeywords) context.callInfo = CALL_KEYWORD;
         return object.callMethod(context, method, methodArgs,
-                CallBlock.newCallClosure(context, this, Signature.OPTIONAL, (ctx, args, blk) -> {
-                    IRubyObject ret = block.yieldValues(ctx, args);
+                CallBlock.newCallClosure(context, this, block.getSignature(), (ctx, args, blk) -> {
+                    IRubyObject ret;
+
+                    if (args.length == 1) {
+                        ret = block.yield(ctx, args[0]);
+                    } else {
+                        ret = block.yieldValues(ctx, args);
+                    }
+
                     IRubyObject val = feedValue.use_value(ctx);
                     return val.isNil() ? ret : val;
                 })
@@ -346,7 +356,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         ArraySupport.copy(args, newArgs, mlen, args.length);
 
         return new RubyEnumerator(context.runtime, getType(), object, asSymbol(context, method), newArgs,
-                size, sizeFn, methodArgsHasKeywords).each(context, block);
+                null, null, methodArgsHasKeywords).each(context, block);
     }
 
     @JRubyMethod(name = "inspect")
@@ -556,15 +566,42 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
     /** MRI: enumerator_s_produce
      *
      */
-    @JRubyMethod(meta = true, optional = 1, checkArity = false)
+    @JRubyMethod(meta = true, optional = 2, checkArity = false, keywords = true)
     public static IRubyObject produce(ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
-        int argc = Arity.checkArgumentCount(context, args, 0, 1);
+        IRubyObject size = UNDEF;
+        int argc = args.length;
+
+        if (hasKeywords(resetCallInfo(context))) {
+            argc--;
+            IRubyObject maybeSize = ArgsUtil.extractKeywordArg(context, (RubyHash) args[args.length - 1], "size");
+            if (maybeSize != null) {
+                size = maybeSize;
+            }
+        }
+
+        size = size == UNDEF ?
+                context.runtime.getFloat().getConstant("INFINITY") :
+                convertToFeasibleSizeValue(context, size);
+
+        Arity.checkArgumentCount(context, argc, 0, 1);
 
         if (!block.isGiven()) throw argumentError(context, "no block given");
 
         IRubyObject init = argc == 0 ? null : args[0];
-        RubyProducer producer = RubyProducer.newProducer(context, init, block);
+        RubyProducer producer = RubyProducer.newProducer(context, init, block, size);
         return enumeratorizeWithSize(context, producer, "each", RubyProducer::size);
+    }
+
+    private static IRubyObject convertToFeasibleSizeValue(ThreadContext context, IRubyObject obj) {
+        if (obj.isNil()) {
+            return obj;
+        } else if (obj.respondsTo("call")) {
+            return obj;
+        } else if (obj instanceof RubyFloat flote && flote.value == Double.POSITIVE_INFINITY) {
+            return obj;
+        } else {
+            return toInteger(context, obj);
+        }
     }
 
     @Deprecated(since = "9.4.3.0")

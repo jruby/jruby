@@ -20,6 +20,10 @@ final class Java7ClassValue<T> extends ClassValue<T> {
         return proxy.get(cls).get();
     }
 
+    public void clear() {
+        // nothing to clear and values are weakly referenced by the ClassValue anyway
+    }
+
     // If we put any objects that reference an org.jruby.Ruby runtime
     // (like RubyClass instances) in here we run into a circular
     // reference situation that GC isn't handling where they will

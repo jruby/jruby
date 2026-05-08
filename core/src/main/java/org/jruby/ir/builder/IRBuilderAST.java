@@ -607,6 +607,10 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
 
     protected Operand[] buildCallArgs(Node args, int[] flags) {
         switch (args.getNodeType()) {
+            case DEFNNODE:
+            case DEFSNODE:
+                build(args);
+                return new Operand[] { new Symbol(((MethodDefNode) args).getName()) };
             case ARGSCATNODE:
             case ARGSPUSHNODE:
                 Operand lhs = build(((TwoValueNode) args).getFirstNode());
@@ -2515,7 +2519,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             return buildOpAsgnConstDeclAnd(node.getFirstNode(), node.getSecondNode(), ((Colon3Node) node.getFirstNode()).getName());
         }
 
-        return buildOpAsgnConstDecl((Colon3Node) node.getFirstNode(), ((Colon3Node) node.getFirstNode()).getName(), node.getSecondNode(), node.getSymbolOperator());
+        return buildOpAsgnConstDecl(node.getFirstNode(), ((Colon3Node) node.getFirstNode()).getName(), node.getSecondNode(), node.getSymbolOperator());
     }
 
     public Operand buildOpAsgnAnd(OpAsgnAndNode node) {
@@ -2762,7 +2766,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         int[] flags = new int[] { 0 };
         Operand value = buildYieldArgs(argNode, flags);
 
-        addInstr(new YieldInstr(result, getYieldClosureVariable(), value, flags[0], unwrap));
+        addInstr(new YieldInstr(scope, result, getYieldClosureVariable(), value, flags[0], unwrap));
 
         return result;
     }

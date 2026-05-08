@@ -66,3 +66,7 @@ windows:Process.spawn with a single argument does not subject the specified comm
 windows:Process.spawn with a single argument does not create an argument array with shell parsing semantics for whitespace on Windows
 windows:Process.spawn with a command array uses the first element as the command name and the second as the argv[0] value
 windows:Process.spawn with a command array calls #to_ary to convert the argument to an Array
+fails:Process.spawn sets $? to exit status 127 when the command does not exist
+fails:Process.spawn sets $? to exit status 127 when the file does not exist
+fails:Process.spawn raises an Errno::EACCES when the path is a directory
+fails:Process.spawn raises an Errno::ENOENT when a non-executable file is found in PATH

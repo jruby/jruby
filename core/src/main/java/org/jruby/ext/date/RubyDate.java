@@ -1687,15 +1687,6 @@ public class RubyDate extends RubyObject {
         return new RubyDateParser().parse(context, format, (RubyString) string);
     }
 
-    // @Deprecated(since = "9.2.0.0")
-    public static IRubyObject _strptime(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        return switch (args.length) {
-            case 1 -> _strptime(context, self, args[0]);
-            case 2 -> _strptime(context, self, args[0], args[1]);
-            default -> throw argumentError(context, args.length, 1);
-        };
-    }
-
     @JRubyMethod(name = "zone_to_diff", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject zone_to_diff(ThreadContext context, IRubyObject self, IRubyObject zone) {
         final int offset = TimeZoneConverter.dateZoneToDiff(zone.asJavaString());

@@ -3,6 +3,7 @@ package org.jruby.ir.targets.indy;
 import com.headius.invokebinder.Binder;
 import org.jruby.Ruby;
 import org.jruby.RubyHash;
+import org.jruby.RubyHashLinkedBuckets;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
@@ -86,7 +87,7 @@ public class HashBootstrap {
 
     public static RubyHash hash(ThreadContext context, IRubyObject[] pairs) {
         Ruby runtime = context.runtime;
-        RubyHash hash = new RubyHash(runtime, pairs.length / 2 + 1);
+        RubyHash hash = RubyHashLinkedBuckets.newLBHash(runtime, pairs.length / 2 + 1);
         for (int i = 0; i < pairs.length;) {
             hash.fastASetCheckString(runtime, pairs[i++], pairs[i++]);
         }

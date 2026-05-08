@@ -53,13 +53,4 @@ public class NullWarnings implements IRubyWarnings {
     public void warn(ID id, String message) {}
     public void warning(ID id, String message) {}
     public void warning(ID id, String fileName, int lineNumber, String message) {}
-    
-    @Deprecated(since = "1.7.0")
-    public void warn(ID id, String message, Object... data) {}
-    @Deprecated(since = "1.7.0")
-    public void warning(ID id, String message, Object... data) {}
-    @Deprecated(since = "1.7.0")
-    public void warn(ID id, String fileName, int lineNumber, String message, Object... data) {}
-    @Deprecated(since = "1.7.0")
-    public void warning(ID id, String fileName, int lineNumber, String message, Object...data) {}
 }

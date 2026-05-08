@@ -283,22 +283,6 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
             return method.toString();
         }
 
-        @Deprecated(since = "9.1.6.0")
-        public Object defaultResult() {
-            final Class returnType = method.getReturnType();
-
-            if (returnType == Void.TYPE) return null;
-            if (returnType == Boolean.TYPE) return Boolean.FALSE;
-            if (returnType == Byte.TYPE) return Byte.valueOf((byte) 0);
-            if (returnType == Short.TYPE) return Short.valueOf((short) 0);
-            if (returnType == Integer.TYPE) return Integer.valueOf(0);
-            if (returnType == Long.TYPE) return Long.valueOf(0L);
-            if (returnType == Float.TYPE) return Float.valueOf(0.0f);
-            if (returnType == Double.TYPE) return Double.valueOf(0.0);
-
-            return null;
-        }
-
         public final boolean matches(final String name, final Class<?>[] parameterTypes) {
             return method.getName().equals(name) && Arrays.equals(this.parameterTypes, parameterTypes);
         }

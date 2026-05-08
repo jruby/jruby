@@ -101,9 +101,6 @@ import static org.jruby.util.StringSupport.codeRangeScan;
  */
 @JRubyClass(name = "Symbol", include = "Enumerable")
 public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingCapable, Constantizable, Appendable, SimpleHash {
-    @Deprecated(since = "9.2.1.0")
-    public static final long symbolHashSeedK0 = 5238926673095087190l;
-
     private final int id;
     private final int hashCode;
     private final String symbol;
@@ -326,20 +323,6 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return runtime.getSymbolTable().lookup(id);
     }
 
-    /* Symbol class methods.
-     *
-     */
-    @Deprecated(since = "9.1.0.0")
-    public static RubySymbol newSymbol(Ruby runtime, IRubyObject name) {
-        if (name instanceof RubySymbol) {
-            return runtime.getSymbolTable().getSymbol(((RubySymbol) name).getBytes(), false);
-        } else if (name instanceof RubyString) {
-            return runtime.getSymbolTable().getSymbol(((RubyString) name).getByteList(), false);
-        } else {
-            return newSymbol(runtime, name.asString().getByteList());
-        }
-    }
-
     public static RubySymbol newHardSymbol(Ruby runtime, IRubyObject name) {
         if (name instanceof RubySymbol) {
             return runtime.getSymbolTable().getSymbol(((RubySymbol) name).getBytes(), true);
@@ -508,8 +491,15 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         ByteList bytes = fstring.getByteList();
         Encoding enc = bytes.getEncoding();
 
+        boolean nameInvalid;
+        if (str.isAsciiOnly()) {
+            nameInvalid = !isSymbolName(symbol);
+        } else {
+            nameInvalid = this.type == SymbolNameType.OTHER;
+        }
+
         if ((resenc != enc && !str.isAsciiOnly()) /*|| len != (long)strlen(ptr)*/ ||
-                !isSymbolName(symbol) || !isPrintable(context)) {
+                nameInvalid || !isPrintable(context)) {
             return false;
         }
         return true;
@@ -939,11 +929,6 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     @JRubyMethod(meta = true)
     public static IRubyObject all_symbols(ThreadContext context, IRubyObject recv) {
         return context.runtime.getSymbolTable().all_symbols(context);
-    }
-    @Deprecated(since = "1.2")
-    public static IRubyObject all_symbols(IRubyObject recv) {
-        var runtime = recv.getRuntime();
-        return runtime.getSymbolTable().all_symbols(runtime.getCurrentContext());
     }
 
     @Deprecated(since = "10.0.0.0", forRemoval = true)
@@ -1483,32 +1468,6 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
             }
             symbolTable = newTable;
             return newTable;
-        }
-
-        // backwards-compatibility, but threadsafe now
-        @Deprecated(since = "9.0.0.0")
-        public RubySymbol lookup(String name) {
-            int hash = name.hashCode();
-            SymbolEntry[] table = symbolTable;
-            RubySymbol symbol = null;
-
-            SymbolEntry e = table[getIndex(hash, table)];
-            while (e != null) {
-                if (hash == e.hash && name.equals(e.name)) {
-                    symbol = e.symbol.get();
-                    if (symbol != null) break;
-                }
-                e = e.next;
-            }
-
-            return symbol;
-        }
-
-        // not so backwards-compatible here, but no one should have been
-        // calling this anyway.
-        @Deprecated(since = "9.0.0.0")
-        public void store(RubySymbol symbol) {
-            throw new UnsupportedOperationException();
         }
     }
 

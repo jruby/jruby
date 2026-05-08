@@ -48,6 +48,7 @@ import java.util.function.BiConsumer;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Builtins;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.JavaSites.ObjectSites;
 import org.jruby.runtime.ObjectAllocator;
@@ -107,11 +108,6 @@ public class RubyObject extends RubyBasicObject {
      */
     public RubyObject(RubyClass metaClass) {
         super(metaClass);
-    }
-
-    @Deprecated(since = "1.7.0")
-    protected RubyObject(Ruby runtime, RubyClass metaClass, boolean useObjectSpace, boolean canBeTainted) {
-        super(runtime, metaClass, useObjectSpace, canBeTainted);
     }
 
     /**
@@ -332,55 +328,6 @@ public class RubyObject extends RubyBasicObject {
         metaClass.getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, arg0, arg1, arg2, block);
     }
 
-    /*
-     * Tries to convert this object to the specified Ruby type, using
-     * a specific conversion method.
-     */
-    @Deprecated(since = "1.1.6")
-    public final IRubyObject convertToType(RubyClass target, int convertMethodIndex) {
-        throw new RuntimeException("Not supported; use the String versions");
-    }
-
-    /* specific_eval
-     *
-     * Evaluates the block or string inside of the context of this
-     * object, using the supplied arguments. If a block is given, this
-     * will be yielded in the specific context of this object. If no
-     * block is given then a String-like object needs to be the first
-     * argument, and this string will be evaluated. Second and third
-     * arguments in the args-array is optional, but can contain the
-     * filename and line of the string under evaluation.
-     */
-    @Deprecated(since = "1.1.2")
-    public IRubyObject specificEval(ThreadContext context, RubyModule mod, IRubyObject[] args, Block block, EvalType evalType) {
-        if (block.isGiven()) {
-            if (args.length > 0) throw argumentError(context, args.length, 0);
-
-            return yieldUnder(context, mod, block, evalType);
-        }
-
-        if (args.length == 0) throw argumentError(context, "block not supplied");
-        if (args.length > 3) {
-            String lastFuncName = context.getFrameName();
-            throw argumentError(context, "wrong number of arguments: " + lastFuncName + "(src) or " + lastFuncName + "{..}");
-        }
-
-        // We just want the TypeError if the argument doesn't convert to a String (JRUBY-386)
-        RubyString evalStr = args[0] instanceof RubyString str ? str : args[0].convertToString();
-
-        String file;
-        int line;
-        if (args.length > 1) {
-            file = args[1].convertToString().asJavaString();
-            line = args.length > 2 ? toInt(context, args[2]) - 1 : 0;
-        } else {
-            file = "(eval at " + context.getSingleBacktrace().getFileAndLine() + ")";
-            line = 0;
-        }
-
-        return evalUnder(context, mod, evalStr, file, line, evalType);
-    }
-
     // Methods of the Object class (rb_obj_*):
 
     /** rb_equal
@@ -419,7 +366,7 @@ public class RubyObject extends RubyBasicObject {
             }
         } else if (a instanceof RubyFloat) {
             if (b instanceof RubyFloat) {
-                if (!context.sites.Float.op_equal.isBuiltin(a)) {
+                if (!Builtins.checkFloatEquals(context)) {
                     return context.sites.Float.op_equal.call(context, a, a, b).isTrue();
                 }
                 return ((RubyFloat) a).fastEqual((RubyFloat) b);
@@ -484,11 +431,12 @@ public class RubyObject extends RubyBasicObject {
         for (; idx < args.length; idx++) {
             if ( obj.isNil() ) break;
             IRubyObject arg = args[idx];
-            if (isArrayDig(obj, sites)) {
+            RubyClass metaClass = obj.getMetaClass();
+            if (isArrayDig(context, metaClass)) {
                 obj = ((RubyArray) obj).dig(context, arg);
-            } else if (isHashDig(obj, sites)) {
+            } else if (isHashDig(context, metaClass)) {
                 obj =  ((RubyHash) obj).dig(context, arg);
-            } else if (isStructDig(obj, sites)) {
+            } else if (isStructDig(context, metaClass)) {
                 obj =  ((RubyStruct) obj).dig(context, arg);
             } else if (sites.respond_to_dig.respondsTo(context, obj, obj, true) ) {
                 final int len = args.length - idx;
@@ -517,10 +465,11 @@ public class RubyObject extends RubyBasicObject {
         if ( obj.isNil() ) return context.nil;
 
         ObjectSites sites = sites(context);
+        RubyClass metaClass = obj.getMetaClass();
 
-        if (isArrayDig(obj, sites)) return ((RubyArray) obj).dig(context, arg1);
-        if (isHashDig(obj, sites)) return ((RubyHash) obj).dig(context, arg1);
-        if (isStructDig(obj, sites)) return ((RubyStruct) obj).dig(context, arg1);
+        if (isArrayDig(context, metaClass)) return ((RubyArray) obj).dig(context, arg1);
+        if (isHashDig(context, metaClass)) return ((RubyHash) obj).dig(context, arg1);
+        if (isStructDig(context, metaClass)) return ((RubyStruct) obj).dig(context, arg1);
 
         if (!sites.respond_to_dig.respondsTo(context, obj, obj, true)) throw typeError(context, "", obj," does not have #dig method");
         return sites.dig_misc.call(context, obj, obj, arg1);
@@ -529,26 +478,27 @@ public class RubyObject extends RubyBasicObject {
     public static IRubyObject dig2(ThreadContext context, IRubyObject obj, IRubyObject arg1, IRubyObject arg2) {
         if ( obj.isNil() ) return context.nil;
 
+        RubyClass metaClass = obj.getMetaClass();
         ObjectSites sites = sites(context);
 
-        if (isArrayDig(obj, sites)) return ((RubyArray) obj).dig(context, arg1, arg2);
-        if (isHashDig(obj, sites)) return ((RubyHash) obj).dig(context, arg1, arg2);
-        if (isStructDig(obj, sites)) return ((RubyStruct) obj).dig(context, arg1, arg2);
+        if (isArrayDig(context, metaClass)) return ((RubyArray) obj).dig(context, arg1, arg2);
+        if (isHashDig(context, metaClass)) return ((RubyHash) obj).dig(context, arg1, arg2);
+        if (isStructDig(context, metaClass)) return ((RubyStruct) obj).dig(context, arg1, arg2);
 
         if (!sites.respond_to_dig.respondsTo(context, obj, obj, true)) throw typeError(context, "", obj," does not have #dig method");
         return sites.dig_misc.call(context, obj, obj, arg1, arg2);
     }
 
-    private static boolean isStructDig(IRubyObject obj, ObjectSites sites) {
-        return obj instanceof RubyStruct && sites.dig_struct.isBuiltin(obj.getMetaClass());
+    private static boolean isStructDig(ThreadContext context, RubyClass metaClass) {
+        return metaClass == context.runtime.getStructClass() && Builtins.checkStructDig(context);
     }
 
-    private static boolean isHashDig(IRubyObject obj, ObjectSites sites) {
-        return obj instanceof RubyHash && sites.dig_hash.isBuiltin(obj.getMetaClass());
+    private static boolean isHashDig(ThreadContext context, RubyClass metaClass) {
+        return metaClass == context.runtime.getHash() && Builtins.checkHashDig(context);
     }
 
-    private static boolean isArrayDig(IRubyObject obj, ObjectSites sites) {
-        return obj instanceof RubyArray && sites.dig_array.isBuiltin(obj.getMetaClass());
+    private static boolean isArrayDig(ThreadContext context, RubyClass metaClass) {
+        return metaClass == context.runtime.getArray() && Builtins.checkArrayDig(context);
     }
 
     /**

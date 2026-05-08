@@ -1,3 +1,5 @@
+exclude :test_alternative_pattern, "alternative patterns with local variables do not parse (https://github.com/jruby/jruby/issues/9269)"
+exclude :test_alternative_pattern_nested, "alternative patterns with local variables do not parse (https://github.com/jruby/jruby/issues/9269)"
 exclude :test_hash_pattern, "work in progress"
 exclude :test_single_pattern_error_find_pattern, "work in progress"
 exclude :test_single_pattern_error_guard_clause, "work in progress"

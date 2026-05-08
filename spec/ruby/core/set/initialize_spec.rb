@@ -64,6 +64,22 @@ describe "Set#initialize" do
     s.size.should eql(0)
   end
 
+  it "should initialize with set" do
+    o = Set.new([1, 2])
+    s = Set.new(o)
+    s.size.should eql(2)
+    s.should include(1)
+    s.should include(2)
+  end
+
+  it "should initialize with set and block" do
+    o = Set.new([1, 2])
+    s = Set.new(o) { |e| e + 2 }
+    s.size.should eql(2)
+    s.should include(3)
+    s.should include(4)
+  end
+
   it "should initialize with just block" do
     s = Set.new { |x| x * x }
     s.size.should eql(0)

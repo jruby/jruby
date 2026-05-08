@@ -77,7 +77,7 @@ public class JRubyLibrary implements Library {
         var Object = objectClass(context);
 
         // load Ruby parts of the 'jruby' library
-        loadService(context).loadFromClassLoader(runtime.getJRubyClassLoader(), "jruby/jruby.rb", false);
+        loadService(context).loadFromClassLoader("jruby/jruby.rb", false);
 
         var JRuby = defineModule(context, "JRuby").
                 defineMethods(context, JRubyLibrary.class).defineMethods(context, JRubyUtilLibrary.class);
@@ -299,12 +299,6 @@ public class JRubyLibrary implements Library {
         return CompiledScript.newInstance(context,
                 new IRubyObject[] {filename, asSymbol(context, scope.getId()), content, Java.getInstance(runtime, bytes)},
                 Block.NULL_BLOCK);
-    }
-
-    @Deprecated(since = "9.2.1.0") // @JRubyMethod(meta = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject load_string_ext(ThreadContext context, IRubyObject recv) {
-        CoreExt.loadStringExtensions(context);
-        return context.nil;
     }
 
     @JRubyMethod(module = true)

@@ -151,11 +151,6 @@ public class AliasMethod extends DynamicMethod {
     }
 
 
-    @Deprecated(since = "9.3.0.0") @Override
-    public Arity getArity(){
-        return entry.method.getArity();
-    }
-
     @Override
     public Signature getSignature() {
         return entry.method.getSignature();
@@ -163,9 +158,9 @@ public class AliasMethod extends DynamicMethod {
 
 
     public String getOldName() {
-        return entry.method.getName();
+        return getRealMethod().getName();
     }
-    
+
     @Override
     public DynamicMethod getRealMethod() {
         return entry.method.getRealMethod();

@@ -22,16 +22,6 @@ import java.util.EnumSet;
 public class ClassSuperInstr extends CallInstr {
     private final boolean isLiteralBlock;
 
-    // clone constructor
-    protected ClassSuperInstr(IRScope scope, Variable result, Operand receiver, RubySymbol name, Operand[] args,
-                              Operand closure, int flags, boolean potentiallyRefined, CallSite callSite,
-                              long callSiteId) {
-        super(scope, Operation.CLASS_SUPER, CallType.SUPER, result, name, receiver, args, closure, flags,
-                potentiallyRefined, callSite, callSiteId);
-
-        isLiteralBlock = closure instanceof WrappedIRClosure;
-    }
-
     // normal constructor
     public ClassSuperInstr(IRScope scope, Variable result, Operand definingModule, RubySymbol name, Operand[] args,
                            Operand closure, int flags, boolean isPotentiallyRefined) {
@@ -58,7 +48,7 @@ public class ClassSuperInstr extends CallInstr {
     public Instr clone(CloneInfo ii) {
         return new ClassSuperInstr(ii.getScope(), ii.getRenamedVariable(getResult()), getDefiningModule().cloneForInlining(ii),
                 name, cloneCallArgs(ii), getClosureArg().cloneForInlining(ii),
-                getFlags(), isPotentiallyRefined(), getCallSite(), getCallSiteId());
+                getFlags(), isPotentiallyRefined());
     }
 
     public static ClassSuperInstr decode(IRReaderDecoder d) {

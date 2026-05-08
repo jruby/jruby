@@ -1,0 +1,3 @@
+fails:IO::Buffer#| raises TypeError if mask is not an IO::Buffer
+fails:IO::Buffer#or! raises TypeError if mask is not an IO::Buffer
+fails:IO::Buffer#or! modifies the buffer in place

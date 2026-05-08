@@ -134,12 +134,6 @@ public class ArrayUtils {
                 array.getClass().getComponentType().getName() + ')');
     }
 
-    @Deprecated(since = "9.1.8.0")
-    public static void copyDataToJavaArrayDirect(ThreadContext context,
-        final RubyArray rubyArray, final Object javaArray) {
-        copyDataToJavaArrayDirect(rubyArray, javaArray);
-    }
-
     public static void copyDataToJavaArrayDirect(final RubyArray rubyArray, final Object javaArray) {
         Class targetType = javaArray.getClass().getComponentType();
 

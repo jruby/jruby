@@ -1,2 +1,7 @@
 exclude :test_condition_variable, "hangs on macos M1"
 exclude :test_current_scheduler, "fails intermittently on Linux CI on GHA"
+exclude :test_io_read_error, "not hooked up to Scheduler yet, https://github.com/jruby/jruby/issues/9275"
+exclude :test_io_write_error, "not hooked up to Scheduler yet, https://github.com/jruby/jruby/issues/9275"
+exclude :test_io_write_flush_error, "not hooked up to Scheduler yet, https://github.com/jruby/jruby/issues/9275"
+exclude :test_io_write_on_flush, "not hooked up to Scheduler yet, https://github.com/jruby/jruby/issues/9275"
+exclude :test_iseq_compile_under_gc_stress_bug_21180, "uses RubyVM"

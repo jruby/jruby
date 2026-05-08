@@ -186,7 +186,7 @@ public class RubyNameError extends RubyStandardError {
         // MRI: coercion dance for name error object inspection in name_err_mesg_to_str
         private static RubyString getNameOrInspect(ThreadContext context, IRubyObject object) {
             IRubyObject tmp = tryModuleName(context, object);
-            if (tmp == UNDEF || tmp.isNil()) tmp = tryInspect(context, object);
+            if (tmp == null || tmp.isNil()) tmp = tryInspect(context, object);
             if (tmp == UNDEF) context.clearErrorInfo();
             tmp = TypeConverter.checkStringType(context.runtime, tmp);
             if (tmp.isNil()) tmp = Convert.anyToString(context, object);
@@ -212,7 +212,7 @@ public class RubyNameError extends RubyStandardError {
                     // ignore
                 }
             }
-            return UNDEF;
+            return null;
         }
     }
 
