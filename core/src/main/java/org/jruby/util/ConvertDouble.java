@@ -71,7 +71,7 @@ public class ConvertDouble {
     }
 
     /**
-     * Efficiently reject strings with leading [_], trailing [_-+], or any of /_e|e_|_E|E_/.
+     * Efficiently reject strings with leading [_], trailing [_-+], or any of /__|-_|+_|_e|e_|_E|E_/.
      * @param b incoming bytes
      * @param begin starting offset
      * @param length effective length
@@ -86,14 +86,14 @@ public class ConvertDouble {
         int last = b[end];
         if (first == '_' || last == '_' || last == '+' || last == '-') return true;
 
-        // scan remaining chars to reject invalid underscores around exponent delimiter
-        if (length >= 3) {
-            int i = 1;
-            byte cur = b[begin + 1];
-            byte next = b[begin + 2];
+        // scan remaining chars to reject invalid underscores
+        if (length >= 2) {
+            int i = 0;
+            byte cur = first;
+            byte next = b[begin + 1];
             while (i < end) {
-                if (((cur == '_') && (next == 'e' || next == 'E')) ||
-                        ((cur == 'e' || cur == 'E') && next == '_')) return true;
+                if (((cur == '_') && (next == 'e' || next == 'E' || next == '_' || next == '.')) ||
+                        (next == '_' && (cur == 'e' || cur == 'E' || cur == '-' || cur == '+'))) return true;
                 cur = next;
                 next = b[begin + ++i];
             }
