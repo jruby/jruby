@@ -1,3 +1,0 @@
-fails(JRUBY-3655):Process::Constants has the correct constant values on Linux
-fails(JRUBY-3655):Process::Constants has the correct constant values on BSD-like systems
-fails(JRUBY-3655):Process::Constants has the correct constant values on Darwin
