@@ -1,0 +1,1 @@
+fails:UnboundMethod#original_name returns the original name even when aliased thrice

@@ -189,7 +189,7 @@ RSpec.describe RaiseErrorMatcher do
       raise "bar"
     end
 
-    matcher = RaiseErrorMatcher.new(RuntimeError, cause:)
+    matcher = RaiseErrorMatcher.new(RuntimeError, cause: cause)
     expect(matcher.matches?(proc)).to eq(true)
   end
 
@@ -201,7 +201,7 @@ RSpec.describe RaiseErrorMatcher do
       raise "bar"
     end
 
-    matcher = RaiseErrorMatcher.new(RuntimeError, "bar", cause:)
+    matcher = RaiseErrorMatcher.new(RuntimeError, "bar", cause: cause)
     expect(matcher.matches?(proc)).to eq(true)
   end
 
@@ -211,7 +211,7 @@ RSpec.describe RaiseErrorMatcher do
       raise "foo"
     end
 
-    matcher = RaiseErrorMatcher.new(RuntimeError, cause:)
+    matcher = RaiseErrorMatcher.new(RuntimeError, cause: cause)
 
     begin
       matcher.matches?(proc)
@@ -221,7 +221,7 @@ RSpec.describe RaiseErrorMatcher do
       )
     end
 
-    matcher = RaiseErrorMatcher.new(RuntimeError, "foo", cause:)
+    matcher = RaiseErrorMatcher.new(RuntimeError, "foo", cause: cause)
 
     begin
       matcher.matches?(proc)
