@@ -36,18 +36,32 @@ import java.util.Set;
 
 public class ConvertDouble {
 
-    private static final NumberFormatSymbols FORMAT_SYMBOLS =
+    /**
+     * Performance optimisation:
+     * By reusing an instance of the parser, we can save the costly initialisation time.
+     */
+    private static final ConfigurableDoubleParser FAST_PARSER = new ConfigurableDoubleParser(
             NumberFormatSymbols.fromDefault()
                     .withGroupingSeparator(Set.<Character>of('_'))
                     .withInfinity(Collections.EMPTY_SET)
-                    .withNaN(Collections.EMPTY_SET);
+                    .withNaN(Collections.EMPTY_SET));
+
 
     /**
      * Converts supplied ByteList into a double.  strict-mode will not like
      * extra text non-numeric text or multiple sequention underscores.
      */
     public static double byteListToDouble(ByteList bytes, boolean strict) {
-        return new DoubleConverter().parse(bytes, strict, true);
+        try {
+            // Fast path:
+            // Optimistically parse the entire input using the fast parser.
+            return FAST_PARSER.parseDouble(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
+        } catch (NumberFormatException e){
+            // Slow path:
+            // Determine how many bytes we can safely consume, and then
+            // call the fast parser again.
+            return new DoubleConverter().parse(bytes, strict, true);
+        }
     }
 
     /**
@@ -179,7 +193,7 @@ public class ConvertDouble {
                 addExponentToResult(adjustExponent);
             }
 
-            return Double.valueOf(new String(chars, 0, charsIndex));
+            return FAST_PARSER.parseDouble(new String(chars, 0, charsIndex));
         }
 
         static class LightweightNumberFormatException extends NumberFormatException {
