@@ -52,16 +52,54 @@ public class ConvertDouble {
      * extra text non-numeric text or multiple sequention underscores.
      */
     public static double byteListToDouble(ByteList bytes, boolean strict) {
-        try {
-            // Fast path:
-            // Optimistically parse the entire input using the fast parser.
-            return FAST_PARSER.parseDouble(bytes.getUnsafeBytes(), bytes.begin(), bytes.length());
-        } catch (NumberFormatException e){
-            // Slow path:
-            // Determine how many bytes we can safely consume, and then
-            // call the fast parser again.
-            return new DoubleConverter().parse(bytes, strict, true);
+        byte[] b = bytes.getUnsafeBytes();
+        int begin = bytes.begin();
+        int length = bytes.length();
+
+        if (!rejectedByRuby(b, begin, length)) {
+            try {
+                // Fast path:
+                // Optimistically parse the entire input using the fast parser.
+                return FAST_PARSER.parseDouble(b, begin, length);
+            } catch (NumberFormatException e) {
+            }
         }
+        // Slow path:
+        // Determine how many bytes we can safely consume, and then
+        // call the fast parser again.
+        return new DoubleConverter().parse(bytes, strict, true);
+    }
+
+    /**
+     * Efficiently reject strings with leading [_], trailing [_-+], or any of /_e|e_|_E|E_/.
+     * @param b incoming bytes
+     * @param begin starting offset
+     * @param length effective length
+     * @return true if the string is rejected by Ruby, false otherwise.
+     */
+    private static boolean rejectedByRuby(byte[] b, int begin, int length) {
+        if (length == 0) return true;
+
+        // reject invalid prefix or suffix
+        byte first = b[begin];
+        int end = length - 1;
+        int last = b[end];
+        if (first == '_' || last == '_' || last == '+' || last == '-') return true;
+
+        // scan remaining chars to reject invalid underscores around exponent delimiter
+        if (length >= 3) {
+            int i = 1;
+            byte cur = b[begin + 1];
+            byte next = b[begin + 2];
+            while (i < end) {
+                if (((cur == '_') && (next == 'e' || next == 'E')) ||
+                        ((cur == 'e' || cur == 'E') && next == '_')) return true;
+                cur = next;
+                next = b[begin + ++i];
+            }
+        }
+
+        return false;
     }
 
     public static class DoubleConverter {
