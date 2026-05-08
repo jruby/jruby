@@ -39,6 +39,33 @@ jobs:
       - name: rake ${{ matrix.target }}
         run: bin/jruby -S rake ${{ matrix.target }}
 
+  # This job is a fast-fail all-interp run of test:mri:code to give early indication if the jitted runs will pass.
+  rake-test-mri-fast:
+    name: rake test:mri:core:int (Java 26, fast fail)
+
+    runs-on: ubuntu-latest
+
+    env:
+      JRUBY_OPTS: '--dev'
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v6
+      - name: remove old java installs
+        run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
+      - name: set up java 26
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'zulu'
+          java-version: 26
+          cache: 'maven'
+      - name: bootstrap
+        run: ./mvnw -ntp -Pbootstrap clean package
+      - name: bundle install
+        run: bin/jruby --dev -S bundle install
+      - name: rake test:mri:core:int
+        run: bin/jruby -S rake test:mri:core:int
+
   rake-test-multiplatform:
     runs-on: ${{ matrix.platform }}
 
