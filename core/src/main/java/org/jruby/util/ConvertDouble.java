@@ -87,16 +87,13 @@ public class ConvertDouble {
         if (first == '_' || last == '_' || last == '+' || last == '-') return true;
 
         // scan remaining chars to reject invalid underscores
-        if (length >= 2) {
-            int i = 0;
-            byte cur = first;
-            byte next = b[begin + 1];
-            while (i < end) {
-                if (((cur == '_') && (next == 'e' || next == 'E' || next == '_' || next == '.')) ||
-                        (next == '_' && (cur == 'e' || cur == 'E' || cur == '-' || cur == '+'))) return true;
-                cur = next;
-                next = b[begin + ++i];
-            }
+        for (int i = 1, cur = first; i <= end; i++) {
+            byte next = b[begin + i];
+
+            if (cur == '_' && (next == 'e' || next == 'E' || next == '_' || next == '.')) return true;
+            if (next == '_' && (cur == 'e' || cur == 'E' || cur == '-' || cur == '+')) return true;
+
+            cur = next;
         }
 
         return false;
