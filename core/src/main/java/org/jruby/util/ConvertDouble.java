@@ -64,18 +64,6 @@ public class ConvertDouble {
         }
     }
 
-    /**
-     * Converts supplied ByteList into a double using FastDoubleParser. String must be 7-bit ASCII and contain no
-     * underscores.
-     *
-     * @param bytes the bytelist to parse
-     * @return the resulting double value
-     */
-    public static double fastByteListToDouble(ByteList bytes) {
-        var parser = new ConfigurableDoubleParser(FORMAT_SYMBOLS);
-        return parser.parseDouble(bytes);
-    }
-
     public static class DoubleConverter {
         private byte[] bytes;
         private int index;
