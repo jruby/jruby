@@ -190,6 +190,7 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
     @Override
     public IRubyObject reverse_bang(ThreadContext context) {
         if (!packed()) return super.reverse_bang(context);
+        modifyCheck(context);
         return this;
     }
 
