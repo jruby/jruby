@@ -3,10 +3,10 @@ fails:Process.clock_gettime supports the platform clocks mentioned in the docume
 fails:Process.clock_gettime supports the platform clocks mentioned in the documentation CLOCK_MONOTONIC_RAW
 fails:Process.clock_gettime supports the platform clocks mentioned in the documentation CLOCK_MONOTONIC_RAW_APPROX
 fails:Process.clock_gettime supports the platform clocks mentioned in the documentation CLOCK_UPTIME_RAW and CLOCK_UPTIME_RAW_APPROX
-fails(FreeBSD):Process.clock_gettime supports the platform clocks mentioned in the documentation CLOCK_VIRTUAL
-fails(FreeBSD):Process.clock_gettime supports the platform clocks mentioned in the documentation CLOCK_PROF
-fails(FreeBSD):Process.clock_gettime supports the platform clocks mentioned in the documentation CLOCK_UPTIME
-fails(FreeBSD):Process.clock_gettime supports the platform clocks mentioned in the documentation CLOCK_SECOND
-fails(FreeBSD):Process.clock_gettime supports the platform clocks mentioned in the documentation CLOCK_REALTIME_FAST and CLOCK_REALTIME_PRECISE
-fails(FreeBSD):Process.clock_gettime supports the platform clocks mentioned in the documentation CLOCK_MONOTONIC_FAST and CLOCK_MONOTONIC_PRECISE
-fails(FreeBSD):Process.clock_gettime supports the platform clocks mentioned in the documentation CLOCK_UPTIME_FAST and CLOCK_UPTIME_PRECISE
+fails(FreeBSD,https://github.com/jruby/jruby/issues/9430):Process.clock_gettime supports the platform clocks mentioned in the documentation CLOCK_VIRTUAL
+fails(FreeBSD,https://github.com/jruby/jruby/issues/9430):Process.clock_gettime supports the platform clocks mentioned in the documentation CLOCK_PROF
+fails(FreeBSD,https://github.com/jruby/jruby/issues/9430):Process.clock_gettime supports the platform clocks mentioned in the documentation CLOCK_UPTIME
+fails(FreeBSD,https://github.com/jruby/jruby/issues/9430):Process.clock_gettime supports the platform clocks mentioned in the documentation CLOCK_SECOND
+fails(FreeBSD,https://github.com/jruby/jruby/issues/9430):Process.clock_gettime supports the platform clocks mentioned in the documentation CLOCK_REALTIME_FAST and CLOCK_REALTIME_PRECISE
+fails(FreeBSD,https://github.com/jruby/jruby/issues/9430):Process.clock_gettime supports the platform clocks mentioned in the documentation CLOCK_MONOTONIC_FAST and CLOCK_MONOTONIC_PRECISE
+fails(FreeBSD,https://github.com/jruby/jruby/issues/9430):Process.clock_gettime supports the platform clocks mentioned in the documentation CLOCK_UPTIME_FAST and CLOCK_UPTIME_PRECISE

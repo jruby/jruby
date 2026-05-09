@@ -1,0 +1,1 @@
+fails(FreeBSD:https://github.com/jruby/jruby/issues/9433):File::Stat#nlink returns the number of links to a file
