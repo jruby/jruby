@@ -1,3 +1,0 @@
-fails:Method#original_name returns the original name even when aliased thrice
-fails:Method#original_name returns the source UnboundMethod's name (not the name given to define_method)
-fails:Method#original_name preserves the source method's name through define_method and alias
