@@ -1097,7 +1097,12 @@ public class IRRuntimeHelpers {
      * @return the instance method definition target, or the "cbase" for other purposes
      */
     public static RubyModule getCurrentClassBase(ThreadContext context, IRubyObject self) {
-        return getModuleFromScope(context, context.getCurrentStaticScope(), self);
+        StaticScope scope = context.getCurrentStaticScope();
+        RubyModule module = getModuleFromScope(context, scope, self);
+        if (scope.isSingleton()) {
+            return self.getSingletonClass();
+        }
+        return module;
     }
 
     public static RubyModule getModuleFromScope(ThreadContext context, StaticScope scope, IRubyObject arg) {
