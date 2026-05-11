@@ -1,3 +1,2 @@
-fails(JRUBY-3655):Process::Constants has the correct constant values on Linux
-fails(JRUBY-3655):Process::Constants has the correct constant values on BSD-like systems
-fails(JRUBY-3655):Process::Constants has the correct constant values on Darwin
+fails(FreeBSD,https://github.com/jruby/jruby/issues/9431):Process::Constants on NetBSD and FreeBSD defines RLIMIT_SBSIZE
+fails(FreeBSD,https://github.com/jruby/jruby/issues/9431):Process::Constants on FreeBSD defines RLIMIT_NPTS

@@ -1,0 +1,2 @@
+fails(OpenBSD, possibly broken native access, https://github.com/jruby/jruby/issues/9438):File.sticky? returns true if the named file has the sticky bit, otherwise false
+
