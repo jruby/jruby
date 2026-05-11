@@ -407,6 +407,7 @@ jobs:
             pkg install -y openjdk21
           run: |
             export JAVA_HOME="/usr/local/openjdk21"
+            export TZ="America/Chicago"
             bin/jruby spec/mspec/bin/mspec ci :${{ matrix.rubyspec-target }}
 
   spec-ruby-openbsd:
@@ -439,6 +440,7 @@ jobs:
             pkg_add jdk--%21
           run: |
             export JAVA_HOME="/usr/local/jdk-21"
+            export TZ="America/Chicago"
             bin/jruby spec/mspec/bin/mspec ci :${{ matrix.rubyspec-target }}
 
   dependency-check:
