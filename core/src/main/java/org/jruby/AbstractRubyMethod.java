@@ -196,7 +196,9 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
 
     @JRubyMethod
     public IRubyObject original_name(ThreadContext context) {
-        return asSymbol(context, method instanceof AliasMethod alias ? alias.getOldName() : method.getName());
+        if (method instanceof AliasMethod alias) return asSymbol(context, alias.getOldName());
+        String source = method.getSourceName();
+        return asSymbol(context, source != null ? source : methodName);
     }
 
     public IRubyObject inspect(IRubyObject receiver) {
@@ -254,9 +256,10 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
         }
         str.catString(sharp);
         str.cat(asSymbol(context, methodName).asString());
-        if (!methodName.equals(method.getName())) {
+        String displaySource = method instanceof AliasMethod alias ? alias.getOldName() : method.getSourceName();
+        if (displaySource != null && !methodName.equals(displaySource)) {
             str.catString("(");
-            str.cat(asSymbol(context, method.getRealMethod().getName()).asString());
+            str.cat(asSymbol(context, displaySource).asString());
             str.catString(")");
         }
         if (method.isNotImplemented()) {

@@ -77,6 +77,9 @@ public abstract class DynamicMethod {
     protected byte flags;
     /** The simple, base name this method was defined under. May be null.*/
     protected final String name;
+    /** The original source name when this method was bound under a different name
+     *  via define_method(name, Method/UnboundMethod); null otherwise. */
+    protected String sourceName;
     /** An arbitrarily-typed "method handle" for use by compilers and call sites */
     protected Object handle;
     /** How many times has this method been aliased. */
@@ -574,6 +577,14 @@ public abstract class DynamicMethod {
      */
     public String getName() {
         return name;
+    }
+
+    public String getSourceName() {
+        return sourceName;
+    }
+
+    public void setSourceName(String sourceName) {
+        this.sourceName = sourceName;
     }
 
     /**

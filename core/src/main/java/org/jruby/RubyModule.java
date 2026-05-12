@@ -2992,6 +2992,7 @@ public class RubyModule extends RubyObject {
             checkValidBindTargetFrom(context, (RubyModule) method.owner(context), false);
 
             newMethod = method.getMethod().dup();
+            newMethod.setSourceName(method.getMethodName());
             newMethod.setImplementationClass(this);
             newMethod.setVisibility(visibility);
         } else {
