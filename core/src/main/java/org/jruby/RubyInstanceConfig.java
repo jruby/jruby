@@ -55,6 +55,7 @@ import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 import org.objectweb.asm.Opcodes;
 
 import java.io.*;
+import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -1812,31 +1813,12 @@ public class RubyInstanceConfig {
         }
 
         int version = Integer.parseInt(specVersion);
-        switch (version) {
-            case 8 :
-                return Opcodes.V1_8; // 52
-            case 9 :
-                return Opcodes.V9;
-            case 10 :
-                return Opcodes.V10;
-            case 11 :
-                return Opcodes.V11;
-            case 12 :
-                return Opcodes.V12;
-            case 13 :
-                return Opcodes.V13;
-            case 14 :
-                return Opcodes.V14;
-            case 15 :
-                return Opcodes.V15;
-            case 16 :
-                return Opcodes.V16;
-            case 17 :
-                return Opcodes.V17;
-            case 18 :
-            default :
-                return Opcodes.V18;
-        }
+		try {
+			Field versionField = Opcodes.class.getField("V" + version);
+			return (Integer) versionField.get(null);
+		} catch (Exception e) {
+			return Opcodes.V21;
+		}
     }
 
     @Deprecated
