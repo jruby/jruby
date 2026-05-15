@@ -30,7 +30,9 @@
 package org.jruby.test;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.util.Locale;
 
 import org.jruby.exceptions.MainExitException;
@@ -38,6 +40,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.load.LoadService;
+import org.objectweb.asm.Opcodes;
 
 /**
  * This should be filled up with more tests for RubyInstanceConfig later
@@ -145,5 +148,21 @@ public class TestRubyInstanceConfig extends Base {
         return "/dev/fd/0";
       }
       return "/dev/stdin";
+    }
+
+    public void testBytecodeVersion() throws Exception {
+        assertEquals("it uses Opcodes.V1_8 for '1.8'", Opcodes.V1_8, RubyInstanceConfig.calculateBytecodeVersion("1.8"));
+        assertEquals("it uses Opcodes.V9 for '9'", Opcodes.V9, RubyInstanceConfig.calculateBytecodeVersion("9"));
+        assertEquals("it uses Opcodes.V21 for '21'", Opcodes.V21, RubyInstanceConfig.calculateBytecodeVersion("21"));
+        assertEquals("it uses Opcodes.V21 for '21'", Opcodes.V21, RubyInstanceConfig.calculateBytecodeVersion("21"));
+        assertEquals("it falls back on Opcodes.V21 for high unsupported versions", Opcodes.V21, RubyInstanceConfig.calculateBytecodeVersion("99"));
+        PrintStream err = System.err;
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); PrintStream ps = new PrintStream(baos)) {
+            System.setErr(ps);
+            assertEquals("it falls back on Opcodes.V1_8 for low unsupported versions", Opcodes.V1_8, RubyInstanceConfig.calculateBytecodeVersion("1.7"));
+            assertEquals("it outputs an error message for low unsupported versions", "unsupported Java version 1.7, using 1.8", new String(baos.toByteArray()).replaceAll("[\\n\\r]", ""));
+        } finally {
+            System.setErr(err);
+        }
     }
 }

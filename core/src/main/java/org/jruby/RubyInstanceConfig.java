@@ -1803,22 +1803,26 @@ public class RubyInstanceConfig {
 
     private static int initJavaBytecodeVersion() {
         final String specVersion = Options.BYTECODE_VERSION.load();
+        return calculateBytecodeVersion(specVersion);
+    }
+
+    public static int calculateBytecodeVersion(String specVersion) {
         if (specVersion.indexOf('.') != -1) {
             switch (specVersion) {
                 default:
-                    System.err.println("unsupported Java version, using 1.8: " + specVersion);
+                    System.err.println("unsupported Java version " + specVersion + ", using 1.8");
                 case "1.8":
                     return Opcodes.V1_8;
             }
         }
 
         int version = Integer.parseInt(specVersion);
-		try {
-			Field versionField = Opcodes.class.getField("V" + version);
-			return (Integer) versionField.get(null);
-		} catch (Exception e) {
-			return Opcodes.V21;
-		}
+        try {
+            Field versionField = Opcodes.class.getField("V" + version);
+            return (Integer) versionField.get(null);
+        } catch (Exception e) {
+            return Opcodes.V21;
+        }
     }
 
     @Deprecated
