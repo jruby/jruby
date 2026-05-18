@@ -1541,6 +1541,18 @@ public class RubyLexer extends LexingCommon {
             yaccValue = new NthRefNode(ruby_sourceline, ref);
             return tNTH_REF;
         case '0':
+            int c2 = nextc();
+            if (isIdentifierChar(c2)) {
+                // $0<ident-chars> e.g. $01234 is invalid
+                StringBuilder name = new StringBuilder("$0");
+                do {
+                    name.append((char) c2);
+                    c2 = nextc();
+                } while (isIdentifierChar(c2));
+                pushback(c2);
+                compile_error("'" + name + "' is not allowed as a global variable name");
+            }
+            pushback(c2);
             return identifierToken(tGVAR, new ByteList(new byte[] {'$', (byte) c}));
         default:
             if (!isIdentifierChar(c)) {
