@@ -77,9 +77,6 @@ public abstract class DynamicMethod {
     protected byte flags;
     /** The simple, base name this method was defined under. May be null.*/
     protected final String name;
-    /** The original source name when this method was bound under a different name
-     *  via define_method(name, Method/UnboundMethod); null otherwise. */
-    protected String sourceName;
     /** An arbitrarily-typed "method handle" for use by compilers and call sites */
     protected Object handle;
     /** How many times has this method been aliased. */
@@ -246,6 +243,16 @@ public abstract class DynamicMethod {
     /* Arity 3, with block; calls through IRubyObject[] path */
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         return call(context, self, klazz, name, new IRubyObject[] {arg0, arg1, arg2}, block);
+    }
+
+    /**
+     * Get the source name for {@code Method#original_name}.
+     * Overridden by {@link AliasMethod} and {@link RenamedDynamicMethod}.
+     *
+     * @return the source name
+     */
+    public String getOldName() {
+        return name;
     }
 
     /*
@@ -579,17 +586,9 @@ public abstract class DynamicMethod {
         return name;
     }
 
-    public String getSourceName() {
-        return sourceName;
-    }
-
-    public void setSourceName(String sourceName) {
-        this.sourceName = sourceName;
-    }
-
     /**
      * Get the "handle" associated with this DynamicMethod.
-     * 
+     *
      * @return the handle
      */
     public Object getHandle() {
