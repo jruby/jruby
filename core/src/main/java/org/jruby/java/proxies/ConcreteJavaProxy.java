@@ -480,7 +480,8 @@ public class ConcreteJavaProxy extends JavaProxy {
     private static boolean canSkipDirectSuper(final AbstractIRMethod method, IRubyObject[] args) {
         ExitableInterpreterContext ic = ((IRMethod) method.getIRScope()).builtInterpreterContextForJavaConstructor();
 
-        return ic != null && (ic.directSuperAllArgs() || args.length == 0 && ic.directSuperNoArgs());
+        return ic != null && (ic.directSuperAllArgs() || args.length == 0 && ic.directSuperNoArgs() ||
+                ic.directSuperRequiredArgs() == args.length);
     }
 
     private static SplitCtorPlan splitCtorPlan(final RubyClass base, final JCtorCache jcc, final boolean fromRubySuper) {
