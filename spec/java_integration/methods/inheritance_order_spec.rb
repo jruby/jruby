@@ -35,6 +35,25 @@ describe "super order" do
     end
   end
 
+  let(:subclass_with_fixed_ctor) do
+    Class.new(InheritanceBase) do
+      def initialize(opts)
+        super(opts)
+        trace.add "Ruby fixed constructor called with #{opts.inspect}"
+      end
+    end
+  end
+
+  let(:subclass_with_reassigned_fixed_ctor) do
+    Class.new(InheritanceBase) do
+      def initialize(opts)
+        opts = {arg: 'bar'}
+        super(opts)
+        trace.add "Ruby reassigned fixed constructor called with #{opts.inspect}"
+      end
+    end
+  end
+
   shared_examples 'tests' do |args|
     java_arg = args.empty? ? "no options" : args[-1][:arg]
 
@@ -83,6 +102,25 @@ describe "super order" do
   end
 
   context('with options hash') { include_examples 'tests', [{arg: 'foo'}] }
+
+  it 'calls Ruby constructors first when a Ruby subclass directly forwards fixed args' do
+    opts = {arg: 'foo'}
+    obj = subclass_with_fixed_ctor.new(opts)
+
+    expect(obj.trace).to eq(["Java base constructor called with foo",
+                             "Ruby base constructor called with #{[opts].inspect}",
+                             "Ruby fixed constructor called with #{opts.inspect}"])
+  end
+
+  it 'does not bypass fixed arg reassignments before super' do
+    original_opts = {arg: 'foo'}
+    reassigned_opts = {arg: 'bar'}
+    obj = subclass_with_reassigned_fixed_ctor.new(original_opts)
+
+    expect(obj.trace).to eq(["Java base constructor called with bar",
+                             "Ruby base constructor called with #{[reassigned_opts].inspect}",
+                             "Ruby reassigned fixed constructor called with #{reassigned_opts.inspect}"])
+  end
 
   context('with no args') { include_examples 'tests', [] }
 

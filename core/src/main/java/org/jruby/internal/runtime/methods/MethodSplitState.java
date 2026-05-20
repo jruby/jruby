@@ -74,6 +74,7 @@ class MethodSplitState implements InternalSplitState {
             Block block) {
         if (ic.directSuperAllArgs()) return new SplitSuperState<>(new ExitableReturn(args, block), new MethodSplitState(ic));
         if (ic.directSuperNoArgs() && args.length == 0) return new SplitSuperState<>(new ExitableReturn(IRubyObject.NULL_ARRAY, block), new MethodSplitState(ic));
+        if (ic.directSuperRequiredArgs() == args.length) return new SplitSuperState<>(new ExitableReturn(args, block), new MethodSplitState(ic));
 
         return null;
     }
