@@ -29,7 +29,9 @@ package org.jruby.ir.interpreter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
@@ -37,7 +39,11 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JavaCtorSuperInstr;
+import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
+import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ReturnInstr;
+import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.Variable;
 import org.jruby.runtime.ThreadContext;
 
 import static org.jruby.runtime.ThreadContext.CALL_SPLATS;
@@ -52,6 +58,7 @@ public class ExitableInterpreterContext extends InterpreterContext {
     private final boolean exitsAtReturn;
     private final boolean directSuperNoArgs;
     private final boolean directSuperAllArgs;
+    private final int directSuperRequiredArgs;
 
     public ExitableInterpreterContext(InterpreterContext originalIC, CallBase superCall, int exitIPC) {
         this(originalIC.getScope(), Arrays.asList(originalIC.getInstructions()), originalIC.getTemporaryVariableCount(), originalIC.getFlags(), superCall, exitIPC);
@@ -64,6 +71,7 @@ public class ExitableInterpreterContext extends InterpreterContext {
         this.exitsAtReturn = exitsAtReturn(instructions, superCall, exitIPC);
         this.directSuperNoArgs = directSuperNoArgs(instructions, superCall, exitIPC) && getStaticScope().getSignature().isNoArguments();
         this.directSuperAllArgs = directSuperAllArgs(instructions, superCall, exitIPC) && isRestOnlySignature();
+        this.directSuperRequiredArgs = directSuperRequiredArgs(instructions, superCall, exitIPC);
     }
 
     public ExitableInterpreterEngineState getEngineState() {
@@ -84,6 +92,10 @@ public class ExitableInterpreterContext extends InterpreterContext {
 
     public boolean directSuperAllArgs() {
         return directSuperAllArgs;
+    }
+
+    public int directSuperRequiredArgs() {
+        return directSuperRequiredArgs;
     }
     
     @Override
@@ -155,6 +167,50 @@ public class ExitableInterpreterContext extends InterpreterContext {
         }
 
         return true;
+    }
+
+    private int directSuperRequiredArgs(List<Instr> instructions, CallBase superCall, int exitIPC) {
+        if (instructions == null || !exitsAtReturn(instructions, superCall, exitIPC) || superCall.getFlags() != 0) return -1;
+
+        var signature = getStaticScope().getSignature();
+        int required = signature.required();
+        if (required == 0 || superCall.getArgsCount() != required || signature.opt() != 0 || signature.hasRest() ||
+                signature.post() != 0 || signature.hasKwargs()) return -1;
+
+        Map<Variable, Integer> receivedArgs = new HashMap<>();
+
+        for (int i = 0; i < exitIPC; i++) {
+            Instr instr = instructions.get(i);
+            Operation operation = instr.getOperation();
+
+            if (instr instanceof ResultInstr resultInstr && receivedArgs.containsKey(resultInstr.getResult())) return -1;
+
+            switch (operation) {
+                case CHECK_ARITY:
+                case COPY:
+                case LINE_NUM:
+                case LOAD_IMPLICIT_CLOSURE:
+                case LOAD_FRAME_CLOSURE:
+                case RECV_KW:
+                case RECV_SELF:
+                    break;
+                case RECV_PRE_REQD_ARG:
+                    ReceivePreReqdArgInstr receive = (ReceivePreReqdArgInstr) instr;
+                    receivedArgs.put(receive.getResult(), receive.getArgIndex());
+                    break;
+                default:
+                    return -1;
+            }
+        }
+
+        Operand[] superArgs = superCall.getCallArgs();
+        for (int i = 0; i < required; i++) {
+            if (!(superArgs[i] instanceof Variable variable) || receivedArgs.get(variable) == null || receivedArgs.get(variable) != i) {
+                return -1;
+            }
+        }
+
+        return required;
     }
 
     private boolean isRestOnlySignature() {
