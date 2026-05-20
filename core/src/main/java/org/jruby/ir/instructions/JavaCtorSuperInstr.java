@@ -1,7 +1,6 @@
 package org.jruby.ir.instructions;
 
 import static org.jruby.api.Error.runtimeError;
-import static org.jruby.api.Create.newArray;
 
 import org.jruby.RubySymbol;
 import org.jruby.internal.runtime.methods.ExitableReturn;
@@ -37,7 +36,7 @@ public class JavaCtorSuperInstr extends CallInstr {
         Block block = prepareBlock(context, self, currScope, currDynScope, temp);
 
         IRRuntimeHelpers.setCallInfo(context, getFlags());
-        return new ExitableReturn(newArray(context, args), block);
+        return new ExitableReturn(args, block);
     }
 
     @Override

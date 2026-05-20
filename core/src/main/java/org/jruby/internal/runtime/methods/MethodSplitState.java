@@ -28,8 +28,10 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.InternalSplitState;
+import org.jruby.internal.runtime.SplitSuperState;
 import org.jruby.ir.interpreter.ExitableInterpreterContext;
 import org.jruby.ir.interpreter.ExitableInterpreterEngineState;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -42,6 +44,16 @@ class MethodSplitState implements InternalSplitState {
     public final RubyModule implClass;
     public final IRubyObject self;
     public final String name;
+
+    public MethodSplitState(ExitableInterpreterContext ic) {
+        this.context = null;
+        this.eic = ic;
+        this.state = null;
+        this.scope = null;
+        this.implClass = null;
+        this.self = null;
+        this.name = null;
+    }
 
     public MethodSplitState(ThreadContext context, ExitableInterpreterContext ic, RubyModule clazz, IRubyObject self,
             String name) {
@@ -56,5 +68,13 @@ class MethodSplitState implements InternalSplitState {
 
     public boolean exitsAtReturn() {
         return eic.exitsAtReturn();
+    }
+
+    public static SplitSuperState<MethodSplitState> directSuperState(ExitableInterpreterContext ic, IRubyObject[] args,
+            Block block) {
+        if (ic.directSuperAllArgs()) return new SplitSuperState<>(new ExitableReturn(args, block), new MethodSplitState(ic));
+        if (ic.directSuperNoArgs() && args.length == 0) return new SplitSuperState<>(new ExitableReturn(IRubyObject.NULL_ARRAY, block), new MethodSplitState(ic));
+
+        return null;
     }
 }
