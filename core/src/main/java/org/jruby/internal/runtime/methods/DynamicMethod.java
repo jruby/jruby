@@ -79,8 +79,8 @@ public abstract class DynamicMethod {
     protected final String name;
     /** An arbitrarily-typed "method handle" for use by compilers and call sites */
     protected Object handle;
-    /** How many times has this method been aliased. */
-    protected int aliasCount;
+    /** Has this method been aliased. */
+    protected boolean aliased;
 
     private static final int BUILTIN_FLAG = 0b1;
     private static final int NOTIMPL_FLAG = 0b10;
@@ -632,12 +632,22 @@ public abstract class DynamicMethod {
         return false;
     }
 
+    @Deprecated
     public void adjustAliasCount(int delta) {
-        this.aliasCount += delta;
+        aliased = delta > 0;
     }
 
+    @Deprecated
     public int getAliasCount() {
-        return this.aliasCount;
+        return this.aliased ? 1 : 0;
+    }
+
+    public void setAliased() {
+        this.aliased = true;
+    }
+
+    public boolean isAliased() {
+        return this.aliased;
     }
 
     /**

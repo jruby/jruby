@@ -5622,7 +5622,7 @@ public class RubyModule extends RubyObject {
 
         DynamicMethod method = getMethods().get(name);
         if (method != null && entry.method.getRealMethod() != method.getRealMethod() && !method.isUndefined()) {
-            if (method.getRealMethod().getAliasCount() == 0) {
+            if (!method.getRealMethod().isAliased()) {
                 if (method instanceof PositionAware posAware) {
                     warning(context, "method redefined; discarding old " + name + "\n" + posAware.getFile() + ":" + (posAware.getLine() + 1) + ": warning: previous definition of " + name + " was here");
                 } else {
