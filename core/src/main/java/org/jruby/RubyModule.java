@@ -5622,10 +5622,12 @@ public class RubyModule extends RubyObject {
 
         DynamicMethod method = getMethods().get(name);
         if (method != null && entry.method.getRealMethod() != method.getRealMethod() && !method.isUndefined()) {
-            if (method.getRealMethod().getAliasCount() == 0) warning(context, "method redefined; discarding old " + name);
-
-            if (method instanceof PositionAware posAware) {
-                context.runtime.getWarnings().warning(ID.REDEFINING_METHOD, posAware.getFile(), posAware.getLine() + 1, "previous definition of " + name + " was here");
+            if (method.getRealMethod().getAliasCount() == 0) {
+                if (method instanceof PositionAware posAware) {
+                    warning(context, "method redefined; discarding old " + name + "\n" + posAware.getFile() + ":" + (posAware.getLine() + 1) + ": warning: previous definition of " + name + " was here");
+                } else {
+                    warning(context, "method redefined; discarding old " + name);
+                }
             }
         }
 
