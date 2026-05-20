@@ -40,10 +40,8 @@ import java.util.Collections;
 
 import org.jruby.MetaClass;
 import org.jruby.PrependedModule;
-import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.Signature;

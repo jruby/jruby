@@ -2510,7 +2510,12 @@ public class RubyModule extends RubyObject {
      * @param oldName
      */
     public void putAlias(ThreadContext context, String id, CacheEntry entry, String oldName) {
-        if (id.equals(oldName)) return;
+        if (id.equals(oldName)) {
+            // Increment alias count even if we don't redefine anything.
+            // See hack in Rails to silence redefinition warnings: https://github.com/rails/rails/pull/29233
+            entry.method.setAliased();
+            return;
+        }
 
         putMethod(context.runtime, id, new AliasMethod(this, entry, id, oldName));
 
@@ -5620,7 +5625,7 @@ public class RubyModule extends RubyObject {
 
         DynamicMethod method = getMethods().get(name);
         if (method != null && entry.method.getRealMethod() != method.getRealMethod() && !method.isUndefined()) {
-            if (!method.getRealMethod().isAliased()) {
+            if (!entry.method.isAliased()) {
                 if (method instanceof PositionAware posAware) {
                     warning(context, "method redefined; discarding old " + name + "\n" + posAware.getFile() + ":" + (posAware.getLine() + 1) + ": warning: previous definition of " + name + " was here");
                 } else {
