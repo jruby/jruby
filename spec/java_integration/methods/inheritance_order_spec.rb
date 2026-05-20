@@ -54,6 +54,25 @@ describe "super order" do
     end
   end
 
+  let(:subclass_with_rest_ctor) do
+    Class.new(InheritanceBase) do
+      def initialize(first, *rest)
+        super
+        trace.add "Ruby rest constructor called with #{[first, *rest].inspect}"
+      end
+    end
+  end
+
+  let(:subclass_with_reassigned_rest_ctor) do
+    Class.new(InheritanceBase) do
+      def initialize(first, *rest)
+        first = {arg: 'bar'}
+        super
+        trace.add "Ruby reassigned rest constructor called with #{[first, *rest].inspect}"
+      end
+    end
+  end
+
   shared_examples 'tests' do |args|
     java_arg = args.empty? ? "no options" : args[-1][:arg]
 
@@ -120,6 +139,25 @@ describe "super order" do
     expect(obj.trace).to eq(["Java base constructor called with bar",
                              "Ruby base constructor called with #{[reassigned_opts].inspect}",
                              "Ruby reassigned fixed constructor called with #{reassigned_opts.inspect}"])
+  end
+
+  it 'calls Ruby constructors first when a Ruby subclass directly forwards rest args' do
+    opts = {arg: 'foo'}
+    obj = subclass_with_rest_ctor.new(opts)
+
+    expect(obj.trace).to eq(["Java base constructor called with foo",
+                             "Ruby base constructor called with #{[opts].inspect}",
+                             "Ruby rest constructor called with #{[opts].inspect}"])
+  end
+
+  it 'does not bypass rest arg reassignments before super' do
+    original_opts = {arg: 'foo'}
+    reassigned_opts = {arg: 'bar'}
+    obj = subclass_with_reassigned_rest_ctor.new(original_opts)
+
+    expect(obj.trace).to eq(["Java base constructor called with bar",
+                             "Ruby base constructor called with #{[reassigned_opts].inspect}",
+                             "Ruby reassigned rest constructor called with #{[reassigned_opts].inspect}"])
   end
 
   context('with no args') { include_examples 'tests', [] }

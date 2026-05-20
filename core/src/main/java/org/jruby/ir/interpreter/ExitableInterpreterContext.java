@@ -40,9 +40,11 @@ import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JavaCtorSuperInstr;
 import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
+import org.jruby.ir.instructions.ReceiveRestArgInstr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ReturnInstr;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.Variable;
 import org.jruby.runtime.ThreadContext;
 
@@ -70,7 +72,8 @@ public class ExitableInterpreterContext extends InterpreterContext {
         this.exitIPC = exitIPC;
         this.exitsAtReturn = exitsAtReturn(instructions, superCall, exitIPC);
         this.directSuperNoArgs = directSuperNoArgs(instructions, superCall, exitIPC) && getStaticScope().getSignature().isNoArguments();
-        this.directSuperAllArgs = directSuperAllArgs(instructions, superCall, exitIPC) && isRestOnlySignature();
+        this.directSuperAllArgs = (directSuperAllArgs(instructions, superCall, exitIPC) && isRestOnlySignature()) ||
+                directSuperAllZSuperArgs(instructions, superCall, exitIPC);
         this.directSuperRequiredArgs = directSuperRequiredArgs(instructions, superCall, exitIPC);
     }
 
@@ -167,6 +170,59 @@ public class ExitableInterpreterContext extends InterpreterContext {
         }
 
         return true;
+    }
+
+    private boolean directSuperAllZSuperArgs(List<Instr> instructions, CallBase superCall, int exitIPC) {
+        if (instructions == null || !exitsAtReturn(instructions, superCall, exitIPC) || superCall.getFlags() != 0) return false;
+
+        var signature = getStaticScope().getSignature();
+        int required = signature.required();
+        if (superCall.getArgsCount() != required + 1 || signature.opt() != 0 || !signature.hasRest() ||
+                signature.post() != 0 || signature.hasKwargs()) return false;
+
+        Map<Variable, Integer> receivedArgs = new HashMap<>();
+        Variable restArg = null;
+
+        for (int i = 0; i < exitIPC; i++) {
+            Instr instr = instructions.get(i);
+            Operation operation = instr.getOperation();
+
+            if (instr instanceof ResultInstr resultInstr) {
+                Variable result = resultInstr.getResult();
+                if (receivedArgs.containsKey(result) || result.equals(restArg)) return false;
+            }
+
+            switch (operation) {
+                case CHECK_ARITY:
+                case COPY:
+                case LINE_NUM:
+                case LOAD_IMPLICIT_CLOSURE:
+                case LOAD_FRAME_CLOSURE:
+                case RECV_KW:
+                case RECV_SELF:
+                    break;
+                case RECV_PRE_REQD_ARG:
+                    ReceivePreReqdArgInstr receive = (ReceivePreReqdArgInstr) instr;
+                    receivedArgs.put(receive.getResult(), receive.getArgIndex());
+                    break;
+                case RECV_REST_ARG:
+                    ReceiveRestArgInstr rest = (ReceiveRestArgInstr) instr;
+                    if (rest.getArgIndex() != required || rest.required != required) return false;
+                    restArg = rest.getResult();
+                    break;
+                default:
+                    return false;
+            }
+        }
+
+        Operand[] superArgs = superCall.getCallArgs();
+        for (int i = 0; i < required; i++) {
+            if (!(superArgs[i] instanceof Variable variable) || receivedArgs.get(variable) == null || receivedArgs.get(variable) != i) {
+                return false;
+            }
+        }
+
+        return superArgs[required] instanceof Splat splat && splat.getArray().equals(restArg);
     }
 
     private int directSuperRequiredArgs(List<Instr> instructions, CallBase superCall, int exitIPC) {
