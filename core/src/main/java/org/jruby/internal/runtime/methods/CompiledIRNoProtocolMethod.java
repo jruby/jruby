@@ -163,7 +163,10 @@ public class CompiledIRNoProtocolMethod extends AbstractIRMethod {
 
         // TODO: JIT?
 
-        INTERPRET_METHOD((MethodSplitState) state.state, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+        MethodSplitState methodState = (MethodSplitState) state.state;
+        if (methodState.exitsAtReturn()) return;
+
+        INTERPRET_METHOD(methodState, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
     }
 
     protected void post(InterpreterContext ic, ThreadContext context) {

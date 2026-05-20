@@ -230,7 +230,10 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
     public void finishSplitCall(SplitSuperState state) {
         if (IRRuntimeHelpers.isDebug()) doDebug(); // TODO?
 
-        INTERPRET_METHOD((MethodSplitState) state.state, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+        MethodSplitState methodState = (MethodSplitState) state.state;
+        if (methodState.exitsAtReturn()) return;
+
+        INTERPRET_METHOD(methodState, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
     }
 
     protected void doDebug() {

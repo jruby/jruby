@@ -33,8 +33,9 @@ import java.util.List;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.CallBase;
-import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.instructions.ReturnInstr;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -48,6 +49,7 @@ public class ExitableInterpreterContext extends InterpreterContext {
 	
     private final CallBase superCall;
     private final int exitIPC;
+    private final boolean exitsAtReturn;
 
     public ExitableInterpreterContext(InterpreterContext originalIC, CallBase superCall, int exitIPC) {
         this(originalIC.getScope(), Arrays.asList(originalIC.getInstructions()), originalIC.getTemporaryVariableCount(), originalIC.getFlags(), superCall, exitIPC);
@@ -58,6 +60,7 @@ public class ExitableInterpreterContext extends InterpreterContext {
 
         this.superCall = superCall;
         this.exitIPC = exitIPC;
+        this.exitsAtReturn = exitsAtReturn(instructions, superCall, exitIPC);
     }
 
     public ExitableInterpreterEngineState getEngineState() {
@@ -66,6 +69,10 @@ public class ExitableInterpreterContext extends InterpreterContext {
 
     public int getExitIPC() {
         return exitIPC;
+    }
+
+    public boolean exitsAtReturn() {
+        return exitsAtReturn;
     }
     
     @Override
@@ -82,5 +89,13 @@ public class ExitableInterpreterContext extends InterpreterContext {
         IRRuntimeHelpers.setCallInfo(context, superCall.getFlags());
 
         return args;
+    }
+
+    private static boolean exitsAtReturn(List<Instr> instructions, CallBase superCall, int exitIPC) {
+        if (instructions == null || exitIPC + 1 >= instructions.size()) return false;
+
+        Instr instr = instructions.get(exitIPC + 1);
+
+        return instr instanceof ReturnInstr && ((ReturnInstr) instr).getReturnValue() == superCall.getResult();
     }
 }
