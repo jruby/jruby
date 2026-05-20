@@ -134,6 +134,7 @@ public class VariableInterceptor {
      * @param map a variable map that has name-value pairs to be injected
      * @param scope scope to inject local variable values
      */
+    @Deprecated
     public static void inject(BiVariableMap map, DynamicScope scope) {
         // lvar might not be given while parsing but be given when evaluating.
         // to avoid ArrayIndexOutOfBoundsException, checks the length of scope.getValues()
@@ -156,6 +157,7 @@ public class VariableInterceptor {
      * @param map variable map that holds retrieved name-value pairs.
      * @param receiver a receiver when the script has been evaluated once
      */
+    @Deprecated
     public static void retrieve(LocalVariableBehavior behavior, BiVariableMap map, RubyObject receiver) {
         Argv.retrieve(receiver, map);
         switch (behavior) {

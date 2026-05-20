@@ -36,7 +36,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -46,6 +46,7 @@ import org.jruby.RubyObject;
 import org.jruby.embed.LocalVariableBehavior;
 import org.jruby.embed.variable.BiVariable;
 import org.jruby.embed.variable.VariableInterceptor;
+import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -76,6 +77,7 @@ public class BiVariableMap implements Map<String, Object> {
 
     private List<String> varNames;
     private List<BiVariable> variables;
+    private Map<String, IRubyObject> localVariables;
 
     /**
      * Constructs an empty map. Users do not instantiate this map. The map is created
@@ -173,11 +175,19 @@ public class BiVariableMap implements Map<String, Object> {
      * @param key is a key to be tested its presence
      * @return <code>true</code> if this map contains a mapping for the specified key
      */
-    @Override
-    public boolean containsKey(final Object key) {
-        if ( varNames == null || key == null ) return false;
-        return varNames.contains( checkKey(key) );
-    }
+	@Override
+	public boolean containsKey(final Object key) {
+		return containsKey(null, key);
+	}
+
+	public boolean containsKey(final Object receiver, final Object key) {
+		final String name = checkKey(key);
+		final VariableAccessor acc = VariableAccessor.getInstance(getLocalVariableBehavior(), name);
+		if (acc == null)
+			return false;
+		final IRubyObject rec = getReceiver(receiver);
+		return acc.containsKey(this, rec, name);
+	}
 
     /**
      * Returns <code>true</code> if this map maps one or more keys to the
@@ -219,20 +229,26 @@ public class BiVariableMap implements Map<String, Object> {
      * @return the value in simple Java object to which the specified key is mapped, or
      *         {@code null} if this map contains no mapping for the key
      */
-    public Object get(Object receiver, Object key) {
-        checkKey(key);
-        final RubyObject robj = getReceiverObject(receiver);
-        // attemps to retrieve global variables
-        if ( isLazy() ) {
-            VariableInterceptor.tryLazyRetrieval(context.getLocalVariableBehavior(), this, robj, key);
-        }
-        BiVariable var = getVariable(robj, (String) key);
-        return var == null ? null : var.getJavaObject();
-    }
+	public Object get(Object receiver, Object key) {
+		final String name = checkKey(key);
+		final VariableAccessor acc = VariableAccessor.getInstance(getLocalVariableBehavior(), name);
+		if (acc == null)
+			return null;
+		final IRubyObject rec = getReceiver(receiver);
+		return toJava(acc.retrieve(this, rec, name));
+	}
 
-    private RubyObject getReceiverObject(final Object receiver) {
-        return receiver instanceof RubyObject ? (RubyObject) receiver : getTopSelf();
-    }
+	private Object toJava(final IRubyObject value) {
+		return value != null ? value.toJava(Object.class) : null;
+	}
+
+	private IRubyObject getReceiver(final Object receiver) {
+		if (receiver == null)
+			return null;
+		if (receiver instanceof IRubyObject rec)
+			return rec;
+		throw new IllegalArgumentException("receiver object is not a Ruby object");
+	}
 
     private RubyObject getTopSelf() {
         return (RubyObject) getRuntime().getTopSelf();
@@ -324,21 +340,18 @@ public class BiVariableMap implements Map<String, Object> {
      * @return the previous value associated with <code>key</code>, or
      *         <code>null</code> if there was no mapping for <code>key</code>.
      */
-    public Object put(Object receiver, String key, Object value) {
-        checkKey(key);
-        final RubyObject robj = getReceiverObject(receiver);
-        BiVariable var = getVariable(robj, key);
-        Object oldValue = null;
-        if ( var != null ) { // updates
-            oldValue = var.getJavaObject();
-            var.setJavaObject(robj.getRuntime(), value);
-        }
-        else { // creates new value
-            var = VariableInterceptor.getVariableInstance(context.getLocalVariableBehavior(), robj, key, value);
-            if ( var != null ) update(key, var);
-        }
-        return oldValue;
-    }
+	public Object put(Object receiver, String key, Object value) {
+		final String name = checkKey(key);
+		final VariableAccessor acc = VariableAccessor.getInstance(getLocalVariableBehavior(), name);
+		if (acc == null)
+			return null;
+		final IRubyObject rec = getReceiver(receiver);
+		final IRubyObject prevValue = acc.retrieve(this, rec, name);
+		final IRubyObject rubyValue = value instanceof IRubyObject ? (IRubyObject) value
+				: JavaEmbedUtils.javaToRuby(getRuntime(), value);
+		acc.inject(this, rec, name, rubyValue);
+		return toJava(prevValue);
+	}
 
     /**
      * Returns Ruby's local variable names this map has. The returned array is mainly
@@ -346,44 +359,75 @@ public class BiVariableMap implements Map<String, Object> {
      *
      * @return String array of Ruby's local variable names
      */
-    public String[] getLocalVarNames() {
-        if ( variables == null ) return EMPTY_STRING_ARRAY;
+	public String[] getLocalVarNames() {
+		if (localVariables == null)
+			return EMPTY_STRING_ARRAY;
+		return localVariables.keySet().toArray(String[]::new);
+	}
 
-        List<String> localVarNames = new ArrayList<>(variables.size());
-        for ( final BiVariable var : variables ) {
-            if ( var.getType() == BiVariable.Type.LocalVariable ) {
-                localVarNames.add( var.getName() );
-            }
-        }
-        return localVarNames.toArray(new String[localVarNames.size()]);
+    Set<String> getLocalVariableNames() {
+    	if (localVariables == null)
+    		return Set.of();
+    	return localVariables.keySet();
     }
 
+    IRubyObject getLocalVariable(final String name) {
+    	if (localVariables == null)
+    		return null;
+		return localVariables.get(name);
+	}
+    
+    void setLocalVariable(final String name, final IRubyObject value) {
+    	if (localVariables == null)
+    		localVariables = new HashMap<String, IRubyObject>();
+		localVariables.put(name, value);
+	}
+    
+    void removeLocalVariable(final String name) {
+    	if (localVariables != null)
+    		localVariables.remove(name);
+	}
+    
     /**
      * Returns Ruby's local variable values this map has. The returned array is
      * mainly used to inject local variables to Ruby scripts while evaluating.
      *
      * @return IRubyObject array of Ruby's local variable names.
      */
-    public IRubyObject[] getLocalVarValues() {
-        if ( variables == null ) return IRubyObject.NULL_ARRAY;
+    @Deprecated
+	public IRubyObject[] getLocalVarValues() {
+		if (localVariables == null)
+			return IRubyObject.NULL_ARRAY;
+		return localVariables.values().toArray(IRubyObject[]::new);
+	}
 
-        List<IRubyObject> localVarValues = new ArrayList<>(variables.size());
-        for ( final BiVariable var : variables ) {
-            if ( var.getType() == BiVariable.Type.LocalVariable ) {
-                localVarValues.add( var.getRubyObject() );
-            }
-        }
-        return localVarValues.toArray( new IRubyObject[ localVarValues.size() ] );
-    }
+	void inject(final DynamicScope scope) {
+		if (localVariables == null)
+			return;
+		final String[] names = scope.getAllNamesInScope();
+		for (int i = 0; i < names.length; i++)
+			if (localVariables.containsKey(names[i]))
+				scope.setValue(i, localVariables.get(names[i]), 0);
+	}
 
-    void inject(final DynamicScope scope) {
-        VariableInterceptor.inject(this, scope);
-    }
+	void retrieve(final IRubyObject receiver) {
+		if (persistLocalVariables(getLocalVariableBehavior())) {
+			final DynamicScope scope = (DynamicScope) receiver.getRuntime().getCurrentContext().getCurrentScope();
+			final String[] names = scope.getAllNamesInScope();
+			for (int i = 0; i < names.length; i++)
+				setLocalVariable(names[i], scope.getValue(i, 0));
+		}
+	}
 
-    void retrieve(final IRubyObject receiver) {
-        final RubyObject robj = getReceiverObject(receiver);
-        VariableInterceptor.retrieve(getLocalVariableBehavior(), this, robj);
-    }
+	private boolean persistLocalVariables(LocalVariableBehavior localVariableBehavior) {
+		switch (getLocalVariableBehavior()) {
+		case BSF:
+		case PERSISTENT:
+			return true;
+		default:
+			return false;
+		}
+	}
 
     void terminate() {
         VariableInterceptor.terminateGlobalVariables(getLocalVariableBehavior(), getVariables(), getRuntime());
@@ -402,7 +446,7 @@ public class BiVariableMap implements Map<String, Object> {
      */
     @Override
     public Object remove(final Object key) {
-        return removeFrom(getTopSelf(), key);
+        return removeFrom(null, key);
     }
 
     /**
@@ -416,22 +460,16 @@ public class BiVariableMap implements Map<String, Object> {
      * @return the previous value associated with <code>key</code>, or
      *         <code>null</code> if there was no mapping for <code>key</code>.
      */
-    public Object removeFrom(final Object receiver, final Object key) {
-        if ( variables == null ) return null;
-        checkKey(key);
-        final RubyObject robj = getReceiverObject(receiver);
-        for ( int i = 0; i < size(); i++ ) {
-            if ( key.equals( varNames.get(i) ) ) {
-                final BiVariable var = variables.get(i);
-                if ( var.isReceiverIdentical(robj) ) {
-                    varNames.remove(i);
-                    variables.remove(i);
-                    return var.getJavaObject();
-                }
-            }
-        }
-        return null;
-    }
+	public Object removeFrom(final Object receiver, final Object key) {
+		final String name = checkKey(key);
+		final VariableAccessor acc = VariableAccessor.getInstance(getLocalVariableBehavior(), name);
+		if (acc == null)
+			return null;
+		final IRubyObject rec = getReceiver(receiver);
+		final IRubyObject prevValue = acc.retrieve(this, rec, name);
+		acc.remove(this, rec, name);
+		return toJava(prevValue);
+	}
 
     /**
      * Copies all of the mappings from the specified map to this map.
@@ -488,10 +526,18 @@ public class BiVariableMap implements Map<String, Object> {
      *
      * @return a set view of the keys contained in this map
      */
-    @Override
-    public Set<String> keySet() {
-        return new LinkedHashSet<String>( getNames() );
-    }
+	@Override
+	public Set<String> keySet() {
+		return keySet(null);
+	}
+
+	public Set<String> keySet(final Object receiver) {
+		final IRubyObject rec = getReceiver(receiver);
+		final Set<String> names = new HashSet<>();
+		for (final VariableAccessor acc : VariableAccessor.getAll(getLocalVariableBehavior()))
+			names.addAll(acc.keySet(this, rec));
+		return names;
+	}
 
     /**
      * Returns a {@link Collection} view of the values contained in this map.
