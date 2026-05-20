@@ -53,4 +53,8 @@ class MethodSplitState implements InternalSplitState {
         this.self = self;
         this.name = name;
     }
+
+    public boolean exitsAtReturn() {
+        return eic.exitsAtReturn();
+    }
 }
