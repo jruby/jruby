@@ -25,14 +25,20 @@ launcher = full_path if File.exist? full_path
 
 $jruby = "#{launcher} #{options} "
 
-def jruby_command(command, *args)
+def jruby_command(command, *args, wait: true)
   command = "#{$jruby} -rlogger -S #{command} #{args.join(' ')}"
   puts "$ #{command}"
-  value = system command
+  if wait
+    value = system command
+  else
+    value = spawn command
+  end
   puts value
+  value
 end
 
 rails_app = 'frogger'
+rails_pid = nil
 
 FileUtils.rm_rf rails_app
 jruby_command("gem", "install rails --version=#{rails_version}")
@@ -41,14 +47,15 @@ Dir.chdir(rails_app) do
   jruby_command("bundle", "update")
   jruby_command("rails", "generate scaffold person name:string")
   jruby_command("rake", "db:migrate")
-  jruby_command("rails server & echo $? > rails_server.pid")
+  rails_pid = jruby_command("rails server", wait: false)
 end
 
 begin
   system("#{$jruby} #{File.join(File.dirname(__FILE__), "verify_rails")}")
 ensure
   puts "shutting down server"
-  system("kill $(cat frogger/rails_server.pid)")
+  Process.kill("TERM", rails_pid)
+  Process.waitpid(rails_pid)
 end
 
 puts "Done"
