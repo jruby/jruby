@@ -84,6 +84,19 @@ def extract_person_id(location)
   match[1]
 end
 
+puts "Waiting for server to start..."
+tries = 0
+begin
+  sock = TCPSocket.new("localhost", 3000)
+rescue
+  puts $!
+  sleep 5
+  retry unless tries > 10
+  raise
+else
+  sock.close
+end
+
 session = Session.new(BASE_URL)
 
 original_name = "Person-#{SecureRandom.hex(6)}"

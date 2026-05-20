@@ -43,8 +43,6 @@ Dir.chdir(rails_app) do
   jruby_command("rake", "db:migrate")
   jruby_command("rails server & echo $? > rails_server.pid")
 end
-puts "waiting for server to start..."
-sleep 10
 
 begin
   system("#{$jruby} #{File.join(File.dirname(__FILE__), "verify_rails")}")
