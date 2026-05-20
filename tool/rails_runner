@@ -7,6 +7,7 @@ ENV['RAILS_ENV'] = "development"
 # FIXME: -rlogger is because logger is getting loaded in CRuby but not
 # for us.  
 ENV['JRUBY_OPTS'] = "--dev -rlogger"
+ENV['JAVA_OPTS'] = "-Djava.net.preferIPv4Stack=true"
 
 #launcher, options, rails_version = "jruby", "", "6.1.3.2"
 launcher, options, rails_version = "jruby", "", "7.0.10"
@@ -40,7 +41,7 @@ Dir.chdir(rails_app) do
   jruby_command("bundle", "update")
   jruby_command("rails", "generate scaffold person name:string")
   jruby_command("rake", "db:migrate")
-  jruby_command("rails server 2>&1 > /dev/null & echo $? > rails_server.pid")
+  jruby_command("rails server & echo $? > rails_server.pid")
 end
 puts "waiting for server to start..."
 sleep 10
