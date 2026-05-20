@@ -43,6 +43,8 @@ import org.jruby.api.Convert;
 import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.internal.runtime.SplitSuperState;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.ir.IRMethod;
+import org.jruby.ir.interpreter.ExitableInterpreterContext;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock;
 import org.jruby.ir.JIT;
 import org.jruby.java.invokers.RubyToJavaInvoker;
@@ -359,6 +361,9 @@ public class ConcreteJavaProxy extends JavaProxy {
             if (cache == null) { // (ruby < ruby < java) super call from one IRO to another IRO ctor
                 ctorIndex = -1;
                 arguments = null;
+            } else if (args.length == 0 && cache.noArgConstructorIndex >= 0) {
+                ctorIndex = cache.noArgConstructorIndex;
+                arguments = null;
             } else {
                 ctorIndex = JCreateMethod.forTypes(runtime, args, cache);
                 arguments = RubyToJavaInvoker.convertArguments(cache.constructors[ctorIndex], args);
@@ -386,6 +391,40 @@ public class ConcreteJavaProxy extends JavaProxy {
         }
     }
 
+    public static final class SplitCtorPlan {
+        private final RubyClass base;
+        private final int token;
+        private final String name;
+        private final RubyModule methodSource;
+        private final RubyClass sourceLocation;
+        private final RubyModule effectiveSource;
+        private final boolean isLateral;
+        private final DynamicMethod method;
+
+        private SplitCtorPlan(RubyClass base, CacheEntry methodEntry) {
+            this.base = base;
+            this.token = methodEntry.token;
+            this.name = base.getClassConfig().javaCtorMethodName;
+            this.methodSource = methodEntry.sourceModule;
+            this.sourceLocation = findIncludedPrependedModule(methodEntry.sourceModule, base);
+            RubyModule effectiveSource = sourceLocation != null ? sourceLocation : methodEntry.sourceModule;
+            this.isLateral = isClassOrIncludedPrependedModule(methodEntry.sourceModule, base);
+            DynamicMethod method = methodEntry.method.getRealMethod(); // ensure we don't use a wrapper (jruby/jruby#8148)
+
+            if (method instanceof StaticJCreateMethod) {
+                method = ((StaticJCreateMethod) method).oldInit;
+                if (method != null) effectiveSource = method.getImplementationClass();
+            }
+
+            this.effectiveSource = effectiveSource;
+            this.method = method;
+        }
+
+        private boolean isValid(RubyClass base) {
+            return this.base == base && token == base.getGeneration();
+        }
+    }
+
     /**
      * Used by reified classes, this method is tightly coupled with RealClassGenerator, finishInitialize
      * Do not refactor without looking at RCG
@@ -397,41 +436,65 @@ public class ConcreteJavaProxy extends JavaProxy {
 
     private SplitCtorData splitInitialized(RubyClass base, IRubyObject[] args, Block block, JCtorCache jcc, boolean fromRubySuper) {
         final Ruby runtime = getRuntime();
-        final String name = base.getClassConfig().javaCtorMethodName;
-        final CacheEntry methodEntry = base.searchWithCache(name);
-        final RubyClass sourceLocation = findIncludedPrependedModule(methodEntry.sourceModule, base);
-        RubyModule effectiveSource = sourceLocation != null ? sourceLocation : methodEntry.sourceModule;
-        final boolean isLateral = isClassOrIncludedPrependedModule(methodEntry.sourceModule, base);
-        DynamicMethod method = methodEntry.method.getRealMethod(); // ensure we don't use a wrapper (jruby/jruby#8148)
-        if (method instanceof StaticJCreateMethod) {
-            method = ((StaticJCreateMethod) method).oldInit;
-            if (method != null) effectiveSource = method.getImplementationClass();
-        }
+        final SplitCtorPlan plan = splitCtorPlan(base, jcc, fromRubySuper);
+        final String name = plan.name;
+        final RubyClass sourceLocation = plan.sourceLocation;
+        final RubyModule effectiveSource = plan.effectiveSource;
+        final boolean isLateral = plan.isLateral;
+        final DynamicMethod method = plan.method;
 
         if (isPrependedJavaCtorWrapper(sourceLocation, base) && method instanceof AbstractIRMethod air) {
+            if (canSkipDirectSuper(air, args)) {
+                return splitInitialized(sourceLocation.getSuperClass(), args, block, jcc, true);
+            }
+
             SplitSuperState<?> state = air.startSplitSuperCall(runtime.getCurrentContext(), this, effectiveSource, name, args, block);
-            IRubyObject[] forwardedArgs = state == null ? args : state.callArrayArgs.toJavaArrayMaybeUnsafe();
+            IRubyObject[] forwardedArgs = state == null ? args : state.callArgs;
             Block forwardedBlock = state == null ? block : state.callBlockArgs;
             SplitCtorData ctorData = splitInitialized(sourceLocation.getSuperClass(), forwardedArgs, forwardedBlock, jcc, true);
             return new SplitCtorData(ctorData, args, air, effectiveSource, name, state, block);
         }
 
         // jcreate is for nested ruby classes from a java class
-        if (shouldSplitJavaConstructorInitialize(isLateral, fromRubySuper, methodEntry.sourceModule) && method instanceof AbstractIRMethod) {
+        if (shouldSplitJavaConstructorInitialize(isLateral, fromRubySuper, plan.methodSource) && method instanceof AbstractIRMethod) {
 
             AbstractIRMethod air = (AbstractIRMethod) method; // TODO: getMetaClass() ? or base? (below v)
+
+            if (canSkipDirectSuper(air, args)) {
+                return splitSuperInitialized(effectiveSource, args, block, jcc);
+            }
 
             SplitSuperState<?> state = air.startSplitSuperCall(runtime.getCurrentContext(), this, effectiveSource, name, args, block);
             if (state == null) { // no super in method
                 return new SplitCtorData(runtime, args, jcc, air, effectiveSource, name, block);
             }
 
-            IRubyObject[] forwardedArgs = state.callArrayArgs.toJavaArrayMaybeUnsafe();
+            IRubyObject[] forwardedArgs = state.callArgs;
             Block forwardedBlock = state.callBlockArgs;
             SplitCtorData ctorData = splitSuperInitialized(effectiveSource, forwardedArgs, forwardedBlock, jcc);
             return new SplitCtorData(ctorData, args, air, effectiveSource, name, state, block);
         }
         return new SplitCtorData(runtime, args, jcc);
+    }
+
+    private static boolean canSkipDirectSuper(final AbstractIRMethod method, IRubyObject[] args) {
+        ExitableInterpreterContext ic = ((IRMethod) method.getIRScope()).builtInterpreterContextForJavaConstructor();
+
+        return ic != null && (ic.directSuperAllArgs() || args.length == 0 && ic.directSuperNoArgs());
+    }
+
+    private static SplitCtorPlan splitCtorPlan(final RubyClass base, final JCtorCache jcc, final boolean fromRubySuper) {
+        if (jcc != null && !fromRubySuper) {
+            SplitCtorPlan plan = jcc.getSplitCtorPlan();
+            if (plan != null && plan.isValid(base)) return plan;
+
+            plan = new SplitCtorPlan(base, base.searchWithCache(base.getClassConfig().javaCtorMethodName));
+            jcc.setSplitCtorPlan(plan);
+
+            return plan;
+        }
+
+        return new SplitCtorPlan(base, base.searchWithCache(base.getClassConfig().javaCtorMethodName));
     }
 
     private SplitCtorData splitSuperInitialized(final RubyModule methodSource, final IRubyObject[] args,

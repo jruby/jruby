@@ -32,6 +32,7 @@ import java.util.List;
 
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ReturnInstr;
@@ -40,6 +41,8 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import static org.jruby.runtime.ThreadContext.CALL_SPLATS;
 
 public class ExitableInterpreterContext extends InterpreterContext {
 
@@ -50,6 +53,8 @@ public class ExitableInterpreterContext extends InterpreterContext {
     private final CallBase superCall;
     private final int exitIPC;
     private final boolean exitsAtReturn;
+    private final boolean directSuperNoArgs;
+    private final boolean directSuperAllArgs;
 
     public ExitableInterpreterContext(InterpreterContext originalIC, CallBase superCall, int exitIPC) {
         this(originalIC.getScope(), Arrays.asList(originalIC.getInstructions()), originalIC.getTemporaryVariableCount(), originalIC.getFlags(), superCall, exitIPC);
@@ -61,6 +66,8 @@ public class ExitableInterpreterContext extends InterpreterContext {
         this.superCall = superCall;
         this.exitIPC = exitIPC;
         this.exitsAtReturn = exitsAtReturn(instructions, superCall, exitIPC);
+        this.directSuperNoArgs = directSuperNoArgs(instructions, superCall, exitIPC) && getStaticScope().getSignature().isNoArguments();
+        this.directSuperAllArgs = directSuperAllArgs(instructions, superCall, exitIPC) && isRestOnlySignature();
     }
 
     public ExitableInterpreterEngineState getEngineState() {
@@ -73,6 +80,14 @@ public class ExitableInterpreterContext extends InterpreterContext {
 
     public boolean exitsAtReturn() {
         return exitsAtReturn;
+    }
+
+    public boolean directSuperNoArgs() {
+        return directSuperNoArgs;
+    }
+
+    public boolean directSuperAllArgs() {
+        return directSuperAllArgs;
     }
     
     @Override
@@ -96,6 +111,62 @@ public class ExitableInterpreterContext extends InterpreterContext {
 
         Instr instr = instructions.get(exitIPC + 1);
 
-        return instr instanceof ReturnInstr && ((ReturnInstr) instr).getReturnValue() == superCall.getResult();
+        return instr instanceof ReturnInstr && ((ReturnInstr) instr).getReturnValue().equals(superCall.getResult());
+    }
+
+    private static boolean directSuperNoArgs(List<Instr> instructions, CallBase superCall, int exitIPC) {
+        if (instructions == null || !exitsAtReturn(instructions, superCall, exitIPC) || superCall.getArgsCount() != 0) return false;
+
+        for (int i = 0; i < exitIPC; i++) {
+            Operation operation = instructions.get(i).getOperation();
+
+            switch (operation) {
+                case CHECK_ARITY:
+                case COPY:
+                case LINE_NUM:
+                case LOAD_IMPLICIT_CLOSURE:
+                case LOAD_FRAME_CLOSURE:
+                case RECV_KW:
+                case RECV_SELF:
+                    break;
+                default:
+                    return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static boolean directSuperAllArgs(List<Instr> instructions, CallBase superCall, int exitIPC) {
+        if (instructions == null || !exitsAtReturn(instructions, superCall, exitIPC) ||
+                superCall.getArgsCount() != 1 || superCall.getFlags() != CALL_SPLATS) return false;
+
+        for (int i = 0; i < exitIPC; i++) {
+            Operation operation = instructions.get(i).getOperation();
+
+            switch (operation) {
+                case BUILD_SPLAT:
+                case CHECK_ARITY:
+                case COPY:
+                case LINE_NUM:
+                case LOAD_IMPLICIT_CLOSURE:
+                case LOAD_FRAME_CLOSURE:
+                case RECV_KW:
+                case RECV_REST_ARG:
+                case RECV_SELF:
+                    break;
+                default:
+                    return false;
+            }
+        }
+
+        return true;
+    }
+
+    private boolean isRestOnlySignature() {
+        var signature = getStaticScope().getSignature();
+
+        return signature.pre() == 0 && signature.opt() == 0 && signature.post() == 0 &&
+                signature.hasRest() && !signature.hasKwargs();
     }
 }

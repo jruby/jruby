@@ -630,11 +630,22 @@ public class Java implements Library {
 
         private final NonBlockingHashMapLong<ParameterTypes> cache = new NonBlockingHashMapLong<>(8);
         public final JavaConstructor[] constructors;
+        public final int noArgConstructorIndex;
         private final List<JavaConstructor> constructorList;
+        private volatile ConcreteJavaProxy.SplitCtorPlan splitCtorPlan;
 
         public JCtorCache(JavaConstructor[] constructors) {
             this.constructors = constructors;
             constructorList = Arrays.asList(constructors);
+            noArgConstructorIndex = findNoArgConstructor(constructors);
+        }
+
+        private static int findNoArgConstructor(JavaConstructor[] constructors) {
+            for (int i = 0; i < constructors.length; i++) {
+                if (constructors[i].getParameterTypes().length == 0) return i;
+            }
+
+            return -1;
         }
 
         public int indexOf(JavaConstructor ctor) {
@@ -647,6 +658,14 @@ public class Java implements Library {
 
         public final void putSignature(int signatureCode, ParameterTypes callable) {
             cache.put(signatureCode, callable);
+        }
+
+        public ConcreteJavaProxy.SplitCtorPlan getSplitCtorPlan() {
+            return splitCtorPlan;
+        }
+
+        public void setSplitCtorPlan(ConcreteJavaProxy.SplitCtorPlan splitCtorPlan) {
+            this.splitCtorPlan = splitCtorPlan;
         }
     }
 

@@ -202,6 +202,9 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
         ExitableInterpreterContext ic = ((IRMethod) getIRScope()).builtInterpreterContextForJavaConstructor();
         if (ic == null) return null; // no super call/can't split this
 
+        SplitSuperState<MethodSplitState> directState = MethodSplitState.directSuperState(ic, args, block);
+        if (directState != null) return directState;
+
         MethodSplitState state = new MethodSplitState(context, ic, clazz, self, name);
 
         ExitableReturn result = INTERPRET_METHOD(state, args, block);
