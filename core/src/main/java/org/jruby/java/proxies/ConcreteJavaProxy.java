@@ -43,6 +43,7 @@ import org.jruby.api.Convert;
 import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.internal.runtime.SplitSuperState;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.MethodSplitState;
 import org.jruby.ir.interpreter.ExitableInterpreterContext;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock;
 import org.jruby.ir.JIT;
@@ -74,7 +75,7 @@ public class ConcreteJavaProxy extends JavaProxy {
 
     public static RubyClass createConcreteJavaProxy(final ThreadContext context, RubyClass JavaProxy) {
         var ConcreteJavaProxy = defineClass(context, "ConcreteJavaProxy", JavaProxy, ConcreteJavaProxy::new);
-        initialize(ConcreteJavaProxy);
+        addInitializeMethod(context, ConcreteJavaProxy);
         return ConcreteJavaProxy;
     }
 
@@ -643,22 +644,25 @@ public class ConcreteJavaProxy extends JavaProxy {
         if (returned.nested != null) finishInitialize(returned.nested);
 
         if (returned.method != null) {
+            ThreadContext context = getRuntime().getCurrentContext();
             if (returned.state != null) {
-                returned.method.finishSplitCall(returned.state);
+                finishSplitCall(returned.method, returned.state);
             } else { // no super, direct call
-                returned.method.call(getRuntime().getCurrentContext(), this, returned.clazz,
-                        returned.name, returned.rbarguments, returned.block);
+                returned.method.call(context, this, returned.clazz, returned.name, returned.rbarguments, returned.block);
             }
         }
         // Ignore other cases
     }
 
-    @Deprecated(since = "10.0.0.0")
-    protected static void initialize(final RubyClass concreteJavaProxy) {
-        initialize(concreteJavaProxy.getRuntime().getCurrentContext(), concreteJavaProxy);
+    private void finishSplitCall(final AbstractIRMethod method, final SplitSuperState state) {
+        final MethodSplitState methodState = (MethodSplitState) state.state;
+        if (methodState.getInterpreterContext().exitsAtReturn()) return;
+
+        final ThreadContext context = getRuntime().getCurrentContext();
+        method.interpretSplit(context, methodState, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
     }
 
-    protected static void initialize(ThreadContext context, final RubyClass concreteJavaProxy) {
+    protected static void addInitializeMethod(ThreadContext context, final RubyClass concreteJavaProxy) {
         concreteJavaProxy.addMethod(context, "initialize", new InitializeMethod(concreteJavaProxy));
         // We define a custom "new" method to ensure that __jcreate! is getting called,
         // so that if the user doesn't call super in their subclasses, the object will

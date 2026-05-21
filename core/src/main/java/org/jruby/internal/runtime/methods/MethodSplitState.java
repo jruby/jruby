@@ -37,46 +37,62 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class MethodSplitState implements InternalSplitState {
-    public final ExitableInterpreterContext eic;
-    public final ExitableInterpreterEngineState state;
-    public final ThreadContext context;
+    final ExitableInterpreterContext interpreterContext;
+    final ExitableInterpreterEngineState interpreterEngineState;
+
     public final DynamicScope scope;
     public final RubyModule implClass;
     public final IRubyObject self;
     public final String name;
 
-    public MethodSplitState(ExitableInterpreterContext ic) {
-        this.context = null;
-        this.eic = ic;
-        this.state = null;
+    private MethodSplitState(ExitableInterpreterContext ic) {
+        assert ic != null;
+        this.interpreterContext = ic;
+        this.interpreterEngineState = null;
         this.scope = null;
         this.implClass = null;
         this.self = null;
         this.name = null;
     }
 
-    public MethodSplitState(ThreadContext context, ExitableInterpreterContext ic, RubyModule clazz, IRubyObject self,
-            String name) {
-        this.context = context;
-        this.eic = ic;
-        this.state = ic.getEngineState();
+    public MethodSplitState(ExitableInterpreterContext ic, RubyModule clazz, IRubyObject self, String name) {
+        this.interpreterContext = ic;
+        this.interpreterEngineState = ic.getEngineState();
         this.scope = DynamicScope.newDynamicScope(ic.getStaticScope());
         this.implClass = clazz;
         this.self = self;
         this.name = name;
     }
 
-    public boolean exitsAtReturn() {
-        return eic.exitsAtReturn();
+    public ExitableInterpreterContext getInterpreterContext() {
+        return interpreterContext;
     }
 
-    public static SplitSuperState<MethodSplitState> directSuperState(ThreadContext context, ExitableInterpreterContext ic,
-            IRubyObject[] args, Block block) {
-        if (ic.directSuperAllArgs()) return new SplitSuperState<>(new ExitableReturn(args, block), new MethodSplitState(ic));
-        if (ic.directSuperNoArgs() && args.length == 0) return new SplitSuperState<>(new ExitableReturn(IRubyObject.NULL_ARRAY, block), new MethodSplitState(ic));
-        if (ic.directSuperRequiredArgs() == args.length) return new SplitSuperState<>(new ExitableReturn(args, block), new MethodSplitState(ic));
+    public ExitableInterpreterEngineState getInterpreterEngineState() {
+        return interpreterEngineState;
+    }
 
-        if (ic.terminalLiteralSuper()) return new SplitSuperState<>(new ExitableReturn(ic.getTerminalLiteralSuperArgs(context), block), new MethodSplitState(ic));
+    /**
+     * Direct <code>super</code> does not need any interpreter execution and thus returns a dummy instance.
+     * @return dummy wrapped {@link MethodSplitState} or null for non "direct" super calls
+     */
+    public static SplitSuperState<MethodSplitState> directSuperState(ThreadContext context,
+                                                                     ExitableInterpreterContext ic,
+                                                                     IRubyObject[] args, Block block) {
+        if (ic.directSuperNoArgs() && args.length == 0) {
+            return new SplitSuperState<>(new ExitableReturn(IRubyObject.NULL_ARRAY, block), new MethodSplitState(ic));
+        }
+
+        if (ic.directSuperRequiredArgs() == args.length || ic.directSuperAllArgs()) {
+            return new SplitSuperState<>(new ExitableReturn(args, block), new MethodSplitState(ic));
+        }
+
+        if (ic.isTerminalLiteralSuper()) {
+            return new SplitSuperState<>(
+                new ExitableReturn(ic.getTerminalLiteralSuperArgs(context), block),
+                new MethodSplitState(ic)
+            );
+        }
 
         return null;
     }
