@@ -18,7 +18,7 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    name: Build JRuby dist archive
+    name: Build JRuby dist archives
 
     steps:
       - name: checkout
@@ -33,10 +33,17 @@ jobs:
         run: |
           ./mvnw -ntp clean package -Pdist
           mv maven/jruby-dist/target/jruby-dist*-bin.tar.gz jruby-dist-bin.tar.gz
-      - name: cache dist
+          mv maven/jruby-dist/target/jruby-dist*-src.tar.gz jruby-dist-src.tar.gz
+      - name: cache dist bin
         uses: actions/upload-artifact@v7
         with:
           path: jruby-dist-bin.tar.gz
+          retention-days: 1
+          archive: false
+      - name: cache dist src
+        uses: actions/upload-artifact@v7
+        with:
+          path: jruby-dist-src.tar.gz
           retention-days: 1
           archive: false
 
@@ -64,7 +71,18 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
-      - name: download cached dist
+      - name: download cached dist src
+        uses: actions/download-artifact@v8
+        with:
+          name: jruby-dist-src.tar.gz
+      - name: test compilation of dist src
+        run: |
+          mkdir jruby-dist-src
+          cd jruby-dist-src
+          tar xzf ../jruby-dist-src.tar.gz --strip-components=1
+          ./mvnw -ntp clean install -Pdist
+          cd ..
+      - name: download cached dist bin
         uses: actions/download-artifact@v8
         with:
           name: jruby-dist-bin.tar.gz
