@@ -2544,17 +2544,26 @@ public class RubyClass extends RubyModule {
         }
 
         /**
-         * Generates an init barrier. NOT Thread-safe, but hopefully nobody has threads in their constructor? This is
-         * used to ensure that self.to_java is valid if the super ctor calls an abstract method that is re-implemented
-         * by ruby
+         * Generates an init barrier.
+         * NOT Thread-safe, but hopefully nobody has threads in their constructor?
          */
         @Override
         protected void generateObjectBarrier(SkinnyMethodAdapter m) {
-            // For non-concrete things, we check, as this is not a RubyObject
+            // Ensures self.to_java is valid if the super ctor calls a Ruby-implemented abstract method.
+            // if (getObject() == null) setObject(this);
             m.aload(0);
             m.getfield(javaPath, RUBY_OBJECT_FIELD, rubyName);
-            m.aload(0);
-            m.invokevirtual(rubyPath, "ensureThis", sig(void.class, Object.class));
+            m.dup();
+            m.invokevirtual(rubyPath, "getObject", sig(Object.class));
+            org.objectweb.asm.Label skip = new org.objectweb.asm.Label();
+            m.ifnonnull(skip);
+            m.aload(0); // stack: rubyObject, this
+            m.invokevirtual(rubyPath, "setObject", sig(void.class, Object.class)); // stack: (empty)
+            org.objectweb.asm.Label done = new org.objectweb.asm.Label();
+            m.go_to(done);
+            m.label(skip);
+            m.pop(); // discard rubyObject
+            m.label(done);
         }
 
         private void defineInterfaceMethods() {
