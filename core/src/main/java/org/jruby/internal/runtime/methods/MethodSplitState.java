@@ -70,11 +70,13 @@ public class MethodSplitState implements InternalSplitState {
         return eic.exitsAtReturn();
     }
 
-    public static SplitSuperState<MethodSplitState> directSuperState(ExitableInterpreterContext ic, IRubyObject[] args,
-            Block block) {
+    public static SplitSuperState<MethodSplitState> directSuperState(ThreadContext context, ExitableInterpreterContext ic,
+            IRubyObject[] args, Block block) {
         if (ic.directSuperAllArgs()) return new SplitSuperState<>(new ExitableReturn(args, block), new MethodSplitState(ic));
         if (ic.directSuperNoArgs() && args.length == 0) return new SplitSuperState<>(new ExitableReturn(IRubyObject.NULL_ARRAY, block), new MethodSplitState(ic));
         if (ic.directSuperRequiredArgs() == args.length) return new SplitSuperState<>(new ExitableReturn(args, block), new MethodSplitState(ic));
+
+        if (ic.terminalLiteralSuper()) return new SplitSuperState<>(new ExitableReturn(ic.getTerminalLiteralSuperArgs(context), block), new MethodSplitState(ic));
 
         return null;
     }

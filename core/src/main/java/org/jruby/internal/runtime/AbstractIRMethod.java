@@ -237,7 +237,7 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
         ExitableInterpreterContext ic = ((IRMethod) getIRScope()).builtInterpreterContextForJavaConstructor();
         if (ic == null) return null;
 
-        SplitSuperState<MethodSplitState> directState = MethodSplitState.directSuperState(ic, args, block);
+        SplitSuperState<MethodSplitState> directState = MethodSplitState.directSuperState(context, ic, args, block);
         if (directState != null) return directState;
 
         if (ic.canEscapeAtSuper()) {
