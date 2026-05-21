@@ -340,7 +340,8 @@ public class ConcreteJavaProxy extends JavaProxy {
         }
 
         private SplitCtorData(Ruby runtime, IRubyObject[] args, ConstructorCache cache,
-                              AbstractIRMethod method, RubyModule clazz, String name, SplitSuperState<?> state, Block block, SplitCtorData nested) {
+                              AbstractIRMethod method, RubyModule clazz, String name,
+                              SplitSuperState<?> state, Block block, SplitCtorData nested) {
             rbarguments = args;
             if (cache == null) { // (ruby < ruby < java) super call from one IRO to another IRO ctor
                 ctorIndex = -1;
@@ -393,24 +394,22 @@ public class ConcreteJavaProxy extends JavaProxy {
         private final RubyModule effectiveSource;
         private final boolean isLateral;
 
-        // Cached strategy fields - precomputed once per (base, generation)
+        // cached strategy fields - precomputed once per (base, generation)
         private final AbstractIRMethod method;
         private final ExitableInterpreterContext interpreterContext;
         private final boolean prependedJavaCtorWrapper;
 
-        // Lazily-resolved IRubyObject[] for terminal literal super calls; shared across invocations
+        // lazily-resolved IRubyObject[] for terminal literal super calls; shared across invocations
         private IRubyObject[] cachedTerminalLiteralArgs;
 
-        // Cached next plan in the recursive split-constructor chain (one of these is populated based on
-        // which Ruby super source we recurse into). Avoids repeated method searches up the class chain.
+        // cached next plan in the recursive split-constructor chain
+        // (one of these is populated based on which Ruby super source we recurse into)
         private SplitCtorPlan cachedSuperPlan;
         private SplitCtorPlan cachedPrependedSuperPlan;
 
-        // Cached SplitCtorData reachable from this plan via a terminal literal-args super call when the chain
-        // terminates immediately in a Java constructor (no intermediate Ruby super). Stable across calls because
-        // the literal args, resolved Java constructor index, and converted argument array are all stable and the
-        // terminator forces {@code Block.NULL_BLOCK}.
-        private volatile SplitCtorData cachedLiteralSuperTerminator;
+        // cached <init> data reachable from this plan via a terminal literal-args super call
+        // when the chain terminates immediately in a Java constructor (no Ruby `super`)
+        volatile SplitCtorData cachedLiteralSuperTerminator;
 
         private SplitCtorPlan(RubyClass base, CacheEntry methodEntry) {
             this.base = base;
@@ -516,7 +515,7 @@ public class ConcreteJavaProxy extends JavaProxy {
 
         final ThreadContext context = getRuntime().getCurrentContext();
 
-        if (plan.prependedJavaCtorWrapper && method != null) {
+        if (method != null && plan.prependedJavaCtorWrapper) {
             if (plan.canSkipDirectSuper(args)) {
                 return splitInitialized(plan.prependedSuperPlan(sourceLocation.getSuperClass()), args, block, cache, true);
             }
@@ -530,11 +529,11 @@ public class ConcreteJavaProxy extends JavaProxy {
             IRubyObject[] forwardedArgs = state == null ? args : state.callArgs;
             Block forwardedBlock = state == null ? block : state.callBlockArgs;
             SplitCtorData ctorData = splitInitialized(plan.prependedSuperPlan(sourceLocation.getSuperClass()), forwardedArgs, forwardedBlock, cache, true);
-            return new SplitCtorData(ctorData, args, method, effectiveSource, name, state, block);
+            return new SplitCtorData(ctorData, forwardedArgs, method, effectiveSource, name, state, block);
         }
 
         // jcreate is for nested ruby classes from a java class
-        if (shouldSplitJavaConstructorInitialize(plan.isLateral, fromRubySuper, plan.methodSource) && method != null) {
+        if (method != null && shouldSplitJavaConstructorInitialize(plan.isLateral, fromRubySuper, plan.methodSource)) {
             if (plan.canSkipDirectSuper(args)) {
                 return splitSuperInitialized(plan, args, block, cache);
             }
@@ -557,7 +556,7 @@ public class ConcreteJavaProxy extends JavaProxy {
             IRubyObject[] forwardedArgs = state.callArgs;
             Block forwardedBlock = state.callBlockArgs;
             SplitCtorData ctorData = splitSuperInitialized(plan, forwardedArgs, forwardedBlock, cache);
-            return new SplitCtorData(ctorData, args, method, effectiveSource, name, state, block);
+            return new SplitCtorData(ctorData, forwardedArgs, method, effectiveSource, name, state, block);
         }
 
         return new SplitCtorData(runtime, args, cache);
@@ -582,6 +581,10 @@ public class ConcreteJavaProxy extends JavaProxy {
         RubyClass next = nextRubyConstructorSource(plan.effectiveSource);
 
         if (next == null) return new SplitCtorData(getRuntime(), args, cache);
+        // In a Ruby < Ruby < Java chain the next Ruby class has its own reified `<init>` which will run
+        // its own splitInitialized when the parent constructor is dispatched; so we must not chain through
+        // it here (would double-execute initialize body and also break finishInitialize)
+        if (!next.getDelegate().getJavaProxy()) return new SplitCtorData(getRuntime(), args, null);
         return splitInitialized(plan.superPlan(next), args, block, cache, true);
     }
 
