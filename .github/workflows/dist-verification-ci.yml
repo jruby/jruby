@@ -18,7 +18,7 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    name: Build JRuby dist archives
+    name: Build JRuby release artifacts
 
     steps:
       - name: checkout
@@ -31,9 +31,10 @@ jobs:
           cache: 'maven'
       - name: build dist archive
         run: |
-          ./mvnw -ntp clean package -Pdist
+          ./mvnw -ntp clean package -Pall
           mv maven/jruby-dist/target/jruby-dist*-bin.tar.gz jruby-dist-bin.tar.gz
           mv maven/jruby-dist/target/jruby-dist*-src.tar.gz jruby-dist-src.tar.gz
+          mv maven/jruby-complete/target/jruby-complete*.jar jruby-complete.jar
       - name: cache dist bin
         uses: actions/upload-artifact@v7
         with:
@@ -44,6 +45,12 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           path: jruby-dist-src.tar.gz
+          retention-days: 1
+          archive: false
+      - name: cache jruby-complete
+        uses: actions/upload-artifact@v7
+        with:
+          path: jruby-complete.jar
           retention-days: 1
           archive: false
 
@@ -59,13 +66,48 @@ jobs:
 
     runs-on: ${{ matrix.runs-on }}
 
-    name: dist verification on ${{ matrix.runs-on }} (Java ${{ matrix.java-version }})
+    name: rails verification on ${{ matrix.runs-on }} (Java ${{ matrix.java-version }})
 
     steps:
       - name: checkout
         uses: actions/checkout@v6
         with:
           path: jruby-src
+      - name: set up java ${{ matrix.java-version }}
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'zulu'
+          java-version: ${{ matrix.java-version }}
+      - name: download cached dist bin
+        uses: actions/download-artifact@v8
+        with:
+          name: jruby-dist-bin.tar.gz
+      - name: unpack dist
+        run: tar xzf jruby-dist-bin.tar.gz --strip-components=1
+      - name: dist verification (Windows)
+        if: matrix.runs-on == 'windows-latest'
+        run: echo "${{ github.workspace }}\bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
+      - name: set up dist path (Unix)
+        if: matrix.runs-on != 'windows-latest'
+        run: echo "$(pwd)/bin" >> $GITHUB_PATH
+      - name: rails verification
+        run: jruby jruby-src/tool/rails_runner
+
+  src-verification:
+
+    needs: build-dist
+
+    strategy:
+      matrix:
+        java-version: ['21', '25']
+        runs-on: [windows-latest, macos-latest, ubuntu-latest]
+      fail-fast: false
+
+    runs-on: ${{ matrix.runs-on }}
+
+    name: src verification on ${{ matrix.runs-on }} (Java ${{ matrix.java-version }})
+
+    steps:
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v5
         with:
@@ -82,6 +124,54 @@ jobs:
           tar xzf ../jruby-dist-src.tar.gz --strip-components=1
           ./mvnw -ntp clean install -Pdist
           cd ..
+
+  jruby-complete-verification:
+
+    needs: build-dist
+
+    strategy:
+      matrix:
+        java-version: ['21', '25']
+        runs-on: [windows-latest, macos-latest, ubuntu-latest]
+      fail-fast: false
+
+    runs-on: ${{ matrix.runs-on }}
+
+    name: jruby-complete verification on ${{ matrix.runs-on }} (Java ${{ matrix.java-version }})
+
+    steps:
+      - name: set up java ${{ matrix.java-version }}
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'zulu'
+          java-version: ${{ matrix.java-version }}
+      - name: download cached jruby-complete
+        uses: actions/download-artifact@v8
+        with:
+          name: jruby-complete.jar
+      - name: confirm rubygems works with jruby-complete
+        run: java -jar jruby-complete.jar -S gem list
+
+  misc-verification:
+
+    needs: build-dist
+
+    strategy:
+      matrix:
+        java-version: ['21', '25']
+        runs-on: [windows-latest, macos-latest, ubuntu-latest]
+      fail-fast: false
+
+    runs-on: ${{ matrix.runs-on }}
+
+    name: misc verification on ${{ matrix.runs-on }} (Java ${{ matrix.java-version }})
+
+    steps:
+      - name: set up java ${{ matrix.java-version }}
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'zulu'
+          java-version: ${{ matrix.java-version }}
       - name: download cached dist bin
         uses: actions/download-artifact@v8
         with:
@@ -94,8 +184,6 @@ jobs:
       - name: set up dist path (Unix)
         if: matrix.runs-on != 'windows-latest'
         run: echo "$(pwd)/bin" >> $GITHUB_PATH
-      - name: rails verification
-        run: jruby jruby-src/tool/rails_runner
       - name: syslog verification (Unix)
         if: matrix.runs-on != 'windows-latest'
         run: jruby -rsyslog -e 1
