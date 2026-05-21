@@ -106,7 +106,7 @@ public class ExitableInterpreterContext extends InterpreterContext {
         return directSuperRequiredArgs;
     }
 
-    public boolean terminalLiteralSuper() {
+    public boolean isTerminalLiteralSuper() {
         return terminalLiteralSuperArgs != null;
     }
 

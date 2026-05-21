@@ -50,7 +50,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -624,76 +623,12 @@ public class Java implements Library {
         subclass.addMethod(context, "__jcreate!", new JCreateMethod(subclassSingleton));
     }
 
-    /**
-     * Used for concrete reified classes. Constructed in generated code (RubyClass)
-     */
-    public static class JCtorCache implements CallableSelector.CallableCache<ParameterTypes> {
-
-        private final NonBlockingHashMapLong<ParameterTypes> cache = new NonBlockingHashMapLong<>(8);
-        public final JavaConstructor[] constructors;
-        public final int noArgConstructorIndex;
-        private final List<JavaConstructor> constructorList;
-        private volatile ConcreteJavaProxy.SplitCtorPlan splitCtorPlan;
-
-        public JCtorCache(JavaConstructor[] constructors) {
-            this.constructors = constructors;
-            constructorList = Arrays.asList(constructors);
-            noArgConstructorIndex = findNoArgConstructor(constructors);
-        }
-
-        private static int findNoArgConstructor(JavaConstructor[] constructors) {
-            for (int i = 0; i < constructors.length; i++) {
-                if (constructors[i].getParameterTypes().length == 0) return i;
-            }
-
-            return -1;
-        }
-
-        public int indexOf(JavaConstructor ctor) {
-            return constructorList.indexOf(ctor);
-        }
-
-        public final ParameterTypes getSignature(int signatureCode) {
-            return cache.get(signatureCode);
-        }
-
-        public final void putSignature(int signatureCode, ParameterTypes callable) {
-            cache.put(signatureCode, callable);
-        }
-
-        public ConcreteJavaProxy.SplitCtorPlan getSplitCtorPlan() {
-            return splitCtorPlan;
-        }
-
-        public void setSplitCtorPlan(ConcreteJavaProxy.SplitCtorPlan splitCtorPlan) {
-            this.splitCtorPlan = splitCtorPlan;
-        }
-    }
-
     public static class JCreateMethod extends JavaMethodN implements CallableSelector.CallableCache<JavaProxyConstructor> {
 
         private final NonBlockingHashMapLong<JavaProxyConstructor> cache = new NonBlockingHashMapLong<>(8);
 
         JCreateMethod(RubyModule cls) {
             super(cls, PUBLIC, "__jcreate!");
-        }
-
-        /**
-         * Disambiguate which ctor index to call from the given cache
-         * @param args argument list for the ctors
-         * @param cache cache of ctors
-         * @param runtime
-         * @return Index of ctor in cache to call, or throws a new exception
-         */
-        public static int forTypes(Ruby runtime, IRubyObject[] args, JCtorCache cache) {
-            JavaConstructor ctor = matchConstructorIndex(runtime.getCurrentContext(), cache.constructors, cache,
-                    args.length, args);
-            int index = cache.indexOf(ctor);
-            if (index < 0) {
-                // use our error otherwise
-                throw argumentError(runtime.getCurrentContext(), "index error finding superconstructor");
-            }
-            return index;
         }
 
         private static JavaProxyClass getProxyClass(final ThreadContext context, final IRubyObject self) {
@@ -806,9 +741,9 @@ public class Java implements Library {
         }
 
         // generic (slowest) path
-        public static <T extends ParameterTypes> T matchConstructorIndex(final ThreadContext context,
-            final T[] constructors, final CallableCache<ParameterTypes> cache, final int arity, final IRubyObject... args) {
-            ArrayList<T> forArity = findCallablesForArity(arity, constructors);
+        static <T extends ParameterTypes> T matchConstructorInternal(final ThreadContext context,
+            final T[] constructors, final CallableCache<ParameterTypes> cache, final IRubyObject... args) {
+            ArrayList<T> forArity = findCallablesForArity(args.length, constructors);
 
             if (forArity.isEmpty()) throw argumentError(context, "wrong number of arguments for constructor");
 

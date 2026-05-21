@@ -68,7 +68,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.proxies.ConcreteJavaProxy.SplitCtorData;
 import org.jruby.java.proxies.MapJavaProxy;
-import org.jruby.javasupport.Java.JCtorCache;
+import org.jruby.javasupport.ConstructorCache;
 import org.jruby.javasupport.JavaConstructor;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
@@ -933,12 +933,12 @@ public abstract class RealClassGenerator {
         m.aload(rubyArrayIndex);
         m.aload(blockIndex); // load block from arg 3
         if (!hasParent) {
-            m.getstatic(cjr.javaPath, cjr.RUBY_CTOR_CACHE_FIELD, ci(JCtorCache.class));
+            m.getstatic(cjr.javaPath, cjr.RUBY_CTOR_CACHE_FIELD, ci(ConstructorCache.class));
         } else {
             m.aconst_null();
         }
         m.invokevirtual(cjr.rubyPath, "splitInitialized",
-                sig(SplitCtorData.class, RubyClass.class, IRubyObject[].class, Block.class, JCtorCache.class)); // pushes splitctordata
+                sig(SplitCtorData.class, RubyClass.class, IRubyObject[].class, Block.class, ConstructorCache.class)); // pushes splitctordata
 
         m.dup(); // splitctordata (results of splitInitialized)
 
