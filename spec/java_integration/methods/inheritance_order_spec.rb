@@ -73,6 +73,16 @@ describe "super order" do
     end
   end
 
+  let(:subclass_with_pre_super_work_ctor) do
+    Class.new(InheritanceBase) do
+      def initialize(opts)
+        computed = {arg: opts[:arg].upcase}
+        super(computed)
+        trace.add "Ruby computed constructor called with #{computed.inspect}"
+      end
+    end
+  end
+
   shared_examples 'tests' do |args|
     java_arg = args.empty? ? "no options" : args[-1][:arg]
 
@@ -158,6 +168,16 @@ describe "super order" do
     expect(obj.trace).to eq(["Java base constructor called with bar",
                              "Ruby base constructor called with #{[reassigned_opts].inspect}",
                              "Ruby reassigned rest constructor called with #{[reassigned_opts].inspect}"])
+  end
+
+  it 'preserves arbitrary pre-super work before Java constructor selection' do
+    original_opts = {arg: 'foo'}
+    computed_opts = {arg: 'FOO'}
+    obj = subclass_with_pre_super_work_ctor.new(original_opts)
+
+    expect(obj.trace).to eq(["Java base constructor called with FOO",
+                             "Ruby base constructor called with #{[computed_opts].inspect}",
+                             "Ruby computed constructor called with #{computed_opts.inspect}"])
   end
 
   context('with no args') { include_examples 'tests', [] }

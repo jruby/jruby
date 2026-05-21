@@ -36,7 +36,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-class MethodSplitState implements InternalSplitState {
+public class MethodSplitState implements InternalSplitState {
     public final ExitableInterpreterContext eic;
     public final ExitableInterpreterEngineState state;
     public final ThreadContext context;

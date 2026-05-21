@@ -93,6 +93,12 @@ public class ExitableInterpreterContext extends InterpreterContext {
         return exitsAtReturn;
     }
 
+    public boolean canEscapeAtSuper() {
+        int[] rescuePCs = getRescueIPCs();
+
+        return exitsAtReturn && (rescuePCs == null || rescuePCs[exitIPC] == -1);
+    }
+
     public boolean directSuperNoArgs() {
         return directSuperNoArgs;
     }

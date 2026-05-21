@@ -34,6 +34,7 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.coverage.CoverageData;
+import org.jruby.internal.runtime.SplitSuperCall;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.CompiledIRNoProtocolMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -1432,6 +1433,8 @@ public class IRRuntimeHelpers {
 
     @Interp
     public static IRubyObject instanceSuper(ThreadContext context, IRubyObject self, String id, RubyModule definingModule, IRubyObject[] args, Block block) {
+        if (context.isCapturingSplitSuper(self, id)) throw new SplitSuperCall(args, block);
+
         CacheEntry entry = getSuperMethodEntry(id, definingModule);
         DynamicMethod method = entry.method;
 
@@ -1550,6 +1553,8 @@ public class IRRuntimeHelpers {
         String methodName = context.getFrameName();
 
         Helpers.checkSuperDisabledOrOutOfMethod(context, klazz, methodName);
+
+        if (context.isCapturingSplitSuper(self, methodName)) throw new SplitSuperCall(args, block);
 
         RubyClass superClass = searchNormalSuperclass(klazz);
         CacheEntry entry = superClass != null ? superClass.searchWithCache(methodName) : CacheEntry.NULL_CACHE;

@@ -32,9 +32,7 @@ import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
 import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.internal.runtime.SplitSuperState;
-import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
-import org.jruby.ir.interpreter.ExitableInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.persistence.IRDumper;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -84,16 +82,6 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         context.preMethodFrameOnly(implClass, name, self, block);
         if (ic.pushNewDynScope()) {
             context.pushScope(DynamicScope.newDynamicScope(ic.getStaticScope()));
-        }
-    }
-
-    // TODO: new method or make this pre?
-    protected void preSplit(InterpreterContext ic, ThreadContext context, IRubyObject self, String name, Block block,
-            RubyModule implClass, DynamicScope scope) {
-        // update call stacks (push: frame, class, scope, etc.)
-        context.preMethodFrameOnly(implClass, name, self, block);
-        if (ic.pushNewDynScope()) {
-            context.pushScope(scope);
         }
     }
 
@@ -289,52 +277,16 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
     }
 
     @Override
-    public SplitSuperState<MethodSplitState> startSplitSuperCall(ThreadContext context, IRubyObject self,
+    public SplitSuperState<?> startSplitSuperCall(ThreadContext context, IRubyObject self,
             RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        // TODO: check if IR method, or is it guaranteed?
-        // 2 -> IRMethod
-        ExitableInterpreterContext ic = ((IRMethod) getIRScope()).builtInterpreterContextForJavaConstructor();
-        if (ic == null) return null; // no super call/can't split this
+        if (callCount >= 0) tryJit(context, this, false);
 
-        SplitSuperState<MethodSplitState> directState = MethodSplitState.directSuperState(ic, args, block);
-        if (directState != null) return directState;
-
-        MethodSplitState state = new MethodSplitState(context, ic, clazz, self, name);
-
-        // TODO: JIT?
-
-        ExitableReturn result = INTERPRET_METHOD(state, args, block);
-
-        return new SplitSuperState<>(result, state);
-    }
-
-    private ExitableReturn INTERPRET_METHOD(MethodSplitState state, IRubyObject[] args, Block block) {
-        try {
-            ThreadContext.pushBacktrace(state.context, state.name, state.eic.getFileName(), state.eic.getLine());
-
-            // TODO: explicit call protocol?
-            try {
-                this.preSplit(state.eic, state.context, state.self, state.name, block, state.implClass, state.scope);
-                return state.eic.getEngine().interpret(state.context, null, state.self, state.eic, state.state,
-                        state.implClass, state.name, args, block);
-            } finally {
-                this.post(state.eic, state.context);
-            }
-        } finally {
-            ThreadContext.popBacktrace(state.context);
+        DynamicMethod jittedMethod = actualMethod;
+        if (jittedMethod instanceof AbstractIRMethod irMethod) {
+            return irMethod.startSplitSuperCall(context, self, clazz, name, args, block);
         }
-    }
 
-    @Override
-    public void finishSplitCall(SplitSuperState state) {
-        if (IRRuntimeHelpers.isDebug()) doDebug(); // TODO?
-
-        // TODO: JIT?
-
-        MethodSplitState methodState = (MethodSplitState) state.state;
-        if (methodState.exitsAtReturn()) return;
-
-        INTERPRET_METHOD(methodState, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+        return super.startSplitSuperCall(context, self, clazz, name, args, block);
     }
 
     private void doDebug() {
