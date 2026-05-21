@@ -1,4 +1,5 @@
 #!/usr/bin/env jruby
+require 'rbconfig'
 require 'rubygems'
 require 'fileutils'
 require 'optparse'
@@ -54,8 +55,13 @@ begin
   system("#{$jruby} #{File.join(File.dirname(__FILE__), "verify_rails")}")
 ensure
   puts "shutting down server"
-  Process.kill("TERM", rails_pid)
-  Process.waitpid(rails_pid)
+  case RbConfig::CONFIG['host_os']
+  when /mswin|win32|windows/
+    system "taskkill /T /PID #{rails_pid}"
+  else
+    Process.kill("TERM", rails_pid)
+    Process.waitpid(rails_pid)
+  end
 end
 
 puts "Done"
