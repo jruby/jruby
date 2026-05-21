@@ -43,7 +43,6 @@ import org.jruby.api.Convert;
 import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.internal.runtime.SplitSuperState;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.ir.IRMethod;
 import org.jruby.ir.interpreter.ExitableInterpreterContext;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock;
 import org.jruby.ir.JIT;
@@ -389,6 +388,15 @@ public class ConcreteJavaProxy extends JavaProxy {
             this.block = block;
             this.nested = ctorData;
         }
+
+        /**
+         * Returns true if this {@code SplitCtorData} represents a leaf Java constructor terminator: a chain end
+         * with no nested Ruby super, no continuation method, and no captured split state. Such terminators are
+         * fully immutable and safe to cache across calls.
+         */
+        boolean isLeafJavaTerminator() {
+            return method == null && state == null && nested == null;
+        }
     }
 
     public static final class SplitCtorPlan {
@@ -400,6 +408,25 @@ public class ConcreteJavaProxy extends JavaProxy {
         private final RubyModule effectiveSource;
         private final boolean isLateral;
         private final DynamicMethod method;
+
+        // Cached strategy fields - precomputed once per (base, generation).
+        private final AbstractIRMethod air;
+        private final ExitableInterpreterContext eic;
+        private final boolean prependedJavaCtorWrapper;
+
+        // Lazily-resolved IRubyObject[] for terminal literal super calls; shared across invocations.
+        private volatile IRubyObject[] cachedTerminalLiteralArgs;
+
+        // Cached next plan in the recursive split-constructor chain (one of these is populated based on
+        // which Ruby super source we recurse into). Avoids repeated method searches up the class chain.
+        private volatile SplitCtorPlan cachedSuperPlan;
+        private volatile SplitCtorPlan cachedPrependedSuperPlan;
+
+        // Cached SplitCtorData reachable from this plan via a terminal literal-args super call when the chain
+        // terminates immediately in a Java constructor (no intermediate Ruby super). Stable across calls because
+        // the literal args, resolved Java constructor index, and converted argument array are all stable and the
+        // terminator forces {@code Block.NULL_BLOCK}.
+        private volatile SplitCtorData cachedLiteralSuperTerminator;
 
         private SplitCtorPlan(RubyClass base, CacheEntry methodEntry) {
             this.base = base;
@@ -418,10 +445,71 @@ public class ConcreteJavaProxy extends JavaProxy {
 
             this.effectiveSource = effectiveSource;
             this.method = method;
+
+            AbstractIRMethod air = method instanceof AbstractIRMethod ? (AbstractIRMethod) method : null;
+            this.air = air;
+            this.eic = air != null ? air.getJavaConstructorContext() : null;
+            this.prependedJavaCtorWrapper = isPrependedJavaCtorWrapper(sourceLocation, base);
         }
 
         private boolean isValid(RubyClass base) {
             return this.base == base && token == base.getGeneration();
+        }
+
+        /**
+         * Returns true when {@code args} can be forwarded directly to the Java superclass constructor without
+         * entering the split interpreter (e.g. {@code def initialize(*args); super(*args); end}).
+         */
+        private boolean canSkipDirectSuper(IRubyObject[] args) {
+            ExitableInterpreterContext ic = eic;
+            return ic != null && (ic.directSuperAllArgs() ||
+                    args.length == 0 && ic.directSuperNoArgs() ||
+                    ic.directSuperRequiredArgs() == args.length);
+        }
+
+        /**
+         * Returns resolved Java constructor args when the Ruby initialize body is a terminal {@code super(...)}
+         * with only immutable literal arguments; {@code null} otherwise.
+         *
+         * @implNote resolved array is cached on first use and shared across invocations - safe because literals are
+         * immutable and downstream callers ({@code JCreateMethod.forTypes}, {@code RubyToJavaInvoker.convertArguments})
+         * only read from the array.
+         */
+        private IRubyObject[] terminalLiteralSuperArgs(ThreadContext context) {
+            ExitableInterpreterContext ic = eic;
+            if (ic == null || !ic.terminalLiteralSuper()) return null;
+
+            IRubyObject[] cached = cachedTerminalLiteralArgs;
+            if (cached != null) return cached;
+
+            cached = ic.getTerminalLiteralSuperArgs(context);
+            cachedTerminalLiteralArgs = cached;
+            return cached;
+        }
+
+        /**
+         * Returns (and caches) the recursive plan reached when traversing into the next Ruby super source
+         * via {@code splitSuperInitialized}, stable per current plan and super base.
+         */
+        private SplitCtorPlan superPlan(RubyClass nextBase) {
+            SplitCtorPlan cached = cachedSuperPlan;
+            if (cached != null && cached.isValid(nextBase)) return cached;
+
+            cached = new SplitCtorPlan(nextBase, nextBase.searchWithCache(nextBase.getClassConfig().javaCtorMethodName));
+            cachedSuperPlan = cached;
+            return cached;
+        }
+
+        /**
+         * Returns (and caches) the plan reached when traversing into the prepended Java ctor wrapper's super source.
+         */
+        private SplitCtorPlan prependedSuperPlan(RubyClass nextBase) {
+            SplitCtorPlan cached = cachedPrependedSuperPlan;
+            if (cached != null && cached.isValid(nextBase)) return cached;
+
+            cached = new SplitCtorPlan(nextBase, nextBase.searchWithCache(nextBase.getClassConfig().javaCtorMethodName));
+            cachedPrependedSuperPlan = cached;
+            return cached;
         }
     }
 
@@ -431,77 +519,65 @@ public class ConcreteJavaProxy extends JavaProxy {
      * @return An object used by reified code and the finishInitialize method
      */
     public SplitCtorData splitInitialized(RubyClass base, IRubyObject[] args, Block block, JCtorCache jcc) {
-        return splitInitialized(base, args, block, jcc, false);
+        return splitInitialized(topLevelSplitCtorPlan(base, jcc), args, block, jcc, false);
     }
 
-    private SplitCtorData splitInitialized(RubyClass base, IRubyObject[] args, Block block, JCtorCache jcc, boolean fromRubySuper) {
+    private SplitCtorData splitInitialized(SplitCtorPlan plan, IRubyObject[] args, Block block, JCtorCache jcc, boolean fromRubySuper) {
         final Ruby runtime = getRuntime();
-        final SplitCtorPlan plan = splitCtorPlan(base, jcc, fromRubySuper);
+        final AbstractIRMethod air = plan.air;
+        final ExitableInterpreterContext eic = plan.eic;
         final String name = plan.name;
         final RubyClass sourceLocation = plan.sourceLocation;
         final RubyModule effectiveSource = plan.effectiveSource;
-        final boolean isLateral = plan.isLateral;
-        final DynamicMethod method = plan.method;
 
-        if (isPrependedJavaCtorWrapper(sourceLocation, base) && method instanceof AbstractIRMethod air) {
-            if (canSkipDirectSuper(air, args)) {
-                return splitInitialized(sourceLocation.getSuperClass(), args, block, jcc, true);
+        if (plan.prependedJavaCtorWrapper && air != null) {
+            if (plan.canSkipDirectSuper(args)) {
+                return splitInitialized(plan.prependedSuperPlan(sourceLocation.getSuperClass()), args, block, jcc, true);
             }
 
-            IRubyObject[] literalArgs = terminalLiteralSuperArgs(runtime.getCurrentContext(), air);
+            IRubyObject[] literalArgs = plan.terminalLiteralSuperArgs(runtime.getCurrentContext());
             if (literalArgs != null) {
-                return splitInitialized(sourceLocation.getSuperClass(), literalArgs, block, jcc, true);
+                return splitInitialized(plan.prependedSuperPlan(sourceLocation.getSuperClass()), literalArgs, block, jcc, true);
             }
 
-            SplitSuperState<?> state = air.startSplitSuperCall(runtime.getCurrentContext(), this, effectiveSource, name, args, block);
+            SplitSuperState<?> state = air.startSplitSuperCall(runtime.getCurrentContext(), this, effectiveSource, name, args, block, eic);
             IRubyObject[] forwardedArgs = state == null ? args : state.callArgs;
             Block forwardedBlock = state == null ? block : state.callBlockArgs;
-            SplitCtorData ctorData = splitInitialized(sourceLocation.getSuperClass(), forwardedArgs, forwardedBlock, jcc, true);
+            SplitCtorData ctorData = splitInitialized(plan.prependedSuperPlan(sourceLocation.getSuperClass()), forwardedArgs, forwardedBlock, jcc, true);
             return new SplitCtorData(ctorData, args, air, effectiveSource, name, state, block);
         }
 
         // jcreate is for nested ruby classes from a java class
-        if (shouldSplitJavaConstructorInitialize(isLateral, fromRubySuper, plan.methodSource) && method instanceof AbstractIRMethod) {
-
-            AbstractIRMethod air = (AbstractIRMethod) method; // TODO: getMetaClass() ? or base? (below v)
-
-            if (canSkipDirectSuper(air, args)) {
-                return splitSuperInitialized(effectiveSource, args, block, jcc);
+        if (shouldSplitJavaConstructorInitialize(plan.isLateral, fromRubySuper, plan.methodSource) && air != null) {
+            if (plan.canSkipDirectSuper(args)) {
+                return splitSuperInitialized(plan, args, block, jcc);
             }
 
-            IRubyObject[] literalArgs = terminalLiteralSuperArgs(runtime.getCurrentContext(), air);
+            IRubyObject[] literalArgs = plan.terminalLiteralSuperArgs(runtime.getCurrentContext());
             if (literalArgs != null) {
-                return splitSuperInitialized(effectiveSource, literalArgs, block, jcc);
+                SplitCtorData cachedTerminator = plan.cachedLiteralSuperTerminator;
+                if (cachedTerminator != null) return cachedTerminator;
+
+                SplitCtorData terminator = splitSuperInitialized(plan, literalArgs, block, jcc);
+                if (terminator.isLeafJavaTerminator()) plan.cachedLiteralSuperTerminator = terminator;
+                return terminator;
             }
 
-            SplitSuperState<?> state = air.startSplitSuperCall(runtime.getCurrentContext(), this, effectiveSource, name, args, block);
+            SplitSuperState<?> state = air.startSplitSuperCall(runtime.getCurrentContext(), this, effectiveSource, name, args, block, eic);
             if (state == null) { // no super in method
                 return new SplitCtorData(runtime, args, jcc, air, effectiveSource, name, block);
             }
 
             IRubyObject[] forwardedArgs = state.callArgs;
             Block forwardedBlock = state.callBlockArgs;
-            SplitCtorData ctorData = splitSuperInitialized(effectiveSource, forwardedArgs, forwardedBlock, jcc);
+            SplitCtorData ctorData = splitSuperInitialized(plan, forwardedArgs, forwardedBlock, jcc);
             return new SplitCtorData(ctorData, args, air, effectiveSource, name, state, block);
         }
         return new SplitCtorData(runtime, args, jcc);
     }
 
-    private static boolean canSkipDirectSuper(final AbstractIRMethod method, IRubyObject[] args) {
-        ExitableInterpreterContext ic = ((IRMethod) method.getIRScope()).builtInterpreterContextForJavaConstructor();
-
-        return ic != null && (ic.directSuperAllArgs() || args.length == 0 && ic.directSuperNoArgs() ||
-                ic.directSuperRequiredArgs() == args.length);
-    }
-
-    private static IRubyObject[] terminalLiteralSuperArgs(final ThreadContext context, final AbstractIRMethod method) {
-        ExitableInterpreterContext ic = ((IRMethod) method.getIRScope()).builtInterpreterContextForJavaConstructor();
-
-        return ic != null && ic.terminalLiteralSuper() ? ic.getTerminalLiteralSuperArgs(context) : null;
-    }
-
-    private static SplitCtorPlan splitCtorPlan(final RubyClass base, final JCtorCache jcc, final boolean fromRubySuper) {
-        if (jcc != null && !fromRubySuper) {
+    private static SplitCtorPlan topLevelSplitCtorPlan(final RubyClass base, final JCtorCache jcc) {
+        if (jcc != null) {
             SplitCtorPlan plan = jcc.getSplitCtorPlan();
             if (plan != null && plan.isValid(base)) return plan;
 
@@ -514,11 +590,12 @@ public class ConcreteJavaProxy extends JavaProxy {
         return new SplitCtorPlan(base, base.searchWithCache(base.getClassConfig().javaCtorMethodName));
     }
 
-    private SplitCtorData splitSuperInitialized(final RubyModule methodSource, final IRubyObject[] args,
+    private SplitCtorData splitSuperInitialized(final SplitCtorPlan plan, final IRubyObject[] args,
                                                final Block block, final JCtorCache jcc) {
-        RubyClass next = nextRubyConstructorSource(methodSource, jcc);
+        RubyClass next = nextRubyConstructorSource(plan.effectiveSource, jcc);
 
-        return next != null ? splitInitialized(next, args, block, jcc, true) : new SplitCtorData(getRuntime(), args, jcc);
+        return next != null ? splitInitialized(plan.superPlan(next), args, block, jcc, true)
+                : new SplitCtorData(getRuntime(), args, jcc);
     }
 
     private static RubyClass nextRubyConstructorSource(final RubyModule methodSource, final JCtorCache jcc) {

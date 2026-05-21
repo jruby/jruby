@@ -229,12 +229,14 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
     }
 
     /*
-     * Calls a split method (java constructor-invoked initialize) and returns the paused state. If
-     * this method doesn't have a super call, returns null without execution.
+     * Calls a split method (java constructor-invoked initialize) and returns the paused state. If the supplied
+     * {@code ic} is {@code null} (no Java-callable super), returns {@code null} without execution.
+     *
+     * Callers (typically {@code ConcreteJavaProxy.SplitCtorPlan}) cache the {@link ExitableInterpreterContext}
+     * so we avoid redundant volatile lookups on the hot construction path.
      */
     public SplitSuperState<?> startSplitSuperCall(ThreadContext context, IRubyObject self, RubyModule klazz,
-            String name, IRubyObject[] args, Block block) {
-        ExitableInterpreterContext ic = ((IRMethod) getIRScope()).builtInterpreterContextForJavaConstructor();
+            String name, IRubyObject[] args, Block block, ExitableInterpreterContext ic) {
         if (ic == null) return null;
 
         SplitSuperState<MethodSplitState> directState = MethodSplitState.directSuperState(context, ic, args, block);
@@ -244,6 +246,11 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
         ExitableReturn result = interpretSplit(state, args, block);
 
         return new SplitSuperState<>(result, state);
+    }
+
+    public ExitableInterpreterContext getJavaConstructorContext() {
+        IRScope scope = getIRScope();
+        return scope instanceof IRMethod ? ((IRMethod) scope).builtInterpreterContextForJavaConstructor() : null;
     }
 
     public void finishSplitCall(SplitSuperState state) {
