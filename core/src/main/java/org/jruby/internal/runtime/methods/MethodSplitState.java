@@ -45,7 +45,7 @@ public class MethodSplitState implements InternalSplitState {
     public final IRubyObject self;
     public final String name;
 
-    private MethodSplitState(ExitableInterpreterContext ic) {
+    public MethodSplitState(ExitableInterpreterContext ic) {
         assert ic != null;
         this.interpreterContext = ic;
         this.interpreterEngineState = null;
@@ -87,7 +87,7 @@ public class MethodSplitState implements InternalSplitState {
             return new SplitSuperState<>(new ExitableReturn(args, block), new MethodSplitState(ic));
         }
 
-        if (ic.isTerminalLiteralSuper()) {
+        if (ic.terminalLiteralSuper()) {
             return new SplitSuperState<>(
                 new ExitableReturn(ic.getTerminalLiteralSuperArgs(context), block),
                 new MethodSplitState(ic)
