@@ -448,6 +448,11 @@ public class ConcreteJavaProxy extends JavaProxy {
                 return splitInitialized(sourceLocation.getSuperClass(), args, block, jcc, true);
             }
 
+            IRubyObject[] literalArgs = terminalLiteralSuperArgs(runtime.getCurrentContext(), air);
+            if (literalArgs != null) {
+                return splitInitialized(sourceLocation.getSuperClass(), literalArgs, block, jcc, true);
+            }
+
             SplitSuperState<?> state = air.startSplitSuperCall(runtime.getCurrentContext(), this, effectiveSource, name, args, block);
             IRubyObject[] forwardedArgs = state == null ? args : state.callArgs;
             Block forwardedBlock = state == null ? block : state.callBlockArgs;
@@ -462,6 +467,11 @@ public class ConcreteJavaProxy extends JavaProxy {
 
             if (canSkipDirectSuper(air, args)) {
                 return splitSuperInitialized(effectiveSource, args, block, jcc);
+            }
+
+            IRubyObject[] literalArgs = terminalLiteralSuperArgs(runtime.getCurrentContext(), air);
+            if (literalArgs != null) {
+                return splitSuperInitialized(effectiveSource, literalArgs, block, jcc);
             }
 
             SplitSuperState<?> state = air.startSplitSuperCall(runtime.getCurrentContext(), this, effectiveSource, name, args, block);
@@ -482,6 +492,12 @@ public class ConcreteJavaProxy extends JavaProxy {
 
         return ic != null && (ic.directSuperAllArgs() || args.length == 0 && ic.directSuperNoArgs() ||
                 ic.directSuperRequiredArgs() == args.length);
+    }
+
+    private static IRubyObject[] terminalLiteralSuperArgs(final ThreadContext context, final AbstractIRMethod method) {
+        ExitableInterpreterContext ic = ((IRMethod) method.getIRScope()).builtInterpreterContextForJavaConstructor();
+
+        return ic != null && ic.terminalLiteralSuper() ? ic.getTerminalLiteralSuperArgs(context) : null;
     }
 
     private static SplitCtorPlan splitCtorPlan(final RubyClass base, final JCtorCache jcc, final boolean fromRubySuper) {

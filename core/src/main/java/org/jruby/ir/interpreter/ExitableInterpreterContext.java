@@ -42,8 +42,10 @@ import org.jruby.ir.instructions.ReceiveRestArgInstr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ReturnInstr;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.ImmutableLiteral;
 import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -64,6 +66,7 @@ public class ExitableInterpreterContext extends InterpreterContext {
     private final boolean directSuperNoArgs;
     private final boolean directSuperAllArgs;
     private final int directSuperRequiredArgs;
+    private final Operand[] terminalLiteralSuperArgs;
 
     public ExitableInterpreterContext(InterpreterContext originalIC, CallBase superCall, int exitIPC) {
         this(originalIC.getScope(), Arrays.asList(originalIC.getInstructions()), originalIC.getTemporaryVariableCount(), originalIC.getFlags(), superCall, exitIPC);
@@ -79,6 +82,7 @@ public class ExitableInterpreterContext extends InterpreterContext {
         this.directSuperAllArgs = (directSuperAllArgs(instructions, superCall, exitIPC) && isRestOnlySignature()) ||
                 directSuperAllZSuperArgs(instructions, superCall, exitIPC);
         this.directSuperRequiredArgs = directSuperRequiredArgs(instructions, superCall, exitIPC);
+        this.terminalLiteralSuperArgs = terminalLiteralSuperArgs(instructions, superCall, exitIPC);
     }
 
     public ExitableInterpreterEngineState getEngineState() {
@@ -109,6 +113,21 @@ public class ExitableInterpreterContext extends InterpreterContext {
 
     public int directSuperRequiredArgs() {
         return directSuperRequiredArgs;
+    }
+
+    public boolean terminalLiteralSuper() {
+        return terminalLiteralSuperArgs != null;
+    }
+
+    public IRubyObject[] getTerminalLiteralSuperArgs(ThreadContext context) {
+        Operand[] operands = terminalLiteralSuperArgs;
+        IRubyObject[] args = new IRubyObject[operands.length];
+
+        for (int i = 0; i < operands.length; i++) {
+            args[i] = (IRubyObject) ((ImmutableLiteral<?>) operands[i]).cachedObject(context);
+        }
+
+        return args;
     }
     
     @Override
@@ -235,6 +254,35 @@ public class ExitableInterpreterContext extends InterpreterContext {
         }
 
         return superArgs[required] instanceof Splat splat && splat.getArray().equals(restArg);
+    }
+
+    private static Operand[] terminalLiteralSuperArgs(List<Instr> instructions, CallBase superCall, int exitIPC) {
+        if (instructions == null || !exitsAtReturn(instructions, superCall, exitIPC) || superCall.getFlags() != 0 ||
+                superCall.getClosureArg() instanceof WrappedIRClosure) return null;
+
+        for (int i = 0; i < exitIPC; i++) {
+            Operation operation = instructions.get(i).getOperation();
+
+            switch (operation) {
+                case CHECK_ARITY:
+                case COPY:
+                case LINE_NUM:
+                case LOAD_IMPLICIT_CLOSURE:
+                case LOAD_FRAME_CLOSURE:
+                case RECV_KW:
+                case RECV_SELF:
+                    break;
+                default:
+                    return null;
+            }
+        }
+
+        Operand[] args = superCall.getCallArgs();
+        for (Operand arg : args) {
+            if (!(arg instanceof ImmutableLiteral<?>)) return null;
+        }
+
+        return args;
     }
 
     private int directSuperRequiredArgs(List<Instr> instructions, CallBase superCall, int exitIPC) {
