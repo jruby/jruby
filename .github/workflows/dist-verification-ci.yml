@@ -1,6 +1,13 @@
 name: Dist Verification CI
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_call:
+    secrets:
+      INSTALL4J_LICENSE:
+        required: true
+
 
 env:
   JAVA_OPTS: '-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xms60M -Xmx1G -XX:InitialCodeCacheSize=40M -XX:ReservedCodeCacheSize=120M'
@@ -29,12 +36,26 @@ jobs:
           distribution: 'zulu'
           java-version: 21
           cache: 'maven'
-      - name: build dist archive
+      - name: set up install4j
+        uses: luangong/setup-install4j@v1
+        with:
+          version: 9.0.7
+          license: ${{ secrets.INSTALL4J_LICENSE }}
+      - name: build release artifacts
         run: |
           ./mvnw -ntp clean package -Pall
+      - uses: cedx/SetupAnt@v6
+      - name: install dependencies
+        run: bin/jruby -S bundle install
+      - name: build installer
+        run: bin/jruby -S rake installer INSTALL4J_EXECUTABLE=/opt/install4j/bin/install4jc
+      - name: cache release artifacts
+        run: |
           mv maven/jruby-dist/target/jruby-dist*-bin.tar.gz jruby-dist-bin.tar.gz
           mv maven/jruby-dist/target/jruby-dist*-src.tar.gz jruby-dist-src.tar.gz
           mv maven/jruby-complete/target/jruby-complete*.jar jruby-complete.jar
+          mv release/jruby_windows-x32*.exe jruby_windows-x32.exe
+          mv release/jruby_windows_x64*.exe jruby_windows-x64.exe
       - name: cache dist bin
         uses: actions/upload-artifact@v7
         with:
@@ -51,6 +72,18 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           path: jruby-complete.jar
+          retention-days: 1
+          archive: false
+      - name: cache x32 installer
+        uses: actions/upload-artifact@v7
+        with:
+          path: jruby_windows-x32.exe
+          retention-days: 1
+          archive: false
+      - name: cache x64 installer
+        uses: actions/upload-artifact@v7
+        with:
+          path: jruby_windows-x64.exe
           retention-days: 1
           archive: false
 
@@ -187,3 +220,32 @@ jobs:
       - name: syslog verification (Unix)
         if: matrix.runs-on != 'windows-latest'
         run: jruby -rsyslog -e 1
+
+
+
+  jruby-complete-verification:
+
+    needs: build-dist
+
+    strategy:
+      matrix:
+        java-version: ['21', '25']
+        runs-on: [windows-latest, macos-latest, ubuntu-latest]
+      fail-fast: false
+
+    runs-on: ${{ matrix.runs-on }}
+
+    name: jruby-complete verification on ${{ matrix.runs-on }} (Java ${{ matrix.java-version }})
+
+    steps:
+      - name: set up java ${{ matrix.java-version }}
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'zulu'
+          java-version: ${{ matrix.java-version }}
+      - name: download cached jruby-complete
+        uses: actions/download-artifact@v8
+        with:
+          name: jruby-complete.jar
+      - name: confirm rubygems works with jruby-complete
+        run: java -jar jruby-complete.jar -S gem list
