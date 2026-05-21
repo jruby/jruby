@@ -617,8 +617,9 @@ public class Java implements Library {
                 return context.nil;
             }
         });
-        ///TODO: investigate this, should jcreate! still exist?
 
+        // __jcreate! is the fallback constructor dispatch used by NewMethodReified when no reified Java ctor
+        // is available (e.g. interface-only subclasses); also retained for backwards compatibility.
         subclass.addMethod(context, "__jcreate!", new JCreateMethod(subclassSingleton));
     }
 

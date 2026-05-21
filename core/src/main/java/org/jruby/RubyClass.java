@@ -2466,7 +2466,7 @@ public class RubyClass extends RubyModule {
                 final int mod = constructor.getModifiers();
                 if (!Modifier.isPublic(mod) && !Modifier.isProtected(mod)) continue;
                 candidates.add(constructor);
-                if (constructor.getParameterCount() == 0) zeroArg = Optional.of(constructor); // TODO: varargs?
+                if (constructor.getParameterCount() == 0) zeroArg = Optional.of(constructor);
             }
             boolean isNestedRuby = ReifiedJavaProxy.class.isAssignableFrom(reifiedParent);
 
@@ -2474,20 +2474,17 @@ public class RubyClass extends RubyModule {
             DynamicMethod methodEntry = searchMethod(jcc.javaCtorMethodName);
             PositionAware position = getPositionOrDefault(methodEntry);
             cw.visitSource(position.getFile(), null);
-            int superpos = ConcreteJavaProxy.findSuperLine(runtime, methodEntry, position.getLine());
             Set<String> generatedCtors = new HashSet<>();
 
-            if (candidates.size() > 0) { // TODO: doc: implies javaConstructable?
-                List<JavaConstructor> savedCtorsList = new ArrayList<>(candidates.size());
-                for (Constructor<?> constructor : candidates) {
-                    savedCtorsList.add(JavaConstructor.wrap(constructor));
-                }
-                savedSuperCtors = savedCtorsList.toArray(new JavaConstructor[savedCtorsList.size()]);
-            } else {
-                // TODO: copy validateArgs
-                // TODO: no ctors = error?
+            if (candidates.isEmpty()) {
                 throw typeError(context, "class " + reifiedParent.getName() + " doesn't have a public or protected constructor");
             }
+
+            List<JavaConstructor> savedCtorsList = new ArrayList<>(candidates.size());
+            for (Constructor<?> constructor : candidates) {
+                savedCtorsList.add(JavaConstructor.wrap(constructor));
+            }
+            savedSuperCtors = savedCtorsList.toArray(new JavaConstructor[savedCtorsList.size()]);
 
             if (zeroArg.isPresent()) {
                 // standard constructor that accepts Ruby, RubyClass. For use by JRuby (internally)
@@ -2539,8 +2536,7 @@ public class RubyClass extends RubyModule {
             }
             
             // generate the real (IRubyObject) ctor. All other ctor generated proxy to this one
-            RealClassGenerator.makeConcreteConstructorSwitch(cw, position, superpos, isNestedRuby, this,
-                    savedSuperCtors);
+            RealClassGenerator.makeConcreteConstructorSwitch(cw, position, isNestedRuby, this, savedSuperCtors);
         }
 
         /**

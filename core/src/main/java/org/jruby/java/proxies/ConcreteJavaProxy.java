@@ -127,14 +127,13 @@ public class ConcreteJavaProxy extends JavaProxy {
     }
 
     private static final class NewMethod extends org.jruby.internal.runtime.methods.JavaMethod {
-    	final DynamicMethod newMethod;
+        final DynamicMethod newMethod;
 
         NewMethod(final RubyClass clazz) {
             super(clazz, Visibility.PUBLIC, "new");
             newMethod = clazz.searchMethod("new");
         }
 
-        // TODO: reload this on method changes?
         private DynamicMethod reifyAndNewMethod(ThreadContext context, IRubyObject clazz) {
             RubyClass parent = ((RubyClass) clazz);
             if (parent.getJavaProxy()) return newMethod;
@@ -157,47 +156,47 @@ public class ConcreteJavaProxy extends JavaProxy {
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-        	return reifyAndNewMethod(context, self).call(context, self, clazz, "new",block);
+            return reifyAndNewMethod(context, self).call(context, self, clazz, "new", block);
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
-        	return reifyAndNewMethod(context, self).call(context, self, clazz, "new",arg0, block);
+            return reifyAndNewMethod(context, self).call(context, self, clazz, "new", arg0, block);
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
-        	return reifyAndNewMethod(context, self).call(context, self, clazz, "new",arg0, arg1, block);
+            return reifyAndNewMethod(context, self).call(context, self, clazz, "new", arg0, arg1, block);
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        	return reifyAndNewMethod(context, self).call(context, self, clazz, "new",arg0, arg1, arg2, block);
+            return reifyAndNewMethod(context, self).call(context, self, clazz, "new", arg0, arg1, arg2, block);
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-        	return reifyAndNewMethod(context, self).call(context, self, clazz, "new",args);
+            return reifyAndNewMethod(context, self).call(context, self, clazz, "new", args);
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-        	return reifyAndNewMethod(context, self).call(context, self, clazz,"new_proxy");
+            return reifyAndNewMethod(context, self).call(context, self, clazz, "new_proxy");
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
-        	return reifyAndNewMethod(context, self).call(context, self, clazz, "new_proxy",arg0);
+            return reifyAndNewMethod(context, self).call(context, self, clazz, "new_proxy", arg0);
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
-        	return reifyAndNewMethod(context, self).call(context, self, clazz,"new", arg0, arg1);
+            return reifyAndNewMethod(context, self).call(context, self, clazz, "new", arg0, arg1);
         }
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        	return reifyAndNewMethod(context, self).call(context, self, clazz,"new", arg0, arg1, arg2);
+            return reifyAndNewMethod(context, self).call(context, self, clazz, "new", arg0, arg1, arg2);
         }
 
     }
@@ -213,7 +212,8 @@ public class ConcreteJavaProxy extends JavaProxy {
         StaticJCreateMethod(RubyModule implClass, Constructor<? extends ReifiedJavaProxy> javaProxyConstructor, DynamicMethod oldinit) {
             super(implClass, PUBLIC, "__jcreate_static!");
             this.withBlock = javaProxyConstructor;
-            this.oldInit = oldinit == null ? oldinit : oldinit.getRealMethod(); // ensure we don't use a wrapper (jruby/jruby#8148)
+            // ensure we don't use a wrapper (jruby/jruby#8148)
+            this.oldInit = oldinit == null ? null : oldinit.getRealMethod();
         }
 
         @Override
@@ -221,11 +221,11 @@ public class ConcreteJavaProxy extends JavaProxy {
                 IRubyObject[] args, Block block) {
             try {
                 ConcreteJavaProxy cjp = (ConcreteJavaProxy) self;
-                // TODO: Instead of selectively overwriting, silently fail? or only use the other method/this method?
                 if (cjp.getObject() == null) {
+                    // first-time init: invoke the generated reified constructor (which sets cjp.object internally)
                     withBlock.newInstance(cjp, args, block, context.runtime, clazz);
-                    // note: the generated ctor sets self.object = our discarded return of the new object
                 } else if (oldInit != null) {
+                    // re-entry into initialize on an already-constructed proxy - delegate to the prior initialize
                     return oldInit.call(context, self, clazz, name, args, block);
                 }
             } catch (InstantiationException | InvocationTargetException e) {
@@ -236,21 +236,17 @@ public class ConcreteJavaProxy extends JavaProxy {
             return self;
         }
 
-        public static void tryInstall(Ruby runtime, RubyClass clazz, JavaProxyClass proxyClass,
+        public static void tryInstall(ThreadContext context, RubyClass clazz,
                 Class<? extends ReifiedJavaProxy> reified, boolean overwriteInitialize) {
             try {
                 Constructor<? extends ReifiedJavaProxy> withBlock = reified.getConstructor(new Class[] {
                         ConcreteJavaProxy.class, IRubyObject[].class, Block.class, Ruby.class, RubyClass.class });
-                // TODO: move initialize to real_initialize
-                // TODO: don't lock in this initialize method
-                var context = runtime.getCurrentContext();
-                if (overwriteInitialize) clazz.addMethod(context,"initialize",
+                if (overwriteInitialize) clazz.addMethod(context, "initialize",
                     new StaticJCreateMethod(clazz, withBlock, clazz.getMethodLocation().searchMethod("initialize")));
                 clazz.addMethod(context, "__jallocate!", new StaticJCreateMethod(clazz, withBlock, null));
             } catch (SecurityException | NoSuchMethodException e) {
-                // TODO log?
-                // e.printStackTrace();
-                // ignore, don't install
+                // class lacks the expected (ConcreteJavaProxy, IRubyObject[], Block, Ruby, RubyClass) ctor -
+                // ignore and leave the existing initialize/__jallocate! in place
             }
         }
     }
@@ -284,35 +280,30 @@ public class ConcreteJavaProxy extends JavaProxy {
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name,
                 IRubyObject[] args, Block blk) {
-            // TODO: is there a better way to shake off old reified NewMethodReified methods on extension?
-            if (self != implementationClass) { // someone extended the base, we are no longer them, re-reify
+            // a subclass extended the base after we were installed; rebuild and dispatch via a fresh NewMethod
+            if (self != implementationClass) {
                 return new NewMethod((RubyClass)self).call(context, self, clazz, name, args, blk);
             }
 
             if (ctor == null) {
                 ReifiedJavaProxy proxy = JavaUtil.unwrapJava(context, initialize.call(context, self, clazz, "new", args));
                 return proxy.___jruby$rubyObject();
-            } else {
+            }
 
-                // assume no easy conversions, use ruby fallback.
-                ConcreteJavaProxy object = new ConcreteJavaProxy(context.runtime, (RubyClass) self);
-                try {
-                    ctor.newInstance(object, args, blk, context.runtime, self);// TODO: clazz?
-                    // note: the generated ctor sets self.object = our discarded return of the new object
-                    return object;
-                } catch (InstantiationException | InvocationTargetException e) {
-                    throw JavaProxyConstructor.throwInstantiationExceptionCause(context.runtime, e);
-                } catch (IllegalAccessException | IllegalArgumentException e) {
-                    throw JavaProxyConstructor.mapInstantiationException(context.runtime, e);
-                }
+            // assume no easy conversions, use ruby fallback.
+            ConcreteJavaProxy object = new ConcreteJavaProxy(context.runtime, (RubyClass) self);
+            try {
+                // the generated ctor uses `self` as its ruby class; note: it sets self.object = the discarded
+                // return of the new java object internally
+                ctor.newInstance(object, args, blk, context.runtime, self);
+                return object;
+            } catch (InstantiationException | InvocationTargetException e) {
+                throw JavaProxyConstructor.throwInstantiationExceptionCause(context.runtime, e);
+            } catch (IllegalAccessException | IllegalArgumentException e) {
+                throw JavaProxyConstructor.mapInstantiationException(context.runtime, e);
             }
         }
 
-    }
-
-    public static int findSuperLine(Ruby runtime, DynamicMethod dm, int start) {
-        // TODO: ???
-        return start;
     }
 
     /**
@@ -468,7 +459,6 @@ public class ConcreteJavaProxy extends JavaProxy {
                         returned.name, returned.rbarguments, returned.block);
             }
         }
-        // Ignore other cases
     }
 
     @Deprecated(since = "10.0.0.0")
