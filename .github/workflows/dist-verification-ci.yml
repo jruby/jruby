@@ -221,21 +221,18 @@ jobs:
         if: matrix.runs-on != 'windows-latest'
         run: jruby -rsyslog -e 1
 
-
-
-  jruby-complete-verification:
+  installer-verification:
 
     needs: build-dist
 
     strategy:
       matrix:
         java-version: ['21', '25']
-        runs-on: [windows-latest, macos-latest, ubuntu-latest]
       fail-fast: false
 
-    runs-on: ${{ matrix.runs-on }}
+    runs-on: windows-latest
 
-    name: jruby-complete verification on ${{ matrix.runs-on }} (Java ${{ matrix.java-version }})
+    name: installer verification on Windows (Java ${{ matrix.java-version }})
 
     steps:
       - name: set up java ${{ matrix.java-version }}
@@ -243,9 +240,18 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
-      - name: download cached jruby-complete
+      - name: download cached installer
         uses: actions/download-artifact@v8
         with:
-          name: jruby-complete.jar
-      - name: confirm rubygems works with jruby-complete
-        run: java -jar jruby-complete.jar -S gem list
+          name: jruby_windows-x32.exe
+      - name: download cached installer
+        uses: actions/download-artifact@v8
+        with:
+          name: jruby_windows-x64.exe
+      - name: run installer
+        run: ./jruby_windows-x64.exe -q
+      - name: run installed JRuby
+        run: |
+          dir C:\jruby-10.1.1.0-SNAPSHOT
+          dir C:\jruby-10.1.1.0-SNAPSHOT\bin
+          C:\jruby-10.1.1.0-SNAPSHOT\bin\jruby -v

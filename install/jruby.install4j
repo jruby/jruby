@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<install4j version="9.0.4" transformSequenceNumber="9">
+<install4j version="9.0.7" transformSequenceNumber="9">
   <directoryPresets config="." />
   <application name="JRuby" applicationId="4535-5096-5383-5182" mediaDir="." compression="9" shortName="jruby" publisher="JRuby Dev Team" publisherWeb="http://www.jruby.org/" version="${compiler:jruby.version}" allPathsRelative="true" macVolumeId="720835987edcfb24" javaMinVersion="17" javaMaxVersion="200" jdkMode="runtimeJre">
     <variables>
@@ -7,9 +7,10 @@
       <variable name="ruby.version" value="error" />
       <variable name="ruby.patchlevel" value="error" />
       <variable name="ruby.buildplatform" value="error" />
+      <variable name="jruby.location" value="/Users/headius/work/jruby" />
     </variables>
   </application>
-  <files preserveSymlinks="false" globalExcludeSuffixes="jsa">
+  <files globalExcludeSuffixes="jsa" preserveSymlinks="false">
     <filesets>
       <fileset name="non-arch ruby lib" id="97" />
       <fileset name="windows arch-specific" id="99" />
