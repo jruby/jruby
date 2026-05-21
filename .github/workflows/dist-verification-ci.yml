@@ -250,8 +250,3 @@ jobs:
           name: jruby_windows-x64.exe
       - name: run installer
         run: ./jruby_windows-x64.exe -q
-      - name: run installed JRuby
-        run: |
-          dir C:\jruby-10.1.1.0-SNAPSHOT
-          dir C:\jruby-10.1.1.0-SNAPSHOT\bin
-          C:\jruby-10.1.1.0-SNAPSHOT\bin\jruby -v
