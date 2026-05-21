@@ -30,8 +30,8 @@ import java.lang.invoke.MethodHandle;
 
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.AbstractIRMethod;
+import org.jruby.internal.runtime.SplitSuperCall;
 import org.jruby.internal.runtime.SplitSuperState;
-import org.jruby.ir.IRMethod;
 import org.jruby.ir.interpreter.ExitableInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.parser.StaticScope;
@@ -116,6 +116,21 @@ public class CompiledIRNoProtocolMethod extends AbstractIRMethod {
     }
 
     @Override
+    protected SplitSuperState<MethodSplitState> tryCompiledTerminalSplit(ThreadContext context, IRubyObject self,
+            RubyModule clazz, String name, IRubyObject[] args, Block block, ExitableInterpreterContext ic) {
+        Object previous = context.beginSplitSuperCapture(self, name);
+        try {
+            call(context, self, clazz, name, block);
+        } catch (SplitSuperCall split) {
+            return new SplitSuperState<>(split.getResult(), new MethodSplitState(ic));
+        } finally {
+            context.endSplitSuperCapture(previous);
+        }
+
+        throw new RuntimeException("BUG: compiled split constructor completed without captured super");
+    }
+
+    @Override
     public InterpreterContext ensureInstrsReady() {
         // AbstractIRMethod.getMethodData() calls this; we want the IC because no get/put fields were eliminated.
         return getIRScope().getInterpreterContext();
@@ -124,71 +139,5 @@ public class CompiledIRNoProtocolMethod extends AbstractIRMethod {
     @Override
     protected void printMethodIR() {
         // no-op
-    }
-    // TODO: compile:
-
-    @Override
-    public SplitSuperState<MethodSplitState> startSplitSuperCall(ThreadContext context, IRubyObject self,
-            RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        // TODO: check if IR method, or is it guaranteed?
-        ExitableInterpreterContext ic = ((IRMethod) getIRScope()).builtInterpreterContextForJavaConstructor();
-        if (ic == null) return null; // no super call/can't split this
-
-        SplitSuperState<MethodSplitState> directState = MethodSplitState.directSuperState(ic, args, block);
-        if (directState != null) return directState;
-
-        MethodSplitState state = new MethodSplitState(context, ic, clazz, self, name);
-
-        // TODO: JIT?
-
-        ExitableReturn result = INTERPRET_METHOD(state, args, block);
-
-        return new SplitSuperState<>(result, state);
-    }
-
-    private ExitableReturn INTERPRET_METHOD(MethodSplitState state, IRubyObject[] args, Block block) {
-        try {
-            ThreadContext.pushBacktrace(state.context, state.name, state.eic.getFileName(), state.eic.getLine());
-
-            // TODO: explicit call protocol?
-            try {
-                this.preSplit(state.eic, state.context, state.self, state.name, block, state.implClass, state.scope);
-                return state.eic.getEngine().interpret(state.context, null, state.self, state.eic, state.state,
-                        state.implClass, state.name, args, block);
-            } finally {
-                this.post(state.eic, state.context);
-            }
-        } finally {
-            ThreadContext.popBacktrace(state.context);
-        }
-    }
-
-    @Override
-    public void finishSplitCall(SplitSuperState state) {
-
-        // TODO: JIT?
-
-        MethodSplitState methodState = (MethodSplitState) state.state;
-        if (methodState.exitsAtReturn()) return;
-
-        INTERPRET_METHOD(methodState, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
-    }
-
-    protected void post(InterpreterContext ic, ThreadContext context) {
-        // update call stacks (pop: ..)
-        context.popFrame();
-        if (ic.popDynScope()) {
-            context.popScope();
-        }
-    }
-
-    // TODO: new method or make this pre?
-    protected void preSplit(InterpreterContext ic, ThreadContext context, IRubyObject self, String name, Block block,
-            RubyModule implClass, DynamicScope scope) {
-        // update call stacks (push: frame, class, scope, etc.)
-        context.preMethodFrameOnly(implClass, name, self, block);
-        if (ic.pushNewDynScope()) {
-            context.pushScope(scope);
-        }
     }
 }

@@ -32,17 +32,21 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.ExitableReturn;
 import org.jruby.internal.runtime.methods.IRMethodArgs;
+import org.jruby.internal.runtime.methods.MethodSplitState;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.interpreter.ExitableInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
@@ -228,8 +232,61 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
      * Calls a split method (java constructor-invoked initialize) and returns the paused state. If
      * this method doesn't have a super call, returns null without execution.
      */
-    public abstract SplitSuperState startSplitSuperCall(ThreadContext context, IRubyObject self, RubyModule klazz,
-            String name, IRubyObject[] args, Block block);
-    
-    public abstract void finishSplitCall(SplitSuperState state);
+    public SplitSuperState<?> startSplitSuperCall(ThreadContext context, IRubyObject self, RubyModule klazz,
+            String name, IRubyObject[] args, Block block) {
+        ExitableInterpreterContext ic = ((IRMethod) getIRScope()).builtInterpreterContextForJavaConstructor();
+        if (ic == null) return null;
+
+        SplitSuperState<MethodSplitState> directState = MethodSplitState.directSuperState(ic, args, block);
+        if (directState != null) return directState;
+
+        if (ic.canEscapeAtSuper()) {
+            SplitSuperState<MethodSplitState> compiledState = tryCompiledTerminalSplit(context, self, klazz, name, args, block, ic);
+            if (compiledState != null) return compiledState;
+        }
+
+        MethodSplitState state = new MethodSplitState(context, ic, klazz, self, name);
+        ExitableReturn result = interpretSplit(state, args, block);
+
+        return new SplitSuperState<>(result, state);
+    }
+
+    public void finishSplitCall(SplitSuperState state) {
+        MethodSplitState methodState = (MethodSplitState) state.state;
+        if (methodState.exitsAtReturn()) return;
+
+        interpretSplit(methodState, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+    }
+
+    protected ExitableReturn interpretSplit(MethodSplitState state, IRubyObject[] args, Block block) {
+        try {
+            ThreadContext.pushBacktrace(state.context, state.name, state.eic.getFileName(), state.eic.getLine());
+
+            try {
+                preSplit(state.eic, state.context, state.self, state.name, block, state.implClass, state.scope);
+                return state.eic.getEngine().interpret(state.context, null, state.self, state.eic, state.state,
+                        state.implClass, state.name, args, block);
+            } finally {
+                postSplit(state.eic, state.context);
+            }
+        } finally {
+            ThreadContext.popBacktrace(state.context);
+        }
+    }
+
+    protected void preSplit(InterpreterContext ic, ThreadContext context, IRubyObject self, String name, Block block,
+            RubyModule implClass, DynamicScope scope) {
+        context.preMethodFrameOnly(implClass, name, self, block);
+        if (ic.pushNewDynScope()) context.pushScope(scope);
+    }
+
+    protected void postSplit(InterpreterContext ic, ThreadContext context) {
+        context.popFrame();
+        if (ic.popDynScope()) context.popScope();
+    }
+
+    protected SplitSuperState<MethodSplitState> tryCompiledTerminalSplit(ThreadContext context, IRubyObject self,
+            RubyModule klazz, String name, IRubyObject[] args, Block block, ExitableInterpreterContext ic) {
+        return null;
+    }
 }
