@@ -33,6 +33,7 @@ import org.jruby.compiler.Compilable;
 import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.internal.runtime.SplitSuperState;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.interpreter.ExitableInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.persistence.IRDumper;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -278,15 +279,15 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
 
     @Override
     public SplitSuperState<?> startSplitSuperCall(ThreadContext context, IRubyObject self,
-            RubyModule clazz, String name, IRubyObject[] args, Block block) {
+            RubyModule clazz, String name, IRubyObject[] args, Block block,
+            ExitableInterpreterContext ic) {
         if (callCount >= 0) tryJit(context, this, false);
 
-        DynamicMethod jittedMethod = actualMethod;
-        if (jittedMethod instanceof AbstractIRMethod irMethod) {
-            return irMethod.startSplitSuperCall(context, self, clazz, name, args, block);
+        if (actualMethod instanceof AbstractIRMethod irMethod) {
+            return irMethod.startSplitSuperCall(context, self, clazz, name, args, block, ic);
         }
 
-        return super.startSplitSuperCall(context, self, clazz, name, args, block);
+        return super.startSplitSuperCall(context, self, clazz, name, args, block, ic);
     }
 
     private void doDebug() {

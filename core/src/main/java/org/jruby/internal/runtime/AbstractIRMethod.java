@@ -228,13 +228,16 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
         return ruby2Keywords;
     }
 
-    /*
-     * Calls a split method (java constructor-invoked initialize) and returns the paused state. If
-     * this method doesn't have a super call, returns null without execution.
+    /**
+     * Calls a split method (java constructor-invoked initialize) and returns the paused state.
+     * If the supplied {@code ic} is {@code null} (no Java-callable super), returns {@code null} without execution.
+     *
+     * Callers (typically {@link org.jruby.java.proxies.ConcreteJavaProxy.SplitCtorPlan}) cache the
+     * {@link ExitableInterpreterContext} so we avoid redundant volatile lookups on the hot construction path.
      */
-    public SplitSuperState<?> startSplitSuperCall(ThreadContext context, IRubyObject self, RubyModule klazz,
-            String name, IRubyObject[] args, Block block) {
-        ExitableInterpreterContext ic = ((IRMethod) getIRScope()).builtInterpreterContextForJavaConstructor();
+    public SplitSuperState<?> startSplitSuperCall(ThreadContext context, IRubyObject self,
+                                                  RubyModule klazz, String name, IRubyObject[] args, Block block,
+                                                  ExitableInterpreterContext ic) {
         if (ic == null) return null;
 
         SplitSuperState<MethodSplitState> directState = MethodSplitState.directSuperState(context, ic, args, block);
@@ -245,42 +248,40 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
             if (compiledState != null) return compiledState;
         }
 
-        MethodSplitState state = new MethodSplitState(context, ic, klazz, self, name);
-        ExitableReturn result = interpretSplit(state, args, block);
-
-        return new SplitSuperState<>(result, state);
+        MethodSplitState state = new MethodSplitState(ic, klazz, self, name);
+        return new SplitSuperState<>(interpretSplit(context, state, args, block), state);
     }
 
-    public void finishSplitCall(SplitSuperState state) {
-        MethodSplitState methodState = (MethodSplitState) state.state;
-        if (methodState.exitsAtReturn()) return;
-
-        interpretSplit(methodState, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+    public ExitableInterpreterContext getJavaConstructorContext() {
+        IRScope scope = getIRScope();
+        return scope instanceof IRMethod ? ((IRMethod) scope).builtInterpreterContextForJavaConstructor() : null;
     }
 
-    protected ExitableReturn interpretSplit(MethodSplitState state, IRubyObject[] args, Block block) {
+    public final ExitableReturn interpretSplit(ThreadContext context, MethodSplitState state, IRubyObject[] args, Block block) {
         try {
-            ThreadContext.pushBacktrace(state.context, state.name, state.eic.getFileName(), state.eic.getLine());
+            final ExitableInterpreterContext ic = state.getInterpreterContext();
+            ThreadContext.pushBacktrace(context, state.name, ic.getFileName(), ic.getLine());
 
             try {
-                preSplit(state.eic, state.context, state.self, state.name, block, state.implClass, state.scope);
-                return state.eic.getEngine().interpret(state.context, null, state.self, state.eic, state.state,
+                preSplit(ic, context, state.self, state.name, block, state.implClass, state.scope);
+                return ic.getEngine().interpret(context, null, state.self, ic, state.getInterpreterEngineState(),
                         state.implClass, state.name, args, block);
             } finally {
-                postSplit(state.eic, state.context);
+                postSplit(ic, context);
             }
         } finally {
-            ThreadContext.popBacktrace(state.context);
+            ThreadContext.popBacktrace(context);
         }
     }
 
-    protected void preSplit(InterpreterContext ic, ThreadContext context, IRubyObject self, String name, Block block,
-            RubyModule implClass, DynamicScope scope) {
+    private void preSplit(InterpreterContext ic, ThreadContext context,
+                          IRubyObject self, String name, Block block,
+                          RubyModule implClass, DynamicScope scope) {
         context.preMethodFrameOnly(implClass, name, self, block);
         if (ic.pushNewDynScope()) context.pushScope(scope);
     }
 
-    protected void postSplit(InterpreterContext ic, ThreadContext context) {
+    private void postSplit(InterpreterContext ic, ThreadContext context) {
         context.popFrame();
         if (ic.popDynScope()) context.popScope();
     }
