@@ -27,6 +27,7 @@
 package org.jruby.ir.interpreter;
 
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
@@ -37,6 +38,7 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.instructions.JavaCtorSuperInstr;
 import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.ir.instructions.ReceiveRestArgInstr;
 import org.jruby.ir.instructions.ResultInstr;
@@ -46,9 +48,6 @@ import org.jruby.ir.operands.ImmutableLiteral;
 import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
-import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.parser.StaticScope;
-import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -60,7 +59,6 @@ public class ExitableInterpreterContext extends InterpreterContext {
 
     private final static ExitableInterpreterEngine EXITABLE_INTERPRETER = new ExitableInterpreterEngine();
 	
-    private final CallBase superCall;
     private final int exitIPC;
     private final boolean exitsAtReturn;
     private final boolean directSuperNoArgs;
@@ -73,9 +71,8 @@ public class ExitableInterpreterContext extends InterpreterContext {
     }
 
     private ExitableInterpreterContext(IRScope scope, List<Instr> instructions, int temporaryVariableCount, EnumSet<IRFlags> flags, CallBase superCall, int exitIPC) {
-        super(scope, instructions, temporaryVariableCount, flags);
+        super(scope, splitInstructions(scope, instructions, superCall, exitIPC), temporaryVariableCount, flags);
 
-        this.superCall = superCall;
         this.exitIPC = exitIPC;
         this.exitsAtReturn = exitsAtReturn(instructions, superCall, exitIPC);
         this.directSuperNoArgs = directSuperNoArgs(instructions, superCall, exitIPC) && getStaticScope().getSignature().isNoArguments();
@@ -95,12 +92,6 @@ public class ExitableInterpreterContext extends InterpreterContext {
 
     public boolean exitsAtReturn() {
         return exitsAtReturn;
-    }
-
-    public boolean canEscapeAtSuper() {
-        int[] rescuePCs = getRescueIPCs();
-
-        return exitsAtReturn && (rescuePCs == null || rescuePCs[exitIPC] == -1);
     }
 
     public boolean directSuperNoArgs() {
@@ -135,23 +126,21 @@ public class ExitableInterpreterContext extends InterpreterContext {
     	return EXITABLE_INTERPRETER;
     }
 
-    /**
-     * @return the live ruby values for the operand to the original super call.
-      */
-    public IRubyObject[] getArgs(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temps) {
-    	IRubyObject[] args = superCall.prepareArguments(context, self, currScope, currDynScope, temps);
-
-        IRRuntimeHelpers.setCallInfo(context, superCall.getFlags());
-
-        return args;
-    }
-
     private static boolean exitsAtReturn(List<Instr> instructions, CallBase superCall, int exitIPC) {
         if (instructions == null || exitIPC + 1 >= instructions.size()) return false;
 
         Instr instr = instructions.get(exitIPC + 1);
 
         return instr instanceof ReturnInstr && ((ReturnInstr) instr).getReturnValue().equals(superCall.getResult());
+    }
+
+    private static List<Instr> splitInstructions(IRScope scope, List<Instr> instructions, CallBase superCall, int exitIPC) {
+        if (instructions == null) return null;
+
+        List<Instr> splitInstructions = new ArrayList<>(instructions);
+        splitInstructions.set(exitIPC, new JavaCtorSuperInstr(scope, superCall));
+
+        return splitInstructions;
     }
 
     private static boolean directSuperNoArgs(List<Instr> instructions, CallBase superCall, int exitIPC) {

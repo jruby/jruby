@@ -30,9 +30,6 @@ import java.lang.invoke.MethodHandle;
 
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.AbstractIRMethod;
-import org.jruby.internal.runtime.SplitSuperCall;
-import org.jruby.internal.runtime.SplitSuperState;
-import org.jruby.ir.interpreter.ExitableInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
@@ -111,21 +108,6 @@ public class CompiledIRNoProtocolMethod extends AbstractIRMethod {
             // the right needsDynamicScope depth.
             context.pushScope(DynamicScope.newDynamicScope(staticScope, context.getCurrentScope()));
         }
-    }
-
-    @Override
-    protected SplitSuperState<MethodSplitState> tryCompiledTerminalSplit(ThreadContext context, IRubyObject self,
-            RubyModule clazz, String name, IRubyObject[] args, Block block, ExitableInterpreterContext ic) {
-        Object previous = context.beginSplitSuperCapture(self, name);
-        try {
-            call(context, self, clazz, name, block);
-        } catch (SplitSuperCall split) {
-            return new SplitSuperState<>(split.getResult(), new MethodSplitState(ic));
-        } finally {
-            context.endSplitSuperCapture(previous);
-        }
-
-        throw new RuntimeException("BUG: compiled split constructor completed without captured super");
     }
 
     @Override

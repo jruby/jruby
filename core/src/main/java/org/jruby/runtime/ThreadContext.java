@@ -180,8 +180,6 @@ public final class ThreadContext {
 
     Visibility lastVisibility;
 
-    private SplitSuperCapture splitSuperCapture;
-
     IRubyObject lastExitStatus;
 
     // These two fields are required to support explicit call protocol
@@ -1546,33 +1544,6 @@ public final class ThreadContext {
     @JIT
     public static void clearCallInfo(ThreadContext context) {
         context.callInfo = 0;
-    }
-
-    public Object beginSplitSuperCapture(IRubyObject self, String name) {
-        SplitSuperCapture previous = splitSuperCapture;
-        splitSuperCapture = new SplitSuperCapture(self, name);
-
-        return previous;
-    }
-
-    public void endSplitSuperCapture(Object previous) {
-        splitSuperCapture = (SplitSuperCapture) previous;
-    }
-
-    public boolean isCapturingSplitSuper(IRubyObject self, String name) {
-        SplitSuperCapture capture = splitSuperCapture;
-
-        return capture != null && capture.self == self && capture.name.equals(name);
-    }
-
-    private static final class SplitSuperCapture {
-        private final IRubyObject self;
-        private final String name;
-
-        private SplitSuperCapture(IRubyObject self, String name) {
-            this.self = self;
-            this.name = name;
-        }
     }
 
     public static boolean hasKeywords(int callInfo) {

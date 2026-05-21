@@ -60,7 +60,6 @@ public class ExitableInterpreterEngine extends InterpreterEngine {
         Object[] temp = state.getTemporaryVariables();
         int n = instrs.length;
         int ipc = state.getIPC();
-        int exitIPC = interpreterContext.getExitIPC();
         Object exception = null;
 
         boolean   ruby2Keywords = interpreterContext.isRuby2Keywords();
@@ -77,16 +76,6 @@ public class ExitableInterpreterEngine extends InterpreterEngine {
 
         // Enter the looooop!
         while (ipc < n) {
-            // We want to exit at this instr and return its call arguments to consumer of this interpreter.
-            if (ipc == exitIPC) {
-                // FIXME: I assume result of super in this case will be nil which means we should not have to explicitly
-                // set the temp to nil but we shall see...
-                state.setIPC(ipc + 1);  // Mark next instr to execute when we call execute again using this state.
-                return new ExitableReturn(
-                 		interpreterContext.getArgs(context, self, currScope, currDynScope, temp),
-         				((CallBase)instrs[ipc]).prepareBlock(context, self, currScope, currDynScope, temp));
-            }
-
             Instr instr = instrs[ipc];
 
             Operation operation = instr.getOperation();
@@ -105,6 +94,11 @@ public class ExitableInterpreterEngine extends InterpreterEngine {
                                 currScope, currDynScope, temp, exception, blockArg);
                         break;
                     case CALL_OP:
+                        if (instr instanceof JavaCtorSuperInstr javaCtorSuper) {
+                            state.setIPC(ipc + 1);
+                            return javaCtorSuper.prepareSuper(context, self, currScope, currDynScope, temp);
+                        }
+
                         if (profile) Profiler.updateCallSite(instr, interpreterContext.getScope(), scopeVersion);
                         processCall(context, instr, operation, currDynScope, currScope, temp, self, name);
                         break;

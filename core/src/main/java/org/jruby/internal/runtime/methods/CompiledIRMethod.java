@@ -31,12 +31,9 @@ import java.lang.invoke.MethodHandle;
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
 import org.jruby.internal.runtime.AbstractIRMethod;
-import org.jruby.internal.runtime.SplitSuperCall;
-import org.jruby.internal.runtime.SplitSuperState;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
-import org.jruby.ir.interpreter.ExitableInterpreterContext;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Block;
@@ -260,20 +257,5 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
 
     public boolean needsToFindImplementer() {
         return needsToFindImplementer;
-    }
-
-    @Override
-    protected SplitSuperState<MethodSplitState> tryCompiledTerminalSplit(ThreadContext context, IRubyObject self,
-            RubyModule clazz, String name, IRubyObject[] args, Block block, ExitableInterpreterContext ic) {
-        Object previous = context.beginSplitSuperCapture(self, name);
-        try {
-            call(context, self, clazz, name, args, block);
-        } catch (SplitSuperCall split) {
-            return new SplitSuperState<>(split.getResult(), new MethodSplitState(ic));
-        } finally {
-            context.endSplitSuperCapture(previous);
-        }
-
-        throw new RuntimeException("BUG: compiled split constructor completed without captured super");
     }
 }

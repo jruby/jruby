@@ -240,11 +240,6 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
         SplitSuperState<MethodSplitState> directState = MethodSplitState.directSuperState(context, ic, args, block);
         if (directState != null) return directState;
 
-        if (ic.canEscapeAtSuper()) {
-            SplitSuperState<MethodSplitState> compiledState = tryCompiledTerminalSplit(context, self, klazz, name, args, block, ic);
-            if (compiledState != null) return compiledState;
-        }
-
         MethodSplitState state = new MethodSplitState(context, ic, klazz, self, name);
         ExitableReturn result = interpretSplit(state, args, block);
 
@@ -283,10 +278,5 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
     protected void postSplit(InterpreterContext ic, ThreadContext context) {
         context.popFrame();
         if (ic.popDynScope()) context.popScope();
-    }
-
-    protected SplitSuperState<MethodSplitState> tryCompiledTerminalSplit(ThreadContext context, IRubyObject self,
-            RubyModule klazz, String name, IRubyObject[] args, Block block, ExitableInterpreterContext ic) {
-        return null;
     }
 }
