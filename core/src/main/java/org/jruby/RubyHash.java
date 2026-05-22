@@ -247,6 +247,15 @@ public class RubyHash extends RubyObject implements Map {
 
     // Delegated constructor, to be hidden and returned to normal super constructor once no longer in use
     @Deprecated(since = "10.0.3.0")
+    public RubyHash(Ruby runtime, int buckets) {
+        super(runtime, runtime.getHash());
+        // ensure no subclasses call this constructor
+        assert getClass() == RubyHash.class;
+        this.setDelegate(RubyHashLinkedBuckets.newLBHash(runtime, buckets));
+    }
+
+    // Delegated constructor, to be hidden and returned to normal super constructor once no longer in use
+    @Deprecated(since = "10.0.3.0")
     public RubyHash(Ruby runtime) {
         super(runtime, runtime.getHash());
         // ensure no subclasses call this constructor
