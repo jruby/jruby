@@ -1078,11 +1078,11 @@ public abstract class RealClassGenerator {
      */
     public static String makeConcreteConstructorProxy(ClassWriter cw, PositionAware initPosition, boolean hasRuby,
             ConcreteJavaReifier cjr, Class[] ctorTypes, boolean nested) {
-        Class clazz;
+        final Class<?> proxyClass;
         if (Map.class.isAssignableFrom(cjr.reifiedParent)) {
-            clazz = MapJavaProxy.class;
+            proxyClass = MapJavaProxy.class;
         } else {
-            clazz = ConcreteJavaProxy.class;
+            proxyClass = ConcreteJavaProxy.class;
         }
         String sig = hasRuby ? sig(void.class, cjr.join(ctorTypes, Ruby.class, RubyClass.class))
                 : sig(void.class, ctorTypes);
@@ -1105,11 +1105,11 @@ public abstract class RealClassGenerator {
         m.aload(0); // uninitialized this
 
         //// new ConcreteJavaProxy(ruby, rubyClass);
-        m.newobj(p(clazz));
+        m.newobj(p(proxyClass));
         m.dup(); // rubyobject
         m.aload(rubyIndex); // ruby
         m.aload(rubyClassIndex); // rubyclass
-        m.invokespecial(p(clazz), "<init>", sig(void.class, Ruby.class, RubyClass.class));
+        m.invokespecial(p(proxyClass), "<init>", sig(void.class, Ruby.class, RubyClass.class));
 
         if (nested) m.iconst_1();
         else m.iconst_0(); // called from subclass?
