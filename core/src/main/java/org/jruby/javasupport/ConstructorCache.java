@@ -25,13 +25,21 @@ public class ConstructorCache implements CallableSelector.CallableCache<Paramete
      * @return index of ctor in cache to call, or throws an argument error
      */
     public static int findIndex(Ruby runtime, ConstructorCache cache, IRubyObject[] args) {
-        ThreadContext context = runtime.getCurrentContext();
-        JavaConstructor constructor = Java.JCreateMethod.matchConstructorInternal(
-            context, cache.constructors, cache, args
-        );
-        int index = cache.indexOf(constructor);
-        assert index >= 0; // matchConstructor would have already raised
-        return index;
+        // fast path: check the callable signature cache before doing arity filtering + full match
+        JavaConstructor[] constructors = cache.constructors;
+        int signatureCode = CallableSelector.argsHashCode(args);
+        ParameterTypes cached = cache.getSignature(signatureCode);
+        if (cached == null) {
+            // cache miss — do full match which populates the cache for next time
+            ThreadContext context = runtime.getCurrentContext();
+            cached = Java.JCreateMethod.matchConstructorInternal(context, constructors, cache, args);
+        }
+
+        for (int i = 0; i < constructors.length; i++) {
+            if (constructors[i] == cached) return i;
+        }
+
+        throw new AssertionError("BUG: matched constructor not found in cache");
     }
 
     public ConstructorCache(JavaConstructor[] constructors) {
@@ -42,13 +50,6 @@ public class ConstructorCache implements CallableSelector.CallableCache<Paramete
     private static int findNoArgConstructor(JavaConstructor[] constructors) {
         for (int i = 0; i < constructors.length; i++) {
             if (constructors[i].getParameterTypes().length == 0) return i;
-        }
-        return -1;
-    }
-
-    private int indexOf(final JavaConstructor constructor) {
-        for (int i = 0; i < constructors.length; i++) {
-            if (constructors[i].equals(constructor)) return i;
         }
         return -1;
     }
