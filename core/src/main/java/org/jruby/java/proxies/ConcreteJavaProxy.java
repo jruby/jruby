@@ -149,14 +149,18 @@ public class ConcreteJavaProxy extends JavaProxy {
                 }
             }
 
-            RubyClass singleton = parent.singletonClass(context);
-            DynamicMethod method = singleton.searchMethod("new");
+            final RubyClass singleton = parent.singletonClass(context);
+            final DynamicMethod method = singleton.searchMethod("new");
             if (method instanceof NewMethodReified) return method;
-            if (!(method instanceof NewMethod)) return method;
 
-            method = new NewMethodReified(parent, parent.getReifiedJavaClass());
-            singleton.addMethod(context, "new", method);
-            return method;
+            final NewMethodReified reified = new NewMethodReified(parent, parent.getReifiedJavaClass());
+            // only install if the current singleton `new` is our own NewMethod;
+            // a user-defined `def self.new` must stay in place (its super will find NewMethodReified
+            // through the normal reification path via StaticJCreateMethod/setProxyClassReified)
+            if (method instanceof NewMethod) {
+                singleton.addMethod(context, "new", reified);
+            }
+            return reified;
         }
 
         @Override
