@@ -43,7 +43,7 @@ public class TestSplitSuperStrategy {
         DynamicMethod real = dm.getRealMethod();
         // unwrap StaticJCreateMethod wrapper installed after reification
         if (real instanceof StaticJCreateMethod) {
-            real = ((StaticJCreateMethod) real).oldInit;
+            real = ((StaticJCreateMethod) real).oldInitialize;
             if (real == null) return null;
         }
         real = real.getRealMethod();
