@@ -32,6 +32,8 @@ import static org.jruby.runtime.Visibility.PUBLIC;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Map;
+import java.util.function.BiFunction;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -261,10 +263,12 @@ public class ConcreteJavaProxy extends JavaProxy {
 
         private final DynamicMethod initialize;
         private final Constructor<? extends ReifiedJavaProxy> constructor;
+        private final BiFunction<Ruby, RubyClass, ConcreteJavaProxy> proxyFactory;
 
         public NewMethodReified(final RubyClass clazz, Class<? extends ReifiedJavaProxy> reified) {
             super(clazz, Visibility.PUBLIC, "new");
             initialize = clazz.searchMethod("__jcreate!");
+            proxyFactory = Map.class.isAssignableFrom(reified) ? MapJavaProxy::new : ConcreteJavaProxy::new;
 
             Constructor<? extends ReifiedJavaProxy> constructor;
             try {
@@ -290,7 +294,7 @@ public class ConcreteJavaProxy extends JavaProxy {
             }
 
             // assume no easy conversions, use ruby fallback.
-            ConcreteJavaProxy object = new ConcreteJavaProxy(context.runtime, (RubyClass) self);
+            ConcreteJavaProxy object = proxyFactory.apply(context.runtime, (RubyClass) self);
             try {
                 // the generated ctor uses `self` as its ruby class; note: it sets self.object = the discarded
                 // return of the new java object internally

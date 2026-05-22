@@ -4,9 +4,23 @@ describe "MapJavaProxy" do
 
   class B < java.util.HashMap
   end
+
+  class C < java.util.HashMap
+    def initialize
+      super()
+    end
+  end
   
   it "does not raise ClassCastException" do
-    A.new["test"].should be_nil
-    B.new["test"].should be_nil
+    expect(A.new["test"]).to be_nil
+    expect(B.new["test"]).to be_nil
+  end
+
+  it "preserves MapJavaProxy behavior for reified subclasses" do
+    map = C.new
+
+    map["test"] = "value"
+    expect(map["test"]).to eq("value")
+    expect(map.to_hash).to eq({ "test" => "value" })
   end
 end
