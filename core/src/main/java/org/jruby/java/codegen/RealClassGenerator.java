@@ -880,7 +880,7 @@ public abstract class RealClassGenerator {
      *                     Block block, RubyClass rubyClass) {
      *       this.this$rubyObject = cjp;
      *       SplitCtorData d = cjp.splitInitialized(
-     *               isSuperCall ? rubyClass : rubyClass, args, block, this$rubyCtorCache);
+     *               isSuperCall ? MyClass.rubyClass : rubyClass, args, block, this$rubyCtorCache);
      *       Object[] a = d.arguments;
      *       switch (d.ctorIndex) {
      *       case 0:  super((String) a[0], (Boolean) a[1]); break;
