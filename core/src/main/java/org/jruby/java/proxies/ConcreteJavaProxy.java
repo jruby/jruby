@@ -502,40 +502,40 @@ public class ConcreteJavaProxy extends JavaProxy {
      */
     @JIT
     public SplitCtorData splitInitialized(RubyClass base, IRubyObject[] args, Block block, ConstructorCache jcc) {
-        return splitInitialized(topLevelSplitCtorPlan(base, jcc), args, block, jcc, false);
+        final ThreadContext context = getRuntime().getCurrentContext();
+        return splitInitialized(context, topLevelSplitCtorPlan(base, jcc), args, block, jcc, false);
     }
 
-    private SplitCtorData splitInitialized(SplitCtorPlan plan, IRubyObject[] args, Block block, ConstructorCache cache, boolean fromRubySuper) {
-        final Ruby runtime = getRuntime();
+    private SplitCtorData splitInitialized(final ThreadContext context, SplitCtorPlan plan,
+                                           IRubyObject[] args, Block block, ConstructorCache cache,
+                                           boolean fromRubySuper) {
         final AbstractIRMethod method = plan.method;
         final ExitableInterpreterContext ic = plan.interpreterContext;
         final String name = plan.name;
         final RubyClass sourceLocation = plan.sourceLocation;
         final RubyModule effectiveSource = plan.effectiveSource;
 
-        final ThreadContext context = getRuntime().getCurrentContext();
-
         if (method != null && plan.prependedJavaCtorWrapper) {
             if (plan.canSkipDirectSuper(args)) {
-                return splitInitialized(plan.prependedSuperPlan(sourceLocation.getSuperClass()), args, block, cache, true);
+                return splitInitialized(context, plan.prependedSuperPlan(sourceLocation.getSuperClass()), args, block, cache, true);
             }
 
             IRubyObject[] literalArgs = plan.terminalLiteralSuperArgs(context);
             if (literalArgs != null) {
-                return splitInitialized(plan.prependedSuperPlan(sourceLocation.getSuperClass()), literalArgs, block, cache, true);
+                return splitInitialized(context, plan.prependedSuperPlan(sourceLocation.getSuperClass()), literalArgs, block, cache, true);
             }
 
             SplitSuperState<?> state = method.startSplitSuperCall(context, this, effectiveSource, name, args, block, ic);
             IRubyObject[] forwardedArgs = state == null ? args : state.callArgs;
             Block forwardedBlock = state == null ? block : state.callBlockArgs;
-            SplitCtorData ctorData = splitInitialized(plan.prependedSuperPlan(sourceLocation.getSuperClass()), forwardedArgs, forwardedBlock, cache, true);
+            SplitCtorData ctorData = splitInitialized(context, plan.prependedSuperPlan(sourceLocation.getSuperClass()), forwardedArgs, forwardedBlock, cache, true);
             return new SplitCtorData(ctorData, forwardedArgs, method, effectiveSource, name, state, block);
         }
 
         // jcreate is for nested ruby classes from a java class
         if (method != null && shouldSplitJavaConstructorInitialize(plan.isLateral, fromRubySuper, plan.methodSource)) {
             if (plan.canSkipDirectSuper(args)) {
-                return splitSuperInitialized(plan, args, block, cache);
+                return splitSuperInitialized(context, plan, args, block, cache);
             }
 
             IRubyObject[] literalArgs = plan.terminalLiteralSuperArgs(context);
@@ -543,23 +543,23 @@ public class ConcreteJavaProxy extends JavaProxy {
                 SplitCtorData cachedTerminator = plan.cachedLiteralSuperTerminator;
                 if (cachedTerminator != null) return cachedTerminator;
 
-                SplitCtorData terminator = splitSuperInitialized(plan, literalArgs, block, cache);
+                SplitCtorData terminator = splitSuperInitialized(context, plan, literalArgs, block, cache);
                 if (terminator.isLeafJavaTerminator()) plan.cachedLiteralSuperTerminator = terminator;
                 return terminator;
             }
 
             SplitSuperState<?> state = method.startSplitSuperCall(context, this, effectiveSource, name, args, block, ic);
             if (state == null) { // no super in method
-                return new SplitCtorData(runtime, args, cache, method, effectiveSource, name, block);
+                return new SplitCtorData(context.runtime, args, cache, method, effectiveSource, name, block);
             }
 
             IRubyObject[] forwardedArgs = state.callArgs;
             Block forwardedBlock = state.callBlockArgs;
-            SplitCtorData ctorData = splitSuperInitialized(plan, forwardedArgs, forwardedBlock, cache);
+            SplitCtorData ctorData = splitSuperInitialized(context, plan, forwardedArgs, forwardedBlock, cache);
             return new SplitCtorData(ctorData, forwardedArgs, method, effectiveSource, name, state, block);
         }
 
-        return new SplitCtorData(runtime, args, cache);
+        return new SplitCtorData(context.runtime, args, cache);
     }
 
     private static SplitCtorPlan topLevelSplitCtorPlan(final RubyClass base, final ConstructorCache cache) {
@@ -576,16 +576,17 @@ public class ConcreteJavaProxy extends JavaProxy {
         return new SplitCtorPlan(base, base.searchWithCache(base.getClassConfig().javaCtorMethodName));
     }
 
-    private SplitCtorData splitSuperInitialized(final SplitCtorPlan plan, final IRubyObject[] args,
+    private SplitCtorData splitSuperInitialized(final ThreadContext context,
+                                                final SplitCtorPlan plan, final IRubyObject[] args,
                                                 final Block block, final ConstructorCache cache) {
         RubyClass next = nextRubyConstructorSource(plan.effectiveSource);
 
-        if (next == null) return new SplitCtorData(getRuntime(), args, cache);
+        if (next == null) return new SplitCtorData(context.runtime, args, cache);
         // In a Ruby < Ruby < Java chain the next Ruby class has its own reified `<init>` which will run
         // its own splitInitialized when the parent constructor is dispatched; so we must not chain through
         // it here (would double-execute initialize body and also break finishInitialize)
-        if (!next.getDelegate().getJavaProxy()) return new SplitCtorData(getRuntime(), args, null);
-        return splitInitialized(plan.superPlan(next), args, block, cache, true);
+        if (!next.getDelegate().getJavaProxy()) return new SplitCtorData(context.runtime, args, null);
+        return splitInitialized(context, plan.superPlan(next), args, block, cache, true);
     }
 
     private static RubyClass nextRubyConstructorSource(final RubyModule methodSource) {
@@ -632,27 +633,28 @@ public class ConcreteJavaProxy extends JavaProxy {
     /**
      * Used by reified classes, this method is tightly coupled with RealClassGenerator, splitInitialize
      * Do not refactor without looking at RCG
-     * <p>Note: invoked from generated byte-code</p>
      */
     @JIT
     public void finishInitialize(final SplitCtorData returned) {
-        if (returned.nested != null) finishInitialize(returned.nested);
+        finishInitialize(getRuntime().getCurrentContext(), returned);
+    }
+
+    private void finishInitialize(final ThreadContext context, final SplitCtorData returned) {
+        if (returned.nested != null) finishInitialize(context, returned.nested);
 
         if (returned.method == null) return; // leaf java terminator - no Ruby continuation
 
         if (returned.state != null) {
-            finishSplitCall(returned.method, returned.state);
+            finishSplitCall(context, returned.method, returned.state);
         } else { // no super in this Ruby initialize, direct call to run the body
-            final ThreadContext context = getRuntime().getCurrentContext();
             returned.method.call(context, this, returned.clazz, returned.name, returned.rbarguments, returned.block);
         }
     }
 
-    private void finishSplitCall(final AbstractIRMethod method, final SplitSuperState state) {
+    private void finishSplitCall(final ThreadContext context, final AbstractIRMethod method, final SplitSuperState state) {
         final MethodSplitState methodState = (MethodSplitState) state.state;
         if (methodState.getInterpreterContext().exitsAtReturn()) return;
 
-        final ThreadContext context = getRuntime().getCurrentContext();
         method.interpretSplit(context, methodState, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
     }
 
