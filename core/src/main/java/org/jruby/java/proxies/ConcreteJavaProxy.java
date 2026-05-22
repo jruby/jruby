@@ -32,7 +32,6 @@ import static org.jruby.runtime.Visibility.PUBLIC;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Map;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -134,8 +133,8 @@ public class ConcreteJavaProxy extends JavaProxy {
             newMethod = clazz.searchMethod("new");
         }
 
-        private DynamicMethod reifyAndNewMethod(ThreadContext context, IRubyObject clazz) {
-            RubyClass parent = ((RubyClass) clazz);
+        private DynamicMethod reifyAndNewMethod(ThreadContext context, IRubyObject self) {
+            final RubyClass parent = (RubyClass) self;
             if (parent.getJavaProxy()) return newMethod;
 
             // overridden class: reify and re-lookup new as reification changes it
@@ -146,7 +145,14 @@ public class ConcreteJavaProxy extends JavaProxy {
                 }
             }
 
-            return new NewMethodReified(parent, parent.getReifiedJavaClass());
+            RubyClass singleton = parent.singletonClass(context);
+            DynamicMethod method = singleton.searchMethod("new");
+            if (method instanceof NewMethodReified) return method;
+            if (!(method instanceof NewMethod)) return method;
+
+            method = new NewMethodReified(parent, parent.getReifiedJavaClass());
+            singleton.addMethod(context, "new", method);
+            return method;
         }
 
         @Override
@@ -223,7 +229,7 @@ public class ConcreteJavaProxy extends JavaProxy {
                 ConcreteJavaProxy cjp = (ConcreteJavaProxy) self;
                 if (cjp.getObject() == null) {
                     // first-time init: invoke the generated reified constructor (which sets cjp.object internally)
-                    withBlock.newInstance(cjp, args, block, context.runtime, clazz);
+                    withBlock.newInstance(cjp, args, block, clazz);
                 } else if (oldInit != null) {
                     // re-entry into initialize on an already-constructed proxy - delegate to the prior initialize
                     return oldInit.call(context, self, clazz, name, args, block);
@@ -240,12 +246,12 @@ public class ConcreteJavaProxy extends JavaProxy {
                 Class<? extends ReifiedJavaProxy> reified, boolean overwriteInitialize) {
             try {
                 Constructor<? extends ReifiedJavaProxy> withBlock = reified.getConstructor(new Class[] {
-                        ConcreteJavaProxy.class, IRubyObject[].class, Block.class, Ruby.class, RubyClass.class });
+                        ConcreteJavaProxy.class, IRubyObject[].class, Block.class, RubyClass.class });
                 if (overwriteInitialize) clazz.addMethod(context, "initialize",
                     new StaticJCreateMethod(clazz, withBlock, clazz.getMethodLocation().searchMethod("initialize")));
                 clazz.addMethod(context, "__jallocate!", new StaticJCreateMethod(clazz, withBlock, null));
             } catch (SecurityException | NoSuchMethodException e) {
-                // class lacks the expected (ConcreteJavaProxy, IRubyObject[], Block, Ruby, RubyClass) ctor -
+                // class lacks the expected (ConcreteJavaProxy, IRubyObject[], Block, RubyClass) ctor -
                 // ignore and leave the existing initialize/__jallocate! in place
             }
         }
@@ -262,7 +268,7 @@ public class ConcreteJavaProxy extends JavaProxy {
 
             Constructor<? extends ReifiedJavaProxy> constructor;
             try {
-                constructor = reified.getConstructor(ConcreteJavaProxy.class, IRubyObject[].class, Block.class, Ruby.class, RubyClass.class);
+                constructor = reified.getConstructor(ConcreteJavaProxy.class, IRubyObject[].class, Block.class, RubyClass.class);
             } catch (SecurityException | NoSuchMethodException e) {
                 // ignore, don't install
                 constructor = null;
@@ -288,7 +294,7 @@ public class ConcreteJavaProxy extends JavaProxy {
             try {
                 // the generated ctor uses `self` as its ruby class; note: it sets self.object = the discarded
                 // return of the new java object internally
-                constructor.newInstance(object, args, block, context.runtime, self);
+                constructor.newInstance(object, args, block, self);
                 return object;
             } catch (InstantiationException | InvocationTargetException e) {
                 throw JavaProxyConstructor.throwInstantiationExceptionCause(context.runtime, e);
