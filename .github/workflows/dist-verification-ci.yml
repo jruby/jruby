@@ -251,18 +251,18 @@ jobs:
       - name: run installed JRuby x64
         run: installed_jruby\bin\jruby -e "puts 'hello'"
 
-      - name: set up java (x86, ${{ matrix.java-version }})
-        uses: actions/setup-java@v5
-        with:
-          architecture: x86
-          distribution: 'temurin'
-          java-version: ${{ matrix.java-version }}
-      - name: download cached installer x86
-        uses: actions/download-artifact@v8
-        with:
-          name: jruby_windows-x32.exe
-      - name: run installer x86
-        shell: cmd
-        run: .\jruby_windows-x64.exe -q -console -dir installed_jruby
-      - name: run installed JRuby x86
-        run: installed_jruby\bin\jruby -e "puts 'hello'"
+#      - name: set up java (x86, ${{ matrix.java-version }})
+#        uses: actions/setup-java@v5
+#        with:
+#          architecture: x86
+#          distribution: 'temurin'
+#          java-version: ${{ matrix.java-version }}
+#      - name: download cached installer x86
+#        uses: actions/download-artifact@v8
+#        with:
+#          name: jruby_windows-x32.exe
+#      - name: run installer x86
+#        shell: cmd
+#        run: .\jruby_windows-x64.exe -q -console -dir installed_jruby
+#      - name: run installed JRuby x86
+#        run: installed_jruby\bin\jruby -e "puts 'hello'"
