@@ -254,38 +254,31 @@ public class ConcreteJavaProxy extends JavaProxy {
     public static final class NewMethodReified extends org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock {
 
         private final DynamicMethod initialize;
-        private final Constructor<? extends ReifiedJavaProxy> ctor;
+        private final Constructor<? extends ReifiedJavaProxy> constructor;
 
         public NewMethodReified(final RubyClass clazz, Class<? extends ReifiedJavaProxy> reified) {
             super(clazz, Visibility.PUBLIC, "new");
             initialize = clazz.searchMethod("__jcreate!");
 
-            Constructor<? extends ReifiedJavaProxy> withBlock;
+            Constructor<? extends ReifiedJavaProxy> constructor;
             try {
-                Class _clazz;
-                if (Map.class.isAssignableFrom(reified)) {
-                    _clazz = MapJavaProxy.class;
-                } else {
-                    _clazz = ConcreteJavaProxy.class;
-                }
-                withBlock = reified.getConstructor(new Class[] { _clazz, IRubyObject[].class,
-                        Block.class, Ruby.class, RubyClass.class });
+                constructor = reified.getConstructor(ConcreteJavaProxy.class, IRubyObject[].class, Block.class, Ruby.class, RubyClass.class);
             } catch (SecurityException | NoSuchMethodException e) {
                 // ignore, don't install
-                withBlock = null;
+                constructor = null;
             }
-            ctor = withBlock;
+            this.constructor = constructor;
         }
 
         @Override
-        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name,
-                IRubyObject[] args, Block blk) {
+        public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz,
+                                String name, IRubyObject[] args, Block block) {
             // a subclass extended the base after we were installed; rebuild and dispatch via a fresh NewMethod
             if (self != implementationClass) {
-                return new NewMethod((RubyClass)self).call(context, self, clazz, name, args, blk);
+                return new NewMethod((RubyClass) self).call(context, self, clazz, name, args, block);
             }
 
-            if (ctor == null) {
+            if (constructor == null) {
                 ReifiedJavaProxy proxy = JavaUtil.unwrapJava(context, initialize.call(context, self, clazz, "new", args));
                 return proxy.___jruby$rubyObject();
             }
@@ -295,7 +288,7 @@ public class ConcreteJavaProxy extends JavaProxy {
             try {
                 // the generated ctor uses `self` as its ruby class; note: it sets self.object = the discarded
                 // return of the new java object internally
-                ctor.newInstance(object, args, blk, context.runtime, self);
+                constructor.newInstance(object, args, block, context.runtime, self);
                 return object;
             } catch (InstantiationException | InvocationTargetException e) {
                 throw JavaProxyConstructor.throwInstantiationExceptionCause(context.runtime, e);
