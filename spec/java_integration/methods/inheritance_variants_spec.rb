@@ -297,4 +297,27 @@ describe "Java subclassing - constructor argument variants" do
     end
   end
 
+  describe "custom singleton new (def self.new)" do
+    it "does not cause infinite recursion when user overrides self.new with super" do
+      cls = Class.new(MultiCtorBase) do
+        class << self
+          def new(s = "default")
+            super(s)
+          end
+        end
+
+        def initialize(s)
+          super(s)
+        end
+      end
+
+      obj = cls.new("hello")
+      expect(obj.ctor).to eq("(String)")
+
+      obj = cls.new
+      expect(obj.ctor).to eq("(String)")
+      expect(obj.trace.to_a).to eq(["Java (String) ctor with default"])
+    end
+  end
+
 end
