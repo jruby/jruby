@@ -61,6 +61,7 @@ import org.jruby.*;
 import org.jruby.api.Access;
 import org.jruby.exceptions.NameError;
 import org.jruby.exceptions.TypeError;
+import org.jruby.java.proxies.BlockInterfaceTemplate;
 import org.jruby.javasupport.binding.Initializer;
 import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.proxy.JavaProxyConstructor;
@@ -83,6 +84,7 @@ import org.jruby.java.addons.ClassJavaAddons;
 import org.jruby.java.addons.IOJavaAddons;
 import org.jruby.java.addons.KernelJavaAddons;
 import org.jruby.java.addons.StringJavaAddons;
+import org.jruby.java.codegen.BlockInterfaceGenerator;
 import org.jruby.java.codegen.RealClassGenerator;
 import org.jruby.java.dispatch.CallableSelector;
 import org.jruby.java.dispatch.CallableSelector.CallableCache;
@@ -1481,9 +1483,6 @@ public class Java implements Library {
             Constructor<?> proxyConstructor = proxyImplClass.getConstructor(IRubyObject.class);
             return proxyConstructor.newInstance(wrapper);
         }
-        catch (InvocationTargetException e) {
-            throw mapGeneratedProxyException(context.runtime, e);
-        }
         catch (ReflectiveOperationException e) {
             throw mapGeneratedProxyException(context.runtime, e);
         }
@@ -1492,6 +1491,45 @@ public class Java implements Library {
     // NOTE: only used when java.lang.reflect.Proxy is to be used for interface impls (by default its not)
     private static Object newProxyInterfaceImpl(final IRubyObject wrapper, final Class[] interfaces, final ClassLoader loader) {
         return Proxy.newProxyInstance(loader, interfaces, new InterfaceProxyHandler(wrapper, interfaces));
+    }
+
+    /**
+     * Fast path for converting a proc to a Java interface proxy, bypassing the singleton class setup.
+     * <p>
+     * The standard {@link JavaUtil#convertProcToInterface} path creates a singleton class for each proc, includes the
+     * interface module, and installs method stubs (operations acquires the global {@code hierarchyLock}).
+     * <p>
+     *
+     * @apiNote Meant to be used with {@code javaMethod { ... } } block variants implementing a functional interface;
+     * the proc passed is a mere dummy block wrapped NOT one originating from (or visible to) user .rb code
+     * @implNote Dispatches directly to {@code block.call()} without any Ruby method lookup.
+     */
+    public static <T> Constructor<? extends BlockInterfaceTemplate> getBlockToInterfaceConstructor(final Ruby runtime,
+                                                                                                   final Class<T> targetType) {
+        try {
+            return BlockInterfaceGenerator.getConstructor(runtime, targetType);
+        } catch (ReflectiveOperationException e) {
+            throw mapGeneratedProxyException(runtime, e);
+        }
+    }
+
+    /**
+     * @see #getBlockToInterfaceConstructor(Ruby, Class)
+     */
+    public static <T> T newBlockToInterfaceInstance(final RubyProc proc,
+                                                    final Constructor<? extends BlockInterfaceTemplate> constructor) {
+        try {
+            return (T) constructor.newInstance(proc);
+        } catch (ReflectiveOperationException e) {
+            throw mapGeneratedProxyException(proc.getRuntime(), e);
+        }
+    }
+
+    public static RubyProc newBlockToInterfaceProc(final Ruby runtime, final Block block) {
+        final var blockProc = block.getProcObject();
+        final var proc = new RubyProc(runtime, runtime.getProc(), block, Block.Type.JAVA, false);
+        block.setProcObject(blockProc); // undo RubyProc: block.setProcObject(this);
+        return proc;
     }
 
     private static final class InterfaceProxyHandler implements InvocationHandler {
@@ -1666,22 +1704,15 @@ public class Java implements Library {
         try {
             return proxyConstructor.newInstance(runtime, clazz);
         }
-        catch (InvocationTargetException e) {
-            throw mapGeneratedProxyException(runtime, e);
-        }
         catch (ReflectiveOperationException e) {
             throw mapGeneratedProxyException(runtime, e);
         }
     }
 
-    private static RaiseException mapGeneratedProxyException(final Ruby runtime, final ReflectiveOperationException e) {
-        return withException(typeError(runtime.getCurrentContext(),
-                "Exception instantiating generated interface impl:\n" + e), e);
-    }
-
-    private static RaiseException mapGeneratedProxyException(final Ruby runtime, final InvocationTargetException e) {
-        return withException(typeError(runtime.getCurrentContext(),
-                "Exception instantiating generated interface impl:\n" + e.getTargetException()), e);
+    private static RaiseException mapGeneratedProxyException(final Ruby runtime, ReflectiveOperationException e) {
+        Throwable cause = (e instanceof InvocationTargetException) ? e.getCause() : e;
+        var error = typeError(runtime.getCurrentContext(), "Exception instantiating generated interface impl: " + cause);
+        return withException(error, e);
     }
 
     public static IRubyObject allocateProxy(Object javaObject, RubyClass clazz) {
@@ -1741,32 +1772,40 @@ public class Java implements Library {
         return result;
     }
 
+    public static boolean isFunctionalInterfaceType(final Class<?> type) {
+        return (type.isInterface() && getFunctionalInterfaceMethod(type) != null);
+    }
+
     /**
-     * @param iface
+     * @param interfaceType
      * @return the sole un-implemented method for a functional-style interface or null
-     * <p>Note: This method is internal and might be subject to change, do not assume its part of JRuby's API!</p>
+     * @apiNote This method is internal and might be subject to change, do not assume its part of JRuby's API
      */
-    public static Method getFunctionalInterfaceMethod(final Class<?> iface) {
-        assert iface.isInterface();
+    public static Method getFunctionalInterfaceMethod(final Class<?> interfaceType) {
+        assert interfaceType.isInterface();
+
+        final Method[] objectMethods = Object.class.getMethods();
+
         Method single = null;
-        for ( final Method method : iface.getMethods() ) {
+        for (final Method method : interfaceType.getMethods()) {
             final int mod = method.getModifiers();
-            if ( Modifier.isStatic(mod) ) continue;
-            if ( Modifier.isAbstract(mod) ) {
-                try { // check if it's equals, hashCode etc. :
-                    Object.class.getMethod(method.getName(), method.getParameterTypes());
-                    continue; // abstract but implemented by java.lang.Object
-                }
-                catch (NoSuchMethodException e) { /* fall-through */ }
-                catch (SecurityException e) {
-                    // NOTE: we could try check for FunctionalInterface on Java 8
-                }
-            }
-            else continue; // not-abstract ... default method
-            if ( single == null ) single = method;
+            if (Modifier.isStatic(mod) || !Modifier.isAbstract(mod)) continue; // skip static and default methods
+            if (method.getDeclaringClass() == Object.class ||
+                isRedeclaredObjectMethod(objectMethods, method)) continue; // equals, hashCode etc.
+
+            if (single == null) single = method;
             else return null; // not a functional iface
         }
         return single;
+    }
+
+    private static boolean isRedeclaredObjectMethod(final Method[] objectMethods, final Method method) {
+        for (int i = 0; i < objectMethods.length; i++) {
+            final Method objectMethod = objectMethods[i];
+            if (objectMethod.getName().equals(method.getName()) &&
+                Arrays.equals(objectMethod.getParameterTypes(), method.getParameterTypes())) return true;
+        }
+        return false;
     }
 
     /**

@@ -59,7 +59,11 @@ import org.jruby.util.func.TriFunction;
  */
 public class Block implements FunctionOneOrTwoOrThree<ThreadContext, IRubyObject, IRubyObject, IRubyObject>, RecursiveFunctionEx<IRubyObject> {
     public enum Type {
-        NORMAL(false), PROC(false), LAMBDA(true), THREAD(false);
+        NORMAL(false),
+        PROC(false),
+        LAMBDA(true),
+        THREAD(false),
+        JAVA(false); // special type used with Java block-to-interface conversion
 
         Type(boolean checkArity) {
             this.checkArity = checkArity;
