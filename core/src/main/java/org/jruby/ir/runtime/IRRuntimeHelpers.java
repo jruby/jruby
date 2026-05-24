@@ -148,7 +148,7 @@ public class IRRuntimeHelpers {
     public static void checkForLJE(ThreadContext context, DynamicScope currentScope, boolean definedWithinMethod, Block block) {
         if (inLambda(block.type)) return; // break/return in lambda is unconditionally a return.
 
-        DynamicScope returnToScope = getContainingReturnToScope(currentScope);
+        DynamicScope returnToScope = getContainingReturnToScope(block.getBinding().getDynamicScope());
 
         if (returnToScope == null || !context.scopeExistsOnCallStack(returnToScope)) {
             throw IRException.RETURN_LocalJumpError.getException(context.runtime);
@@ -177,13 +177,14 @@ public class IRRuntimeHelpers {
     public static IRubyObject initiateNonLocalReturn(DynamicScope currentScope, Block block, IRubyObject returnValue) {
         if (block != null && inLambda(block.type)) throw new IRWrappedLambdaReturnValue(returnValue);
 
-        DynamicScope returnToScope = getContainingLambda(currentScope);
+        DynamicScope parentScope = block.getBinding().getDynamicScope();
+        DynamicScope returnToScope = getContainingLambda(parentScope);
 
-        if (returnToScope == null) returnToScope = getContainingReturnToScope(currentScope);
+        if (returnToScope == null) returnToScope = getContainingReturnToScope(parentScope);
 
         assert returnToScope != null: "accidental return scope";
 
-        throw IRReturnJump.create(currentScope.getStaticScope(), returnToScope, returnValue);
+        throw IRReturnJump.create(block.getBody().getStaticScope(), returnToScope, returnValue);
     }
 
     // Finds static scope of where we want to *return* to.
@@ -231,16 +232,17 @@ public class IRRuntimeHelpers {
         // paths so that ensures are run, frames/scopes are popped from runtime stacks, etc.
         if (inLambda(block.type)) throw new IRWrappedLambdaReturnValue(breakValue, true);
 
-        IRScopeType scopeType = ensureScopeIsClosure(context, dynScope);
+        DynamicScope parentScope = block.getBinding().getDynamicScope();
+//        IRScopeType scopeType = ensureScopeIsClosure(context, parentScope);
 
-        DynamicScope parentScope = dynScope.getParentScope();
+//        DynamicScope parentScope = dynScope.getParentScope();
 
         if (block.isEscaped()) {
             throw Helpers.newLocalJumpErrorForBreak(context.runtime, breakValue);
         }
 
         // Raise a break jump so we can bubble back down the stack to the appropriate place to break from.
-        throw IRBreakJump.create(parentScope, breakValue, scopeType.isEval()); // weirdly evals are impld as closures...yes yes.
+        throw IRBreakJump.create(parentScope, breakValue, false);
     }
 
     // Are we within the scope where we want to return the value we are passing down the stack?
