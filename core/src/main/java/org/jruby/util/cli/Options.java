@@ -109,7 +109,7 @@ public class Options {
     // ClassValue in OpenJDK appears to root data even after it goes away, so this is disabled again. See jruby/jruby#3228
     public static final Option<Boolean> INVOKEDYNAMIC_CLASS_VALUES = bool(INVOKEDYNAMIC, "invokedynamic.class.values", false, "Use ClassValue to store class-specific data.");
     public static final Option<Integer> INVOKEDYNAMIC_GLOBAL_MAXFAIL = integer(INVOKEDYNAMIC, "invokedynamic.global.maxfail", 100, "Maximum global cache failures after which to use slow path.");
-    public static final Option<Boolean> INVOKEDYNAMIC_HANDLES = bool(INVOKEDYNAMIC, "invokedynamic.handles", false, "Use MethodHandles rather than generated code to bind Ruby methods.");
+    public static final Option<Boolean> INVOKEDYNAMIC_HANDLES = bool(INVOKEDYNAMIC, "invokedynamic.handles", true, "Use MethodHandles rather than generated code to bind methods.");
     public static final Option<Boolean> INVOKEDYNAMIC_YIELD = bool(INVOKEDYNAMIC, "invokedynamic.yield", true, "Bind yields directly using invokedynamic.");
 
     // NOTE: -1 jit.threshold is way of having interpreter not promote full builds
