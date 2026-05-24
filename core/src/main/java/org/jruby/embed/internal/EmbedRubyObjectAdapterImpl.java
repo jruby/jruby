@@ -29,12 +29,16 @@
  */
 package org.jruby.embed.internal;
 
+import java.util.Map;
+
 import org.jruby.Ruby;
+import org.jruby.RubyHash;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyObjectAdapter;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.embed.EmbedEvalUnit;
 import org.jruby.embed.EmbedRubyObjectAdapter;
 import org.jruby.embed.InvokeFailedException;
@@ -279,6 +283,80 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
             }
         }
         return rubyArgs;
+    }
+
+    // --- Keyword argument support ---
+
+    public Object callMethod(Object receiver, String methodName, Map<String, Object> kwargs) {
+        return doInvokeMethodKwargs(Object.class, getReceiverObject(receiver), methodName, Block.NULL_BLOCK, null, null, kwargs);
+    }
+
+    public Object callMethod(Object receiver, String methodName, Object[] args, Map<String, Object> kwargs) {
+        return doInvokeMethodKwargs(Object.class, getReceiverObject(receiver), methodName, Block.NULL_BLOCK, null, args, kwargs);
+    }
+
+    public <T> T callMethod(Object receiver, String methodName, Object[] args, Map<String, Object> kwargs, Class<T> returnType) {
+        return doInvokeMethodKwargs(returnType, getReceiverObject(receiver), methodName, Block.NULL_BLOCK, null, args, kwargs);
+    }
+
+    public <T> T callMethod(Object receiver, String methodName, Object[] args, Map<String, Object> kwargs, Block block, Class<T> returnType) {
+        return doInvokeMethodKwargs(returnType, getReceiverObject(receiver), methodName, block, null, args, kwargs);
+    }
+
+    private <T> T doInvokeMethodKwargs(Class<T> returnType, IRubyObject rubyReceiver, String methodName,
+                                        Block block, EmbedEvalUnit unit, Object[] args, Map<String, Object> kwargs) {
+        final Ruby runtime = container.getProvider().getRuntime();
+        final ThreadContext context = runtime.getCurrentContext();
+        final boolean sharing_variables = isSharingVariables(container);
+
+        if (sharing_variables) {
+            beforeSharingVariablesCall(context, unit);
+        }
+        try {
+            IRubyObject[] rubyArgs = (args != null && args.length > 0) ? convertArgs(runtime, args) : IRubyObject.NULL_ARRAY;
+
+            RubyHash kwargsHash = convertKwargsToRubyHash(runtime, kwargs);
+
+            IRubyObject[] finalArgs;
+            if (kwargsHash != null) {
+                finalArgs = new IRubyObject[rubyArgs.length + 1];
+                System.arraycopy(rubyArgs, 0, finalArgs, 0, rubyArgs.length);
+                finalArgs[rubyArgs.length] = kwargsHash;
+                context.callInfo = ThreadContext.CALL_KEYWORD;
+            } else {
+                finalArgs = rubyArgs;
+            }
+
+            IRubyObject result = Helpers.invoke(context, rubyReceiver, methodName, finalArgs, block);
+            if (sharing_variables) {
+                container.getVarMap().retrieve(rubyReceiver);
+            }
+            if (returnType != null) {
+                Object ret = JavaEmbedUtils.rubyToJava(runtime, result, returnType);
+                return returnType.cast(ret);
+            }
+            return null;
+        } catch (Exception e) {
+            if (e instanceof InvokeFailedException) throw e;
+            if (wrapExceptions) throw new InvokeFailedException(e);
+            Helpers.throwException(e); return null; // never returns
+        } finally {
+            if (sharing_variables) {
+                afterSharingVariablesCall(context);
+            }
+        }
+    }
+
+    private static RubyHash convertKwargsToRubyHash(Ruby runtime, Map<String, Object> kwargs) {
+        if (kwargs == null || kwargs.isEmpty()) return null;
+
+        RubyHash hash = RubyHash.newHash(runtime);
+        for (Map.Entry<String, Object> entry : kwargs.entrySet()) {
+            RubySymbol key = runtime.newSymbol(entry.getKey());
+            IRubyObject value = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getValue());
+            hash.fastASet(key, value);
+        }
+        return hash;
     }
 
 }

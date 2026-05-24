@@ -29,6 +29,8 @@
  */
 package org.jruby.embed;
 
+import java.util.Map;
+
 import org.jruby.RubyObjectAdapter;
 import org.jruby.runtime.Block;
 
@@ -184,4 +186,50 @@ public interface EmbedRubyObjectAdapter extends RubyObjectAdapter {
      * @return an instance of requested Java type
      */
     <T> T runRubyMethod(Class<T> returnType, Object receiver, String methodName, Block block, Object... args);
+
+    /**
+     * Executes a method defined in Ruby script, passing keyword arguments.
+     *
+     * @param receiver is an instance that will receive this method call
+     * @param methodName is a method name to be called
+     * @param kwargs is a map of keyword argument names to values
+     * @return an instance automatically converted from Ruby to Java
+     */
+    Object callMethod(Object receiver, String methodName, Map<String, Object> kwargs);
+
+    /**
+     * Executes a method defined in Ruby script, passing positional and keyword arguments.
+     *
+     * @param receiver is an instance that will receive this method call
+     * @param methodName is a method name to be called
+     * @param args is an array of positional method arguments
+     * @param kwargs is a map of keyword argument names to values
+     * @return an instance automatically converted from Ruby to Java
+     */
+    Object callMethod(Object receiver, String methodName, Object[] args, Map<String, Object> kwargs);
+
+    /**
+     * Executes a method defined in Ruby script, passing positional and keyword arguments.
+     *
+     * @param receiver is an instance that will receive this method call
+     * @param methodName is a method name to be called
+     * @param args is an array of positional method arguments
+     * @param kwargs is a map of keyword argument names to values
+     * @param returnType is the type we want it to convert to
+     * @return an instance of requested Java type
+     */
+    <T> T callMethod(Object receiver, String methodName, Object[] args, Map<String, Object> kwargs, Class<T> returnType);
+
+    /**
+     * Executes a method defined in Ruby script, passing positional args, keyword args, and a block.
+     *
+     * @param receiver is an instance that will receive this method call
+     * @param methodName is a method name to be called
+     * @param args is an array of positional method arguments
+     * @param kwargs is a map of keyword argument names to values
+     * @param block is a block to be executed in this method
+     * @param returnType is the type we want it to convert to
+     * @return an instance of requested Java type
+     */
+    <T> T callMethod(Object receiver, String methodName, Object[] args, Map<String, Object> kwargs, Block block, Class<T> returnType);
 }

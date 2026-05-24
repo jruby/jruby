@@ -1505,6 +1505,72 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
     }
 
     /**
+     * Executes a method defined in Ruby script, passing keyword arguments.
+     *
+     * @param receiver is an instance that will receive this method call.
+     *                 Ruby's self object will be used if no appropriate receiver
+     *                 is given.
+     * @param methodName is a method name to be called
+     * @param kwargs is a map of keyword argument names (as Strings) to values.
+     *              Keys are converted to Ruby Symbols automatically.
+     * @return an instance automatically converted from Ruby to Java
+     */
+    public Object callMethod(Object receiver, String methodName, Map<String, Object> kwargs) {
+        return objectAdapter.callMethod(receiver, methodName, kwargs);
+    }
+
+    /**
+     * Executes a method defined in Ruby script, passing positional and keyword arguments.
+     *
+     * @param receiver is an instance that will receive this method call.
+     *                 Ruby's self object will be used if no appropriate receiver
+     *                 is given.
+     * @param methodName is a method name to be called
+     * @param args is an array of positional method arguments
+     * @param kwargs is a map of keyword argument names (as Strings) to values.
+     *              Keys are converted to Ruby Symbols automatically.
+     * @return an instance automatically converted from Ruby to Java
+     */
+    public Object callMethod(Object receiver, String methodName, Object[] args, Map<String, Object> kwargs) {
+        return objectAdapter.callMethod(receiver, methodName, args, kwargs);
+    }
+
+    /**
+     * Executes a method defined in Ruby script, passing positional and keyword arguments.
+     *
+     * @param receiver is an instance that will receive this method call.
+     *                 Ruby's self object will be used if no appropriate receiver
+     *                 is given.
+     * @param methodName is a method name to be called
+     * @param args is an array of positional method arguments
+     * @param kwargs is a map of keyword argument names (as Strings) to values.
+     *              Keys are converted to Ruby Symbols automatically.
+     * @param returnType is the type we want it to convert to
+     * @return an instance of requested Java type
+     */
+    public <T> T callMethod(Object receiver, String methodName, Object[] args, Map<String, Object> kwargs, Class<T> returnType) {
+        return objectAdapter.callMethod(receiver, methodName, args, kwargs, returnType);
+    }
+
+    /**
+     * Executes a method defined in Ruby script, passing positional args, keyword args, and a block.
+     *
+     * @param receiver is an instance that will receive this method call.
+     *                 Ruby's self object will be used if no appropriate receiver
+     *                 is given.
+     * @param methodName is a method name to be called
+     * @param args is an array of positional method arguments
+     * @param kwargs is a map of keyword argument names (as Strings) to values.
+     *              Keys are converted to Ruby Symbols automatically.
+     * @param block is a block to be executed in this method
+     * @param returnType is the type we want it to convert to
+     * @return an instance of requested Java type
+     */
+    public <T> T callMethod(Object receiver, String methodName, Object[] args, Map<String, Object> kwargs, Block block, Class<T> returnType) {
+        return objectAdapter.callMethod(receiver, methodName, args, kwargs, block, returnType);
+    }
+
+    /**
      *
      * @param receiver is an instance that will receive this method call.
      *                 Ruby's self object will be used if no appropriate receiver
