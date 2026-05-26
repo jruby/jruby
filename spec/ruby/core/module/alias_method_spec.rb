@@ -102,6 +102,26 @@ describe "Module#alias_method" do
     ModuleSpecs::Allonym.new.publish.should == :report
   end
 
+  it "does not warn when restoring a method after self-aliasing" do
+    klass = Class.new
+
+    def klass.foo
+      :original
+    end
+
+    singleton = klass.singleton_class
+
+    -> {
+      singleton.alias_method :__tmp_foo, :foo
+      klass.define_singleton_method(:foo) { :stub }
+      singleton.alias_method :foo, :foo
+      singleton.alias_method :foo, :__tmp_foo
+      singleton.undef_method :__tmp_foo
+    }.should_not complain(verbose: true)
+
+    klass.foo.should == :original
+  end
+
   it "works on private module methods in a module that has been reopened" do
     ModuleSpecs::ReopeningModule.foo.should == true
     -> { ModuleSpecs::ReopeningModule.foo2 }.should_not raise_error(NoMethodError)

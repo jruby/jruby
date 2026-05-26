@@ -5702,15 +5702,22 @@ public class RubyModule extends RubyObject {
 
         DynamicMethod method = getMethods().get(name);
         if (method != null && entry.method.getRealMethod() != method.getRealMethod() && !method.isUndefined()) {
-            if (method.getRealMethod().getAliasCount() == 0) warning(context, "method redefined; discarding old " + name);
+            if (method.getRealMethod().getAliasCount() == 0) {
+                warning(context, "method redefined; discarding old " + name);
 
-            if (method instanceof PositionAware posAware) {
-                context.runtime.getWarnings().warning(ID.REDEFINING_METHOD, posAware.getFile(), posAware.getLine() + 1, "previous definition of " + name + " was here");
+                if (method instanceof PositionAware posAware) {
+                    context.runtime.getWarnings().warning(ID.REDEFINING_METHOD, posAware.getFile(), posAware.getLine() + 1, "previous definition of " + name + " was here");
+                }
             }
         }
 
-        checkAliasFrameAccesses(context, oldName, name, entry.method);
-        putAlias(context, name, entry, oldName);
+        if (name.equals(oldName)) {
+            // MRI treats self-aliasing as an intentional alias, which suppresses redefinition warning
+            entry.method.getRealMethod().adjustAliasCount(1);
+        } else {
+            checkAliasFrameAccesses(context, oldName, name, entry.method);
+            putAlias(context, name, entry, oldName);
+        }
 
         RubyModule methodLocation = getMethodLocation();
         synchronized (context.runtime.getHierarchyLock()) {
