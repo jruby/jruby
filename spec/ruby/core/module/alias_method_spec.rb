@@ -122,6 +122,51 @@ describe "Module#alias_method" do
     klass.foo.should == :original
   end
 
+  it "preserves self-alias redefinition suppression when reusing a method definition" do
+    klass = Class.new do
+      def foo
+        :original
+      end
+
+      def bar
+        :bar
+      end
+
+      alias_method :foo, :foo
+    end
+
+    method = klass.instance_method(:foo)
+    klass.class_eval { define_method(:foo, method) }
+
+    -> {
+      klass.class_eval { alias_method :foo, :bar }
+    }.should_not complain(verbose: true)
+
+    klass.new.foo.should == :bar
+  end
+
+  it "warns again after self-alias redefinition suppression is replaced by a new method body" do
+    klass = Class.new do
+      def foo
+        :original
+      end
+
+      def bar
+        :bar
+      end
+
+      alias_method :foo, :foo
+    end
+
+    klass.class_eval { define_method(:foo) { :replacement } }
+
+    -> {
+      klass.class_eval { alias_method :foo, :bar }
+    }.should complain(/method redefined/, verbose: true)
+
+    klass.new.foo.should == :bar
+  end
+
   it "works on private module methods in a module that has been reopened" do
     ModuleSpecs::ReopeningModule.foo.should == true
     -> { ModuleSpecs::ReopeningModule.foo2 }.should_not raise_error(NoMethodError)
