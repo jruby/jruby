@@ -79,8 +79,10 @@ public abstract class DynamicMethod {
     protected final String name;
     /** An arbitrarily-typed "method handle" for use by compilers and call sites */
     protected Object handle;
-    /** How many times has this method been aliased. */
-    protected int aliasCount;
+    /** Whether this method has been aliased */
+    private boolean aliased;
+    /** Whether this method has been marked to suppress redefinition warnings */
+    private boolean noRedefinitionWarning;
 
     private static final int BUILTIN_FLAG = 0b1;
     private static final int NOTIMPL_FLAG = 0b10;
@@ -678,12 +680,20 @@ public abstract class DynamicMethod {
         this(implementationClass, visibility, "(anonymous)");
     }
 
-    public void adjustAliasCount(int delta) {
-        this.aliasCount += delta;
+    void setAliased(boolean aliased) {
+        this.aliased = aliased;
     }
 
-    public int getAliasCount() {
-        return this.aliasCount;
+    public boolean isAliased() {
+        return this.aliased;
+    }
+
+    public void setNoRedefinitionWarning() {
+        this.noRedefinitionWarning = true;
+    }
+
+    public boolean warnsOnRedefinition() {
+        return !this.aliased && !this.noRedefinitionWarning;
     }
 
     /**

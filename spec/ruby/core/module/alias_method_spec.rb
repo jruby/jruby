@@ -102,6 +102,71 @@ describe "Module#alias_method" do
     ModuleSpecs::Allonym.new.publish.should == :report
   end
 
+  it "does not warn when restoring a method after self-aliasing" do
+    klass = Class.new
+
+    def klass.foo
+      :original
+    end
+
+    singleton = klass.singleton_class
+
+    -> {
+      singleton.alias_method :__tmp_foo, :foo
+      klass.define_singleton_method(:foo) { :stub }
+      singleton.alias_method :foo, :foo
+      singleton.alias_method :foo, :__tmp_foo
+      singleton.undef_method :__tmp_foo
+    }.should_not complain(verbose: true)
+
+    klass.foo.should == :original
+  end
+
+  it "preserves self-alias redefinition suppression when reusing a method definition" do
+    klass = Class.new do
+      def foo
+        :original
+      end
+
+      def bar
+        :bar
+      end
+
+      alias_method :foo, :foo
+    end
+
+    method = klass.instance_method(:foo)
+    klass.class_eval { define_method(:foo, method) }
+
+    -> {
+      klass.class_eval { alias_method :foo, :bar }
+    }.should_not complain(verbose: true)
+
+    klass.new.foo.should == :bar
+  end
+
+  it "warns again after self-alias redefinition suppression is replaced by a new method body" do
+    klass = Class.new do
+      def foo
+        :original
+      end
+
+      def bar
+        :bar
+      end
+
+      alias_method :foo, :foo
+    end
+
+    klass.class_eval { define_method(:foo) { :replacement } }
+
+    -> {
+      klass.class_eval { alias_method :foo, :bar }
+    }.should complain(/method redefined/, verbose: true)
+
+    klass.new.foo.should == :bar
+  end
+
   it "works on private module methods in a module that has been reopened" do
     ModuleSpecs::ReopeningModule.foo.should == true
     -> { ModuleSpecs::ReopeningModule.foo2 }.should_not raise_error(NoMethodError)
