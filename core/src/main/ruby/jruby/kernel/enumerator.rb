@@ -146,7 +146,9 @@ class Enumerator
       proc do |yielder, *args|
         catch yielder do
           obj.each(*args) do |*x|
-            yield yielder, *x
+            # Match CRuby's rb_enum_values_pack (enum.c):
+            #   0 args -> nil, 1 arg -> the value, N args -> Array.
+            yield yielder, (x.size <= 1 ? x.first : x)
           end
         end
       end
