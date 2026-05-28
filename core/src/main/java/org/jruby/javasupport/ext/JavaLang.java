@@ -43,6 +43,7 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.JavaInternalBlockBody;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.RubyStringBuilder;
@@ -229,9 +230,8 @@ public abstract class JavaLang {
         public static IRubyObject backtrace(final ThreadContext context, final IRubyObject self) {
             final Ruby runtime = context.runtime;
             java.lang.Throwable throwable = unwrapIfJavaObject(self);
-            // TODO instead this should get aligned with NativeException !?!
             StackTraceElement[] stackTrace = throwable.getStackTrace();
-            if ( stackTrace == null ) return context.nil; // never actually happens
+            if ( stackTrace == null ) return context.nil;
             final int len = stackTrace.length;
             if ( len == 0 ) return RubyArray.newEmptyArray(runtime);
             IRubyObject[] backtrace = new IRubyObject[len];
@@ -239,6 +239,20 @@ public abstract class JavaLang {
                 backtrace[i] = RubyString.newString(runtime, stackTrace[i].toString());
             }
             return RubyArray.newArrayMayCopy(runtime, backtrace);
+        }
+
+        @JRubyMethod
+        public static IRubyObject backtrace_locations(final ThreadContext context, final IRubyObject self) {
+            java.lang.Throwable throwable = unwrapIfJavaObject(self);
+            StackTraceElement[] stackTrace = throwable.getStackTrace();
+            if ( stackTrace == null ) return context.nil;
+            final int len = stackTrace.length;
+            if ( len == 0 ) return RubyArray.newEmptyArray(context.runtime);
+            RubyStackTraceElement[] rubyStackTrace = new RubyStackTraceElement[len];
+            for ( int i = 0; i < len; i++ ) {
+                rubyStackTrace[i] = new RubyStackTraceElement(stackTrace[i]);
+            }
+            return RubyThread.Location.newLocationArray(context.runtime, rubyStackTrace);
         }
 
         @JRubyMethod // can not set backtrace for a java.lang.Throwable
