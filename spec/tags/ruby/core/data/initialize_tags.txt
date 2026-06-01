@@ -1,0 +1,4 @@
+fails:Data#initialize raises ArgumentError if at least one argument is missing and other is provided as both String and Symbol
+fails:Data#initialize raises ArgumentError if unknown keyword is given which is convertable to String
+fails:Data#initialize raises TypeError when the keyword is not convertable to String
+fails:Data#initialize raises TypeError if the conversion with #to_str does not return a String

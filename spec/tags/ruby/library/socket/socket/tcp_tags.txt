@@ -4,3 +4,5 @@ fails:Socket.tcp closes the Socket automatically when a block is given
 fails:Socket.tcp binds to a local address and port when specified
 fails:Socket.tcp raises ArgumentError when 6 arguments are provided
 fails:Socket.tcp connects to the server
+fails:Socket.tcp connects to the server when passed open_timeout argument
+fails:Socket.tcp raises Errno::ETIMEDOUT with :open_timeout when no server is listening on the given address

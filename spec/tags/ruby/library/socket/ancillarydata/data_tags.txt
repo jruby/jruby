@@ -1,0 +1,1 @@
+fails:Socket::AncillaryData#data returns the data as a String
