@@ -1,0 +1,11 @@
+fails:Socket::AncillaryData.ipv6_pktinfo returns a Socket::AncillaryData
+fails:Socket::AncillaryData.ipv6_pktinfo sets the family to AF_INET
+fails:Socket::AncillaryData.ipv6_pktinfo sets the level to IPPROTO_IP
+fails:Socket::AncillaryData.ipv6_pktinfo sets the type to IP_PKTINFO
+fails:Socket::AncillaryData#ipv6_pktinfo using an Addrinfo without a port number returns an Array
+fails:Socket::AncillaryData#ipv6_pktinfo using an Addrinfo without a port number the returned Array stores an Addrinfo at index 0
+fails:Socket::AncillaryData#ipv6_pktinfo using an Addrinfo without a port number the returned Array stores the ifindex at index 1
+fails:Socket::AncillaryData#ipv6_pktinfo using an Addrinfo without a port number the source Addrinfo uses the correct IP address
+fails:Socket::AncillaryData#ipv6_pktinfo using an Addrinfo without a port number the source Addrinfo is not the same object as the input Addrinfo
+fails:Socket::AncillaryData#ipv6_pktinfo using an Addrinfo without a port number the ifindex is an Integer
+fails:Socket::AncillaryData#ipv6_pktinfo using an Addrinfo with a port number the source Addrinfo does not contain a port number

@@ -1,0 +1,9 @@
+fails:Socket::AncillaryData.unix_rights using a list of IO objects sets the family to AF_UNIX
+fails:Socket::AncillaryData.unix_rights using a list of IO objects sets the level to SOL_SOCKET
+fails:Socket::AncillaryData.unix_rights using a list of IO objects sets the type to SCM_RIGHTS
+fails:Socket::AncillaryData.unix_rights using a list of IO objects sets the data to a String containing the file descriptors
+fails:Socket::AncillaryData.unix_rights using non IO objects raises TypeError
+fails:Socket::AncillaryData#unix_rights returns the data as an Array of IO objects
+fails:Socket::AncillaryData#unix_rights returns nil when the data is not a list of file descriptors
+fails:Socket::AncillaryData#unix_rights raises TypeError when the level is not SOL_SOCKET
+fails:Socket::AncillaryData#unix_rights raises TypeError when the type is not SCM_RIGHTS

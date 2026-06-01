@@ -1,0 +1,2 @@
+fails:UnboundMethod#original_name returns the source UnboundMethod's name for Kernel#is_a? and Kernel#kind_of?
+fails:UnboundMethod#original_name preserves the source name when aliasing a define_method'd Kernel method
