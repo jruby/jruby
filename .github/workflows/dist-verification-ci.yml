@@ -36,26 +36,17 @@ jobs:
           distribution: 'temurin'
           java-version: 21
           cache: 'maven'
-      - name: set up install4j
-        uses: luangong/setup-install4j@v1
-        with:
-          version: 12.0.4
-          license: ${{ secrets.INSTALL4J_LICENSE }}
       - name: build release artifacts
         run: |
           ./mvnw -ntp clean package -Pall
       - uses: cedx/SetupAnt@v6
       - name: install dependencies
         run: bin/jruby -S bundle install
-      - name: build installer
-        run: bin/jruby -S rake installer INSTALL4J_EXECUTABLE=/opt/install4j/bin/install4jc
       - name: cache release artifacts
         run: |
           mv maven/jruby-dist/target/jruby-dist*-bin.tar.gz jruby-dist-bin.tar.gz
           mv maven/jruby-dist/target/jruby-dist*-src.tar.gz jruby-dist-src.tar.gz
           mv maven/jruby-complete/target/jruby-complete*.jar jruby-complete.jar
-          mv release/jruby_windows-x32*.exe jruby_windows-x32.exe
-          mv release/jruby_windows_x64*.exe jruby_windows-x64.exe
       - name: cache dist bin
         uses: actions/upload-artifact@v7
         with:
@@ -74,6 +65,46 @@ jobs:
           path: jruby-complete.jar
           retention-days: 1
           archive: false
+
+  build-installer:
+
+    if: ${{ github.repository == 'jruby/jruby' && github.action == 'push' }}
+
+    strategy:
+      matrix:
+        java-version: ['21']
+      fail-fast: false
+
+    runs-on: ubuntu-latest
+
+    name: Build JRuby Windows installers
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v6
+      - name: set up java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: 21
+          cache: 'maven'
+      - name: set up install4j
+        uses: luangong/setup-install4j@v1
+        with:
+          version: 12.0.4
+          license: ${{ secrets.INSTALL4J_LICENSE }}
+      - name: build release artifacts
+        run: |
+          ./mvnw -ntp clean package -Pall
+      - uses: cedx/SetupAnt@v6
+      - name: install dependencies
+        run: bin/jruby -S bundle install
+      - name: build installer
+        run: bin/jruby -S rake installer INSTALL4J_EXECUTABLE=/opt/install4j/bin/install4jc
+      - name: cache release artifacts
+        run: |
+          mv release/jruby_windows-x32*.exe jruby_windows-x32.exe
+          mv release/jruby_windows_x64*.exe jruby_windows-x64.exe
       - name: cache x32 installer
         uses: actions/upload-artifact@v7
         with:
@@ -223,7 +254,9 @@ jobs:
 
   installer-verification:
 
-    needs: build-dist
+    if: ${{ github.repository == 'jruby/jruby' && github.action == 'push' }}
+
+    needs: build-installer
 
     strategy:
       matrix:
