@@ -705,7 +705,8 @@ public class IRRuntimeHelpers {
     @JIT
     public static IRubyObject receiveSpecificArityKeywords(ThreadContext context, IRubyObject last, boolean ruby2Keywords) {
         int callInfo = ThreadContext.resetCallInfo(context);
-        if (last instanceof RubyHash hash) {
+        if (shouldHandleKwargs(last, callInfo)) {
+            RubyHash hash = (RubyHash) last;
             KwargsAction kwargsAction = kwargsActionJIT(last, ruby2Keywords, callInfo);
             return switch (kwargsAction) {
                 case RETURN_DUP -> hash.dupFast(context);
@@ -778,7 +779,14 @@ public class IRRuntimeHelpers {
     }
 
     private static boolean shouldHandleKwargs(IRubyObject[] args, int callInfo) {
-        return (callInfo & CALL_KEYWORD_EMPTY) == 0 && args.length >= 1 && args[args.length - 1] instanceof RubyHash;
+        if (args.length > 0) {
+            return shouldHandleKwargs(args[args.length - 1], callInfo);
+        }
+        return false;
+    }
+
+    private static boolean shouldHandleKwargs(IRubyObject lastArg, int callInfo) {
+        return (callInfo & CALL_KEYWORD_EMPTY) == 0 && lastArg instanceof RubyHash;
     }
 
     enum KwargsAction {
