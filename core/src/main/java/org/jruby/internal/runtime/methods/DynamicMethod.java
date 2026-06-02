@@ -245,6 +245,16 @@ public abstract class DynamicMethod {
         return call(context, self, klazz, name, new IRubyObject[] {arg0, arg1, arg2}, block);
     }
 
+    /**
+     * Get the source name for {@code Method#original_name}.
+     * Overridden by {@link AliasMethod} and {@link RenamedDynamicMethod}.
+     *
+     * @return the source name
+     */
+    public String getOldName() {
+        return name;
+    }
+
     /*
      * Will call respond_to?/respond_to_missing? on object and name
      */
@@ -578,7 +588,7 @@ public abstract class DynamicMethod {
 
     /**
      * Get the "handle" associated with this DynamicMethod.
-     * 
+     *
      * @return the handle
      */
     public Object getHandle() {
