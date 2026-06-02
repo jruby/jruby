@@ -253,7 +253,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
         return new RubyHashLinkedBuckets(runtime, defaultValue, buckets);
     }
 
-    protected void set(int flag, boolean set) {
+    protected void setHashFlag(int flag, boolean set) {
         if (set) {
             hashFlags |= flag;
         } else {
@@ -261,7 +261,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
         }
     }
 
-    protected boolean get(int flag) {
+    protected boolean hasHashFlag(int flag) {
         return (hashFlags & flag) != 0;
     }
 
@@ -576,7 +576,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
 
         if (block.isGiven()) {
             ifNone = context.runtime.newProc(Block.Type.PROC, block);
-            set(PROCDEFAULT_HASH, true);
+            setHashFlag(PROCDEFAULT_HASH, true);
         } else {
             ifNone = UNDEF;
         }
@@ -595,7 +595,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
 
             if (block.isGiven()) {
                 ifNone = context.runtime.newProc(Block.Type.PROC, block);
-                set(PROCDEFAULT_HASH, true);
+                setHashFlag(PROCDEFAULT_HASH, true);
             } else {
                 ifNone = UNDEF;
             }
@@ -628,7 +628,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
 
     @JRubyMethod(name = "default")
     public IRubyObject default_value_get(ThreadContext context) {
-        if (get(PROCDEFAULT_HASH)) {
+        if (hasHashFlag(PROCDEFAULT_HASH)) {
             return context.nil;
         }
         return ifNone == UNDEF ? context.nil : ifNone;
@@ -636,7 +636,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
 
     @JRubyMethod(name = "default")
     public IRubyObject default_value_get(ThreadContext context, IRubyObject arg) {
-        if (get(PROCDEFAULT_HASH)) {
+        if (hasHashFlag(PROCDEFAULT_HASH)) {
             return sites(context).call.call(context, ifNone, ifNone, this, arg);
         }
         return ifNone == UNDEF ? context.nil : ifNone;
@@ -650,7 +650,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
         modify();
 
         ifNone = defaultValue;
-        set(PROCDEFAULT_HASH, false);
+        setHashFlag(PROCDEFAULT_HASH, false);
 
         return ifNone;
     }
@@ -660,7 +660,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
      */
     @JRubyMethod
     public IRubyObject default_proc(ThreadContext context) {
-        return get(PROCDEFAULT_HASH) ? ifNone : context.nil;
+        return hasHashFlag(PROCDEFAULT_HASH) ? ifNone : context.nil;
     }
 
     /** default_proc_arity_check
@@ -684,7 +684,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
 
         if (proc.isNil()) {
             ifNone = proc;
-            set(PROCDEFAULT_HASH, false);
+            setHashFlag(PROCDEFAULT_HASH, false);
             return proc;
         }
 
@@ -694,7 +694,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
         proc = b;
         checkDefaultProcArity(context, ((RubyProc) proc).getBlock());
         ifNone = proc;
-        set(PROCDEFAULT_HASH, true);
+        setHashFlag(PROCDEFAULT_HASH, true);
         return proc;
     }
 
@@ -1971,10 +1971,10 @@ public class RubyHashLinkedBuckets extends RubyHash {
 
         ifNone = otherHash.getIfNone();
 
-        if (otherHash.get(PROCDEFAULT_HASH)) {
-            set(PROCDEFAULT_HASH, true);
+        if (otherHash.hasHashFlag(PROCDEFAULT_HASH)) {
+            setHashFlag(PROCDEFAULT_HASH, true);
         } else {
-            set(PROCDEFAULT_HASH, false);
+            setHashFlag(PROCDEFAULT_HASH, false);
         }
 
         return this;
@@ -2207,10 +2207,10 @@ public class RubyHashLinkedBuckets extends RubyHash {
 
         dup.ifNone = this.ifNone;
 
-        if (this.get(PROCDEFAULT_HASH)) {
-            dup.set(PROCDEFAULT_HASH, true);
+        if (this.hasHashFlag(PROCDEFAULT_HASH)) {
+            dup.setHashFlag(PROCDEFAULT_HASH, true);
         } else {
-            dup.set(PROCDEFAULT_HASH, false);
+            dup.setHashFlag(PROCDEFAULT_HASH, false);
         }
 
         return dup;
@@ -2222,7 +2222,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
     }
 
     public boolean hasDefaultProc() {
-        return get(PROCDEFAULT_HASH);
+        return hasHashFlag(PROCDEFAULT_HASH);
     }
 
     public IRubyObject getIfNone(){
@@ -2434,7 +2434,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
      * @return true if this object is compared by identity, false otherwise
      */
     public boolean isComparedByIdentity() {
-        return get(COMPARE_BY_IDENTITY);
+        return hasHashFlag(COMPARE_BY_IDENTITY);
     }
 
     /**
@@ -2443,15 +2443,15 @@ public class RubyHashLinkedBuckets extends RubyHash {
      * @param comparedByIdentity should this object be compared by identity?
      */
     public void setComparedByIdentity(boolean comparedByIdentity) {
-        set(COMPARE_BY_IDENTITY, comparedByIdentity);
+        setHashFlag(COMPARE_BY_IDENTITY, comparedByIdentity);
     }
 
     public boolean isRuby2KeywordHash() {
-        return get(RUBY2_KEYWORD);
+        return hasHashFlag(RUBY2_KEYWORD);
     }
 
     public void setRuby2KeywordHash(boolean value) {
-        set(RUBY2_KEYWORD, value);
+        setHashFlag(RUBY2_KEYWORD, value);
     }
 
     private class BaseSet extends AbstractSet {
