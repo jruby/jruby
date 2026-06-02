@@ -2514,7 +2514,7 @@ public class Helpers {
         Visibility visibility = method.getVisibility();
 
         if (visibility != Visibility.PRIVATE &&
-                (visibility != Visibility.PROTECTED || metaClass.getRealClass().isInstance(self)) && !method.isUndefined()) {
+                (visibility != Visibility.PROTECTED || method.getImplementationClass().isInstance(self)) && !method.isUndefined()) {
             return definedMessage;
         }
 
