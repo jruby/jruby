@@ -720,7 +720,8 @@ public class IRRuntimeHelpers {
         return last;
     }
 
-    public static KwargsAction kwargsActionJIT(IRubyObject last, boolean ruby2Keywords, int callInfo) {
+    @JIT
+    private static KwargsAction kwargsActionJIT(IRubyObject last, boolean ruby2Keywords, int callInfo) {
         boolean isKwarg = hasKeywords(callInfo);
         if (ruby2Keywords) {
             // ruby2_keywords only get unmarked if it enters a method which accepts keywords.
@@ -791,6 +792,7 @@ public class IRRuntimeHelpers {
      * @param callInfo the callInfo metadata for the call
      * @return true if keywords should be processed, false otherwise
      */
+    @Interp
     private static boolean shouldHandleKwargs(IRubyObject[] args, int callInfo) {
         if (args.length > 0) {
             return shouldHandleKwargs(args[args.length - 1], callInfo);
@@ -808,6 +810,7 @@ public class IRRuntimeHelpers {
      * @param callInfo the callInfo metadata for the call
      * @return true if keywords should be processed, false otherwise
      */
+    @JIT
     private static boolean shouldHandleKwargs(IRubyObject lastArg, int callInfo) {
         return !keywordsEmpty(callInfo) && lastArg instanceof RubyHash;
     }
@@ -823,6 +826,7 @@ public class IRRuntimeHelpers {
         RETURN_HASH
     }
 
+    @Interp
     private static IRubyObject receiveKeywordsHash(ThreadContext context, IRubyObject[] args, boolean hasRestArgs,
                                                    boolean acceptsKeywords, boolean ruby2_keywords_method, int callInfo) {
         RubyHash hash = (RubyHash) args[args.length - 1];
