@@ -778,6 +778,20 @@ public class IRRuntimeHelpers {
         return UNDEFINED;
     }
 
+    /**
+     * For the given the argument list and callInfo, determine whether keyword argument
+     * processing should happen. The basic requirements are:
+     *
+     * <ul>
+     *     <li>callInfo metadata does not indicate explicitly-empty keyword args</li>
+     *     <li>one or more arguments in the argument list</li>
+     *     <li>last argument is a Hash</li>
+     * </ul>
+     *
+     * @param args the argument list
+     * @param callInfo the callInfo metadata for the call
+     * @return true if keywords should be processed, false otherwise
+     */
     private static boolean shouldHandleKwargs(IRubyObject[] args, int callInfo) {
         if (args.length > 0) {
             return shouldHandleKwargs(args[args.length - 1], callInfo);
@@ -785,8 +799,18 @@ public class IRRuntimeHelpers {
         return false;
     }
 
+    /**
+     * For the given last argument and callInfo, determine whether keyword argument
+     * processing should happen.
+     * </p>
+     * See {@link #shouldHandleKwargs(IRubyObject[], int)}.
+     *
+     * @param lastArg the last argument in the argument list
+     * @param callInfo the callInfo metadata for the call
+     * @return true if keywords should be processed, false otherwise
+     */
     private static boolean shouldHandleKwargs(IRubyObject lastArg, int callInfo) {
-        return (callInfo & CALL_KEYWORD_EMPTY) == 0 && lastArg instanceof RubyHash;
+        return !keywordsEmpty(callInfo) && lastArg instanceof RubyHash;
     }
 
     enum KwargsAction {
