@@ -25,6 +25,7 @@ project 'JRuby Core' do
                     { pattern: 'org.objectweb', shadedPattern: 'org.jruby.org.objectweb' },
                     { pattern: 'me.qmx.jitescript', shadedPattern: 'org.jruby.me.qmx.jitescript' },
                     { pattern: 'com.dylibso.chicory', shadedPattern: 'com.jruby.internal.org.dylibso.chicory'},
+                    { pattern: 'io.roastedroot.redline', shadedPattern: 'com.jruby.internal.io.roastedroot.redline'},
                     { pattern: 'org.ruby_lang.prism', shadedPattern: 'org.jruby.internal.prism'},
                     { pattern: 'org.jruby.parser.prism', shadedPattern: 'org.jruby.internal.parser.prism'}
                   ],

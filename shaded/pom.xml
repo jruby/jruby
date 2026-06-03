@@ -57,6 +57,10 @@ DO NOT MODIFY - GENERATED CODE
                   <shadedPattern>com.jruby.internal.org.dylibso.chicory</shadedPattern>
                 </relocation>
                 <relocation>
+                  <pattern>io.roastedroot.redline</pattern>
+                  <shadedPattern>com.jruby.internal.io.roastedroot.redline</shadedPattern>
+                </relocation>
+                <relocation>
                   <pattern>org.ruby_lang.prism</pattern>
                   <shadedPattern>org.jruby.internal.prism</shadedPattern>
                 </relocation>
