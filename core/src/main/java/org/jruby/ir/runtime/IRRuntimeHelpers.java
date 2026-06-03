@@ -705,7 +705,8 @@ public class IRRuntimeHelpers {
     @JIT
     public static IRubyObject receiveSpecificArityKeywords(ThreadContext context, IRubyObject last, boolean ruby2Keywords) {
         int callInfo = ThreadContext.resetCallInfo(context);
-        if (last instanceof RubyHash hash) {
+        if (shouldHandleKwargs(last, callInfo)) {
+            RubyHash hash = (RubyHash) last;
             KwargsAction kwargsAction = kwargsActionJIT(last, ruby2Keywords, callInfo);
             return switch (kwargsAction) {
                 case RETURN_DUP -> hash.dupFast(context);
@@ -720,7 +721,8 @@ public class IRRuntimeHelpers {
         return last;
     }
 
-    public static KwargsAction kwargsActionJIT(IRubyObject last, boolean ruby2Keywords, int callInfo) {
+    @JIT
+    private static KwargsAction kwargsActionJIT(IRubyObject last, boolean ruby2Keywords, int callInfo) {
         boolean isKwarg = hasKeywords(callInfo);
         if (ruby2Keywords) {
             // ruby2_keywords only get unmarked if it enters a method which accepts keywords.
@@ -777,8 +779,41 @@ public class IRRuntimeHelpers {
         return UNDEFINED;
     }
 
+    /**
+     * For the given the argument list and callInfo, determine whether keyword argument
+     * processing should happen. The basic requirements are:
+     *
+     * <ul>
+     *     <li>callInfo metadata does not indicate explicitly-empty keyword args</li>
+     *     <li>one or more arguments in the argument list</li>
+     *     <li>last argument is a Hash</li>
+     * </ul>
+     *
+     * @param args the argument list
+     * @param callInfo the callInfo metadata for the call
+     * @return true if keywords should be processed, false otherwise
+     */
+    @Interp
     private static boolean shouldHandleKwargs(IRubyObject[] args, int callInfo) {
-        return (callInfo & CALL_KEYWORD_EMPTY) == 0 && args.length >= 1 && args[args.length - 1] instanceof RubyHash;
+        if (args.length > 0) {
+            return shouldHandleKwargs(args[args.length - 1], callInfo);
+        }
+        return false;
+    }
+
+    /**
+     * For the given last argument and callInfo, determine whether keyword argument
+     * processing should happen.
+     * </p>
+     * See {@link #shouldHandleKwargs(IRubyObject[], int)}.
+     *
+     * @param lastArg the last argument in the argument list
+     * @param callInfo the callInfo metadata for the call
+     * @return true if keywords should be processed, false otherwise
+     */
+    @JIT
+    private static boolean shouldHandleKwargs(IRubyObject lastArg, int callInfo) {
+        return !keywordsEmpty(callInfo) && lastArg instanceof RubyHash;
     }
 
     enum KwargsAction {
@@ -792,6 +827,7 @@ public class IRRuntimeHelpers {
         RETURN_HASH
     }
 
+    @Interp
     private static IRubyObject receiveKeywordsHash(ThreadContext context, IRubyObject[] args, boolean hasRestArgs,
                                                    boolean acceptsKeywords, boolean ruby2_keywords_method, int callInfo) {
         RubyHash hash = (RubyHash) args[args.length - 1];

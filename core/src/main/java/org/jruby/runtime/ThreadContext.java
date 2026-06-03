@@ -1554,6 +1554,13 @@ public final class ThreadContext {
         return hasKeywords(callInfo) && !keywordsEmpty(callInfo);
     }
 
+    /**
+     * Return true if the given callInfo indicates keywords are explicitly empty and
+     * should not be processed.
+     *
+     * @param callInfo the callInfo for a call
+     * @return true if marked as empty, false otherwise
+     */
     public static boolean keywordsEmpty(int callInfo) {
         return (callInfo & CALL_KEYWORD_EMPTY) != 0;
     }
