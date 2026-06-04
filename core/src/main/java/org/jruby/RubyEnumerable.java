@@ -1981,7 +1981,7 @@ public class RubyEnumerable {
     public static IRubyObject group_by(ThreadContext context, IRubyObject self, final Block block) {
         if (!block.isGiven()) return enumeratorizeWithSize(context, self, "group_by", RubyEnumerable::size);
 
-        final RubyHash result = new RubyHash(context.runtime);
+        final RubyHash result = RubyHash.newHash(context.runtime);
 
         callEach(context, eachSite(context), self, Signature.OPTIONAL, (ctx, largs, blk) -> {
             IRubyObject larg = packEnumValues(ctx, largs);

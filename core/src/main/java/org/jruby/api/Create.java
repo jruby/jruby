@@ -196,7 +196,7 @@ public class Create {
      */
     // MRI: rb_hash_new
     public static RubyHash newHash(ThreadContext context) {
-        return new RubyHash(context.runtime);
+        return RubyHash.newHash(context.runtime);
     }
 
     /**
@@ -224,7 +224,7 @@ public class Create {
      */
     // MRI: rb_hash_new
     public static RubyHash newSmallHash(ThreadContext context) {
-        return new RubyHash(context.runtime, 1);
+        return RubyHash.newHash(context.runtime, 1);
     }
 
     /**
@@ -237,7 +237,7 @@ public class Create {
      */
     // MRI: rb_hash_new
     public static RubyHash newSmallHash(ThreadContext context, IRubyObject key, IRubyObject value) {
-        RubyHash hash = new RubyHash(context.runtime, 1);
+        RubyHash hash = RubyHash.newHash(context.runtime, 1);
         hash.fastASetSmall(context.runtime, key, value, true);
         return hash;
     }

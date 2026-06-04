@@ -138,15 +138,15 @@ public class RubySet extends RubyObject implements Set {
     // ... this is important with Rails using Sprockets at its marshalling Set instances
 
     final void allocHash(final ThreadContext context) {
-        setHash(new RubyHash(context.runtime, context.fals));
+        setHash(RubyHash.newHash(context.runtime, context.fals));
     }
 
     final void allocHash(final Ruby runtime) {
-        setHash(new RubyHash(runtime, runtime.getFalse()));
+        setHash(RubyHash.newHash(runtime, runtime.getFalse()));
     }
 
     final void allocHash(final ThreadContext context, final int size) {
-        setHash(new RubyHash(context.runtime, context.fals, size));
+        setHash(RubyHash.newHash(context.runtime, context.fals, size));
     }
 
     final void setHash(final RubyHash hash) {
@@ -918,7 +918,7 @@ public class RubySet extends RubyObject implements Set {
     public IRubyObject classify(ThreadContext context, final Block block) {
         if (!block.isGiven()) return enumeratorizeWithSize(context, this, "classify", RubySet::size);
 
-        final RubyHash h = new RubyHash(context.runtime, size());
+        final RubyHash h = RubyHash.newHash(context.runtime, size());
 
         for ( IRubyObject i : elementsOrdered() ) {
             final IRubyObject key = block.yield(context, i);
@@ -1036,6 +1036,7 @@ public class RubySet extends RubyObject implements Set {
             return new DivideTSortHash(context.runtime, klass);
         }
 
+        @SuppressWarnings("removal")
         DivideTSortHash(final Ruby runtime, final RubyClass metaClass) {
             super(runtime, metaClass);
         }

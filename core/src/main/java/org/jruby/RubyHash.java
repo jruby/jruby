@@ -138,6 +138,7 @@ public class RubyHash extends RubyObject implements Map {
     public static final int COMPARE_BY_IDENTITY_F = ObjectFlags.COMPARE_BY_IDENTITY_F;
     public static final int RUBY2_KEYWORD_F = ObjectFlags.RUBY2_KEYWORD_F;
 
+    @SuppressWarnings("removal")
     public static RubyClass createHashClass(ThreadContext context, RubyClass Object, RubyModule Enumerable) {
         return defineClass(context, "Hash", Object, RubyHash::new).
                 reifiedClass(RubyHash.class).
@@ -212,6 +213,7 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_new
      *
      */
+    @SuppressWarnings("deprecation")
     public static final RubyHash newSmallHash(Ruby runtime) {
         return new RubyHash(runtime, 1);
     }
@@ -224,6 +226,23 @@ public class RubyHash extends RubyObject implements Map {
         RubyHash kwargs = newSmallHash(runtime);
         kwargs.fastASetSmall(key, value);
         return kwargs;
+    }
+
+    @SuppressWarnings("deprecation")
+    public static RubyHash newHash(Ruby runtime, IRubyObject defaultValue) {
+        return new RubyHash(runtime, defaultValue);
+    }
+
+    @SuppressWarnings("deprecation")
+    public static RubyHash newHash(Ruby runtime, int buckets) {
+        return new RubyHash(runtime, buckets);
+    }
+
+    @SuppressWarnings("deprecation")
+    public static RubyHash newHash(Ruby runtime, IRubyObject defaultValue, int buckets) {
+        RubyHash hash = new RubyHash(runtime, buckets, true);
+        hash.ifNone = defaultValue;
+        return hash;
     }
 
     /** rb_hash_new
@@ -256,26 +275,31 @@ public class RubyHash extends RubyObject implements Map {
         self.setComparedByIdentity(identity);
     }
 
+    @Deprecated(since = "10.0.6.0", forRemoval = true)
     public RubyHash(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
         this.ifNone = UNDEF;
         allocFirst();
     }
 
+    @Deprecated(since = "10.0.6.0", forRemoval = true)
     public RubyHash(Ruby runtime, int buckets) {
         this(runtime, UNDEF, buckets);
     }
 
+    @Deprecated(since = "10.0.6.0", forRemoval = true)
     public RubyHash(Ruby runtime) {
         this(runtime, UNDEF);
     }
 
+    @Deprecated(since = "10.0.6.0", forRemoval = true)
     public RubyHash(Ruby runtime, IRubyObject defaultValue) {
         super(runtime, runtime.getHash());
         this.ifNone = defaultValue;
         allocFirst();
     }
 
+    @Deprecated(since = "10.0.6.0", forRemoval = true)
     public RubyHash(Ruby runtime, IRubyObject defaultValue, int buckets) {
         this(runtime, buckets, true);
         this.ifNone = defaultValue;
@@ -301,6 +325,7 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     // TODO should this be deprecated ? (to be efficient, internals should deal with RubyHash directly)
+    @Deprecated(since = "10.0.3.0", forRemoval = true)
     public RubyHash(Ruby runtime, Map valueMap, IRubyObject defaultValue) {
         super(runtime, runtime.getHash());
         this.ifNone = defaultValue;
