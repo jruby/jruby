@@ -68,7 +68,7 @@ jobs:
 
   build-installer:
 
-    if: ${{ github.repository == 'jruby/jruby' && github.action == 'push' }}
+    if: ${{ github.repository == 'jruby/jruby' && github.event_name == 'push' }}
 
     strategy:
       matrix:
@@ -254,7 +254,7 @@ jobs:
 
   installer-verification:
 
-    if: ${{ github.repository == 'jruby/jruby' && github.action == 'push' }}
+    if: ${{ github.repository == 'jruby/jruby' && github.event_name == 'push' }}
 
     needs: build-installer
 
