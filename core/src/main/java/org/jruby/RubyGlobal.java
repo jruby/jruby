@@ -736,6 +736,7 @@ public class RubyGlobal {
         // the op_aset to also update the real ENV map via setenv/unsetenv.
         private final boolean updateRealENV;
 
+        @SuppressWarnings(value = {"deprecation", "removal"})
         public StringOnlyRubyHash(Ruby runtime, Map<RubyString, RubyString> valueMap, IRubyObject defaultValue, boolean updateRealENV) {
             super(runtime, valueMap, defaultValue);
             this.updateRealENV = updateRealENV;

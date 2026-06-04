@@ -185,7 +185,7 @@ public class TestRubyHash extends Base {
     }
     
     public void testGet() {
-        RubyHash rubyHash = new RubyHash(Ruby.getGlobalRuntime());
+        RubyHash rubyHash = RubyHash.newHash(Ruby.getGlobalRuntime());
         assertEquals(null, rubyHash.get("Non matching key"));
     }
 

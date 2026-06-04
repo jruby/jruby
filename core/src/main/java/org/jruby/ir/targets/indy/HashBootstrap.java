@@ -86,7 +86,7 @@ public class HashBootstrap {
 
     public static RubyHash hash(ThreadContext context, IRubyObject[] pairs) {
         Ruby runtime = context.runtime;
-        RubyHash hash = new RubyHash(runtime, pairs.length / 2 + 1);
+        RubyHash hash = RubyHash.newHash(runtime, pairs.length / 2 + 1);
         for (int i = 0; i < pairs.length;) {
             hash.fastASetCheckString(runtime, pairs[i++], pairs[i++]);
         }

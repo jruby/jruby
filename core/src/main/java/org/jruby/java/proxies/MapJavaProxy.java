@@ -344,7 +344,7 @@ public final class MapJavaProxy extends ConcreteJavaProxy {
         @Override
         public RubyHash to_hash(ThreadContext context) {
             final Ruby runtime = context.runtime;
-            final RubyHash hash = new RubyHash(runtime);
+            final RubyHash hash = RubyHash.newHash(runtime);
             @SuppressWarnings("unchecked")
             Set<Map.Entry> entries = mapDelegate().entrySet();
             for ( Map.Entry entry : entries ) {
