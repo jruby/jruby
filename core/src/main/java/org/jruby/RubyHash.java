@@ -122,6 +122,7 @@ public class RubyHash extends RubyObject implements Map {
     @Deprecated(since = "10.0.3.0")
     public static final RubyHashEntry NO_ENTRY = NULL_ENTRY;
 
+    @SuppressWarnings("removal")
     public static RubyClass createHashClass(ThreadContext context, RubyClass Object, RubyModule Enumerable) {
         return defineClass(context, "Hash", Object, (runtime, klass) -> new RubyHashLinkedBuckets(runtime, klass)).
                 reifiedClass(RubyHash.class).
@@ -189,6 +190,7 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_new
      *
      */
+    @Deprecated(since = "10.1.1.0")
     public static final RubyHash newHash(Ruby runtime) {
         return RubyHashLinkedBuckets.newLBHash(runtime);
     }
@@ -196,6 +198,7 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_new
      *
      */
+    @SuppressWarnings("deprecation")
     public static final RubyHash newSmallHash(Ruby runtime) {
         return RubyHashLinkedBuckets.newLBHash(runtime, 1);
     }
@@ -208,6 +211,21 @@ public class RubyHash extends RubyObject implements Map {
         RubyHash kwargs = newSmallHash(runtime);
         kwargs.fastASetSmall(key, value);
         return kwargs;
+    }
+
+    @SuppressWarnings("deprecation")
+    public static RubyHash newHash(Ruby runtime, IRubyObject defaultValue) {
+        return RubyHashLinkedBuckets.newLBHash(runtime, defaultValue);
+    }
+
+    @SuppressWarnings("deprecation")
+    public static RubyHash newHash(Ruby runtime, int buckets) {
+        return RubyHashLinkedBuckets.newLBHash(runtime, buckets);
+    }
+
+    @SuppressWarnings("deprecation")
+    public static RubyHash newHash(Ruby runtime, IRubyObject defaultValue, int buckets) {
+        return RubyHashLinkedBuckets.newLBHash(runtime, defaultValue, buckets);
     }
 
     /** rb_hash_new
@@ -228,7 +246,7 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     // Delegated constructor, to be hidden and returned to normal super constructor once no longer in use
-    @Deprecated(since = "10.0.3.0")
+    @Deprecated(since = "10.0.6.0", forRemoval = true)
     public RubyHash(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
         // ensure no subclasses call this constructor
@@ -246,7 +264,12 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     // Delegated constructor, to be hidden and returned to normal super constructor once no longer in use
-    @Deprecated(since = "10.0.3.0")
+    @Deprecated(since = "10.0.6.0", forRemoval = true)
+    public RubyHash(Ruby runtime, int buckets) {
+        this(runtime, UNDEF, buckets);
+    }
+
+    @Deprecated(since = "10.0.6.0", forRemoval = true)
     public RubyHash(Ruby runtime) {
         super(runtime, runtime.getHash());
         // ensure no subclasses call this constructor
@@ -255,12 +278,25 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     // Delegated constructor, to be hidden and returned to normal super constructor once no longer in use
-    @Deprecated(since = "10.0.3.0")
+    @Deprecated(since = "10.0.6.0", forRemoval = true)
     public RubyHash(Ruby runtime, IRubyObject defaultValue) {
         super(runtime, runtime.getHash());
         // ensure no subclasses call this constructor
         assert getClass() == RubyHash.class;
         this.setDelegate(RubyHashLinkedBuckets.newLBHash(runtime, defaultValue));
+    }
+
+    @Deprecated(since = "10.0.6.0", forRemoval = true)
+    public RubyHash(Ruby runtime, IRubyObject defaultValue, int buckets) {
+        super(runtime, runtime.getHash());
+        this.setDelegate(RubyHashLinkedBuckets.newLBHash(runtime, defaultValue, buckets));
+    }
+
+    // TODO should this be deprecated ? (to be efficient, internals should deal with RubyHash directly)
+    @Deprecated(since = "10.0.3.0", forRemoval = true)
+    public RubyHash(Ruby runtime, Map valueMap, IRubyObject defaultValue) {
+        super(runtime, runtime.getHash());
+        this.setDelegate(RubyHashLinkedBuckets.newHash(runtime, valueMap, defaultValue));
     }
 
     /* ============================
