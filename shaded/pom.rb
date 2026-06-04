@@ -41,7 +41,9 @@ project 'JRuby Core' do
                                      # Enable native access for JRuby and classpath classes when run not as a module
                                      'Enable-Native-Access' => 'ALL-UNNAMED',
                                    }
-                                 }],
+                                 },
+                                 { :@implementation => 'org.apache.maven.plugins.shade.resource.ServicesResourceTransformer'}
+                  ],
                   filters: [
                     { artifact: 'ch.randelshofer:fastdoubleparser', excludes: '**/23/**' },
                     { artifact: 'ch.randelshofer:fastdoubleparser', excludes: '**/17/**' },
