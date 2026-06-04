@@ -14,10 +14,12 @@ task :windows_installer => :init_release do
   
   install_windows_gems(unpacked_dir)
 
-  if File.executable?(INSTALL4J_EXECUTABLE)
+  install4j_executable = ENV['INSTALL4J_EXECUTABLE']
+
+  if File.executable?(install4j_executable)
     root_dir = Dir.pwd
     Dir.chdir(unpacked_dir) do
-      sh %Q^"#{INSTALL4J_EXECUTABLE}" -m windows -D jruby.dist.location=#{root_dir},jruby.location=#{unpacked_dir},ruby.version=#{VERSION_RUBY},jruby.version=#{version},ruby.patchlevel=0,ruby.buildplatform=i386-mingw32 #{INSTALL4J_CONFIG_FILE}^ do |ok, result|
+      sh %Q^"#{install4j_executable}" -m windows -D jruby.dist.location=#{root_dir},jruby.location=#{unpacked_dir},ruby.version=#{VERSION_RUBY},jruby.version=#{version},ruby.patchlevel=0,ruby.buildplatform=i386-mingw32 #{INSTALL4J_CONFIG_FILE}^ do |ok, result|
         $stderr.puts "** Something went wrong: #{result}" unless ok
       end
       mv Dir[File.join(root_dir, 'install', '*.exe')], File.join(root_dir, RELEASE_DIR)
