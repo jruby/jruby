@@ -25,6 +25,7 @@ project 'JRuby Core' do
                     { pattern: 'org.objectweb', shadedPattern: 'org.jruby.org.objectweb' },
                     { pattern: 'me.qmx.jitescript', shadedPattern: 'org.jruby.me.qmx.jitescript' },
                     { pattern: 'com.dylibso.chicory', shadedPattern: 'com.jruby.internal.org.dylibso.chicory'},
+                    { pattern: 'io.roastedroot.redline', shadedPattern: 'com.jruby.internal.io.roastedroot.redline'},
                     { pattern: 'org.ruby_lang.prism', shadedPattern: 'org.jruby.internal.prism'},
                     { pattern: 'org.jruby.parser.prism', shadedPattern: 'org.jruby.internal.parser.prism'}
                   ],
@@ -40,7 +41,9 @@ project 'JRuby Core' do
                                      # Enable native access for JRuby and classpath classes when run not as a module
                                      'Enable-Native-Access' => 'ALL-UNNAMED',
                                    }
-                                 }],
+                                 },
+                                 { :@implementation => 'org.apache.maven.plugins.shade.resource.ServicesResourceTransformer'}
+                  ],
                   filters: [
                     { artifact: 'ch.randelshofer:fastdoubleparser', excludes: '**/23/**' },
                     { artifact: 'ch.randelshofer:fastdoubleparser', excludes: '**/17/**' },
