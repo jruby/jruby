@@ -17,3 +17,4 @@ windows:IO#each when passed chomp and empty line as a separator yields each para
 windows:IO#each when passed chomp and nil as a separator yields self's content
 windows:IO#each when passed chomp, nil as a separator, and a limit yields each line of limit size without truncating trailing new line character
 windows:IO#each uses $/ as the default line separator
+fails:IO#each is an alias of IO#each_line

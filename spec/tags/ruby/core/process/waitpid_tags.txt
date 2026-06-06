@@ -1,1 +1,2 @@
 windows:Process.waitpid returns nil when the process has not yet completed and WNOHANG is specified
+fails:Process.waitpid is an alias of Process.wait

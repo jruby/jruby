@@ -1,0 +1,1 @@
+fails:StringIO#each is an alias of StringIO#each_line
