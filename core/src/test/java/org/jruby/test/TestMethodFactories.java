@@ -52,6 +52,7 @@ public class TestMethodFactories extends Base {
 
         mod.defineAnnotatedMethods(MyBoundClass.class);
 
+        confirmMethods(mod);
         confirmCheckArity(mod);
     }
 
@@ -70,6 +71,13 @@ public class TestMethodFactories extends Base {
         IRubyObject nil = runtime.getNil();
         assertTrue("four-arg method should be callable",
                 mod.searchMethod("four_arg_method").call(context, mod, mod.getMetaClass(), "four_arg_method", new IRubyObject[] {nil, nil, nil, nil}).isTrue());
+        // methods with required <= 3 and IRubyObject[] args (missing rest=true) should bind and be callable
+        assertTrue("one-arg method should be callable",
+                mod.searchMethod("one_arg_method").call(context, mod, mod.getMetaClass(), "one_arg_method", new IRubyObject[] {nil}).isTrue());
+        assertTrue("two-arg method should be callable",
+                mod.searchMethod("two_arg_method").call(context, mod, mod.getMetaClass(), "two_arg_method", new IRubyObject[] {nil, nil}).isTrue());
+        assertTrue("three-arg method should be callable",
+                mod.searchMethod("three_arg_method").call(context, mod, mod.getMetaClass(), "three_arg_method", new IRubyObject[] {nil, nil, nil}).isTrue());
     }
 
     // jruby/jruby#7851: Restore automatic arity checking with an opt-out
@@ -104,6 +112,23 @@ public class TestMethodFactories extends Base {
         @JRubyMethod(required = 4)
         public static IRubyObject four_arg_method(IRubyObject self, IRubyObject[] obj) {
             return self.getRuntime().getTrue();
+        }
+
+        // methods with required <= 3 and IRubyObject[] args (missing rest=true) should bind correctly
+        // instead of crashing with ArrayIndexOutOfBoundsException in loadArguments
+        @JRubyMethod(required = 1)
+        public static IRubyObject one_arg_method(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+            return context.tru;
+        }
+
+        @JRubyMethod(required = 2)
+        public static IRubyObject two_arg_method(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+            return context.tru;
+        }
+
+        @JRubyMethod(required = 3)
+        public static IRubyObject three_arg_method(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+            return context.tru;
         }
 
         // jruby/jruby#7851: Restore automatic arity checking with an opt-out
