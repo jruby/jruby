@@ -188,48 +188,106 @@ public interface EmbedRubyObjectAdapter extends RubyObjectAdapter {
     <T> T runRubyMethod(Class<T> returnType, Object receiver, String methodName, Block block, Object... args);
 
     /**
-     * Executes a method defined in Ruby script, passing keyword arguments.
+     * Executes a method defined in Ruby script, passing keyword arguments only.
+     * <p>
+     * Each map key is treated as a kwarg name and resolved to a Ruby
+     * {@code Symbol}. The accepted key types are {@link RubySymbol} (used
+     * directly), {@link String}, and {@link org.jruby.RubyString}
+     * (both converted via {@code toString()} + {@code newSymbol(...)}). Any
+     * other key type causes an {@link IllegalArgumentException}. Values are
+     * converted from Java to Ruby via the standard JavaEmbedUtils conversions.
+     * A {@code null} or empty {@code kwargs} map results in a call with no
+     * keyword arguments.
      *
      * @param receiver is an instance that will receive this method call
      * @param methodName is a method name to be called
-     * @param kwargs is a map of keyword argument names to values
+     * @param kwargs is a map of keyword argument names to values. Keys must be
+     *              {@code String}, {@code RubyString}, or {@code RubySymbol}.
+     *              May be {@code null} or empty to indicate no keyword arguments.
      * @return an instance automatically converted from Ruby to Java
+     * @throws IllegalArgumentException if a key is not a supported type
+     * @throws InvokeFailedException if the underlying Ruby call raises and the
+     *              implementation is configured to wrap exceptions.
+     * @since JRuby 10.1.1.0
      */
-    Object callMethod(Object receiver, String methodName, Map<String, Object> kwargs);
+    Object callMethodWithKeywordArgs(Object receiver, String methodName, Map<?, Object> kwargs);
 
     /**
      * Executes a method defined in Ruby script, passing positional and keyword arguments.
+     * <p>
+     * See {@link #callMethodWithKeywordArgs(Object, String, Map)} for details on how
+     * kwarg keys and values are converted.
      *
      * @param receiver is an instance that will receive this method call
      * @param methodName is a method name to be called
-     * @param args is an array of positional method arguments
-     * @param kwargs is a map of keyword argument names to values
+     * @param args is an array of positional method arguments. May be
+     *              {@code null} or empty to indicate no positional arguments.
+     * @param kwargs is a map of keyword argument names to values. Keys must be
+     *              {@code String}, {@code RubyString}, or {@code RubySymbol}.
+     *              May be {@code null} or empty to indicate no keyword arguments.
      * @return an instance automatically converted from Ruby to Java
+     * @throws IllegalArgumentException if a key is not a supported type
+     * @throws InvokeFailedException if the underlying Ruby call raises and the
+     *              implementation is configured to wrap exceptions.
+     * @since JRuby 10.1.1.0
      */
-    Object callMethod(Object receiver, String methodName, Object[] args, Map<String, Object> kwargs);
+    Object callMethodWithKeywordArgs(Object receiver, String methodName, Object[] args, Map<?, Object> kwargs);
 
     /**
-     * Executes a method defined in Ruby script, passing positional and keyword arguments.
+     * Executes a method defined in Ruby script, passing positional and keyword arguments,
+     * and converts the result to the given Java type.
+     * <p>
+     * See {@link #callMethodWithKeywordArgs(Object, String, Map)} for details on how
+     * kwarg keys and values are converted.
      *
      * @param receiver is an instance that will receive this method call
      * @param methodName is a method name to be called
-     * @param args is an array of positional method arguments
-     * @param kwargs is a map of keyword argument names to values
-     * @param returnType is the type we want it to convert to
-     * @return an instance of requested Java type
+     * @param args is an array of positional method arguments. May be
+     *              {@code null} or empty to indicate no positional arguments.
+     * @param kwargs is a map of keyword argument names to values. Keys must be
+     *              {@code String}, {@code RubyString}, or {@code RubySymbol}.
+     *              May be {@code null} or empty to indicate no keyword arguments.
+     * @param returnType is the Java type to convert the return value to. Pass
+     *              {@code null} to discard the result and return {@code null}.
+     * @param <T> the Java type to convert the return value to
+     * @return an instance of the requested Java type, or {@code null} if
+     *              {@code returnType} is {@code null}
+     * @throws IllegalArgumentException if a key is not a supported type
+     * @throws InvokeFailedException if the underlying Ruby call raises and the
+     *              implementation is configured to wrap exceptions.
+     * @since JRuby 10.1.1.0
      */
-    <T> T callMethod(Object receiver, String methodName, Object[] args, Map<String, Object> kwargs, Class<T> returnType);
+    <T> T callMethodWithKeywordArgs(Object receiver, String methodName, Object[] args, Map<?, Object> kwargs, Class<T> returnType);
 
     /**
-     * Executes a method defined in Ruby script, passing positional args, keyword args, and a block.
+     * Executes a method defined in Ruby script, passing positional args, keyword
+     * args, and a block, and converts the result to the given Java type.
+     * <p>
+     * Pass {@link org.jruby.runtime.Block#NULL_BLOCK} for {@code block} to
+     * indicate "no block" — equivalent to a Ruby call without a block (any
+     * {@code yield} in the callee will raise {@code LocalJumpError} unless
+     * guarded by {@code block_given?}). See
+     * {@link #callMethodWithKeywordArgs(Object, String, Map)} for details on how
+     * kwarg keys and values are converted.
      *
      * @param receiver is an instance that will receive this method call
      * @param methodName is a method name to be called
-     * @param args is an array of positional method arguments
-     * @param kwargs is a map of keyword argument names to values
-     * @param block is a block to be executed in this method
-     * @param returnType is the type we want it to convert to
-     * @return an instance of requested Java type
+     * @param args is an array of positional method arguments. May be
+     *              {@code null} or empty to indicate no positional arguments.
+     * @param kwargs is a map of keyword argument names to values. Keys must be
+     *              {@code String}, {@code RubyString}, or {@code RubySymbol}.
+     *              May be {@code null} or empty to indicate no keyword arguments.
+     * @param block is a block to be executed in this method, or
+     *              {@link org.jruby.runtime.Block#NULL_BLOCK} for no block.
+     * @param returnType is the Java type to convert the return value to. Pass
+     *              {@code null} to discard the result and return {@code null}.
+     * @param <T> the Java type to convert the return value to
+     * @return an instance of the requested Java type, or {@code null} if
+     *              {@code returnType} is {@code null}
+     * @throws IllegalArgumentException if a key is not a supported type
+     * @throws InvokeFailedException if the underlying Ruby call raises and the
+     *              implementation is configured to wrap exceptions.
+     * @since JRuby 10.1.1.0
      */
-    <T> T callMethod(Object receiver, String methodName, Object[] args, Map<String, Object> kwargs, Block block, Class<T> returnType);
+    <T> T callMethodWithKeywordArgs(Object receiver, String methodName, Object[] args, Map<?, Object> kwargs, Block block, Class<T> returnType);
 }
