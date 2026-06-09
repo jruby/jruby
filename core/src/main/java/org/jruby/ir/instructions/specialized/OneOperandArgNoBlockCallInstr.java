@@ -34,7 +34,7 @@ public class OneOperandArgNoBlockCallInstr extends CallInstr {
     public Instr clone(CloneInfo ii) {
         return new OneOperandArgNoBlockCallInstr(ii.getScope(), Operation.CALL_1O, getCallType(),
                 ii.getRenamedVariable(result), getName(), getReceiver().cloneForInlining(ii), cloneCallArgs(ii),
-                getFlags(), isPotentiallyRefined());
+                getFlags(), isPotentiallyRefined() || ii.isRefinementsClone());
     }
 
     @Override

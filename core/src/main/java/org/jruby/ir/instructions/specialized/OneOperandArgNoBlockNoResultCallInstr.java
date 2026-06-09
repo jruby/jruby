@@ -25,7 +25,7 @@ public class OneOperandArgNoBlockNoResultCallInstr extends NoResultCallInstr {
     public Instr clone(CloneInfo ii) {
         return new OneOperandArgNoBlockNoResultCallInstr(ii.getScope(), getCallType(), getName(), getReceiver().cloneForInlining(ii),
                 cloneCallArgs(ii), getClosureArg().cloneForInlining(ii), getFlags(),
-                isPotentiallyRefined());
+                isPotentiallyRefined() || ii.isRefinementsClone());
     }
 
     @Override

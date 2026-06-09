@@ -50,7 +50,7 @@ public class AttrAssignInstr extends NoResultCallInstr {
     @Override
     public Instr clone(CloneInfo ii) {
         return new AttrAssignInstr(ii.getScope(), getCallType(), getName(), getReceiver().cloneForInlining(ii),
-                cloneCallArgs(ii), getFlags(), isPotentiallyRefined());
+                cloneCallArgs(ii), getFlags(), isPotentiallyRefined() || ii.isRefinementsClone());
     }
 
     @Override

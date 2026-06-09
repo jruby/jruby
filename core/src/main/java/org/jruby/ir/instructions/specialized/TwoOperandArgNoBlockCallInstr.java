@@ -26,7 +26,7 @@ public class TwoOperandArgNoBlockCallInstr  extends CallInstr  {
     @Override
     public Instr clone(CloneInfo ii) {
         return new TwoOperandArgNoBlockCallInstr(ii.getScope(), getCallType(), ii.getRenamedVariable(result), getName(),
-                getReceiver().cloneForInlining(ii), cloneCallArgs(ii), getFlags(), isPotentiallyRefined()
+                getReceiver().cloneForInlining(ii), cloneCallArgs(ii), getFlags(), isPotentiallyRefined() || ii.isRefinementsClone()
         );
     }
 

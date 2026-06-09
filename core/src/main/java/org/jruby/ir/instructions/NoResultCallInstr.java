@@ -44,7 +44,7 @@ public class NoResultCallInstr extends CallBase {
         return new NoResultCallInstr(ii.getScope(), getOperation(), getCallType(), getName(),
                 getReceiver().cloneForInlining(ii), cloneCallArgs(ii),
                 getClosureArg().cloneForInlining(ii), getFlags(),
-                isPotentiallyRefined());
+                isPotentiallyRefined() || ii.isRefinementsClone());
     }
 
     public static NoResultCallInstr decode(IRReaderDecoder d) {

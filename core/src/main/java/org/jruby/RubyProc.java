@@ -35,10 +35,14 @@
 
 package org.jruby;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.ir.IRClosure;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.java.codegen.BlockInterfaceGenerator;
 import org.jruby.javasupport.Java;
@@ -58,6 +62,7 @@ import org.jruby.runtime.marshal.DataType;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.castAsModule;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
@@ -416,6 +421,33 @@ public class RubyProc extends RubyObject implements DataType {
     @JRubyMethod(name = "to_proc")
     public RubyProc to_proc() {
     	return this;
+    }
+
+    /**
+     * Return a new Proc whose body runs with the given modules' refinements active.  The receiver is unchanged and the
+     * captured closure environment is shared; only the refinement scope differs.  This is a heavy operation (it deep
+     * copies the block's IR), so callers are expected to cache and reuse the result.
+     */
+    @JRubyMethod(name = "with_refinements", rest = true)
+    public IRubyObject with_refinements(ThreadContext context, IRubyObject[] args) {
+        if (args.length == 0) throw argumentError(context, "wrong number of arguments (given 0, expected 1+)");
+
+        BlockBody body = block.getBody();
+        if (fromMethod || !(body instanceof IRBlockBody)) {
+            throw argumentError(context, "can't create a refinements-aware proc from this proc");
+        }
+
+        List<RubyModule> modules = new ArrayList<>(args.length);
+        for (IRubyObject arg : args) {
+            modules.add(castAsModule(context, arg));
+        }
+
+        IRClosure refinedClosure = ((IRBlockBody) body).getScope().cloneForRefinements(context, modules);
+        // Share the captured environment (binding holds the dynamic scope); clone the binding wrapper only so that
+        // proc setup (file/line/dummy-scope) does not mutate the original proc's binding.
+        Block newBlock = new Block(refinedClosure.getBlockBody(), block.getBinding().clone(), block.type);
+
+        return newProc(context.runtime, getMetaClass(), newBlock, type, file, line);
     }
 
     @JRubyMethod

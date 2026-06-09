@@ -79,7 +79,7 @@ public class InstanceSuperInstr extends CallInstr {
         return new InstanceSuperInstr(ii.getScope(), ii.getRenamedVariable(getResult()),
                 getDefiningModule().cloneForInlining(ii), getName(), cloneCallArgs(ii),
                 getClosureArg().cloneForInlining(ii), getFlags(),
-                isPotentiallyRefined());
+                isPotentiallyRefined() || ii.isRefinementsClone());
     }
 
     public static InstanceSuperInstr decode(IRReaderDecoder d) {

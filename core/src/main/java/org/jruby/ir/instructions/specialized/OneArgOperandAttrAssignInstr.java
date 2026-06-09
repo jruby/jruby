@@ -27,7 +27,7 @@ public class OneArgOperandAttrAssignInstr extends AttrAssignInstr {
     @Override
     public Instr clone(CloneInfo ii) {
         return new OneArgOperandAttrAssignInstr(ii.getScope(), getCallType(), getName(), getReceiver().cloneForInlining(ii),
-                cloneCallArgs(ii), getFlags(), isPotentiallyRefined());
+                cloneCallArgs(ii), getFlags(), isPotentiallyRefined() || ii.isRefinementsClone());
     }
 
     @Override

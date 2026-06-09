@@ -32,6 +32,12 @@ public class OneFloatArgNoBlockCallInstr extends CallInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
+        // The float fast path is not implemented for refined call sites, so fall back to a generic refined call.
+        if (ii.isRefinementsClone()) {
+            return new OneOperandArgNoBlockCallInstr(ii.getScope(), Operation.CALL_1O, getCallType(),
+                    ii.getRenamedVariable(result), getName(), getReceiver().cloneForInlining(ii), cloneCallArgs(ii),
+                    getFlags(), true);
+        }
         return new OneFloatArgNoBlockCallInstr(ii.getScope(), getCallType(), ii.getRenamedVariable(result), getName(),
                 getReceiver().cloneForInlining(ii), cloneCallArgs(ii), getFlags(), isPotentiallyRefined()
         );

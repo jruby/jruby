@@ -26,11 +26,22 @@ public abstract class CloneInfo {
     public SimpleCloneInfo cloneForCloningClosure(IRClosure clonedClosure) {
         // If cloning for ensure block cloning we want to propagate that to child closure clones
         boolean ensureClone = this instanceof SimpleCloneInfo && ((SimpleCloneInfo) this).isEnsureBlockCloneMode();
-        SimpleCloneInfo clone = new SimpleCloneInfo(clonedClosure, ensureClone);
+        // If cloning for Proc#with_refinements we must propagate that so nested closures are also made refinement-aware
+        SimpleCloneInfo clone = new SimpleCloneInfo(clonedClosure, ensureClone, false, isRefinementsClone());
 
         clone.variableRenameMap.putAll(variableRenameMap);
 
         return clone;
+    }
+
+    /**
+     * Is this clone being performed to produce a refinement-aware copy (Proc#with_refinements)?  When true, call-like
+     * instructions are re-created as refined call sites bound to the clone's static scope.
+     *
+     * @return true if this is a refinements clone
+     */
+    public boolean isRefinementsClone() {
+        return false;
     }
 
     /**

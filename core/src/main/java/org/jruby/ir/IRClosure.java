@@ -5,6 +5,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.function.Supplier;
 
+import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
 import org.jruby.ast.DefNode;
 import org.jruby.ast.IterNode;
@@ -26,6 +27,7 @@ import org.jruby.runtime.IRBlockBody;
 import org.jruby.runtime.MixedModeIRBlockBody;
 import org.jruby.runtime.InterpretedIRBlockBody;
 import org.jruby.runtime.Signature;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.util.ByteList;
 
 // Closures are contexts/scopes for the purpose of IR building.  They are self-contained and accumulate instructions
@@ -75,6 +77,17 @@ public class IRClosure extends IRScope {
     /* Inlining generates a new name and id and basic cloning will reuse the originals name */
     protected IRClosure(IRClosure c, IRScope lexicalParent, int closureId, ByteList fullName) {
         super(c, lexicalParent);
+        this.closureId = closureId;
+        super.setByteName(fullName);
+
+        isEND = c.isEND;
+
+        this.signature = c.signature;
+    }
+
+    /** Used by Proc#with_refinements cloning, which needs each clone to own a fresh StaticScope. */
+    protected IRClosure(IRClosure c, IRScope lexicalParent, int closureId, ByteList fullName, StaticScope staticScope) {
+        super(c, lexicalParent, staticScope);
         this.closureId = closureId;
         super.setByteName(fullName);
 
@@ -341,15 +354,33 @@ public class IRClosure extends IRScope {
         IRClosure clonedClosure;
         IRScope lexicalParent = ii.getScope();
 
+        // For Proc#with_refinements we give the clone its own StaticScope (a duplicate of ours) whose enclosing scope
+        // points at the clone's lexical parent.  This keeps the original untouched and lets a refinements overlay be
+        // reached by walking the enclosing-scope chain at method resolution time.
+        StaticScope refinementsScope = null;
+        if (ii.isRefinementsClone()) {
+            refinementsScope = getStaticScope().duplicate();
+            refinementsScope.setEnclosingScope(lexicalParent.getStaticScope());
+        }
+
         if (ii instanceof SimpleCloneInfo && !((SimpleCloneInfo) ii).isEnsureBlockCloneMode()) {
-            clonedClosure = new IRClosure(this, lexicalParent, closureId, getByteName());
+            clonedClosure = refinementsScope != null ?
+                    new IRClosure(this, lexicalParent, closureId, getByteName(), refinementsScope) :
+                    new IRClosure(this, lexicalParent, closureId, getByteName());
         } else {
             int id = lexicalParent.getNextClosureId();
             ByteList fullName = lexicalParent.getByteName();
             fullName = fullName != null ? fullName.dup() : new ByteList();
             fullName.append(CLOSURE_CLONE);
             fullName.append(java.lang.Integer.toString(id).getBytes());
-            clonedClosure = new IRClosure(this, lexicalParent, id, fullName);
+            clonedClosure = refinementsScope != null ?
+                    new IRClosure(this, lexicalParent, id, fullName, refinementsScope) :
+                    new IRClosure(this, lexicalParent, id, fullName);
+        }
+
+        if (refinementsScope != null) {
+            refinementsScope.setIRScope(clonedClosure);
+            clonedClosure.setIsMaybeUsingRefinements();
         }
 
         // WrappedIRClosure should always have a single unique IRClosure in them so we should
@@ -357,6 +388,35 @@ public class IRClosure extends IRScope {
         lexicalParent.addClosure(clonedClosure);
 
         return cloneForInlining(ii, clonedClosure);
+    }
+
+    /**
+     * Produce a refinement-aware deep copy of this closure tree for Proc#with_refinements.  The returned closure has
+     * its own StaticScope carrying an overlay with the given modules' refinements activated, and all of its (and nested
+     * closures') call-like instructions are re-created as refined call sites.  The original closure is left unchanged.
+     *
+     * @param context the current thread context
+     * @param modules the refinement modules to activate
+     * @return a new IRClosure whose body runs with the given refinements active
+     */
+    public IRClosure cloneForRefinements(ThreadContext context, List<RubyModule> modules) {
+        // Cloning reads the startup InterpreterContext as its instruction source.  This is built when the closure's
+        // defining scope is built, which has necessarily happened for any closure backing a live Proc.
+        if (getInterpreterContext() == null) {
+            throw context.runtime.newArgumentError("cannot create a refinements-aware copy of this proc");
+        }
+
+        SimpleCloneInfo ii = new SimpleCloneInfo(getLexicalParent(), false, false, true);
+        IRClosure clone = cloneForInlining(ii);
+        clone.setArgumentDescriptors(getArgumentDescriptors());
+
+        // Activate the requested refinements on the clone's own overlay module so refined call sites resolve them.
+        RubyModule overlay = clone.getStaticScope().getOverlayModuleForWrite(context);
+        for (RubyModule module : modules) {
+            RubyModule.usingModule(context, overlay, module);
+        }
+
+        return clone;
     }
 
     public Signature getSignature() {

@@ -40,7 +40,7 @@ public class ZSuperInstr extends UnresolvedSuperInstr {
     public Instr clone(CloneInfo ii) {
         return new ZSuperInstr(ii.getScope(), ii.getRenamedVariable(getResult()), getReceiver().cloneForInlining(ii),
                 cloneCallArgs(ii), getClosureArg().cloneForInlining(ii), getFlags(),
-                isPotentiallyRefined());
+                isPotentiallyRefined() || ii.isRefinementsClone());
     }
 
     public static ZSuperInstr decode(IRReaderDecoder d) {

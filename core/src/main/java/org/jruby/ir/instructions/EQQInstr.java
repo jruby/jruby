@@ -52,7 +52,7 @@ public class EQQInstr extends CallInstr implements FixedArityInstr {
     @Override
     public Instr clone(CloneInfo ii) {
         return new EQQInstr(ii.getScope(), ii.getRenamedVariable(result), getReceiver().cloneForInlining(ii),
-                getArg1().cloneForInlining(ii), isSplattedValue(), isPattern(), isPotentiallyRefined());
+                getArg1().cloneForInlining(ii), isSplattedValue(), isPattern(), isPotentiallyRefined() || ii.isRefinementsClone());
     }
 
     @Override

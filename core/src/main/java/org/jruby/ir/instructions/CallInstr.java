@@ -126,7 +126,7 @@ public class CallInstr extends CallBase implements ResultInstr {
         return new CallInstr(ii.getScope(), getOperation(), getCallType(), ii.getRenamedVariable(result), getName(),
                 getReceiver().cloneForInlining(ii), cloneCallArgs(ii),
                 getClosureArg().cloneForInlining(ii),
-                getFlags(), isPotentiallyRefined()
+                getFlags(), isPotentiallyRefined() || ii.isRefinementsClone()
         );
     }
 
