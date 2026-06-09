@@ -2669,7 +2669,7 @@ public class ScriptingContainerTest {
 //    }
 
     @Test
-    public void testCallMethodWithKeywords_kwargsOnly() {
+    public void testCallMethodWithKeywordArgs_kwargsOnly() {
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         try {
             String script =
@@ -2681,11 +2681,11 @@ public class ScriptingContainerTest {
 
             Map<String, Object> kwargs = new HashMap<>();
             kwargs.put("name", "World");
-            Object result = instance.callMethodWithKeywords(receiver, "greet", kwargs);
+            Object result = instance.callMethodWithKeywordArgs(receiver, "greet", kwargs);
             assertEquals("Hello, World!", result.toString());
 
             kwargs.put("greeting", "Hi");
-            result = instance.callMethodWithKeywords(receiver, "greet", kwargs);
+            result = instance.callMethodWithKeywordArgs(receiver, "greet", kwargs);
             assertEquals("Hi, World!", result.toString());
         } finally {
             instance.terminate();
@@ -2693,7 +2693,7 @@ public class ScriptingContainerTest {
     }
 
     @Test
-    public void testCallMethodWithKeywords_positionalAndKwargs() {
+    public void testCallMethodWithKeywordArgs_positionalAndKwargs() {
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         try {
             String script =
@@ -2706,7 +2706,7 @@ public class ScriptingContainerTest {
             Object[] args = {"foo", "bar"};
             Map<String, Object> kwargs = new HashMap<>();
             kwargs.put("separator", " - ");
-            String result = instance.callMethodWithKeywords(receiver, "combine", args, kwargs, String.class);
+            String result = instance.callMethodWithKeywordArgs(receiver, "combine", args, kwargs, String.class);
             assertEquals("foo - bar", result);
         } finally {
             instance.terminate();
@@ -2714,7 +2714,7 @@ public class ScriptingContainerTest {
     }
 
     @Test
-    public void testCallMethodWithKeywords_returnType() {
+    public void testCallMethodWithKeywordArgs_returnType() {
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         try {
             String script = "def add(x:, y:)\n  x + y\nend\nself";
@@ -2723,7 +2723,7 @@ public class ScriptingContainerTest {
             Map<String, Object> kwargs = new HashMap<>();
             kwargs.put("x", 3);
             kwargs.put("y", 4);
-            Long result = instance.callMethodWithKeywords(receiver, "add", null, kwargs, Long.class);
+            Long result = instance.callMethodWithKeywordArgs(receiver, "add", null, kwargs, Long.class);
             assertEquals(Long.valueOf(7), result);
         } finally {
             instance.terminate();
@@ -2731,7 +2731,7 @@ public class ScriptingContainerTest {
     }
 
     @Test
-    public void testCallMethodWithKeywords_nullValue() {
+    public void testCallMethodWithKeywordArgs_nullValue() {
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         try {
             String script = "def check_nil(val: 'default')\n  val.nil?\nend\nself";
@@ -2739,7 +2739,7 @@ public class ScriptingContainerTest {
 
             Map<String, Object> kwargs = new HashMap<>();
             kwargs.put("val", null);
-            Boolean result = instance.callMethodWithKeywords(receiver, "check_nil", null, kwargs, Boolean.class);
+            Boolean result = instance.callMethodWithKeywordArgs(receiver, "check_nil", null, kwargs, Boolean.class);
             assertTrue(result);
         } finally {
             instance.terminate();
@@ -2747,7 +2747,7 @@ public class ScriptingContainerTest {
     }
 
     @Test
-    public void testCallMethodWithKeywords_emptyKwargs() {
+    public void testCallMethodWithKeywordArgs_emptyKwargs() {
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         try {
             String script = "def double(a)\n  a * 2\nend\nself";
@@ -2755,7 +2755,7 @@ public class ScriptingContainerTest {
 
             Object[] args = {5};
             Map<String, Object> kwargs = new HashMap<>();
-            Long result = instance.callMethodWithKeywords(receiver, "double", args, kwargs, Long.class);
+            Long result = instance.callMethodWithKeywordArgs(receiver, "double", args, kwargs, Long.class);
             assertEquals(Long.valueOf(10), result);
         } finally {
             instance.terminate();
@@ -2763,7 +2763,7 @@ public class ScriptingContainerTest {
     }
 
     @Test
-    public void testCallMethodWithKeywords_block() {
+    public void testCallMethodWithKeywordArgs_block() {
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         try {
             String script =
@@ -2776,7 +2776,7 @@ public class ScriptingContainerTest {
             Object[] args = {5};
             Map<String, Object> kwargs = new HashMap<>();
             kwargs.put("factor", 3);
-            Long result = instance.callMethodWithKeywords(receiver, "transform", args, kwargs,
+            Long result = instance.callMethodWithKeywordArgs(receiver, "transform", args, kwargs,
                     Block.NULL_BLOCK, Long.class);
             assertEquals(Long.valueOf(15), result);
         } finally {
@@ -2785,7 +2785,7 @@ public class ScriptingContainerTest {
     }
 
     @Test
-    public void testCallMethodWithKeywords_callInfoIsRestored() {
+    public void testCallMethodWithKeywordArgs_callInfoIsRestored() {
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         try {
             String script =
@@ -2801,7 +2801,7 @@ public class ScriptingContainerTest {
 
             Map<String, Object> kwargs = new HashMap<>();
             kwargs.put("name", "World");
-            instance.callMethodWithKeywords(receiver, "greet", kwargs);
+            instance.callMethodWithKeywordArgs(receiver, "greet", kwargs);
 
             assertEquals("callInfo should be restored to the value present before the kwargs call",
                     sentinel, context.callInfo);
@@ -2811,7 +2811,7 @@ public class ScriptingContainerTest {
     }
 
     @Test
-    public void testCallMethodWithKeywords_callInfoRestoredAfterException() {
+    public void testCallMethodWithKeywordArgs_callInfoRestoredAfterException() {
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         try {
             String script =
@@ -2828,7 +2828,7 @@ public class ScriptingContainerTest {
             Map<String, Object> kwargs = new HashMap<>();
             kwargs.put("msg", "kaboom");
             try {
-                instance.callMethodWithKeywords(receiver, "boom", kwargs);
+                instance.callMethodWithKeywordArgs(receiver, "boom", kwargs);
                 fail("expected the Ruby method to raise");
             } catch (InvokeFailedException expected) {
             }
@@ -2841,7 +2841,7 @@ public class ScriptingContainerTest {
     }
 
     @Test
-    public void testCallMethodWithKeywords_rubyStringKeys() {
+    public void testCallMethodWithKeywordArgs_rubyStringKeys() {
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         try {
             String script =
@@ -2854,7 +2854,7 @@ public class ScriptingContainerTest {
             Ruby runtime = instance.getProvider().getRuntime();
             Map<RubyString, Object> kwargs = new HashMap<>();
             kwargs.put(RubyString.newString(runtime, "name"), "World");
-            Object result = instance.callMethodWithKeywords(receiver, "greet", kwargs);
+            Object result = instance.callMethodWithKeywordArgs(receiver, "greet", kwargs);
             assertEquals("Hello, World!", result.toString());
         } finally {
             instance.terminate();
