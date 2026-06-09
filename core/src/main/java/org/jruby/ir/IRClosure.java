@@ -391,6 +391,52 @@ public class IRClosure extends IRScope {
     }
 
     /**
+     * Single-slot memo of the most recent refinement-aware clone of this closure (see {@link #refinementsClone}).
+     * Lazily set: stays null until Proc#with_refinements is first used on this closure, so closures that never use
+     * the feature pay only for one (null) reference.  Mirrors CRuby's single-slot memo: only the last (modules ->
+     * clone) pair is retained, and a differing modules set overwrites it.
+     */
+    private static final class RefinementsCache {
+        final RubyModule[] modules;
+        final IRClosure clone;
+
+        RefinementsCache(RubyModule[] modules, IRClosure clone) {
+            this.modules = modules;
+            this.clone = clone;
+        }
+
+        boolean matches(RubyModule[] other) {
+            if (modules.length != other.length) return false;
+            // Identity + order: RubyModule equality is identity, and refinement application order is significant.
+            for (int i = 0; i < modules.length; i++) {
+                if (modules[i] != other[i]) return false;
+            }
+            return true;
+        }
+    }
+
+    private volatile RefinementsCache refinementsCache;
+
+    /**
+     * Return a refinement-aware clone of this closure for the given modules, reusing the cached clone when the same
+     * modules (by identity and order) were used last time.  A miss recomputes via {@link #cloneForRefinements} and
+     * overwrites the single slot.  Lock-free: a race only causes a redundant clone, which is harmless.
+     *
+     * @param context the current thread context
+     * @param modules the refinement modules to activate (freshly allocated array; stored without copying)
+     * @return a clone whose body runs with the given refinements active
+     */
+    public IRClosure refinementsClone(ThreadContext context, RubyModule[] modules) {
+        RefinementsCache cache = refinementsCache;
+        if (cache != null && cache.matches(modules)) return cache.clone;
+
+        IRClosure clone = cloneForRefinements(context, modules);
+        refinementsCache = new RefinementsCache(modules, clone);
+
+        return clone;
+    }
+
+    /**
      * Produce a refinement-aware deep copy of this closure tree for Proc#with_refinements.  The returned closure has
      * its own StaticScope carrying an overlay with the given modules' refinements activated, and all of its (and nested
      * closures') call-like instructions are re-created as refined call sites.  The original closure is left unchanged.
@@ -399,7 +445,7 @@ public class IRClosure extends IRScope {
      * @param modules the refinement modules to activate
      * @return a new IRClosure whose body runs with the given refinements active
      */
-    public IRClosure cloneForRefinements(ThreadContext context, List<RubyModule> modules) {
+    public IRClosure cloneForRefinements(ThreadContext context, RubyModule[] modules) {
         // Cloning reads the startup InterpreterContext as its instruction source.  This is built when the closure's
         // defining scope is built, which has necessarily happened for any closure backing a live Proc.
         if (getInterpreterContext() == null) {

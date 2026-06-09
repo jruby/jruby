@@ -35,9 +35,6 @@
 
 package org.jruby;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 
@@ -437,12 +434,12 @@ public class RubyProc extends RubyObject implements DataType {
             throw argumentError(context, "can't create a refinements-aware proc from this proc");
         }
 
-        List<RubyModule> modules = new ArrayList<>(args.length);
-        for (IRubyObject arg : args) {
-            modules.add(castAsModule(context, arg));
+        RubyModule[] modules = new RubyModule[args.length];
+        for (int i = 0; i < args.length; i++) {
+            modules[i] = castAsModule(context, args[i]);
         }
 
-        IRClosure refinedClosure = ((IRBlockBody) body).getScope().cloneForRefinements(context, modules);
+        IRClosure refinedClosure = ((IRBlockBody) body).getScope().refinementsClone(context, modules);
         // Share the captured environment (binding holds the dynamic scope); clone the binding wrapper only so that
         // proc setup (file/line/dummy-scope) does not mutate the original proc's binding.
         Block newBlock = new Block(refinedClosure.getBlockBody(), block.getBinding().clone(), block.type);
