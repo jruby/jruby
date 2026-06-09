@@ -2862,7 +2862,7 @@ public class ScriptingContainerTest {
     }
 
     @Test
-    public void testCallMethodWithSymbolKeywords_kwargsOnly() {
+    public void testCallMethodWithKeywordArgs_symbolKeys() {
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         try {
             String script =
@@ -2884,7 +2884,7 @@ public class ScriptingContainerTest {
     }
 
     @Test
-    public void testCallMethodWithSymbolKeywords_positionalAndReturnType() {
+    public void testCallMethodWithKeywordArgs_symbolKeysPositionalAndReturnType() {
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         try {
             String script = "def add(base, x:, y:)\n  base + x + y\nend\nself";
