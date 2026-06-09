@@ -502,6 +502,8 @@ public final class Ruby implements Constantizable {
 
         warningCategories = config.getWarningCategories();
         warningModule = RubyWarnings.createWarningModule(context);
+        warningBufferClass = RubyWarnings.createWarningBufferClass(context, warningModule);
+        warnings = new RubyWarnings(this, warningBufferClass);
 
         // Initialize exceptions
         initExceptions(context);
@@ -1706,6 +1708,9 @@ public final class Ruby implements Constantizable {
 
                 // map ENOSYS to NotImplementedError
                 errnos.put(Errno.ENOSYS.intValue(), notImplementedError);
+
+                // map NOERROR to 0
+                createSysErr(context, 0, "NOERROR");
             } catch (Exception e) {
                 // dump the trace and continue
                 // this is currently only here for Android, which seems to have
@@ -4102,6 +4107,9 @@ public final class Ruby implements Constantizable {
         IRubyObject msg = new RubyNameError.RubyNameErrorMessage(this, message, recv, name);
         RubyException err = RubyNameError.newNameError(getCurrentContext(), getNameError(), msg, name, privateCall);
 
+        // set cause since we are preparing to raise
+        err.setCause(getCurrentContext().getErrorInfo());
+
         return err.toThrowable();
     }
 
@@ -4149,7 +4157,12 @@ public final class Ruby implements Constantizable {
             }
         }
 
-        return new RubyNameError(this, getNameError(), message, name).toThrowable();
+        RubyNameError nameError = new RubyNameError(this, getNameError(), message, name);
+
+        // set cause since we are preparing to raise
+        nameError.setCause(getCurrentContext().getErrorInfo());
+
+        return nameError.toThrowable();
     }
 
     public RaiseException newNameError(String message, IRubyObject name, Throwable exception, boolean printWhenVerbose) {
@@ -4161,7 +4174,12 @@ public final class Ruby implements Constantizable {
             }
         }
 
-        return new RubyNameError(this, getNameError(), message, name).toThrowable();
+        RubyNameError nameError = new RubyNameError(this, getNameError(), message, name);
+
+        // set cause since we are preparing to raise
+        nameError.setCause(getCurrentContext().getErrorInfo());
+
+        return nameError.toThrowable();
     }
 
     /**
@@ -4224,6 +4242,9 @@ public final class Ruby implements Constantizable {
         RubySymbol nameStr = newSymbol(name);
         IRubyObject msg = new RubyNameError.RubyNameErrorMessage(this, message, recv, nameStr);
         RubyException err = RubyNoMethodError.newNoMethodError(getNoMethodError(), msg, nameStr, args, privateCall);
+
+        // set cause since we are preparing to raise
+        err.setCause(getCurrentContext().getErrorInfo());
 
         return err.toThrowable();
     }
@@ -5282,6 +5303,7 @@ public final class Ruby implements Constantizable {
     private final RubyClass sizedQueueClass;
     private final RubyClass dataClass;
     private final RubyClass setClass;
+    private final RubyClass warningBufferClass;
 
     private RubyClass tmsStruct;
     private RubyClass passwdStruct;
@@ -5432,7 +5454,7 @@ public final class Ruby implements Constantizable {
     private final EncodingService encodingService;
 
     private final GlobalVariables globalVariables = new GlobalVariables(this);
-    private final RubyWarnings warnings = new RubyWarnings(this);
+    private final RubyWarnings warnings;
     private final WarnCallback regexpWarnings = message -> getWarnings().warn(message);
 
     /**
@@ -5642,6 +5664,9 @@ public final class Ruby implements Constantizable {
                 } else {
                     Ruby.this.getWarnings().warn(filename, "break from proc-closure");
                 }
+
+                // avoid errors during END being seen by other END blocks
+                context.clearErrorInfo();
 
             } catch (SystemExit exit) {
                 RubyException raisedException = exit.getException();

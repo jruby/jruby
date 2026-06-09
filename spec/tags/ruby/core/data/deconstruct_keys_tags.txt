@@ -15,4 +15,4 @@ fails:Data#deconstruct_keys raises TypeError if index is not a String, a Symbol 
 fails:Data#deconstruct_keys tries to convert a key with #to_str if index is not a String nor a Symbol, but responds to #to_str
 fails:Data#deconstruct_keys raise an error on argument position number
 fails:Data#deconstruct_keys raises a TypeError if the conversion with #to_str does not return a String
-fails:Data#deconstruct_keys raises TypeError if index is not a Symbol and not convertible to String 
+fails:Data#deconstruct_keys raises TypeError if index is not a Symbol and not convertible to String

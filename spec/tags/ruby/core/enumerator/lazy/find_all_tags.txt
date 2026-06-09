@@ -1,0 +1,1 @@
+fails:Enumerator::Lazy#find_all is an alias of Enumerator::Lazy#select

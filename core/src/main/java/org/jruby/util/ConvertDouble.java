@@ -28,13 +28,75 @@
 
 package org.jruby.util;
 
+import ch.randelshofer.fastdoubleparser.ConfigurableDoubleParser;
+import ch.randelshofer.fastdoubleparser.NumberFormatSymbols;
+
+import java.util.Collections;
+import java.util.Set;
+
 public class ConvertDouble {
+
+    /**
+     * Performance optimisation:
+     * By reusing an instance of the parser, we can save the costly initialisation time.
+     */
+    private static final ConfigurableDoubleParser FAST_PARSER = new ConfigurableDoubleParser(
+            NumberFormatSymbols.fromDefault()
+                    .withGroupingSeparator(Set.<Character>of('_'))
+                    .withInfinity(Collections.EMPTY_SET)
+                    .withNaN(Collections.EMPTY_SET));
+
+
     /**
      * Converts supplied ByteList into a double.  strict-mode will not like
      * extra text non-numeric text or multiple sequention underscores.
      */
     public static double byteListToDouble(ByteList bytes, boolean strict) {
+        byte[] b = bytes.getUnsafeBytes();
+        int begin = bytes.begin();
+        int length = bytes.length();
+
+        if (!rejectedByRuby(b, begin, length)) {
+            try {
+                // Fast path:
+                // Optimistically parse the entire input using the fast parser.
+                return FAST_PARSER.parseDouble(b, begin, length);
+            } catch (NumberFormatException e) {
+            }
+        }
+        // Slow path:
+        // Determine how many bytes we can safely consume, and then
+        // call the fast parser again.
         return new DoubleConverter().parse(bytes, strict, true);
+    }
+
+    /**
+     * Efficiently reject strings with leading [_], trailing [_-+], or any of /__|-_|+_|_e|e_|_E|E_/.
+     * @param b incoming bytes
+     * @param begin starting offset
+     * @param length effective length
+     * @return true if the string is rejected by Ruby, false otherwise.
+     */
+    private static boolean rejectedByRuby(byte[] b, int begin, int length) {
+        if (length == 0) return true;
+
+        // reject invalid prefix or suffix
+        byte first = b[begin];
+        int end = length - 1;
+        int last = b[end];
+        if (first == '_' || last == '_' || last == '+' || last == '-') return true;
+
+        // scan remaining chars to reject invalid underscores
+        for (int i = 1, cur = first; i <= end; i++) {
+            byte next = b[begin + i];
+
+            if (cur == '_' && (next == 'e' || next == 'E' || next == '_' || next == '.')) return true;
+            if (next == '_' && (cur == 'e' || cur == 'E' || cur == '-' || cur == '+')) return true;
+
+            cur = next;
+        }
+
+        return false;
     }
 
     public static class DoubleConverter {
@@ -154,7 +216,7 @@ public class ConvertDouble {
                 addExponentToResult(adjustExponent);
             }
 
-            return Double.valueOf(new String(chars, 0, charsIndex));
+            return FAST_PARSER.parseDouble(new String(chars, 0, charsIndex));
         }
 
         static class LightweightNumberFormatException extends NumberFormatException {

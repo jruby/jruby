@@ -63,7 +63,6 @@ import static org.jruby.api.Access.hashClass;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.*;
-import static org.jruby.runtime.ThreadContext.hasKeywords;
 import static org.jruby.runtime.Visibility.PRIVATE;
 
 // Design overview:
@@ -123,6 +122,7 @@ public class RubyHash extends RubyObject implements Map {
     @Deprecated(since = "10.0.3.0")
     public static final RubyHashEntry NO_ENTRY = NULL_ENTRY;
 
+    @SuppressWarnings("removal")
     public static RubyClass createHashClass(ThreadContext context, RubyClass Object, RubyModule Enumerable) {
         return defineClass(context, "Hash", Object, (runtime, klass) -> new RubyHashLinkedBuckets(runtime, klass)).
                 reifiedClass(RubyHash.class).
@@ -190,6 +190,7 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_new
      *
      */
+    @Deprecated(since = "10.1.1.0")
     public static final RubyHash newHash(Ruby runtime) {
         return RubyHashLinkedBuckets.newLBHash(runtime);
     }
@@ -197,6 +198,7 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_new
      *
      */
+    @SuppressWarnings("deprecation")
     public static final RubyHash newSmallHash(Ruby runtime) {
         return RubyHashLinkedBuckets.newLBHash(runtime, 1);
     }
@@ -209,6 +211,21 @@ public class RubyHash extends RubyObject implements Map {
         RubyHash kwargs = newSmallHash(runtime);
         kwargs.fastASetSmall(key, value);
         return kwargs;
+    }
+
+    @SuppressWarnings("deprecation")
+    public static RubyHash newHash(Ruby runtime, IRubyObject defaultValue) {
+        return RubyHashLinkedBuckets.newLBHash(runtime, defaultValue);
+    }
+
+    @SuppressWarnings("deprecation")
+    public static RubyHash newHash(Ruby runtime, int buckets) {
+        return RubyHashLinkedBuckets.newLBHash(runtime, buckets);
+    }
+
+    @SuppressWarnings("deprecation")
+    public static RubyHash newHash(Ruby runtime, IRubyObject defaultValue, int buckets) {
+        return RubyHashLinkedBuckets.newLBHash(runtime, defaultValue, buckets);
     }
 
     /** rb_hash_new
@@ -229,7 +246,7 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     // Delegated constructor, to be hidden and returned to normal super constructor once no longer in use
-    @Deprecated(since = "10.0.3.0")
+    @Deprecated(since = "10.0.6.0", forRemoval = true)
     public RubyHash(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
         // ensure no subclasses call this constructor
@@ -247,7 +264,12 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     // Delegated constructor, to be hidden and returned to normal super constructor once no longer in use
-    @Deprecated(since = "10.0.3.0")
+    @Deprecated(since = "10.0.6.0", forRemoval = true)
+    public RubyHash(Ruby runtime, int buckets) {
+        this(runtime, UNDEF, buckets);
+    }
+
+    @Deprecated(since = "10.0.6.0", forRemoval = true)
     public RubyHash(Ruby runtime) {
         super(runtime, runtime.getHash());
         // ensure no subclasses call this constructor
@@ -256,12 +278,25 @@ public class RubyHash extends RubyObject implements Map {
     }
 
     // Delegated constructor, to be hidden and returned to normal super constructor once no longer in use
-    @Deprecated(since = "10.0.3.0")
+    @Deprecated(since = "10.0.6.0", forRemoval = true)
     public RubyHash(Ruby runtime, IRubyObject defaultValue) {
         super(runtime, runtime.getHash());
         // ensure no subclasses call this constructor
         assert getClass() == RubyHash.class;
         this.setDelegate(RubyHashLinkedBuckets.newLBHash(runtime, defaultValue));
+    }
+
+    @Deprecated(since = "10.0.6.0", forRemoval = true)
+    public RubyHash(Ruby runtime, IRubyObject defaultValue, int buckets) {
+        super(runtime, runtime.getHash());
+        this.setDelegate(RubyHashLinkedBuckets.newLBHash(runtime, defaultValue, buckets));
+    }
+
+    // TODO should this be deprecated ? (to be efficient, internals should deal with RubyHash directly)
+    @Deprecated(since = "10.0.3.0", forRemoval = true)
+    public RubyHash(Ruby runtime, Map valueMap, IRubyObject defaultValue) {
+        super(runtime, runtime.getHash());
+        this.setDelegate(RubyHashLinkedBuckets.newHash(runtime, valueMap, defaultValue));
     }
 
     /* ============================
@@ -286,28 +321,56 @@ public class RubyHash extends RubyObject implements Map {
         this.state = state;
     }
 
-    public static final class RubyHashEntry implements Map.Entry {
-        final IRubyObject key;
-        IRubyObject value;
-        RubyHashEntry next;
-        RubyHashEntry prevAdded;
-        RubyHashEntry nextAdded;
-        final int hash;
+    public static class RubyHashEntryLink {
+        RubyHash.RubyHashEntryLink prevAdded;
+        RubyHash.RubyHashEntryLink nextAdded;
+
+        int hash() {
+            // should never be called
+            throw new RuntimeException("hash() should never be called on RubyHashEntryLink");
+        }
+
+        public IRubyObject key() {
+            // should never be called
+            throw new RuntimeException("key() should never be called on RubyHashEntryLink");
+        }
+
+        IRubyObject value() {
+            // should never be called
+            throw new RuntimeException("value() should never be called on RubyHashEntryLink");
+        }
+
+        IRubyObject value(IRubyObject value) {
+            // should never be called
+            throw new RuntimeException("value(IRubyObject) should never be called on RubyHashEntryLink");
+        }
+
+        public boolean isLive() {
+            // should never be called
+            throw new RuntimeException("value() should never be called on RubyHashEntryLink");
+        }
+    }
+
+    public static final class RubyHashEntry extends RubyHashEntryLink implements Map.Entry {
+        private final IRubyObject key;
+        private IRubyObject value;
+        private RubyHashEntry next;
+        private final int hash;
 
         RubyHashEntry() {
             key = NEVER;
             hash = -1;
         }
 
-        public RubyHashEntry(int h, IRubyObject k, IRubyObject v, RubyHashEntry e, RubyHashEntry head) {
+        public RubyHashEntry(int h, IRubyObject k, IRubyObject v, RubyHashEntry e, RubyHashEntryLink head) {
             key = k;
-            value = v;
-            next = e;
+            value(v);
+            next(e);
             hash = h;
 
             if (head != null) {
-                RubyHashEntry prevAdded = head.prevAdded;
-                RubyHashEntry nextAdded = head;
+                RubyHashEntryLink prevAdded = head.prevAdded;
+                RubyHashEntryLink nextAdded = head;
 
                 this.prevAdded = prevAdded;
                 prevAdded.nextAdded = this;
@@ -319,16 +382,16 @@ public class RubyHash extends RubyObject implements Map {
 
         public RubyHashEntry(RubyHashEntry oldEntry, int newHash) {
             this.hash = newHash;
-            this.key = oldEntry.key;
-            this.value = oldEntry.value;
-            this.next = oldEntry.next;
+            this.key = oldEntry.key();
+            this.value(oldEntry.value());
+            this.next(oldEntry.next());
 
             // prevAdded is never null
-            RubyHashEntry prevAdded = oldEntry.prevAdded;
+            RubyHashEntryLink prevAdded = oldEntry.prevAdded;
             this.prevAdded = prevAdded;
             prevAdded.nextAdded = this;
 
-            RubyHashEntry nextAdded = oldEntry.nextAdded;
+            RubyHashEntryLink nextAdded = oldEntry.nextAdded;
             if (nextAdded != null) {
                 this.nextAdded = nextAdded;
                 nextAdded.prevAdded = this;
@@ -349,25 +412,19 @@ public class RubyHash extends RubyObject implements Map {
 
         @Override
         public Object getKey() {
-            return key;
-        }
-        public Object getJavaifiedKey(){
-            return key.toJava(Object.class);
+            return key();
         }
 
         @Override
         public Object getValue() {
-            return value;
-        }
-        public Object getJavaifiedValue() {
-            return value.toJava(Object.class);
+            return value();
         }
 
         @Override
         public Object setValue(Object value) {
-            IRubyObject oldValue = this.value;
+            IRubyObject oldValue = this.value();
             if (value instanceof IRubyObject) {
-                this.value = (IRubyObject)value;
+                this.value((IRubyObject)value);
             } else {
                 throw new UnsupportedOperationException("directEntrySet() doesn't support setValue for non IRubyObject instance entries, convert them manually or use entrySet() instead");
             }
@@ -379,13 +436,49 @@ public class RubyHash extends RubyObject implements Map {
             if(!(other instanceof RubyHashEntry)) return false;
             RubyHashEntry otherEntry = (RubyHashEntry)other;
 
-            return (key == otherEntry.key || key.eql(otherEntry.key)) &&
-                    (value == otherEntry.value || value.equals(otherEntry.value));
+            return (key() == otherEntry.key() || key().eql(otherEntry.key())) &&
+                    (value() == otherEntry.value() || value().equals(otherEntry.value()));
         }
 
         @Override
         public int hashCode(){
-            return key.hashCode() ^ value.hashCode();
+            return key().hashCode() ^ value().hashCode();
+        }
+
+        public IRubyObject key() {
+            return key;
+        }
+
+        IRubyObject value() {
+            return value;
+        }
+
+        IRubyObject value(IRubyObject value) {
+            IRubyObject oldValue = this.value;
+            this.value = value;
+            return oldValue;
+        }
+
+        RubyHashEntry next() {
+            return next;
+        }
+
+        void next(RubyHashEntry next) {
+            this.next = next;
+        }
+
+        int hash() {
+            return hash;
+        }
+
+        @Deprecated(since = "10.1.1.0")
+        public Object getJavaifiedKey(){
+            return key.toJava(Object.class);
+        }
+
+        @Deprecated(since = "10.1.1.0")
+        public Object getJavaifiedValue() {
+            return value.toJava(Object.class);
         }
     }
 

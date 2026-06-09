@@ -39,6 +39,33 @@ jobs:
       - name: rake ${{ matrix.target }}
         run: bin/jruby -S rake ${{ matrix.target }}
 
+  # This job is a fast-fail all-interp run of test:mri:code to give early indication if the jitted runs will pass.
+  rake-test-mri-fast:
+    name: rake test:mri:core:int (Java 26, fast fail)
+
+    runs-on: ubuntu-latest
+
+    env:
+      JRUBY_OPTS: '--dev'
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v6
+      - name: remove old java installs
+        run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
+      - name: set up java 26
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'zulu'
+          java-version: 26
+          cache: 'maven'
+      - name: bootstrap
+        run: ./mvnw -ntp -Pbootstrap clean package
+      - name: bundle install
+        run: bin/jruby --dev -S bundle install
+      - name: rake test:mri:core:int
+        run: bin/jruby -S rake test:mri:core:int
+
   rake-test-multiplatform:
     runs-on: ${{ matrix.platform }}
 
@@ -349,6 +376,72 @@ jobs:
         run: bin/jruby spec/mspec/bin/mspec ci :core
         env:
           JRUBY_OPTS: -Xjit.threshold=0
+
+  spec-ruby-freebsd:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        rubyspec-target: ['language', 'core']
+
+    name: ${{ matrix.rubyspec-target }} specs (FreeBSD, Java 21)
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: set up java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'zulu'
+          java-version: 21
+          cache: 'maven'
+      - name: pre-build JRuby
+        run: |
+          ./mvnw -ntp -Pbootstrap clean package
+          bin/jruby --dev -S bundle install
+      - name: run in FreeBSD
+        uses: vmactions/freebsd-vm@v1
+        with:
+          prepare: |
+            pkg install -y openjdk21
+          run: |
+            export JAVA_HOME="/usr/local/openjdk21"
+            export TZ="America/Chicago"
+            bin/jruby spec/mspec/bin/mspec ci :${{ matrix.rubyspec-target }}
+
+  spec-ruby-openbsd:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        rubyspec-target: ['language', 'core']
+
+    name: ${{ matrix.rubyspec-target }} specs (OpenBSD, Java 21)
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+      - name: set up java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'zulu'
+          java-version: 21
+          cache: 'maven'
+      - name: pre-build JRuby
+        run: |
+          ./mvnw -ntp -Pbootstrap clean package
+          bin/jruby --dev -S bundle install
+      - name: run in OpenBSD
+        uses: vmactions/openbsd-vm@v1
+        with:
+          prepare: |
+            pkg_add jdk--%21
+          run: |
+            export JAVA_HOME="/usr/local/jdk-21"
+            export TZ="America/Chicago"
+            bin/jruby spec/mspec/bin/mspec ci :${{ matrix.rubyspec-target }}
 
   dependency-check:
     runs-on: ubuntu-latest

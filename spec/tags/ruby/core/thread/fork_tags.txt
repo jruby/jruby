@@ -1,2 +1,3 @@
 fails:Thread.fork Thread.start does not call #initialize
 fails:Thread.fork Thread.start raises an ArgumentError if not passed a block
+fails:Thread.fork is an alias of Thread.start

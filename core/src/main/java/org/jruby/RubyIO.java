@@ -5034,6 +5034,11 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     private static long transfer(ThreadContext context, ReadableByteChannel from, FileChannel to, long length, long position) throws IOException {
+        // do nothing for length zero
+        if (length == 0) {
+            return 0;
+        }
+
         // handle large files on 32-bit JVMs
         long chunkSize = 128 * 1024 * 1024;
         long transferred = 0;
@@ -5065,6 +5070,11 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     private static long transfer(FileChannel from, WritableByteChannel to, long remaining, long position) throws IOException {
+        // do nothing for length zero
+        if (remaining == 0) {
+            return 0;
+        }
+
         // handle large files on 32-bit JVMs
         long chunkSize = 128 * 1024 * 1024;
         long transferred = 0;
@@ -5086,6 +5096,11 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     private static long transfer(ThreadContext context, ReadableByteChannel from, WritableByteChannel to, long length, long position) throws IOException {
+        // do nothing for length zero
+        if (length == 0) {
+            return 0;
+        }
+
         int chunkSize = 8 * 1024;
         ByteBuffer buffer = ByteBuffer.allocate(chunkSize);
         long transferred = 0;

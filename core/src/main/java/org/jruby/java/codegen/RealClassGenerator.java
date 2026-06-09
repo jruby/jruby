@@ -56,7 +56,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyClass.ConcreteJavaReifier;
@@ -747,44 +746,53 @@ public abstract class RealClassGenerator {
             mv.pushInt(paramTypes.length);
             mv.anewarray(p(IRubyObject.class));
 
+            int argIndex = 1;
             // TODO: make this do specific-arity calling
-            for (int i = 0, argIndex = 1; i < paramTypes.length; i++) {
-                Class paramType = paramTypes[i];
+            for (int i = 0; i < paramTypes.length; i++) {
                 mv.dup();
                 mv.pushInt(i);
-                // convert to IRubyObject
-                if (paramTypes[i].isPrimitive()) {
-                    mv.aload(rubyIndex);
-                    if (paramType == byte.class || paramType == short.class || paramType == char.class || paramType == int.class) {
-                        mv.iload(argIndex++);
-                        mv.invokestatic(p(JavaUtil.class), "convertJavaToRuby", sig(IRubyObject.class, Ruby.class, int.class));
-                    } else if (paramType == long.class) {
-                        mv.lload(argIndex);
-                        argIndex += 2; // up two slots, for long's two halves
-                        mv.invokestatic(p(JavaUtil.class), "convertJavaToRuby", sig(IRubyObject.class, Ruby.class, long.class));
-                    } else if (paramType == float.class) {
-                        mv.fload(argIndex++);
-                        mv.invokestatic(p(JavaUtil.class), "convertJavaToRuby", sig(IRubyObject.class, Ruby.class, float.class));
-                    } else if (paramType == double.class) {
-                        mv.dload(argIndex);
-                        argIndex += 2; // up two slots, for long's two halves
-                        mv.invokestatic(p(JavaUtil.class), "convertJavaToRuby", sig(IRubyObject.class, Ruby.class, double.class));
-                    } else if (paramType == boolean.class) {
-                        mv.iload(argIndex++);
-                        mv.invokestatic(p(JavaUtil.class), "convertJavaToRuby", sig(IRubyObject.class, Ruby.class, boolean.class));
-                    }
-                } else if (!IRubyObject.class.isAssignableFrom(paramType)) {
-                    mv.aload(rubyIndex);
-                    mv.aload(argIndex++);
-                    mv.invokestatic(p(JavaUtil.class), "convertJavaToUsableRubyObject", sig(IRubyObject.class, Ruby.class, Object.class));
-                } else {
-                    mv.aload(argIndex++);
-                }
+                argIndex = coerceArgumentToRuby(mv, paramTypes[i], argIndex, rubyIndex);
                 mv.aastore();
             }
         } else {
             mv.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class));
         }
+    }
+
+    public static int coerceArgumentToRuby(SkinnyMethodAdapter mv, Class<?> paramType, int argIndex, int rubyIndex) {
+        if (paramType.isPrimitive()) {
+            mv.aload(rubyIndex);
+            if (paramType == byte.class || paramType == short.class || paramType == char.class || paramType == int.class) {
+                mv.iload(argIndex);
+                mv.invokestatic(p(JavaUtil.class), "convertJavaToRuby", sig(IRubyObject.class, Ruby.class, int.class));
+            } else if (paramType == long.class) {
+                mv.lload(argIndex);
+                mv.invokestatic(p(JavaUtil.class), "convertJavaToRuby", sig(IRubyObject.class, Ruby.class, long.class));
+            } else if (paramType == float.class) {
+                mv.fload(argIndex);
+                mv.invokestatic(p(JavaUtil.class), "convertJavaToRuby", sig(IRubyObject.class, Ruby.class, float.class));
+            } else if (paramType == double.class) {
+                mv.dload(argIndex);
+                mv.invokestatic(p(JavaUtil.class), "convertJavaToRuby", sig(IRubyObject.class, Ruby.class, double.class));
+            } else if (paramType == boolean.class) {
+                mv.iload(argIndex);
+                mv.invokestatic(p(JavaUtil.class), "convertJavaToRuby", sig(IRubyObject.class, Ruby.class, boolean.class));
+            }
+            argIndex += paramSlotSize(paramType);
+        } else if (!IRubyObject.class.isAssignableFrom(paramType)) {
+            mv.aload(rubyIndex);
+            mv.aload(argIndex++);
+            mv.invokestatic(p(JavaUtil.class), "convertJavaToUsableRubyObject", sig(IRubyObject.class, Ruby.class, Object.class));
+        } else {
+            mv.aload(argIndex++);
+        }
+
+        return argIndex;
+    }
+
+    public static int paramSlotSize(final Class<?> paramType) {
+        // two slots, for double's and long's two halves
+        return paramType == long.class || paramType == double.class ? 2 : 1;
     }
 
     public static void coerceResultAndReturn(SkinnyMethodAdapter mv, Class returnType) {
@@ -839,8 +847,7 @@ public abstract class RealClassGenerator {
                 // if the return type is not an IRubyObject implementer, coerce to that type before casting
                 if (!IRubyObject.class.isAssignableFrom(returnType)) {
                     mv.ldc(Type.getType(returnType));
-                    mv.invokeinterface(
-                        p(IRubyObject.class), "toJava", sig(Object.class, Class.class));
+                    mv.invokeinterface(p(IRubyObject.class), "toJava", sig(Object.class, Class.class));
                 }
                 mv.checkcast(p(returnType));
                 if (doReturn) mv.areturn();

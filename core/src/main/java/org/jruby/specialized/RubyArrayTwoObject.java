@@ -226,7 +226,7 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
     @Override
     public IRubyObject reverse_bang(ThreadContext context) {
         if (!packed()) return super.reverse_bang(context);
-
+        modifyCheck(context);
         IRubyObject tmp = car;
         car = cdr;
         cdr = tmp;
@@ -249,7 +249,7 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
         IRubyObject cdr = this.cdr;
 
         IRubyObject ret = block.yieldArray(context, Create.newArray(context, car, cdr), null);
-        //TODO: ary_sort_check should be done here
+        modifyCheck(context);
         int compare = RubyComparable.cmpint(context, ret, car, cdr);
         if (compare > 0) reverse_bang(context);
         return this;
@@ -274,6 +274,7 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
             compare = ((RubyString) o1).op_cmp((RubyString) o2);
         } else {
             compare = compareOthers(context, o1, o2);
+            modifyCheck(context);
         }
 
         if (compare > 0) reverse_bang(context);

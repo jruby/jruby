@@ -356,7 +356,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         ArraySupport.copy(args, newArgs, mlen, args.length);
 
         return new RubyEnumerator(context.runtime, getType(), object, asSymbol(context, method), newArgs,
-                size, sizeFn, methodArgsHasKeywords).each(context, block);
+                null, null, methodArgsHasKeywords).each(context, block);
     }
 
     @JRubyMethod(name = "inspect")

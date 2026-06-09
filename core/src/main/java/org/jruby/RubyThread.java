@@ -579,9 +579,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         public static RubyArray newLocationArray(Ruby runtime, RubyStackTraceElement[] elements,
             final int offset, final int length) {
 
+            final RubyClass locationClass = runtime.getLocation();
             IRubyObject[] ary = new IRubyObject[length];
             for ( int i = 0; i < length; i++ ) {
-                ary[i] = newLocation(runtime, elements[i + offset]);
+                ary[i] = new Location(runtime, locationClass, elements[i + offset]);
             }
 
             return RubyArray.newArrayNoCopy(runtime, ary);

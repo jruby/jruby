@@ -2895,7 +2895,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     public RubyString append(IRubyObject other) {
-        return append(other, (o) -> o.convertToString());
+        return append(other, IRubyObject::convertToString);
     }
 
     public RubyString append(RubyString other) {

@@ -34,6 +34,7 @@ import java.util.Set;
 
 import org.joni.WarnCallback;
 import org.jruby.Ruby;
+import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
@@ -41,6 +42,7 @@ import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.JavaSites;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
@@ -69,9 +71,11 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
     private final Ruby runtime;
     private final Set<ID> oncelers = EnumSet.allOf(IRubyWarnings.ID.class);
+    private final RubyClass WarningBuffer;
 
-    public RubyWarnings(Ruby runtime) {
+    public RubyWarnings(Ruby runtime, RubyClass WarningBuffer) {
         this.runtime = runtime;
+        this.WarningBuffer = WarningBuffer;
     }
 
     public static RubyModule createWarningModule(ThreadContext context) {
@@ -80,6 +84,24 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         Warning.extend_object(context, Warning);
 
         return Warning;
+    }
+
+    public static RubyClass createWarningBufferClass(ThreadContext context, RubyModule Warning) {
+        return Warning.defineClassUnder(context, "buffer", stringClass(context), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR)
+                .defineMethods(context, Buffer.class);
+    }
+
+    public static class Buffer {
+        @JRubyMethod(rest = true)
+        public static IRubyObject write(ThreadContext context, IRubyObject buf, IRubyObject[] args) {
+            RubyString string = buf.convertToString();
+            for (var arg : args) string.append(arg);
+            return buf;
+        }
+    }
+
+    public RubyClass getWarningBuffer() {
+        return WarningBuffer;
     }
 
     @Override

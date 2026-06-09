@@ -59,7 +59,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.api.Warn;
 import org.jruby.ast.util.ArgsUtil;
-import org.jruby.common.IRubyWarnings;
 import org.jruby.common.RubyWarnings;
 import org.jruby.exceptions.CatchThrow;
 import org.jruby.exceptions.MainExitException;
@@ -69,7 +68,6 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock;
 import org.jruby.ir.interpreter.Interpreter;
-import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.platform.Platform;
@@ -96,7 +94,6 @@ import org.jruby.util.func.ObjectIntIntFunction;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.PopenExecutor;
 
-import static org.jruby.RubyBasicObject.UNDEF;
 import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyFile.fileResource;
@@ -117,7 +114,6 @@ import static org.jruby.api.Access.argsFile;
 import static org.jruby.api.Access.fileClass;
 import static org.jruby.api.Access.globalVariables;
 import static org.jruby.api.Access.integerClass;
-import static org.jruby.api.Access.ioClass;
 import static org.jruby.api.Access.kernelModule;
 import static org.jruby.api.Access.loadService;
 import static org.jruby.api.Access.objectClass;
@@ -138,7 +134,6 @@ import static org.jruby.api.Create.newSharedString;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
-import static org.jruby.api.Warn.warnDeprecatedForRemovalAlternate;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.dupIfKeywordRestAtCallsite;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.receiveKeywords;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
@@ -1027,103 +1022,200 @@ public class RubyKernel {
         return str.op_format(context, arg);
     }
 
-    public static IRubyObject raise(ThreadContext context, IRubyObject self, IRubyObject arg0) {
-        // semi extract_raise_opts :
-        if (arg0 instanceof RubyHash opt && !opt.isEmpty() &&
-                opt.has_key_p(context, asSymbol(context, "cause")) == context.tru) {
-                throw argumentError(context, "only cause is given with no arguments");
-        }
-
-        IRubyObject cause = context.getErrorInfo(); // returns nil for no error-info
-
-        Throwable throwable = unwrapJavaException(context, arg0);
-
-        if (throwable == null) {
-            RaiseException raise = arg0 instanceof RubyString ?
-                    ((RubyException) context.runtime.getRuntimeError().newInstance(context, arg0)).toThrowable() :
-                    convertToException(context, arg0, null).toThrowable();
-
-            var exception = raise.getException();
-
-            if (context.runtime.isDebug()) printExceptionSummary(context, exception);
-            if (exception.getCause() == null && cause != exception) exception.setCause(context, cause);
-
-            throwable = raise;
-        }
-
-        Helpers.throwException(throwable);
-        return null; // not reached
+    @JRubyMethod(name = {"raise", "fail"}, optional = 4, checkArity = false, module = true, visibility = PRIVATE, omit = true, keywords = true)
+    public static IRubyObject raise(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return switch (args.length) {
+            case 0 -> raise(context, recv);
+            case 1 -> raise(context, recv, args[0]);
+            case 2 -> raise(context, recv, args[0], args[1]);
+            case 3 -> raise(context, recv, args[0], args[1], args[2]);
+            case 4 -> raise(context, recv, args[0], args[1], args[2], args[3]);
+            default -> {
+                Arity.raiseArgumentError(context, args.length, 0, 3);
+                yield null;
+            }
+        };
     }
 
-    @JRubyMethod(name = {"raise", "fail"}, optional = 4, checkArity = false, module = true, visibility = PRIVATE, omit = true, keywords = true)
-    public static IRubyObject raise(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        int argc = args.length;
-        boolean forceCause = false;
+    @JRubyMethod(name = {"raise", "fail"}, module = true, visibility = PRIVATE, omit = true, keywords = true)
+    public static IRubyObject raise(ThreadContext context, IRubyObject recv) {
+        ThreadContext.resetCallInfo(context);
 
-        // semi extract_raise_opts :
+        IRubyObject lastException = context.getErrorInfo();
+
+        maybeThrowJavaException(context, lastException);
+
+        RubyException exception =
+                lastException instanceof RubyException ex ? ex : newBlankRuntimeException(context);
+
+        printDebugException(context, exception);
+
+        return Helpers.throwExceptionT(exception.toThrowable());
+    }
+
+    @JRubyMethod(name = {"raise", "fail"}, module = true, visibility = PRIVATE, omit = true, keywords = true)
+    public static IRubyObject raise(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
         int callInfo = ThreadContext.resetCallInfo(context);
+
+        Cause cause = prepareCause(context, arg0, 1, callInfo);
+
+        if (cause.remainingArgs == 0) throw argumentError(context, "only cause is given with no arguments");
+
+        maybeThrowJavaException(context, arg0);
+
+        RubyException exception = prepareNewException(context, arg0);
+
+        printDebugException(context, exception);
+
+        setNewExceptionCause(context, exception, cause);
+
+        return Helpers.throwExceptionT(exception.toThrowable());
+    }
+
+    @JRubyMethod(name = {"raise", "fail"}, module = true, visibility = PRIVATE, omit = true, keywords = true)
+    public static IRubyObject raise(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
+        int callInfo = ThreadContext.resetCallInfo(context);
+
+        Cause cause = prepareCause(context, arg1, 2, callInfo);
+
+        maybeThrowJavaException(context, arg0);
+
+        RubyException exception = switch (cause.remainingArgs) {
+            case 1 -> prepareNewException(context, arg0);
+            default -> prepareNewException(context, arg0, arg1);
+        };
+
+        printDebugException(context, exception);
+
+        setGivenExceptionCause(context, cause, exception);
+
+        return Helpers.throwExceptionT(exception.toThrowable());
+    }
+
+    @JRubyMethod(name = {"raise", "fail"}, module = true, visibility = PRIVATE, omit = true, keywords = true)
+    public static IRubyObject raise(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        int callInfo = ThreadContext.resetCallInfo(context);
+        Cause cause = prepareCause(context, arg2, 3, callInfo);
+
+        maybeThrowJavaException(context, arg0);
+
+        RubyException exception = switch (cause.remainingArgs) {
+            case 2 -> prepareNewException(context, arg0, arg1);
+            default -> prepareNewException(context, arg0, arg1, arg2);
+        };
+
+        printDebugException(context, exception);
+
+        setNewExceptionCause(context, exception, cause);
+
+        return Helpers.throwExceptionT(exception.toThrowable());
+    }
+
+    public static IRubyObject raise(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+        int callInfo = ThreadContext.resetCallInfo(context);
+
+        Cause cause = prepareCause(context, arg3, 4, callInfo);
+
+        // ensure no more than three args remain
+        Arity.checkArgumentCount(context, cause.remainingArgs, 0, 3);
+
+        maybeThrowJavaException(context, arg0);
+
+        RubyException exception = prepareNewException(context, arg0, arg1, arg2);
+
+        printDebugException(context, exception);
+
+        setNewExceptionCause(context, exception, cause);
+
+        return Helpers.throwExceptionT(exception.toThrowable());
+    }
+
+    /**
+     * Construct a new RuntimeException with an empty message.
+     *
+     * @param context the current thread context
+     * @return the new blank RuntimeException object
+     */
+    private static RubyException newBlankRuntimeException(ThreadContext context) {
+        return RubyException.newException(context.runtime, runtimeErrorClass(context), "");
+    }
+
+    /**
+     * Prepare a {@link Cause} record given the provided last argument, total argument count, and keyword callInfo.
+     *
+     * @param context the current thread context
+     * @param lastArg the last argument provided to Kernel#raise
+     * @param argc the total count of arguments provided to Kernel#raise
+     * @param callInfo the keyword callInfo bits
+     * @return a Cause record
+     */
+    private static Cause prepareCause(ThreadContext context, IRubyObject lastArg, int argc, int callInfo) {
+        boolean causeGiven = false;
         IRubyObject cause = null;
-        if (ThreadContext.hasNonemptyKeywords(callInfo) && argc > 0) {
-            IRubyObject last = args[argc - 1];
-            if (last instanceof RubyHash opt) {
+        if (ThreadContext.hasNonemptyKeywords(callInfo)) {
+            if (lastArg instanceof RubyHash opt) {
                 RubySymbol key;
                 if (!opt.isEmpty() && (opt.has_key_p(context, key = asSymbol(context, "cause")) == context.tru)) {
                     cause = opt.delete(context, key, Block.NULL_BLOCK);
-                    forceCause = true;
-                    if (opt.isEmpty() && --argc == 0) { // more opts will be passed along
-                        throw argumentError(context, "only cause is given with no arguments");
+                    causeGiven = true;
+                    if (opt.isEmpty()) {
+                        --argc;
                     }
                 }
             }
         }
 
-        Arity.checkArgumentCount(context, argc, 0, 3);
+        if ( cause == null ) cause = context.getErrorInfo();
+        return new Cause(argc, causeGiven, cause);
+    }
 
-        if ( argc > 0 ) { // for argc == 0 we will be raising $!
-            // NOTE: getErrorInfo needs to happen before new RaiseException(...)
-            if ( cause == null ) cause = context.getErrorInfo(); // returns nil for no error-info
-        }
+    /**
+     * Represents an exception cause extracted from a Kernel#raise argument list.
+     *
+     * @param remainingArgs the remaining argument count, excluding any cause: keyword
+     * @param provided whether the cause was provided with a cause: keyword
+     * @param value the extracted cause
+     */
+    private record Cause(int remainingArgs, boolean provided, IRubyObject value) {}
 
-        Throwable throwable = unwrapJavaException(context, args, argc);
+    /**
+     * Set the cause for an exception that was already constructed elsewhere. This is intended to be used to
+     * appropriately set the cause for previously-raised exceptions. Such exceptions will only hve their cause altered
+     * if:
+     * </p>
+     * <ul>
+     *     <li>the cause is not nil, and either</li>
+     *     <ul>
+     *         <li>it is being forced (provided with cause: keyword), OR</li>
+     *         <li>it has never been set previously and the given cause is not the same as the target exception.</li>
+     *     </ul>
+     * </ul>
+     *
+     * @param context the current thread context
+     * @param cause the desired cause
+     * @param exception the exception
+     */
+    private static void setGivenExceptionCause(ThreadContext context, Cause cause, RubyException exception) {
+        if (!cause.value.isNil() && cause.value != exception) {
+            RubyException.checkCircularCause(context, exception, cause.value);
 
-        if (throwable == null) {
-            RaiseException raise;
-            switch (argc) {
-                case 0:
-                    IRubyObject lastException = globalVariables(context).get("$!");
-                    if (lastException.isNil()) {
-                        raise = RaiseException.from(context.runtime, runtimeErrorClass(context), "");
-                    } else {
-                        // non RubyException value is allowed to be assigned as $!.
-                        raise = ((RubyException) lastException).toThrowable();
-                    }
-                    break;
-                case 1:
-                    if (args[0] instanceof RubyString) {
-                        raise = ((RubyException) runtimeErrorClass(context).newInstance(context, args[0], block)).toThrowable();
-                    } else {
-                        raise = convertToException(context, args[0], null).toThrowable();
-                    }
-                    break;
-                case 2:
-                    raise = convertToException(context, args[0], args[1]).toThrowable();
-                    break;
-                default:
-                    RubyException exception = convertToException(context, args[0], args[1]);
-                    exception.setBacktrace(context, args[2]);
-                    raise = exception.toThrowable();
-                    break;
+            if (cause.provided) {
+                exception.setCause(context, cause.value);
+            } else if (exception.getCause() == null) {
+                exception.setCause(context, cause.value);
             }
-
-            var exception = raise.getException();
-            if (context.runtime.isDebug()) printExceptionSummary(context, exception);
-            if (forceCause || argc > 0 && exception.getCause() == null && cause != exception) exception.setCause(context, cause);
-
-            throwable = raise;
         }
+    }
 
-        Helpers.throwException(throwable);
-        return null; // not reached
+    /**
+     * Set the cause for a newly-constructed exception.
+     *
+     * @param context the current thread context
+     * @param exception the exception
+     * @param cause the cause
+     */
+    private static void setNewExceptionCause(ThreadContext context, RubyException exception, Cause cause) {
+        if ((cause.provided || exception.getCause() == null) && cause.value != exception) exception.setCause(context, cause.value);
     }
 
     /**
@@ -1172,28 +1264,98 @@ public class RubyKernel {
         return null;
     }
 
-    private static RubyException convertToException(ThreadContext context, IRubyObject obj, IRubyObject optionalMessage) {
-        if (!obj.respondsTo("exception")) throw typeError(context, "exception class/object expected");
+    /**
+     * If the given exception is a Java exception, throw it without any further manipulation.
+     *
+     * @param context the current thread context
+     * @param exception the exception to check and possibly throw
+     */
+    private static void maybeThrowJavaException(ThreadContext context, IRubyObject exception) {
+        Throwable throwable = unwrapJavaException(context, exception);
+        if (throwable != null) Helpers.throwException(throwable);
+    }
+
+    /**
+     * Prepare a new exception given the provided factory object, message, and backtrace. The "exception" method will be
+     * called on the given factory.
+     *
+     * @param context the current thread context
+     * @param stringOrFactory the factory object or string message for RuntimeError
+     * @return the resulting exception object
+     */
+    private static RubyException prepareNewException(ThreadContext context, IRubyObject stringOrFactory) {
+        RubyException exception;
+
+        if (stringOrFactory instanceof RubyString) {
+            exception = ((RubyException) runtimeErrorClass(context).newInstance(context, stringOrFactory));
+        } else {
+            exception = prepareNewException(context, stringOrFactory, null);
+        }
+
+        return exception;
+    }
+
+
+    /**
+     * Prepare a new exception given the provided factory object, message, and backtrace. The "exception" method will be
+     * called on the given factory.
+     *
+     * @param context the current thread context
+     * @param factory the factory object
+     * @param optionalMessage the exception message or null if none
+     * @return the resulting exception object
+     */
+    private static RubyException prepareNewException(ThreadContext context, IRubyObject factory, IRubyObject optionalMessage) {
+        if (!factory.respondsTo("exception")) throw typeError(context, "exception class/object expected");
 
         IRubyObject exception = optionalMessage == null ?
-                obj.callMethod(context, "exception") :
-                obj.callMethod(context, "exception", optionalMessage);
+                factory.callMethod(context, "exception") :
+                factory.callMethod(context, "exception", optionalMessage);
 
-        if (!RubyException.class.isInstance(exception)) throw typeError(context, "exception object expected");
+        if (!(exception instanceof RubyException)) throw typeError(context, "exception object expected");
 
         return (RubyException) exception;
     }
 
-    private static void printExceptionSummary(ThreadContext context, RubyException rEx) {
-        RubyStackTraceElement[] elements = rEx.getBacktraceElements();
-        RubyStackTraceElement firstElement = elements.length > 0 ? elements[0] :
-                new RubyStackTraceElement("", "", "(empty)", 0, false);
-        String msg = String.format("Exception '%s' at %s:%s - %s\n",
-                rEx.getMetaClass(),
-                firstElement.getFileName(), firstElement.getLineNumber(),
-                TypeConverter.convertToType(rEx, stringClass(context), "to_s"));
+    /**
+     * Prepare a new exception given the provided factory object, message, and backtrace. The "exception" method will be
+     * called on the given factory.
+     *
+     * @param context the current thread context
+     * @param factory the factory object
+     * @param message the exception message
+     * @param backtrace the exception backtrace
+     * @return the resulting exception object
+     */
+    private static RubyException prepareNewException(ThreadContext context, IRubyObject factory, IRubyObject message, IRubyObject backtrace) {
+        RubyException exception = prepareNewException(context, factory, message);
 
-        context.runtime.getErrorStream().print(msg);
+        exception.setBacktrace(context, backtrace);
+
+        return exception;
+    }
+
+    /**
+     * Print the given exception to stderr if debug is enabled.
+     *
+     * @param context the current thread context
+     * @param exception the exception to print
+     */
+    private static void printDebugException(ThreadContext context, RubyException exception) {
+        Ruby runtime = context.runtime;
+        if (runtime.isDebug()) {
+            // trigger exception backtrace construction
+            exception.toThrowable();
+            RubyStackTraceElement[] elements = exception.getBacktraceElements();
+            RubyStackTraceElement firstElement = elements.length > 0 ? elements[0] :
+                    new RubyStackTraceElement("", "", "(empty)", 0, false);
+            String msg = String.format("Exception '%s' at %s:%s - %s\n",
+                    exception.getMetaClass(),
+                    firstElement.getFileName(), firstElement.getLineNumber(),
+                    TypeConverter.convertToType(exception, stringClass(context), "to_s"));
+
+            runtime.getErrorStream().print(msg);
+        }
     }
 
     /**
@@ -1533,8 +1695,16 @@ public class RubyKernel {
                 i = 1;
             }
 
-            for (; i < argMessagesLen; i++) {
-                warnObj(context, recv, args[i], category);
+            if (argMessagesLen - i > 0) {
+                RubyString buffer = newEmptyString(context);
+                buffer.setMetaClass(context.runtime.getWarnings().getWarningBuffer());
+
+                IRubyObject[] newArgs = (argMessagesLen == args.length && i == 0) ? args : Arrays.copyOfRange(args, i, argMessagesLen);
+                RubyIO.puts(context, buffer, newArgs);
+
+                buffer.setMetaClass(context.runtime.getString());
+
+                warnObj(context, recv, buffer, category);
             }
         }
 
@@ -2550,5 +2720,10 @@ public class RubyKernel {
             default:
                 throw argumentError(context, args.length, 2, 3);
         }
+    }
+
+    @Deprecated(since = "10.1.1.0")
+    public static IRubyObject raise(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        return raise(context, recv, args);
     }
 }

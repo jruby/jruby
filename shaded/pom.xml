@@ -57,6 +57,10 @@ DO NOT MODIFY - GENERATED CODE
                   <shadedPattern>com.jruby.internal.org.dylibso.chicory</shadedPattern>
                 </relocation>
                 <relocation>
+                  <pattern>io.roastedroot.redline</pattern>
+                  <shadedPattern>com.jruby.internal.io.roastedroot.redline</shadedPattern>
+                </relocation>
+                <relocation>
                   <pattern>org.ruby_lang.prism</pattern>
                   <shadedPattern>org.jruby.internal.prism</shadedPattern>
                 </relocation>
@@ -74,7 +78,22 @@ DO NOT MODIFY - GENERATED CODE
                     <Enable-Native-Access>ALL-UNNAMED</Enable-Native-Access>
                   </manifestEntries>
                 </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
               </transformers>
+              <filters>
+                <filter>
+                  <artifact>ch.randelshofer:fastdoubleparser</artifact>
+                  <excludes>**/23/**</excludes>
+                </filter>
+                <filter>
+                  <artifact>ch.randelshofer:fastdoubleparser</artifact>
+                  <excludes>**/17/**</excludes>
+                </filter>
+                <filter>
+                  <artifact>ch.randelshofer:fastdoubleparser</artifact>
+                  <excludes>**/11/**</excludes>
+                </filter>
+              </filters>
               <createSourcesJar>false</createSourcesJar>
               <compress>false</compress>
             </configuration>

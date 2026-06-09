@@ -1,0 +1,1 @@
+fails:MatchData#deconstruct is an alias of MatchData#captures

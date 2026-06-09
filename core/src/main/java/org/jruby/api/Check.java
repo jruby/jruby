@@ -27,7 +27,7 @@ public class Check {
 
         if (checked[0] == null) {
             throw argumentError(context, (boolean)checked[1] ?
-                "string contains null char" : "string contains null byte");
+                "path name contains null char" : "path name contains null byte");
         }
 
         return (RubyString) checked[0];

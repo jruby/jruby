@@ -1,1 +1,0 @@
-fails:Invoking a method raises TypeError if 'to_proc' doesn't return a Proc

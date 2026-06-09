@@ -542,7 +542,10 @@ public abstract class RubyParserBase {
     public AssignableNode assignableInCurr(ByteList nameBytes, Node value) {
         RubySymbol name = symbolID(nameBytes);
         currentScope.addVariableThisScope(name.idString());
-        if (warnOnUnusedVariables) scopedParserState.addDefinedVariable(name, lexer.getRubySourceline());
+        if (warnOnUnusedVariables) {
+            scopedParserState.addDefinedVariable(name, lexer.getRubySourceline());
+            scopedParserState.markUsedVariable(name, 0);
+        }
         return currentScope.assign(lexer.getRubySourceline(), name, makeNullNil(value));
     }
 
@@ -970,13 +973,13 @@ public abstract class RubyParserBase {
      * assign_in_cond
 	 **/
     private boolean checkAssignmentInCondition(Node node) {
-        if (node instanceof MultipleAsgnNode || node instanceof LocalAsgnNode || node instanceof DAsgnNode || node instanceof GlobalAsgnNode || node instanceof InstAsgnNode) {
+        if (node instanceof MultipleAsgnNode || node instanceof LocalAsgnNode || node instanceof DAsgnNode || node instanceof GlobalAsgnNode || node instanceof InstAsgnNode || node instanceof ClassVarAsgnNode || node instanceof ConstDeclNode) {
             Node valueNode = ((AssignableNode) node).getValueNode();
             if (isStaticContent(valueNode)) {
                 warning(ID.ASSIGNMENT_IN_CONDITIONAL, lexer.getFile(), valueNode.getLine(), "found '= literal' in conditional, should be ==");
             }
             return true;
-        } 
+        }
 
         return false;
     }

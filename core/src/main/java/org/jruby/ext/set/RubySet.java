@@ -106,15 +106,28 @@ public class RubySet extends RubyObject implements Set {
             defaultMarshal.marshalTo(runtime, obj, type, marshalStream);
         }
 
+        /**
+         * Dump a set by using a dummy object to hold the @hash ivar, for compatibility.
+         *
+         * This logic duplicates some of the default marshal sequence but uses a dummy object to whole the @hash
+         * instance variable expected by older Ruby implementations.
+         *
+         * @param context the current thread context
+         * @param out the output stream
+         * @param obj the set object to dump
+         * @param type the class of the set object
+         * @param marshalStream the marshal stream
+         */
         public void marshalTo(ThreadContext context, RubyOutputStream out, Object obj, RubyClass type, MarshalDumper marshalStream) {
             RubySet set = (RubySet) obj;
 
-            // create dummy object with extra @hash ivar and dump variables from that
+            // register set object now for recursive sets
+            marshalStream.registerObject(set);
+
+            // create dummy object with extra @hash ivar and dump all variables from that
             RubyObject dummy = new RubyObject(context.runtime, type);
             dummy.setInstanceVariable("@hash", set.hash);
-
             set.copyInstanceVariablesInto(dummy);
-
             marshalStream.dumpVariables(context, out, dummy);
         }
 
@@ -125,15 +138,30 @@ public class RubySet extends RubyObject implements Set {
             return result;
         }
 
+        /**
+         * Load a Set from a marshal stream by intercepting the dummy object carrying the @hash ivar.
+         *
+         * See {@link #marshalTo} for an explanation of this custom marshal logic.
+         *
+         * @param context the current thread context
+         * @param in the input stream
+         * @param type the class of the set object
+         * @param loader the marshal loader
+         * @return the unmarshalled Set object
+         */
         public Object unmarshalFrom(ThreadContext context, RubyInputStream in, RubyClass type, MarshalLoader loader) {
             RubySet set = new RubySet(context.runtime, type, false);
 
+            loader.entry(set);
+
             // unmarshal as dummy object and extra @hash ivar
-            RubyObject dummy = (RubyObject) loader.entry(new RubyObject(context.runtime, type));
+            RubyObject dummy = new RubyObject(context.runtime, type);
             loader.ivar(context, in, null, dummy, null);
 
+            // update internal hash
             set.hash = (RubyHash) dummy.getInstanceVariables().removeInstanceVariable("@hash");
 
+            // copy remaining instance variables
             dummy.copyInstanceVariablesInto(set);
 
             return set;
