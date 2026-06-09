@@ -1806,23 +1806,42 @@ public class RubyInstanceConfig {
         return calculateBytecodeVersion(specVersion);
     }
 
-    public static int calculateBytecodeVersion(String specVersion) {
-        if (specVersion.indexOf('.') != -1) {
-            switch (specVersion) {
-                default:
-                    System.err.println("unsupported Java version " + specVersion + ", using 1.8");
-                case "1.8":
-                    return Opcodes.V1_8;
-            }
+    public static int calculateBytecodeVersion(String givenVersion) {
+        // try given version, falling back on property and then lowest supported
+        int bytecodeVersion = parseJavaVersion(givenVersion);
+
+        if (bytecodeVersion != -1) return bytecodeVersion;
+
+        String defaultVersion = SafePropertyAccessor.getProperty("java.specification.version", "1.8");
+        if (givenVersion.equals(defaultVersion)) {
+            // can't determine spec version, use lowest supported
+            return Opcodes.V1_8;
         }
 
-        int version = Integer.parseInt(specVersion);
+        // default is different than given, try again
+        bytecodeVersion = parseJavaVersion(defaultVersion);
+
+        if (bytecodeVersion != -1) return bytecodeVersion;
+
+        System.err.println("unsupported Java version " + givenVersion + " and default version " + defaultVersion + ", using 1.8");
+        return Opcodes.V1_8;
+    }
+
+    private static int parseJavaVersion(String givenVersion) {
+        switch (givenVersion) {
+            case "1.8":
+            case "8":
+                return Opcodes.V1_8;
+        }
+
         try {
+            int version = Integer.parseInt(givenVersion);
             Field versionField = Opcodes.class.getField("V" + version);
             return (Integer) versionField.get(null);
         } catch (Exception e) {
-            return Opcodes.V21;
+            // return -1 below
         }
+        return -1;
     }
 
     @Deprecated
