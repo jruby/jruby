@@ -434,6 +434,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
     /*
      * plain internal array assignment
      */
+    @Deprecated(since = "10.0.6.0")
     public RubyArray(Ruby runtime, IRubyObject[] vals, int begin, int length) {
         super(runtime, runtime.getArray());
         this.values = vals;
@@ -448,6 +449,7 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         this.realLength = length;
     }
 
+    @Deprecated(since = "10.0.6.0")
     public RubyArray(Ruby runtime, int length) {
         super(runtime, runtime.getArray());
         this.values = IRubyObject.array(validateBufferLength(runtime, length));
@@ -482,12 +484,14 @@ public class RubyArray<T extends IRubyObject> extends RubyObject implements List
         super(runtime, klass, objectSpace);
     }
 
+    @Deprecated(since = "10.0.6.0")
     public RubyArray(Ruby runtime, RubyClass klass, IRubyObject[] vals) {
         super(runtime, klass);
         values = vals;
         realLength = vals.length;
     }
 
+    @Deprecated(since = "10.0.6.0")
     public RubyArray(RubyClass klass, IRubyObject[] vals, boolean shared) {
         super(klass);
         values = vals;
