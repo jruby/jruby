@@ -174,10 +174,6 @@ public class RubyHashLinkedBuckets extends RubyHash {
         allocFirst();
     }
 
-    protected RubyHashLinkedBuckets(Ruby runtime, int buckets) {
-        this(runtime, UNDEF, buckets);
-    }
-
     protected RubyHashLinkedBuckets(Ruby runtime) {
         this(runtime, UNDEF);
     }
@@ -234,7 +230,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
     }
 
     public static RubyHashLinkedBuckets newLBHash(Ruby runtime, int buckets) {
-        return new RubyHashLinkedBuckets(runtime, buckets);
+        return new RubyHashLinkedBuckets(runtime, UNDEF, buckets);
     }
 
     public static RubyHashLinkedBuckets newLBHash(Ruby runtime, int buckets, boolean objectSpace) {
