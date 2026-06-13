@@ -290,16 +290,21 @@ public class RubyHash extends RubyObject implements Map {
         this.setDelegate(RubyHashLinkedBuckets.newLBHash(runtime, defaultValue));
     }
 
+    // Delegated constructor, to be hidden and returned to normal super constructor once no longer in use
     @Deprecated(since = "10.0.6.0", forRemoval = true)
     public RubyHash(Ruby runtime, IRubyObject defaultValue, int buckets) {
         super(runtime, runtime.getHash());
+        // ensure no subclasses call this constructor
+        assert getClass() == RubyHash.class;
         this.setDelegate(RubyHashLinkedBuckets.newLBHash(runtime, defaultValue, buckets));
     }
 
-    // TODO should this be deprecated ? (to be efficient, internals should deal with RubyHash directly)
+    // Delegated constructor, to be hidden and returned to normal super constructor once no longer in use
     @Deprecated(since = "10.0.3.0", forRemoval = true)
     public RubyHash(Ruby runtime, Map valueMap, IRubyObject defaultValue) {
         super(runtime, runtime.getHash());
+        // ensure no subclasses call this constructor
+        assert getClass() == RubyHash.class;
         this.setDelegate(RubyHashLinkedBuckets.newHash(runtime, valueMap, defaultValue));
     }
 
