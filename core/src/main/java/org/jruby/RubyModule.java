@@ -74,7 +74,6 @@ import org.jruby.anno.TypePopulator;
 import org.jruby.api.Convert;
 import org.jruby.api.JRubyAPI;
 import org.jruby.api.Warn;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.embed.Extension;
 import org.jruby.exceptions.LoadError;
 import org.jruby.exceptions.RaiseException;
@@ -118,7 +117,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.load.LoadService;
@@ -2512,7 +2510,12 @@ public class RubyModule extends RubyObject {
      * @param oldName
      */
     public void putAlias(ThreadContext context, String id, CacheEntry entry, String oldName) {
-        if (id.equals(oldName)) return;
+        if (id.equals(oldName)) {
+            // Increment alias count even if we don't redefine anything.
+            // See hack in Rails to silence redefinition warnings: https://github.com/rails/rails/pull/29233
+            entry.method.setAliased();
+            return;
+        }
 
         putMethod(context.runtime, id, new AliasMethod(this, entry, id, oldName));
 
@@ -5622,10 +5625,12 @@ public class RubyModule extends RubyObject {
 
         DynamicMethod method = getMethods().get(name);
         if (method != null && entry.method.getRealMethod() != method.getRealMethod() && !method.isUndefined()) {
-            if (method.getRealMethod().getAliasCount() == 0) warning(context, "method redefined; discarding old " + name);
-
-            if (method instanceof PositionAware posAware) {
-                context.runtime.getWarnings().warning(ID.REDEFINING_METHOD, posAware.getFile(), posAware.getLine() + 1, "previous definition of " + name + " was here");
+            if (!method.isAliased()) {
+                if (method instanceof PositionAware posAware) {
+                    warning(context, "method redefined; discarding old " + name + "\n" + posAware.getFile() + ":" + (posAware.getLine() + 1) + ": warning: previous definition of " + name + " was here");
+                } else {
+                    warning(context, "method redefined; discarding old " + name);
+                }
             }
         }
 
