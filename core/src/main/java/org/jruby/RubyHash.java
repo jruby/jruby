@@ -1304,12 +1304,12 @@ public class RubyHash extends RubyObject implements Map {
         getDelegate().setRuby2KeywordHash(value);
     }
 
-    protected void set(int flag, boolean set) {
-        getDelegate().set(flag, set);
+    protected void setHashFlag(int flag, boolean set) {
+        getDelegate().setHashFlag(flag, set);
     }
 
-    protected boolean get(int flag) {
-        return getDelegate().get(flag);
+    protected boolean hasHashFlag(int flag) {
+        return getDelegate().hasHashFlag(flag);
     }
 
     // Still used by jruby-openssl
