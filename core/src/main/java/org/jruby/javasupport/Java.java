@@ -174,9 +174,6 @@ public class Java implements Library {
         var Java = defineModule(context, "Java").
                 defineMethods(context, Java.class);
 
-        //final RubyClass _JavaObject = JavaObject.createJavaObjectClass(runtime, Java);
-        //JavaArray.createJavaArrayClass(runtime, Java, _JavaObject);
-
         // set of utility methods for Java-based proxy objects
         var _JavaProxyMethods = JavaProxyMethods.createJavaProxyMethods(context);
 
@@ -305,11 +302,6 @@ public class Java implements Library {
             return allocateProxy(rawJavaObject, proxyClass);
         }
         return runtime.getNil();
-    }
-
-    @Deprecated(since = "9.4-")
-    public static RubyModule getInterfaceModule(final Ruby runtime, final JavaClass javaClass) {
-        return getInterfaceModule(runtime.getCurrentContext(), javaClass.javaClass());
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -443,11 +435,6 @@ public class Java implements Library {
             case "Void" : return Void.class;
         }
         return null;
-    }
-
-    @Deprecated(since = "9.4.0.0")
-    public static RubyModule getProxyClass(Ruby runtime, JavaClass javaClass) {
-        return getProxyClass(runtime.getCurrentContext(), javaClass.javaClass());
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -1351,11 +1338,6 @@ public class Java implements Library {
         return result != null ? result : context.nil;
     }
 
-    @Deprecated(since = "9.4.0.0")
-    public static IRubyObject wrap(Ruby runtime, IRubyObject java_object) {
-        return getInstance(runtime, ((JavaObject) java_object).getValue());
-    }
-
     @Deprecated(since = "10.0.0.0")
     public static IRubyObject new_proxy_instance2(IRubyObject recv, final IRubyObject wrapper,
                                                   final IRubyObject interfaces, Block block) {
@@ -1781,10 +1763,5 @@ public class Java implements Library {
      */
     public static <T extends AccessibleObject & Member> boolean isAccessible(T member) {
         return Modules.isAccessible(member, Java.class);
-    }
-
-    public static JavaObject castToJavaObject(ThreadContext context, IRubyObject newValue) {
-        if (!(newValue instanceof JavaObject)) throw typeError(context, newValue, "a java object");
-        return (JavaObject) newValue;
     }
 }
