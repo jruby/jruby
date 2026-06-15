@@ -1072,6 +1072,7 @@ public class RubyKernel {
 
         setNewExceptionCause(context, exception, cause);
 
+        context.setErrorInfo(exception); // set $! as part of the raise flow (like MRI's setup_exception)
         return Helpers.throwExceptionT(exception.toThrowable());
     }
 
@@ -1092,6 +1093,7 @@ public class RubyKernel {
 
         setGivenExceptionCause(context, cause, exception);
 
+        context.setErrorInfo(exception); // set $! as part of the raise flow (like MRI's setup_exception)
         return Helpers.throwExceptionT(exception.toThrowable());
     }
 
@@ -1111,6 +1113,7 @@ public class RubyKernel {
 
         setNewExceptionCause(context, exception, cause);
 
+        context.setErrorInfo(exception); // set $! as part of the raise flow (like MRI's setup_exception)
         return Helpers.throwExceptionT(exception.toThrowable());
     }
 
@@ -1130,6 +1133,7 @@ public class RubyKernel {
 
         setNewExceptionCause(context, exception, cause);
 
+        context.setErrorInfo(exception); // set $! as part of the raise flow (like MRI's setup_exception)
         return Helpers.throwExceptionT(exception.toThrowable());
     }
 

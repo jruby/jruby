@@ -456,12 +456,13 @@ public class IRRuntimeHelpers {
     public static void setErrorInfoGlobalVariable(ThreadContext context, Object exception) {
         if (exception instanceof RaiseException) {
             setErrorInfoGlobalVariable(context, ((RaiseException) exception).getException());
-        } else if (exception instanceof Throwable && !(exception instanceof JumpException)) {
+        } else if (exception instanceof Throwable && !(exception instanceof Unrescuable)) {
             exception = Helpers.wrapJavaException(context.runtime, (Throwable) exception);
             setErrorInfoGlobalVariable(context, (IRubyObject) exception);
         } else if (exception instanceof IRubyObject) {
             setErrorInfoGlobalVariable(context, (IRubyObject) exception);
         }
+        // un-rescuables e.g. JumpException, ThreadKill do not affect $!
     }
 
     public static void setErrorInfoGlobalVariable(ThreadContext context, IRubyObject exception) {
