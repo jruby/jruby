@@ -2697,9 +2697,7 @@ public class JVMVisitor extends IRVisitor {
     public void RestoreErrorInfoInstr(RestoreErrorInfoInstr restoreerrorinfoinstr) {
         jvmMethod().loadContext();
         visit(restoreerrorinfoinstr.getArg());
-        // jvmAdapter().invokevirtual(p(ThreadContext.class), "setErrorInfo", sig(IRubyObject.class, IRubyObject.class));
         jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "setErrorInfoGlobalVariable", sig(Void.TYPE, ThreadContext.class, Object.class));
-        jvmAdapter().pop();
     }
 
     @Override

@@ -2547,7 +2547,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         // Caught exception case -- build rescue body
         addInstr(new LabelInstr(caughtLabel));
         if (reference != null) {
-            Variable exception = addResultInstr(new GetGlobalVariableInstr(temp(), symbol("$!")));
+            Variable exception = addResultInstr(new GetErrorInfoInstr(temp()));
 
             buildAssignment(reference, exception);  // Prism does not desugar
         }

@@ -466,7 +466,7 @@ public class IRRuntimeHelpers {
     }
 
     public static void setErrorInfoGlobalVariable(ThreadContext context, IRubyObject exception) {
-        context.runtime.getGlobalVariables().set("$!", exception);
+        context.setErrorInfo(exception);
     }
 
     public static IRubyObject isExceptionHandled(ThreadContext context, IRubyObject excType, Object excObj) {
