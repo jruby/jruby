@@ -455,12 +455,11 @@ public class IRRuntimeHelpers {
     @JIT
     public static void setErrorInfoGlobalVariable(ThreadContext context, Object exception) {
         if (exception instanceof RaiseException) {
-            exception = ((RaiseException) exception).getException();
+            setErrorInfoGlobalVariable(context, ((RaiseException) exception).getException());
         } else if (exception instanceof Throwable && !(exception instanceof JumpException)) {
             exception = Helpers.wrapJavaException(context.runtime, (Throwable) exception);
-        }
-
-        if (exception instanceof IRubyObject) {
+            setErrorInfoGlobalVariable(context, (IRubyObject) exception);
+        } else if (exception instanceof IRubyObject) {
             setErrorInfoGlobalVariable(context, (IRubyObject) exception);
         }
     }
