@@ -958,11 +958,11 @@ public class RubyKernel {
 
         }
 
-        RaiseException ex = message == null ?
-                context.runtime.newSystemExit(status) :
-                context.runtime.newSystemExit(status, message);
-        context.setErrorInfo(ex.getException()); // set $! (in case Kernel.exit called from at_exit)
-        return ex;
+        RubySystemExit exception = message == null ?
+                RubySystemExit.newInstance(context, status, "exit") :
+                RubySystemExit.newInstance(context, status, message);
+        context.setErrorInfo(exception); // set $! before toThrowable/preRaise fires event hooks
+        return exception.toThrowable();
     }
 
 
