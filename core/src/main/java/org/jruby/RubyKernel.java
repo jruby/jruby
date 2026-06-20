@@ -67,6 +67,8 @@ import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock;
+import org.jruby.ir.IREvalScript;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.java.proxies.ConcreteJavaProxy;
@@ -1468,7 +1470,7 @@ public class RubyKernel {
                 binding.setLine(0);
             }
         } else {  // no explicit file/line argument given
-            binding.setFile("(eval at " + context.getSingleBacktrace().getFileAndLine() + ")");
+            binding.setFile("(eval at " + context.getSingleBacktrace().getFileAndLine() + ")", true);
             binding.setLine(0);
         }
 
@@ -2295,10 +2297,30 @@ public class RubyKernel {
         // NOTE: not using __FILE__ = context.getFile() since it won't work with JIT
         String __FILE__ = context.getSingleBacktrace().getFileName();
 
+        IREvalScript evalScript = getEvalScript(context);
+
+        if (evalScript != null) {
+            if (evalScript.isFileNameSynthetic()) return context.nil;
+
+            return newString(context, RubyFile.dirname(context, __FILE__));
+        }
+
         __FILE__ = loadService(context).getPathForLocation(__FILE__);
 
         RubyString path = RubyFile.expandPathInternal(context, newString(context, __FILE__), null, false, true);
         return newString(context, RubyFile.dirname(context, path.asJavaString()));
+    }
+
+    private static IREvalScript getEvalScript(ThreadContext context) {
+        if (context.getCurrentStaticScope() == null) return null;
+
+        IRScope scope = context.getCurrentStaticScope().getIRScope();
+
+        for (; scope != null; scope = scope.getLexicalParent()) {
+            if (scope instanceof IREvalScript evalScript) return evalScript;
+        }
+
+        return null;
     }
 
     @Deprecated(since = "10.0.0.0")

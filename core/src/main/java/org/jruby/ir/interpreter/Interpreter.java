@@ -210,6 +210,10 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
      * @return An IRubyObject result from the evaluation
      */
     public static IRubyObject evalSimple(ThreadContext context, RubyModule under, IRubyObject self, RubyString src, String file, int lineNumber, EvalType evalType) {
+        return evalSimple(context, under, self, src, file, lineNumber, evalType, false);
+    }
+
+    public static IRubyObject evalSimple(ThreadContext context, RubyModule under, IRubyObject self, RubyString src, String file, int lineNumber, EvalType evalType, boolean syntheticFile) {
         Ruby runtime = context.runtime;
 
         // no binding, just eval in "current" frame (caller's frame)
@@ -220,7 +224,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         context.pushEvalSimpleFrame(self);
 
         try {
-            return evalCommon(context, evalScope, self, src, file, lineNumber, evalName(file, lineNumber), Block.NULL_BLOCK, evalType, false);
+            return evalCommon(context, evalScope, self, src, file, lineNumber, evalName(file, lineNumber), Block.NULL_BLOCK, evalType, false, syntheticFile);
         } finally {
             context.popFrame();
         }
@@ -232,7 +236,12 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
     private static IRubyObject evalCommon(ThreadContext context, DynamicScope evalScope, IRubyObject self, IRubyObject src,
                                           String file, int lineNumber, String name, Block blockArg, EvalType evalType, boolean bindingGiven) {
-        InterpreterContext ic = prepareIC(context, evalScope, src, file, lineNumber, evalType, bindingGiven);
+        return evalCommon(context, evalScope, self, src, file, lineNumber, name, blockArg, evalType, bindingGiven, false);
+    }
+
+    private static IRubyObject evalCommon(ThreadContext context, DynamicScope evalScope, IRubyObject self, IRubyObject src,
+                                          String file, int lineNumber, String name, Block blockArg, EvalType evalType, boolean bindingGiven, boolean syntheticFile) {
+        InterpreterContext ic = prepareIC(context, evalScope, src, file, lineNumber, evalType, bindingGiven, syntheticFile);
 
         evalScope.setEvalType(evalType);
         context.pushScope(evalScope);
@@ -265,7 +274,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         Frame lastFrame = context.preEvalWithBinding(binding);
         try {
             return evalCommon(context, evalScope, self, src, binding.getFile(),
-                    binding.getLine(), binding.getMethod(), binding.getFrame().getBlock(), EvalType.BINDING_EVAL, bindingGiven);
+                    binding.getLine(), binding.getMethod(), binding.getFrame().getBlock(), EvalType.BINDING_EVAL, bindingGiven, binding.isFileNameSynthetic());
         } finally {
             context.postEvalWithBinding(binding, lastFrame);
         }
@@ -273,13 +282,18 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
     private static InterpreterContext prepareIC(ThreadContext context, DynamicScope evalScope, IRubyObject src,
                                                         String file, int lineNumber, EvalType evalType, boolean bindingGiven) {
+        return prepareIC(context, evalScope, src, file, lineNumber, evalType, bindingGiven, false);
+    }
+
+    private static InterpreterContext prepareIC(ThreadContext context, DynamicScope evalScope, IRubyObject src,
+                                                        String file, int lineNumber, EvalType evalType, boolean bindingGiven, boolean syntheticFile) {
         Ruby runtime = context.runtime;
         IRScope containingIRScope = evalScope.getStaticScope().getEnclosingScope().getIRScope();
         ParseResult result = runtime.getParserManager().parseEval(file, lineNumber, src.convertToString().getByteList(), evalScope);
         StaticScope staticScope = evalScope.getStaticScope();
 
         // Top-level script!
-        IREvalScript script = new IREvalScript(runtime.getIRManager(), containingIRScope, file, lineNumber, staticScope, evalType);
+        IREvalScript script = new IREvalScript(runtime.getIRManager(), containingIRScope, file, lineNumber, staticScope, evalType, syntheticFile);
 
         // enable refinements if incoming scope already has an overlay active
         if (staticScope.getOverlayModuleForRead() != null || containingIRScope.maybeUsingRefinements()) {
