@@ -936,8 +936,19 @@ public class IRRuntimeHelpers {
 
     @JIT @Interp
     public static void setCallInfo(ThreadContext context, int flags) {
-        // FIXME: This may propagate empty more than the current call?   empty might need to be stuff elsewhere to prevent this.
-        context.callInfo = (context.callInfo & CALL_KEYWORD_EMPTY) | flags;
+        // CALL_KEYWORD_EMPTY is set dynamically while building this call's arguments (argsPush,
+        // isHashEmpty, irSplat) when a keyword-rest or splat turns out to be empty, and it must
+        // survive into the call so the callee treats the kwargs as explicitly empty. It is only
+        // ever set for a call that passes a keyword-rest or splat, so we carry it forward only
+        // when this call is such a call. Otherwise a leftover CALL_KEYWORD_EMPTY from a previous
+        // call whose (native) callee never reset callInfo would leak into an unrelated call (e.g.
+        // a plain keyword call), causing the keyword argument to be mishandled. See
+        // test/jruby/test_call_info.rb#test_forward_dots_to_native_method_does_not_leak.
+        if ((flags & (CALL_KEYWORD_REST | CALL_SPLATS)) != 0) {
+            context.callInfo = (context.callInfo & CALL_KEYWORD_EMPTY) | flags;
+        } else {
+            context.callInfo = flags;
+        }
     }
 
     public static void checkForExtraUnwantedKeywordArgs(ThreadContext context, final StaticScope scope, RubyHash keywordArgs) {
