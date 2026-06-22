@@ -49,29 +49,17 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
     private static final Logger LOG = LoggerFactory.getLogger(ThreadFiber.class);
 
     private static final BiConsumer<Ruby, Runnable> FIBER_LAUNCHER;
-    private static final MethodHandle VTHREAD_START_METHOD;
     private static final String[] INITIALIZE_KWARGS = {"blocking", "pool", "storage"};
 
     static {
-        BiConsumer<Ruby, Runnable> fiberLauncher = ThreadFiber::nativeThreadLauncher;
-        MethodHandle start = null;
+        BiConsumer<Ruby, Runnable> fiberLauncher;
 
         if (Options.FIBER_VTHREADS.load()) {
-            try {
-                // test that API is available
-                Method ofVirtualMethod = Thread.class.getMethod("ofVirtual");
-                Object builder = ofVirtualMethod.invoke(null);
-                Method startMethod = Class.forName("java.lang.Thread$Builder").getMethod("start", Runnable.class);
-
-                start = MethodHandles.publicLookup().unreflect(startMethod).bindTo(builder);
-
-                fiberLauncher = new VirtualThreadLauncher();
-            } catch (Throwable t) {
-                // default impl set below
-            }
+            fiberLauncher = ThreadFiber::virtualThreadLauncher;
+        } else {
+            fiberLauncher = ThreadFiber::nativeThreadLauncher;
         }
 
-        VTHREAD_START_METHOD = start;
         FIBER_LAUNCHER = fiberLauncher;
     }
 
@@ -79,19 +67,12 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         runtime.getFiberExecutor().submit(runnable);
     }
 
-    public boolean isBlocking() {
-        return data.blocking;
+    private static void virtualThreadLauncher(Ruby runtime, Runnable runnable) {
+        Thread.ofVirtual().start(runnable);
     }
 
-    private static class VirtualThreadLauncher implements BiConsumer<Ruby, Runnable> {
-        @Override
-        public void accept(Ruby ruby, Runnable runnable) {
-            try {
-                VTHREAD_START_METHOD.invokeWithArguments(runnable);
-            } catch (Throwable t) {
-                Helpers.throwException(t);
-            }
-        }
+    public boolean isBlocking() {
+        return data.blocking;
     }
 
     public ThreadFiber(Ruby runtime, RubyClass klass) {
