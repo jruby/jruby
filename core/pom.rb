@@ -80,7 +80,7 @@ project 'JRuby Base' do
 
   jar 'org.crac:crac:1.5.0'
 
-  jar 'org.jruby:jruby-prism:2.0.2'
+  jar 'org.jruby:jruby-prism:2.0.3'
 
   jar 'ch.randelshofer:fastdoubleparser:2.0.1'
 
