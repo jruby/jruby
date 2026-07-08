@@ -739,7 +739,7 @@ public class IRRuntimeHelpers {
             // This complicates check_arity but empty ** is special case.
             RubyHash hash = (RubyHash) last;
             return hash;
-        } else if (isKwarg || ((RubyHash) last).isRuby2KeywordHash()) {
+        } else if (isKwarg || ((callInfo & CALL_SPLATS) != 0 && ((RubyHash) last).isRuby2KeywordHash())) {
             RubyHash hash = (RubyHash) last;
             return hash.dupFast(context);
         } else {
