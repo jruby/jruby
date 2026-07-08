@@ -3,3 +3,5 @@ fails:Thread#raise on same thread raises a RuntimeError when called with no argu
 fails(gh-631):Thread#raise on a sleeping thread raises a RuntimeError when called with no arguments inside rescue
 fails:Thread#raise on same thread re-raises a previously rescued exception without overwriting the backtrace
 fails:Thread#raise on a sleeping thread calls #set_backtrace only in the caller thread
+fails:Thread#raise re-raises a previously rescued exception with cleaned backtrace and sets a new backtrace
+fails:Thread#raise on same thread re-raises a previously rescued exception with cleaned backtrace and sets a new backtrace

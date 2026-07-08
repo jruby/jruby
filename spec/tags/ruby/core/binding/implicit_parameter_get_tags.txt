@@ -1,0 +1,6 @@
+fails:Binding#implicit_parameter_get raises a NameError for not existing numbered parameter
+fails:Binding#implicit_parameter_get raises a NameError for not existing "it" parameter
+fails:Binding#implicit_parameter_get raises a NameError when a numbered parameter is defined in a parent scope
+fails:Binding#implicit_parameter_get raises a NameError when "it" parameter is defined in a parent scope
+fails:Binding#implicit_parameter_get raises a NameError when a numbered parameter is defined in a nested scope
+fails:Binding#implicit_parameter_get raises a NameError when "it" parameter is defined in a nested scope

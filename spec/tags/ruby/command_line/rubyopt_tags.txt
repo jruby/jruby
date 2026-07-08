@@ -1,0 +1,1 @@
+fails:Processing RUBYOPT is overwritten by a cli switch
