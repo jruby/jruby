@@ -220,42 +220,42 @@ public class ManyVarsDynamicScope extends DynamicScope {
     public void setValueFourDepthZeroVoid(IRubyObject value) {
         IRubyObject[] variableValues = this.variableValues;
 
-        assert checkOffset(variableValues, 3) : failSet(this, value, 3);
+        assert checkOffset(variableValues, 4) : failSet(this, value, 4);
 
         variableValues[4] = value;
     }
     public void setValueFiveDepthZeroVoid(IRubyObject value) {
         IRubyObject[] variableValues = this.variableValues;
 
-        assert checkOffset(variableValues, 3) : failSet(this, value, 3);
+        assert checkOffset(variableValues, 5) : failSet(this, value, 5);
 
         variableValues[5] = value;
     }
     public void setValueSixDepthZeroVoid(IRubyObject value) {
         IRubyObject[] variableValues = this.variableValues;
 
-        assert checkOffset(variableValues, 3) : failSet(this, value, 3);
+        assert checkOffset(variableValues, 6) : failSet(this, value, 6);
 
         variableValues[6] = value;
     }
     public void setValueSevenDepthZeroVoid(IRubyObject value) {
         IRubyObject[] variableValues = this.variableValues;
 
-        assert checkOffset(variableValues, 3) : failSet(this, value, 3);
+        assert checkOffset(variableValues, 7) : failSet(this, value, 7);
 
         variableValues[7] = value;
     }
     public void setValueEightDepthZeroVoid(IRubyObject value) {
         IRubyObject[] variableValues = this.variableValues;
 
-        assert checkOffset(variableValues, 3) : failSet(this, value, 3);
+        assert checkOffset(variableValues, 8) : failSet(this, value, 8);
 
         variableValues[8] = value;
     }
     public void setValueNineDepthZeroVoid(IRubyObject value) {
         IRubyObject[] variableValues = this.variableValues;
 
-        assert checkOffset(variableValues, 3) : failSet(this, value, 3);
+        assert checkOffset(variableValues, 9) : failSet(this, value, 9);
 
         variableValues[9] = value;
     }

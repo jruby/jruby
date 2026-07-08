@@ -82,6 +82,22 @@ class TestBacktraces < Test::Unit::TestCase
     assert_equal 1, ruby_trace.length # only once!
   end
 
+  def test_java_backtrace_locations
+    org.jruby.test.TestHelper.throwTestHelperException
+    raise 'did no raise exception'
+  rescue java.lang.Exception => e
+    locations = e.backtrace_locations
+    assert_kind_of Array, locations
+    assert_kind_of Thread::Backtrace::Location, locations[0]
+
+    location = locations[0]
+    assert_equal 'org/jruby/test/TestHelper.java', location.path
+
+    assert_operator location.lineno, :>, 1
+    assert_equal 'throwTestHelperException', location.label
+    assert_match /TestHelper\.java:\d+:in .throwTestHelperException/, location.to_s
+  end
+
   def test_simple_exception_recursive
     @offset = __LINE__
     def meth(n)

@@ -12,10 +12,17 @@ DO NOT MODIFY - GENERATED CODE
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>10.1.0.0-SNAPSHOT</version>
+    <version>10.1.1.0-SNAPSHOT</version>
   </parent>
   <artifactId>jruby-core</artifactId>
   <name>JRuby Core</name>
+  <distributionManagement>
+    <relocation>
+      <groupId>org.jruby</groupId>
+      <artifactId>jruby-base</artifactId>
+      <message>The jruby-core artifact is deprecated in favor of the jruby-base artifact.</message>
+    </relocation>
+  </distributionManagement>
   <properties>
     <jruby.basedir>${basedir}/..</jruby.basedir>
     <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
@@ -52,6 +59,22 @@ DO NOT MODIFY - GENERATED CODE
                   <pattern>me.qmx.jitescript</pattern>
                   <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
                 </relocation>
+                <relocation>
+                  <pattern>com.dylibso.chicory</pattern>
+                  <shadedPattern>com.jruby.internal.org.dylibso.chicory</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>io.roastedroot.redline</pattern>
+                  <shadedPattern>com.jruby.internal.io.roastedroot.redline</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.ruby_lang.prism</pattern>
+                  <shadedPattern>org.jruby.internal.prism</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.jruby.parser.prism</pattern>
+                  <shadedPattern>org.jruby.internal.parser.prism</shadedPattern>
+                </relocation>
               </relocations>
               <transformers>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
@@ -62,7 +85,22 @@ DO NOT MODIFY - GENERATED CODE
                     <Enable-Native-Access>ALL-UNNAMED</Enable-Native-Access>
                   </manifestEntries>
                 </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
               </transformers>
+              <filters>
+                <filter>
+                  <artifact>ch.randelshofer:fastdoubleparser</artifact>
+                  <excludes>**/23/**</excludes>
+                </filter>
+                <filter>
+                  <artifact>ch.randelshofer:fastdoubleparser</artifact>
+                  <excludes>**/17/**</excludes>
+                </filter>
+                <filter>
+                  <artifact>ch.randelshofer:fastdoubleparser</artifact>
+                  <excludes>**/11/**</excludes>
+                </filter>
+              </filters>
               <createSourcesJar>false</createSourcesJar>
               <compress>false</compress>
             </configuration>
@@ -133,6 +171,9 @@ DO NOT MODIFY - GENERATED CODE
                       <include>com.github.jnr:jnr-ffi</include>
                       <include>me.qmx.jitescript:jitescript</include>
                       <include>org.ow2.asm:*</include>
+                      <include>com.dylibso:*</include>
+                      <include>org.jruby:jruby-prism</include>
+                      <include>org.ruby_lang:prism-parser-wasm</include>
                     </includes>
                     <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
@@ -144,6 +185,14 @@ DO NOT MODIFY - GENERATED CODE
                     <relocation>
                       <pattern>me.qmx.jitescript</pattern>
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>com.dylibso.chicory</pattern>
+                      <shadedPattern>org.jruby.internal.com.dylibso.chicory</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.ruby_lang</pattern>
+                      <shadedPattern>org.jruby.internal.org.ruby_lang</shadedPattern>
                     </relocation>
                   </relocations>
                   <transformers>
@@ -194,6 +243,9 @@ DO NOT MODIFY - GENERATED CODE
                       <include>com.github.jnr:jnr-ffi</include>
                       <include>me.qmx.jitescript:jitescript</include>
                       <include>org.ow2.asm:*</include>
+                      <include>com.dylibso:*</include>
+                      <include>org.jruby:jruby-prism</include>
+                      <include>org.ruby_lang:prism-parser-wasm</include>
                     </includes>
                     <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
@@ -205,6 +257,14 @@ DO NOT MODIFY - GENERATED CODE
                     <relocation>
                       <pattern>me.qmx.jitescript</pattern>
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>com.dylibso.chicory</pattern>
+                      <shadedPattern>org.jruby.internal.com.dylibso.chicory</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.ruby_lang</pattern>
+                      <shadedPattern>org.jruby.internal.org.ruby_lang</shadedPattern>
                     </relocation>
                   </relocations>
                   <transformers>
@@ -255,6 +315,9 @@ DO NOT MODIFY - GENERATED CODE
                       <include>com.github.jnr:jnr-ffi</include>
                       <include>me.qmx.jitescript:jitescript</include>
                       <include>org.ow2.asm:*</include>
+                      <include>com.dylibso:*</include>
+                      <include>org.jruby:jruby-prism</include>
+                      <include>org.ruby_lang:prism-parser-wasm</include>
                     </includes>
                     <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
@@ -266,6 +329,14 @@ DO NOT MODIFY - GENERATED CODE
                     <relocation>
                       <pattern>me.qmx.jitescript</pattern>
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>com.dylibso.chicory</pattern>
+                      <shadedPattern>org.jruby.internal.com.dylibso.chicory</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.ruby_lang</pattern>
+                      <shadedPattern>org.jruby.internal.org.ruby_lang</shadedPattern>
                     </relocation>
                   </relocations>
                   <transformers>
@@ -316,6 +387,9 @@ DO NOT MODIFY - GENERATED CODE
                       <include>com.github.jnr:jnr-ffi</include>
                       <include>me.qmx.jitescript:jitescript</include>
                       <include>org.ow2.asm:*</include>
+                      <include>com.dylibso:*</include>
+                      <include>org.jruby:jruby-prism</include>
+                      <include>org.ruby_lang:prism-parser-wasm</include>
                     </includes>
                     <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
@@ -327,6 +401,14 @@ DO NOT MODIFY - GENERATED CODE
                     <relocation>
                       <pattern>me.qmx.jitescript</pattern>
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>com.dylibso.chicory</pattern>
+                      <shadedPattern>org.jruby.internal.com.dylibso.chicory</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.ruby_lang</pattern>
+                      <shadedPattern>org.jruby.internal.org.ruby_lang</shadedPattern>
                     </relocation>
                   </relocations>
                   <transformers>
@@ -377,6 +459,9 @@ DO NOT MODIFY - GENERATED CODE
                       <include>com.github.jnr:jnr-ffi</include>
                       <include>me.qmx.jitescript:jitescript</include>
                       <include>org.ow2.asm:*</include>
+                      <include>com.dylibso:*</include>
+                      <include>org.jruby:jruby-prism</include>
+                      <include>org.ruby_lang:prism-parser-wasm</include>
                     </includes>
                     <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
@@ -388,6 +473,14 @@ DO NOT MODIFY - GENERATED CODE
                     <relocation>
                       <pattern>me.qmx.jitescript</pattern>
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>com.dylibso.chicory</pattern>
+                      <shadedPattern>org.jruby.internal.com.dylibso.chicory</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.ruby_lang</pattern>
+                      <shadedPattern>org.jruby.internal.org.ruby_lang</shadedPattern>
                     </relocation>
                   </relocations>
                   <transformers>
@@ -438,6 +531,9 @@ DO NOT MODIFY - GENERATED CODE
                       <include>com.github.jnr:jnr-ffi</include>
                       <include>me.qmx.jitescript:jitescript</include>
                       <include>org.ow2.asm:*</include>
+                      <include>com.dylibso:*</include>
+                      <include>org.jruby:jruby-prism</include>
+                      <include>org.ruby_lang:prism-parser-wasm</include>
                     </includes>
                     <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
@@ -449,6 +545,14 @@ DO NOT MODIFY - GENERATED CODE
                     <relocation>
                       <pattern>me.qmx.jitescript</pattern>
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>com.dylibso.chicory</pattern>
+                      <shadedPattern>org.jruby.internal.com.dylibso.chicory</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.ruby_lang</pattern>
+                      <shadedPattern>org.jruby.internal.org.ruby_lang</shadedPattern>
                     </relocation>
                   </relocations>
                   <transformers>
@@ -499,6 +603,9 @@ DO NOT MODIFY - GENERATED CODE
                       <include>com.github.jnr:jnr-ffi</include>
                       <include>me.qmx.jitescript:jitescript</include>
                       <include>org.ow2.asm:*</include>
+                      <include>com.dylibso:*</include>
+                      <include>org.jruby:jruby-prism</include>
+                      <include>org.ruby_lang:prism-parser-wasm</include>
                     </includes>
                     <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
@@ -510,6 +617,14 @@ DO NOT MODIFY - GENERATED CODE
                     <relocation>
                       <pattern>me.qmx.jitescript</pattern>
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>com.dylibso.chicory</pattern>
+                      <shadedPattern>org.jruby.internal.com.dylibso.chicory</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.ruby_lang</pattern>
+                      <shadedPattern>org.jruby.internal.org.ruby_lang</shadedPattern>
                     </relocation>
                   </relocations>
                   <transformers>
@@ -560,6 +675,9 @@ DO NOT MODIFY - GENERATED CODE
                       <include>com.github.jnr:jnr-ffi</include>
                       <include>me.qmx.jitescript:jitescript</include>
                       <include>org.ow2.asm:*</include>
+                      <include>com.dylibso:*</include>
+                      <include>org.jruby:jruby-prism</include>
+                      <include>org.ruby_lang:prism-parser-wasm</include>
                     </includes>
                     <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
@@ -571,6 +689,14 @@ DO NOT MODIFY - GENERATED CODE
                     <relocation>
                       <pattern>me.qmx.jitescript</pattern>
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>com.dylibso.chicory</pattern>
+                      <shadedPattern>org.jruby.internal.com.dylibso.chicory</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.ruby_lang</pattern>
+                      <shadedPattern>org.jruby.internal.org.ruby_lang</shadedPattern>
                     </relocation>
                   </relocations>
                   <transformers>
@@ -621,6 +747,9 @@ DO NOT MODIFY - GENERATED CODE
                       <include>com.github.jnr:jnr-ffi</include>
                       <include>me.qmx.jitescript:jitescript</include>
                       <include>org.ow2.asm:*</include>
+                      <include>com.dylibso:*</include>
+                      <include>org.jruby:jruby-prism</include>
+                      <include>org.ruby_lang:prism-parser-wasm</include>
                     </includes>
                     <excludes>javax.annotation:javax.annotation-api</excludes>
                   </artifactSet>
@@ -632,6 +761,14 @@ DO NOT MODIFY - GENERATED CODE
                     <relocation>
                       <pattern>me.qmx.jitescript</pattern>
                       <shadedPattern>org.jruby.me.qmx.jitescript</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>com.dylibso.chicory</pattern>
+                      <shadedPattern>org.jruby.internal.com.dylibso.chicory</shadedPattern>
+                    </relocation>
+                    <relocation>
+                      <pattern>org.ruby_lang</pattern>
+                      <shadedPattern>org.jruby.internal.org.ruby_lang</shadedPattern>
                     </relocation>
                   </relocations>
                   <transformers>

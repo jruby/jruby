@@ -117,7 +117,7 @@ public final class ConstructorInvoker extends RubyToJavaInvoker {
 
             final int len = args.length;
 
-            IRubyObject[] newArgs = ArraySupport.newCopy(args, RubyProc.newProc(context.runtime, block, block.type));
+            IRubyObject[] newArgs = ArraySupport.newCopy(args, Java.newBlockToInterfaceProc(context.runtime, block));
             JavaConstructor constructor = (JavaConstructor) findCallable(self, name, newArgs, len + 1);
             final Class<?>[] paramTypes = constructor.getParameterTypes();
 
@@ -138,7 +138,7 @@ public final class ConstructorInvoker extends RubyToJavaInvoker {
         if (block.isGiven()) {
             JavaProxy proxy = castJavaProxy(self);
 
-            RubyProc proc = RubyProc.newProc(context.runtime, block, block.type);
+            RubyProc proc = Java.newBlockToInterfaceProc(context.runtime, block);
             JavaConstructor constructor = (JavaConstructor) findCallableArityOne(self, name, proc);
             final Class<?>[] paramTypes = constructor.getParameterTypes();
             Object cArg0 = proc.toJava(paramTypes[0]);
@@ -155,7 +155,7 @@ public final class ConstructorInvoker extends RubyToJavaInvoker {
         if (block.isGiven()) {
             JavaProxy proxy = castJavaProxy(self);
 
-            RubyProc proc = RubyProc.newProc(context.runtime, block, block.type);
+            RubyProc proc = Java.newBlockToInterfaceProc(context.runtime, block);
             JavaConstructor constructor = (JavaConstructor) findCallableArityTwo(self, name, arg0, proc);
             final Class<?>[] paramTypes = constructor.getParameterTypes();
             Object cArg0 = arg0.toJava(paramTypes[0]);
@@ -173,7 +173,7 @@ public final class ConstructorInvoker extends RubyToJavaInvoker {
         if (block.isGiven()) {
             JavaProxy proxy = castJavaProxy(self);
 
-            RubyProc proc = RubyProc.newProc(context.runtime, block, block.type);
+            RubyProc proc = Java.newBlockToInterfaceProc(context.runtime, block);
             JavaConstructor constructor = (JavaConstructor) findCallableArityThree(self, name, arg0, arg1, proc);
             final Class<?>[] paramTypes = constructor.getParameterTypes();
             Object cArg0 = arg0.toJava(paramTypes[0]);
@@ -192,7 +192,7 @@ public final class ConstructorInvoker extends RubyToJavaInvoker {
         if (block.isGiven()) {
             JavaProxy proxy = castJavaProxy(self);
 
-            RubyProc proc = RubyProc.newProc(context.runtime, block, block.type);
+            RubyProc proc = Java.newBlockToInterfaceProc(context.runtime, block);
             JavaConstructor constructor = (JavaConstructor) findCallableArityFour(self, name, arg0, arg1, arg2, proc);
             final Class<?>[] paramTypes = constructor.getParameterTypes();
             Object cArg0 = arg0.toJava(paramTypes[0]);

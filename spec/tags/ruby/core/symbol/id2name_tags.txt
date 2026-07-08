@@ -1,2 +1,3 @@
 fails:Symbol#id2name warns about mutating returned string
 fails:Symbol#id2name does not warn about mutation when Warning[:deprecated] is false
+fails:Symbol#id2name is an alias of Symbol#to_s

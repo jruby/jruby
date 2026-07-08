@@ -1,0 +1,1 @@
+fails:Enumerable#collect is an alias of Enumerable#map

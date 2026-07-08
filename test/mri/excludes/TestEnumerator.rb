@@ -1,4 +1,3 @@
-exclude :test_each_arg, "unfinished in initial 2.6 work, #6161"
 exclude :test_generator, "missing FrozenError"
 exclude :test_initialize_copy, "missing TypeError"
 exclude :test_inspect, "unfinished in initial 2.6 work, #6161"

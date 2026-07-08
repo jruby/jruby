@@ -2,3 +2,9 @@ windows:File.open opens directories
 windows:File.open does not open a file that does no exists when using File::TRUNC mode
 windows:File.open can't write in a block when call open with File::TRUNC mode
 windows:File.open raises an Errno::EEXIST if the file exists when open with File::RDONLY|File::TRUNC
+fails(OpenBSD, possibly broken IO flags or native access, https://github.com/jruby/jruby/issues/9438):File.open opens a file that no exists when use File::TRUNC mode
+fails(OpenBSD, possibly broken IO flags or native access, https://github.com/jruby/jruby/issues/9438):File.open truncates the file when passed File::TRUNC mode
+fails(OpenBSD, possibly broken IO flags or native access, https://github.com/jruby/jruby/issues/9438):File.open can't read in a block when call open with File::TRUNC mode
+fails(OpenBSD, possibly broken IO flags or native access, https://github.com/jruby/jruby/issues/9438):File.open can't write in a block when call open with File::TRUNC mode
+fails(OpenBSD, possibly broken IO flags or native access, https://github.com/jruby/jruby/issues/9438):File.open raises an Errno::EEXIST if the file exists when open with File::RDONLY|File::TRUNC
+

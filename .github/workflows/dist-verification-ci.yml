@@ -1,6 +1,13 @@
 name: Dist Verification CI
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_call:
+    secrets:
+      INSTALL4J_LICENSE:
+        required: true
+
 
 env:
   JAVA_OPTS: '-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xms60M -Xmx1G -XX:InitialCodeCacheSize=40M -XX:ReservedCodeCacheSize=120M'
@@ -18,7 +25,7 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    name: Build JRuby dist archive
+    name: Build JRuby release artifacts
 
     steps:
       - name: checkout
@@ -26,17 +33,88 @@ jobs:
       - name: set up java 21
         uses: actions/setup-java@v5
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: 21
           cache: 'maven'
-      - name: build dist archive
+      - name: build release artifacts
         run: |
-          ./mvnw -ntp clean package -Pdist
+          ./mvnw -ntp clean package -Pall
+      - uses: cedx/SetupAnt@v6
+      - name: install dependencies
+        run: bin/jruby -S bundle install
+      - name: cache release artifacts
+        run: |
           mv maven/jruby-dist/target/jruby-dist*-bin.tar.gz jruby-dist-bin.tar.gz
-      - name: cache dist
+          mv maven/jruby-dist/target/jruby-dist*-src.tar.gz jruby-dist-src.tar.gz
+          mv maven/jruby-complete/target/jruby-complete*.jar jruby-complete.jar
+      - name: cache dist bin
         uses: actions/upload-artifact@v7
         with:
           path: jruby-dist-bin.tar.gz
+          retention-days: 1
+          archive: false
+      - name: cache dist src
+        uses: actions/upload-artifact@v7
+        with:
+          path: jruby-dist-src.tar.gz
+          retention-days: 1
+          archive: false
+      - name: cache jruby-complete
+        uses: actions/upload-artifact@v7
+        with:
+          path: jruby-complete.jar
+          retention-days: 1
+          archive: false
+
+  build-installer:
+
+    if: ${{ github.repository == 'jruby/jruby' && github.event_name == 'push' }}
+
+    strategy:
+      matrix:
+        java-version: ['21']
+      fail-fast: false
+
+    runs-on: ubuntu-latest
+
+    name: Build JRuby Windows installers
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v6
+      - name: set up java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: 21
+          cache: 'maven'
+      - name: set up install4j
+        uses: luangong/setup-install4j@v1
+        with:
+          version: 12.0.4
+          license: ${{ secrets.INSTALL4J_LICENSE }}
+      - name: build release artifacts
+        run: |
+          ./mvnw -ntp clean package -Pall
+      - uses: cedx/SetupAnt@v6
+      - name: install dependencies
+        run: bin/jruby -S bundle install
+      - name: build installer
+        run: bin/jruby -S rake installer INSTALL4J_EXECUTABLE=/opt/install4j/bin/install4jc
+      - name: cache release artifacts
+        run: |
+          mv release/jruby_windows-x32*.exe jruby_windows-x32.exe
+          mv release/jruby_windows_x64*.exe jruby_windows-x64.exe
+      - name: cache x32 installer
+        uses: actions/upload-artifact@v7
+        with:
+          path: jruby_windows-x32.exe
+          retention-days: 1
+          archive: false
+      - name: cache x64 installer
+        uses: actions/upload-artifact@v7
+        with:
+          path: jruby_windows-x64.exe
           retention-days: 1
           archive: false
 
@@ -52,7 +130,7 @@ jobs:
 
     runs-on: ${{ matrix.runs-on }}
 
-    name: dist verification on ${{ matrix.runs-on }} (Java ${{ matrix.java-version }})
+    name: rails verification on ${{ matrix.runs-on }} (Java ${{ matrix.java-version }})
 
     steps:
       - name: checkout
@@ -62,9 +140,9 @@ jobs:
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v5
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: ${{ matrix.java-version }}
-      - name: download cached dist
+      - name: download cached dist bin
         uses: actions/download-artifact@v8
         with:
           name: jruby-dist-bin.tar.gz
@@ -78,6 +156,146 @@ jobs:
         run: echo "$(pwd)/bin" >> $GITHUB_PATH
       - name: rails verification
         run: jruby jruby-src/tool/rails_runner
+
+  src-verification:
+
+    needs: build-dist
+
+    strategy:
+      matrix:
+        java-version: ['21', '25']
+        runs-on: [windows-latest, macos-latest, ubuntu-latest]
+      fail-fast: false
+
+    runs-on: ${{ matrix.runs-on }}
+
+    name: src verification on ${{ matrix.runs-on }} (Java ${{ matrix.java-version }})
+
+    steps:
+      - name: set up java ${{ matrix.java-version }}
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: ${{ matrix.java-version }}
+      - name: download cached dist src
+        uses: actions/download-artifact@v8
+        with:
+          name: jruby-dist-src.tar.gz
+      - name: test compilation of dist src
+        run: |
+          mkdir jruby-dist-src
+          cd jruby-dist-src
+          tar xzf ../jruby-dist-src.tar.gz --strip-components=1
+          ./mvnw -ntp clean install -Pdist
+          cd ..
+
+  jruby-complete-verification:
+
+    needs: build-dist
+
+    strategy:
+      matrix:
+        java-version: ['21', '25']
+        runs-on: [windows-latest, macos-latest, ubuntu-latest]
+      fail-fast: false
+
+    runs-on: ${{ matrix.runs-on }}
+
+    name: jruby-complete verification on ${{ matrix.runs-on }} (Java ${{ matrix.java-version }})
+
+    steps:
+      - name: set up java ${{ matrix.java-version }}
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: ${{ matrix.java-version }}
+      - name: download cached jruby-complete
+        uses: actions/download-artifact@v8
+        with:
+          name: jruby-complete.jar
+      - name: confirm rubygems works with jruby-complete
+        run: java -jar jruby-complete.jar -S gem list
+
+  misc-verification:
+
+    needs: build-dist
+
+    strategy:
+      matrix:
+        java-version: ['21', '25']
+        runs-on: [windows-latest, macos-latest, ubuntu-latest]
+      fail-fast: false
+
+    runs-on: ${{ matrix.runs-on }}
+
+    name: misc verification on ${{ matrix.runs-on }} (Java ${{ matrix.java-version }})
+
+    steps:
+      - name: set up java ${{ matrix.java-version }}
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: ${{ matrix.java-version }}
+      - name: download cached dist bin
+        uses: actions/download-artifact@v8
+        with:
+          name: jruby-dist-bin.tar.gz
+      - name: unpack dist
+        run: tar xzf jruby-dist-bin.tar.gz --strip-components=1
+      - name: dist verification (Windows)
+        if: matrix.runs-on == 'windows-latest'
+        run: echo "${{ github.workspace }}\bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
+      - name: set up dist path (Unix)
+        if: matrix.runs-on != 'windows-latest'
+        run: echo "$(pwd)/bin" >> $GITHUB_PATH
       - name: syslog verification (Unix)
         if: matrix.runs-on != 'windows-latest'
         run: jruby -rsyslog -e 1
+
+  installer-verification:
+
+    if: ${{ github.repository == 'jruby/jruby' && github.event_name == 'push' }}
+
+    needs: build-installer
+
+    strategy:
+      matrix:
+        java-version: ['21', '25']
+      fail-fast: false
+
+    runs-on: windows-latest
+
+    name: installer verification on Windows (Java ${{ matrix.java-version }})
+
+    steps:
+      - name: set up java (x64, ${{ matrix.java-version }})
+        uses: actions/setup-java@v5
+        with:
+          architecture: x64
+          distribution: 'temurin'
+          java-version: ${{ matrix.java-version }}
+      - name: download cached installer x64
+        uses: actions/download-artifact@v8
+        with:
+          name: jruby_windows-x64.exe
+      - name: run installer x64
+        shell: cmd
+        run: .\jruby_windows-x64.exe -q -console -dir installed_jruby
+      - name: run installed JRuby x64
+        run: installed_jruby\bin\jruby -e "puts 'hello'"
+
+#      - name: set up java (x86, ${{ matrix.java-version }})
+#        uses: actions/setup-java@v5
+#        with:
+#          architecture: x86
+#          distribution: 'temurin'
+#          java-version: ${{ matrix.java-version }}
+#      - name: download cached installer x86
+#        uses: actions/download-artifact@v8
+#        with:
+#          name: jruby_windows-x32.exe
+#      - name: run installer x86
+#        shell: cmd
+#        run: .\jruby_windows-x64.exe -q -console -dir installed_jruby
+#      - name: run installed JRuby x86
+#        run: installed_jruby\bin\jruby -e "puts 'hello'"

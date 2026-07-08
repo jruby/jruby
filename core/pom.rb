@@ -45,11 +45,11 @@ project 'JRuby Base' do
 
   # exclude jnr-ffi to avoid problems with shading and relocation of the asm packages
   jar 'com.github.jnr:jnr-netdb:1.2.0', exclusions: ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-enxio:0.32.20', exclusions: ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-unixsocket:0.38.25', exclusions: ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-posix:3.1.22', exclusions: ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-constants:0.10.4', exclusions: ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-ffi:2.2.19'
+  jar 'com.github.jnr:jnr-enxio:0.33.0', exclusions: ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-unixsocket:0.39.1', exclusions: ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-posix:3.2.1', exclusions: ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-constants:0.11.0', exclusions: ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-ffi:2.3.0'
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
@@ -79,6 +79,10 @@ project 'JRuby Base' do
   jar 'com.headius:backport9:1.13'
 
   jar 'org.crac:crac:1.5.0'
+
+  jar 'org.jruby:jruby-prism:2.0.3'
+
+  jar 'ch.randelshofer:fastdoubleparser:2.0.1'
 
   plugin_management do
     plugin('org.eclipse.m2e:lifecycle-mapping:1.0.0',

@@ -1,3 +1,6 @@
 windows:The DATA constant returns a File object with the right offset
 windows:The DATA constant is set even if there is no data after __END__
 windows:The DATA constant is set even if there is no newline after __END__
+fails:The DATA constant is set even if there is no newline after __END__
+fails:The DATA constant does not change when an included files also has a __END__
+fails:The DATA constant is included in an otherwise empty file

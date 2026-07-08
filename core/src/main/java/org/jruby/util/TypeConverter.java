@@ -240,13 +240,13 @@ public class TypeConverter {
         IRubyObject className =  types(runtime, obj.getType());
         String message = isImplicitTypeError(methodName) ? "no implicit conversion of" : "can't convert ";
 
-        return typeError(runtime.getCurrentContext(), str(runtime, message, className, " to ", types(runtime, target)));
+        return typeError(runtime.getCurrentContext(), str(runtime, message, className, " into ", types(runtime, target)));
     }
 
     public static RaiseException newTypeErrorMismatch(Ruby runtime, IRubyObject obj, RubyClass target, String methodName, IRubyObject val) {
         IRubyObject className =  types(runtime, obj.getType());
 
-        return typeError(runtime.getCurrentContext(), str(runtime, "can't convert ", className, " to ", types(runtime, target), " (",
+        return typeError(runtime.getCurrentContext(), str(runtime, "can't convert ", className, " into ", types(runtime, target), " (",
                 className, '#' + methodName + " gives ", types(runtime, val.getType()), ")"));
     }
 

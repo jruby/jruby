@@ -6,3 +6,55 @@ fails:Kernel.printf formatting io is specified other formats c raises TypeError 
 fails:Kernel.printf formatting io is not specified other formats c raises TypeError if argument is nil
 fails:Kernel.printf formatting io is not specified other formats c raises TypeError if converting to String with to_str returns non-String
 fails:Kernel.printf formatting io is not specified other formats c raises TypeError if converting to Integer with to_int returns non-Integer
+fails:Kernel.printf formatting io is specified integer formats b converts to the empty string if precision is 0 and value is 0
+fails:Kernel.printf formatting io is specified integer formats b pads the empty string if precision is 0 and value is 0
+fails:Kernel.printf formatting io is specified integer formats B converts to the empty string if precision is 0 and value is 0
+fails:Kernel.printf formatting io is specified integer formats B pads the empty string if precision is 0 and value is 0
+fails:Kernel.printf formatting io is specified integer formats o converts to the empty string if precision is 0 and value is 0
+fails:Kernel.printf formatting io is specified integer formats o pads the empty string if precision is 0 and value is 0
+fails:Kernel.printf formatting io is specified integer formats x converts to the empty string if precision is 0 and value is 0
+fails:Kernel.printf formatting io is specified integer formats x pads the empty string if precision is 0 and value is 0
+fails:Kernel.printf formatting io is specified integer formats X converts to the empty string if precision is 0 and value is 0
+fails:Kernel.printf formatting io is specified integer formats X pads the empty string if precision is 0 and value is 0
+fails:Kernel.printf formatting io is specified flags # applies to formats bBxX does nothing for zero argument when combined with zero precision
+fails:Kernel.printf formatting io is not specified integer formats b converts to the empty string if precision is 0 and value is 0
+fails:Kernel.printf formatting io is not specified integer formats b pads the empty string if precision is 0 and value is 0
+fails:Kernel.printf formatting io is not specified integer formats B converts to the empty string if precision is 0 and value is 0
+fails:Kernel.printf formatting io is not specified integer formats B pads the empty string if precision is 0 and value is 0
+fails:Kernel.printf formatting io is not specified integer formats o converts to the empty string if precision is 0 and value is 0
+fails:Kernel.printf formatting io is not specified integer formats o pads the empty string if precision is 0 and value is 0
+fails:Kernel.printf formatting io is not specified integer formats x converts to the empty string if precision is 0 and value is 0
+fails:Kernel.printf formatting io is not specified integer formats x pads the empty string if precision is 0 and value is 0
+fails:Kernel.printf formatting io is not specified integer formats X converts to the empty string if precision is 0 and value is 0
+fails:Kernel.printf formatting io is not specified integer formats X pads the empty string if precision is 0 and value is 0
+fails:Kernel.printf formatting io is not specified flags # applies to formats bBxX does nothing for zero argument when combined with zero precision
+fails:Kernel#printf formatting io is specified integer formats b converts to the empty string if precision is 0 and value is 0
+fails:Kernel#printf formatting io is specified integer formats b pads the empty string if precision is 0 and value is 0
+fails:Kernel#printf formatting io is specified integer formats B converts to the empty string if precision is 0 and value is 0
+fails:Kernel#printf formatting io is specified integer formats B pads the empty string if precision is 0 and value is 0
+fails:Kernel#printf formatting io is specified integer formats o converts to the empty string if precision is 0 and value is 0
+fails:Kernel#printf formatting io is specified integer formats o pads the empty string if precision is 0 and value is 0
+fails:Kernel#printf formatting io is specified integer formats x converts to the empty string if precision is 0 and value is 0
+fails:Kernel#printf formatting io is specified integer formats x pads the empty string if precision is 0 and value is 0
+fails:Kernel#printf formatting io is specified integer formats X converts to the empty string if precision is 0 and value is 0
+fails:Kernel#printf formatting io is specified integer formats X pads the empty string if precision is 0 and value is 0
+fails:Kernel#printf formatting io is specified other formats c displays no characters if argument is an empty string
+fails:Kernel#printf formatting io is specified other formats c raises TypeError if argument is nil
+fails:Kernel#printf formatting io is specified other formats % raises ArgumentError if not followed by a conversion specifier
+fails:Kernel#printf formatting io is specified flags # applies to formats bBxX does nothing for zero argument when combined with zero precision
+fails:Kernel#printf formatting io is specified flags * raises ArgumentError if absolute argument specifier is followed by a conversion specifier
+fails:Kernel#printf formatting io is not specified integer formats b converts to the empty string if precision is 0 and value is 0
+fails:Kernel#printf formatting io is not specified integer formats b pads the empty string if precision is 0 and value is 0
+fails:Kernel#printf formatting io is not specified integer formats B converts to the empty string if precision is 0 and value is 0
+fails:Kernel#printf formatting io is not specified integer formats B pads the empty string if precision is 0 and value is 0
+fails:Kernel#printf formatting io is not specified integer formats o converts to the empty string if precision is 0 and value is 0
+fails:Kernel#printf formatting io is not specified integer formats o pads the empty string if precision is 0 and value is 0
+fails:Kernel#printf formatting io is not specified integer formats x converts to the empty string if precision is 0 and value is 0
+fails:Kernel#printf formatting io is not specified integer formats x pads the empty string if precision is 0 and value is 0
+fails:Kernel#printf formatting io is not specified integer formats X converts to the empty string if precision is 0 and value is 0
+fails:Kernel#printf formatting io is not specified integer formats X pads the empty string if precision is 0 and value is 0
+fails:Kernel#printf formatting io is not specified other formats c displays no characters if argument is an empty string
+fails:Kernel#printf formatting io is not specified other formats c raises TypeError if argument is nil
+fails:Kernel#printf formatting io is not specified other formats % raises ArgumentError if not followed by a conversion specifier
+fails:Kernel#printf formatting io is not specified flags # applies to formats bBxX does nothing for zero argument when combined with zero precision
+fails:Kernel#printf formatting io is not specified flags * raises ArgumentError if absolute argument specifier is followed by a conversion specifier

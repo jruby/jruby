@@ -1,0 +1,7 @@
+fails:Socket::AncillaryData.int returns a Socket::AncillaryData
+fails:Socket::AncillaryData.int sets the family to AF_INET
+fails:Socket::AncillaryData.int sets the level SOL_SOCKET
+fails:Socket::AncillaryData.int sets the type SCM_RIGHTS
+fails:Socket::AncillaryData.int sets the data to a packed String
+fails:Socket::AncillaryData#int returns the data as an Integer
+fails:Socket::AncillaryData#int raises when the data is not an Integer

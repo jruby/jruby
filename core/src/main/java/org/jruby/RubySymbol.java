@@ -491,8 +491,15 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         ByteList bytes = fstring.getByteList();
         Encoding enc = bytes.getEncoding();
 
+        boolean nameInvalid;
+        if (str.isAsciiOnly()) {
+            nameInvalid = !isSymbolName(symbol);
+        } else {
+            nameInvalid = this.type == SymbolNameType.OTHER;
+        }
+
         if ((resenc != enc && !str.isAsciiOnly()) /*|| len != (long)strlen(ptr)*/ ||
-                !isSymbolName(symbol) || !isPrintable(context)) {
+                nameInvalid || !isPrintable(context)) {
             return false;
         }
         return true;

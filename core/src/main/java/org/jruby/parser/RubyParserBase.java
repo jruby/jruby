@@ -542,7 +542,10 @@ public abstract class RubyParserBase {
     public AssignableNode assignableInCurr(ByteList nameBytes, Node value) {
         RubySymbol name = symbolID(nameBytes);
         currentScope.addVariableThisScope(name.idString());
-        if (warnOnUnusedVariables) scopedParserState.addDefinedVariable(name, lexer.getRubySourceline());
+        if (warnOnUnusedVariables) {
+            scopedParserState.addDefinedVariable(name, lexer.getRubySourceline());
+            scopedParserState.markUsedVariable(name, 0);
+        }
         return currentScope.assign(lexer.getRubySourceline(), name, makeNullNil(value));
     }
 
@@ -970,13 +973,13 @@ public abstract class RubyParserBase {
      * assign_in_cond
 	 **/
     private boolean checkAssignmentInCondition(Node node) {
-        if (node instanceof MultipleAsgnNode || node instanceof LocalAsgnNode || node instanceof DAsgnNode || node instanceof GlobalAsgnNode || node instanceof InstAsgnNode) {
+        if (node instanceof MultipleAsgnNode || node instanceof LocalAsgnNode || node instanceof DAsgnNode || node instanceof GlobalAsgnNode || node instanceof InstAsgnNode || node instanceof ClassVarAsgnNode || node instanceof ConstDeclNode) {
             Node valueNode = ((AssignableNode) node).getValueNode();
             if (isStaticContent(valueNode)) {
                 warning(ID.ASSIGNMENT_IN_CONDITIONAL, lexer.getFile(), valueNode.getLine(), "found '= literal' in conditional, should be ==");
             }
             return true;
-        } 
+        }
 
         return false;
     }
@@ -1401,6 +1404,14 @@ public abstract class RubyParserBase {
         if (node == null || orig == null) return;
 
         node.setLine(orig.getLine());
+
+        // Detect IfNode and propagate newline to the bodies.
+        // This is a bit of a form-fitted fix, but the full reduce_nodes logic from CRuby
+        // defied an initial porting attempt. See jruby/jruby#9293.
+        if (node.isNewline() && node instanceof IfNode ifNode) {
+            if (ifNode.getThenBody() instanceof Node thenNode) thenNode.setNewline();
+            if (ifNode.getElseBody() instanceof Node elseNode) elseNode.setNewline();
+        }
     }
 
     public Node new_fcall(ByteList operation) {

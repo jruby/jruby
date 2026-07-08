@@ -360,10 +360,7 @@ public class CallableSelector {
             if (method == null) {
                 method = findCallable(methods, AssignableOrDuckable, args);
                 if (method == null) {
-                    method = findCallable(methods, AssignableOrDuckable, args);
-                    if (method == null) {
-                        method = findCallable(methods, AssignableAndPrimitivableWithVarargs, args);
-                    }
+                    method = findCallable(methods, AssignableAndPrimitivableWithVarargs, args);
                 }
             }
         }

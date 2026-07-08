@@ -1,4 +1,5 @@
 #!/usr/bin/env jruby
+require 'rbconfig'
 require 'rubygems'
 require 'fileutils'
 require 'optparse'
@@ -7,9 +8,10 @@ ENV['RAILS_ENV'] = "development"
 # FIXME: -rlogger is because logger is getting loaded in CRuby but not
 # for us.  
 ENV['JRUBY_OPTS'] = "--dev -rlogger"
+ENV['JAVA_OPTS'] = "-Djava.net.preferIPv4Stack=true"
 
 #launcher, options, rails_version = "jruby", "", "6.1.3.2"
-launcher, options, rails_version = "jruby", "", "7.0.8.7"
+launcher, options, rails_version = "jruby", "", "7.0.10"
 OptionParser.new do |opt|
   opt.banner = "Usage: runner [OPTIONS]"
   opt.separator  ""
@@ -24,14 +26,20 @@ launcher = full_path if File.exist? full_path
 
 $jruby = "#{launcher} #{options} "
 
-def jruby_command(command, *args)
+def jruby_command(command, *args, wait: true)
   command = "#{$jruby} -rlogger -S #{command} #{args.join(' ')}"
   puts "$ #{command}"
-  value = system command
+  if wait
+    value = system command
+  else
+    value = spawn command
+  end
   puts value
+  value
 end
 
 rails_app = 'frogger'
+rails_pid = nil
 
 FileUtils.rm_rf rails_app
 jruby_command("gem", "install rails --version=#{rails_version}")
@@ -40,7 +48,20 @@ Dir.chdir(rails_app) do
   jruby_command("bundle", "update")
   jruby_command("rails", "generate scaffold person name:string")
   jruby_command("rake", "db:migrate")
-#  jruby_command("rails", "webpacker:install")
-#  jruby_command("rails", "server")
+  rails_pid = jruby_command("rails server", wait: false)
 end
+
+begin
+  system("#{$jruby} #{File.join(File.dirname(__FILE__), "verify_rails")}")
+ensure
+  puts "shutting down server"
+  case RbConfig::CONFIG['host_os']
+  when /mswin|win32|windows/
+    system "taskkill /T /PID #{rails_pid}"
+  else
+    Process.kill("TERM", rails_pid)
+    Process.waitpid(rails_pid)
+  end
+end
+
 puts "Done"

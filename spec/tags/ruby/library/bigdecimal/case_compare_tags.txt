@@ -1,0 +1,1 @@
+fails:BigDecimal#=== is an alias of BigDecimal#==

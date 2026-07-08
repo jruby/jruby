@@ -1,0 +1,1 @@
+fails:String#each_line when passed '' (paragraph mode, broken by 2 or more successive newlines) removes trailing newlines with `chomp: true`

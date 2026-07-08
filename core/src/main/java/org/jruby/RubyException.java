@@ -189,9 +189,15 @@ public class RubyException extends RubyObject {
         public void marshalTo(ThreadContext context, RubyOutputStream out, RubyException exc, RubyClass type,
                               MarshalDumper marshalStream) {
             marshalStream.registerObject(exc);
-            marshalStream.dumpVariables(context, out, exc, 2, (marshal, c, o, v, receiver) -> {
+            Object _cause = exc.getCause();
+            IRubyObject cause = exc.getCause() instanceof RubyException ? (RubyException) _cause : null;
+            int count = cause == null ? 2 : 3;
+            marshalStream.dumpVariables(context, out, exc, count, (marshal, c, o, v, receiver) -> {
                 receiver.receive(marshal, c, o, "mesg", v.getMessage());
                 receiver.receive(marshal, c, o, "bt", v.getBacktrace());
+                if (cause != null) {
+                    receiver.receive(marshal, c, o, "cause", cause);
+                }
             });
         }
 
@@ -218,6 +224,10 @@ public class RubyException extends RubyObject {
 
             exc.setMessage((IRubyObject) exc.removeInternalVariable("mesg"));
             exc.set_backtrace(context, (IRubyObject) exc.removeInternalVariable("bt"));
+            if (exc.removeInternalVariable("cause") instanceof RubyException cause) {
+                checkCircularCause(context, exc, cause);
+                exc.setCause(context, cause);
+            }
 
             return exc;
         }
@@ -504,13 +514,7 @@ public class RubyException extends RubyObject {
             return;
         }
 
-        Object c = cause;
-        while (c instanceof RubyException causeException) {
-            if (c == this) {
-                throw argumentError(context, "circular causes");
-            }
-            c = causeException.getCause();
-        }
+        checkCircularCause(context, this, cause);
 
         this.cause = cause;
 
@@ -531,6 +535,16 @@ public class RubyException extends RubyObject {
                 Ruby runtime = getRuntime();
                 throw typeError(runtime.getCurrentContext(), "exception object expected");
             }
+        }
+    }
+
+    static void checkCircularCause(ThreadContext context, IRubyObject exception, IRubyObject cause) {
+        Object c = cause;
+        while (c instanceof RubyException causeException) {
+            if (c == exception) {
+                throw argumentError(context, "circular causes");
+            }
+            c = causeException.getCause();
         }
     }
 

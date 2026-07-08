@@ -31,7 +31,7 @@ default_gems = [
   ['digest', '3.2.1'],
   ['english', '0.8.1'],
   # Ongoing discussion about the -java gem, since it just omits the ext: https://github.com/ruby/erb/issues/52
-  ['erb', '6.0.1'],
+  ['erb', '6.0.1.1'],
   ['error_highlight', '0.7.1'],
   # https://github.com/ruby/etc/issues/19
   # ['etc', '1.4.6'],
@@ -50,7 +50,7 @@ default_gems = [
   ['ipaddr', '1.2.8'],
   ['jar-dependencies', '0.5.7'],
   ['jruby-readline', '1.3.7'],
-  ['jruby-openssl', '0.15.6'],
+  ['jruby-openssl', '0.16.1'],
   ['json', '2.18.0'],
   ['net-http', '0.9.1'],
   ['net-protocol', '0.2.2'],

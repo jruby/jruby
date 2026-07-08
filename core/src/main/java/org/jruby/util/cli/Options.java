@@ -193,6 +193,13 @@ public class Options {
     public static final Option<String> GEM_HOME = string(MISCELLANEOUS, "gem.home", "The home dir where Ruby gems will be installed.");
     public static final Option<String> GEM_PATH = string(MISCELLANEOUS, "gem.path", "The path containing all dirs to search for installed Ruby gems.");
 
+    public static final Option<Boolean> USE_COMPACT_FIXNUMS = bool(MISCELLANEOUS, "fixnum.compact", true, "Allocate fixnums compactly.");
+    // int fixnums don't pack any tighter than long with current JVMs
+    public static final Option<Boolean> USE_INT_FIXNUMS = bool(MISCELLANEOUS, "fixnum.int", false, "Allocate int-range fixnums compactly.");
+    public static final Option<Boolean> USE_SHORT_FIXNUMS = bool(MISCELLANEOUS, "fixnum.short", true, "Allocate short-range fixnums compactly.");
+    // byte fixnums don't pack any tighter than short with current JVMs
+    public static final Option<Boolean> USE_BYTE_FIXNUMS = bool(MISCELLANEOUS, "fixnum.byte", false, "Allocate byte-range fixnums compactly.");
+
     public static final Option<Boolean> DEBUG_LOADSERVICE = bool(DEBUG, "debug.loadService", false, "Log require/load file searches.");
     public static final Option<Boolean> DEBUG_LOADSERVICE_TIMING = bool(DEBUG, "debug.loadService.timing", false, "Log require/load parse+evaluate times.");
     public static final Option<Boolean> DEBUG_LAUNCH = bool(DEBUG, "debug.launch", false, "Log externally-launched processes.");

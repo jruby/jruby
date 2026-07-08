@@ -946,6 +946,19 @@ public class RubyLexer extends LexingCommon {
             default: System.err.print("'" + (char)token + "',"); break;
         }
     }
+
+    // DEBUGGING HELP
+    // These are manually tweaked for deep debugging issues where yylex2 is changed to yylex and yylex is changed
+    // to yylex2.  We do not want to progmatically add printToken into our code as this is already a lot of code
+    // for the JVM to reason with.
+    /*
+    private int yylex2() throws IOException {
+        int currentToken = yylex2();
+        
+        printToken(currentToken);
+        
+        return currentToken;
+    }*/
     
     /**
      *  Returns the next token. Also sets yyVal is needed.
@@ -1528,6 +1541,18 @@ public class RubyLexer extends LexingCommon {
             yaccValue = new NthRefNode(ruby_sourceline, ref);
             return tNTH_REF;
         case '0':
+            int c2 = nextc();
+            if (isIdentifierChar(c2)) {
+                // $0<ident-chars> e.g. $01234 is invalid
+                StringBuilder name = new StringBuilder("$0");
+                do {
+                    name.append((char) c2);
+                    c2 = nextc();
+                } while (isIdentifierChar(c2));
+                pushback(c2);
+                compile_error("'" + name + "' is not allowed as a global variable name");
+            }
+            pushback(c2);
             return identifierToken(tGVAR, new ByteList(new byte[] {'$', (byte) c}));
         default:
             if (!isIdentifierChar(c)) {
