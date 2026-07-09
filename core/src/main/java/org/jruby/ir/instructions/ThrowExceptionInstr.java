@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.RubyException;
 import org.jruby.RubyKernel;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
@@ -51,7 +52,7 @@ public class ThrowExceptionInstr extends OneOperandInstr implements FixedArityIn
             excObj = Helpers.wrapJavaException(context.runtime, (Throwable) excObj); // IRubyObject
         }
 
-        RubyKernel.raise(context, kernelModule(context), new IRubyObject[] {(IRubyObject) excObj}, Block.NULL_BLOCK);
+        RubyException.raise(context, (IRubyObject) excObj);
 
         // should never get here
         throw new AssertionError("Control shouldn't have reached here in ThrowEx");

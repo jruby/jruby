@@ -1062,11 +1062,12 @@ public class RubyKernel {
 
         if (cause.remainingArgs == 0) throw argumentError(context, "only cause is given with no arguments");
 
-        maybeThrowJavaException(context, arg0);
+        return raiseInternal(context, arg0, cause);
+    }
 
-        RubyException exception = prepareNewException(context, arg0);
-
-        return raiseException(context, exception, cause);
+    static IRubyObject raiseInternal(ThreadContext context, IRubyObject exception, Cause cause) {
+        maybeThrowJavaException(context, exception);
+        return raiseException(context, prepareNewException(context, exception), cause);
     }
 
     @JRubyMethod(name = {"raise", "fail"}, module = true, visibility = PRIVATE, omit = true, keywords = true)
@@ -1162,6 +1163,10 @@ public class RubyKernel {
         return new Cause(argc, causeGiven, cause);
     }
 
+    static Cause lastErrorCause(ThreadContext context) {
+        return new Cause(0, false, context.getErrorInfo());
+    }
+
     /**
      * Represents an exception cause extracted from a Kernel#raise argument list.
      *
@@ -1169,7 +1174,7 @@ public class RubyKernel {
      * @param provided whether the cause was provided with a cause: keyword
      * @param value the extracted cause
      */
-    private record Cause(int remainingArgs, boolean provided, IRubyObject value) {}
+    record Cause(int remainingArgs, boolean provided, IRubyObject value) {}
 
     /**
      * Set the cause for an exception that was already constructed elsewhere. This is intended to be used to
