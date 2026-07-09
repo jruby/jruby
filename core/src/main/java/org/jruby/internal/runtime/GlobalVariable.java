@@ -69,7 +69,7 @@ public final class GlobalVariable {
         return scope;
     }
 
-    public List<IRubyObject> getTraces() {
+    public ArrayList getTraces() {
         return traces;
     }
 
