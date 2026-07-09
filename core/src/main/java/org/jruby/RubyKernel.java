@@ -1107,11 +1107,16 @@ public class RubyKernel {
         return raiseException(context, exception);
     }
 
+    // MRI's rb_longjmp -> setup_exception
     private static IRubyObject raiseException(ThreadContext context, RubyException exception) {
-        printDebugException(context, exception);
+        context.setErrorInfo(exception); // set $! early - wiring below forces toThrowable/preRaise
 
-        context.setErrorInfo(exception); // set $! as part of the raise flow (like MRI's setup_exception)
-        return Helpers.throwExceptionT(exception.toThrowable());
+        RaiseException throwable = exception.toThrowable();
+        printDebugException(context, exception); // debug output ($DEBUG) after $! is set
+        // :raise hook before throwing (MRI: EXEC_EVENT_HOOK(ec, RUBY_EVENT_RAISE, ...))
+        IRRuntimeHelpers.traceRaise(context);
+
+        return Helpers.throwExceptionT(throwable);
     }
 
     public static IRubyObject raise(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
