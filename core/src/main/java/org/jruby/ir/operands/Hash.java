@@ -28,15 +28,25 @@ import static org.jruby.api.Create.newSmallHash;
 // that actually build the hash
 public class Hash extends Operand {
     public final KeyValuePair<Operand, Operand>[] pairs;
+    public final boolean keywords;
 
     public Hash(List<KeyValuePair<Operand, Operand>> pairs) {
-        this(pairs.toArray(new KeyValuePair[pairs.size()]));
+        this(pairs, false);
+    }
+
+    public Hash(List<KeyValuePair<Operand, Operand>> pairs, boolean keywords) {
+        this(pairs.toArray(new KeyValuePair[pairs.size()]), keywords);
     }
 
     protected Hash(KeyValuePair<Operand, Operand>[] pairs) {
+        this(pairs, false);
+    }
+
+    protected Hash(KeyValuePair<Operand, Operand>[] pairs, boolean keywords) {
         super();
 
         this.pairs = pairs;
+        this.keywords = keywords;
     }
 
     @Override
