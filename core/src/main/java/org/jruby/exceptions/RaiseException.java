@@ -35,6 +35,8 @@
 
 package org.jruby.exceptions;
 
+import java.util.Arrays;
+
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -49,9 +51,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
-
-import java.lang.reflect.Member;
-import java.util.Arrays;
 
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Error.nameError;
@@ -263,15 +262,8 @@ public class RaiseException extends JumpException {
         return trace;
     }
 
-    private void fillInStackTraceSkipPreRaise() {
-        originalFillInStackTrace(); // (fillInStackTraceSkipPreRaise) originalFillInStackTrace, preRaise
-        StackTraceElement[] curTrace = getStackTrace();
-        StackTraceElement[] newTrace = skipFillInStackTracePart(curTrace);
-        if (newTrace != curTrace) setStackTrace(newTrace);
-    }
-
     /**
-      * Sets the exception
+     * Sets the exception
      * @param newException The exception to set
      */
     protected final void setException(RubyException newException) {
