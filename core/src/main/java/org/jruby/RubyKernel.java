@@ -955,11 +955,17 @@ public class RubyKernel {
             } else {
                 return new MainExitException(status, true);
             }
+
         }
 
-        return message == null ?
-                context.runtime.newSystemExit(status) :
-                context.runtime.newSystemExit(status, message);
+        RubySystemExit exception = message == null ?
+                RubySystemExit.newInstance(context, status, "exit") :
+                RubySystemExit.newInstance(context, status, message);
+        // MRI raises SystemExit through usual rb_longjmp -> setup_exception
+        context.setErrorInfo(exception); // set $!
+        RaiseException throwable = exception.toThrowable();
+        IRRuntimeHelpers.traceRaise(context);
+        return throwable;
     }
 
 
@@ -1048,9 +1054,7 @@ public class RubyKernel {
         RubyException exception =
                 lastException instanceof RubyException ex ? ex : newBlankRuntimeException(context);
 
-        printDebugException(context, exception);
-
-        return Helpers.throwExceptionT(exception.toThrowable());
+        return raiseException(context, exception);
     }
 
     @JRubyMethod(name = {"raise", "fail"}, module = true, visibility = PRIVATE, omit = true, keywords = true)
@@ -1061,15 +1065,12 @@ public class RubyKernel {
 
         if (cause.remainingArgs == 0) throw argumentError(context, "only cause is given with no arguments");
 
-        maybeThrowJavaException(context, arg0);
+        return raiseInternal(context, arg0, cause);
+    }
 
-        RubyException exception = prepareNewException(context, arg0);
-
-        printDebugException(context, exception);
-
-        setNewExceptionCause(context, exception, cause);
-
-        return Helpers.throwExceptionT(exception.toThrowable());
+    static IRubyObject raiseInternal(ThreadContext context, IRubyObject exception, Cause cause) {
+        maybeThrowJavaException(context, exception);
+        return raiseWithNewExceptionCause(context, prepareNewException(context, exception), cause);
     }
 
     @JRubyMethod(name = {"raise", "fail"}, module = true, visibility = PRIVATE, omit = true, keywords = true)
@@ -1085,11 +1086,8 @@ public class RubyKernel {
             default -> prepareNewException(context, arg0, arg1);
         };
 
-        printDebugException(context, exception);
-
         setGivenExceptionCause(context, cause, exception);
-
-        return Helpers.throwExceptionT(exception.toThrowable());
+        return raiseException(context, exception);
     }
 
     @JRubyMethod(name = {"raise", "fail"}, module = true, visibility = PRIVATE, omit = true, keywords = true)
@@ -1104,11 +1102,24 @@ public class RubyKernel {
             default -> prepareNewException(context, arg0, arg1, arg2);
         };
 
-        printDebugException(context, exception);
+        return raiseWithNewExceptionCause(context, exception, cause);
+    }
 
+    private static IRubyObject raiseWithNewExceptionCause(ThreadContext context, RubyException exception, Cause cause) {
         setNewExceptionCause(context, exception, cause);
+        return raiseException(context, exception);
+    }
 
-        return Helpers.throwExceptionT(exception.toThrowable());
+    // MRI's rb_longjmp -> setup_exception
+    private static IRubyObject raiseException(ThreadContext context, RubyException exception) {
+        context.setErrorInfo(exception); // set $! early - wiring below forces toThrowable/preRaise
+
+        RaiseException throwable = exception.toThrowable();
+        printDebugException(context, exception); // debug output ($DEBUG) after $! is set
+        // :raise hook before throwing (MRI: EXEC_EVENT_HOOK(ec, RUBY_EVENT_RAISE, ...))
+        IRRuntimeHelpers.traceRaise(context);
+
+        return Helpers.throwExceptionT(throwable);
     }
 
     public static IRubyObject raise(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
@@ -1123,11 +1134,7 @@ public class RubyKernel {
 
         RubyException exception = prepareNewException(context, arg0, arg1, arg2);
 
-        printDebugException(context, exception);
-
-        setNewExceptionCause(context, exception, cause);
-
-        return Helpers.throwExceptionT(exception.toThrowable());
+        return raiseWithNewExceptionCause(context, exception, cause);
     }
 
     /**
@@ -1169,6 +1176,10 @@ public class RubyKernel {
         return new Cause(argc, causeGiven, cause);
     }
 
+    static Cause lastErrorCause(ThreadContext context) {
+        return new Cause(0, false, context.getErrorInfo());
+    }
+
     /**
      * Represents an exception cause extracted from a Kernel#raise argument list.
      *
@@ -1176,7 +1187,7 @@ public class RubyKernel {
      * @param provided whether the cause was provided with a cause: keyword
      * @param value the extracted cause
      */
-    private record Cause(int remainingArgs, boolean provided, IRubyObject value) {}
+    record Cause(int remainingArgs, boolean provided, IRubyObject value) {}
 
     /**
      * Set the cause for an exception that was already constructed elsewhere. This is intended to be used to
@@ -1232,7 +1243,7 @@ public class RubyKernel {
         IRubyObject maybeException = null;
         switch (argc) {
             case 0:
-                maybeException = globalVariables(context).get("$!");
+                maybeException = context.getErrorInfo();
                 break;
             case 1:
                 if (args.length == 1) maybeException = args[0];
@@ -1259,7 +1270,7 @@ public class RubyKernel {
             if (!(maybeThrowable instanceof Throwable)) throw typeError(context, "can't raise a non-Throwable Java object");
 
             final Throwable ex = (Throwable) maybeThrowable;
-            return ex; // not reached
+            return ex;
         }
         return null;
     }

@@ -22,6 +22,8 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.instructions.*;
+import org.jruby.ir.instructions.defined.GetErrorInfoInstr;
+import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.*;
 import org.jruby.ir.operands.Boolean;
@@ -188,15 +190,14 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
      */
     protected Operand buildEnsureInternal(U body, U elseNode, U[] exceptions, U rescueBody, X optRescue,
                                           boolean isModifier, U ensureNode, boolean isRescue, U reference) {
-        var savedGlobalException = addResultInstr(new GetGlobalVariableInstr(temp(), symbol("$!")));
+        var savedGlobalException = addResultInstr(new GetErrorInfoInstr(temp()));
 
         // The ensure code is built first so that when the protected body is being built,
         // the ensure code can be cloned at break/next/return sites in the protected body.
         EnsureBlockInfo ebi = new EnsureBlockInfo(scope, getCurrentLoop(), activeRescuers.peek(), currentLine() + 1);
 
-        // Rescue will change $! but we need to restore $! later.  prism: ensure and isRescue means it is both (we
-        // call this method again below to rip those two things apart.
-        if (isRescue && ensureNode == null) ebi.savedGlobalException = savedGlobalException;
+        // Rescue will change $! but we need to restore $! later.
+        if (isRescue) ebi.savedGlobalException = savedGlobalException;
 
         // Record body of ensure and push to ensure body stack if there is an actual ensure body.
         Operand ensureRetVal = processEnsureBody(ensureNode, ebi);
@@ -248,7 +249,11 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         Variable exc = addResultInstr(new ReceiveJRubyExceptionInstr(temp()));
 
         // Now emit the ensure body's stashed instructions
-        if (ensureNode != null) ebi.emitEnsureBody(this);
+        if (ensureNode != null) {
+            addInstr(new RestoreErrorInfoInstr(exc));
+            addInstr(new LabelInstr(ebi.bodyStart));
+            ebi.emitEnsureBody(this);
+        }
 
         // 1. Ensure block has no explicit return => the result of the entire ensure expression is the result of the protected body.
         // 2. Ensure block has an explicit return => the result of the protected body is ignored.
@@ -2542,7 +2547,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         // Caught exception case -- build rescue body
         addInstr(new LabelInstr(caughtLabel));
         if (reference != null) {
-            Variable exception = addResultInstr(new GetGlobalVariableInstr(temp(), symbol("$!")));
+            Variable exception = addResultInstr(new GetErrorInfoInstr(temp()));
 
             buildAssignment(reference, exception);  // Prism does not desugar
         }
