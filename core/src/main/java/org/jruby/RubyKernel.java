@@ -1051,9 +1051,7 @@ public class RubyKernel {
         RubyException exception =
                 lastException instanceof RubyException ex ? ex : newBlankRuntimeException(context);
 
-        printDebugException(context, exception);
-
-        return Helpers.throwExceptionT(exception.toThrowable());
+        return raiseException(context, exception, null);
     }
 
     @JRubyMethod(name = {"raise", "fail"}, module = true, visibility = PRIVATE, omit = true, keywords = true)
@@ -1068,12 +1066,7 @@ public class RubyKernel {
 
         RubyException exception = prepareNewException(context, arg0);
 
-        printDebugException(context, exception);
-
-        setNewExceptionCause(context, exception, cause);
-
-        context.setErrorInfo(exception); // set $! as part of the raise flow (like MRI's setup_exception)
-        return Helpers.throwExceptionT(exception.toThrowable());
+        return raiseException(context, exception, cause);
     }
 
     @JRubyMethod(name = {"raise", "fail"}, module = true, visibility = PRIVATE, omit = true, keywords = true)
@@ -1089,12 +1082,7 @@ public class RubyKernel {
             default -> prepareNewException(context, arg0, arg1);
         };
 
-        printDebugException(context, exception);
-
-        setGivenExceptionCause(context, cause, exception);
-
-        context.setErrorInfo(exception); // set $! as part of the raise flow (like MRI's setup_exception)
-        return Helpers.throwExceptionT(exception.toThrowable());
+        return raiseException(context, exception, cause);
     }
 
     @JRubyMethod(name = {"raise", "fail"}, module = true, visibility = PRIVATE, omit = true, keywords = true)
@@ -1109,9 +1097,12 @@ public class RubyKernel {
             default -> prepareNewException(context, arg0, arg1, arg2);
         };
 
-        printDebugException(context, exception);
+        return raiseException(context, exception, cause);
+    }
 
-        setNewExceptionCause(context, exception, cause);
+    private static IRubyObject raiseException(ThreadContext context, RubyException exception, Cause cause) {
+        printDebugException(context, exception);
+        if (cause != null) setNewExceptionCause(context, exception, cause);
 
         context.setErrorInfo(exception); // set $! as part of the raise flow (like MRI's setup_exception)
         return Helpers.throwExceptionT(exception.toThrowable());
@@ -1129,12 +1120,7 @@ public class RubyKernel {
 
         RubyException exception = prepareNewException(context, arg0, arg1, arg2);
 
-        printDebugException(context, exception);
-
-        setNewExceptionCause(context, exception, cause);
-
-        context.setErrorInfo(exception); // set $! as part of the raise flow (like MRI's setup_exception)
-        return Helpers.throwExceptionT(exception.toThrowable());
+        return raiseException(context, exception, cause);
     }
 
     /**
