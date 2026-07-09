@@ -29,6 +29,7 @@ git clone $REPO release
 cd release
 pwd
 ./mvnw -ntp clean deploy -Prelease
+jruby -S bundle install
 jruby -S rake post_process_artifacts
 
 cd release

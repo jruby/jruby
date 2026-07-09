@@ -1619,7 +1619,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         // can be U_NIL if the node is an if node with returns in both branches.
         if (closureRetVal != U_NIL) addInstr(new ReturnInstr(closureRetVal));
 
-        prependUsedClosureImplicitState(forNode);
+        prependUsedClosureImplicitState();
 
         // Add break/return handling in case it is a lambda (we cannot know at parse time what it is).
         // SSS FIXME: At a later time, see if we can optimize this and do this on demand.
@@ -1655,7 +1655,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         // can be U_NIL if the node is an if node with returns in both branches.
         if (closureRetVal != U_NIL) addInstr(new ReturnInstr(closureRetVal));
 
-        prependUsedClosureImplicitState(false);
+        prependUsedClosureImplicitState();
 
         handleBreakAndReturnsInLambdas();
 
@@ -3067,14 +3067,13 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         if (numberOfInstrs > 0) afterPrologueIndex += numberOfInstrs;
     }
 
-    private void prependUsedClosureImplicitState(boolean forLoop) {
+    private void prependUsedClosureImplicitState() {
         int numberOfInstrs = 0;
         if (needsYieldBlock) {
             numberOfInstrs++;
             addInstrAtBeginning(new LoadBlockImplicitClosureInstr(getYieldClosureVariable()));
         }
-        // for loops refer to previous module scope and not its own so we do not make one.
-        if (!forLoop && currentModuleUsed) {
+        if (currentModuleUsed) {
             numberOfInstrs++;
             addInstrAtBeginning(new CopyInstr(getCurrentModuleVariable(), SCOPE_MODULE[0]));
         }
