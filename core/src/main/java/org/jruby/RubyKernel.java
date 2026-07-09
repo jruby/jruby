@@ -961,8 +961,11 @@ public class RubyKernel {
         RubySystemExit exception = message == null ?
                 RubySystemExit.newInstance(context, status, "exit") :
                 RubySystemExit.newInstance(context, status, message);
-        context.setErrorInfo(exception); // set $! before toThrowable/preRaise fires event hooks
-        return exception.toThrowable();
+        // MRI raises SystemExit through usual rb_longjmp -> setup_exception
+        context.setErrorInfo(exception); // set $!
+        RaiseException throwable = exception.toThrowable();
+        IRRuntimeHelpers.traceRaise(context);
+        return throwable;
     }
 
 
