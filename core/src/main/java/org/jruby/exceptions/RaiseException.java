@@ -223,8 +223,6 @@ public class RaiseException extends JumpException {
             }
             setStackTraceFromException();
         }
-
-        IRRuntimeHelpers.traceRaise(context);
     }
 
     private void setStackTraceFromException() {
