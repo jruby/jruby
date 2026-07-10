@@ -10,7 +10,3 @@ fails:Marshal.load when called with freeze: true returns frozen object extended 
 fails:Marshal.load when called on objects with custom _dump methods loads the String in multibyte encoding
 fails:Marshal.load for a Rational loads
 fails:Marshal.load for a Complex loads
-fails:Marshal.load raises an ArgumentError when the dumped data is truncated
-fails:Marshal.load raises an ArgumentError when the argument is empty String
-fails:Marshal.load for a Data loads an extended Data
-fails:Marshal.load for an Integer raises ArgumentError if the input is too short

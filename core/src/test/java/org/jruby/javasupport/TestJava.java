@@ -40,11 +40,10 @@ public class TestJava extends junit.framework.TestCase {
         method = Java.getFunctionalInterfaceMethod(java.io.Serializable.class);
         assertNull(method);
 
-        //if ( Java.JAVA8 ) { // compare and equals both abstract
+        // compare and equals both abstract
         method = Java.getFunctionalInterfaceMethod(java.util.Comparator.class);
         assertNotNull(method);
         assertEquals("compare", method.getName());
-        //}
 
         method = Java.getFunctionalInterfaceMethod(java.lang.Comparable.class);
         assertNotNull(method);
@@ -82,9 +81,7 @@ public class TestJava extends junit.framework.TestCase {
     public void testJavaConstructorExceptionHandling() throws Exception {
         final Ruby runtime = Ruby.newInstance();
         ThreadContext context = runtime.getCurrentContext();
-        JavaConstructor constructor = JavaConstructor.create(runtime,
-                ThrowingConstructor.class.getDeclaredConstructor(Integer.class)
-        );
+        JavaConstructor constructor = JavaConstructor.wrap(ThrowingConstructor.class.getDeclaredConstructor(Integer.class));
 
         assertNotNull(constructor.newInstanceDirect(context, new Object[] { 1 }));
 

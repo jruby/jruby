@@ -1,0 +1,1 @@
+fails:Zlib::GzipReader#eof is an alias of Zlib::GzipReader#eof?

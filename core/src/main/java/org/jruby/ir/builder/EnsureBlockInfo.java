@@ -6,7 +6,7 @@ import org.jruby.ir.instructions.ExceptionRegionEndMarkerInstr;
 import org.jruby.ir.instructions.ExceptionRegionStartMarkerInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.LabelInstr;
-import org.jruby.ir.instructions.RuntimeHelperCall;
+import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.NullBlock;
 import org.jruby.ir.operands.Operand;
@@ -16,8 +16,6 @@ import org.jruby.ir.transformations.inlining.SimpleCloneInfo;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.jruby.ir.instructions.RuntimeHelperCall.Methods.RESET_GVAR_UNDERSCORE;
 
 /* -----------------------------------------------------------------------------------
  * Every ensure block has a start label and end label
@@ -92,7 +90,6 @@ class EnsureBlockInfo {
      * @param builder
      */
     public void emitEnsureBody(IRBuilder builder) {
-        builder.addInstr(new LabelInstr(bodyStart));
         for (Instr i: instrs) {
             builder.addInstr(i);
         }
@@ -103,7 +100,7 @@ class EnsureBlockInfo {
         if (savedGlobalException != null) {
             // We need make sure on all outgoing paths in optimized short-hand rescues we restore the backtrace
             if (!needsBacktrace) builder.addInstr(builder.getManager().needsBacktrace(true));
-            addInstr(new RuntimeHelperCall(builder.temp(), RESET_GVAR_UNDERSCORE, new Operand[] { savedGlobalException }));
+            addInstr(new RestoreErrorInfoInstr(savedGlobalException));
         }
 
         // Sometimes we process a rescue and it hits something like non-local flow like a 'next' and

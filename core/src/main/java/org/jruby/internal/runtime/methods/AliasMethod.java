@@ -68,7 +68,7 @@ public class AliasMethod extends DynamicMethod {
      */ 
     public AliasMethod(RubyModule implementationClass, CacheEntry entry, String newName, String oldName) {
         super(implementationClass, determineVisibility(newName, entry.method.getVisibility()), oldName);
-        entry.method.getRealMethod().adjustAliasCount(1);
+        entry.method.setAliased();
 
         this.entry = entry;
 
@@ -158,9 +158,9 @@ public class AliasMethod extends DynamicMethod {
 
 
     public String getOldName() {
-        return entry.method.getName();
+        return getRealMethod().getName();
     }
-    
+
     @Override
     public DynamicMethod getRealMethod() {
         return entry.method.getRealMethod();

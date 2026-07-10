@@ -2,3 +2,4 @@ fails:Thread#backtrace_locations without argument is the same as showing all loc
 fails:Thread#backtrace_locations the first location reports the call to #backtrace_locations
 fails:Thread#backtrace_locations can be called with a range whose end is negative
 fails:Thread#backtrace_locations returns nil if omitting more locations than available
+fails:Thread#backtrace_locations can be called with `nil` length

@@ -61,9 +61,16 @@ public class JavaSupportImpl extends JavaSupport {
         super(runtime);
     }
 
+    public void tearDown() {
+        super.tearDown();
+        staticAssignedNames.clear();
+        instanceAssignedNames.clear();
+    }
+
     private static Map<String, AssignedName> newAssignedNames(Class<?> klass) {
         return new HashMap<>(8, 1);
     }
+
 
     public ClassValue<Map<String, AssignedName>> getStaticAssignedNames() {
         return staticAssignedNames;

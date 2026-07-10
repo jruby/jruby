@@ -47,7 +47,17 @@ public abstract class ClassValue<T> {
 
     public abstract T get(Class<?> cls);
 
-    protected final ClassValueCalculator<T> calculator;
+    /**
+     * Make a best effort to clear all references.
+     *
+     * Best effort here is sometimes not easily achievable, if for example values are opaquely contained
+     * in a {@link java.lang.ClassValue} instance that does not directly support global clearing.
+     */
+    public void clear() {
+        calculator = null;
+    }
+
+    protected volatile ClassValueCalculator<T> calculator;
 
     public static <T> ClassValue<T> newInstance(ClassValueCalculator<T> calculator) {
         if (Options.INVOKEDYNAMIC_CLASS_VALUES.load()) return newJava7Instance(calculator);

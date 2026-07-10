@@ -56,6 +56,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.ConvertDouble;
+import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 
 import java.math.BigDecimal;
@@ -521,8 +522,7 @@ public class RubyNumeric extends RubyObject {
         var context = runtime.getCurrentContext();
         try {
             ByteList bytes = arg.getByteList();
-            double value = ConvertDouble.byteListToDouble(bytes, strict);
-            return asFloat(context, value);
+            return asFloat(context, ConvertDouble.byteListToDouble(bytes, strict));
         } catch (NumberFormatException e) {
             if (strict) {
                 if (!exception) return context.nil;

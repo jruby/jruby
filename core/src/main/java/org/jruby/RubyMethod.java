@@ -299,11 +299,6 @@ public class RubyMethod extends AbstractRubyMethod {
         return super_method(context, receiver, superClass);
     }
 
-    @JRubyMethod
-    public IRubyObject original_name(ThreadContext context) {
-        return method instanceof AliasMethod ? asSymbol(context, ((AliasMethod)method).getOldName()) : name(context);
-    }
-
     public IRubyObject getReceiver() {
         return receiver;
     }

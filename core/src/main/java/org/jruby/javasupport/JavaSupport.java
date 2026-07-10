@@ -51,6 +51,7 @@ import org.jruby.util.Loader;
 import org.jruby.util.collections.ClassValue;
 import org.jruby.util.collections.ClassValueCalculator;
 
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Member;
 import java.util.Map;
 import java.util.Set;
@@ -63,11 +64,13 @@ import static org.jruby.javasupport.Java.initCause;
 
 public abstract class JavaSupport {
 
-    protected final Ruby runtime;
-
-    @Deprecated(since = "9.4.3.0")
-    private final ClassValue<JavaClass> javaClassCache;
+    protected Ruby runtime;
     private final ClassValue<RubyModule> proxyClassCache;
+
+    /**
+     * A lock to be used for proxy initialization.
+     */
+    private final ReentrantLock lock = new ReentrantLock();
 
     static final class UnfinishedProxy extends ReentrantLock {
         final RubyModule proxy;
@@ -92,8 +95,7 @@ public abstract class JavaSupport {
     private RubyModule javaUtilitiesModule;
     private RubyModule javaArrayUtilitiesModule;
     private RubyClass javaObjectClass;
-    @Deprecated(since = "9.4.3.0")
-    private Object objectJavaClass;
+
     private RubyClass javaClassClass;
     private RubyClass javaPackageClass;
     private RubyClass javaArrayClass;
@@ -112,23 +114,39 @@ public abstract class JavaSupport {
     public JavaSupport(final Ruby runtime) {
         this.runtime = runtime;
 
-        this.javaClassCache = ClassValue.newInstance(klass -> new JavaClass(runtime, getJavaClassClass(), klass));
+        WeakReference<Ruby> runtimeRef = new WeakReference<>(runtime);
 
-        this.proxyClassCache = ClassValue.newInstance(this::computeProxyClass);
-
+        this.proxyClassCache = ClassValue.newInstance(proxyCalculator(runtimeRef, lock));
         // Proxy creation is synchronized (see above) so a HashMap is fine for recursion detection.
         this.unfinishedProxies = new ConcurrentHashMap<>(8, 0.75f, 1);
+    }
+
+    private static ClassValueCalculator<RubyModule> proxyCalculator(WeakReference<Ruby> runtimeRef, ReentrantLock lock) {
+        return klass -> computeProxyClass(runtimeRef.get(), lock, klass);
+    }
+
+    public void tearDown() {
+        proxyClassCache.clear();
+        unfinishedProxies.clear();
+        runtime = null;
     }
 
     /**
      * Because of the complexity of processing a given class and all its dependencies,
      * we opt to synchronize this logic. Creation of all proxies goes through here,
      * allowing us to skip some threading work downstream.
+     *
+     * This method is made static to avoid any circular reference via JavaSupport back to the ClassValue this supports.
      */
-    private synchronized RubyModule computeProxyClass(Class<?> klass) {
-        RubyModule proxyKlass = Java.createProxyClassForClass(runtime, klass);
-        JavaExtensions.define(runtime, klass, proxyKlass); // (lazy) load extensions
-        return proxyKlass;
+    private static RubyModule computeProxyClass(Ruby runtime, ReentrantLock lock, Class<?> klass) {
+        lock.lock();
+        try {
+            RubyModule proxyKlass = Java.createProxyClassForClass(runtime, klass);
+            JavaExtensions.define(runtime, klass, proxyKlass); // (lazy) load extensions
+            return proxyKlass;
+        } finally {
+            lock.unlock();
+        }
     }
 
     @Deprecated(since = "9.4.0.0")
@@ -226,15 +244,6 @@ public abstract class JavaSupport {
 
         var context = runtime.getCurrentContext();
         return javaProxyConstructorClass = getJavaModule(context).getClass(context, "JavaProxyConstructor");
-    }
-
-    @Deprecated(since = "9.4.0.0") // no longer used
-    public JavaClass getObjectJavaClass() {
-        Object clazz;
-        if ((clazz = objectJavaClass) != null) return (JavaClass) clazz;
-        JavaClass javaClass = JavaClass.get(runtime, Object.class);
-        objectJavaClass = javaClass;
-        return javaClass;
     }
 
     @Deprecated(since = "9.4.0.0")
@@ -357,10 +366,7 @@ public abstract class JavaSupport {
 
     abstract ClassValue<Map<String, AssignedName>> getInstanceAssignedNames();
 
-    @Deprecated(since = "9.4.0.0") // internal API - no longer used (kept functional due deprecated JavaClass.get API)
-    public JavaClass getJavaClassFromCache(Class clazz) {
-        return javaClassCache.get(clazz);
-    }
+
 
     final void beginProxy(Class clazz, RubyModule proxy) {
         UnfinishedProxy up = new UnfinishedProxy(proxy);

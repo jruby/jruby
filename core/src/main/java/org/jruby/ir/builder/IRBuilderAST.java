@@ -1043,13 +1043,22 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             NodeType seenType = null;
             for (Node aCase : caseNode.getCases().children()) {
                 WhenNode whenNode = (WhenNode) aCase;
-                NodeType exprNodeType = whenNode.getExpressionNodes().getNodeType();
+                Node exprNode = whenNode.getExpressionNodes();
+                NodeType exprNodeType = exprNode.getNodeType();
 
                 if (seenType == null) {
                     seenType = exprNodeType;
                 } else if (seenType != exprNodeType) {
                     seenType = null;
                     break;
+                }
+
+                if (exprNode instanceof FixnumNode fixnum) {
+                    long value = fixnum.getValue();
+                    if (value > java.lang.Integer.MAX_VALUE || value < java.lang.Integer.MIN_VALUE) {
+                        seenType = null;
+                        break;
+                    }
                 }
             }
 
@@ -1200,7 +1209,6 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
 
             T expr = (T) whenNode.getExpressionNodes();
             long exprLong = caseFunction.apply(expr);
-            if (exprLong > java.lang.Integer.MAX_VALUE) throw notCompilable("optimized case has long-ranged value", caseNode);
 
             if (jumpTable.get((int) exprLong) == null) {
                 jumpTable.put((int) exprLong, new Tuple<>(buildOptimizedWhenOperand(expr), bodyLabel));

@@ -12,7 +12,7 @@ DO NOT MODIFY - GENERATED CODE
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>10.1.0.0-SNAPSHOT</version>
+    <version>10.1.1.0-SNAPSHOT</version>
   </parent>
   <artifactId>jruby-stdlib</artifactId>
   <name>JRuby Lib Setup</name>
@@ -28,7 +28,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>org.jruby</groupId>
       <artifactId>jruby-core</artifactId>
-      <version>10.1.0.0-SNAPSHOT</version>
+      <version>10.1.1.0-SNAPSHOT</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -125,7 +125,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>erb</artifactId>
-      <version>6.0.1</version>
+      <version>6.0.1.1</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -281,7 +281,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>jruby-openssl</artifactId>
-      <version>0.15.6</version>
+      <version>0.16.1</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -1151,7 +1151,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/did_you_mean-2.0.0*</include>
           <include>specifications/digest-3.2.1*</include>
           <include>specifications/english-0.8.1*</include>
-          <include>specifications/erb-6.0.1*</include>
+          <include>specifications/erb-6.0.1.1*</include>
           <include>specifications/error_highlight-0.7.1*</include>
           <include>specifications/ffi-1.17.0*</include>
           <include>specifications/fiddle-1.1.8*</include>
@@ -1163,7 +1163,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/ipaddr-1.2.8*</include>
           <include>specifications/jar-dependencies-0.5.7*</include>
           <include>specifications/jruby-readline-1.3.7*</include>
-          <include>specifications/jruby-openssl-0.15.6*</include>
+          <include>specifications/jruby-openssl-0.16.1*</include>
           <include>specifications/json-2.18.0*</include>
           <include>specifications/net-http-0.9.1*</include>
           <include>specifications/net-protocol-0.2.2*</include>
@@ -1235,7 +1235,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/did_you_mean-2.0.0*/**/*</include>
           <include>gems/digest-3.2.1*/**/*</include>
           <include>gems/english-0.8.1*/**/*</include>
-          <include>gems/erb-6.0.1*/**/*</include>
+          <include>gems/erb-6.0.1.1*/**/*</include>
           <include>gems/error_highlight-0.7.1*/**/*</include>
           <include>gems/ffi-1.17.0*/**/*</include>
           <include>gems/fiddle-1.1.8*/**/*</include>
@@ -1247,7 +1247,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/ipaddr-1.2.8*/**/*</include>
           <include>gems/jar-dependencies-0.5.7*/**/*</include>
           <include>gems/jruby-readline-1.3.7*/**/*</include>
-          <include>gems/jruby-openssl-0.15.6*/**/*</include>
+          <include>gems/jruby-openssl-0.16.1*/**/*</include>
           <include>gems/json-2.18.0*/**/*</include>
           <include>gems/net-http-0.9.1*/**/*</include>
           <include>gems/net-protocol-0.2.2*/**/*</include>
@@ -1319,7 +1319,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/did_you_mean-2.0.0*</include>
           <include>cache/digest-3.2.1*</include>
           <include>cache/english-0.8.1*</include>
-          <include>cache/erb-6.0.1*</include>
+          <include>cache/erb-6.0.1.1*</include>
           <include>cache/error_highlight-0.7.1*</include>
           <include>cache/ffi-1.17.0*</include>
           <include>cache/fiddle-1.1.8*</include>
@@ -1331,7 +1331,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/ipaddr-1.2.8*</include>
           <include>cache/jar-dependencies-0.5.7*</include>
           <include>cache/jruby-readline-1.3.7*</include>
-          <include>cache/jruby-openssl-0.15.6*</include>
+          <include>cache/jruby-openssl-0.16.1*</include>
           <include>cache/json-2.18.0*</include>
           <include>cache/net-http-0.9.1*</include>
           <include>cache/net-protocol-0.2.2*</include>
@@ -1403,7 +1403,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>extensions/universal-java/4.0.0/did_you_mean-2.0.0/*</include>
           <include>extensions/universal-java/4.0.0/digest-3.2.1/*</include>
           <include>extensions/universal-java/4.0.0/english-0.8.1/*</include>
-          <include>extensions/universal-java/4.0.0/erb-6.0.1/*</include>
+          <include>extensions/universal-java/4.0.0/erb-6.0.1.1/*</include>
           <include>extensions/universal-java/4.0.0/error_highlight-0.7.1/*</include>
           <include>extensions/universal-java/4.0.0/ffi-1.17.0/*</include>
           <include>extensions/universal-java/4.0.0/fiddle-1.1.8/*</include>
@@ -1415,7 +1415,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>extensions/universal-java/4.0.0/ipaddr-1.2.8/*</include>
           <include>extensions/universal-java/4.0.0/jar-dependencies-0.5.7/*</include>
           <include>extensions/universal-java/4.0.0/jruby-readline-1.3.7/*</include>
-          <include>extensions/universal-java/4.0.0/jruby-openssl-0.15.6/*</include>
+          <include>extensions/universal-java/4.0.0/jruby-openssl-0.16.1/*</include>
           <include>extensions/universal-java/4.0.0/json-2.18.0/*</include>
           <include>extensions/universal-java/4.0.0/net-http-0.9.1/*</include>
           <include>extensions/universal-java/4.0.0/net-protocol-0.2.2/*</include>

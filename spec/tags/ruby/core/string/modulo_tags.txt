@@ -8,3 +8,16 @@ fails(https://github.com/jruby/jruby/issues/8739):String#% raises an ArgumentErr
 fails:String#% other formats c raises TypeError if argument is nil
 fails:String#% other formats c raises TypeError if converting to String with to_str returns non-String
 fails:String#% other formats c raises TypeError if converting to Integer with to_int returns non-Integer
+fails:String#% integer formats b converts to the empty string if precision is 0 and value is 0
+fails:String#% integer formats b pads the empty string if precision is 0 and value is 0
+fails:String#% integer formats B converts to the empty string if precision is 0 and value is 0
+fails:String#% integer formats B pads the empty string if precision is 0 and value is 0
+fails:String#% integer formats o converts to the empty string if precision is 0 and value is 0
+fails:String#% integer formats o pads the empty string if precision is 0 and value is 0
+fails:String#% integer formats x converts to the empty string if precision is 0 and value is 0
+fails:String#% integer formats x pads the empty string if precision is 0 and value is 0
+fails:String#% integer formats X converts to the empty string if precision is 0 and value is 0
+fails:String#% integer formats X pads the empty string if precision is 0 and value is 0
+fails:String#% flags # applies to formats bBxX does nothing for zero argument when combined with zero precision
+fails:String#% other formats % raises ArgumentError if not followed by a conversion specifier
+fails:String#% flags * raises ArgumentError if absolute argument specifier is followed by a conversion specifier

@@ -419,14 +419,17 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (!getEncoding().isAsciiCompatible()) throw getRuntime().newEncodingCompatibilityError("ASCII incompatible encoding: " + getEncoding());
     }
 
+    @Deprecated(since = "10.0.6.0", forRemoval = true)
     public RubyString(Ruby runtime, RubyClass rubyClass) {
         this(runtime, rubyClass, ByteList.NULL_ARRAY);
     }
 
+    @Deprecated(since = "10.0.6.0", forRemoval = true)
     public RubyString(Ruby runtime, RubyClass rubyClass, CharSequence value) {
         this(runtime, rubyClass, value, UTF8);
     }
 
+    @Deprecated(since = "10.0.6.0", forRemoval = true)
     public RubyString(Ruby runtime, RubyClass rubyClass, CharSequence value, Encoding enc) {
         super(runtime, rubyClass);
         assert value != null;
@@ -451,24 +454,28 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         this.value = encodeBytelist(value, enc);
     }
 
+    @Deprecated(since = "10.0.6.0", forRemoval = true)
     public RubyString(Ruby runtime, RubyClass rubyClass, byte[] value) {
         super(runtime, rubyClass);
         assert value != null;
         this.value = new ByteList(value);
     }
 
+    @Deprecated(since = "10.0.6.0", forRemoval = true)
     public RubyString(Ruby runtime, RubyClass rubyClass, ByteList value) {
         super(runtime, rubyClass);
         assert value != null;
         this.value = value;
     }
 
+    @Deprecated(since = "10.0.6.0", forRemoval = true)
     public RubyString(Ruby runtime, RubyClass rubyClass, ByteList value, boolean objectSpace) {
         super(runtime, rubyClass, objectSpace);
         assert value != null;
         this.value = value;
     }
 
+    @Deprecated(since = "10.0.6.0", forRemoval = true)
     public RubyString(Ruby runtime, RubyClass rubyClass, ByteList value, Encoding encoding, boolean objectSpace) {
         this(runtime, rubyClass, value, objectSpace);
         value.setEncoding(encoding);
@@ -2888,7 +2895,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     public RubyString append(IRubyObject other) {
-        return append(other, (o) -> o.convertToString());
+        return append(other, IRubyObject::convertToString);
     }
 
     public RubyString append(RubyString other) {

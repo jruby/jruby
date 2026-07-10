@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<install4j version="9.0.4" transformSequenceNumber="9">
+<install4j version="12.0.4" transformSequenceNumber="12">
   <directoryPresets config="." />
   <application name="JRuby" applicationId="4535-5096-5383-5182" mediaDir="." compression="9" shortName="jruby" publisher="JRuby Dev Team" publisherWeb="http://www.jruby.org/" version="${compiler:jruby.version}" allPathsRelative="true" macVolumeId="720835987edcfb24" javaMinVersion="17" javaMaxVersion="200" jdkMode="runtimeJre">
     <variables>
@@ -7,9 +7,10 @@
       <variable name="ruby.version" value="error" />
       <variable name="ruby.patchlevel" value="error" />
       <variable name="ruby.buildplatform" value="error" />
+      <variable name="jruby.location" value="/Users/headius/work/jruby" />
     </variables>
   </application>
-  <files preserveSymlinks="false" globalExcludeSuffixes="jsa">
+  <files globalExcludeSuffixes="jsa">
     <filesets>
       <fileset name="non-arch ruby lib" id="97" />
       <fileset name="windows arch-specific" id="99" />
@@ -140,7 +141,6 @@
           <archive location="lib/jruby.jar" failOnError="false" />
         </classPath>
       </java>
-      <macStaticAssociationActions mode="selected" />
       <vmOptionsFile mode="none" />
       <iconImageFiles>
         <file path="./icon16.png" />
@@ -148,7 +148,7 @@
       </iconImageFiles>
     </launcher>
   </launchers>
-  <installerGui suggestPreviousLocations="false">
+  <installerGui>
     <applications>
       <application id="installer" beanClass="com.install4j.runtime.beans.applications.InstallerApplication">
         <serializedBean>
@@ -158,6 +158,11 @@
           <screen id="1" beanClass="com.install4j.runtime.beans.screens.StartupScreen" rollbackBarrierExitCode="0">
             <actions>
               <action id="321" beanClass="com.install4j.runtime.beans.actions.misc.RequestPrivilegesAction" actionElevationType="none" />
+              <action id="432" beanClass="com.install4j.runtime.beans.actions.control.SetInstallationDirectoryAction" actionElevationType="none">
+                <serializedBean>
+                  <property name="searchForPreviousInstallation" type="boolean" value="false" />
+                </serializedBean>
+              </action>
             </actions>
           </screen>
         </startup>
@@ -186,7 +191,7 @@
             </styleOverrides>
             <actions>
               <action id="322" beanClass="com.install4j.runtime.beans.actions.misc.LoadResponseFileAction" multiExec="true">
-                <condition>context.getBooleanVariable("sys.confirmedUpdateInstallation")</condition>
+                <condition>context.getBooleanVariable("sys.streamlinedInstallation")</condition>
               </action>
             </actions>
             <formComponents>
@@ -207,9 +212,12 @@ return console.askOkCancel(message, true);
                   </property>
                 </serializedBean>
               </formComponent>
-              <formComponent id="328" beanClass="com.install4j.runtime.beans.formcomponents.UpdateAlertComponent" useExternalParametrization="true" externalParametrizationName="Update Alert" externalParametrizationMode="include">
+              <formComponent id="328" beanClass="com.install4j.runtime.beans.formcomponents.StreamlinedInstallationChooserComponent" useExternalParametrization="true" externalParametrizationName="Update Alert" externalParametrizationMode="include">
+                <serializedBean>
+                  <property name="streamlinedInstallationStrategy" type="enum" class="com.install4j.runtime.beans.formcomponents.StreamlinedInstallationStrategy" value="UPDATE_ONLY" />
+                </serializedBean>
                 <externalParametrizationPropertyNames>
-                  <propertyName>updateCheck</propertyName>
+                  <propertyName>streamlinedInstallationStrategy</propertyName>
                 </externalParametrizationPropertyNames>
               </formComponent>
               <formComponent id="329" beanClass="com.install4j.runtime.beans.formcomponents.MultilineLabelComponent" insetTop="20">
@@ -220,7 +228,7 @@ return console.askOkCancel(message, true);
             </formComponents>
           </screen>
           <screen id="3" beanClass="com.install4j.runtime.beans.screens.InstallationDirectoryScreen">
-            <condition>!context.getBooleanVariable("sys.confirmedUpdateInstallation")</condition>
+            <condition>!context.getBooleanVariable("sys.streamlinedInstallation")</condition>
             <actions>
               <action id="4" beanClass="com.install4j.runtime.beans.actions.misc.LoadResponseFileAction" multiExec="true">
                 <condition>context.getVariable("sys.responseFile") == null</condition>
@@ -310,12 +318,11 @@ return console.askOkCancel(message, true);
                 </serializedBean>
                 <condition>Util.isWindows() &amp;&amp; WinEnvVars.getenv("JAVA_HOME") == null</condition>
               </action>
-              <action id="9" beanClass="com.install4j.runtime.beans.actions.desktop.CreateProgramGroupAction" actionElevationType="elevated">
+              <action id="9" beanClass="com.install4j.runtime.beans.actions.desktop.CreateDefaultStartMenuEntriesAction" actionElevationType="elevated">
                 <serializedBean>
-                  <property name="addUninstaller" type="boolean" value="true" />
                   <property name="allUsers" type="boolean" value="false" />
-                  <property name="programGroupName" type="string">${compiler:sys.fullName} ${compiler:sys.version}</property>
-                  <property name="uninstallerMenuName" type="string">${i18n:UninstallerMenuEntry(${compiler:sys.fullName})}</property>
+                  <property name="folderName" type="string">${compiler:sys.fullName} ${compiler:sys.version}</property>
+                  <property name="linkDirectory" type="string">${installer:sys.symlinkDir}</property>
                 </serializedBean>
                 <condition>!context.getBooleanVariable("sys.programGroupDisabled")</condition>
               </action>
@@ -536,20 +543,19 @@ return console.askYesNo(message, true);
               <property name="imageEdgeBackgroundColor">
                 <object class="com.install4j.runtime.beans.LightOrDarkColor">
                   <object class="java.awt.Color">
-                    <int>25</int>
+                    <int>27</int>
                     <int>143</int>
                     <int>220</int>
                     <int>255</int>
                   </object>
                   <object class="java.awt.Color">
                     <int>0</int>
-                    <int>74</int>
-                    <int>151</int>
+                    <int>73</int>
+                    <int>150</int>
                     <int>255</int>
                   </object>
                 </object>
               </property>
-              <property name="imageEdgeBorder" type="boolean" value="true" />
               <property name="imageFile">
                 <object class="com.install4j.api.beans.ExternalFile">
                   <string>${compiler:sys.install4jHome}/resource/styles/wizard.png</string>
@@ -567,9 +573,14 @@ return console.askYesNo(message, true);
             <beans>
               <formComponent id="417" beanClass="com.install4j.runtime.beans.styles.ScreenTitleComponent" insetTop="0">
                 <serializedBean>
-                  <property name="labelFontSizePercent" type="int" value="130" />
-                  <property name="labelFontStyle" type="enum" class="com.install4j.runtime.beans.formcomponents.FontStyle" value="BOLD" />
-                  <property name="labelFontType" type="enum" class="com.install4j.runtime.beans.formcomponents.FontType" value="DERIVED" />
+                  <property name="labelWidgetStyle" id="LabelWidgetStyle0">
+                    <property name="fontDescriptor">
+                      <property name="fontSizePercent" type="int" value="130" />
+                      <property name="fontStyle" type="enum" class="com.install4j.runtime.beans.formcomponents.FontStyle" value="BOLD" />
+                      <property name="fontType" type="enum" class="com.install4j.runtime.beans.formcomponents.FontType" value="DERIVED" />
+                    </property>
+                  </property>
+                  <property name="labelWidgetStyleId" type="null" />
                 </serializedBean>
               </formComponent>
               <formComponent id="418" beanClass="com.install4j.runtime.beans.formcomponents.SeparatorComponent" />
@@ -647,8 +658,13 @@ return console.askYesNo(message, true);
                 <beans>
                   <formComponent name="Title" id="424" beanClass="com.install4j.runtime.beans.styles.ScreenTitleComponent">
                     <serializedBean>
-                      <property name="labelFontStyle" type="enum" class="com.install4j.runtime.beans.formcomponents.FontStyle" value="BOLD" />
-                      <property name="labelFontType" type="enum" class="com.install4j.runtime.beans.formcomponents.FontType" value="DERIVED" />
+                      <property name="labelWidgetStyle" id="LabelWidgetStyle0">
+                        <property name="fontDescriptor">
+                          <property name="fontStyle" type="enum" class="com.install4j.runtime.beans.formcomponents.FontStyle" value="BOLD" />
+                          <property name="fontType" type="enum" class="com.install4j.runtime.beans.formcomponents.FontType" value="DERIVED" />
+                        </property>
+                      </property>
+                      <property name="labelWidgetStyleId" type="null" />
                     </serializedBean>
                   </formComponent>
                   <formComponent name="Subtitle" id="425" beanClass="com.install4j.runtime.beans.styles.ScreenTitleComponent" insetLeft="8">
@@ -713,9 +729,12 @@ return console.askYesNo(message, true);
         </beans>
       </group>
     </styles>
+    <widgetStyles defaultWidgetStyleId="122">
+      <widgetStyle name="Standard" id="122" beanClass="com.install4j.runtime.beans.widgets.WidgetStyleCollection" />
+    </widgetStyles>
   </installerGui>
   <mediaSets>
-    <windows name="Windows" id="20" mediaFileName="${compiler:sys.shortName}_${compiler:sys.platform}_${compiler:sys.version}" installDir="jruby-${compiler:jruby.version}" jreBitType="32" customInstallBaseDir="c:">
+    <windows name="Windows" id="20" mediaFileName="${compiler:sys.shortName}_${compiler:sys.platform}_${compiler:sys.version}" installDir="jruby-${compiler:jruby.version}" customInstallBaseDir="c:" architecture="32">
       <excludedBeans>
         <bean refId="26" />
       </excludedBeans>
@@ -724,7 +743,7 @@ return console.askYesNo(message, true);
       </exclude>
       <jreBundle jreBundleSource="none" />
     </windows>
-    <windows name="Windows 64-bit" id="24" mediaFileName="${compiler:sys.shortName}_windows_x64_${compiler:sys.version}" installDir="jruby-${compiler:jruby.version}" customInstallBaseDir="c:">
+    <windows name="Windows 64-bit" id="24" mediaFileName="${compiler:sys.shortName}_windows_x64_${compiler:sys.version}" installDir="jruby-${compiler:jruby.version}" customInstallBaseDir="c:" architecture="64">
       <excludedBeans>
         <bean refId="26" />
       </excludedBeans>
@@ -733,7 +752,7 @@ return console.askYesNo(message, true);
       </exclude>
       <jreBundle jreBundleSource="none" />
     </windows>
-    <macosFolder name="Mac OS X Folder" id="22" mediaFileName="${compiler:sys.shortName}_${compiler:sys.platform}_${compiler:sys.version}" installDir="jruby-${compiler:sys.version}">
+    <macosFolder name="Mac OS X Folder" id="22" mediaFileName="${compiler:sys.shortName}_${compiler:sys.platform}_${compiler:sys.version}" installDir="jruby-${compiler:sys.version}" architecture="amd64">
       <excludedBeans>
         <bean refId="25" />
         <bean refId="63" />

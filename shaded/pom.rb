@@ -9,6 +9,11 @@ project 'JRuby Core' do
   inherit 'org.jruby:jruby-parent', version
   id 'org.jruby:jruby-core'
 
+  distribution_management do
+    relocation(groupId: 'org.jruby', artifactId: 'jruby-base',
+               message: 'The jruby-core artifact is deprecated in favor of the jruby-base artifact.')
+  end
+
   properties("polyglot.dump.pom": 'pom.xml',
              "polyglot.dump.readonly": true,
              "jruby.basedir": '${basedir}/..')
@@ -23,7 +28,11 @@ project 'JRuby Core' do
                   },
                   relocations: [
                     { pattern: 'org.objectweb', shadedPattern: 'org.jruby.org.objectweb' },
-                    { pattern: 'me.qmx.jitescript', shadedPattern: 'org.jruby.me.qmx.jitescript' }
+                    { pattern: 'me.qmx.jitescript', shadedPattern: 'org.jruby.me.qmx.jitescript' },
+                    { pattern: 'com.dylibso.chicory', shadedPattern: 'com.jruby.internal.org.dylibso.chicory'},
+                    { pattern: 'io.roastedroot.redline', shadedPattern: 'com.jruby.internal.io.roastedroot.redline'},
+                    { pattern: 'org.ruby_lang.prism', shadedPattern: 'org.jruby.internal.prism'},
+                    { pattern: 'org.jruby.parser.prism', shadedPattern: 'org.jruby.internal.parser.prism'}
                   ],
                   transformers: [{ :@implementation => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
                                    mainClass: 'org.jruby.main.Main',
@@ -37,7 +46,14 @@ project 'JRuby Core' do
                                      # Enable native access for JRuby and classpath classes when run not as a module
                                      'Enable-Native-Access' => 'ALL-UNNAMED',
                                    }
-                                 }],
+                                 },
+                                 { :@implementation => 'org.apache.maven.plugins.shade.resource.ServicesResourceTransformer'}
+                  ],
+                  filters: [
+                    { artifact: 'ch.randelshofer:fastdoubleparser', excludes: '**/23/**' },
+                    { artifact: 'ch.randelshofer:fastdoubleparser', excludes: '**/17/**' },
+                    { artifact: 'ch.randelshofer:fastdoubleparser', excludes: '**/11/**' },
+                  ],
                   createSourcesJar: false,
                   compress: false)
   end
@@ -77,12 +93,17 @@ project 'JRuby Core' do
                         # maven/jruby-complete/pom.rb
                         includes: ['com.github.jnr:jnr-ffi',
                                    'me.qmx.jitescript:jitescript',
-                                   'org.ow2.asm:*'],
+                                   'org.ow2.asm:*',
+                                   'com.dylibso:*',
+                                   'org.jruby:jruby-prism',
+                                   'org.ruby_lang:prism-parser-wasm'],
                         excludes: 'javax.annotation:javax.annotation-api'
                       },
                       relocations: [
                         { pattern: 'org.objectweb', shadedPattern: 'org.jruby.org.objectweb' },
-                        { pattern: 'me.qmx.jitescript', shadedPattern: 'org.jruby.me.qmx.jitescript' }
+                        { pattern: 'me.qmx.jitescript', shadedPattern: 'org.jruby.me.qmx.jitescript' },
+                        { pattern: 'com.dylibso.chicory', shadedPattern: 'org.jruby.internal.com.dylibso.chicory'},
+                        { pattern: 'org.ruby_lang', shadedPattern: 'org.jruby.internal.org.ruby_lang'}
                       ],
                       transformers: [{ :@implementation => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
                                        :mainClass => 'org.jruby.main.Main',

@@ -364,6 +364,281 @@ describe "Single-method Java interfaces" do
   end
 end
 
+describe "Ruby block passed as a Java functional-interface" do
+  it "supports arity 0" do # SingleMethodInterface.callIt()
+    # Already exercised broadly in 'can be coerced from a block ...' tests.
+    expect(UsesSingleMethodInterface.callIt { 'zero' }).to eq('zero')
+  end
+
+  it "supports arity 1" do
+    Java::java_integration.fixtures.iface.SingleMethodInterfaceWithArg::Caller.call do |arg|
+      expect(arg).to eq 42
+    end
+    Java::java_integration.fixtures.iface.SingleMethodInterfaceWithArg::Caller.call('x') do |arg|
+      expect(arg).to eq 'x'
+    end
+  end
+
+  it "supports arity 2 (java.io.FilenameFilter)" do
+    seen = []
+    Java::java.io.File.new('.').list do |dir, name|
+      seen << [dir.class, name.class]
+      false # boolean accept(File, String)
+    end
+    expect(seen).not_to be_empty
+    seen.each { |dir_cls, name_cls|
+      expect(dir_cls).to eq java.io.File
+      expect(name_cls).to eq String
+    }
+  end
+
+  it "supports arity 3" do # (mixed reference args + reference return)
+    result = Java::java_integration.fixtures.iface.SingleMethodInterfaceWith3Args::Caller.call do |a, b, c|
+      expect(a).to eq 'alpha'
+      expect(b).to eq 1
+      expect(c).to eq true
+      [a, b, c]
+    end
+    expect(result).to eq ['alpha', 1, true]
+  end
+
+  it "supports arity 4" do # (mixed reference + primitive args, Object[] return)
+    result = Java::java_integration.fixtures.iface.SingleMethodInterfaceWith4Args::Caller.call do |_, b, c, d|
+      expect(b).to eq 'hello'
+      expect(c).to eq 'world'
+      expect(d).to eq 42
+      [b, c, d]
+    end
+    expect(result.to_a).to eq ['hello', 'world', 42]
+  end
+
+  it "java.util.function.Consumer<T> via Iterable#forEach (arity 1, void return)" do
+    seen = []
+    list = java.util.ArrayList.new
+    [1, 2, 3].each { |i| list.add(i) }
+    list.forEach { |x| seen << x }
+    expect(seen).to eq [1, 2, 3]
+  end
+
+  it "java.util.function.BiConsumer<K,V> via Map#forEach (arity 2, void return)" do
+    pairs = []
+    map = java.util.LinkedHashMap.new
+    map.put('a', 1); map.put('b', 2)
+    map.forEach { |k, v| pairs << [k, v] }
+    expect(pairs).to eq [['a', 1], ['b', 2]]
+  end
+
+  it "java.util.function.BiFunction<K,V,R> via Map#compute (arity 2, reference return)" do
+    map = java.util.HashMap.new
+    map.put('count', 1)
+    result = map.compute('count') { |k, v| v + 10 }
+    expect(result).to eq 11
+    expect(map.get('count')).to eq 11
+  end
+
+  it "java.util.function.Function<T,R> via Map#computeIfAbsent (arity 1, reference return)" do
+    map = java.util.HashMap.new
+    result = map.computeIfAbsent('k') { |key| "value-for-#{key}" }
+    expect(result).to eq 'value-for-k'
+    expect(map.get('k')).to eq 'value-for-k'
+  end
+
+  it "java.util.function.Predicate<T> via Collection#removeIf (arity 1, primitive boolean return)" do
+    list = java.util.ArrayList.new
+    [1, 2, 3, 4, 5].each { |i| list.add(i) }
+    list.removeIf { |i| i.even? }
+    expect(list.to_a).to eq [1, 3, 5]
+  end
+
+  it "primitive consumers via Optional*#ifPresent (arity 1, primitive argument, void return)" do
+    seen = []
+    java.util.OptionalInt.of(42).ifPresent { |i| seen << i }
+    java.util.OptionalLong.of(1_234_567_890_123).ifPresent { |l| seen << l }
+    java.util.OptionalDouble.of(1.25).ifPresent { |d| seen << d }
+    expect(seen).to eq [42, 1_234_567_890_123, 1.25]
+  end
+
+  it "java.util.function.IntBinaryOperator via IntStream#reduce (arity 2, primitive arguments)" do
+    ints = [1, 2, 3].to_java(:int)
+    sum = java.util.stream.IntStream.of(ints).reduce(0) { |a, b| a + b }
+    expect(sum).to eq 6
+  end
+
+  it "IntSupplier via OptionalInt#orElseGet (arity 0, primitive int return)" do
+    expect(java.util.OptionalInt.empty.orElseGet { 7 }).to eq 7
+  end
+
+  it "LongSupplier via OptionalLong#orElseGet (arity 0, primitive long return)" do
+    expect(java.util.OptionalLong.empty.orElseGet { 1 << 40 }).to eq(1 << 40)
+  end
+
+  it "DoubleSupplier via OptionalDouble#orElseGet (arity 0, primitive double return)" do
+    expect(java.util.OptionalDouble.empty.orElseGet { 3.14 }).to eq 3.14
+  end
+
+  it "IntUnaryOperator via IntStream#map (int -> int)" do
+    ints = [1, 2, 3].to_java(:int)
+    result = java.util.stream.IntStream.of(ints).map { |i| i * 10 }.toArray.to_a
+    expect(result).to eq [10, 20, 30]
+  end
+
+  it "IntPredicate via IntStream#filter (int -> boolean)" do
+    ints = [1, 2, 3, 4].to_java(:int)
+    result = java.util.stream.IntStream.of(ints).filter { |i| i.even? }.toArray.to_a
+    expect(result).to eq [2, 4]
+  end
+
+  it "IntFunction via IntStream#mapToObj (int -> reference)" do
+    ints = [1, 2, 3].to_java(:int)
+    result = java.util.stream.IntStream.of(ints).mapToObj { |i| "n=#{i}" }.toArray.to_a
+    expect(result).to eq ['n=1', 'n=2', 'n=3']
+  end
+
+  it "IntToLongFunction via IntStream#mapToLong (int -> long)" do
+    ints = [1, 2].to_java(:int)
+    result = java.util.stream.IntStream.of(ints).mapToLong { |i| i * (1 << 32) }.toArray.to_a
+    expect(result).to eq [1 * (1 << 32), 2 * (1 << 32)]
+  end
+
+  it "IntToDoubleFunction via IntStream#mapToDouble (int -> double)" do
+    ints = [2, 4].to_java(:int)
+    result = java.util.stream.IntStream.of(ints).mapToDouble { |i| i + 0.5 }.toArray.to_a
+    expect(result).to eq [2.5, 4.5]
+  end
+
+  it "LongUnaryOperator via LongStream#map (long -> long)" do
+    result = java.util.stream.LongStream.of([10, 20].to_java(:long)).map { |l| l + 1 }.toArray.to_a
+    expect(result).to eq [11, 21]
+  end
+
+  it "LongPredicate via LongStream#filter (long -> boolean)" do
+    result = java.util.stream.LongStream.of([1, 2, 3, 4].to_java(:long)).filter { |l| l > 2 }.toArray.to_a
+    expect(result).to eq [3, 4]
+  end
+
+  it "LongFunction via LongStream#mapToObj (long -> reference)" do
+    result = java.util.stream.LongStream.of([100, 200].to_java(:long)).mapToObj { |l| "L#{l}" }.toArray.to_a
+    expect(result).to eq ['L100', 'L200']
+  end
+
+  it "LongToIntFunction via LongStream#mapToInt (long -> int)" do
+    result = java.util.stream.LongStream.of([1000, 2000].to_java(:long)).mapToInt { |l| (l / 100).to_i }.toArray.to_a
+    expect(result).to eq [10, 20]
+  end
+
+  it "LongToDoubleFunction via LongStream#mapToDouble (long -> double)" do
+    result = java.util.stream.LongStream.of([3, 7].to_java(:long)).mapToDouble { |l| l / 2.0 }.toArray.to_a
+    expect(result).to eq [1.5, 3.5]
+  end
+
+  it "DoubleUnaryOperator via DoubleStream#map (double -> double)" do
+    result = java.util.stream.DoubleStream.of([1.5, 2.5].to_java(:double)).map { |d| d * 2 }.toArray.to_a
+    expect(result).to eq [3.0, 5.0]
+  end
+
+  it "DoublePredicate via DoubleStream#filter (double -> boolean)" do
+    result = java.util.stream.DoubleStream.of([0.5, 1.5, 2.5].to_java(:double)).filter { |d| d > 1.0 }.toArray.to_a
+    expect(result).to eq [1.5, 2.5]
+  end
+
+  it "DoubleFunction via DoubleStream#mapToObj (double -> reference)" do
+    result = java.util.stream.DoubleStream.of([1.5].to_java(:double)).mapToObj { |d| "d=#{d}" }.toArray.to_a
+    expect(result).to eq ['d=1.5']
+  end
+
+  it "DoubleToIntFunction via DoubleStream#mapToInt (double -> int)" do
+    result = java.util.stream.DoubleStream.of([3.7, 1.2].to_java(:double)).mapToInt { |d| d.floor }.toArray.to_a
+    expect(result).to eq [3, 1]
+  end
+
+  it "DoubleToLongFunction via DoubleStream#mapToLong (double -> long)" do
+    result = java.util.stream.DoubleStream.of([9.9].to_java(:double)).mapToLong { |d| d.floor }.toArray.to_a
+    expect(result).to eq [9]
+  end
+
+  it "ToIntFunction via Stream#mapToInt (reference -> int)" do
+    result = java.util.Arrays.stream(['ab', 'cdef'].to_java(:string)).mapToInt { |s| s.length }.toArray.to_a
+    expect(result).to eq [2, 4]
+  end
+
+  it "ToLongFunction via Stream#mapToLong (reference -> long)" do
+    result = java.util.Arrays.stream(['a', 'bb'].to_java(:string)).mapToLong { |s| s.length }.toArray.to_a
+    expect(result).to eq [1, 2]
+  end
+
+  it "ToDoubleFunction via Stream#mapToDouble (reference -> double)" do
+    result = java.util.Arrays.stream(['abc'].to_java(:string)).mapToDouble { |s| s.length * 1.0 }.toArray.to_a
+    expect(result).to eq [3.0]
+  end
+
+  it "LongBinaryOperator via LongStream#reduce (long,long -> long)" do
+    sum = java.util.stream.LongStream.of([1, 2, 3].to_java(:long)).reduce(0) { |a, b| a + b }
+    expect(sum).to eq 6
+  end
+
+  it "DoubleBinaryOperator via DoubleStream#reduce (double,double -> double)" do
+    sum = java.util.stream.DoubleStream.of([1.5, 2.5].to_java(:double)).reduce(0.0) { |a, b| a + b }
+    expect(sum).to eq 4.0
+  end
+
+  it "java.util.function.UnaryOperator<T> via List#replaceAll (arity 1, reference return)" do
+    list = java.util.ArrayList.new
+    ['a', 'b', 'c'].each { |s| list.add(s) }
+    list.replaceAll { |s| s.upcase }
+    expect(list.to_a).to eq ['A', 'B', 'C']
+  end
+
+  it "java.util.function.Supplier<T> via Optional#orElseGet (arity 0, reference return)" do
+    result = java.util.Optional.empty.orElseGet { 'default' }
+    expect(result).to eq 'default'
+    result2 = java.util.Optional.of('x').orElseGet { 'default' }
+    expect(result2).to eq 'x'
+  end
+
+  it "java.util.Comparator via List#sort (arity 2, primitive int return)" do
+    list = java.util.ArrayList.new
+    ['xx', 'a', 'bbb'].each { |s| list.add(s) }
+    list.sort { |a, b| a.length <=> b.length }
+    expect(list.to_a).to eq ['a', 'xx', 'bbb']
+  end
+
+  it "java.lang.Runnable via Optional#ifPresent — arity-0 Consumer with side-effect" do
+    ran = []
+    java.util.Optional.empty.ifPresent { |_| ran << :should_not_run }
+    java.util.Optional.of('x').ifPresent { |x| ran << x }
+    expect(ran).to eq ['x']
+  end
+
+  context "across method dispatch" do
+
+    it "static-method dispatch (StaticMethodInvoker)" do
+      expect(UsesSingleMethodInterface.callIt { 's0' }).to eq('s0')
+      expect(UsesSingleMethodInterface.callIt(nil) { 's1' }).to eq('s1')
+      expect(UsesSingleMethodInterface.callIt(nil, nil) { 's2' }).to eq('s2')
+      expect(UsesSingleMethodInterface.callIt(nil, nil, nil) { 's3' }).to eq('s3')
+      expect(UsesSingleMethodInterface.callIt(nil, nil, nil, nil) { 's4' }).to eq('s4')
+    end
+
+    it "instance-method dispatch (InstanceMethodInvoker)" do
+      receiver = UsesSingleMethodInterface.new
+      expect(receiver.callIt2 { 'i0' }).to eq('i0')
+      expect(receiver.callIt2(nil) { 'i1' }).to eq('i1')
+      expect(receiver.callIt2(nil, nil) { 'i2' }).to eq('i2')
+      expect(receiver.callIt2(nil, nil, nil) { 'i3' }).to eq('i3')
+      expect(receiver.callIt2(nil, nil, nil, nil) { 'i4' }).to eq('i4')
+    end
+
+    it "constructor dispatch (ConstructorInvoker)" do
+      expect(UsesSingleMethodInterface.new            { 'c0' }.result).to eq('c0')
+      expect(UsesSingleMethodInterface.new(nil)       { 'c1' }.result).to eq('c1')
+      expect(UsesSingleMethodInterface.new(nil, nil)  { 'c2' }.result).to eq('c2')
+      expect(UsesSingleMethodInterface.new(nil, nil, nil)      { 'c3' }.result).to eq('c3')
+      expect(UsesSingleMethodInterface.new(nil, nil, nil, nil) { 'c4' }.result).to eq('c4')
+    end
+
+  end
+end
+
 describe "A bean-like Java interface" do
   it "allows implementation with attr* methods" do
     myimpl1 = Class.new do

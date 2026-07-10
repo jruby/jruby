@@ -166,7 +166,13 @@ public class ThreadService extends ThreadLocal<SoftReference<ThreadContext>> {
         mainContext = null;
 
         // clear thread map
+        for (Map.Entry<Thread, RubyThread> entry : rubyThreadMap.entrySet()) {
+            entry.getValue().clearContext();
+        }
         rubyThreadMap.clear();
+
+        // remove the terminating thread's context
+        remove();
     }
 
     public void initMainThread() {

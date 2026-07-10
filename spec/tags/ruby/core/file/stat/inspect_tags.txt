@@ -1,1 +1,2 @@
 windows:File::Stat#inspect produces a nicely formatted description of a File::Stat object
+fails(FreeBSD:https://github.com/jruby/jruby/issues/9433):File::Stat#inspect produces a nicely formatted description of a File::Stat object

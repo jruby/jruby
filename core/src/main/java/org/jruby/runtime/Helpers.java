@@ -2613,6 +2613,11 @@ public class Helpers {
         Helpers.<RuntimeException>throwsUnchecked(e);
     }
 
+    public static <T> T throwExceptionT(final Throwable e) {
+        Helpers.<RuntimeException>throwsUnchecked(e);
+        return null; // not reached
+    }
+
     public static <T> T tryThrow(Callable<T> call) {
         try {
             return call.call();

@@ -504,10 +504,12 @@ public class BuildDynamicStringSite extends MutableCallSite {
         int firstStringCR = firstString.cr;
 
         // copy element bytes into a buffer initialSize wide, zeroing out the begin offset
-        byte[] bufferArray = Arrays.copyOfRange(firstStringByteList.unsafeBytes(), firstStringByteList.begin(), initialSize);
+        int firstSize = firstStringByteList.realSize();
+        byte[] bufferArray = new byte[firstSize + initialSize];
+        System.arraycopy(firstStringByteList.unsafeBytes(), firstStringByteList.begin(), bufferArray, 0, firstSize);
 
         // use element realSize for starting buffer realSize
-        ByteList bufferByteList = new ByteList(bufferArray, 0, firstStringByteList.realSize(), firstStringByteList.getEncoding(), false);
+        ByteList bufferByteList = new ByteList(bufferArray, 0, firstSize, firstStringByteList.getEncoding(), false);
 
         buffer = RubyString.newString(context.runtime, bufferByteList, firstStringCR);
         return buffer;
