@@ -31,9 +31,12 @@ import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.passes.CompilerPassListener;
 import org.jruby.ir.passes.CompilerPassScheduler;
 
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -98,6 +101,11 @@ public class IRManager {
     private IRBuilderFactory builderFactory;
     private AtomicLong callSiteCounter = new AtomicLong(1);
 
+    // Proc#refined cache: source closure -> its most recent refinements clone (see IRClosure#refinementsClone)
+    // Entries live for the runtime's lifetime; weak keys would never clear because the value reaches its key.
+    private final Map<IRClosure, IRClosure.RefinementsCache> refinementsCloneCache =
+            Collections.synchronizedMap(new IdentityHashMap<>());
+
     public IRManager(Ruby runtime, RubyInstanceConfig config) {
         this.runtime = runtime;
         this.config = config;
@@ -120,6 +128,10 @@ public class IRManager {
 
     public Ruby getRuntime() {
         return runtime;
+    }
+
+    Map<IRClosure, IRClosure.RefinementsCache> getRefinementsCloneCache() {
+        return refinementsCloneCache;
     }
 
     public Nil getNil() {

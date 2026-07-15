@@ -39,6 +39,8 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.ir.IRClosure;
+import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.java.codegen.BlockInterfaceGenerator;
 import org.jruby.javasupport.Java;
@@ -58,6 +60,7 @@ import org.jruby.runtime.marshal.DataType;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.castAsModule;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
@@ -416,6 +419,43 @@ public class RubyProc extends RubyObject implements DataType {
     @JRubyMethod(name = "to_proc")
     public RubyProc to_proc() {
     	return this;
+    }
+
+    /**
+     * Return a new Proc whose body runs with the given modules' refinements active; the receiver is unchanged
+     * and the captured environment is shared.  Heavy (it deep-copies the block's IR), so the result is cached.
+     */
+    @JRubyMethod(name = "refined", rest = true)
+    public IRubyObject refined(ThreadContext context, IRubyObject[] args) {
+        if (args.length == 0) throw argumentError(context, "wrong number of arguments (given 0, expected 1+)");
+
+        BlockBody body = block.getBody();
+        if (fromMethod || !(body instanceof IRBlockBody)) {
+            throw argumentError(context, "can't apply refinements to a Proc without a Ruby block");
+        }
+
+        // Chaining is not allowed: activate multiple modules by passing them all in a single call.
+        if (((IRBlockBody) body).getScope().isRefinementsClone()) {
+            throw argumentError(context, "can't apply refinements to a Proc that already has refinements");
+        }
+
+        RubyModule[] modules = new RubyModule[args.length];
+        for (int i = 0; i < args.length; i++) {
+            modules[i] = castAsModule(context, args[i]);
+        }
+
+        IRClosure refinedClosure = ((IRBlockBody) body).getScope().refinementsClone(context, modules);
+        // Share the captured environment (binding holds the dynamic scope); clone the binding wrapper only so that
+        // proc setup (file/line/dummy-scope) does not mutate the original proc's binding.
+        Binding newBinding = block.getBinding().clone();
+        // A block from compiled top-level code has a null frame method name; the clone always runs interpreted,
+        // so give it the interpreter's top-level name or building a backtrace through it would crash.
+        if (newBinding.getMethod() == null) newBinding.setMethod(Interpreter.ROOT);
+        Block newBlock = new Block(refinedClosure.getBlockBody(), newBinding, block.type);
+
+        // The real class, not the receiver's metaclass: the refined proc must not inherit the receiver's
+        // singleton state (as in CRuby).  Proc subclasses are still preserved.
+        return newProc(context.runtime, getMetaClass().getRealClass(), newBlock, type, file, line);
     }
 
     @JRubyMethod

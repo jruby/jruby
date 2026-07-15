@@ -10,6 +10,11 @@ public class IRMetaClassBody extends IRClassBody {
     }
 
     @Override
+    protected IRModuleBody cloneInstance(IRScope lexicalParent, StaticScope scope) {
+        return new IRMetaClassBody(getManager(), lexicalParent, getByteName(), getLine(), scope);
+    }
+
+    @Override
     public IRScopeType getScopeType() {
         return IRScopeType.METACLASS_BODY;
     }

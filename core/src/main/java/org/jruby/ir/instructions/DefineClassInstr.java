@@ -42,7 +42,7 @@ public class DefineClassInstr extends TwoOperandResultBaseInstr implements Fixed
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new DefineClassInstr(ii.getRenamedVariable(result), body,
+        return new DefineClassInstr(ii.getRenamedVariable(result), (IRClassBody) body.cloneForInlining(ii),
                 getContainer().cloneForInlining(ii), getSuperClass().cloneForInlining(ii));
     }
 

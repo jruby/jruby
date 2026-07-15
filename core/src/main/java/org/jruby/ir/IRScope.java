@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 import org.jruby.runtime.DynamicScope;
@@ -144,16 +145,20 @@ public abstract class IRScope implements ParseResult {
     private boolean needsCodeCoverage;
     private boolean usesEval;
 
-    // Used by cloning code for inlining
-    protected IRScope(IRScope s, IRScope lexicalParent) {
+    /**
+     * Copy constructor used by cloning code (inlining shares the source's StaticScope; Proc#refined cloning
+     * supplies a fresh one so a refinements overlay can be attached without mutating the original).
+     */
+    protected IRScope(IRScope s, IRScope lexicalParent, StaticScope staticScope) {
         this.lexicalParent = lexicalParent;
         this.manager = s.manager;
         this.lineNumber = s.lineNumber;
-        this.staticScope = s.staticScope;
+        this.staticScope = staticScope;
         this.nextClosureIndex = s.nextClosureIndex;
         this.interpreterContext = null;
         this.coverageMode = CoverageData.NONE;
         this.localVars = new HashMap<>(s.localVars);
+        this.ruby2Keywords = s.ruby2Keywords;
         this.scopeId = globalScopeCount.getAndIncrement();
 
         setupLexicalContainment();
@@ -213,6 +218,10 @@ public abstract class IRScope implements ParseResult {
 
     protected synchronized void addChildScope(IRScope scope) {
         lexicalChildren.add(scope);
+    }
+
+    protected synchronized void removeChildScope(IRScope scope) {
+        lexicalChildren.remove(scope);
     }
 
     public synchronized List<IRScope> getLexicalScopes() {
@@ -615,6 +624,30 @@ public abstract class IRScope implements ParseResult {
         if (RubyInstanceConfig.IR_COMPILER_DEBUG) LOG.info(interpreterContext.toString());
 
         return interpreterContext;
+    }
+
+    /**
+     * Shared body of the IRMethod/IRModuleBody Proc#refined clone: give the copy its own StaticScope reaching
+     * the enclosing clone's refinements overlay, flag it maybe-using-refinements, and re-create its instructions.
+     * The caller supplies the source InterpreterContext and a constructor for the empty copy.
+     */
+    protected <T extends IRScope> T cloneScopeForRefinements(IRScope lexicalParent, InterpreterContext sourceIC,
+                                                             BiFunction<IRScope, StaticScope, T> constructor) {
+        StaticScope refinementsScope = getStaticScope().duplicate();
+        refinementsScope.setEnclosingScope(lexicalParent.getStaticScope());
+
+        T clone = constructor.apply(lexicalParent, refinementsScope);
+        refinementsScope.setIRScope(clone);
+        clone.setIsMaybeUsingRefinements();
+
+        SimpleCloneInfo clonedII = new SimpleCloneInfo(clone, false, false, true);
+        List<Instr> newInstrs = new ArrayList<>(sourceIC.getInstructions().length);
+        for (Instr i : sourceIC.getInstructions()) {
+            newInstrs.add(i.clone(clonedII));
+        }
+        clone.allocateInterpreterContext(newInstrs, sourceIC.getTemporaryVariableCount(), sourceIC.getFlags());
+
+        return clone;
     }
 
     private Instr[] cloneInstrs() {

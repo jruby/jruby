@@ -1134,6 +1134,9 @@ public class RubyModule extends RubyObject {
         if (context.getCurrentStaticScope().isWithinMethod()) {
             throw runtimeError(context, "Module#using is not permitted in methods");
         }
+        if (context.getCurrentStaticScope().isWithinRefinementsProc()) {
+            throw runtimeError(context, "Module#using is not permitted in a proc with refinements");
+        }
 
         // I pass the cref even though I don't need to so that the concept is simpler to read
         StaticScope staticScope = context.getCurrentStaticScope();
@@ -1164,7 +1167,12 @@ public class RubyModule extends RubyObject {
         RefinementStore refinementStore = module.refinementStore;
         if (refinementStore == null) return; // No refinements registered for this module
 
-        Map<RubyModule, RubyModule> refinements = refinementStore.refinements;
+        // Snapshot under the map's own lock: Proc#refined activates refinements from arbitrary threads
+        // while Module#refine on another thread may be mutating this map.
+        Map<RubyModule, RubyModule> refinements;
+        synchronized (refinementStore.refinements) {
+            refinements = new IdentityHashMap<>(refinementStore.refinements);
+        }
         for (Map.Entry<RubyModule, RubyModule> entry: refinements.entrySet()) {
             usingRefinement(context, cref, entry.getKey(), entry.getValue());
         }
@@ -2938,9 +2946,21 @@ public class RubyModule extends RubyObject {
         return context.getCurrentFrame().getSelf() == this ? context.getCurrentVisibility() : PUBLIC;
     }
 
+    private static void checkNotRefinementsProc(ThreadContext context, Block block) {
+        // A method defined from a Proc#refined proc would silently drop its refinements (a method is invoked
+        // against its method entry, not the proc's refinement scope), so reject it.
+        if (block.getBody() instanceof IRBlockBody body) {
+            IRClosure closure = body.getScope();
+            if (closure != null && closure.isRefinementsClone()) {
+                throw argumentError(context, "can't define a method from a Proc with refinements");
+            }
+        }
+    }
+
     public IRubyObject defineMethodFromBlock(ThreadContext context, IRubyObject arg0, Block block, Visibility visibility) {
         RubySymbol name = checkID(context, arg0);
         if (!block.isGiven()) throw argumentError(context, "tried to create Proc object without a block");
+        checkNotRefinementsProc(context, block);
 
         if ("initialize".equals(name.idString())) visibility = PRIVATE;
 
@@ -2984,6 +3004,7 @@ public class RubyModule extends RubyObject {
         if (context.runtime.getProc().isInstance(arg1)) {
             // double-testing args.length here, but it avoids duplicating the proc-setup code in two places
             RubyProc proc = (RubyProc)arg1;
+            checkNotRefinementsProc(context, proc.getBlock());
 
             newMethod = createProcMethod(context.runtime, name.idString(), visibility, proc.getBlock());
         } else if (arg1 instanceof AbstractRubyMethod) {

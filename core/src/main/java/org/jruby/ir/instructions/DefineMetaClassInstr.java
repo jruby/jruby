@@ -53,7 +53,8 @@ public class DefineMetaClassInstr extends OneOperandResultBaseInstr implements F
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new DefineMetaClassInstr(ii.getRenamedVariable(result), getObject().cloneForInlining(ii), metaClassBody);
+        return new DefineMetaClassInstr(ii.getRenamedVariable(result), getObject().cloneForInlining(ii),
+                metaClassBody.cloneForInlining(ii));
     }
 
     @Override

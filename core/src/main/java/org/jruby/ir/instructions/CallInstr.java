@@ -27,7 +27,14 @@ public class CallInstr extends CallBase implements ResultInstr {
 
     public static CallInstr create(IRScope scope, CallType callType, Variable result, RubySymbol name, Operand receiver,
                                    Operand[] args, Operand closure, int flags) {
-        boolean isPotentiallyRefined = scope.maybeUsingRefinements();
+        return create(scope, callType, result, name, receiver, args, closure, flags, false);
+    }
+
+    // clone() passes the source instruction's flag so a refined call stays refined even
+    // when it is cloned into a scope without the refinement flag.
+    private static CallInstr create(IRScope scope, CallType callType, Variable result, RubySymbol name, Operand receiver,
+                                    Operand[] args, Operand closure, int flags, boolean potentiallyRefined) {
+        boolean isPotentiallyRefined = potentiallyRefined || scope.maybeUsingRefinements();
 
         if (!containsArgSplat(args)) {
             boolean hasClosure = closure != NullBlock.INSTANCE;
@@ -121,9 +128,11 @@ public class CallInstr extends CallBase implements ResultInstr {
         return NoResultCallInstr.create(getCallType(), getName(), getReceiver(), getCallArgs(), getClosureArg(), isPotentiallyRefined());
     }*/
 
+    // Shared by the specialized subclasses: create() re-picks the specialization from the cloned operand
+    // shapes and the effective refinement flag, so a refinements clone drops the fixnum/float fast paths.
     @Override
     public Instr clone(CloneInfo ii) {
-        return new CallInstr(ii.getScope(), getOperation(), getCallType(), ii.getRenamedVariable(result), getName(),
+        return create(ii.getScope(), getCallType(), ii.getRenamedVariable(result), getName(),
                 getReceiver().cloneForInlining(ii), cloneCallArgs(ii),
                 getClosureArg().cloneForInlining(ii),
                 getFlags(), isPotentiallyRefined()

@@ -10,6 +10,11 @@ public class IRClassBody extends IRModuleBody {
     }
 
     @Override
+    protected IRModuleBody cloneInstance(IRScope lexicalParent, StaticScope scope) {
+        return new IRClassBody(getManager(), lexicalParent, getByteName(), getLine(), scope, executesOnce());
+    }
+
+    @Override
     public IRScopeType getScopeType() {
         return IRScopeType.CLASS_BODY;
     }

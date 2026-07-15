@@ -45,6 +45,11 @@ public class ArrayDerefInstr extends OneOperandArgNoBlockCallInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
+        // The optimized aref path bypasses refinements (dispatches through CachingCallSite.isBuiltin), so a
+        // clone into a refined scope falls back to a generic refined call, like the fixnum/float fast paths.
+        if (isPotentiallyRefined() || ii.getScope().maybeUsingRefinements()) {
+            return super.clone(ii);
+        }
         return new ArrayDerefInstr(ii.getScope(), (Variable) getResult().cloneForInlining(ii),
                 getReceiver().cloneForInlining(ii), key, getFlags());
     }

@@ -38,7 +38,7 @@ public class DefineClassMethodInstr extends OneOperandInstr implements FixedArit
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new DefineClassMethodInstr(getContainer().cloneForInlining(ii), method);
+        return new DefineClassMethodInstr(getContainer().cloneForInlining(ii), method.cloneForInlining(ii));
     }
 
     @Override

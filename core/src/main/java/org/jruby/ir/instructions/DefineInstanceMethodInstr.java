@@ -40,7 +40,7 @@ public class DefineInstanceMethodInstr extends NoOperandInstr implements FixedAr
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new DefineInstanceMethodInstr(method);
+        return new DefineInstanceMethodInstr(method.cloneForInlining(ii));
     }
 
     @Override

@@ -56,6 +56,7 @@ import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.LocalVarNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.VCallNode;
+import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
@@ -868,6 +869,21 @@ public class StaticScope implements Serializable, Cloneable {
     public boolean isWithinMethod() {
         for (StaticScope current = this; current != null; current = current.getEnclosingScope()) {
             if (current.getScopeType().isMethod()) return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Determine if we are lexically within the body of a Proc#refined proc (its refinements clone tree).
+     * `using` is rejected there: it would diverge the refinement set shared by the memoized clone.  Walk the
+     * enclosing-scope chain, since nested bodies/blocks/evals reach the clone through it.
+     * @return true if so
+     */
+    public boolean isWithinRefinementsProc() {
+        for (StaticScope current = this; current != null; current = current.getEnclosingScope()) {
+            IRScope irScope = current.getIRScope();
+            if (irScope instanceof IRClosure && ((IRClosure) irScope).isInRefinementsCloneTree()) return true;
         }
 
         return false;

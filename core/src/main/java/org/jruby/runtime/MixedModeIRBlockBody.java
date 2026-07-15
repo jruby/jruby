@@ -179,6 +179,13 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
                 ensureInstrsReady();
                 closure.getNearestTopLocalVariableScope().prepareForCompilation();
 
+                // A Proc#refined clone is grafted under an already-built enclosing scope, so the recursive
+                // prepareForCompilation above can short-circuit before reaching it.  Build the closure's own full IR
+                // directly in that case so the refinement-aware clone can still be JIT-compiled.
+                if (closure.getFullInterpreterContext() == null) {
+                    closure.prepareForCompilation();
+                }
+
                 FullInterpreterContext fic = closure.getFullInterpreterContext();
 
                 if (fic == null || !fic.hasExplicitCallProtocol()) {
