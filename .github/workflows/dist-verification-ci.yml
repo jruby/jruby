@@ -31,7 +31,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v6
       - name: set up java 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95
         with:
           distribution: 'temurin'
           java-version: 21
@@ -83,7 +83,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v6
       - name: set up java 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95
         with:
           distribution: 'temurin'
           java-version: 21
@@ -138,7 +138,7 @@ jobs:
         with:
           path: jruby-src
       - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95
         with:
           distribution: 'temurin'
           java-version: ${{ matrix.java-version }}
@@ -173,7 +173,7 @@ jobs:
 
     steps:
       - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95
         with:
           distribution: 'temurin'
           java-version: ${{ matrix.java-version }}
@@ -205,7 +205,7 @@ jobs:
 
     steps:
       - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95
         with:
           distribution: 'temurin'
           java-version: ${{ matrix.java-version }}
@@ -232,7 +232,7 @@ jobs:
 
     steps:
       - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95
         with:
           distribution: 'temurin'
           java-version: ${{ matrix.java-version }}
@@ -269,7 +269,7 @@ jobs:
 
     steps:
       - name: set up java (x64, ${{ matrix.java-version }})
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95
         with:
           architecture: x64
           distribution: 'temurin'
@@ -285,7 +285,7 @@ jobs:
         run: installed_jruby\bin\jruby -e "puts 'hello'"
 
 #      - name: set up java (x86, ${{ matrix.java-version }})
-#        uses: actions/setup-java@v5
+#        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95
 #        with:
 #          architecture: x86
 #          distribution: 'temurin'

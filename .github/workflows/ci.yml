@@ -27,7 +27,7 @@ jobs:
       - name: remove default java except 21
         run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
       - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
@@ -54,7 +54,7 @@ jobs:
       - name: remove old java installs
         run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
       - name: set up java 26
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95
         with:
           distribution: 'zulu'
           java-version: 26
@@ -82,7 +82,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v6
       - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
@@ -105,7 +105,7 @@ jobs:
       - name: remove default java except 21
         run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
       - name: set up java 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95
         with:
           distribution: 'zulu'
           java-version: 21
@@ -131,7 +131,7 @@ jobs:
       - name: remove default java except 21
         run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
       - name: set up java 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95
         with:
           distribution: 'temurin'
           java-version: 21
@@ -163,7 +163,7 @@ jobs:
       - name: remove default java except 21
         run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
       - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
@@ -192,7 +192,7 @@ jobs:
       - name: remove default java except 21
         run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
       - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95
         with:
           distribution: 'zulu'
           java-version: ${{ matrix.java-version }}
@@ -224,7 +224,7 @@ jobs:
       - name: remove default java except 21
         run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
       - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95
         with:
           distribution: temurin
           java-version: ${{ matrix.java-version }}
@@ -250,7 +250,7 @@ jobs:
       - name: remove default java except 21
         run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
       - name: set up java 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95
         with:
           distribution: 'zulu'
           java-version: 21
@@ -275,7 +275,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v6
       - name: set up java 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95
         with:
           distribution: 'zulu'
           java-version: 21
@@ -332,7 +332,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v6
       - name: set up java 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95
         with:
           distribution: 'zulu'
           java-version: 21
@@ -361,7 +361,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v6
       - name: set up java 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95
         with:
           distribution: 'zulu'
           java-version: 21
@@ -391,7 +391,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v3
       - name: set up java 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95
         with:
           distribution: 'zulu'
           java-version: 21
@@ -424,7 +424,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v3
       - name: set up java 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95
         with:
           distribution: 'zulu'
           java-version: 21
@@ -454,7 +454,7 @@ jobs:
       - name: remove default java except 21
         run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
       - name: set up java 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95
         with:
           distribution: 'zulu'
           java-version: '21'
@@ -474,7 +474,7 @@ jobs:
       - name: remove default java except 21
         run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
       - name: set up java 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95
         with:
           distribution: 'zulu'
           java-version: 21
@@ -515,7 +515,7 @@ jobs:
       - name: remove default java except 21
         run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
       - name: set up java 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95
         with:
           distribution: 'temurin'
           java-version: 21
@@ -536,7 +536,7 @@ jobs:
       - name: remove default java except 21
         run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
       - name: set up java 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95
         with:
           distribution: 'temurin'
           java-version: 21
@@ -564,7 +564,7 @@ jobs:
 #      - name: checkout
 #        uses: actions/checkout@v6
 #      - name: set up java ${{ matrix.java-version }}
-#        uses: actions/setup-java@v5
+#        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95
 #        with:
 #          distribution: 'zulu'
 #          java-version: ${{ matrix.java-version }}
@@ -593,7 +593,7 @@ jobs:
 #        with:
 #          java-version: 21
 #      - name: set up java ${{ matrix.java-version }}
-#        uses: actions/setup-java@v5
+#        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95
 #        with:
 #          distribution: 'zulu'
 #          java-version: ${{ matrix.java-version }}
@@ -614,7 +614,7 @@ jobs:
       - name: remove default java except 21
         run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
       - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95
         with:
           distribution: 'semeru'
           java-version: '21'
