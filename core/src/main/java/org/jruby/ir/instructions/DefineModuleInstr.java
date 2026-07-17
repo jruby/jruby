@@ -43,7 +43,8 @@ public class DefineModuleInstr extends OneOperandResultBaseInstr implements Fixe
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new DefineModuleInstr(ii.getRenamedVariable(result), getContainer().cloneForInlining(ii), body);
+        return new DefineModuleInstr(ii.getRenamedVariable(result), getContainer().cloneForInlining(ii),
+                body.cloneForInlining(ii));
     }
 
     @Override

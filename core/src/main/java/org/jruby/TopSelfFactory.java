@@ -117,6 +117,9 @@ public final class TopSelfFactory {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
                 Arity.checkArgumentCount(context, args, 1, 1);
+                if (context.getCurrentStaticScope().isWithinRefinementsProc()) {
+                    throw context.runtime.newRuntimeError("main.using is not permitted in a proc with refinements");
+                }
                 RubyModule cref = context.getCurrentStaticScope().getOverlayModuleForWrite(context);
                 // unclear what the equivalent check would be for us
 //                rb_control_frame_t * prev_cfp = previous_frame(GET_THREAD());

@@ -4,11 +4,9 @@ import org.jruby.RubySymbol;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.CallInstr;
-import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
-import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -22,14 +20,6 @@ public class OneOperandArgBlockCallInstr extends CallInstr {
                                        Operand receiver, Operand[] args, Operand closure, int flags,
                                        boolean isPotentiallyRefined) {
         super(scope, Operation.CALL_1OB, callType, result, name, receiver, args, closure, flags, isPotentiallyRefined);
-    }
-
-    @Override
-    public Instr clone(CloneInfo ii) {
-        return new OneOperandArgBlockCallInstr(ii.getScope(), getCallType(), ii.getRenamedVariable(result), getName(),
-                getReceiver().cloneForInlining(ii), cloneCallArgs(ii),
-                getClosureArg().cloneForInlining(ii), getFlags(), isPotentiallyRefined()
-        );
     }
 
     @Override

@@ -40,6 +40,7 @@ import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.representations.BasicBlock;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.CallType;
@@ -78,6 +79,23 @@ public class IRMethod extends IRScope {
     @Override
     public boolean hasBeenBuilt() {
         return defNode == null;
+    }
+
+    /**
+     * Deep-copy this method for a Proc#refined clone: a {@code def} inside a refined proc must capture that
+     * proc's refinements (like a {@code def} inside a {@code using} scope), so the defined method keeps
+     * resolving the refined methods.  For ordinary inlining the shared original is returned unchanged.
+     */
+    public IRMethod cloneForInlining(CloneInfo ii) {
+        if (!ii.isRefinementsClone()) return this;
+
+        // Cloning copies already-built instructions, so make sure ours are built first.
+        return cloneScopeForRefinements(ii.getScope(), lazilyAcquireInterpreterContext(), (parent, scope) -> {
+            IRMethod clone = new IRMethod(getManager(), parent, null, getByteName(), isInstanceMethod, getLine(),
+                    scope, getCoverageMode());
+            clone.setArgumentDescriptors(getArgumentDescriptors());
+            return clone;
+        });
     }
 
     public MethodData getMethodData() {

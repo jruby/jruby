@@ -1,5 +1,6 @@
 package org.jruby.ir;
 
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.util.ByteList;
 
@@ -15,6 +16,23 @@ public class IRModuleBody extends IRScope {
         if (staticScope != null) {
             staticScope.setIRScope(this);
         }
+    }
+
+    /**
+     * Deep-copy this module/class body for a Proc#refined clone: a {@code class}/{@code module} (re)opened
+     * inside a refined proc must see that proc's refinements, in the body and in any {@code def} it contains.
+     * For ordinary inlining the shared original is returned unchanged.
+     */
+    public IRModuleBody cloneForInlining(CloneInfo ii) {
+        if (!ii.isRefinementsClone()) return this;
+
+        // Class/module bodies are built eagerly when their enclosing scope is built, so the IC is available here.
+        return cloneScopeForRefinements(ii.getScope(), builtInterpreterContext(), this::cloneInstance);
+    }
+
+    /** Construct an empty copy of this body of the correct concrete type for a refinements clone. */
+    protected IRModuleBody cloneInstance(IRScope lexicalParent, StaticScope scope) {
+        return new IRModuleBody(getManager(), lexicalParent, getByteName(), getLine(), scope, executesOnce);
     }
 
     @Override

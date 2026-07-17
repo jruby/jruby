@@ -5,6 +5,7 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
+import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.runtime.ThreadContext;
 
 /**
@@ -29,6 +30,15 @@ public class SymbolProc extends ImmutableLiteral {
     @Override
     public Object createCacheObject(ThreadContext context) {
         return IRRuntimeHelpers.newSymbolProc(context, getName());
+    }
+
+    @Override
+    public Operand cloneForInlining(CloneInfo ii) {
+        // A baked &:sym caches a *non-refined* symbol proc, so it would ignore the refinements activated on a
+        // Proc#refined clone.
+        if (ii.isRefinementsClone()) return new Symbol(name);
+
+        return this;
     }
 
     @Override
