@@ -46,6 +46,13 @@ namespace :spec do
           :spec_target => ":fast"
   end
 
+  desc "Run fast specs that do not spawn many subprocesses"
+  task :'ruby:fast:int' do
+    mspec :compile_mode => "OFF",
+          :format => MSPEC_FORMAT,
+          :spec_target => ":fast"
+  end
+
   desc "Run slow specs"
   task :'ruby:slow' do
     mspec :compile_mode => "OFF",
