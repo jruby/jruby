@@ -38,7 +38,6 @@ import java.util.List;
 import junit.framework.TestCase;
 
 import org.jruby.Ruby;
-import org.jruby.RubyString;
 import org.jruby.api.Create;
 import org.jruby.runtime.ObjectSpace;
 import org.jruby.runtime.ThreadContext;
@@ -46,7 +45,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import static org.jruby.api.Access.arrayClass;
 import static org.jruby.api.Access.stringClass;
-import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
 
 /**
@@ -65,23 +63,6 @@ public class TestObjectSpace extends TestCase {
         super.setUp();
         context = Ruby.newInstance().getCurrentContext();
         target = new ObjectSpace();
-    }
-
-    public void testIdentities() {
-        RubyString o1 = newString(context, "hey");
-        RubyString o2 = newString(context, "ho");
-
-        long id1 = target.createAndRegisterObjectId(o1);
-        long id2 = target.createAndRegisterObjectId(o2);
-
-        assertEquals("id of normal objects must be even", 0, id1 % 2);
-        assertEquals("id of normal objects must be even", 0, id2 % 2);
-        assertTrue("normal ids must be bigger than reserved values", id1 > 4);
-        assertTrue("normal ids must be bigger than reserved values", id2 > 4);
-        
-        assertSame(o1, target.id2ref(id1));
-        assertSame(o2, target.id2ref(id2));
-        assertNull(target.id2ref(4711));
     }
 
     public void testObjectSpace() {

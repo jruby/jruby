@@ -47,7 +47,6 @@ import org.jruby.RubyModule;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.JavaPackage;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.WeakIdentityHashMap;
 
 /**
  * FIXME: This version is faster than the previous, but both suffer from a
@@ -64,7 +63,6 @@ public class ObjectSpace {
 
     private final ReferenceQueue deadIdentityReferences = new ReferenceQueue();
     private final Map<Long, IdReference> identities = new HashMap<>(64);
-    private final Map<IRubyObject, Long> identitiesByObject = new WeakIdentityHashMap(64);
     private static final AtomicLong maxId = new AtomicLong(1000);
     private final ThreadLocal<Reference<ObjectGroup>> currentObjectGroup = new ThreadLocal<>();
     private Reference<GroupSweeper> groupSweeperReference;
@@ -73,29 +71,12 @@ public class ObjectSpace {
         synchronized (identities) {
             cleanIdentities();
             identities.put(id, new IdReference(object, id, deadIdentityReferences));
-            identitiesByObject.put(object, id);
         }
     }
 
-    public static long calculateObjectId(Object object) {
+    public static long calculateObjectId() {
         // Fixnums get all the 0b01 id's, flonums get the 0b10 id's, so we use next ID * 4
         return maxId.getAndIncrement() * 4;
-    }
-
-    public long createAndRegisterObjectId(IRubyObject rubyObject) {
-        synchronized (identities) {
-            Long longId = identitiesByObject.get(rubyObject);
-            if (longId == null) {
-                longId = createId(rubyObject);
-            }
-            return longId.longValue();
-        }
-    }
-
-    private long createId(IRubyObject object) {
-        long id = calculateObjectId(object);
-        registerObjectId(id, object);
-        return id;
     }
 
     public IRubyObject id2ref(long id) {
