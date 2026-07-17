@@ -117,3 +117,4 @@ jruby/test_load_compiled_ruby
 jruby/test_load_compiled_ruby_class_from_classpath
 
 jruby/test_date_parse_limit
+jruby/test_jruby_vm
