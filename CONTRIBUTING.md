@@ -77,7 +77,7 @@ Running the "core" subset of the CRuby test suite:
 ```text
 $ rake test:mri:core # run tests with lazy JIT
 $ rake test:mri:core:int # run tests with interpreter only
-$ rake test:mri:core # run tests with forced JIT
+$ rake test:mri:core:jit # run tests with forced JIT
 ```
 
 ## Submitting a Pull Request
