@@ -41,8 +41,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
 
-import org.jruby.Ruby;
-import org.jruby.java.util.ClassUtils;
 import org.jruby.runtime.ThreadContext;
 
 public class JavaConstructor extends JavaCallable {
@@ -56,22 +54,9 @@ public class JavaConstructor extends JavaCallable {
         this.constructor = constructor;
     }
 
-    @Deprecated(since = "9.4.0.0")
-    public static JavaConstructor create(Ruby runtime, Constructor<?> constructor) {
-        return new JavaConstructor(constructor);
-    }
 
     public static JavaConstructor wrap(Constructor<?> constructor) {
         return new JavaConstructor(constructor);
-    }
-
-    public static JavaConstructor getMatchingConstructor(final Ruby runtime,
-        final Class<?> javaClass, final Class<?>[] argumentTypes) {
-        Constructor c = ClassUtils.getMatchingConstructor(javaClass, argumentTypes);
-
-        if (c == null) return null;
-
-        return wrap(c);
     }
 
     @Override

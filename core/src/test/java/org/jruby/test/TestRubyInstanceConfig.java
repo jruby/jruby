@@ -31,6 +31,7 @@ package org.jruby.test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
@@ -39,6 +40,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.load.LoadService;
+import org.objectweb.asm.Opcodes;
 
 import static org.jruby.api.Access.loadService;
 
@@ -142,5 +144,28 @@ public class TestRubyInstanceConfig extends Base {
       if (osName.contains("mac")) return "/dev/fd/0";
 
       return "/dev/stdin";
+    }
+
+    public void testBytecodeVersion() throws Exception {
+        assertEquals("it uses Opcodes.V21 for '21'", Opcodes.V21, RubyInstanceConfig.calculateBytecodeVersion("21"));
+        assertEquals("it uses Opcodes.V23 for '23'", Opcodes.V23, RubyInstanceConfig.calculateBytecodeVersion("23"));
+
+        PrintStream err = System.err;
+        String specVersion = System.getProperty("java.specification.version");
+
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); PrintStream ps = new PrintStream(baos)) {
+            System.setProperty( "java.specification.version", "22");
+            assertEquals("it falls back on java.specification.version for unsupported versions", Opcodes.V22, RubyInstanceConfig.calculateBytecodeVersion("999"));
+            assertEquals("it falls back on java.specification.version for unsupported versions", Opcodes.V22, RubyInstanceConfig.calculateBytecodeVersion("1.7"));
+            assertEquals("it falls back on java.specification.version for unsupported versions", Opcodes.V22, RubyInstanceConfig.calculateBytecodeVersion("gobbledygook"));
+
+            System.setErr(ps);
+            System.setProperty( "java.specification.version", "gobbledygook");
+            assertEquals("it falls back on 21 when given version and system version are both unsupported", Opcodes.V21, RubyInstanceConfig.calculateBytecodeVersion("jabberwocky"));
+            assertEquals("it outputs a warning when given version and system version are both unsupported", "unsupported Java version jabberwocky and default version gobbledygook, using 21", new String(baos.toByteArray()).replaceAll("[\\n\\r]", ""));
+        } finally {
+            System.setErr(err);
+            System.setProperty("java.specification.version", specVersion);
+        }
     }
 }

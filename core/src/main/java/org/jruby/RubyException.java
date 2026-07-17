@@ -132,6 +132,10 @@ public class RubyException extends RubyObject {
         this.setMessage(message == null ? runtime.getNil() : runtime.newString(message));
     }
 
+    public static void raise(ThreadContext context, IRubyObject exception) {
+        RubyKernel.raiseInternal(context, exception, RubyKernel.lastErrorCause(context));
+    }
+
     @JRubyMethod(name = "exception", rest = true, meta = true)
     public static IRubyObject exception(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         return ((RubyClass) recv).newInstance(context, args, block);
