@@ -133,47 +133,6 @@ public class RubyObjectSpace {
         return recv;
     }
 
-    @Deprecated(since = "10.0.0.0")
-    public static IRubyObject id2ref(IRubyObject recv, IRubyObject id) {
-        return id2ref(((RubyBasicObject) recv).getCurrentContext(), recv, id);
-    }
-
-    @Deprecated(since = "10.1.0.0")
-    @JRubyMethod(name = "_id2ref", module = true, visibility = PRIVATE)
-    public static IRubyObject id2ref(ThreadContext context, IRubyObject recv, IRubyObject id) {
-        Warn.warnDeprecated(context, "ObjectSpace._id2ref is deprecated");
-
-        long longId = castAsFixnum(context, id).getValue();
-        if (longId == 0) return context.fals;
-        if (longId == 20) return context.tru;
-        if (longId == 8) return context.nil;
-        if ((longId & 0b01) == 0b01) return asFixnum(context, (longId - 1) / 2);  // fixnum
-        if ((longId & 0b11) == 0b10) {
-            // flonum
-            double d = 0.0;
-            if (longId != 0x8000000000000002L) {
-                long b63 = (longId >>> 63);
-                /* e: xx1... -> 011... */
-                /*    xx0... -> 100... */
-                /*      ^b63           */
-                long longBits = Numeric.rotr((2 - b63) | (longId & ~0x03), 3);
-                d = Double.longBitsToDouble(longBits);
-            }
-            return asFloat(context, d);
-        } else {
-            if (context.runtime.isObjectSpaceEnabled()) {
-                IRubyObject object = context.runtime.getObjectSpace().id2ref(longId);
-                if (object == null) {
-                    return context.nil;
-                }
-                return object;
-            } else {
-                warn(context, "ObjectSpace is disabled; _id2ref only supports immediates, pass -X+O to enable");
-                throw rangeError(context, String.format("0x%016x is not id value", longId));
-            }
-        }
-    }
-
     public static IRubyObject each_objectInternal(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
         final Ruby runtime = context.runtime;
         final RubyModule rubyClass;

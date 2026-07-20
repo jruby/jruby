@@ -32,13 +32,11 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Function;
 
-import org.jruby.Ruby;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.java.codegen.Reified;
@@ -575,14 +573,7 @@ public class VariableTableManager {
      * @return The generated object ID
      */
     private long initObjectId(RubyBasicObject self, VariableAccessor objectIdAccessor) {
-        Ruby runtime = self.getRuntime();
-        long id;
-
-        if (runtime.isObjectSpaceEnabled()) {
-            id = runtime.getObjectSpace().createAndRegisterObjectId(self);
-        } else {
-            id = ObjectSpace.calculateObjectId(self);
-        }
+        long id = ObjectSpace.calculateObjectId();
 
         // we use a direct path here to avoid frozen checks
         setObjectId(realClass, self, objectIdAccessor.getIndex(), id);
