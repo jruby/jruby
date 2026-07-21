@@ -1628,7 +1628,7 @@ public final class Ruby implements Constantizable {
         ifAllowed("Interrupt",              (ruby) -> interrupt = RubyInterrupt.define(context, signalException));
         ifAllowed("TypeError",              (ruby) -> typeError = RubyTypeError.define(context, standardError));
         ifAllowed("NoMatchingPatternError", (ruby) -> noMatchingPatternError = RubyNoMatchingPatternError.define(context, standardError));
-        ifAllowed("NoMatchingPatternKeyError", (ruby) -> noMatchingPatternKeyError = RubyNoMatchingPatternKeyError.define(context, standardError));
+        ifAllowed("NoMatchingPatternKeyError", (ruby) -> noMatchingPatternKeyError = RubyNoMatchingPatternKeyError.define(context, noMatchingPatternError));
         ifAllowed("ArgumentError",          (ruby) -> argumentError = RubyArgumentError.define(context, standardError));
         ifAllowed("UncaughtThrowError",     (ruby) -> uncaughtThrowError = RubyUncaughtThrowError.define(context, argumentError));
         ifAllowed("IndexError",             (ruby) -> indexError = RubyIndexError.define(context, standardError));
