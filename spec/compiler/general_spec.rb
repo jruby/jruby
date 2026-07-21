@@ -1593,5 +1593,17 @@ modes.each do |mode|
         proxy.apply(1)
       RUBY
     end
+
+    # See https://github.com/jruby/jruby/issues/9531
+    it "propagates keywords through multi-dispatch Class#new + #initialize" do
+      looped = 3.times.map { Time.new("2023-05-08 10:21:21", in: "UTC")}
+      nonlooped = [
+        Time.new("2023-05-08 10:21:21", in: "UTC"),
+        Time.new("2023-05-08 10:21:21", in: "UTC"),
+        Time.new("2023-05-08 10:21:21", in: "UTC")
+      ]
+
+      expect(looped).to eq nonlooped
+    end
   end
 end
