@@ -456,7 +456,7 @@ public class RubyProc extends RubyObject implements DataType {
         return context.nil;
     }
 
-    @JRubyMethod
+    @JRubyMethod(keywords = true)
     public IRubyObject parameters(ThreadContext context) {
         return parametersCommon(context, isLambda());
     }

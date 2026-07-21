@@ -4214,7 +4214,8 @@ public class RubyModule extends RubyObject {
     // Just relying on annotations will give us: got n expected 0..3 when we want got n expected 1..3.
     @JRubyMethod(name = {"module_eval", "class_eval"}, rest = true,
             reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            keywords = true)
     public IRubyObject module_eval(ThreadContext context, IRubyObject[] args, Block block) {
         switch(args.length) {
             case 0: return module_eval(context, block);
