@@ -1086,12 +1086,12 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return this;
     }
 
-    @JRubyMethod(name = "initialize", visibility = PRIVATE)
+    @JRubyMethod(name = "initialize", visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject fileNumber, Block unused) {
         return initializeCommon(context, toInt(context, fileNumber), null, context.nil);
     }
 
-    @JRubyMethod(name = "initialize", visibility = PRIVATE)
+    @JRubyMethod(name = "initialize", visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject fileNumber, IRubyObject second, Block unused) {
         int fileno = toInt(context, fileNumber);
         IRubyObject vmode = null;
@@ -2676,7 +2676,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
      */
 
     // rb_io_gets_m
-    @JRubyMethod(name = "gets", writes = LASTLINE)
+    @JRubyMethod(name = "gets", writes = LASTLINE, keywords = true)
     public IRubyObject gets(ThreadContext context) {
         return Getline.getlineCall(context, GETLINE, this, getReadEncoding(context));
     }
@@ -3123,7 +3123,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     /** Read a line.
      *
      */
-    @JRubyMethod(name = "readline", writes = LASTLINE)
+    @JRubyMethod(name = "readline", writes = LASTLINE, keywords = true)
     public IRubyObject readline(ThreadContext context) {
         IRubyObject line = gets(context);
 
@@ -3896,7 +3896,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return this;
     }
 
-    @JRubyMethod
+    @JRubyMethod(keywords = true)
     public IRubyObject each(final ThreadContext context, final Block block) {
         if (!block.isGiven()) return enumeratorize(context.runtime, this, "each");
 
@@ -3943,7 +3943,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
-    @JRubyMethod
+    @JRubyMethod(keywords = true)
     public IRubyObject each_line(final ThreadContext context, final Block block) {
         if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line");
 
@@ -4000,7 +4000,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
 
-    @JRubyMethod(name = "readlines")
+    @JRubyMethod(name = "readlines", keywords = true)
     public RubyArray readlines(ThreadContext context) {
         return Getline.getlineCall(context, GETLINE_ARY, this, getReadEncoding(context));
     }

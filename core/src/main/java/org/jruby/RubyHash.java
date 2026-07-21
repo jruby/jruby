@@ -824,7 +824,7 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_initialize
      *
      */
-    @JRubyMethod(visibility = PRIVATE)
+    @JRubyMethod(visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, final Block block) {
         modify();
 

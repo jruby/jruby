@@ -927,7 +927,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return initialize_m(getCurrentContext(), arg);
     }
 
-    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
+    @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE, keywords = true)
     public IRubyObject initialize_m(ThreadContext context, IRubyObject arg) {
         return arg instanceof RubyRegexp regexp ?
                 initializeByRegexp(context, regexp, null) :
