@@ -553,7 +553,7 @@ public class RubyHash extends RubyObject implements Map {
      *  ================
      */
 
-    @JRubyMethod(visibility = PRIVATE)
+    @JRubyMethod(visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, final Block block) {
         return getDelegate().initialize(context, block);
     }

@@ -523,7 +523,7 @@ public class RubyStruct extends RubyObject {
         return context.nil;
     }
 
-    @JRubyMethod(visibility = PRIVATE)
+    @JRubyMethod(visibility = PRIVATE, keywords = true)
     @Override
     public IRubyObject initialize(ThreadContext context) {
         IRubyObject nil = context.nil;

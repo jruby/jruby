@@ -432,7 +432,7 @@ public class RubyEnumerable {
         return result;
     }
 
-    @JRubyMethod(name = {"to_a", "entries"})
+    @JRubyMethod(name = {"to_a", "entries"}, keywords = true)
     public static IRubyObject to_a(ThreadContext context, IRubyObject self) {
         var result = newArray(context);
         callEach(context, eachSite(context), self, Signature.OPTIONAL, new AppendBlockCallback(result));

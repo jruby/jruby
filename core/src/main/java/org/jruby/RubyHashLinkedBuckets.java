@@ -566,7 +566,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
     /** rb_hash_initialize
      *
      */
-    @JRubyMethod(visibility = PRIVATE)
+    @JRubyMethod(visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, final Block block) {
         modify();
 
@@ -579,7 +579,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
         return this;
     }
 
-    @JRubyMethod(visibility = PRIVATE)
+    @JRubyMethod(visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject _default, final Block block) {
         boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
         modify();

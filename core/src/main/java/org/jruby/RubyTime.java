@@ -1527,7 +1527,7 @@ public class RubyTime extends RubyObject {
         return obj;
     }
 
-    @JRubyMethod(meta = true)
+    @JRubyMethod(meta = true, keywords = true)
     public static IRubyObject at(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         return at1(context, recv, arg);
     }
@@ -1550,7 +1550,7 @@ public class RubyTime extends RubyObject {
                 atOpts(context, recv, arg1, arg2, null, arg3);
     }
 
-    @JRubyMethod(required = 1, optional = 3, checkArity = false, meta = true)
+    @JRubyMethod(required = 1, optional = 3, checkArity = false, meta = true, keywords = true)
     public static IRubyObject at(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return switch (args.length) {
             case 1 -> at(context, recv, args[0]);
@@ -1712,7 +1712,7 @@ public class RubyTime extends RubyObject {
         return time;
     }
 
-    @JRubyMethod(name = "initialize", visibility = PRIVATE)
+    @JRubyMethod(name = "initialize", visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context) {
         return initializeNow(context, context.nil);
     }
