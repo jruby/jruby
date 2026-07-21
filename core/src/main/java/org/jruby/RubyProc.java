@@ -259,7 +259,7 @@ public class RubyProc extends RubyObject implements DataType {
     }
 
     private RubyProc procDup() {
-        return newProc(getRuntime(), getMetaClass(), block, type, file, line);
+        return newProc(getRuntime(), getMetaClass().getRealClass(), block, type, file, line);
     }
 
     @Override
