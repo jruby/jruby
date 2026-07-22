@@ -124,6 +124,28 @@ describe :kernel_raise, shared: true do
     raised_exception.should == exception
   end
 
+  it "re-raises a previously rescued exception with a new backtrace when its backtrace was cleared" do
+    exception = nil
+
+    begin
+      raise "raised"
+    rescue => exception
+      # Ignore.
+    end
+
+    exception.set_backtrace(nil)
+    exception.backtrace.should == nil
+
+    begin
+      raised_exception = @object.raise(exception)
+    rescue => raised_exception
+      # Ignore.
+    end
+
+    raised_exception.should == exception
+    raised_exception.backtrace.should be_kind_of(Array)
+  end
+
   it "allows Exception, message, and backtrace parameters" do
     -> do
       @object.raise(ArgumentError, "message", caller)
