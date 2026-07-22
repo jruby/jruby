@@ -533,6 +533,23 @@ public class RubyException extends RubyObject {
         backtrace.backtraceData = instanceConfig(context).getTraceType().getBacktrace(context);
     }
 
+    private void clearBacktraceObject() {
+        backtrace.backtraceObject = null;
+        backtrace.backtraceLocations = null;
+    }
+
+    /**
+     * Populate backtrace from the current position when exception is (re-)raised without one.
+     *
+     * MRI {@code setup_exception} which fills the backtrace only when it is <code>nil</code>
+     */
+    public void prepareBacktrace(ThreadContext context) {
+        if (getBacktrace().isNil()) {
+            clearBacktraceObject();
+            captureBacktrace(context);
+        }
+    }
+
     public IRubyObject getBacktrace() {
         IRubyObject backtraceObject = backtrace.backtraceObject;
         if (backtraceObject != null) return backtraceObject;
