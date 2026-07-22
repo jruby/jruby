@@ -543,7 +543,7 @@ public class RubyException extends RubyObject {
      *
      * MRI {@code setup_exception} which fills the backtrace only when it is <code>nil</code>
      */
-    void prepareBacktrace(ThreadContext context) {
+    public void prepareBacktrace(ThreadContext context) {
         if (getBacktrace().isNil()) {
             clearBacktraceObject();
             captureBacktrace(context);

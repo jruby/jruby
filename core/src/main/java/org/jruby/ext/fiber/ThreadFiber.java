@@ -398,7 +398,9 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
         if (data.parent != context.getFiberCurrentThread()) fiberCalledAcrossThreads(runtime);
 
-        FiberRequest val = new FiberRequest(((RubyException) exception).toThrowable(), RequestType.RAISE);
+        RubyException rubyException = (RubyException) exception;
+        rubyException.prepareBacktrace(context);
+        FiberRequest val = new FiberRequest(rubyException.toThrowable(), RequestType.RAISE);
 
         data.prev = context.getFiber();
 
