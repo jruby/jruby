@@ -4225,14 +4225,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 timeout = context.nil;
         }
 
-        if (timeout.isNil()) {
-            tv = -1;
-        }
-        else {
-            tv = (long)(RubyTime.convertTimeInterval(context, timeout) * 1000);
-            if (tv < 0) throw argumentError(context, "time interval must be positive");
-        }
-        return tv;
+        return RubyThread.prepareTimeout(context, timeout);
     }
 
     // MRI: rb_io_advise
