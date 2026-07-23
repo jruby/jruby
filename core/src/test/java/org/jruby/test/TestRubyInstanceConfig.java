@@ -148,7 +148,7 @@ public class TestRubyInstanceConfig extends Base {
 
     public void testBytecodeVersion() throws Exception {
         assertEquals("it uses Opcodes.V21 for '21'", Opcodes.V21, RubyInstanceConfig.calculateBytecodeVersion("21"));
-        assertEquals("it uses Opcodes.V23 for '23'", Opcodes.V23, RubyInstanceConfig.calculateBytecodeVersion("23"));
+        assertEquals("it uses Opcodes.V25 for '25'", Opcodes.V25, RubyInstanceConfig.calculateBytecodeVersion("25"));
 
         PrintStream err = System.err;
         String specVersion = System.getProperty("java.specification.version");
