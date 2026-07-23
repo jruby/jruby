@@ -1622,7 +1622,9 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
                                     }
                             )
                     );
-                    return buildDefnCheckIfThenPaths(undefLabel, tmpVar);
+                    addInstr(createBranch(tmpVar, nil(), undefLabel));
+                    Operand argsCheckDefn = buildGetArgumentDefinition(callNode.getArgsNode(), "method");
+                    return buildDefnCheckIfThenPaths(undefLabel, argsCheckDefn);
                 }
             };
 
