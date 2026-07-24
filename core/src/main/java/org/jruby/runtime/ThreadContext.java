@@ -39,6 +39,7 @@ package org.jruby.runtime;
 import com.headius.backport9.stack.StackWalker;
 import com.headius.backport9.stack.impl.StackWalker8;
 import org.jcodings.Encoding;
+import org.jruby.EvalType;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
@@ -1099,7 +1100,10 @@ public final class ThreadContext {
         DynamicScope scope = getCurrentScope();
         StaticScope sScope = runtime.getStaticScopeFactory().newBlockScope(scope.getStaticScope());
         sScope.setModule(executeUnderClass);
-        pushScope(DynamicScope.newDynamicScope(sScope, scope));
+        sScope.setSingleton(true);
+        DynamicScope dynScope = DynamicScope.newDynamicScope(sScope, scope);
+        dynScope.setEvalType(EvalType.INSTANCE_EVAL);
+        pushScope(dynScope);
         pushCallFrame(frame.getKlazz(), frame.getName(), executeUnderObj, block);
         getCurrentFrame().setVisibility(getPreviousFrame().getVisibility());
     }
