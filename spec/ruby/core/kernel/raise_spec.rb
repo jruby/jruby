@@ -39,13 +39,13 @@ describe "Kernel#raise with previously rescued exception" do
   end
 
   it "re-raises a previously rescued exception without overwriting the cause" do
-    begin
+    check = -> (&second_raiser) do
       begin
         begin
           begin
             raise "Error 1"
           rescue => e1
-            raise "Error 2"
+            second_raiser.call
           end
         rescue => e2
           raise "Error 3"
@@ -57,12 +57,15 @@ describe "Kernel#raise with previously rescued exception" do
     rescue => e
       e.cause.should == e1
     end
+
+    check.() { raise "Error 2" }
+    check.() { raise RuntimeError, "Error 2" }
+    check.() { raise RuntimeError, "Error 2", [] }
   end
 
   it "re-raises a previously rescued exception with overwriting the cause when it's explicitly specified with :cause option" do
-    e4 = RuntimeError.new("Error 4")
-
-    begin
+    check = -> (&last_raiser) do
+      e4 = RuntimeError.new("Error 4")
       begin
         begin
           begin
@@ -75,15 +78,19 @@ describe "Kernel#raise with previously rescued exception" do
         end
       rescue
         e2.cause.should == e1
-        raise e2, cause: e4
+        last_raiser.call(e2, e4)
       end
     rescue => e
       e.cause.should == e4
     end
+
+    check.() {|e1, e2| raise e1, cause: e2}
+    check.() {|e1, e2| raise e1, "New message", cause: e2}
+    check.() {|e1, e2| raise e1, "New message", [], cause: e2}
   end
 
-  it "re-raises a previously rescued exception without overwriting the cause when it's explicitly specified with :cause option and has nil value" do
-    begin
+  it "re-raises a previously rescued exception without overwriting the cause when it's explicitly specified with a :cause option that has nil value" do
+    check = -> (&last_raiser) do
       begin
         begin
           begin
@@ -96,17 +103,21 @@ describe "Kernel#raise with previously rescued exception" do
         end
       rescue
         e2.cause.should == e1
-        raise e2, cause: nil
+        last_raiser.call(e2)
       end
     rescue => e
       e.cause.should == e1
     end
+
+    check.() {|e| raise e, cause: nil }
+    check.() {|e| raise e, "New message", cause: nil }
+    check.() {|e| raise e, "New message", [], cause: nil }
   end
 
   it "re-raises a previously rescued exception without setting a cause implicitly" do
-    begin
+    check = -> (&raiser) do
       begin
-        raise "Error 1"
+        raiser.call
       rescue => e1
         raise
       end
@@ -114,12 +125,17 @@ describe "Kernel#raise with previously rescued exception" do
       e.should == e1
       e.cause.should == nil
     end
+
+    check.() { raise "Error 1" }
+    check.() { raise RuntimeError }
+    check.() { raise RuntimeError, "Error 1" }
+    check.() { raise RuntimeError, "Error 1", [] }
   end
 
   it "re-raises a previously rescued exception that has a cause without setting a cause implicitly" do
-    begin
+    check = -> (&raiser) do
       begin
-        raise "Error 1"
+        raiser.call
       rescue => e1
         begin
           raise "Error 2"
@@ -131,12 +147,18 @@ describe "Kernel#raise with previously rescued exception" do
       e.should == e2
       e.cause.should == e1
     end
+
+
+    check.() { raise "Error 1" }
+    check.() { raise RuntimeError }
+    check.() { raise RuntimeError, "Error 1" }
+    check.() { raise RuntimeError, "Error 1", [] }
   end
 
   it "re-raises a previously rescued exception that doesn't have a cause and isn't a cause of any other exception with setting a cause implicitly" do
-    begin
+    check = -> (&raiser) do
       begin
-        raise "Error 1"
+        raiser.call
       rescue => e1
         begin
           raise "Error 2"
@@ -148,12 +170,17 @@ describe "Kernel#raise with previously rescued exception" do
       e.message.should == "Error 3"
       e.cause.should == e2
     end
+
+    check.() { raise "Error 1" }
+    check.() { raise RuntimeError }
+    check.() { raise RuntimeError, "Error 1" }
+    check.() { raise RuntimeError, "Error 1", [] }
   end
 
   it "re-raises a previously rescued exception that doesn't have a cause and is a cause of other exception without setting a cause implicitly" do
-    begin
+    check = -> (&raiser) do
       begin
-        raise "Error 1"
+        raiser.call
       rescue => e1
         begin
           raise "Error 2"
@@ -167,12 +194,17 @@ describe "Kernel#raise with previously rescued exception" do
       e.should == e1
       e.cause.should == nil
     end
+
+    check.() { raise "Error 1" }
+    check.() { raise RuntimeError }
+    check.() { raise RuntimeError, "Error 1" }
+    check.() { raise RuntimeError, "Error 1", [] }
   end
 
   it "re-raises a previously rescued exception that doesn't have a cause and is a cause of other exception (that wasn't raised explicitly) without setting a cause implicitly" do
-    begin
+    check = -> (&raiser) do
       begin
-        raise "Error 1"
+        raiser.call
       rescue => e1
         begin
           foo # raises NameError
@@ -186,12 +218,17 @@ describe "Kernel#raise with previously rescued exception" do
       e.should == e1
       e.cause.should == nil
     end
+
+    check.() { raise "Error 1" }
+    check.() { raise RuntimeError }
+    check.() { raise RuntimeError, "Error 1" }
+    check.() { raise RuntimeError, "Error 1", [] }
   end
 
   it "re-raises a previously rescued exception that has a cause but isn't a cause of any other exception without setting a cause implicitly" do
-    begin
+    check = -> (&raiser) do
       begin
-        raise "Error 1"
+        raiser.call
       rescue => e1
         begin
           raise "Error 2"
@@ -209,6 +246,11 @@ describe "Kernel#raise with previously rescued exception" do
       e.should == e2
       e.cause.should == e1
     end
+
+    check.() { raise "Error 1" }
+    check.() { raise RuntimeError }
+    check.() { raise RuntimeError, "Error 1" }
+    check.() { raise RuntimeError, "Error 1", [] }
   end
 end
 
