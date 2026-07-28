@@ -91,8 +91,10 @@ public final class TopSelfFactory {
             }
         });
 
+        // TODO: Remove ruby2_keywords when JRuby moves to Ruby 4.5 support.
         singletonClass.addMethod(context, "ruby2_keywords", new JavaMethod.JavaMethodN(singletonClass, Visibility.PRIVATE, "private") {
             @Override
+            @SuppressWarnings("removal")
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
                 return Object.ruby2_keywords(context, args);
             }

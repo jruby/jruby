@@ -3444,6 +3444,12 @@ public class RubyModule extends RubyObject {
         addAccessor(context, newHardSymbol(context.runtime, name.intern()), PUBLIC, false, true);
     }
 
+    /**
+     * @deprecated Use {@code ...} argument forwarding or other delegation styles instead; they work correctly on
+     * Ruby 3.0 and later. This method will be removed in Ruby 4.4. See
+     * <a href="https://bugs.ruby-lang.org/issues/22205">Feature #22205</a> for the schedule.
+     */
+    @Deprecated(since = "ruby 4.1", forRemoval = true)
     @JRubyMethod(required = 1, rest = true, checkArity = false, visibility = PRIVATE)
     public IRubyObject ruby2_keywords(ThreadContext context, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 1, -1);

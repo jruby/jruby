@@ -1100,6 +1100,12 @@ public class RubyHash extends RubyObject implements Map {
         return getDelegate().to_proc(context);
     }
 
+    /**
+     * @deprecated This method will be removed in Ruby 4.5, one version after removal of the
+     * {@code ruby2_keywords} mechanism. See
+     * <a href="https://bugs.ruby-lang.org/issues/22205">Feature #22205</a> for the schedule.
+     */
+    @Deprecated(since = "ruby 4.1", forRemoval = true)
     @JRubyMethod(meta = true)
     public static IRubyObject ruby2_keywords_hash(ThreadContext context, IRubyObject _self, IRubyObject arg) {
         TypeConverter.checkType(context, arg, hashClass(context));
@@ -1110,6 +1116,12 @@ public class RubyHash extends RubyObject implements Map {
         return hash;
     }
 
+    /**
+     * @deprecated This method will be removed in Ruby 4.5, one version after removal of the
+     * {@code ruby2_keywords} mechanism. See
+     * <a href="https://bugs.ruby-lang.org/issues/22205">Feature #22205</a> for the schedule.
+     */
+    @Deprecated(since = "ruby 4.1", forRemoval = true)
     @JRubyMethod(meta = true, name = "ruby2_keywords_hash?")
     public static IRubyObject ruby2_keywords_hash_p(ThreadContext context, IRubyObject _self, IRubyObject arg) {
         TypeConverter.checkType(context, arg, hashClass(context));

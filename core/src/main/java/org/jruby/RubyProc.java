@@ -287,6 +287,12 @@ public class RubyProc extends RubyObject implements DataType {
         return string;
     }
 
+    /**
+     * @deprecated Use explicit delegation ({@code *args, **kwargs}) instead; it works correctly on Ruby 3.0 and
+     * later. This method will be removed in Ruby 4.4. See
+     * <a href="https://bugs.ruby-lang.org/issues/22205">Feature #22205</a> for the schedule.
+     */
+    @Deprecated(since = "ruby 4.1", forRemoval = true)
     @JRubyMethod
     public IRubyObject ruby2_keywords(ThreadContext context) {
         checkFrozen();
