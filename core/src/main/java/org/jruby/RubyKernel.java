@@ -1086,8 +1086,7 @@ public class RubyKernel {
             default -> prepareNewException(context, arg0, arg1);
         };
 
-        setGivenExceptionCause(context, cause, exception);
-        return raiseException(context, exception);
+        return raiseWithNewExceptionCause(context, exception, cause);
     }
 
     @JRubyMethod(name = {"raise", "fail"}, module = true, visibility = PRIVATE, omit = true, keywords = true)
@@ -1226,7 +1225,13 @@ public class RubyKernel {
      * @param cause the cause
      */
     private static void setNewExceptionCause(ThreadContext context, RubyException exception, Cause cause) {
-        if ((cause.provided || exception.getCause() == null) && cause.value != exception) exception.setCause(context, cause.value);
+        if (cause.value.isNil()) {
+            if (!cause.provided && exception.getCause() == null) {
+                exception.setCause(context, cause.value);
+            }
+        } else if ((cause.provided || exception.getCause() == null) && cause.value != exception) {
+            exception.setCause(context, cause.value);
+        }
     }
 
     /**
