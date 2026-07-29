@@ -13,6 +13,69 @@ class TestProcRefined < Test::Unit::TestCase
     end
   end
 
+  # Instructions of a refined clone are copied on the first call: nested closure shells only
+  # appear once the enclosing body materializes, so a never-called refined proc stays a cheap shell.
+  def test_clone_materializes_on_first_call
+    prc = ->(a) { a.map { |s| s.shout } }
+    refined = prc.refined(StringRefinement)
+    scope = JRuby.reference(refined).get_block.get_body.get_scope
+    assert_equal 0, scope.get_closures.size, "nested shells created before the first call"
+    assert_equal ["A!"], refined.call(["a"])
+    assert_equal 1, scope.get_closures.size, "nested shell not created at materialization"
+  end
+
+  # Concurrent first calls can force the lazy instruction copy from several threads at once;
+  # a duplicate build would register nested shells twice in the clone.
+  def test_concurrent_first_call_builds_once
+    20.times do
+      refined = ->(s) { [s].map { |x| x.shout }.first }.refined(StringRefinement)
+      scope = JRuby.reference(refined).get_block.get_body.get_scope
+      latch = java.util.concurrent.CountDownLatch.new(1)
+      results = Queue.new
+      threads = Array.new(8) do
+        Thread.new do
+          latch.await
+          results << refined.call("a")
+        end
+      end
+      latch.count_down
+      threads.each(&:join)
+      8.times { assert_equal "A!", results.pop }
+      assert_equal 1, scope.get_closures.size, "duplicate lazy build registered nested shells twice"
+    end
+  end
+
+  # p.refined(a).refined(b) shares one memoized clone with p.refined(a, b); the memo is written at
+  # materialization, so the never-called chain intermediate does not evict the live entry.
+  def test_chain_shares_memoized_clone
+    quiet = Module.new { refine(String) { def shout; downcase; end } }
+    prc = ->(s) { s.shout }
+    combined = prc.refined(StringRefinement, quiet)
+    assert_equal "hi", combined.call("Hi")
+    chained = prc.refined(StringRefinement).refined(quiet)
+    assert_equal "hi", chained.call("Hi")
+    combined_scope = JRuby.reference(combined).get_block.get_body.get_scope
+    chained_scope = JRuby.reference(chained).get_block.get_body.get_scope
+    # not assert_equal: test-unit's diagnostics call encoding, which IRScope stubs with an exception
+    assert_same combined_scope, chained_scope, "chained call did not reuse the memoized clone"
+  end
+
+  # A proc created inside a refined body lives in the clone tree; refined() on it must still produce
+  # a proper root clone: memoized once materialized, chainable, rejected by define_method.
+  def test_refined_on_proc_from_refined_body
+    quiet = Module.new { refine(String) { def shout; downcase; end } }
+    inner = -> { ->(s) { s.shout } }.refined(StringRefinement).call
+    r1 = inner.refined(quiet)
+    assert_equal "hi", r1.call("Hi")
+    r2 = inner.refined(quiet)
+    assert_same JRuby.reference(r1).get_block.get_body.get_scope,
+                JRuby.reference(r2).get_block.get_body.get_scope,
+                "repeat refined() on a clone-tree proc did not hit the memo"
+    # the chain re-clones from inner with the merged list, so the later module wins
+    assert_equal "HI!", r1.refined(StringRefinement).call("Hi")
+    assert_raise(ArgumentError) { Class.new { define_method(:m, r1) } }
+  end
+
   # Refinement activation (refined -> usingModuleRecursive) can run on any thread while another
   # thread mutates the same module's refinement map via Module#refine; the activation must
   # snapshot the map instead of iterating it unsynchronized (ConcurrentModificationException).
