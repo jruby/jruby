@@ -326,6 +326,11 @@ public class RubyProc extends RubyObject implements DataType {
         return asBoolean(context, getBlock().equals(other.block));
     }
 
+    @JRubyMethod
+    public RubyFixnum hash(ThreadContext context) {
+        return asFixnum(context, block.hashCode());
+    }
+
     private static IRubyObject[] checkArityForLambda(ThreadContext context, Block.Type type, BlockBody blockBody, IRubyObject... args) {
         if (type == Block.Type.LAMBDA) {
             blockBody.getSignature().checkArity(context, args);
