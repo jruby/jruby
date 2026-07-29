@@ -1588,6 +1588,18 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
             this.symbol = symbol;
         }
 
+        // Same-symbol procs are == and hash-equal even as distinct objects; a proc made under
+        // refinements (toRefinedProc) owns a non-dummy scope, which keeps it apart.
+        @Override
+        public boolean equals(Object other) {
+            return other instanceof SymbolProcBody that && id.equals(that.id) && getStaticScope() == that.getStaticScope();
+        }
+
+        @Override
+        public int hashCode() {
+            return id.hashCode();
+        }
+
         private IRubyObject yieldInner(ThreadContext context, RubyArray array, Block blockArg) {
             if (array.isEmpty()) throw argumentError(context, "no receiver given");
 
