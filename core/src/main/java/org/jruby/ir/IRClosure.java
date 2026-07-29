@@ -328,6 +328,12 @@ public class IRClosure extends IRScope {
     protected IRClosure cloneForInlining(CloneInfo ii, IRClosure clone) {
         SimpleCloneInfo clonedII = ii.cloneForCloningClosure(clone);
 
+        if (ii.isRefinementsClone()) {
+            clone.allocateInterpreterContext(new RefinementsCloneInstrs(clone, interpreterContext, clonedII),
+                    interpreterContext.getTemporaryVariableCount(), interpreterContext.getFlags());
+            return clone;
+        }
+
 //        if (getCFG() != null) {
 //            clone.setCFG(getCFG().clone(clonedII, clone));
 //        } else {
@@ -360,9 +366,13 @@ public class IRClosure extends IRScope {
         }
 
         if (ii instanceof SimpleCloneInfo && !((SimpleCloneInfo) ii).isEnsureBlockCloneMode()) {
-            clonedClosure = refinementsScope != null ?
-                    new IRClosure(this, lexicalParent, closureId, getByteName(), refinementsScope) :
-                    new IRClosure(this, lexicalParent, closureId, getByteName());
+            if (ii.isRefinementsCloneRoot()) {
+                clonedClosure = new IRRefinedClosure(this, lexicalParent, closureId, getByteName(), refinementsScope);
+            } else {
+                clonedClosure = refinementsScope != null ?
+                        new IRClosure(this, lexicalParent, closureId, getByteName(), refinementsScope) :
+                        new IRClosure(this, lexicalParent, closureId, getByteName());
+            }
         } else {
             int id = lexicalParent.getNextClosureId();
             ByteList fullName = lexicalParent.getByteName();
@@ -380,14 +390,8 @@ public class IRClosure extends IRScope {
             clonedClosure.inRefinementsCloneTree = true;
         }
 
-        // the top clone of a Proc#refined tree is grafted under the source's real lexical parent.
-        boolean graftedTopRefinementsClone = ii.isRefinementsClone() &&
-                !(lexicalParent instanceof IRClosure && ((IRClosure) lexicalParent).isInRefinementsCloneTree());
-        if (graftedTopRefinementsClone) {
-            // Only the TOP clone is user-visible (the proc returned by Proc#refined); flag it so chaining and
-            // define_method are rejected on it, but not on the nested closures it lexically encloses.
-            clonedClosure.refinementsClone = true;
-        } else {
+        // A Proc#refined root is grafted under the source's real lexical parent, not registered there.
+        if (!ii.isRefinementsCloneRoot()) {
             // WrappedIRClosure should always have a single unique IRClosure in them so we should
             // not end up adding n copies of the same closure as distinct clones...
             lexicalParent.addClosure(clonedClosure);
@@ -423,70 +427,47 @@ public class IRClosure extends IRScope {
         return inRefinementsCloneTree;
     }
 
-    /**
-     * True only on the TOP clone of a Proc#refined tree -- the closure that directly backs the proc the user
-     * receives.  Used to reject chaining Proc#refined and to reject defining a method from such a proc.
-     */
-    private boolean refinementsClone;
-
+    /** True only on the {@link IRRefinedClosure} backing a Proc#refined proc. */
     public boolean isRefinementsClone() {
-        return refinementsClone;
+        return false;
     }
 
     /**
-     * Return a refinement-aware clone of this closure for the given modules, reusing the cached clone when the same
-     * modules (by identity and order) were used last time.  A miss recomputes via {@link #cloneForRefinements} and
-     * overwrites the single slot, emitting a performance-category warning when an existing entry is evicted.
-     * Lock-free: a race only causes a redundant clone, which is harmless.
-     *
-     * @param context the current thread context
-     * @param modules the refinement modules to activate (freshly allocated array; stored without copying)
-     * @return a clone whose body runs with the given refinements active
+     * Return a refinement-aware clone of this closure for the given modules, reusing the memoized clone
+     * when the same modules (by identity and order) were used last time.  A miss builds a lazy shell; the
+     * memo is written when the shell materializes.  Lock-free: a race only reclones.
      */
     public IRClosure refinementsClone(ThreadContext context, RubyModule[] modules) {
         Map<IRClosure, RefinementsCache> cacheMap = getManager().getRefinementsCloneCache();
         RefinementsCache cache = cacheMap.get(this);
-        if (cache != null) {
-            if (cache.matches(modules)) {
-                // Proc#ruby2_keywords marks the scope, possibly after the clone was memoized; a stale
-                // clone must be rebuilt, not reused (as in CRuby).
-                if (cache.clone.isRuby2Keywords() == isRuby2Keywords()) return cache.clone;
-                context.runtime.getWarnings().warnPerformance(
-                        "Proc#refined re-copies the block because the ruby2_keywords flag changed after the copy was memoized");
-            } else {
-                context.runtime.getWarnings().warnPerformance(
-                        "Proc#refined called with different modules for the same block disables memoization");
-            }
+        if (cache != null && cache.matches(modules)) {
+            // Proc#ruby2_keywords marks the scope, possibly after the clone was memoized; a stale
+            // clone must be rebuilt, not reused (as in CRuby).
+            if (cache.clone.isRuby2Keywords() == isRuby2Keywords()) return cache.clone;
+            context.runtime.getWarnings().warnPerformance(
+                    "Proc#refined re-copies the block because the ruby2_keywords flag changed after the copy was memoized");
         }
 
-        IRClosure clone = cloneForRefinements(context, modules);
-        // Build the clone's BlockBody now, before publishing it through the cache, so a thread that later
-        // reads the shared clone on a cache hit sees a fully-built body (via the put's happens-before) and never
-        // races another thread to create a second one in the lazy getBlockBody().
+        IRRefinedClosure clone = cloneForRefinements(context, modules);
+        clone.setRefinementsRecipe(this, modules);
+        // Build the BlockBody before the clone escapes so memo sharers never race in getBlockBody().
         clone.getBlockBody();
-        cacheMap.put(this, new RefinementsCache(modules, clone));
 
         return clone;
     }
 
     /**
-     * Produce a refinement-aware deep copy of this closure tree for Proc#refined: the copy gets its own
-     * StaticScope with the given modules' refinements activated and its call sites re-created as refined.
-     *
-     * Private: callers go through {@link #refinementsClone}, which memoizes the clone.
-     *
-     * @param context the current thread context
-     * @param modules the refinement modules to activate
-     * @return a new IRClosure whose body runs with the given refinements active
+     * Produce the refinement-aware copy for Proc#refined: an {@link IRRefinedClosure} whose own StaticScope
+     * has the modules' refinements activated and whose instructions are cloned lazily on first use.
      */
-    private IRClosure cloneForRefinements(ThreadContext context, RubyModule[] modules) {
+    private IRRefinedClosure cloneForRefinements(ThreadContext context, RubyModule[] modules) {
         // Cloning reads the startup InterpreterContext as its instruction source.
         if (getInterpreterContext() == null) {
             throw context.runtime.newArgumentError("cannot create a refinements-aware copy of this proc");
         }
 
-        SimpleCloneInfo ii = new SimpleCloneInfo(getLexicalParent(), false, false, true);
-        IRClosure clone = cloneForInlining(ii);
+        SimpleCloneInfo ii = new SimpleCloneInfo(getLexicalParent(), false, false, true, true);
+        IRRefinedClosure clone = (IRRefinedClosure) cloneForInlining(ii);
         clone.setArgumentDescriptors(getArgumentDescriptors());
 
         // The constructor registered the clone in its lexical parent's child-scope list; detach the grafted

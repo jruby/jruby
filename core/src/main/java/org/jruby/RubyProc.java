@@ -40,6 +40,7 @@ import org.jruby.anno.JRubyMethod;
 
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ir.IRClosure;
+import org.jruby.ir.IRRefinedClosure;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.java.codegen.BlockInterfaceGenerator;
@@ -429,20 +430,17 @@ public class RubyProc extends RubyObject implements DataType {
 
     /**
      * Return a new Proc whose body runs with the given modules' refinements active; the receiver is unchanged
-     * and the captured environment is shared.  Heavy (it deep-copies the block's IR), so the result is cached.
+     * and the captured environment is shared.  With no arguments, returns the receiver.  Chained calls merge
+     * the module lists, later modules taking precedence.  The block's IR is deep-copied, but only when the
+     * returned proc is first called, and the copy is cached.
      */
     @JRubyMethod(name = "refined", rest = true)
     public IRubyObject refined(ThreadContext context, IRubyObject[] args) {
-        if (args.length == 0) throw argumentError(context, "wrong number of arguments (given 0, expected 1+)");
+        if (args.length == 0) return this;
 
         BlockBody body = block.getBody();
         if (fromMethod || !(body instanceof IRBlockBody)) {
             throw argumentError(context, "can't apply refinements to a Proc without a Ruby block");
-        }
-
-        // Chaining is not allowed: activate multiple modules by passing them all in a single call.
-        if (((IRBlockBody) body).getScope().isRefinementsClone()) {
-            throw argumentError(context, "can't apply refinements to a Proc that already has refinements");
         }
 
         RubyModule[] modules = new RubyModule[args.length];
@@ -450,7 +448,19 @@ public class RubyProc extends RubyObject implements DataType {
             modules[i] = castAsModule(context, args[i]);
         }
 
-        IRClosure refinedClosure = ((IRBlockBody) body).getScope().refinementsClone(context, modules);
+        IRClosure source = ((IRBlockBody) body).getScope();
+        // A chained call re-clones from the original closure with the merged list, sharing the memo slot
+        // with the equivalent single call.
+        if (source instanceof IRRefinedClosure refinedScope) {
+            RubyModule[] chained = refinedScope.getRefinementsModules();
+            RubyModule[] merged = new RubyModule[chained.length + modules.length];
+            System.arraycopy(chained, 0, merged, 0, chained.length);
+            System.arraycopy(modules, 0, merged, chained.length, modules.length);
+            modules = merged;
+            source = refinedScope.getRefinementsSource();
+        }
+
+        IRClosure refinedClosure = source.refinementsClone(context, modules);
         // Share the captured environment (binding holds the dynamic scope); clone the binding wrapper only so that
         // proc setup (file/line/dummy-scope) does not mutate the original proc's binding.
         Binding newBinding = block.getBinding().clone();
