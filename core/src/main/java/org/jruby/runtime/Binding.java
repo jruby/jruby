@@ -258,7 +258,7 @@ public class Binding {
 
     @Override
     public int hashCode() {
-        return (self == null ? 1 : self.hashCode()) * dynamicScope.hashCode();
+        return (self == null ? 1 : self.hashCode()) * (dynamicScope == null ? 1 : dynamicScope.hashCode());
     }
 
     // FIXME: This is because we clone the same explicit binding whenever we execute because both the captured Frame
