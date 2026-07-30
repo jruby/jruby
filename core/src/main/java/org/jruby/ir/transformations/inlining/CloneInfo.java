@@ -45,6 +45,14 @@ public abstract class CloneInfo {
     }
 
     /**
+     * Is this the root of a refinements clone request -- the closure Proc#refined was called on, which
+     * becomes an IRRefinedClosure -- rather than a nested scope cloned along with it?
+     */
+    public boolean isRefinementsCloneRoot() {
+        return false;
+    }
+
+    /**
      * @return The IRScope this cloning operation is happening in (or is coming from).
      */
     public IRScope getScope() {
