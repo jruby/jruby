@@ -38,6 +38,26 @@ public class IRRefinedClosure extends IRClosure {
         return refinementsModules;
     }
 
+    // Module identity, not equals/hashCode: those dispatch to Ruby code, which user modules can override.
+    public boolean sameRecipe(IRRefinedClosure other) {
+        if (refinementsSource == null || refinementsSource != other.refinementsSource) return false;
+        RubyModule[] modules = refinementsModules, otherModules = other.refinementsModules;
+        if (modules.length != otherModules.length) return false;
+        for (int i = 0; i < modules.length; i++) {
+            if (modules[i] != otherModules[i]) return false;
+        }
+        return true;
+    }
+
+    public int recipeHash() {
+        if (refinementsModules == null) return System.identityHashCode(this);
+        int hash = System.identityHashCode(refinementsSource);
+        for (RubyModule module : refinementsModules) {
+            hash = 31 * hash + System.identityHashCode(module);
+        }
+        return hash;
+    }
+
     /**
      * Deferring the memo write to materialization means a never-called chain intermediate cannot evict
      * a live entry.
