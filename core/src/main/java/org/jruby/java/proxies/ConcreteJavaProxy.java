@@ -410,10 +410,13 @@ public class ConcreteJavaProxy extends JavaProxy {
         private final boolean prependedJavaCtorWrapper;
 
         // lazily-resolved IRubyObject[] for terminal literal super calls; shared across invocations
-        private IRubyObject[] cachedTerminalLiteralArgs;
+        // volatile: publish the fully-filled array so a racing reader can't observe null elements
+        private volatile IRubyObject[] cachedTerminalLiteralArgs;
 
         // cached next plan in the recursive split-constructor chain
         // (one of these is populated based on which Ruby super source we recurse into)
+        // no volatile needed: every decision-bearing SplitCtorPlan field is final, so a racy read is
+        // safe (worst case null -> recompute) per JMM final-field semantics
         private SplitCtorPlan cachedSuperPlan;
         private SplitCtorPlan cachedPrependedSuperPlan;
 
