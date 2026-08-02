@@ -63,6 +63,7 @@ public class ExitableInterpreterContext extends InterpreterContext {
     private final boolean exitsAtReturn;
     private final boolean directSuperNoArgs;
     private final boolean directSuperAllArgs;
+    private final int directSuperMinArgs;
     private final int directSuperRequiredArgs;
     private final Operand[] terminalLiteralSuperArgs;
 
@@ -78,6 +79,7 @@ public class ExitableInterpreterContext extends InterpreterContext {
         this.directSuperNoArgs = directSuperNoArgs(instructions, superCall, exitIPC) && getStaticScope().getSignature().isNoArguments();
         this.directSuperAllArgs = (directSuperAllArgs(instructions, superCall, exitIPC) && isRestOnlySignature()) ||
                 directSuperAllZSuperArgs(instructions, superCall, exitIPC);
+        this.directSuperMinArgs = directSuperAllArgs ? getStaticScope().getSignature().required() : 0;
         this.directSuperRequiredArgs = directSuperRequiredArgs(instructions, superCall, exitIPC);
         this.terminalLiteralSuperArgs = terminalLiteralSuperArgs(instructions, superCall, exitIPC);
     }
@@ -106,8 +108,28 @@ public class ExitableInterpreterContext extends InterpreterContext {
         return directSuperRequiredArgs;
     }
 
+    /**
+     * Returns true when the given argument count can be forwarded directly to the Java superclass constructor
+     * (without running the split interpreter) + enforces arity: with too few args for a bare {@code super}
+     * initialize - callers must fall back to the split interpreter so CHECK_ARITY raises ArgumentError.
+     */
+    public boolean directSuperForwardable(int argsLength) {
+        return directSuperNoArgs && argsLength == 0 ||
+                directSuperRequiredArgs == argsLength ||
+                directSuperAllArgs && argsLength >= directSuperMinArgs;
+    }
+
     public boolean isTerminalLiteralSuper() {
         return terminalLiteralSuperArgs != null;
+    }
+
+    /**
+     * Returns true when erminal literal `super` fast path applies for the given argument count;
+     * only safe with zero incoming args: receives no positional args, any extra arg must fall back to
+     * split interpreter for CHECK_ARITY.
+     */
+    public boolean terminalLiteralSuperForwardable(int argsLength) {
+        return terminalLiteralSuperArgs != null && argsLength == 0;
     }
 
     public IRubyObject[] getTerminalLiteralSuperArgs(ThreadContext context) {
