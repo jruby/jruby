@@ -13,10 +13,6 @@ describe "super order" do
     end
   end
 
-  # InheritanceSubclass.class_eval do
-  #   # no constructor
-  # end
-
   let(:subclass_with_ctor) do
     Class.new(InheritanceBase) do
       def initialize(*args)
@@ -102,7 +98,7 @@ describe "super order" do
     it 'calls Ruby constructors first when constructing Ruby subclass with constructor' do
       obj = subclass_with_ctor.new(*args)
       expect(obj.trace).to eq(["Java base constructor called with #{java_arg}",
-                               "Ruby base constructor called with #{args.inspect}", # MISSING in 9.3 !!!
+                               "Ruby base constructor called with #{args.inspect}",
                                "Ruby base-subclass constructor called with #{args.inspect}"])
     end
 

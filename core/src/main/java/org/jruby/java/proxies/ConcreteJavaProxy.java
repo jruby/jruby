@@ -250,7 +250,7 @@ public class ConcreteJavaProxy extends JavaProxy {
 
         public static void tryInstall(ThreadContext context, RubyClass clazz,
                 Class<? extends ReifiedJavaProxy> reified, boolean overwriteInitialize) {
-            final MethodHandle handle = getConstuctorHandle(reified);
+            final MethodHandle handle = getConstructorHandle(reified);
             if (handle != null) {
                 if (overwriteInitialize) {
                     clazz.addMethod(context, "initialize",
@@ -263,7 +263,7 @@ public class ConcreteJavaProxy extends JavaProxy {
     }
 
 
-    private static MethodHandle getConstuctorHandle(final Class<? extends ReifiedJavaProxy> reified) {
+    private static MethodHandle getConstructorHandle(final Class<? extends ReifiedJavaProxy> reified) {
         try {
             Constructor<? extends ReifiedJavaProxy> constructor = reified.getConstructor(
                 ConcreteJavaProxy.class, IRubyObject[].class, Block.class, RubyClass.class);
@@ -288,7 +288,7 @@ public class ConcreteJavaProxy extends JavaProxy {
         public NewMethodReified(final RubyClass clazz, Class<? extends ReifiedJavaProxy> reified) {
             super(clazz, Visibility.PUBLIC, "new");
             initialize = clazz.searchMethod("__jcreate!");
-            constructor = getConstuctorHandle(reified);
+            constructor = getConstructorHandle(reified);
             proxyFactory = Map.class.isAssignableFrom(reified) ? MapJavaProxy::new : ConcreteJavaProxy::new;
         }
 
