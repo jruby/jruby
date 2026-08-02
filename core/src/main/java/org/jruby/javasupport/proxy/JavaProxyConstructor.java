@@ -252,15 +252,6 @@ public class JavaProxyConstructor extends JavaProxyReflectionObject implements P
         throw ex;
     }
 
-    /**
-     * Unified error handler for reified constructor invocation via MethodHandle
-     */
-    public static void throwConstructorError(final Ruby runtime, final Throwable e) {
-        if (e instanceof RaiseException) throw (RaiseException) e;
-        if (e instanceof Error) throw (Error) e;
-        throw mapInstantiationException(runtime, e);
-    }
-
     @Deprecated(since = "10.0.0.0")
     public IRubyObject new_instance(IRubyObject[] args, Block block) {
         return new_instance2(getCurrentContext(), args, block);

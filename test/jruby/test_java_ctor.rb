@@ -67,4 +67,51 @@ class TestJavaCtor < Test::Unit::TestCase
     assert_equal 0, RestOnly.new(10).size
   end
 
+  # --- exception propagation ---
+  # Exceptions thrown while running a Java super constructor must propagate as the original Java
+  # exception, not get wrapped into ArgumentError (regression from reified ctor MethodHandle invocation)
+
+  class NegativeCapacityList < java.util.ArrayList
+    def initialize(cap)
+      super(cap)
+    end
+  end
+
+  def test_java_runtime_exception_propagates_raw
+    assert_raise(java.lang.IllegalArgumentException) { NegativeCapacityList.new(-5) }
+  end
+
+  class LiteralNegativeCapacityList < java.util.ArrayList
+    def initialize
+      super(-7)
+    end
+  end
+
+  def test_java_runtime_exception_propagates_raw_terminal_literal
+    # exercise the terminal-literal super path (and its cached terminator on the 2nd call)
+    assert_raise(java.lang.IllegalArgumentException) { LiteralNegativeCapacityList.new }
+    assert_raise(java.lang.IllegalArgumentException) { LiteralNegativeCapacityList.new }
+  end
+
+  class BadFileStream < java.io.FileInputStream
+    def initialize
+      super('/nonexistent-file-xyz')
+    end
+  end
+
+  def test_java_checked_exception_propagates_raw
+    assert_raise(java.io.FileNotFoundException) { BadFileStream.new }
+  end
+
+  class RaisingInit < java.util.ArrayList
+    def initialize
+      super()
+      raise ArgumentError, 'boom from ruby'
+    end
+  end
+
+  def test_ruby_raise_in_initialize_still_propagates
+    err = assert_raise(ArgumentError) { RaisingInit.new }
+    assert_equal 'boom from ruby', err.message
+  end
 end

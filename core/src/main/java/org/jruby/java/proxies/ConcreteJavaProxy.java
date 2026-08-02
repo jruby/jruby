@@ -59,6 +59,7 @@ import org.jruby.javasupport.proxy.JavaProxyConstructor;
 import org.jruby.javasupport.proxy.ReifiedJavaProxy;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -240,7 +241,7 @@ public class ConcreteJavaProxy extends JavaProxy {
                 try {
                     constructor.invokeExact(proxy, args, block, (RubyClass) clazz);
                 } catch (Throwable e) {
-                    JavaProxyConstructor.throwConstructorError(context.runtime, e);
+                    Helpers.throwException(e);
                 }
             } else if (oldInitialize != null) {
                 // re-entry into initialize on an already-constructed proxy - delegate to the prior initialize
@@ -310,7 +311,7 @@ public class ConcreteJavaProxy extends JavaProxy {
             try {
                 constructor.invokeExact(object, args, block, (RubyClass) self);
             } catch (Throwable e) {
-                JavaProxyConstructor.throwConstructorError(context.runtime, e);
+                Helpers.throwException(e);
             }
             return object;
         }
