@@ -461,10 +461,7 @@ public class ConcreteJavaProxy extends JavaProxy {
          * entering the split interpreter (e.g. {@code def initialize(*args); super(*args); end}).
          */
         private boolean canSkipDirectSuper(IRubyObject[] args) {
-            ExitableInterpreterContext ic = eic;
-            return ic != null && (ic.directSuperAllArgs() ||
-                    args.length == 0 && ic.directSuperNoArgs() ||
-                    ic.directSuperRequiredArgs() == args.length);
+            return eic != null && eic.directSuperForwardable(args.length);
         }
 
         /**
@@ -475,9 +472,9 @@ public class ConcreteJavaProxy extends JavaProxy {
          * immutable and downstream callers ({@code JCreateMethod.forTypes}, {@code RubyToJavaInvoker.convertArguments})
          * only read from the array.
          */
-        private IRubyObject[] terminalLiteralSuperArgs(ThreadContext context) {
+        private IRubyObject[] terminalLiteralSuperArgs(ThreadContext context, int argsLength) {
             ExitableInterpreterContext ic = eic;
-            if (ic == null || !ic.terminalLiteralSuper()) return null;
+            if (ic == null || !ic.terminalLiteralSuperForwardable(argsLength)) return null;
 
             IRubyObject[] cached = cachedTerminalLiteralArgs;
             if (cached != null) return cached;
@@ -535,7 +532,7 @@ public class ConcreteJavaProxy extends JavaProxy {
                 return splitInitialized(plan.prependedSuperPlan(sourceLocation.getSuperClass()), args, block, jcc, true);
             }
 
-            IRubyObject[] literalArgs = plan.terminalLiteralSuperArgs(runtime.getCurrentContext());
+            IRubyObject[] literalArgs = plan.terminalLiteralSuperArgs(runtime.getCurrentContext(), args.length);
             if (literalArgs != null) {
                 return splitInitialized(plan.prependedSuperPlan(sourceLocation.getSuperClass()), literalArgs, block, jcc, true);
             }
@@ -553,7 +550,7 @@ public class ConcreteJavaProxy extends JavaProxy {
                 return splitSuperInitialized(plan, args, block, jcc);
             }
 
-            IRubyObject[] literalArgs = plan.terminalLiteralSuperArgs(runtime.getCurrentContext());
+            IRubyObject[] literalArgs = plan.terminalLiteralSuperArgs(runtime.getCurrentContext(), args.length);
             if (literalArgs != null) {
                 SplitCtorData cachedTerminator = plan.cachedLiteralSuperTerminator;
                 if (cachedTerminator != null) return cachedTerminator;

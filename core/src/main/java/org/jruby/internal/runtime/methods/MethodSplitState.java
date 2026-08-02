@@ -79,15 +79,11 @@ public class MethodSplitState implements InternalSplitState {
     public static SplitSuperState<MethodSplitState> directSuperState(ThreadContext context,
                                                                      ExitableInterpreterContext ic,
                                                                      IRubyObject[] args, Block block) {
-        if (ic.directSuperNoArgs() && args.length == 0) {
-            return new SplitSuperState<>(new ExitableReturn(IRubyObject.NULL_ARRAY, block), new MethodSplitState(ic));
-        }
-
-        if (ic.directSuperRequiredArgs() == args.length || ic.directSuperAllArgs()) {
+        if (ic.directSuperForwardable(args.length)) {
             return new SplitSuperState<>(new ExitableReturn(args, block), new MethodSplitState(ic));
         }
 
-        if (ic.terminalLiteralSuper()) {
+        if (ic.terminalLiteralSuperForwardable(args.length)) {
             return new SplitSuperState<>(
                 new ExitableReturn(ic.getTerminalLiteralSuperArgs(context), block),
                 new MethodSplitState(ic)
