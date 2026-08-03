@@ -1058,6 +1058,7 @@ public class RubyKernel {
 
         var exception = raise.getException();
 
+        exception.prepareBacktrace(context);
         if (context.runtime.isDebug()) printExceptionSummary(context, exception);
         if (exception.getCause() == null && cause != exception) exception.setCause(cause);
 
@@ -1121,6 +1122,7 @@ public class RubyKernel {
         }
 
         var exception = raise.getException();
+        exception.prepareBacktrace(context);
         if (context.runtime.isDebug()) printExceptionSummary(context, exception);
         if (forceCause || argc > 0 && exception.getCause() == null && cause != exception) exception.setCause(cause);
 
