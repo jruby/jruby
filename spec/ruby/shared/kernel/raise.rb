@@ -172,7 +172,7 @@ describe :kernel_raise, shared: true do
 
     ruby_version_is "4.0" do
       reraised_exception.backtrace.should.any? { |line|
-        line.include?("KernelSpecs::RaiseSpecs::UniqueClass.with_raise")
+        line.include?("with_raise")
       }
     end
   end

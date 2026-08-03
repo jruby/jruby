@@ -1114,6 +1114,7 @@ public class RubyKernel {
         context.setErrorInfo(exception); // set $! early - wiring below forces toThrowable/preRaise
 
         RaiseException throwable = exception.toThrowable();
+        exception.prepareBacktrace(context);
         printDebugException(context, exception); // debug output ($DEBUG) after $! is set
         // :raise hook before throwing (MRI: EXEC_EVENT_HOOK(ec, RUBY_EVENT_RAISE, ...))
         IRRuntimeHelpers.traceRaise(context);
