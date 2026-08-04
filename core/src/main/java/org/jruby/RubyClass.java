@@ -1084,10 +1084,9 @@ public class RubyClass extends RubyModule {
     }
 
     private void copyVariableTableManagerForData(ThreadContext context, RubyClass superClazz) {
-        VariableTableManager variableTableManager = superClazz.getVariableTableManager();
-        if (variableTableManager.getRealClass().superClass() == context.runtime.getData()) {
+        if (superClazz != context.runtime.getData() && superClazz.isKindOfModule(context.runtime.getData())) {
             // duplicate data's variable table in subclasses
-            this.variableTableManager = variableTableManager.duplicateForData(this);
+            this.variableTableManager = superClazz.getVariableTableManager().duplicateForData(this);
         }
     }
 
