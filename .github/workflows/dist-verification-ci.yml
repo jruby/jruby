@@ -142,6 +142,7 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: ${{ matrix.java-version }}
+          cache: 'maven'
       - name: download cached dist bin
         uses: actions/download-artifact@v8
         with:
@@ -177,6 +178,7 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: ${{ matrix.java-version }}
+          cache: 'maven'
       - name: download cached dist src
         uses: actions/download-artifact@v8
         with:
@@ -209,6 +211,7 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: ${{ matrix.java-version }}
+          cache: 'maven'
       - name: download cached jruby-complete
         uses: actions/download-artifact@v8
         with:
@@ -236,6 +239,7 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: ${{ matrix.java-version }}
+          cache: 'maven'
       - name: download cached dist bin
         uses: actions/download-artifact@v8
         with:
@@ -274,6 +278,7 @@ jobs:
           architecture: x64
           distribution: 'temurin'
           java-version: ${{ matrix.java-version }}
+          cache: 'maven'
       - name: download cached installer x64
         uses: actions/download-artifact@v8
         with:
