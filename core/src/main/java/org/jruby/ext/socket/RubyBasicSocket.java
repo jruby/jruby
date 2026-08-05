@@ -953,17 +953,17 @@ public class RubyBasicSocket extends RubyIO {
         IRubyObject ret2;
         String hostAddress = addr.getAddress().getHostAddress();
         if (!reverse || doNotReverseLookup(context)) {
-            ret2 = ipV6 && hostAddress.equals("0:0:0:0:0:0:0:0") ?
-                    newString(context, "::") :
-                    newString(context, hostAddress);
+            ret2 = newString(context, normalizeIPv6Address(ipV6, hostAddress));
         } else {
             ret2 = newString(context, addr.getHostName());
         }
-        IRubyObject ret3 = ipV6 && hostAddress.equals("0:0:0:0:0:0:0:0") ?
-                newString(context, "::") :
-                newString(context, hostAddress);
+        IRubyObject ret3 = newString(context, normalizeIPv6Address(ipV6, hostAddress));
 
         return newArray(context, ret0, ret1, ret2, ret3);
+    }
+
+    private static String normalizeIPv6Address(boolean ipV6, String hostAddress) {
+        return ipV6 ? SocketUtilsIPV6.getIPV6Address(hostAddress) : hostAddress;
     }
 
     @Deprecated(since = "10.0.0.0")
