@@ -1973,7 +1973,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         String file = "(eval at " + singleBacktrace.getFileName() + ":" +  + singleBacktrace.getLineNumber() + ")";
         int line = 0;
 
-        return evalUnder(context, mod, evalStr, file, line, evalType);
+        return evalUnder(context, mod, evalStr, file, line, evalType, true);
     }
 
     /** specific_eval
@@ -2001,7 +2001,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         String file = arg1.convertToString().asJavaString();
         int line = 0;
 
-        return evalUnder(context, mod, evalStr, file, line, evalType);
+        return evalUnder(context, mod, evalStr, file, line, evalType, false);
     }
 
     /** specific_eval
@@ -2030,7 +2030,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         String file = arg1.convertToString().asJavaString();
         int line = toInt(context, arg2) - 1;
 
-        return evalUnder(context, mod, evalStr, file, line, evalType);
+        return evalUnder(context, mod, evalStr, file, line, evalType, false);
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -2049,7 +2049,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * using the module under as the context.
      */
     public IRubyObject evalUnder(final ThreadContext context, RubyModule under, RubyString src, String file, int line, EvalType evalType) {
-        return Interpreter.evalSimple(context, under, this, src, file, line, evalType);
+        return evalUnder(context, under, src, file, line, evalType, false);
+    }
+
+    public IRubyObject evalUnder(final ThreadContext context, RubyModule under, RubyString src, String file, int line, EvalType evalType, boolean syntheticFile) {
+        return Interpreter.evalSimple(context, under, this, src, file, line, evalType, syntheticFile);
     }
 
     /**
