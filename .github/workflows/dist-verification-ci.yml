@@ -142,6 +142,8 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: ${{ matrix.java-version }}
+          cache: 'maven'
+          cache-dependency-path: jruby-src
       - name: download cached dist bin
         uses: actions/download-artifact@v8
         with:
@@ -172,22 +174,25 @@ jobs:
     name: src verification on ${{ matrix.runs-on }} (Java ${{ matrix.java-version }})
 
     steps:
+      - name: download cached dist src
+        uses: actions/download-artifact@v8
+        with:
+          name: jruby-dist-src.tar.gz
+      - name: unpack dist src
+        run: |
+          mkdir jruby-dist-src
+          tar xzf jruby-dist-src.tar.gz -C jruby-dist-src --strip-components=1
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: ${{ matrix.java-version }}
-      - name: download cached dist src
-        uses: actions/download-artifact@v8
-        with:
-          name: jruby-dist-src.tar.gz
+          cache: 'maven'
+          cache-dependency-path: jruby-dist-src
       - name: test compilation of dist src
         run: |
-          mkdir jruby-dist-src
           cd jruby-dist-src
-          tar xzf ../jruby-dist-src.tar.gz --strip-components=1
           ./mvnw -ntp clean install -Pdist
-          cd ..
 
   jruby-complete-verification:
 
