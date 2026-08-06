@@ -55,6 +55,7 @@ import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.api.Warn.warn;
+import static org.jruby.runtime.Helpers.arrayOf;
 
 public class Sprintf {
     private static final int FLAG_NONE        = 0;
@@ -176,7 +177,7 @@ public class Sprintf {
                     RubyString nameStr = newString(runtime.getCurrentContext(), name);
                     raiseKeyError("key" + startDelim + nameStr + endDelim + " not found", rubyHash, nameSym);
                 } else if (rubyHash.hasDefaultProc()) {
-                    object = object.callMethod(runtime.getCurrentContext(), "call", nameSym);
+                    object = object.callMethod(runtime.getCurrentContext(), "call", arrayOf(rubyHash, nameSym));
                 }
 
                 if (object.isNil()) throw runtime.newKeyError("key" + startDelim + nameSym + endDelim + " not found", rubyHash, nameSym);
