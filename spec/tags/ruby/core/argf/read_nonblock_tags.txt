@@ -1,0 +1,1 @@
+fails:ARGF.read_nonblock raises an ArgumentError if exception: is not true or false
