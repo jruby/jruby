@@ -10,6 +10,36 @@ permissions:
 
 jobs:
 
+  rake-test-slow:
+    runs-on:
+      group: headius runners
+
+    strategy:
+      matrix:
+        target: ['test:mri:core:jit']
+        java-version: ['21', '25', '26']
+      fail-fast: false
+
+    name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }})
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v6
+      - name: remove default java except 21
+        run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
+      - name: set up java ${{ matrix.java-version }}
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'zulu'
+          java-version: ${{ matrix.java-version }}
+          cache: 'maven'
+      - name: bootstrap
+        run: ./mvnw -ntp -Pbootstrap clean package
+      - name: bundle install
+        run: bin/jruby --dev -S bundle install
+      - name: rake ${{ matrix.target }}
+        run: bin/jruby -S rake ${{ matrix.target }}
+
   rake-test:
     runs-on: ubuntu-latest
 
