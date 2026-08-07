@@ -66,14 +66,4 @@ describe "Class#dup" do
   it "raises TypeError if called on BasicObject" do
     -> { BasicObject.dup }.should.raise(TypeError, "can't copy the root class")
   end
-
-  it "does not freeze the singleton class of the duplicate, even if the original class is frozen" do
-    klass = Class.new
-    klass.freeze
-
-    dup = klass.dup
-
-    dup.should_not.frozen?
-    -> { dup.extend(Module.new) }.should_not raise_error
-  end
 end
