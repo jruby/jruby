@@ -45,13 +45,13 @@ describe "Kernel#raise with previously rescued exception" do
   ]
 
   re_raisers_with_cause = [
-    -> (e1, e2) {raise e1, cause: e2},
-    -> (e1, e2) {raise e1, "New message", cause: e2},
-    -> (e1, e2) {raise e1, "New message", [], cause: e2}
+    -> e1, e2 {raise e1, cause: e2},
+    -> e1, e2 {raise e1, "New message", cause: e2},
+    -> e1, e2 {raise e1, "New message", [], cause: e2}
   ]
 
   it "re-raises a previously rescued exception without overwriting the cause" do
-    check = -> (second_raiser) do
+    check = -> second_raiser do
       begin
         begin
           begin
@@ -74,7 +74,7 @@ describe "Kernel#raise with previously rescued exception" do
   end
 
   it "re-raises a previously rescued exception with overwriting the cause when it's explicitly specified with :cause option" do
-    check = -> ((raiser, re_raiser_with_cause)) do
+    check = -> ((raiser, re_raiser_with_cause)) do # rubocop:disable Style/StabbyLambdaParentheses
       e4 = RuntimeError.new("Error 4")
       begin
         begin
@@ -98,7 +98,7 @@ describe "Kernel#raise with previously rescued exception" do
   end
 
   it "re-raises a previously rescued exception without overwriting the cause when it's explicitly specified with a :cause option that has nil value" do
-    check = -> ((raiser, re_raiser_with_cause)) do
+    check = -> ((raiser, re_raiser_with_cause)) do # rubocop:disable Style/StabbyLambdaParentheses
       begin
         begin
           begin
@@ -121,7 +121,7 @@ describe "Kernel#raise with previously rescued exception" do
   end
 
   it "re-raises a previously rescued exception without setting a cause implicitly" do
-    check = -> (raiser) do
+    check = -> raiser do
       begin
         raiser.call
       rescue => e1
@@ -136,7 +136,7 @@ describe "Kernel#raise with previously rescued exception" do
   end
 
   it "re-raises a previously rescued exception that has a cause without setting a cause implicitly" do
-    check = -> (raiser) do
+    check = -> raiser do
       begin
         raiser.call
       rescue => e1
@@ -155,7 +155,7 @@ describe "Kernel#raise with previously rescued exception" do
   end
 
   it "raises a new exception with two outer rescues while setting the cause implicitly to the innermost rescued exception" do
-    check = -> (raiser) do
+    check = -> raiser do
       begin
         raiser.call
       rescue => e1
@@ -174,7 +174,7 @@ describe "Kernel#raise with previously rescued exception" do
   end
 
   it "re-raises a previously rescued exception that doesn't have a cause and is a cause of other exception without setting a cause implicitly" do
-    check = -> (raiser) do
+    check = -> raiser do
       begin
         raiser.call
       rescue => e1
@@ -195,7 +195,7 @@ describe "Kernel#raise with previously rescued exception" do
   end
 
   it "re-raises a previously rescued exception that doesn't have a cause and is a cause of other exception (that wasn't raised explicitly) without setting a cause implicitly" do
-    check = -> (raiser) do
+    check = -> raiser do
       begin
         raiser.call
       rescue => e1
@@ -216,7 +216,7 @@ describe "Kernel#raise with previously rescued exception" do
   end
 
   it "re-raises a previously rescued exception that has a cause but isn't a cause of any other exception without setting a cause implicitly" do
-    check = -> (raiser) do
+    check = -> raiser do
       begin
         raiser.call
       rescue => e1
