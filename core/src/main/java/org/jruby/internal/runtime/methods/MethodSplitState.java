@@ -28,29 +28,68 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.InternalSplitState;
+import org.jruby.internal.runtime.SplitSuperState;
 import org.jruby.ir.interpreter.ExitableInterpreterContext;
 import org.jruby.ir.interpreter.ExitableInterpreterEngineState;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-class MethodSplitState implements InternalSplitState {
-    public final ExitableInterpreterContext eic;
-    public final ExitableInterpreterEngineState state;
-    public final ThreadContext context;
+public class MethodSplitState implements InternalSplitState {
+    final ExitableInterpreterContext interpreterContext;
+    final ExitableInterpreterEngineState interpreterEngineState;
+
     public final DynamicScope scope;
     public final RubyModule implClass;
     public final IRubyObject self;
     public final String name;
 
-    public MethodSplitState(ThreadContext context, ExitableInterpreterContext ic, RubyModule clazz, IRubyObject self,
-            String name) {
-        this.context = context;
-        this.eic = ic;
-        this.state = ic.getEngineState();
+    private MethodSplitState(ExitableInterpreterContext ic) {
+        assert ic != null;
+        this.interpreterContext = ic;
+        this.interpreterEngineState = null;
+        this.scope = null;
+        this.implClass = null;
+        this.self = null;
+        this.name = null;
+    }
+
+    public MethodSplitState(ExitableInterpreterContext ic, RubyModule clazz, IRubyObject self, String name) {
+        this.interpreterContext = ic;
+        this.interpreterEngineState = ic.getEngineState();
         this.scope = DynamicScope.newDynamicScope(ic.getStaticScope());
         this.implClass = clazz;
         this.self = self;
         this.name = name;
+    }
+
+    public ExitableInterpreterContext getInterpreterContext() {
+        return interpreterContext;
+    }
+
+    public ExitableInterpreterEngineState getInterpreterEngineState() {
+        return interpreterEngineState;
+    }
+
+    /**
+     * Direct <code>super</code> does not need any interpreter execution and thus returns a dummy instance.
+     * @return dummy wrapped {@link MethodSplitState} or null for non "direct" super calls
+     */
+    public static SplitSuperState<MethodSplitState> directSuperState(ThreadContext context,
+                                                                     ExitableInterpreterContext ic,
+                                                                     IRubyObject[] args, Block block) {
+        if (ic.directSuperForwardable(args.length)) {
+            return new SplitSuperState<>(new ExitableReturn(args, block), new MethodSplitState(ic));
+        }
+
+        if (ic.terminalLiteralSuperForwardable(args.length)) {
+            return new SplitSuperState<>(
+                new ExitableReturn(ic.getTerminalLiteralSuperArgs(context), block),
+                new MethodSplitState(ic)
+            );
+        }
+
+        return null;
     }
 }
