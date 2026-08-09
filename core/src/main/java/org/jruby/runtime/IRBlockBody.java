@@ -2,6 +2,7 @@ package org.jruby.runtime;
 
 import org.jruby.RubyArray;
 import org.jruby.ir.IRClosure;
+import org.jruby.ir.IRRefinedClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
@@ -193,6 +194,22 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
 
     public IRClosure getScope() {
         return (IRClosure) scope.getIRScope();
+    }
+
+    // Proc#refined clones with the same recipe are eql? and hash-equal even as distinct copies,
+    // as in CRuby; every other body compares by identity.
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) return true;
+
+        return other instanceof IRBlockBody body &&
+                getScope() instanceof IRRefinedClosure scope && body.getScope() instanceof IRRefinedClosure otherScope &&
+                scope.sameRecipe(otherScope);
+    }
+
+    @Override
+    public int hashCode() {
+        return getScope() instanceof IRRefinedClosure refined ? refined.recipeHash() : super.hashCode();
     }
 
     @Override

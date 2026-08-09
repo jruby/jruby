@@ -628,8 +628,8 @@ public abstract class IRScope implements ParseResult {
 
     /**
      * Shared body of the IRMethod/IRModuleBody Proc#refined clone: give the copy its own StaticScope reaching
-     * the enclosing clone's refinements overlay, flag it maybe-using-refinements, and re-create its instructions.
-     * The caller supplies the source InterpreterContext and a constructor for the empty copy.
+     * the enclosing clone's refinements overlay, flag it maybe-using-refinements, and re-create its instructions
+     * lazily on first use.  The caller supplies the source InterpreterContext and a constructor for the empty copy.
      */
     protected <T extends IRScope> T cloneScopeForRefinements(IRScope lexicalParent, InterpreterContext sourceIC,
                                                              BiFunction<IRScope, StaticScope, T> constructor) {
@@ -641,13 +641,45 @@ public abstract class IRScope implements ParseResult {
         clone.setIsMaybeUsingRefinements();
 
         SimpleCloneInfo clonedII = new SimpleCloneInfo(clone, false, false, true);
-        List<Instr> newInstrs = new ArrayList<>(sourceIC.getInstructions().length);
-        for (Instr i : sourceIC.getInstructions()) {
-            newInstrs.add(i.clone(clonedII));
-        }
-        clone.allocateInterpreterContext(newInstrs, sourceIC.getTemporaryVariableCount(), sourceIC.getFlags());
+        clone.allocateInterpreterContext(new RefinementsCloneInstrs(clone, sourceIC, clonedII),
+                sourceIC.getTemporaryVariableCount(), sourceIC.getFlags());
 
         return clone;
+    }
+
+    /**
+     * Copies a Proc#refined clone's instructions on first use.  Idempotent: InterpreterContext#getEngine can
+     * force it from two threads, and a duplicate copy would re-register nested shells in their parents.
+     */
+    protected static final class RefinementsCloneInstrs implements Supplier<List<Instr>> {
+        private final IRScope clone;
+        private final InterpreterContext sourceIC;
+        private final SimpleCloneInfo clonedII;
+        private List<Instr> instrs;
+
+        RefinementsCloneInstrs(IRScope clone, InterpreterContext sourceIC, SimpleCloneInfo clonedII) {
+            this.clone = clone;
+            this.sourceIC = sourceIC;
+            this.clonedII = clonedII;
+        }
+
+        @Override
+        public synchronized List<Instr> get() {
+            if (instrs == null) {
+                Instr[] source = sourceIC.getInstructions();
+                List<Instr> newInstrs = new ArrayList<>(source.length);
+                for (Instr i : source) {
+                    newInstrs.add(i.clone(clonedII));
+                }
+                instrs = newInstrs;
+                clone.publishRefinementsClone();
+            }
+            return instrs;
+        }
+    }
+
+    /** Hook: an IRRefinedClosure publishes itself to the memo when it materializes. */
+    protected void publishRefinementsClone() {
     }
 
     private Instr[] cloneInstrs() {
