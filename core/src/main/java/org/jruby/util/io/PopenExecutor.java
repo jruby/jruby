@@ -832,10 +832,10 @@ public class PopenExecutor {
         }
 
         /* sort the table by oldfd: O(n log n) */
-        if (sargp == null)
-            Arrays.sort(pairs, intcmp); /* hopefully async-signal-safe */
-        else
-            Arrays.sort(pairs, intrcmp);
+        // JRuby uses posix_spawn actions for redirects, so they should always be sorted by the input "old"
+        // descriptors to ensure we dup them before they get overwritten by other actions.
+        // See https://github.com/jruby/jruby/issues/9577
+        Arrays.sort(pairs, intcmp);
 
         /* initialize older_index and num_newer: O(n log n) */
         for (i = 0; i < n; i++) {
@@ -2008,13 +2008,6 @@ public class PopenExecutor {
         @Override
         public int compare(run_exec_dup2_fd_pair o1, run_exec_dup2_fd_pair o2) {
             return Integer.compare(o1.oldfd, o2.oldfd);
-        }
-    };
-
-    private static final Comparator<run_exec_dup2_fd_pair> intrcmp = new Comparator<run_exec_dup2_fd_pair>() {
-        @Override
-        public int compare(run_exec_dup2_fd_pair o1, run_exec_dup2_fd_pair o2) {
-            return Integer.compare(o2.oldfd, o1.oldfd);
         }
     };
 
