@@ -329,6 +329,10 @@ class Date
   private_constant :COMPLETE_FRAGS
 
   def self.complete_frags(elem) # :nodoc:
+
+    # TODO change RubyDate _parse_impl to behave like MRI for commercial dates. don't return nil cwyear/cwday.
+    elem.delete_if { |k, v| (k == :cwyear && v.nil?) || (k == :cwday && v.nil?) }
+
     g = COMPLETE_FRAGS.max_by { |_, fields| fields.count { |field| elem.key? field } }
     c = g[1].count { |field| elem.key? field }
 
@@ -357,6 +361,7 @@ class Date
         end
         elem[:cweek] ||= 1
         elem[:cwday] ||= 1
+        elem[:cwyear] ||= d.year
       when :wday
         elem[:jd] ||= (d - d.wday + elem[:wday]).jd
       when :wnum0
@@ -394,6 +399,7 @@ class Date
   private_class_method :complete_frags
 
   def self.valid_date_frags?(elem, sg) # :nodoc:
+
     if jd = elem[:jd] and
         jd = _valid_jd?(jd, sg)
       return jd
@@ -410,7 +416,7 @@ class Date
       return jd
     end
 
-    if cwyear = elem[:cwyear] and cweek = elem[:cweek] and cwday = (elem[:cwday] || elem[:wday].nonzero? || 7) and
+    if cweek = elem[:cweek] and cwyear = elem[:cwyear] and cwday = (elem[:cwday] || elem[:wday].nonzero? || 7) and
         jd = _valid_commercial?(cwyear, cweek, cwday, sg)
       return jd
     end
