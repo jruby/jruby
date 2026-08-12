@@ -12,10 +12,17 @@ DO NOT MODIFY - GENERATED CODE
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>jruby-parent</artifactId>
-    <version>10.1.1.0-SNAPSHOT</version>
+    <version>10.1.2.0-SNAPSHOT</version>
   </parent>
   <artifactId>jruby-core</artifactId>
   <name>JRuby Core</name>
+  <distributionManagement>
+    <relocation>
+      <groupId>org.jruby</groupId>
+      <artifactId>jruby-base</artifactId>
+      <message>The jruby-core artifact is deprecated in favor of the jruby-base artifact.</message>
+    </relocation>
+  </distributionManagement>
   <properties>
     <jruby.basedir>${basedir}/..</jruby.basedir>
     <polyglot.dump.pom>pom.xml</polyglot.dump.pom>

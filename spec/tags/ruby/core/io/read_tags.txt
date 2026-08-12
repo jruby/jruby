@@ -14,3 +14,4 @@ windows:IO.read with BOM reads a file with a utf-8 bom
 windows:IO#read with internal encoding not specified does not transcode the String
 windows:IO.read from a pipe warns about deprecation
 
+fails:IO.read from a pipe raises Errno::EINVAL when path starts with a pipe

@@ -35,7 +35,7 @@ import org.jruby.RubyNoMatchingPatternKeyError;
  *
  * @see RubyArgumentError
  */
-public class NoMatchingPatternKeyError extends StandardError {
+public class NoMatchingPatternKeyError extends NoMatchingPatternError {
     public NoMatchingPatternKeyError(String message, RubyNoMatchingPatternKeyError exception) {
         super(message, exception);
     }

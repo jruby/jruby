@@ -1,0 +1,2 @@
+fails:Enumerator::Lazy#take_while value packing of source yields (matches Enumerable#take_while) yields a single nil for a zero-argument source yield
+fails:Enumerator::Lazy#take_while value packing of source yields (matches Enumerable#take_while) yields a packed Array for a multi-argument source yield

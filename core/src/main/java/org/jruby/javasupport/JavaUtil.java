@@ -76,11 +76,9 @@ import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
-import org.jruby.api.Convert;
 import org.jruby.exceptions.TypeError;
 import org.jruby.ext.bigdecimal.RubyBigDecimal;
 import org.jruby.RubyBignum;
-import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
@@ -232,7 +230,6 @@ public class JavaUtil {
         return convertProcToInterface(context, (RubyBasicObject) rubyObject, targetType);
     }
 
-    @SuppressWarnings("unchecked")
     public static <T> T convertProcToInterface(ThreadContext context, RubyBasicObject rubyObject, Class<T> targetType) {
         // Capture original class; we only detach the singleton for natural Proc instances
         RubyClass procClass = rubyObject.getMetaClass();
@@ -282,9 +279,8 @@ public class JavaUtil {
      * @param object
      * @return true if the object is wrapping a Java object
      */
-    @SuppressWarnings("deprecation")
     public static boolean isJavaObject(final IRubyObject object) {
-        return object instanceof JavaProxy || object.dataGetStruct() instanceof JavaObject;
+        return object instanceof JavaProxy;
     }
 
     /**
@@ -293,12 +289,8 @@ public class JavaUtil {
      * @return Java object
      * @see JavaUtil#isJavaObject(IRubyObject)
      */
-    @SuppressWarnings("deprecation")
     public static <T> T unwrapJavaObject(final IRubyObject object) {
-        if ( object instanceof JavaProxy ) {
-            return (T) ((JavaProxy) object).getObject();
-        }
-        return (T) ((JavaObject) object.dataGetStruct()).getValue();
+        return (T) ((JavaProxy) object).getObject();
     }
 
     /**
@@ -307,17 +299,14 @@ public class JavaUtil {
      * @return java object or passed object
      * @see JavaUtil#isJavaObject(IRubyObject)
      */
-    @SuppressWarnings("deprecation")
     public static <T> T unwrapIfJavaObject(final IRubyObject object) {
         if ( object instanceof JavaProxy ) {
             return (T) ((JavaProxy) object).getObject();
         }
         final Object unwrap = object.dataGetStruct();
-        if ( unwrap instanceof JavaObject ) {
-            return (T) ((JavaObject) unwrap).getValue();
-        }
         return (T) object; // assume correct instance
     }
+
 
     public static RubyString inspectObject(ThreadContext context, Object obj) {
         if (!(obj instanceof IRubyObject)) {
@@ -331,13 +320,9 @@ public class JavaUtil {
      * <p>Note: Returns null if not a wrapped Java value.</p>
      * @return unwrapped Java (object's) value
      */
-    @SuppressWarnings("deprecation")
     public static <T> T unwrapJavaValue(final IRubyObject object) {
         if ( object instanceof JavaProxy ) {
             return (T) ((JavaProxy) object).getObject();
-        }
-        if ( object instanceof JavaObject ) {
-            return (T) ((JavaObject) object).getValue();
         }
         final Object unwrap = object.dataGetStruct();
         if ( unwrap instanceof IRubyObject ) {
@@ -1088,13 +1073,9 @@ public class JavaUtil {
         return null;
     }
 
-    @SuppressWarnings("deprecation")
     public static <T> T unwrapJava(final Object wrapped, final T defaultValue) {
         if ( wrapped instanceof JavaProxy proxy) {
             return (T) proxy.getObject();
-        }
-        if ( wrapped instanceof JavaObject jobject) { // handles JavaClass as well
-            return (T) jobject.getValue();
         }
         return defaultValue;
     }

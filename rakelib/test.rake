@@ -70,7 +70,7 @@ namespace :test do
   end
 
   compile_flags = {
-    :default => :int,
+    :default => [],
     # interpreter is set to threshold=1 to encourage full builds to run for code called twice
     :int => ["-X-C", "-Xjit.threshold=1", "-Xjit.background=false"],
     # Note: jit.background=false is implied by jit.threshold=0, but we add it here to be sure
@@ -99,7 +99,6 @@ namespace :test do
         aot: "-X+C -Xjit.background=false #{get_meta_size.call()}"
     }
 
-    mri_suites = [:core, :extra, :stdlib]
     mri_suites = {
       core: "-Xbacktrace.style=mri -Xdebug.fullTrace",
       extra: "--disable-gems -Xbacktrace.style=mri -Xdebug.fullTrace -X+O",

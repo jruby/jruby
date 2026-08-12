@@ -1,1 +1,2 @@
 fails:ruby -E raises a RuntimeError if used with -U
+fails:ruby -E doesn't raise a RuntimeError if used with -U in RUBYOPT

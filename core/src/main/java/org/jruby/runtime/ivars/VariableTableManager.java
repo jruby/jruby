@@ -54,7 +54,7 @@ import static org.jruby.api.Error.typeError;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 
 /**
- * This class encapculates all logic relating to the management of instance
+ * This class encapsulates all logic relating to the management of instance
  * variable tables in RubyBasicObject instances.
  *
  * The logic originally lived in both RubyBasicObject and RubyClass, tightly

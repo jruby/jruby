@@ -13,3 +13,5 @@ fails:StringIO#printf formatting integer formats x pads the empty string if prec
 fails:StringIO#printf formatting integer formats X converts to the empty string if precision is 0 and value is 0
 fails:StringIO#printf formatting integer formats X pads the empty string if precision is 0 and value is 0
 fails:StringIO#printf formatting flags # applies to formats bBxX does nothing for zero argument when combined with zero precision
+fails:StringIO#printf formatting other formats % raises ArgumentError if not followed by a conversion specifier
+fails:StringIO#printf formatting flags * raises ArgumentError if absolute argument specifier is followed by a conversion specifier

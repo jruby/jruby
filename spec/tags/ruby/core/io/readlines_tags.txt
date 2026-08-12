@@ -34,3 +34,4 @@ windows:IO.readlines when passed name, object, object when the first object is a
 windows:IO.readlines when passed name, object, object when the first object is not a String or Integer calls #to_str to convert the object to a String
 windows:IO.readlines when passed name, object, object when the first object is not a String or Integer uses the second object as a limit if it is an Integer
 windows:IO.readlines when passed name, object, object when the first object is not a String or Integer calls #to_int to convert the second object
+fails:IO.readlines raises Errno::EINVAL when path starts with a pipe
