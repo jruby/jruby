@@ -146,7 +146,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     plugin :'scm-publish', '3.1.0'
   end
 
-  plugin('org.sonatype.central:central-publishing-maven-plugin:0.7.0',
+  plugin('org.sonatype.central:central-publishing-maven-plugin:0.11.0',
          extensions: true,
          publishingServerId: 'central')
 
