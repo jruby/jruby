@@ -145,7 +145,11 @@ public class MarshalDumper {
     private void writeAndRegisterSymbol(RubyOutputStream out, RubySymbol sym) {
         if (!getSymbolCache().ifPresent(out, sym, MarshalDumper::writeSymbolLink)) {
             registerSymbol(sym);
-            dumpSymbol(out, sym.getBytes());
+            ByteList value = sym.getBytes();
+            out.write(':');
+            int len = value.length();
+            writeInt(out, len);
+            out.write(value.getUnsafeBytes(), value.begin(), len);
         }
     }
 
@@ -331,7 +335,7 @@ public class MarshalDumper {
 
                     if (hash.isComparedByIdentity()) {
                         out.write(TYPE_UCLASS);
-                        dumpSymbol(out, HASH_BYTELIST);
+                        writeAndRegisterSymbol(out, context.runtime.newSymbol(HASH_BYTELIST));
                     }
                     if (hash.getIfNone() == RubyBasicObject.UNDEF) {
                         out.write('{');
@@ -596,13 +600,6 @@ public class MarshalDumper {
     }
 
     public void writeString(RubyOutputStream out, ByteList value) {
-        int len = value.length();
-        writeInt(out, len);
-        out.write(value.getUnsafeBytes(), value.begin(), len);
-    }
-
-    public void dumpSymbol(RubyOutputStream out, ByteList value) {
-        out.write(':');
         int len = value.length();
         writeInt(out, len);
         out.write(value.getUnsafeBytes(), value.begin(), len);
