@@ -275,10 +275,10 @@ public class UnmarshalStream extends InputStream {
                 obj = objectForArray(partial);
                 break;
             case TYPE_HASH:
-                obj = objectForHash(partial);
+                obj = objectForHash(partial, false);
                 break;
             case TYPE_HASH_DEF:
-                obj = objectForHashDefault(partial);
+                obj = objectForHashDefault(partial, false);
                 break;
             case TYPE_STRUCT:
                 obj = objectForStruct(partial);
@@ -385,12 +385,12 @@ public class UnmarshalStream extends InputStream {
         return leave(RubyStruct.unmarshalFrom(this), partial);
     }
 
-    private IRubyObject objectForHashDefault(boolean partial) throws IOException {
-        return leave(RubyHash.unmarshalFrom(this, true), partial);
+    private IRubyObject objectForHashDefault(boolean partial, boolean identity) throws IOException {
+        return leave(RubyHash.unmarshalFrom(this, true, identity), partial);
     }
 
-    private IRubyObject objectForHash(boolean partial) throws IOException {
-        return leave(RubyHash.unmarshalFrom(this, false), partial);
+    private IRubyObject objectForHash(boolean partial, boolean identity) throws IOException {
+        return leave(RubyHash.unmarshalFrom(this, false, identity), partial);
     }
 
     private IRubyObject objectForArray(boolean partial) throws IOException {
@@ -436,8 +436,9 @@ public class UnmarshalStream extends InputStream {
 
         int type = r_byte();
         if (c == runtime.getHash() && (type == TYPE_HASH || type == TYPE_HASH_DEF)) {
-            // FIXME: Missing logic to make the following methods use compare_by_identity (and construction of that)
-            return type == TYPE_HASH ? objectForHash(partial) : objectForHashDefault(partial);
+            return type == TYPE_HASH ?
+                    objectForHash(partial, true) :
+                    objectForHashDefault(partial, true);
         }
 
         IRubyObject obj = objectFor(type, null, partial, extendedModules);

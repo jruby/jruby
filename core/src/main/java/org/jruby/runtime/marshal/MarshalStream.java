@@ -38,6 +38,7 @@ package org.jruby.runtime.marshal;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
@@ -76,6 +77,8 @@ import static org.jruby.util.RubyStringBuilder.types;
  * @author Anders
  */
 public class MarshalStream extends FilterOutputStream {
+    private static final ByteList HASH_BYTELIST = new ByteList("Hash".getBytes(StandardCharsets.US_ASCII), false);
+
     private final Ruby runtime;
     private final MarshalCache cache;
     private final int depthLimit;
@@ -278,6 +281,10 @@ public class MarshalStream extends FilterOutputStream {
             case HASH: {
                 RubyHash hash = (RubyHash)value;
 
+                if (hash.isComparedByIdentity()) {
+                    out.write(TYPE_UCLASS);
+                    writeAndRegisterSymbol(HASH_BYTELIST);
+                }
                 if(hash.getIfNone() == RubyBasicObject.UNDEF){
                     write('{');
                 } else if (hash.hasDefaultProc()) {

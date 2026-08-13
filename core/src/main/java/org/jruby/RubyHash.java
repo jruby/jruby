@@ -2537,8 +2537,10 @@ public class RubyHash extends RubyObject implements Map {
         }
     };
 
-    public static RubyHash unmarshalFrom(UnmarshalStream input, boolean defaultValue) throws IOException {
-        RubyHash result = (RubyHash) input.entry(newHash(input.getRuntime()));
+    public static RubyHash unmarshalFrom(UnmarshalStream input, boolean defaultValue, boolean identity) throws IOException {
+        RubyHash result = newHash(input.getRuntime());
+        if (identity) result.setComparedByIdentity(true);
+        result = (RubyHash) input.entry(result);
         int size = input.unmarshalInt();
 
         for (int i = 0; i < size; i++) {
