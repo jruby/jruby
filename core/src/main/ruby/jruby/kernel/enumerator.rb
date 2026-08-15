@@ -112,6 +112,7 @@ class Enumerator
 
     def next_values
       reset unless @fiber&.alive?
+      @fiber ||= Fiber.send(:__create_raw__, &@state)
 
       vals, _ = @fiber.resume
 
@@ -129,7 +130,7 @@ class Enumerator
     def reset
       @state.done = false
       @state.result = nil
-      @fiber = Fiber.new(&@state)
+      @fiber = nil
     end
 
   end
