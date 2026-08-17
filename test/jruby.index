@@ -17,6 +17,7 @@ jruby/test_case
 jruby/test_class
 jruby/test_class_subclasses
 jruby/test_comparable
+jruby/test_compound_string_coderange
 jruby/test_core_arities
 jruby/test_coverage
 jruby/test_custom_enumerable
