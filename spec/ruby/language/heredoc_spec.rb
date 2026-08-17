@@ -107,6 +107,13 @@ HERE
     SquigglyHeredocSpecs.least_indented_on_the_last_line_single.should == "    a\n  b\nc\n"
   end
 
+  it "returns an ASCII only String for an ASCII only <<~identifier" do
+    value = <<~EOS
+      hello world
+    EOS
+    value.ascii_only?.should be_true
+  end
+
   it "reports line numbers inside HEREDOC with method call" do
     -> {
       <<-HERE.chomp
