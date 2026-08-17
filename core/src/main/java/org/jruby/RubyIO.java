@@ -66,6 +66,7 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.transcode.EConvFlags;
 import org.jruby.api.API;
+import org.jruby.api.Convert;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
@@ -89,6 +90,7 @@ import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.ShellLauncher.POpenProcess;
 import org.jruby.util.*;
+import org.jruby.util.cli.JVMConsole;
 import org.jruby.util.cli.Options;
 import org.jruby.util.io.ChannelFD;
 import org.jruby.util.io.EncodingUtils;
@@ -2240,23 +2242,23 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     public RubyBoolean tty_p(ThreadContext context) {
         Ruby runtime = context.runtime;
         POSIX posix = runtime.getPosix();
-        OpenFile fptr;
-
-        fptr = getOpenFileChecked();
+        OpenFile fptr = getOpenFileChecked();
 
         fptr.lock();
         try {
             if (posix.isNative() && fptr.fd().realFileno != -1) {
-                return posix.libc().isatty(fptr.getFileno()) == 0 ? runtime.getFalse() : runtime.getTrue();
-            } else if (fptr.isStdio()) {
-                // This is a bit of a hack for platforms where we can't do native stdio
-                return runtime.getTrue();
+                // IO is native and we can call isatty
+                return Convert.asBoolean(context, posix.libc().isatty(fptr.getFileno()) == 1);
+            } else if (fptr.isStdio() && runtime.getInstanceConfig().isMain()) {
+                // IO is stdio and JRuby was started through Main, use JVM console status
+                return Convert.asBoolean(context, JVMConsole.isTerminal);
+            } else {
+                // Cannot determine if stdio is a terminal
+                return context.fals;
             }
         } finally {
             fptr.unlock();
         }
-
-        return runtime.getFalse();
     }
 
     // MRI: rb_io_init_copy
