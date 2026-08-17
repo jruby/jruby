@@ -154,9 +154,9 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
             var newByteList = new ByteList(0);
             newByteList.setEncoding(encoding);
             Operand string = switch (stringStyle) {
-                case Frozen -> new FrozenString(newByteList, CR_VALID, file, line);
-                case Mutable -> new MutableString(newByteList, CR_VALID, file, line);
-                default -> new ChilledString(newByteList, CR_VALID, file, line);
+                case Frozen -> new FrozenString(newByteList, CR_7BIT, file, line);
+                case Mutable -> new MutableString(newByteList, CR_7BIT, file, line);
+                default -> new ChilledString(newByteList, CR_7BIT, file, line);
             };
             return new CopyInstr(getResult(), string);
         } else if (piecesArray.length == 1) { // not sure we can have a compound string with only one piece AND a non-string.
@@ -240,8 +240,8 @@ public class BuildCompoundStringInstr extends NOperandResultBaseInstr {
     private Instr copy(FrozenString string) {
         Operand value = switch (stringStyle) {
             case Frozen -> string;
-            case Mutable -> new MutableString(string.bytelist, CR_VALID, file, line);
-            default -> new ChilledString(string.bytelist, CR_VALID, file, line);
+            case Mutable -> new MutableString(string.bytelist, string.getCodeRange(), file, line);
+            default -> new ChilledString(string.bytelist, string.getCodeRange(), file, line);
         };
 
         return new CopyInstr(result, value);
