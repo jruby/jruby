@@ -215,4 +215,16 @@ public class PrependedModule extends RubyClass implements DelegatedModule {
         return origin.getAutoloadMapForWrite();
     }
 
+    /**
+     * If the origin was a module, also invalidate its hierarchies
+     */
+    @Override
+    public void invalidateCacheDescendants(ThreadContext context) {
+        super.invalidateCacheDescendants(context);
+
+        if (origin.isModule()) {
+            origin.invalidateCacheDescendants(context);
+        }
+    }
+
 }
