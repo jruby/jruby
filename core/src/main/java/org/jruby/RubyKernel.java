@@ -950,7 +950,8 @@ public class RubyKernel {
         }
 
         if (hard) {
-            if (context.runtime.getInstanceConfig().isHardExit()) {
+            if (context.runtime.getInstanceConfig().isMain()) {
+                // JRuby was started through Main, use a hard exit
                 System.exit(status);
             } else {
                 return new MainExitException(status, true);
