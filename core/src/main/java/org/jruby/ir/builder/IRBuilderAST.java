@@ -2332,8 +2332,19 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     public Operand buildHash(HashNode hashNode) {
+        if (hashNode.isLiteral() || hashNode.hasRestKwarg() || !hashNode.hasOnlySymbolKeys()) {
+            // not kwargs or non-simple kwargs, build as a normal Hash
+            return buildLiteralHash(hashNode);
+        }
+
+        // simple kwargs, build as KeywordHash
+        return buildKeywordHash(hashNode);
+    }
+
+    private Variable buildLiteralHash(HashNode hashNode) {
         List<KeyValuePair<Operand, Operand>> args = new ArrayList<>(1);
         boolean hasAssignments = hashNode.containsVariableAssignment();
+
         Variable hash = null;
         // Duplication checks happen when **{} are literals and not **h variable references.
         Operand duplicateCheck = fals();
@@ -2370,6 +2381,20 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         }
 
         return hash;
+    }
+
+    public Operand buildKeywordHash(HashNode hashNode) {
+        List<KeyValuePair<Operand, Operand>> args = new ArrayList<>(1);
+        boolean hasAssignments = hashNode.containsVariableAssignment();
+
+        for (KeyValuePair<Node, Node> pair: hashNode.getPairs()) {
+            Node key = pair.getKey();
+            assert key instanceof SymbolNode : "simple kwargs should only have symbol keys: " + getFileName() + ":" + getLine(hashNode);
+
+            args.add(new KeyValuePair<>(buildSymbol((SymbolNode) key), buildWithOrder(pair.getValue(), hasAssignments)));
+        }
+
+        return new Hash(args, true);
     }
 
     public Operand buildIf(Variable result, final IfNode ifNode) {

@@ -22,10 +22,8 @@ namespace :spec do
 
   desc "Run fast specs that do not spawn many subprocesses"
   task :'ruby:fast' do
-    mspec :compile_mode => "OFF",
-          :format => 'd',
+    mspec :format => 'd',
           :spec_target => ":fast",
-          :jruby_opts => "--dev",
           :spec_config => "spec/jruby.mspec"
   end
 
@@ -42,6 +40,13 @@ namespace :spec do
   task :'ruby:fast:jit' do
     mspec :compile_mode => "JIT",
           :jit_threshold => 0,
+          :format => MSPEC_FORMAT,
+          :spec_target => ":fast"
+  end
+
+  desc "Run fast specs that do not spawn many subprocesses"
+  task :'ruby:fast:int' do
+    mspec :compile_mode => "OFF",
           :format => MSPEC_FORMAT,
           :spec_target => ":fast"
   end

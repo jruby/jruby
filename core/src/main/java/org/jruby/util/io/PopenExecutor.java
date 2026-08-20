@@ -159,17 +159,15 @@ public class PopenExecutor {
         RubyString prog = eargp.use_shell ? eargp.command_name : eargp.command_name;
         ExecArg sarg = new ExecArg();
 
-        if (eargp.chdirGiven) {
-            // we can'd do chdir with posix_spawn, so we should be set to use_shell and now
-            // just need to add chdir to the cmd
-            String script = "cd '" + eargp.chdir_dir + "'; ";
+        String progString;
 
-            // use exec to eliminate extra sh process if we do not need to run command as a shell script
-            if (!searchForMetaChars(prog)) script = script + "exec ";
+        if (eargp.chdirGiven) { // posix_spawn cannot chdir; run a guarded shell command instead
+            progString = chdirShellCommand(eargp.chdir_dir, prog, !searchForMetaChars(prog));
 
-            prog = (RubyString) dupString(context, prog).prepend(context, newString(context, script));
             eargp.chdir_dir = null;
             eargp.chdirGiven = false;
+        } else {
+            progString = prog.toString();
         }
 
         if (execargRunOptions(context, eargp, sarg, errmsg) < 0) return -1;
@@ -182,8 +180,8 @@ public class PopenExecutor {
 //            }
         }
         long pid = eargp.use_shell ?
-                procSpawnSh(context, prog.toString(), eargp) :
-                procSpawnCmd(context, eargp.argv_str.argv, prog.toString(), eargp);
+                procSpawnSh(context, progString, eargp) :
+                procSpawnCmd(context, eargp.argv_str.argv, progString, eargp);
 
         if (pid == -1) {
             Ruby runtime = context.runtime;
@@ -566,9 +564,8 @@ public class PopenExecutor {
         if (prog != null) cmd = checkEmbeddedNulls(context, prog).toString();
 
         if (eargp.chdirGiven) {
-            // we can'd do chdir with posix_spawn, so we should be set to use_shell and now
-            // just need to add chdir to the cmd
-            cmd = "cd '" + eargp.chdir_dir + "'; " + cmd;
+            // posix_spawn cannot chdir; run a guarded shell command instead.
+            cmd = chdirShellCommand(eargp.chdir_dir, cmd, false);
             eargp.chdir_dir = null;
             eargp.chdirGiven = false;
         }
@@ -835,10 +832,10 @@ public class PopenExecutor {
         }
 
         /* sort the table by oldfd: O(n log n) */
-        if (sargp == null)
-            Arrays.sort(pairs, intcmp); /* hopefully async-signal-safe */
-        else
-            Arrays.sort(pairs, intrcmp);
+        // JRuby uses posix_spawn actions for redirects, so they should always be sorted by the input "old"
+        // descriptors to ensure we dup them before they get overwritten by other actions.
+        // See https://github.com/jruby/jruby/issues/9577
+        Arrays.sort(pairs, intcmp);
 
         /* initialize older_index and num_newer: O(n log n) */
         for (i = 0; i < n; i++) {
@@ -1857,6 +1854,15 @@ public class PopenExecutor {
         }
     }
 
+    private static String chdirShellCommand(String dir, CharSequence command, boolean exec) {
+        final String script = "cd -- " + quotePosixShellWord(dir) + " && ";
+        return exec ? (script + "exec " + command) : (script + "eval " + quotePosixShellWord(command.toString()));
+    }
+
+    private static String quotePosixShellWord(String str) {
+        return '\'' + str.replace("'", "'\\''") + '\'';
+    }
+
     /**
      * Search for meta characters in the command, to know whether we should use a shell to launch.
      *
@@ -2002,13 +2008,6 @@ public class PopenExecutor {
         @Override
         public int compare(run_exec_dup2_fd_pair o1, run_exec_dup2_fd_pair o2) {
             return Integer.compare(o1.oldfd, o2.oldfd);
-        }
-    };
-
-    private static final Comparator<run_exec_dup2_fd_pair> intrcmp = new Comparator<run_exec_dup2_fd_pair>() {
-        @Override
-        public int compare(run_exec_dup2_fd_pair o1, run_exec_dup2_fd_pair o2) {
-            return Integer.compare(o2.oldfd, o1.oldfd);
         }
     };
 

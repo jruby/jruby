@@ -132,6 +132,10 @@ public class RubyException extends RubyObject {
         this.setMessage(message == null ? runtime.getNil() : runtime.newString(message));
     }
 
+    public static void raise(ThreadContext context, IRubyObject exception) {
+        RubyKernel.raiseInternal(context, exception, RubyKernel.lastErrorCause(context));
+    }
+
     @JRubyMethod(name = "exception", rest = true, meta = true)
     public static IRubyObject exception(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         return ((RubyClass) recv).newInstance(context, args, block);
@@ -562,6 +566,24 @@ public class RubyException extends RubyObject {
 
     public void captureBacktrace(ThreadContext context) {
         backtrace.backtraceData = instanceConfig(context).getTraceType().getBacktrace(context);
+    }
+
+    private void clearBacktraceObject() {
+        backtrace.backtraceObject = null;
+        backtrace.backtraceLocations = null;
+    }
+
+    /**
+     * Populate backtrace from the current position when exception is (re-)raised without one.
+     *
+     * MRI {@code setup_exception} which fills the backtrace only when it is <code>nil</code>
+     */
+    public void prepareBacktrace(ThreadContext context) {
+        if (getBacktrace().isNil()) {
+            clearBacktraceObject();
+            captureBacktrace(context);
+            backtrace.generateBacktrace(context.runtime);
+        }
     }
 
     public IRubyObject getBacktrace() {

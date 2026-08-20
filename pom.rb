@@ -74,9 +74,9 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
              "rake.version": '13.3.1',
              "jruby-launcher.version": '1.1.6',
              "ant.version": '1.9.8',
-             "asm.version": '9.7.1',
+             "asm.version": '9.10.1',
              "jar-dependencies.version": '0.4.1',
-             "jffi.version": '1.3.15',
+             "jffi.version": '1.4.0',
              "joda.time.version": '2.14.0')
 
   plugin_management do
@@ -146,7 +146,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     plugin :'scm-publish', '3.1.0'
   end
 
-  plugin('org.sonatype.central:central-publishing-maven-plugin:0.7.0',
+  plugin('org.sonatype.central:central-publishing-maven-plugin:0.11.0',
          extensions: true,
          publishingServerId: 'central')
 

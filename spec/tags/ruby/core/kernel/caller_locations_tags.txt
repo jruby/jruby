@@ -3,3 +3,4 @@ fails:Kernel#caller_locations must return nil if omitting more locations than av
 fails:Kernel#caller_locations must return the same locations when called with 1..-1 and when called with no arguments
 fails(https://github.com/jruby/jruby/issues/8660):Kernel#caller_locations includes core library methods defined in Ruby
 fails(https://github.com/jruby/jruby/issues/8660):Kernel#caller_locations does not include core library methods defined in Ruby
+fails:Kernel#caller_locations can be called with `nil` length

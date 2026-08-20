@@ -29,3 +29,4 @@ windows:IO.foreach when passed name, object, object when the first object is not
 windows:IO.foreach when passed name, object, object when the first object is not a String or Integer calls #to_int to convert the second object
 windows:IO.foreach warns about deprecation given a path with a pipe
 
+fails:IO.foreach raises Errno::EINVAL when path starts with a pipe

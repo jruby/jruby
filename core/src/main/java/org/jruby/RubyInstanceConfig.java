@@ -55,6 +55,7 @@ import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 import org.objectweb.asm.Opcodes;
 
 import java.io.*;
+import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -1813,13 +1814,38 @@ public class RubyInstanceConfig {
 
     private static int initJavaBytecodeVersion() {
         final String specVersion = Options.BYTECODE_VERSION.load();
+        return calculateBytecodeVersion(specVersion);
+    }
 
-        int version = Integer.parseInt(specVersion);
-        switch (version) {
-            default:
-            case 21:
-            case 22:
-                return Opcodes.V21;
+    public static int calculateBytecodeVersion(String givenVersion) {
+        // try given version, falling back on property and then lowest supported
+        int bytecodeVersion = parseJavaVersion(givenVersion);
+
+        if (bytecodeVersion != -1) return bytecodeVersion;
+
+        String defaultVersion = SafePropertyAccessor.getProperty("java.specification.version", "21");
+        if (givenVersion.equals(defaultVersion)) {
+            // can't determine spec version, use lowest supported
+            return Opcodes.V21;
         }
+
+        // default is different than given, try again
+        bytecodeVersion = parseJavaVersion(defaultVersion);
+
+        if (bytecodeVersion != -1) return bytecodeVersion;
+
+        System.err.println("unsupported Java version " + givenVersion + " and default version " + defaultVersion + ", using 21");
+        return Opcodes.V21;
+    }
+
+    private static int parseJavaVersion(String givenVersion) {
+        try {
+            int version = Integer.parseInt(givenVersion);
+            Field versionField = Opcodes.class.getField("V" + version);
+            return (Integer) versionField.get(null);
+        } catch (Exception e) {
+            // return -1 below
+        }
+        return -1;
     }
 }

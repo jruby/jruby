@@ -1,0 +1,1 @@
+fails:Kernel#Complex raises an ArgumentError if exception: is not true or false

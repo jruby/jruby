@@ -1,6 +1,9 @@
 require 'test/unit'
 require 'test/jruby/test_helper'
+require 'fileutils'
 require 'rbconfig'
+require 'shellwords'
+require 'tmpdir'
 
 class TestProcess < Test::Unit::TestCase
   include TestHelper
@@ -114,5 +117,47 @@ class TestProcess < Test::Unit::TestCase
     assert_raise(NotImplementedError) { Process.waitpid2 }
     assert_raise(NotImplementedError) { Process.waitall }
   end if WINDOWS
+
+  def test_chdir_option_does_not_allow_shell_injection
+    omit 'requires POSIX shell' if WINDOWS
+
+    Dir.mktmpdir('jruby_chdir_test') do |tmpdir|
+      marker = File.join(tmpdir, 'injected_marker')
+      malicious_dir = "missing' ; touch #{Shellwords.escape(marker)} #"
+
+      system('echo safe', chdir: malicious_dir, out: File::NULL, err: File::NULL)
+
+      assert_false File.exist?(marker), 'command injection via chdir: path executed'
+    end
+  end
+
+  def test_chdir_option_does_not_run_command_when_chdir_fails
+    omit 'requires POSIX shell' if WINDOWS
+
+    Dir.mktmpdir('jruby_chdir_test') do |tmpdir|
+      marker = File.join(tmpdir, 'failed_chdir_marker')
+      missing_dir = File.join(tmpdir, 'missing')
+
+      system("echo safe; touch #{Shellwords.escape(marker)}", chdir: missing_dir, out: File::NULL, err: File::NULL)
+
+      assert_false File.exist?(marker), 'command ran even though chdir: target was missing'
+    end
+  end
+
+  def test_chdir_option_handles_shell_special_characters_in_path
+    omit 'requires POSIX shell' if WINDOWS
+
+    Dir.mktmpdir('jruby_chdir_test') do |tmpdir|
+      ["dir with ' quote $dollar ; semicolon", '-P'].each do |name|
+        dir = File.join(tmpdir, name)
+        FileUtils.mkdir_p(dir)
+
+        assert system('true', chdir: dir, out: File::NULL, err: File::NULL)
+
+        output = IO.popen('pwd', chdir: dir, &:read).strip
+        assert_equal File.realpath(dir), File.realpath(output)
+      end
+    end
+  end
 
 end

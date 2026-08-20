@@ -45,7 +45,6 @@ import org.jruby.embed.InvokeFailedException;
 import org.jruby.embed.ScriptingContainer;
 import org.jruby.embed.variable.BiVariable;
 import org.jruby.embed.variable.InstanceVariable;
-import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.DynamicScope;
@@ -273,16 +272,8 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
         return container.getProvider().getRuntime().getTopSelf();
     }
 
-    @SuppressWarnings("deprecation")
     private static IRubyObject[] convertArgs(final Ruby runtime, final Object[] args) {
-        IRubyObject[] rubyArgs = JavaUtil.convertJavaArrayToRuby(runtime, args);
-        for (int i = 0; i < rubyArgs.length; i++) {
-            IRubyObject obj = rubyArgs[i];
-            if (obj instanceof org.jruby.javasupport.JavaObject) {
-                rubyArgs[i] = Java.wrap(runtime, obj);
-            }
-        }
-        return rubyArgs;
+        return JavaUtil.convertJavaArrayToRuby(runtime, args);
     }
 
     // --- Keyword argument support ---

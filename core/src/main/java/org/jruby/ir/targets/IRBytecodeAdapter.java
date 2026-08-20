@@ -463,7 +463,11 @@ public class IRBytecodeAdapter {
             return literal;
         }
         public static BlockPassType fromIR(ClosureAcceptingInstr callInstr) {
-            return callInstr.getClosureArg() != NullBlock.INSTANCE ? ( callInstr.hasLiteralClosure() ? BlockPassType.LITERAL : BlockPassType.GIVEN) : BlockPassType.NONE;
+            if (callInstr.getClosureArg() != NullBlock.INSTANCE) {
+                if (callInstr.hasLiteralClosure()) return BlockPassType.LITERAL;
+                return BlockPassType.GIVEN;
+            }
+            return BlockPassType.NONE;
         }
     }
 

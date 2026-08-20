@@ -33,10 +33,6 @@ public class DescriptorInfo {
     public DescriptorInfo(List<? extends MethodDescriptor> descs) {
         min = Integer.MAX_VALUE;
         max = 0;
-        keywords = false;
-        frame = false;
-        rest = false;
-        block = false;
         boolean first = true;
         boolean lastBlock = false;
 
@@ -48,6 +44,10 @@ public class DescriptorInfo {
             } else {
                 if (lastBlock != desc.hasBlock) {
                     throw new RuntimeException("Mismatched block parameters for method " + desc.declaringClassName + "." + desc.name);
+                }
+                if (keywords != desc.anno.keywords()) {
+                    // warning for now to avoid breaking existing extensions (jruby/jruby#9531)
+                    System.err.println("WARNING: keywords flag is not uniform across all signatures for method " + desc.declaringClassName + "." + desc.name);
                 }
             }
             lastBlock = desc.hasBlock;

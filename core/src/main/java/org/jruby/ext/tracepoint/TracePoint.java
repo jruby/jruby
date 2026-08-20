@@ -119,11 +119,15 @@ public class TracePoint extends RubyObject {
 
                 context.preTrace();
 
+                final IRubyObject errorInfo = context.getErrorInfo();
                 // FIXME: get return value
-                update(event.getName(), file, line, name, type, context.getErrorInfo(), context.nil, binding);
+                update(event.getName(), file, line, name, type, errorInfo, context.nil, binding);
 
+                // MRI clears $! while a hook runs and restores it after (unless the hook raises)
+                context.setErrorInfo(context.nil);
                 try {
                     block.yieldSpecific(context, TracePoint.this);
+                    context.setErrorInfo(errorInfo);
                 } finally {
                     update(null, null, line, null, context.nil, context.nil, context.nil, context.nil);
                     context.postTrace();

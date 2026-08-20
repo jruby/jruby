@@ -9,6 +9,11 @@ project 'JRuby Core' do
   inherit 'org.jruby:jruby-parent', version
   id 'org.jruby:jruby-core'
 
+  distribution_management do
+    relocation(groupId: 'org.jruby', artifactId: 'jruby-base',
+               message: 'The jruby-core artifact is deprecated in favor of the jruby-base artifact.')
+  end
+
   properties("polyglot.dump.pom": 'pom.xml',
              "polyglot.dump.readonly": true,
              "jruby.basedir": '${basedir}/..')

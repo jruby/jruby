@@ -28,3 +28,5 @@ fails:Kernel.sprintf integer formats x pads the empty string if precision is 0 a
 fails:Kernel.sprintf integer formats X converts to the empty string if precision is 0 and value is 0
 fails:Kernel.sprintf integer formats X pads the empty string if precision is 0 and value is 0
 fails:Kernel.sprintf flags # applies to formats bBxX does nothing for zero argument when combined with zero precision
+fails:Kernel#sprintf other formats % raises ArgumentError if not followed by a conversion specifier
+fails:Kernel#sprintf flags * raises ArgumentError if absolute argument specifier is followed by a conversion specifier
