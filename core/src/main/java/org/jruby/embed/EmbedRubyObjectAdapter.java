@@ -208,7 +208,7 @@ public interface EmbedRubyObjectAdapter extends RubyObjectAdapter {
      * @throws IllegalArgumentException if a key is not a supported type
      * @throws InvokeFailedException if the underlying Ruby call raises and the
      *              implementation is configured to wrap exceptions.
-     * @since JRuby 10.1.1.0
+     * @since JRuby 10.1.2.0
      */
     Object callMethodWithKeywordArgs(Object receiver, String methodName, Map<?, Object> kwargs);
 
@@ -229,7 +229,7 @@ public interface EmbedRubyObjectAdapter extends RubyObjectAdapter {
      * @throws IllegalArgumentException if a key is not a supported type
      * @throws InvokeFailedException if the underlying Ruby call raises and the
      *              implementation is configured to wrap exceptions.
-     * @since JRuby 10.1.1.0
+     * @since JRuby 10.1.2.0
      */
     Object callMethodWithKeywordArgs(Object receiver, String methodName, Object[] args, Map<?, Object> kwargs);
 
@@ -255,7 +255,7 @@ public interface EmbedRubyObjectAdapter extends RubyObjectAdapter {
      * @throws IllegalArgumentException if a key is not a supported type
      * @throws InvokeFailedException if the underlying Ruby call raises and the
      *              implementation is configured to wrap exceptions.
-     * @since JRuby 10.1.1.0
+     * @since JRuby 10.1.2.0
      */
     <T> T callMethodWithKeywordArgs(Object receiver, String methodName, Object[] args, Map<?, Object> kwargs, Class<T> returnType);
 
@@ -287,7 +287,7 @@ public interface EmbedRubyObjectAdapter extends RubyObjectAdapter {
      * @throws IllegalArgumentException if a key is not a supported type
      * @throws InvokeFailedException if the underlying Ruby call raises and the
      *              implementation is configured to wrap exceptions.
-     * @since JRuby 10.1.1.0
+     * @since JRuby 10.1.2.0
      */
     <T> T callMethodWithKeywordArgs(Object receiver, String methodName, Object[] args, Map<?, Object> kwargs, Block block, Class<T> returnType);
 }
