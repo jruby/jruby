@@ -68,7 +68,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.proxies.ConcreteJavaProxy.SplitCtorData;
 import org.jruby.java.proxies.MapJavaProxy;
-import org.jruby.javasupport.Java.JCtorCache;
+import org.jruby.javasupport.ConstructorCache;
 import org.jruby.javasupport.JavaConstructor;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
@@ -869,40 +869,33 @@ public abstract class RealClassGenerator {
     }
 
     private static final String CONCRETE_CTOR_SIG = sig(void.class, ConcreteJavaProxy.class, boolean.class,
-            IRubyObject[].class, Block.class, Ruby.class, RubyClass.class);
+            IRubyObject[].class, Block.class, RubyClass.class);
 
     /**
-     * Main switch constructor. Required for concrete reification
+     * Main switch constructor. Required for concrete reification.
+     *
+     * Generates roughly:
+     * <pre>{@code
+     *   protected MyClass(ConcreteJavaProxy cjp, boolean isSuperCall, IRubyObject[] args,
+     *                     Block block, RubyClass rubyClass) {
+     *       this.this$rubyObject = cjp;
+     *       SplitCtorData d = cjp.splitInitialized(
+     *               isSuperCall ? MyClass.rubyClass : rubyClass, args, block, this$rubyCtorCache);
+     *       Object[] a = d.arguments;
+     *       switch (d.ctorIndex) {
+     *       case 0:  super((String) a[0], (Boolean) a[1]); break;
+     *       case 1:  super(((Number) a[0]).intValue(), (String) a[1]); break;
+     *       default: throw runtime.newNoMethodError("No available java superconstructors match that type signature",
+     *               "super.<init>", d.rbarguments);
+     *       }
+     *       cjp.setObject(this);
+     *       cjp.finishInitialize(d);
+     *   }
+     * }</pre>
      */
-    public static void makeConcreteConstructorSwitch(ClassWriter cw, PositionAware initPosition, int superpos,
+    public static void makeConcreteConstructorSwitch(ClassWriter cw, PositionAware initPosition,
             boolean hasParent, ConcreteJavaReifier cjr, JavaConstructor[] constructors) {
-        // TODO: add source position of super call?
-
-        /*
-         * This generates the code template in lines of //// show what code is being generated
-         * TODO: link and put on wiki?
-         * Generated method:
-   // $FF: synthetic method
-   protected MyClass(ConcreteJavaProxy var1, boolean var2, IRubyObject[] var3, Block var4, Ruby var5, RubyClass var6) {
-      this.this$rubyObject = var1;
-      SplitCtorData var10000 = var1.splitInitialized(var2 ? rubyClass : var6, var3, var4, this$rubyCtorCache);
-      Object[] var7 = var10000.arguments;
-      switch(var10000.ctorIndex) {
-      case 0:
-         super((String)var7[0], (Boolean)var7[1]);
-         break;
-      case 1:
-         super(((Number)var7[0]).intValue(), (String)var7[1]);
-         break;
-      default:
-         throw var5.newNoMethodError("No available java superconstructors match that type signature", "super.<init>", var10000.rbarguments);
-      }
-
-      var1.setObject(this);
-      var1.finishInitialize(var10000);
-   }
-         */
-        // (rubyobject, isSuperCall, args, block, ruby, class)
+        // (rubyobject, isSuperCall, args, block, class)
         SkinnyMethodAdapter m = new SkinnyMethodAdapter(cw, ACC_PROTECTED | ACC_SYNTHETIC, "<init>", CONCRETE_CTOR_SIG,
                 null, null);
 
@@ -912,8 +905,7 @@ public abstract class RealClassGenerator {
         final int isSuperCallIndex = 2;
         final int rubyArrayIndex = 3;
         final int blockIndex = 4;
-        final int rubyIndex = 5;
-        final int rubyClassIndex = 6;
+        final int rubyClassIndex = 5;
 
         m.line(initPosition.getLine());
 
@@ -940,16 +932,14 @@ public abstract class RealClassGenerator {
         m.aload(rubyArrayIndex);
         m.aload(blockIndex); // load block from arg 3
         if (!hasParent) {
-            m.getstatic(cjr.javaPath, cjr.RUBY_CTOR_CACHE_FIELD, ci(JCtorCache.class));
+            m.getstatic(cjr.javaPath, cjr.RUBY_CTOR_CACHE_FIELD, ci(ConstructorCache.class));
         } else {
             m.aconst_null();
         }
         m.invokevirtual(cjr.rubyPath, "splitInitialized",
-                sig(SplitCtorData.class, RubyClass.class, IRubyObject[].class, Block.class, JCtorCache.class)); // pushes splitctordata
+                sig(SplitCtorData.class, RubyClass.class, IRubyObject[].class, Block.class, ConstructorCache.class)); // pushes splitctordata
 
         m.dup(); // splitctordata (results of splitInitialized)
-
-        m.line(superpos); // mark this line as the super call, so the stack trace is slightly accurate.
 
         // top of stack is now the arg list ruby array
 
@@ -974,7 +964,7 @@ public abstract class RealClassGenerator {
             {
                 // default: throw runtime.newNoMethodError("...", "super.<init>", [])
                 m.label(defaultLabel);
-                m.aload(rubyIndex);
+                m.getstatic(cjr.javaPath, cjr.RUBY_FIELD, ci(Ruby.class));
                 m.swap();
                 m.ldc("No available java superconstructors match that type signature");
                 m.swap();
@@ -1028,7 +1018,6 @@ public abstract class RealClassGenerator {
 
 
             m.getfield(p(SplitCtorData.class), "block", ci(Block.class));
-            m.aload(rubyIndex); // ruby
             m.aload(rubyClassIndex); // rubyclass
             m.invokespecial(p(cjr.reifiedParent), "<init>", CONCRETE_CTOR_SIG);
         }
@@ -1060,9 +1049,8 @@ public abstract class RealClassGenerator {
     public static void makeConcreteConstructorIROProxy(ClassWriter cw, PositionAware initPosition,
             ConcreteJavaReifier cjr) {
 
-        // (rubyobject, isSuperCall, args, block, ruby, class)
-        String sig = sig(void.class, ConcreteJavaProxy.class, IRubyObject[].class, Block.class, Ruby.class,
-                RubyClass.class);
+        // (rubyobject, args, block, class)
+        String sig = sig(void.class, ConcreteJavaProxy.class, IRubyObject[].class, Block.class, RubyClass.class);
         SkinnyMethodAdapter m = new SkinnyMethodAdapter(cw, ACC_PUBLIC | ACC_SYNTHETIC, "<init>", sig, null, null);
 
         m.line(initPosition.getLine());
@@ -1073,7 +1061,6 @@ public abstract class RealClassGenerator {
         m.aload(2);
         m.aload(3);
         m.aload(4);
-        m.aload(5);
         m.invokespecial(cjr.javaPath, "<init>", CONCRETE_CTOR_SIG);
 
         m.voidreturn();
@@ -1091,11 +1078,11 @@ public abstract class RealClassGenerator {
      */
     public static String makeConcreteConstructorProxy(ClassWriter cw, PositionAware initPosition, boolean hasRuby,
             ConcreteJavaReifier cjr, Class[] ctorTypes, boolean nested) {
-        Class clazz;
+        final Class<?> proxyClass;
         if (Map.class.isAssignableFrom(cjr.reifiedParent)) {
-            clazz = MapJavaProxy.class;
+            proxyClass = MapJavaProxy.class;
         } else {
-            clazz = ConcreteJavaProxy.class;
+            proxyClass = ConcreteJavaProxy.class;
         }
         String sig = hasRuby ? sig(void.class, cjr.join(ctorTypes, Ruby.class, RubyClass.class))
                 : sig(void.class, ctorTypes);
@@ -1118,11 +1105,11 @@ public abstract class RealClassGenerator {
         m.aload(0); // uninitialized this
 
         //// new ConcreteJavaProxy(ruby, rubyClass);
-        m.newobj(p(clazz));
+        m.newobj(p(proxyClass));
         m.dup(); // rubyobject
         m.aload(rubyIndex); // ruby
         m.aload(rubyClassIndex); // rubyclass
-        m.invokespecial(p(clazz), "<init>", sig(void.class, Ruby.class, RubyClass.class));
+        m.invokespecial(p(proxyClass), "<init>", sig(void.class, Ruby.class, RubyClass.class));
 
         if (nested) m.iconst_1();
         else m.iconst_0(); // called from subclass?
@@ -1131,7 +1118,6 @@ public abstract class RealClassGenerator {
         RealClassGenerator.coerceArgumentsToRuby(m, ctorTypes, rubyIndex);
 
         m.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
-        m.aload(rubyIndex); // ruby
         m.aload(rubyClassIndex); // rubyclass
 
         m.invokespecial(cjr.javaPath, "<init>", CONCRETE_CTOR_SIG);

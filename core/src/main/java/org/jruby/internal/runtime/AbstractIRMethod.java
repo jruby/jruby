@@ -32,17 +32,21 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.ExitableReturn;
 import org.jruby.internal.runtime.methods.IRMethodArgs;
+import org.jruby.internal.runtime.methods.MethodSplitState;
 import org.jruby.internal.runtime.methods.MixedModeIRMethod;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.interpreter.ExitableInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
@@ -224,12 +228,56 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
         return ruby2Keywords;
     }
 
-    /*
-     * Calls a split method (java constructor-invoked initialize) and returns the paused state. If
-     * this method doesn't have a super call, returns null without execution.
+    /**
+     * Calls a split method (java constructor-invoked initialize) and returns the paused state.
+     * If the supplied {@code ic} is {@code null} (no Java-callable super), returns {@code null} without execution.
+     *
+     * Callers (typically {@link org.jruby.java.proxies.ConcreteJavaProxy.SplitCtorPlan}) cache the
+     * {@link ExitableInterpreterContext} so we avoid redundant volatile lookups on the hot construction path.
      */
-    public abstract SplitSuperState startSplitSuperCall(ThreadContext context, IRubyObject self, RubyModule klazz,
-            String name, IRubyObject[] args, Block block);
-    
-    public abstract void finishSplitCall(SplitSuperState state);
+    public SplitSuperState<?> startSplitSuperCall(ThreadContext context, IRubyObject self,
+                                                  RubyModule klazz, String name, IRubyObject[] args, Block block,
+                                                  ExitableInterpreterContext ic) {
+        if (ic == null) return null;
+
+        SplitSuperState<MethodSplitState> directState = MethodSplitState.directSuperState(context, ic, args, block);
+        if (directState != null) return directState;
+
+        MethodSplitState state = new MethodSplitState(ic, klazz, self, name);
+        return new SplitSuperState<>(interpretSplit(context, state, args, block), state);
+    }
+
+    public ExitableInterpreterContext getJavaConstructorContext() {
+        IRScope scope = getIRScope();
+        return scope instanceof IRMethod ? ((IRMethod) scope).builtInterpreterContextForJavaConstructor() : null;
+    }
+
+    public final ExitableReturn interpretSplit(ThreadContext context, MethodSplitState state, IRubyObject[] args, Block block) {
+        try {
+            final ExitableInterpreterContext ic = state.getInterpreterContext();
+            ThreadContext.pushBacktrace(context, state.name, ic.getFileName(), ic.getLine());
+
+            try {
+                preSplit(ic, context, state.self, state.name, block, state.implClass, state.scope);
+                return ic.getEngine().interpret(context, null, state.self, ic, state.getInterpreterEngineState(),
+                        state.implClass, state.name, args, block);
+            } finally {
+                postSplit(ic, context);
+            }
+        } finally {
+            ThreadContext.popBacktrace(context);
+        }
+    }
+
+    private void preSplit(InterpreterContext ic, ThreadContext context,
+                          IRubyObject self, String name, Block block,
+                          RubyModule implClass, DynamicScope scope) {
+        context.preMethodFrameOnly(implClass, name, self, block);
+        if (ic.pushNewDynScope()) context.pushScope(scope);
+    }
+
+    private void postSplit(InterpreterContext ic, ThreadContext context) {
+        context.popFrame();
+        if (ic.popDynScope()) context.popScope();
+    }
 }
