@@ -96,16 +96,16 @@ public class Main {
         this(new RubyInstanceConfig());
     }
 
-    private Main(RubyInstanceConfig config, boolean hardExit) {
+    private Main(RubyInstanceConfig config, boolean main) {
         this.config = config;
-        config.setHardExit(hardExit);
+        config.setMain(main);
     }
 
-    private Main(boolean hardExit) {
+    private Main(boolean main) {
         // used only from main(String[]), so we process dotfile here
         processDotfile();
         this.config = new RubyInstanceConfig();
-        config.setHardExit(hardExit);
+        config.setMain(main);
     }
 
     private static List<String> getDotfileDirectories() {

@@ -343,7 +343,7 @@ public class RubyGlobal {
         // If we're the main for the process and native stdio is enabled, use default descriptors
         if (!Platform.IS_WINDOWS && // Windows does not do native IO yet
                 runtime.getPosix().isNative() &&
-                runtime.getInstanceConfig().isHardExit() && // main JRuby only
+                runtime.getInstanceConfig().isMain() && // main JRuby only
                 Options.NATIVE_STDIO.load()) {
             stdin = RubyIO.prepStdio(
                     runtime, runtime.getIn(), new NativeDeviceChannel(0), OpenFile.READABLE, runtime.getIO(), "<STDIN>");

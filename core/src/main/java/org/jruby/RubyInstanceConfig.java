@@ -1136,12 +1136,22 @@ public class RubyInstanceConfig {
         this.argvGlobalsOn = argvGlobalsOn;
     }
 
-    public boolean isHardExit() {
-        return hardExit;
+    public boolean isMain() {
+        return main;
     }
 
-    public void setHardExit(boolean hardExit) {
-        this.hardExit = hardExit;
+    public void setMain(boolean main) {
+        this.main = main;
+    }
+
+    @Deprecated(since = "10.0.7.0")
+    public boolean isHardExit() {
+        return main;
+    }
+
+    @Deprecated(since = "10.0.7.0")
+    public void setHardExit(boolean main) {
+        this.main = main;
     }
 
     /**
@@ -1576,7 +1586,7 @@ public class RubyInstanceConfig {
     private boolean managementEnabled = false;
     private String inPlaceBackupExtension = Options.CLI_BACKUP_EXTENSION.load();
     private boolean parserDebug = false;
-    private boolean hardExit = false;
+    private boolean main = false;
     private boolean disableGems = !Options.CLI_RUBYGEMS_ENABLE.load();
     private boolean disableDidYouMean = !Options.CLI_DID_YOU_MEAN_ENABLE.load();
     private boolean disableErrorHighlight = !Options.CLI_ERROR_HIGHLIGHT_ENABLE.load();
