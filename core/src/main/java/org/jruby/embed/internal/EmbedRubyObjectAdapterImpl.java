@@ -29,12 +29,16 @@
  */
 package org.jruby.embed.internal;
 
+import java.util.Map;
+
 import org.jruby.Ruby;
+import org.jruby.RubyHash;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyObjectAdapter;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.embed.EmbedEvalUnit;
 import org.jruby.embed.EmbedRubyObjectAdapter;
 import org.jruby.embed.InvokeFailedException;
@@ -270,6 +274,96 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
 
     private static IRubyObject[] convertArgs(final Ruby runtime, final Object[] args) {
         return JavaUtil.convertJavaArrayToRuby(runtime, args);
+    }
+
+    // --- Keyword argument support ---
+
+    public Object callMethodWithKeywordArgs(Object receiver, String methodName, Map<?, Object> kwargs) {
+        return doInvokeMethodKwargs(Object.class, getReceiverObject(receiver), methodName, Block.NULL_BLOCK, null, null,
+                convertKwargsToRubyHash(container.getProvider().getRuntime(), kwargs));
+    }
+
+    public Object callMethodWithKeywordArgs(Object receiver, String methodName, Object[] args, Map<?, Object> kwargs) {
+        return doInvokeMethodKwargs(Object.class, getReceiverObject(receiver), methodName, Block.NULL_BLOCK, null, args,
+                convertKwargsToRubyHash(container.getProvider().getRuntime(), kwargs));
+    }
+
+    public <T> T callMethodWithKeywordArgs(Object receiver, String methodName, Object[] args, Map<?, Object> kwargs, Class<T> returnType) {
+        return doInvokeMethodKwargs(returnType, getReceiverObject(receiver), methodName, Block.NULL_BLOCK, null, args,
+                convertKwargsToRubyHash(container.getProvider().getRuntime(), kwargs));
+    }
+
+    public <T> T callMethodWithKeywordArgs(Object receiver, String methodName, Object[] args, Map<?, Object> kwargs, Block block, Class<T> returnType) {
+        return doInvokeMethodKwargs(returnType, getReceiverObject(receiver), methodName, block, null, args,
+                convertKwargsToRubyHash(container.getProvider().getRuntime(), kwargs));
+    }
+
+    private <T> T doInvokeMethodKwargs(Class<T> returnType, IRubyObject rubyReceiver, String methodName,
+                                        Block block, EmbedEvalUnit unit, Object[] args, RubyHash kwargsHash) {
+        final Ruby runtime = container.getProvider().getRuntime();
+        final ThreadContext context = runtime.getCurrentContext();
+        final boolean sharing_variables = isSharingVariables(container);
+        final int priorCallInfo = context.callInfo;
+
+        if (sharing_variables) {
+            beforeSharingVariablesCall(context, unit);
+        }
+        try {
+            IRubyObject[] rubyArgs = (args != null && args.length > 0) ? convertArgs(runtime, args) : IRubyObject.NULL_ARRAY;
+
+            IRubyObject[] finalArgs;
+            if (kwargsHash != null) {
+                finalArgs = new IRubyObject[rubyArgs.length + 1];
+                System.arraycopy(rubyArgs, 0, finalArgs, 0, rubyArgs.length);
+                finalArgs[rubyArgs.length] = kwargsHash;
+                context.callInfo = ThreadContext.CALL_KEYWORD;
+            } else {
+                finalArgs = rubyArgs;
+            }
+
+            IRubyObject result = Helpers.invoke(context, rubyReceiver, methodName, finalArgs, block);
+            if (sharing_variables) {
+                container.getVarMap().retrieve(rubyReceiver);
+            }
+            if (returnType != null) {
+                Object ret = JavaEmbedUtils.rubyToJava(runtime, result, returnType);
+                return returnType.cast(ret);
+            }
+            return null;
+        } catch (Exception e) {
+            if (e instanceof InvokeFailedException) throw e;
+            if (wrapExceptions) throw new InvokeFailedException(e);
+            Helpers.throwException(e); return null; // never returns
+        } finally {
+            // Restore prior callInfo so a misbehaving callee can't leak the
+            // CALL_KEYWORD flag (or any other flag) into the next call on this thread.
+            context.callInfo = priorCallInfo;
+            if (sharing_variables) {
+                afterSharingVariablesCall(context);
+            }
+        }
+    }
+
+    private static RubyHash convertKwargsToRubyHash(Ruby runtime, Map<?, Object> kwargs) {
+        if (kwargs == null || kwargs.isEmpty()) return null;
+
+        RubyHash hash = RubyHash.newHash(runtime);
+        for (Map.Entry<?, Object> entry : kwargs.entrySet()) {
+            Object rawKey = entry.getKey();
+            RubySymbol key;
+            if (rawKey instanceof RubySymbol sym) {
+                key = sym;
+            } else if (rawKey instanceof CharSequence cs) {
+                key = runtime.newSymbol(cs.toString());
+            } else {
+                throw new IllegalArgumentException(
+                        "kwargs key must be a String, RubyString, or RubySymbol; got: "
+                                + (rawKey == null ? "null" : rawKey.getClass().getName()));
+            }
+            IRubyObject value = JavaUtil.convertJavaToUsableRubyObject(runtime, entry.getValue());
+            hash.fastASet(key, value);
+        }
+        return hash;
     }
 
 }
