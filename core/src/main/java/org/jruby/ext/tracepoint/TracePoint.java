@@ -107,7 +107,6 @@ public class TracePoint extends RubyObject {
             synchronized (this) {
                 inside = true;
 
-                if (file == null) file = "(ruby)";
                 if (type == null) type = context.fals;
 
                 IRubyObject binding;
