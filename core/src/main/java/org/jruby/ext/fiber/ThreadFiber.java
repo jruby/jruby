@@ -23,6 +23,7 @@ import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ExecutionContext;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -251,6 +252,8 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
             return currentFiberData.queue.pop(context);
         } finally {
             adjustThreadBlocking(context, targetFiberData, currentFiberData);
+
+            context.trace(RubyEvent.FIBER_SWITCH, "resume", context.runtime.getFiber());
         }
     }
 
@@ -509,6 +512,8 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
                     try {
                         FiberRequest init = data.queue.pop(ctxt);
+
+                        ctxt.trace(RubyEvent.FIBER_SWITCH, null, null, null, 0);
 
                         try {
                             FiberRequest result;
