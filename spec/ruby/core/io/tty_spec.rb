@@ -24,7 +24,7 @@ describe "IO#tty?" do
   end
 
   it "returns false for stdio streams if they are not connected to a terminal" do
-    # skip "requires STDOUT and STDERR to be terminal devices" unless STDOUT.tty? && STDERR.tty?
+    skip "requires STDOUT and STDERR to be terminal devices" unless STDOUT.tty? && STDERR.tty?
     begin
       io = IO.popen(ruby_cmd('print [STDIN.tty?, STDOUT.tty?, STDERR.tty?].inspect'), "r")
       io.read.should == "[true, false, true]"
