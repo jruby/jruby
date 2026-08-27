@@ -4,6 +4,7 @@ import jnr.constants.platform.Errno;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.cli.Options;
 import org.jruby.util.io.OpenFile;
 
 import java.nio.ByteBuffer;
@@ -13,6 +14,15 @@ import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Error.argumentError;
 
 public class FiberScheduler {
+    // MRI: rb_fiber_scheduler_current, null when there is no scheduler to defer to
+    public static IRubyObject current(ThreadContext context) {
+        if (!Options.FIBER_SCHEDULER.load()) return null;
+
+        IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
+
+        return scheduler.isNil() ? null : scheduler;
+    }
+
     // MRI: rb_fiber_scheduler_kernel_sleep
     public static IRubyObject kernelSleep(ThreadContext context, IRubyObject scheduler, IRubyObject timeout) {
         return scheduler.callMethod(context, "kernel_sleep", timeout);
