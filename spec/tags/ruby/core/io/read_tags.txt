@@ -15,3 +15,4 @@ windows:IO#read with internal encoding not specified does not transcode the Stri
 windows:IO.read from a pipe warns about deprecation
 
 fails:IO.read from a pipe raises Errno::EINVAL when path starts with a pipe
+fails:IO#read with internal encoding not specified reads after ungetc
