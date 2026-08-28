@@ -59,7 +59,7 @@ namespace :spec do
     t.pattern = 'spec/grammar/**/*_spec.rb'
   end
 
-  permute_specs "regression", compile_flags do |t|
+  permute_specs "regression", compile_flags, "test:compile" do |t|
     t.rspec_opts ||= []
     t.rspec_opts << '--color --format documentation '
     t.pattern = 'spec/regression/**/*_spec.rb'
