@@ -1,0 +1,9 @@
+fails:OpenSSL::KDF.pbkdf2_hmac treats all keywords as required
+fails:OpenSSL::KDF.pbkdf2_hmac raises an OpenSSL::KDF::KDFError for 0 or less iterations
+fails:OpenSSL::KDF.pbkdf2_hmac raises a TypeError when hash is neither a String nor an OpenSSL::Digest
+fails:OpenSSL::KDF.pbkdf2_hmac raises a TypeError when hash is neither a String nor an OpenSSL::Digest, it does not try to call #to_str
+fails:OpenSSL::KDF.pbkdf2_hmac raises a RuntimeError for unknown digest algorithms
+fails:OpenSSL::KDF.pbkdf2_hmac treats salt as a required keyword
+fails:OpenSSL::KDF.pbkdf2_hmac treats iterations as a required keyword
+fails:OpenSSL::KDF.pbkdf2_hmac treats length as a required keyword
+fails:OpenSSL::KDF.pbkdf2_hmac treats hash as a required keyword

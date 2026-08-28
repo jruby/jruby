@@ -1,0 +1,65 @@
+# -*- encoding: utf-8 -*-
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
+
+describe "IO#getbyte" do
+  before :each do
+    @io = IOSpecs.io_fixture "lines.txt"
+  end
+
+  after :each do
+    @io.close if @io
+  end
+
+  it "returns the next byte from the stream" do
+    @io.readline.should == "Voici la ligne une.\n"
+    letters = @io.getbyte, @io.getbyte, @io.getbyte, @io.getbyte, @io.getbyte
+    letters.should == [81, 117, 105, 32, 195]
+  end
+
+  it "returns nil when invoked at the end of the stream" do
+    @io.read
+    @io.getbyte.should == nil
+  end
+
+  it "raises an IOError on closed stream" do
+    -> { IOSpecs.closed_io.getbyte }.should.raise(IOError)
+  end
+
+  it "reads after ungetc without character conversion" do
+    @io.set_encoding("utf-8")
+    c = @io.getc
+    @io.ungetc(c)
+    @io.getbyte.should == 86
+  end
+end
+
+describe "IO#getbyte" do
+  before :each do
+    @io = IOSpecs.io_fixture "empty.txt"
+  end
+
+  after :each do
+    @io.close if @io
+  end
+
+  it "returns nil on empty stream" do
+    @io.getbyte.should == nil
+  end
+end
+
+describe "IO#getbyte" do
+  before :each do
+    @name = tmp("io_getbyte.txt")
+    @io = new_io(@name, 'w')
+  end
+
+  after :each do
+    @io.close if @io
+    rm_r @name if @name
+  end
+
+  it "raises an IOError if the stream is not readable" do
+    -> { @io.getbyte }.should.raise(IOError)
+  end
+end

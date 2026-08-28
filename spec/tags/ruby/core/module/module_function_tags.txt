@@ -1,0 +1,2 @@
+fails:Module#module_function as a toggle (no arguments) in a Module body doesn't affect definitions when inside an eval even if the definitions are outside of it
+fails:Module#module_function as a toggle (no arguments) in a Module body when defining methods using define_method makes the initialize-related and respond_to_missing? module methods public

@@ -1,0 +1,13 @@
+windows:Kernel.chomp removes the final newline of $_
+windows:Kernel.chomp removes the final carriage return of $_
+windows:Kernel.chomp removes the final carriage return, newline of $_
+windows:Kernel.chomp removes only the final newline of $_
+windows:Kernel.chomp removes the value of $/ from the end of $_
+windows:Kernel#chomp removes the final newline of $_
+windows:Kernel#chomp removes the final carriage return of $_
+windows:Kernel#chomp removes the final carriage return, newline of $_
+windows:Kernel#chomp removes only the final newline of $_
+windows:Kernel#chomp removes the value of $/ from the end of $_
+windows:Kernel#chomp is a private method
+windows:Kernel.chomp removes the final carriage return, newline from a multi-byte $_
+windows:Kernel#chomp removes the final carriage return, newline from a multi-byte $_

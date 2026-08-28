@@ -1,0 +1,1 @@
+fails:Syslog.log fails with TypeError on nil log messages

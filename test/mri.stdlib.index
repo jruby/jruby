@@ -1,0 +1,66 @@
+# MRI stdlib tests
+
+cgi
+digest
+# only runs as root and we don't support most of this anyway
+#dtrace
+erb
+etc
+fiber
+fileutils
+io
+json
+monitor
+net
+open-uri
+openssl
+optparse
+pathname
+psych
+resolv
+ripper
+socket
+stringio
+strscan
+uri
+yaml
+zlib
+
+test_bundled_gems.rb
+test_delegate.rb
+test_extlibs.rb
+test_find.rb
+test_forwardable.rb
+test_ipaddr.rb
+test_open3.rb
+test_pp.rb
+test_prettyprint.rb
+test_pty.rb
+test_rbconfig.rb
+test_securerandom.rb
+test_shellwords.rb
+test_singleton.rb
+test_tempfile.rb
+test_time.rb
+test_timeout.rb
+test_tmpdir.rb
+test_trick.rb
+test_tsort.rb
+test_unicode_normalize.rb
+test_weakref.rb
+
+# Looks for did_you_mean in the wrong place (../lib)
+#did_you_mean
+
+# Unsupported library, tries to use "fire_update!" defined by test harness
+#mkmf
+
+# Attempts to load test files via relative path from lib (lib/ruby/test/rubygems/alternate_key.pem)
+#rubygems
+
+# Heavy subprocess tests, moved to mri.extra.index
+#test_tracer.rb
+#racc
+#test_open3.rb
+#coverage
+#objspace

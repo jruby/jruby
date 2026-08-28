@@ -1,0 +1,2 @@
+fails:Socket.tcp_server_sockets without a block returns an Array of Socket objects
+fails:Socket.tcp_server_sockets with a block yields the sockets to the supplied block

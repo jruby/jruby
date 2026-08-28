@@ -1,0 +1,5 @@
+exclude :test_01_kinaba, "needs investigation"
+exclude :test_02_mame, "needs investigation"
+exclude :test_03_tompng, "needs investigation"
+exclude :test_04_colin, "needs investigation"
+exclude :test_05_tompng, "needs investigation"

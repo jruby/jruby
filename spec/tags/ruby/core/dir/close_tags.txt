@@ -1,0 +1,2 @@
+fails:Dir#close does not raise an IOError even if the Dir instance is closed
+fails:Dir#close raises an error if the file descriptor is closed with another Dir instance

@@ -1,0 +1,193 @@
+require_relative '../../spec_helper'
+
+describe "File.truncate" do
+  before :each do
+    @name = tmp("test.txt")
+    touch(@name) { |f| f.write("1234567890") }
+  end
+
+  after :each do
+    rm_r @name
+  end
+
+  it "truncates a file" do
+    File.size(@name).should == 10
+
+    File.truncate(@name, 5)
+    File.size(@name).should == 5
+
+    File.open(@name, "r") do |f|
+      f.read(99).should == "12345"
+      f.should.eof?
+    end
+  end
+
+  it "truncate a file size to 0" do
+    File.truncate(@name, 0).should == 0
+    IO.read(@name).should == ""
+  end
+
+  it "truncate a file size to 5"  do
+    File.size(@name).should == 10
+    File.truncate(@name, 5)
+    File.size(@name).should == 5
+    IO.read(@name).should == "12345"
+  end
+
+  it "truncates to a larger file size than the original file" do
+    File.truncate(@name, 12)
+    File.size(@name).should == 12
+    IO.read(@name).should == "1234567890\000\000"
+  end
+
+  it "truncates to the same size as the original file" do
+    File.truncate(@name, File.size(@name))
+    File.size(@name).should == 10
+    IO.read(@name).should == "1234567890"
+  end
+
+  it "raises an Errno::ENOENT if the file does not exist" do
+    # TODO: missing_file
+    not_existing_file = tmp("file-does-not-exist-for-sure.txt")
+
+    # make sure it doesn't exist for real
+    rm_r not_existing_file
+
+    begin
+      -> { File.truncate(not_existing_file, 5) }.should.raise(Errno::ENOENT)
+    ensure
+      rm_r not_existing_file
+    end
+  end
+
+  it "raises an ArgumentError if not passed two arguments" do
+    -> { File.truncate        }.should.raise(ArgumentError)
+    -> { File.truncate(@name) }.should.raise(ArgumentError)
+  end
+
+  platform_is_not :netbsd, :openbsd do
+    it "raises an Errno::EINVAL if the length argument is not valid" do
+      -> { File.truncate(@name, -1)  }.should.raise(Errno::EINVAL) # May fail
+    end
+  end
+
+  it "raises a TypeError if not passed a String type for the first argument" do
+    -> { File.truncate(1, 1) }.should.raise(TypeError)
+  end
+
+  it "raises a TypeError if not passed an Integer type for the second argument" do
+    -> { File.truncate(@name, nil) }.should.raise(TypeError)
+  end
+
+  it "accepts an object that has a #to_path method" do
+    File.truncate(mock_to_path(@name), 0).should == 0
+  end
+
+  platform_is :darwin do
+    it "accepts a path in a non-UTF-8, ASCII-compatible encoding containing non-ASCII characters" do
+      utf8_path = tmp("file_truncate_utf8_path_\u{3042}.txt")
+      # Can fail with UndefinedConversionError if tmp path has non-Shift_JIS chars (e.g. Emojis, Hangul, Cyrillic, accented letters)
+      non_utf8_path = utf8_path.encode(Encoding::Windows_31J)
+
+      begin
+        touch(utf8_path)
+        File.truncate(non_utf8_path, 0).should == 0
+      ensure
+        rm_r utf8_path
+        rm_r non_utf8_path
+      end
+    end
+  end
+end
+
+
+describe "File#truncate" do
+  before :each do
+    @name = tmp("test.txt")
+    @file = File.open @name, 'w'
+    @file.write "1234567890"
+    @file.flush
+  end
+
+  after :each do
+    @file.close unless @file.closed?
+    rm_r @name
+  end
+
+  it "does not move the file write pointer to the specified byte offset" do
+    @file.truncate(3)
+    @file.write "abc"
+    @file.close
+    File.read(@name).should == "123\x00\x00\x00\x00\x00\x00\x00abc"
+  end
+
+  it "does not move the file read pointer to the specified byte offset" do
+    File.open(@name, "r+") do |f|
+      f.read(1).should == "1"
+      f.truncate(0)
+      f.read(1).should == nil
+    end
+  end
+
+  it "truncates a file" do
+    File.size(@name).should == 10
+
+    @file.truncate(5)
+    File.size(@name).should == 5
+    File.open(@name, "r") do |f|
+      f.read(99).should == "12345"
+      f.should.eof?
+    end
+  end
+
+  it "truncates a file size to 0" do
+    @file.truncate(0).should == 0
+    IO.read(@name).should == ""
+  end
+
+  it "truncates a file size to 5"  do
+    File.size(@name).should == 10
+    @file.truncate(5)
+    File.size(@name).should == 5
+    IO.read(@name).should == "12345"
+  end
+
+  it "truncates a file to a larger size than the original file" do
+    @file.truncate(12)
+    File.size(@name).should == 12
+    IO.read(@name).should == "1234567890\000\000"
+  end
+
+  it "truncates a file to the same size as the original file" do
+    @file.truncate(File.size(@name))
+    File.size(@name).should == 10
+    IO.read(@name).should == "1234567890"
+  end
+
+  it "raises an ArgumentError if not passed one argument" do
+    -> { @file.truncate        }.should.raise(ArgumentError)
+    -> { @file.truncate(1) }.should_not.raise(ArgumentError)
+  end
+
+  platform_is_not :netbsd do
+    it "raises an Errno::EINVAL if the length argument is not valid" do
+      -> { @file.truncate(-1)  }.should.raise(Errno::EINVAL) # May fail
+    end
+  end
+
+  it "raises an IOError if file is closed" do
+    @file.close
+    @file.should.closed?
+    -> { @file.truncate(42) }.should.raise(IOError)
+  end
+
+  it "raises an IOError if file is not opened for writing" do
+    File.open(@name, 'r') do |file|
+      -> { file.truncate(42) }.should.raise(IOError)
+    end
+  end
+
+  it "raises a TypeError if not passed an Integer type for the for the argument" do
+    -> { @file.truncate(nil) }.should.raise(TypeError)
+  end
+end

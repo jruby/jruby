@@ -1,0 +1,1 @@
+fails:BigDecimal#clone is an alias of BigDecimal#dup

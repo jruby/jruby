@@ -1,0 +1,1 @@
+fails:TracePoint#defined_class returns class or module of the method being called

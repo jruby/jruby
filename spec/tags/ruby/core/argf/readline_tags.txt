@@ -1,0 +1,2 @@
+windows:ARGF.readline reads all lines of stdin
+windows:ARGF.readline modifies and backups two files when in place edit mode is on

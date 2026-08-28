@@ -1,0 +1,6 @@
+fails:IO::Buffer#valid? with a non-slice buffer is true for a freed file-backed buffer
+fails:IO::Buffer#valid? with a slice is false for a slice of a transferred buffer
+fails:IO::Buffer#valid? with a slice is false for a slice of a freed buffer
+fails:IO::Buffer#valid? with a slice is false for a slice of a freed file-backed buffer
+fails:IO::Buffer#valid? with a slice when buffer is resized is false when slice becomes outside the buffer
+fails:IO::Buffer#valid? with a slice when buffer is resized is false when buffer is copied on resize

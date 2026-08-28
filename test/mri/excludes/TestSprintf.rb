@@ -1,0 +1,8 @@
+exclude :test_binary, "needs investigation"
+exclude :test_float, "needs investigation"
+exclude :test_float_hex, "needs investigation"
+exclude :test_invalid, "needs investigation"
+exclude :test_named_typed, "needs investigation"
+exclude :test_named_typed_enc, "needs investigation"
+exclude :test_named_untyped_enc, "needs investigation"
+exclude :test_no_hidden_garbage, "requires ObjectSpace count_objects"

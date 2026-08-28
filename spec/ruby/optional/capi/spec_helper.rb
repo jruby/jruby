@@ -1,0 +1,172 @@
+# Require the main spec_helper.rb at the end to let `ruby ...spec.rb` work
+
+# MRI magic to use built but not installed ruby
+$extmk = false
+
+require 'rbconfig'
+
+OBJDIR ||= File.expand_path("../../../ext/#{RUBY_ENGINE}/#{RUBY_VERSION}", __FILE__)
+
+def object_path
+  path = OBJDIR
+  if ENV['SPEC_CAPI_CXX'] == 'true'
+    path = "#{path}/cxx"
+  end
+  mkdir_p(path)
+  path
+end
+
+def compile_extension(name)
+  debug = false
+  cxx = ENV['SPEC_CAPI_CXX'] == 'true'
+  run_mkmf_in_process = RUBY_ENGINE == 'truffleruby'
+
+  core_ext_dir = File.expand_path("../ext", __FILE__)
+
+  spec_caller_location = caller_locations.find { |c| c.path.end_with?('_spec.rb') }
+  spec_file_path = spec_caller_location.path
+  spec_ext_dir = File.expand_path("../ext", spec_file_path)
+
+  ext = "#{name}_spec"
+  lib = "#{object_path}/#{ext}.#{RbConfig::CONFIG['DLEXT']}"
+  rubyhdrdir = RbConfig::CONFIG['rubyhdrdir']
+  ruby_header = "#{rubyhdrdir}/ruby.h"
+  abi_header = "#{rubyhdrdir}/ruby/internal/abi.h"
+
+  if RbConfig::CONFIG["ENABLE_SHARED"] == "yes"
+    # below is defined since 2.1, except for mswin, and maybe other platforms
+    libdirname = RbConfig::CONFIG.fetch 'libdirname', 'libdir'
+    libruby = "#{RbConfig::CONFIG[libdirname]}/#{RbConfig::CONFIG['LIBRUBY']}"
+  end
+
+  begin
+    mtime = File.mtime(lib)
+  rescue Errno::ENOENT
+    # not found, then compile
+  else
+    case # if lib is older than headers, source or libruby, then recompile
+    when mtime <= File.mtime("#{core_ext_dir}/rubyspec.h")
+    when mtime <= File.mtime("#{spec_ext_dir}/#{ext}.c")
+    when mtime <= File.mtime(ruby_header)
+    when (mtime <= File.mtime(abi_header) rescue nil)
+    when libruby && mtime <= File.mtime(libruby)
+    else
+      return lib # up-to-date
+    end
+  end
+
+  # Copy needed source files to tmpdir
+  tmpdir = tmp("cext_#{name}")
+  Dir.mkdir(tmpdir)
+  begin
+    files = ["#{core_ext_dir}/rubyspec.h", "#{spec_ext_dir}/#{ext}.c"]
+    if spec_ext_dir != core_ext_dir
+      files += Dir.glob("#{spec_ext_dir}/*.h")
+    end
+    files.each do |file|
+      if cxx and file.end_with?('.c')
+        cp file, "#{tmpdir}/#{File.basename(file, '.c')}.cpp"
+      else
+        cp file, "#{tmpdir}/#{File.basename(file)}"
+      end
+    end
+
+    Dir.chdir(tmpdir) do
+      if run_mkmf_in_process
+        required = require 'mkmf'
+        # Reinitialize mkmf if already required
+        init_mkmf unless required
+        create_makefile(ext, tmpdir)
+      else
+        # Workaround for digest C-API specs to find the ruby/digest.h header
+        # when run in the CRuby repository via make test-spec
+        if MSpecScript.instance_variable_defined?(:@testing_ruby)
+          ruby_repository_extra_include_dir = "-I#{RbConfig::CONFIG.fetch("prefix")}/#{RbConfig::CONFIG.fetch("EXTOUT")}/include"
+        end
+
+        File.write("extconf.rb", <<-RUBY)
+          require 'mkmf'
+          $ruby = ENV.values_at('RUBY_EXE', 'RUBY_FLAGS').join(' ')
+          # MRI magic to consider building non-bundled extensions
+          $extout = nil
+          if RbConfig::CONFIG.key?("buildlibdir") # The top directory where the libruby is built.
+            # Prepend the dummy macro to bypass the conversion in `with_destdir` on DOSISH
+            # platforms, where the drive letter is replaced with `$(DESTDIR)`.  `DESTDIR` is
+            # overridden by the command line argument bellow.
+            RbConfig::MAKEFILE_CONFIG["buildlibdir"] = "$(empty)" + RbConfig::CONFIG["buildlibdir"]
+          end
+          append_cflags '-Wno-declaration-after-statement'
+          #{"append_cflags #{ruby_repository_extra_include_dir.inspect}" if ruby_repository_extra_include_dir}
+          create_makefile(#{ext.inspect})
+        RUBY
+        output = ruby_exe("extconf.rb")
+        raise "extconf failed:\n#{output}" unless $?.success?
+        $stderr.puts output if debug
+      end
+
+      # Do not capture stderr as we want to show compiler warnings
+      make, opts = setup_make
+      output = IO.popen([*make, "V=1", "DESTDIR=", opts], &:read)
+      raise "#{make} failed:\n#{output}" unless $?.success?
+      $stderr.puts output if debug
+
+      cp File.basename(lib), lib
+    end
+  ensure
+    rm_r tmpdir
+  end
+
+  File.chmod(0755, lib)
+  lib
+end
+
+def setup_make
+  make = ENV['MAKE']
+  make ||= (RbConfig::CONFIG['host_os'].include?("mswin") ? "nmake" : "make")
+  env = %w[MFLAGS MAKEFLAGS GNUMAKEFLAGS].to_h {|var| [var, ENV[var]]}
+  make_flags = env["MAKEFLAGS"] || ''
+
+  # suppress logo of nmake.exe to stderr
+  if File.basename(make, ".*").downcase == "nmake" and !make_flags.include?("l")
+    env["MAKEFLAGS"] = "l#{make_flags}"
+  end
+
+  opts = {}
+  if /(?:\A|\s)--jobserver-(?:auth|fds)=(\d+),(\d+)/ =~ make_flags
+    [$1, $2].each do |fd|
+      fd = IO.for_fd(fd.to_i(10), autoclose: false)
+      opts[fd] = fd
+    rescue
+      # Jobserver is not usable, maybe no `+` flag or on Windows.
+      job_options = /\A\s*(?:-j\d+\s*|-\S+\Kj\d+)|(?:\G|\s)\K--jobserver-(?:auth|fds)=\S+\s*/
+      env["MAKEFLAGS"] = make_flags.gsub(job_options, '')
+      %w[GNUMAKEFLAGS MFLAGS].each do |var|
+        if flags = env[var]
+          env[var] = flags.gsub(job_options, '')
+        end
+      end
+      opts.clear
+      break
+    end
+  end
+
+  [[env, make], opts]
+end
+
+def load_extension(name)
+  ext_path = compile_extension(name)
+  require ext_path
+  ext_path
+rescue LoadError => e
+  if %r{/usr/sbin/execerror ruby "\(ld 3 1 main ([/a-zA-Z0-9_\-.]+_spec\.so)"} =~ e.message
+    system('/usr/sbin/execerror', "#{RbConfig::CONFIG["bindir"]}/ruby", "(ld 3 1 main #{$1}")
+  end
+  raise
+end
+
+# Constants
+CAPI_SIZEOF_LONG = [0].pack('l!').size
+
+# Require the main spec_helper.rb only here so load_extension() is defined
+# when running specs with `ruby ...spec.rb`
+require_relative '../../spec_helper'

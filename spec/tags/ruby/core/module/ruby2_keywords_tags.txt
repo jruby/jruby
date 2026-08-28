@@ -1,0 +1,1 @@
+fails:Module#ruby2_keywords does NOT copy the Hash when calling a method taking (*args)

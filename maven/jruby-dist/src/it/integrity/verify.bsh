@@ -1,0 +1,53 @@
+import java.io.*;
+import org.codehaus.plexus.util.FileUtils;
+
+
+String log = FileUtils.fileRead( new File( basedir, "build.log" ) );
+String expected = "rake (10.4.2)";
+if ( !log.contains( expected ) )
+{
+    throw new RuntimeException( "log file does not contain '" + expected + "'" );
+}
+//expected = "4.1.2";
+//if ( !log.contains( expected ) )
+//{
+//    throw new RuntimeException( "log file does not contain '" + expected + "'" );
+//}
+expected = "json (1.8.3 java)";
+if ( !log.contains( expected ) )
+{
+    throw new RuntimeException( "log file does not contain '" + expected + "'" );
+}
+//expected = "rake, version 10.1.0";
+//if ( !log.contains( expected ) )
+//{
+//    throw new RuntimeException( "log file does not contain '" + expected + "'" );
+//}
+expected = "rdoc (4.2.0";
+if ( !log.contains( expected ) )
+{
+    throw new RuntimeException( "log file does not contain '" + expected + "'" );
+}
+expected = "gems count 9";
+if ( !log.contains( expected ) )
+{
+    throw new RuntimeException( "log file does not contain '" + expected + "'" );
+}
+expected = "jar-dependencies";
+if ( !log.contains( expected ) )
+{
+    throw new RuntimeException( "log file does not contain '" + expected + "'" );
+}
+expected = "jruby-openssl";
+if ( !log.contains( expected ) )
+{
+    throw new RuntimeException( "log file does not contain '" + expected + "'" );
+}
+expected = "there is NO org.objectweb.asm.ClassWriter on the classpath";
+if ( !log.contains( expected ) )
+{
+    throw new RuntimeException( "log file does not contain '" + expected + "'" );
+}
+
+String unexpected = "uri:classloader://META-INF/jruby.home";
+if ( log.contains( unexpected ) ) throw new RuntimeException( "log file does contain unexpected '" + unexpected + "'" );

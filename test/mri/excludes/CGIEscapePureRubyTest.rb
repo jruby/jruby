@@ -1,0 +1,5 @@
+exclude :test_cgi_unescapeHTML_following_known_first_letter, "broken aliasing logic causes this test to break others, see https://github.com/jruby/jruby/issues/9251"
+exclude :test_cgi_escapeHTML_with_invalid_byte_sequence, "broken aliasing logic causes this test to break others, see https://github.com/jruby/jruby/issues/9251"
+exclude :test_cgi_unescapeHTML_following_number_sign, "broken aliasing logic causes this test to break others, see https://github.com/jruby/jruby/issues/9251"
+exclude :test_cgi_unescapeHTML_following_invalid_numeric, "broken aliasing logic causes this test to break others, see https://github.com/jruby/jruby/issues/9251"
+exclude :test_cgi_unescapeHTML_with_invalid_byte_sequence, "broken aliasing logic causes this test to break others, see https://github.com/jruby/jruby/issues/9251"

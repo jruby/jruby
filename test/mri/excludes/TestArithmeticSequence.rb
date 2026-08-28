@@ -1,0 +1,1 @@
+exclude :test_stop_result, "needs investigation"

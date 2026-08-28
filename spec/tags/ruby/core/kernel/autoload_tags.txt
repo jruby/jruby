@@ -1,0 +1,1 @@
+fails(class base for autoload and class vars is not calculated correctly, #6749):Kernel#autoload inside a Class.new method body should define on the new anonymous class

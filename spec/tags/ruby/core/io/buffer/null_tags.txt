@@ -1,0 +1,4 @@
+fails:IO::Buffer#null? is false for a file-mapped buffer
+fails:IO::Buffer#null? is true for a 0-sized buffer
+fails:IO::Buffer#null? is true for a slice of a 0-sized buffer
+fails:IO::Buffer#null? is true for a buffer resized to 0

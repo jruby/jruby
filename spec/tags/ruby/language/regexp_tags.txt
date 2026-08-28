@@ -1,0 +1,2 @@
+jit(transition from interpreter will cause a new regexp object to be created):Literal Regexps caches the Regexp object
+fails:Literal Regexps handles a lookbehind with ss characters

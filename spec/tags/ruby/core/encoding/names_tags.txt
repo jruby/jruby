@@ -1,0 +1,1 @@
+fails:Encoding#names includes any aliases the encoding has

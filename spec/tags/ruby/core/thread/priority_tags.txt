@@ -1,0 +1,1 @@
+fails:Thread#priority= sets priority even when the thread has died

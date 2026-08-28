@@ -1,0 +1,1 @@
+fails:Hash#rehash iterates keys in insertion order

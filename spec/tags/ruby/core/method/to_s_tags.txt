@@ -1,0 +1,3 @@
+fails:Method#to_s shows the source UnboundMethod's name in parentheses for a define_method'd method
+fails:Method#to_s does not annotate a directly looked-up Kernel method with a shared internal name
+fails:Method#to_s shows the source name when aliasing a define_method'd Kernel method

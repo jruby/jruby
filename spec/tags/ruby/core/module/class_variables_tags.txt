@@ -1,0 +1,1 @@
+fails:Module#class_variables returns the correct class variables when inherit is given

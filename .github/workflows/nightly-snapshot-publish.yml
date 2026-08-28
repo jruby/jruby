@@ -1,0 +1,23 @@
+name: Nightly Snapshots using Java 8
+
+on:
+  schedule:
+    - cron: '30 6 * * *'
+
+env:
+  JAVA_OPTS: '-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xms60M -Xmx1G -XX:InitialCodeCacheSize=40M -XX:ReservedCodeCacheSize=120M'
+
+permissions:
+  contents: read
+
+jobs:
+  publish-snapshot:
+    permissions:
+      contents: read
+    if: ${{ github.ref == 'refs/heads/jruby-9.4' && github.repository == 'jruby/jruby' }}
+    uses: ./.github/workflows/snapshot-publish.yml
+    with:
+      javaLevel: 8
+    secrets:
+      SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+      SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}

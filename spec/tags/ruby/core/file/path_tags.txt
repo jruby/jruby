@@ -1,0 +1,1 @@
+fails:File#path preserves the encoding of the path

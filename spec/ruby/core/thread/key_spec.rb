@@ -1,0 +1,60 @@
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
+
+describe "Thread#key?" do
+  before :each do
+    @th = Thread.new do
+      Thread.current[:oliver] = "a"
+    end
+    @th.join
+  end
+
+  it "tests for existence of thread local variables using symbols or strings" do
+    @th.key?(:oliver).should == true
+    @th.key?("oliver").should == true
+    @th.key?(:stanley).should == false
+    @th.key?(:stanley.to_s).should == false
+  end
+
+  it "converts a key that is neither String nor Symbol with #to_str" do
+    key = mock('key')
+    key.should_receive(:to_str).and_return('oliver')
+
+    @th.key?(key).should == true
+  end
+
+  it "raises exceptions on the wrong type of keys" do
+    -> { Thread.current.key? nil }.should.raise(TypeError)
+    -> { Thread.current.key? 5 }.should.raise(TypeError)
+  end
+
+  it "is not shared across fibers" do
+    fib = Fiber.new do
+      Thread.current[:val1] = 1
+      Fiber.yield
+      Thread.current.key?(:val1).should == true
+      Thread.current.key?(:val2).should == false
+    end
+    Thread.current.key?(:val1).should_not == true
+    fib.resume
+    Thread.current[:val2] = 2
+    fib.resume
+    Thread.current.key?(:val1).should == false
+    Thread.current.key?(:val2).should == true
+  end
+
+  it "stores a local in another thread when in a fiber" do
+    fib = Fiber.new do
+      t = Thread.new do
+        sleep
+        Thread.current.key?(:value).should == true
+      end
+
+      Thread.pass while t.status and t.status != "sleep"
+      t[:value] = 1
+      t.wakeup
+      t.join
+    end
+    fib.resume
+  end
+end

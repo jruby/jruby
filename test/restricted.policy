@@ -1,0 +1,11 @@
+// intentionally light policy, to mirror javaws and applet security
+
+grant {
+  // Needed by POSIXFactory.
+  permission java.util.PropertyPermission "os.name", "read";
+  permission java.util.PropertyPermission "os.arch", "read";
+
+  // Needed by RubyInstanceConfig.
+  permission java.util.PropertyPermission "java.vm.name", "read";
+  permission java.util.PropertyPermission "java.version", "read";
+};

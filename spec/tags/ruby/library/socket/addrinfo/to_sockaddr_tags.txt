@@ -1,0 +1,1 @@
+fails:Addrinfo#to_sockaddr using a Addrinfo without an IP and port returns a String

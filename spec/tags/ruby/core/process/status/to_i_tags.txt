@@ -1,0 +1,1 @@
+fails:Process::Status#to_i returns an integer when the child is signaled

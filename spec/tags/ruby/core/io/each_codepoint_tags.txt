@@ -1,0 +1,4 @@
+windows:IO#each_codepoint yields each codepoint
+windows:IO#each_codepoint yields each codepoint starting from the current position
+windows:IO#each_codepoint raises an error if reading invalid sequence
+windows:IO#each_codepoint calls the given block

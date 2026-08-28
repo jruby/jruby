@@ -1,0 +1,2 @@
+fails:BasicSocket#read_nonblock using IPv4 replaces the content of the provided buffer without changing its encoding
+fails:BasicSocket#read_nonblock using IPv6 replaces the content of the provided buffer without changing its encoding

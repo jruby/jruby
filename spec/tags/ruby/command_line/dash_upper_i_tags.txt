@@ -1,0 +1,1 @@
+critical(fails on Travis):The -I command line option adds the path at the front of $LOAD_PATH

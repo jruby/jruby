@@ -1,0 +1,1 @@
+fails:Marshal.dump with Float represents a Float much less than 1

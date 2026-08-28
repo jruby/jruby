@@ -1,0 +1,1 @@
+windows:Process.argv0 is the path given as the main script and the same as __FILE__

@@ -1,0 +1,60 @@
+require_relative '../../spec_helper'
+require_relative 'shared/arithmetic_coerce'
+
+describe "Integer#-" do
+  it_behaves_like :integer_arithmetic_coerce_not_rescue, :-
+
+  context "fixnum" do
+    it "returns self minus the given Integer" do
+      (5 - 10).should == -5
+      (9237212 - 5_280).should == 9231932
+
+      (781 - 0.5).should == 780.5
+      (2_560_496 - bignum_value).should == -18446744073706991120
+    end
+
+    it "raises a TypeError when given a non-Integer" do
+      -> {
+        (obj = mock('10')).should_receive(:to_int).any_number_of_times.and_return(10)
+        13 - obj
+      }.should.raise(TypeError)
+      -> { 13 - "10"    }.should.raise(TypeError)
+      -> { 13 - :symbol }.should.raise(TypeError)
+    end
+  end
+
+  context "bignum" do
+    before :each do
+      @bignum = bignum_value(314)
+    end
+
+    it "returns self minus the given Integer" do
+      (@bignum - 9).should == 18446744073709551921
+      (@bignum - 12.57).should be_close(18446744073709551917.43, TOLERANCE)
+      (@bignum - bignum_value(42)).should == 272
+    end
+
+    it "raises a TypeError when given a non-Integer" do
+      -> { @bignum - mock('10') }.should.raise(TypeError)
+      -> { @bignum - "10" }.should.raise(TypeError)
+      -> { @bignum - :symbol }.should.raise(TypeError)
+    end
+  end
+
+  it "coerces the RHS and calls #coerce" do
+    obj = mock("integer plus")
+    obj.should_receive(:coerce).with(5).and_return([5, 10])
+    (5 - obj).should == -5
+  end
+
+  it "coerces the RHS and calls #coerce even if it's private" do
+    obj = Object.new
+    class << obj
+      private def coerce(n)
+        [n, 10]
+      end
+    end
+
+    (5 - obj).should == -5
+  end
+end

@@ -1,0 +1,5 @@
+fails:Process.fork returns status zero
+fails:Process.fork returns status non-zero
+fails:Process.fork returns nil for the child process
+fails:Process.fork runs a block in a child process
+fails:Process.fork marks threads from the parent as killed

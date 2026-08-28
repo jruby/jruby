@@ -1,0 +1,121 @@
+# frozen_string_literal: true
+
+version = ENV['JRUBY_VERSION'] ||
+          File.read(File.join(basedir, '..', 'VERSION')).strip
+
+# NOTE: the module name is logical and the artifact keeps it legacy name
+project 'JRuby Core' do
+  model_version '4.0.0'
+  inherit 'org.jruby:jruby-parent', version
+  id 'org.jruby:jruby-core'
+
+  distribution_management do
+    relocation(groupId: 'org.jruby', artifactId: 'jruby-base',
+               message: 'The jruby-core artifact is deprecated in favor of the jruby-base artifact.')
+  end
+
+  properties("polyglot.dump.pom": 'pom.xml',
+             "polyglot.dump.readonly": true,
+             "jruby.basedir": '${basedir}/..')
+
+  jar 'org.jruby:jruby-base', '${project.version}'
+  plugin :shade do
+    execute_goals('shade',
+                  id: 'create shaded jar',
+                  phase: 'package',
+                  artifactSet: {
+                    excludes: 'javax.annotation:javax.annotation-api'
+                  },
+                  relocations: [
+                    { pattern: 'org.objectweb', shadedPattern: 'org.jruby.org.objectweb' },
+                    { pattern: 'me.qmx.jitescript', shadedPattern: 'org.jruby.me.qmx.jitescript' },
+                    { pattern: 'com.dylibso.chicory', shadedPattern: 'com.jruby.internal.org.dylibso.chicory'},
+                    { pattern: 'io.roastedroot.redline', shadedPattern: 'com.jruby.internal.io.roastedroot.redline'},
+                    { pattern: 'org.ruby_lang.prism', shadedPattern: 'org.jruby.internal.prism'},
+                    { pattern: 'org.jruby.parser.prism', shadedPattern: 'org.jruby.internal.parser.prism'}
+                  ],
+                  transformers: [{ :@implementation => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
+                                   mainClass: 'org.jruby.main.Main',
+                                   manifestEntries: {
+                                     # Module name for JRuby
+                                     'Automatic-Module-Name' => 'org.jruby.dist',
+
+                                     # Open requested packages when not running as a module (i.e. JRuby is on classpath or -jar main jar)
+                                     'Add-Opens' => 'java.base/java.io java.base/java.nio.channels java.base/sun.nio.ch java.management/sun.management',
+
+                                     # Enable native access for JRuby and classpath classes when run not as a module
+                                     'Enable-Native-Access' => 'ALL-UNNAMED',
+                                   }
+                                 },
+                                 { :@implementation => 'org.apache.maven.plugins.shade.resource.ServicesResourceTransformer'}
+                  ],
+                  filters: [
+                    { artifact: 'ch.randelshofer:fastdoubleparser', excludes: '**/23/**' },
+                    { artifact: 'ch.randelshofer:fastdoubleparser', excludes: '**/17/**' },
+                    { artifact: 'ch.randelshofer:fastdoubleparser', excludes: '**/11/**' },
+                  ],
+                  createSourcesJar: false,
+                  compress: false)
+  end
+
+  plugin :'com.coderplus.maven.plugins:copy-rename-maven-plugin', '1.0' do
+    execute_goals 'copy',
+                  id: 'copy to lib/jruby.jar',
+                  phase: 'package',
+                  sourceFile: 'target/jruby-core-${project.version}.jar',
+                  destinationFile: '${jruby.basedir}/lib/jruby.jar'
+  end
+
+  plugin(:compiler,
+         encoding: 'utf-8',
+         verbose: 'true',
+         fork: 'false',
+         compilerArgs: { arg: '-J-Xmx1G' },
+         showWarnings: 'true',
+         showDeprecation: 'true',
+         source: ['${base.java.version}', '17'],
+         target: ['${base.javac.version}', '17'],
+         useIncrementalCompilation: 'false')
+
+  plugin(:source, skipSource: 'true')
+
+  %i[all release main osgi j2ee complete dist jruby_complete_jar_extended jruby-jars].each do |name|
+    profile name do
+      # we shade in all dependencies which use the asm classes and relocate
+      # the asm package-name. with all jruby artifacts behave the same
+      # regarding asm: lib/jruby, jruby-core and jruby-complete via maven
+      plugin :shade do
+        execute_goals('shade',
+                      id: 'shade dependencies into jar',
+                      phase: 'package',
+                      artifactSet: {
+                        # IMPORTANT these needs to match exclusions in
+                        # maven/jruby-complete/pom.rb
+                        includes: ['com.github.jnr:jnr-ffi',
+                                   'me.qmx.jitescript:jitescript',
+                                   'org.ow2.asm:*',
+                                   'com.dylibso:*',
+                                   'org.jruby:jruby-prism',
+                                   'org.ruby_lang:prism-parser-wasm'],
+                        excludes: 'javax.annotation:javax.annotation-api'
+                      },
+                      relocations: [
+                        { pattern: 'org.objectweb', shadedPattern: 'org.jruby.org.objectweb' },
+                        { pattern: 'me.qmx.jitescript', shadedPattern: 'org.jruby.me.qmx.jitescript' },
+                        { pattern: 'com.dylibso.chicory', shadedPattern: 'org.jruby.internal.com.dylibso.chicory'},
+                        { pattern: 'org.ruby_lang', shadedPattern: 'org.jruby.internal.org.ruby_lang'}
+                      ],
+                      transformers: [{ :@implementation => 'org.apache.maven.plugins.shade.resource.ManifestResourceTransformer',
+                                       :mainClass => 'org.jruby.main.Main',
+                                       :manifestEntries => { "Automatic-Module-Name": 'org.jruby.dist' } }],
+                      filters: [
+                        { artifact: 'com.headius:invokebinder', excludes: '**/module-info.class' }
+                      ],
+                      createSourcesJar: true,
+                      compress: true)
+      end
+
+      plugin(:javadoc, failOnError: false)
+    end
+  end
+end

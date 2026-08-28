@@ -1,0 +1,1 @@
+fails:DateTime#second raises an error when minute is given as a rational

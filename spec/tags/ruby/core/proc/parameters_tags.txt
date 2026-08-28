@@ -1,0 +1,2 @@
+fails:Proc#parameters handles the usage of `it` as a parameter
+fails:The `it` parameter affects block parameters

@@ -1,0 +1,1 @@
+windows:File::Stat#ino returns BY_HANDLE_FILE_INFORMATION.nFileIndexHigh/Low of a File::Stat object

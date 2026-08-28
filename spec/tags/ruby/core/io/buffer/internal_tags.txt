@@ -1,0 +1,5 @@
+fails:IO::Buffer#internal? with a file-backed buffer created with .map is false for a regular mapping
+fails:IO::Buffer#internal? with a file-backed buffer created with .map is false for a private mapping
+fails:IO::Buffer#internal? with a slice of a buffer created with .new is false when slicing an internal buffer
+fails:IO::Buffer#internal? with a slice of a buffer created with .map is false
+fails:IO::Buffer#internal? is false for a null buffer

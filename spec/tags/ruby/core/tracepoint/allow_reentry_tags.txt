@@ -1,0 +1,2 @@
+fails:TracePoint.allow_reentry allows the reentrance in a given block
+fails:TracePoint.allow_reentry raises RuntimeError when not called inside a TracePoint

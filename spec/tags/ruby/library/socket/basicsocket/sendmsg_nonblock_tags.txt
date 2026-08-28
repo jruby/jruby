@@ -1,0 +1,14 @@
+fails:BasicSocket#sendmsg_nonblock using IPv4 using a disconnected socket without a destination address raises Errno::EDESTADDRREQ
+fails:BasicSocket#sendmsg_nonblock using IPv4 using a disconnected socket with a destination address as a String returns the amount of sent bytes
+fails:BasicSocket#sendmsg_nonblock using IPv4 using a disconnected socket with a destination address as an Addrinfo returns the amount of sent bytes
+fails:BasicSocket#sendmsg_nonblock using IPv4 using a connected UDP socket without a destination address argument returns the amount of bytes written
+fails:BasicSocket#sendmsg_nonblock using IPv4 using a connected UDP socket with a destination address argument sends the message to the given address instead
+fails:BasicSocket#sendmsg_nonblock using IPv4 using a connected TCP socket raises IO::WaitWritable when the underlying buffer is full
+fails:BasicSocket#sendmsg_nonblock using IPv4 using a connected TCP socket returns :wait_writable when the underlying buffer is full with exception: false
+fails:BasicSocket#sendmsg_nonblock using IPv6 using a disconnected socket without a destination address raises Errno::EDESTADDRREQ
+fails:BasicSocket#sendmsg_nonblock using IPv6 using a disconnected socket with a destination address as a String returns the amount of sent bytes
+fails:BasicSocket#sendmsg_nonblock using IPv6 using a disconnected socket with a destination address as an Addrinfo returns the amount of sent bytes
+fails:BasicSocket#sendmsg_nonblock using IPv6 using a connected UDP socket without a destination address argument returns the amount of bytes written
+fails:BasicSocket#sendmsg_nonblock using IPv6 using a connected UDP socket with a destination address argument sends the message to the given address instead
+fails:BasicSocket#sendmsg_nonblock using IPv6 using a connected TCP socket raises IO::WaitWritable when the underlying buffer is full
+fails:BasicSocket#sendmsg_nonblock using IPv6 using a connected TCP socket returns :wait_writable when the underlying buffer is full with exception: false

@@ -1,0 +1,1 @@
+fails:Set#eql? is an alias of Set#==

@@ -1,0 +1,82 @@
+# -*- encoding: us-ascii -*-
+
+require_relative '../../../spec_helper'
+require_relative 'fixtures/classes'
+require_relative '../../enumerable/shared/value_packing'
+
+describe "Enumerator::Lazy#drop_while" do
+  describe "value packing of source yields (matches Enumerable#drop_while)" do
+    before :each do
+      @take = -> e { e.lazy.drop_while { false } }
+    end
+    it_behaves_like :enumerable_value_packing, nil
+  end
+
+  before :each do
+    @yieldsmixed = EnumeratorLazySpecs::YieldsMixed.new.to_enum.lazy
+    @eventsmixed = EnumeratorLazySpecs::EventsMixed.new.to_enum.lazy
+    ScratchPad.record []
+  end
+
+  after :each do
+    ScratchPad.clear
+  end
+
+  it "returns a new instance of Enumerator::Lazy" do
+    ret = @yieldsmixed.drop_while {}
+    ret.should.instance_of?(Enumerator::Lazy)
+    ret.should_not.equal?(@yieldsmixed)
+  end
+
+  it "sets #size to nil" do
+    Enumerator::Lazy.new(Object.new, 100) {}.drop_while { |v| v }.size.should == nil
+  end
+
+  describe "when the returned lazy enumerator is evaluated by Enumerable#first" do
+    it "stops after specified times" do
+      (0..Float::INFINITY).lazy.drop_while { |n| n < 5 }.first(2).should == [5, 6]
+
+      @eventsmixed.drop_while { false }.first(1)
+      ScratchPad.recorded.should == [:before_yield]
+    end
+  end
+
+  it "calls the block with initial values when yield with multiple arguments" do
+    yields = []
+    @yieldsmixed.drop_while { |v| yields << v; true }.force
+    yields.should == EnumeratorLazySpecs::YieldsMixed.initial_yields
+  end
+
+  it "raises an ArgumentError when not given a block" do
+    -> { @yieldsmixed.drop_while }.should.raise(ArgumentError)
+  end
+
+  describe "when the returned lazy enumerator is evaluated by .force" do
+    it "return same value when called twice" do
+      lazy = [0, 1, 2, 3].lazy.drop_while { |v| v < 2 }
+      lazy.force.should == [2, 3]
+      lazy.force.should == [2, 3]
+    end
+  end
+
+  describe "on a nested Lazy" do
+    it "sets #size to nil" do
+      Enumerator::Lazy.new(Object.new, 100) {}.take(20).drop_while { |v| v }.size.should == nil
+    end
+
+    describe "when the returned lazy enumerator is evaluated by Enumerable#first" do
+      it "stops after specified times" do
+        (0..Float::INFINITY).lazy.drop_while { |n| n < 5 }.drop_while { |n| n.odd? }.first(2).should == [6, 7]
+
+        @eventsmixed.drop_while { false }.drop_while { false }.first(1)
+        ScratchPad.recorded.should == [:before_yield]
+      end
+    end
+  end
+
+  it "works with an infinite enumerable" do
+    s = 0..Float::INFINITY
+    s.lazy.drop_while { |n| n < 100 }.first(100).should ==
+      s.first(200).drop_while { |n| n < 100 }
+  end
+end

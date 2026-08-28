@@ -1,0 +1,1 @@
+fails:Socket::AncillaryData#ipv6_pktinfo_addr returns an Addrinfo

@@ -1,0 +1,26 @@
+# encoding: binary
+require_relative '../../../spec_helper'
+require_relative '../fixtures/classes'
+require_relative 'shared/basic'
+require_relative 'shared/string'
+
+describe "String#unpack with format 'Z'" do
+  it_behaves_like :string_unpack_basic, 'Z'
+  it_behaves_like :string_unpack_no_platform, 'Z'
+  it_behaves_like :string_unpack_string, 'Z'
+
+  it "stops decoding at NULL bytes when passed the '*' modifier" do
+    "a\x00\x00 b \x00c".unpack('Z*Z*Z*Z*').should == ["a", "", " b ", "c"]
+  end
+
+  it "decodes the number of bytes specified by the count modifier and truncates the decoded string at the first NULL byte" do
+    [ ["a\x00 \x00b c",      ["a", " "]],
+      ["\x00a\x00 bc \x00",  ["", "c"]]
+    ].should be_computed_by(:unpack, "Z5Z")
+  end
+
+  it "does not advance past the null byte when given a 'Z' format specifier" do
+    "a\x00\x0f".unpack('Zxc').should == ['a', 15]
+    "a\x00\x0f".unpack('Zcc').should == ['a', 0, 15]
+  end
+end

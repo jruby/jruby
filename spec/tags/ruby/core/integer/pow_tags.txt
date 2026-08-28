@@ -1,0 +1,1 @@
+fails:Integer#pow one argument is passed fixnum raises an ArgumentError when the number is too big

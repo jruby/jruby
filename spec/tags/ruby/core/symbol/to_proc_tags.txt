@@ -1,0 +1,2 @@
+fails:Symbol#to_proc produces a proc with source location nil
+fails:Symbol#to_proc produces a Proc with arity -2

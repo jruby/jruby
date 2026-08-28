@@ -1,0 +1,3 @@
+fails:BasicSocket#remote_address using TCPSocket uses 0 as the protocol
+fails:BasicSocket#remote_address using UDPSocket uses 0 as the protocol
+fails:BasicSocket#remote_address using IPv6 uses 0 as the protocol

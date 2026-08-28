@@ -1,0 +1,1 @@
+fails:Socket::AncillaryData#type returns the type as an Integer

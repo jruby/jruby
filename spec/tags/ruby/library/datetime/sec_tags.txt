@@ -1,0 +1,1 @@
+fails:DateTime.sec raises an error when minute is given as a rational

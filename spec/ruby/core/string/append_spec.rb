@@ -1,0 +1,14 @@
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
+require_relative 'shared/concat'
+
+describe "String#<<" do
+  it_behaves_like :string_concat, :<<
+  it_behaves_like :string_concat_encoding, :<<
+  it_behaves_like :string_concat_type_coercion, :<<
+
+  it "raises an ArgumentError when given the incorrect number of arguments" do
+    -> { "hello".send(:<<) }.should.raise(ArgumentError)
+    -> { "hello".send(:<<, "one", "two") }.should.raise(ArgumentError)
+  end
+end

@@ -1,0 +1,5 @@
+fails:Thread#thread_variable_set converts a key that is neither String nor Symbol with #to_str
+fails:Thread#thread_variable_set removes a key if the value is nil
+fails:Thread#thread_variable_set raises a FrozenError if the thread is frozen
+fails:Thread#thread_variable_set raises a TypeError if the key is neither Symbol nor String, nor responds to #to_str
+fails:Thread#thread_variable_set does not try to convert the key with #to_sym

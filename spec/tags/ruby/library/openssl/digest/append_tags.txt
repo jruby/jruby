@@ -1,0 +1,8 @@
+fails:OpenSSL::Digest#<< when input is not a String and responds to #to_str returns a SHA1 digest
+fails:OpenSSL::Digest#<< when input is not a String and responds to #to_str returns a SHA256 digest
+fails:OpenSSL::Digest#<< when input is not a String and responds to #to_str returns a SHA384 digest
+fails:OpenSSL::Digest#<< when input is not a String and responds to #to_str returns a SHA512 digest
+fails:OpenSSL::Digest#<< when input is not a String and does not respond to #to_str raises a TypeError with SHA1
+fails:OpenSSL::Digest#<< when input is not a String and does not respond to #to_str raises a TypeError with SHA256
+fails:OpenSSL::Digest#<< when input is not a String and does not respond to #to_str raises a TypeError with SHA384
+fails:OpenSSL::Digest#<< when input is not a String and does not respond to #to_str raises a TypeError with SHA512

@@ -1,0 +1,7 @@
+fails:DateTime#deconstruct_keys returns {} when passed []
+fails:DateTime#deconstruct_keys ignores non-Symbol keys
+fails:DateTime#deconstruct_keys ignores not existing Symbol keys
+fails:DateTime#deconstruct_keys returns whole hash for nil as an argument
+fails:DateTime#deconstruct_keys returns only specified keys
+fails:DateTime#deconstruct_keys requires one argument
+fails:DateTime#deconstruct_keys it raises error when argument is neither nil nor array

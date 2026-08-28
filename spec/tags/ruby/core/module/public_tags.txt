@@ -1,0 +1,2 @@
+fails(JRUBY-3917):Module#public on a superclass method calls the redefined method
+fails:Module#public without arguments does not affect method definitions when itself is inside an eval and method definitions are outside

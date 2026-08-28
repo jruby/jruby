@@ -1,0 +1,4 @@
+fails:Net::FTP#initialize when the ssl option is set and the ssl option's value is true initializes ssl_context to a blank SSLContext object
+fails:Net::FTP#initialize when the ssl option is set and the ssl option's value is a hash initializes ssl_context to a configured SSLContext object
+fails:Net::FTP#initialize when the ssl option is set and private_data_connection is set sets private_data_connection to that value
+fails:Net::FTP#initialize when the ssl option is set and private_data_connection is not set sets private_data_connection to nil

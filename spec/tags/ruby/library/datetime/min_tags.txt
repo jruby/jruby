@@ -1,0 +1,3 @@
+fails:DateTime.min raises an error for Rational
+fails:DateTime.min raises an error for Float
+fails:DateTime.min raises an error for minute fractions smaller than -60

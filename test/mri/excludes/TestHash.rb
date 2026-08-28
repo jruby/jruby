@@ -1,0 +1,4 @@
+exclude :test_AREF_fstring_key_default_proc, "Depends on MRI-specific ObjectSpace.count_objects"
+exclude :test_compare_by_identy_memory_leak, "no working assert_no_memory_leak method"
+exclude :test_st_literal_memory_leak, "no working assert_no_memory_leak method"
+exclude :test_update_modify_in_block, "JRuby Hash does not detect or prevent modification during iteration (https://github.com/jruby/jruby/issues/9268)"

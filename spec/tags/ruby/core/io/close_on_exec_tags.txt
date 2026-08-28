@@ -1,0 +1,1 @@
+fails:IO#close_on_exec= ensures the IO's file descriptor is closed in exec'ed processes

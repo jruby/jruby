@@ -1,0 +1,1 @@
+fails:IO.pipe does not use IO.new method to create pipes and allows its overriding

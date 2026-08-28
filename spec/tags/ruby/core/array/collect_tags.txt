@@ -1,0 +1,2 @@
+fails:Array#collect is an alias of Array#map
+fails:Array#collect! is an alias of Array#map!

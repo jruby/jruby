@@ -1,0 +1,2 @@
+critical(hangs):File#flock blocks if trying to lock an exclusively locked file
+windows:File#flock returns false if trying to lock an exclusively locked file

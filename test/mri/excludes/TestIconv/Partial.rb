@@ -1,0 +1,1 @@
+exclude :test_partial_euc2sjis, "needs investigation"

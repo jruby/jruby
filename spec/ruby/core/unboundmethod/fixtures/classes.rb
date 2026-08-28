@@ -1,0 +1,125 @@
+module UnboundMethodSpecs
+  class SourceLocation
+    LOCATION_LINE = __LINE__ + 1
+    def self.location
+      :location
+    end
+
+    def self.redefined
+      :first
+    end
+
+    REDEFINED_LINE = __LINE__ + 1
+    def self.redefined
+      :last
+    end
+
+    ORIGINAL_LINE = __LINE__ + 1
+    def original
+    end
+
+    alias :aka :original
+  end
+
+  module Mod
+    def from_mod; end
+    def foo_super; super; end
+  end
+
+  class Methods
+    include Mod
+
+    def foo
+      true
+    end
+
+    def with_block(&block); end
+
+    alias bar foo
+    alias baz bar
+    alias qux baz
+    alias alias_1 foo
+    alias alias_2 foo
+
+    def original_body(); :this; end
+    def identical_body(); :this; end
+
+    def one; end
+    def two(a); end
+    def three(a, b); end
+    def four(a, b, &c); end
+
+    def neg_one(*a); end
+    def neg_two(a, *b); end
+    def neg_three(a, b, *c); end
+    def neg_four(a, b, *c, &d); end
+
+    def discard_1(); :discard; end
+    def discard_2(); :discard; end
+
+    def my_public_method; end
+    def my_protected_method; end
+    def my_private_method; end
+    protected :my_protected_method
+    private :my_private_method
+  end
+
+  class Parent
+    def foo; end
+    def foo_super
+      true
+    end
+    def self.class_method
+      "I am #{name}"
+    end
+  end
+
+  class Child1 < Parent; end
+  class Child2 < Parent; end
+  class Child3 < Parent
+    class << self
+      alias_method :another_class_method, :class_method
+    end
+  end
+
+  module Mixin
+    def mixin_method; end
+  end
+
+  class IncluderBase
+    include Mixin
+  end
+
+  class IncluderChild < IncluderBase; end
+
+  class ExtenderBase
+    extend Mixin
+  end
+
+  class ExtenderChild < ExtenderBase; end
+
+  class A
+    def baz(a, b)
+      return [__FILE__, self.class]
+    end
+    def overridden; end
+  end
+
+  class B < A
+    def overridden; end
+  end
+
+  class C < B
+    def overridden; end
+  end
+
+  module HashSpecs
+    class SuperClass
+      def foo
+      end
+    end
+
+    class SubClass < SuperClass
+    end
+  end
+end

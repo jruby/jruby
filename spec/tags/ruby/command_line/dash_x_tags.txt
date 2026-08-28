@@ -1,0 +1,2 @@
+windows:The -x command line option runs code after the first /#!.*ruby.*/-ish line in target file
+fails:The -x command line option behaves as -x was set when non-ruby shebang is encountered on first line

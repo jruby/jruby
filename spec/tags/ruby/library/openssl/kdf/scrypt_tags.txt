@@ -1,0 +1,29 @@
+fails:OpenSSL::KDF.scrypt creates the same value with the same input
+fails:OpenSSL::KDF.scrypt supports nullbytes embedded into the password
+fails:OpenSSL::KDF.scrypt coerces the password into a String using #to_str
+fails:OpenSSL::KDF.scrypt coerces the salt into a String using #to_str
+fails:OpenSSL::KDF.scrypt coerces the N into an Integer using #to_int
+fails:OpenSSL::KDF.scrypt coerces the r into an Integer using #to_int
+fails:OpenSSL::KDF.scrypt coerces the p into an Integer using #to_int
+fails:OpenSSL::KDF.scrypt coerces the length into an Integer using #to_int
+fails:OpenSSL::KDF.scrypt accepts an empty password
+fails:OpenSSL::KDF.scrypt accepts an empty salt
+fails:OpenSSL::KDF.scrypt accepts a zero length
+fails:OpenSSL::KDF.scrypt accepts an arbitrary length
+fails:OpenSSL::KDF.scrypt raises a TypeError when password is not a String and does not respond to #to_str
+fails:OpenSSL::KDF.scrypt raises a TypeError when salt is not a String and does not respond to #to_str
+fails:OpenSSL::KDF.scrypt raises a TypeError when N is not an Integer and does not respond to #to_int
+fails:OpenSSL::KDF.scrypt raises a TypeError when r is not an Integer and does not respond to #to_int
+fails:OpenSSL::KDF.scrypt raises a TypeError when p is not an Integer and does not respond to #to_int
+fails:OpenSSL::KDF.scrypt raises a TypeError when length is not an Integer and does not respond to #to_int
+fails:OpenSSL::KDF.scrypt treats salt as a required keyword
+fails:OpenSSL::KDF.scrypt treats N as a required keyword
+fails:OpenSSL::KDF.scrypt treats r as a required keyword
+fails:OpenSSL::KDF.scrypt treats p as a required keyword
+fails:OpenSSL::KDF.scrypt treats length as a required keyword
+fails:OpenSSL::KDF.scrypt treats all keywords as required
+fails:OpenSSL::KDF.scrypt requires N to be a power of 2
+fails:OpenSSL::KDF.scrypt requires N to be at least 2
+fails:OpenSSL::KDF.scrypt requires r to be positive
+fails:OpenSSL::KDF.scrypt requires p to be positive
+fails:OpenSSL::KDF.scrypt requires length to be not negative

@@ -1,0 +1,1 @@
+fails:main#include in a file loaded with wrapping includes the given Module in the load wrapper

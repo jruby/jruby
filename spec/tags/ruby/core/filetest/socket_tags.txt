@@ -1,0 +1,1 @@
+fails:FileTest.socket? returns true if the file is a socket

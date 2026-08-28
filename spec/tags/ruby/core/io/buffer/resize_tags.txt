@@ -1,0 +1,10 @@
+fails:IO::Buffer#resize allows resizing to 0, freeing memory
+fails:IO::Buffer#resize raises ArgumentError if size is negative
+fails:IO::Buffer#resize raises TypeError if size is not an Integer
+fails:IO::Buffer#resize with a buffer created with .new resizes mapped buffer, changing type to internal
+fails:IO::Buffer#resize with a file-backed buffer created with .map disallows resizing shared buffer, raising IO::Buffer::AccessError
+fails:IO::Buffer#resize with a file-backed buffer created with .map resizes private buffer, discarding excess contents
+fails:IO::Buffer#resize with a String-backed buffer created with .for without a block disallows resizing, raising IO::Buffer::AccessError
+fails:IO::Buffer#resize with a String-backed buffer created with .for with a block disallows resizing, raising IO::Buffer::AccessError
+fails:IO::Buffer#resize with a String-backed buffer created with .string disallows resizing, raising IO::Buffer::AccessError
+fails:IO::Buffer#resize with a null buffer allows resizing a 0-sized buffer, creating a regular buffer according to new size

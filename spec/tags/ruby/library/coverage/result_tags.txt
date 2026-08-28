@@ -1,0 +1,2 @@
+fails:Coverage.result returns results for each mode separately when enabled :all modes
+

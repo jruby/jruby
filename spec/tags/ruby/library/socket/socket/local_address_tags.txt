@@ -1,0 +1,7 @@
+fails:Socket#local_address returns an Addrinfo
+fails:Socket#local_address the returned Addrinfo uses AF_INET as the address family
+fails:Socket#local_address the returned Addrinfo uses PF_INET as the protocol family
+fails:Socket#local_address the returned Addrinfo uses SOCK_STREAM as the socket type
+fails:Socket#local_address the returned Addrinfo uses 0.0.0.0 as the IP address
+fails:Socket#local_address the returned Addrinfo uses 0 as the port
+fails:Socket#local_address the returned Addrinfo uses 0 as the protocol

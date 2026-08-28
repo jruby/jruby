@@ -1,0 +1,1 @@
+fails:ObjectSpace::WeakMap#key? is an alias of ObjectSpace::WeakMap#include?

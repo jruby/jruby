@@ -1,0 +1,1 @@
+fails:FileTest.grpowned? takes non primary groups into account

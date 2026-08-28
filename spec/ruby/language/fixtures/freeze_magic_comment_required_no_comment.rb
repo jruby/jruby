@@ -1,0 +1,1 @@
+$second_literal = "abc"

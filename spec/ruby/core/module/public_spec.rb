@@ -1,0 +1,45 @@
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
+require_relative 'shared/set_visibility'
+
+describe "Module#public" do
+  it_behaves_like :set_visibility, :public
+
+  it "on a superclass method calls the redefined method" do
+    ModuleSpecs::ChildPrivateMethodMadePublic.new.private_method_redefined.should == :after_redefinition
+  end
+
+  it "makes a private Object instance method public in a new module" do
+    m = Module.new do
+      public :module_specs_private_method_on_object
+    end
+
+    m.public_instance_methods(false).should.include?(:module_specs_private_method_on_object)
+
+    # Ensure we did not change Object's method
+    Object.public_instance_methods(true).should_not.include?(:module_specs_private_method_on_object)
+  end
+
+  it "makes a private Object instance method public in Kernel" do
+    Kernel.public_instance_methods(false).should.include?(
+                  :module_specs_private_method_on_object_for_kernel_public)
+    Object.public_instance_methods(true).should_not.include?(
+                  :module_specs_private_method_on_object_for_kernel_public)
+  end
+
+  it "returns argument or arguments if given" do
+    (class << Object.new; self; end).class_eval do
+      def foo; end
+      public(:foo).should.equal?(:foo)
+      public([:foo, :foo]).should == [:foo, :foo]
+      public(:foo, :foo).should == [:foo, :foo]
+      public.should.equal?(nil)
+    end
+  end
+
+  it "raises a NameError when given an undefined name" do
+    -> do
+      Module.new.send(:public, :undefined)
+    end.should.raise(NameError)
+  end
+end

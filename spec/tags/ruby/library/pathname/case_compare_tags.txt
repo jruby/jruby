@@ -1,0 +1,1 @@
+fails:Pathname#=== is an alias of Pathname#==

@@ -1,0 +1,2 @@
+fails:RbConfig::LIMITS contains CHAR_MIN and CHAR_MAX
+fails:RbConfig::LIMITS contains SHRT_MIN and SHRT_MAX

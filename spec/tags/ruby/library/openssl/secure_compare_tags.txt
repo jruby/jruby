@@ -1,0 +1,2 @@
+fails:OpenSSL.secure_compare converts both arguments to strings using #to_str, but adds equality check for the original objects
+fails:OpenSSL.secure_compare does not accept arguments that are not string and cannot be coerced into strings

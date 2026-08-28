@@ -1,0 +1,190 @@
+require_relative '../../spec_helper'
+
+describe "IO.select" do
+  before :each do
+    @rd, @wr = IO.pipe
+  end
+
+  after :each do
+    @rd.close unless @rd.closed?
+    @wr.close unless @wr.closed?
+  end
+
+  it "blocks for duration of timeout and returns nil if there are no objects ready for I/O" do
+    IO.select([@rd], nil, nil, 0.001).should == nil
+  end
+
+  it "returns immediately all objects that are ready for I/O when timeout is 0" do
+    @wr.syswrite("be ready")
+    IO.pipe do |_, wr|
+      result = IO.select [@rd], [wr], nil, 0
+      unless result
+        # On some platforms (e.g., Windows), pipe readiness may not be immediate
+        result = IO.select [@rd], [wr], nil, 2
+      end
+      result.should == [[@rd], [wr], []]
+    end
+  end
+
+  it "returns nil after timeout if there are no objects ready for I/O" do
+    result = IO.select [@rd], nil, nil, 0
+    result.should == nil
+  end
+
+  it "returns supplied objects when they are ready for I/O" do
+    main = Thread.current
+    t = Thread.new {
+      Thread.pass until main.status == "sleep"
+      @wr.write "be ready"
+    }
+    result = IO.select [@rd], nil, nil, nil
+    result.should == [[@rd], [], []]
+    t.join
+  end
+
+  it "leaves out IO objects for which there is no I/O ready" do
+    @wr.write "be ready"
+    platform_is :aix do
+      # In AIX, when a pipe is readable, select(2) returns the write side
+      # of the pipe as "readable", even though you cannot actually read
+      # anything from the write side.
+      result = IO.select [@wr, @rd], nil, nil, nil
+      result.should == [[@wr, @rd], [], []]
+    end
+    platform_is_not :aix do
+      # Order matters here. We want to see that @wr doesn't expand the size
+      # of the returned array, so it must be 1st.
+      result = IO.select [@wr, @rd], nil, nil, nil
+      result.should == [[@rd], [], []]
+    end
+  end
+
+  it "returns supplied objects correctly when monitoring the same object in different arrays" do
+    filename = tmp("IO_select_pipe_file")
+    io = File.open(filename, 'w+')
+    result = IO.select [io], [io], nil, 0
+    result.should == [[io], [io], []]
+    io.close
+    rm_r filename
+  end
+
+  it "returns the pipe read end in read set if the pipe write end is closed concurrently" do
+    main = Thread.current
+    t = Thread.new {
+      Thread.pass until main.stop?
+      @wr.close
+    }
+    IO.select([@rd]).should == [[@rd], [], []]
+  ensure
+    t.join
+  end
+
+  it "invokes to_io on supplied objects that are not IO and returns the supplied objects" do
+    # make some data available
+    @wr.write("foobar")
+
+    obj = mock("read_io")
+    obj.should_receive(:to_io).at_least(1).and_return(@rd)
+    IO.select([obj]).should == [[obj], [], []]
+
+    IO.pipe do |_, wr|
+      obj = mock("write_io")
+      obj.should_receive(:to_io).at_least(1).and_return(wr)
+      IO.select(nil, [obj]).should == [[], [obj], []]
+    end
+  end
+
+  it "raises TypeError if supplied objects are not IO" do
+    -> { IO.select([Object.new]) }.should.raise(TypeError)
+    -> { IO.select(nil, [Object.new]) }.should.raise(TypeError)
+
+    obj = mock("io")
+    obj.should_receive(:to_io).any_number_of_times.and_return(nil)
+
+    -> { IO.select([obj]) }.should.raise(TypeError)
+    -> { IO.select(nil, [obj]) }.should.raise(TypeError)
+  end
+
+  it "raises a TypeError if the specified timeout value is not Numeric" do
+    -> { IO.select([@rd], nil, nil, Object.new) }.should.raise(TypeError)
+  end
+
+  it "raises TypeError if the first three arguments are not Arrays" do
+    -> { IO.select(Object.new)}.should.raise(TypeError)
+    -> { IO.select(nil, Object.new)}.should.raise(TypeError)
+    -> { IO.select(nil, nil, Object.new)}.should.raise(TypeError)
+  end
+
+  it "raises an ArgumentError when passed a negative timeout" do
+    -> { IO.select(nil, nil, nil, -5)}.should.raise(ArgumentError, "time interval must not be negative")
+  end
+
+  ruby_version_is "4.0" do
+    it "raises an ArgumentError when passed negative infinity as timeout" do
+      -> { IO.select(nil, nil, nil, -Float::INFINITY)}.should.raise(ArgumentError, "time interval must not be negative")
+    end
+  end
+
+  it "raises an RangeError when passed NaN as timeout" do
+    -> { IO.select(nil, nil, nil, Float::NAN)}.should.raise(RangeError, "NaN out of Time range")
+  end
+
+  describe "returns the available descriptors when the file descriptor" do
+    it "is in both read and error arrays" do
+      @wr.write("foobar")
+      result = IO.select([@rd], nil, [@rd])
+      result.should == [[@rd], [], []]
+    end
+
+    it "is in both write and error arrays" do
+      result = IO.select(nil, [@wr], [@wr])
+      result.should == [[], [@wr], []]
+    end
+
+    it "is in both read and write arrays" do
+      filename = tmp("IO_select_read_write_file")
+      w = File.open(filename, 'w+')
+      begin
+        IO.select([w], [w], []).should == [[w], [w], []]
+      ensure
+        w.close
+        rm_r filename
+      end
+
+      IO.select([@wr], [@wr], []).should == [[], [@wr], []]
+
+      @wr.write("foobar")
+      # CRuby on macOS returns [[@rd], [@rd], []], weird but we accept it here, probably only for pipe read-end
+      [
+        [[@rd], [], []],
+        [[@rd], [@rd], []]
+      ].should.include? IO.select([@rd], [@rd], [])
+    end
+  end
+end
+
+describe "IO.select with infinite timeout" do
+  describe :io_select_infinite_timeout, shared: true do
+    it "sleeps forever and sets the thread status to 'sleep'" do
+      t = Thread.new do
+        IO.select(nil, nil, nil, @method)
+      end
+
+      Thread.pass while t.status && t.status != "sleep"
+      t.join unless t.status
+      t.status.should == "sleep"
+      t.kill
+      t.join
+    end
+  end
+
+  describe "IO.select when passed nil for timeout" do
+    it_behaves_like :io_select_infinite_timeout, nil
+  end
+
+  ruby_version_is "4.0" do
+    describe "IO.select when passed Float::INFINITY for timeout" do
+      it_behaves_like :io_select_infinite_timeout, Float::INFINITY
+    end
+  end
+end

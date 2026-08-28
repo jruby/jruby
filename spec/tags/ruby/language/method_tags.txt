@@ -1,0 +1,6 @@
+fails:when passing **nil into a method that accepts keyword arguments expands nil using ** into {}
+fails:warning about not used block argument warns when passing a block argument to a method that never uses it
+fails:warning about not used block argument warns when passing a block argument to a method that calls #block_given?
+fails:warning about not used block argument warns only once per call site
+fails:warning about not used block argument can be disabled with :strict_unused_block warning category
+fails:warning about not used block argument can be enabled with :strict_unused_block = true warning category in not verbose mode

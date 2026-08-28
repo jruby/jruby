@@ -1,0 +1,5 @@
+exclude :test_irb_info_lang, "messes up console output for subsequent tests"
+exclude :test_irb_info_multiline, "messes up console output for subsequent tests"
+exclude :test_irb_info_multiline_without_rc_files, "messes up console output for subsequent tests"
+exclude :test_irb_info_singleline, "messes up console output for subsequent tests"
+exclude :test_irb_info_singleline_without_rc_files, "messes up console output for subsequent tests"

@@ -1,0 +1,1 @@
+fails:Fiddle::Handle#initialize raises Fiddle::DLError if the library cannot be found

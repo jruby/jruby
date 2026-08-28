@@ -1,0 +1,1 @@
+fails:Dir.open sets the close-on-exec flag for the directory file descriptor

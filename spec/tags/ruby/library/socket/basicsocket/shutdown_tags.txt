@@ -1,0 +1,46 @@
+fails:Socket::BasicSocket#shutdown using IPv4 using a Fixnum shuts down a socket for reading
+fails:Socket::BasicSocket#shutdown using IPv4 using a Fixnum shuts down a socket for writing
+fails:Socket::BasicSocket#shutdown using IPv4 using a Fixnum shuts down a socket for reading and writing
+fails:Socket::BasicSocket#shutdown using IPv4 using a Fixnum raises ArgumentError when using an invalid option
+fails:Socket::BasicSocket#shutdown using IPv4 using a Symbol shuts down a socket for reading using :RD
+fails:Socket::BasicSocket#shutdown using IPv4 using a Symbol shuts down a socket for reading using :SHUT_RD
+fails:Socket::BasicSocket#shutdown using IPv4 using a Symbol shuts down a socket for writing using :WR
+fails:Socket::BasicSocket#shutdown using IPv4 using a Symbol shuts down a socket for writing using :SHUT_WR
+fails:Socket::BasicSocket#shutdown using IPv4 using a Symbol shuts down a socket for reading and writing
+fails:Socket::BasicSocket#shutdown using IPv4 using a Symbol raises ArgumentError when using an invalid option
+fails:Socket::BasicSocket#shutdown using IPv4 using a String shuts down a socket for reading using "RD"
+fails:Socket::BasicSocket#shutdown using IPv4 using a String shuts down a socket for reading using "SHUT_RD"
+fails:Socket::BasicSocket#shutdown using IPv4 using a String shuts down a socket for writing using "WR"
+fails:Socket::BasicSocket#shutdown using IPv4 using a String shuts down a socket for writing using "SHUT_WR"
+fails:Socket::BasicSocket#shutdown using IPv4 using a String raises ArgumentError when using an invalid option
+fails:Socket::BasicSocket#shutdown using IPv4 using an object that responds to #to_str shuts down a socket for reading using "RD"
+fails:Socket::BasicSocket#shutdown using IPv4 using an object that responds to #to_str shuts down a socket for reading using "SHUT_RD"
+fails:Socket::BasicSocket#shutdown using IPv4 using an object that responds to #to_str shuts down a socket for reading and writing
+fails:Socket::BasicSocket#shutdown using IPv4 using an object that does not respond to #to_str raises TypeError
+fails:Socket::BasicSocket#shutdown using IPv6 using a Fixnum shuts down a socket for reading
+fails:Socket::BasicSocket#shutdown using IPv6 using a Fixnum shuts down a socket for writing
+fails:Socket::BasicSocket#shutdown using IPv6 using a Fixnum shuts down a socket for reading and writing
+fails:Socket::BasicSocket#shutdown using IPv6 using a Fixnum raises ArgumentError when using an invalid option
+fails:Socket::BasicSocket#shutdown using IPv6 using a Symbol shuts down a socket for reading using :RD
+fails:Socket::BasicSocket#shutdown using IPv6 using a Symbol shuts down a socket for reading using :SHUT_RD
+fails:Socket::BasicSocket#shutdown using IPv6 using a Symbol shuts down a socket for writing using :WR
+fails:Socket::BasicSocket#shutdown using IPv6 using a Symbol shuts down a socket for writing using :SHUT_WR
+fails:Socket::BasicSocket#shutdown using IPv6 using a Symbol shuts down a socket for reading and writing
+fails:Socket::BasicSocket#shutdown using IPv6 using a Symbol raises ArgumentError when using an invalid option
+fails:Socket::BasicSocket#shutdown using IPv6 using a String shuts down a socket for reading using "RD"
+fails:Socket::BasicSocket#shutdown using IPv6 using a String shuts down a socket for reading using "SHUT_RD"
+fails:Socket::BasicSocket#shutdown using IPv6 using a String shuts down a socket for writing using "WR"
+fails:Socket::BasicSocket#shutdown using IPv6 using a String shuts down a socket for writing using "SHUT_WR"
+fails:Socket::BasicSocket#shutdown using IPv6 using a String raises ArgumentError when using an invalid option
+fails:Socket::BasicSocket#shutdown using IPv6 using an object that responds to #to_str shuts down a socket for reading using "RD"
+fails:Socket::BasicSocket#shutdown using IPv6 using an object that responds to #to_str shuts down a socket for reading using "SHUT_RD"
+fails:Socket::BasicSocket#shutdown using IPv6 using an object that responds to #to_str shuts down a socket for reading and writing
+fails:Socket::BasicSocket#shutdown using IPv6 using an object that does not respond to #to_str raises TypeError
+fails:Socket::BasicSocket#shutdown using IPv4 using an Integer shuts down a socket for reading
+fails:Socket::BasicSocket#shutdown using IPv4 using an Integer shuts down a socket for writing
+fails:Socket::BasicSocket#shutdown using IPv4 using an Integer shuts down a socket for reading and writing
+fails:Socket::BasicSocket#shutdown using IPv4 using an Integer raises ArgumentError when using an invalid option
+fails:Socket::BasicSocket#shutdown using IPv6 using an Integer shuts down a socket for reading
+fails:Socket::BasicSocket#shutdown using IPv6 using an Integer shuts down a socket for writing
+fails:Socket::BasicSocket#shutdown using IPv6 using an Integer shuts down a socket for reading and writing
+fails:Socket::BasicSocket#shutdown using IPv6 using an Integer raises ArgumentError when using an invalid option

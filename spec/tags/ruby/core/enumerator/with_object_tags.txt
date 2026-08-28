@@ -1,0 +1,1 @@
+fails:Enumerator#with_object is an alias of Enumerator#each_with_object

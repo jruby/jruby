@@ -1,0 +1,1 @@
+windows:IO.for_fd raises an Errno::EINVAL if the new mode is not compatible with the descriptor's current mode

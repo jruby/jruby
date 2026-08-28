@@ -1,0 +1,145 @@
+#!/bin/sh
+# -----------------------------------------------------------------------------
+# jruby - Relaunches as jruby.sh from the same path.
+#
+# See jruby.sh for more information.
+# -----------------------------------------------------------------------------
+
+# Pure shell dirname
+dir_name() {
+    local filename="$1" trail=
+    case $filename in
+        */*[!/]*)
+            trail=${filename##*[!/]}
+            filename=${filename%%"$trail"}
+            REPLY=${filename%/*}
+            ;;
+        *[!/]*)
+            trail=${filename##*[!/]}
+            REPLY="."
+            ;;
+        *)
+            REPLY="/"
+            ;;
+    esac
+}
+
+# Pure shell basename
+base_name() {
+    local filename="$1" trail=
+    case $filename in
+        */*[!/]*)
+            trail=${filename##*[!/]}
+            filename=${filename%%"$trail"}
+            REPLY=${filename##*/}
+            ;;
+        *[!/]*)
+            trail=${filename##*[!/]}
+            REPLY=${filename%%"$trail"}
+            ;;
+        *)
+            REPLY="/"
+            ;;
+    esac
+}
+
+# Determine whether path is absolute and contains no relative segments or symlinks
+path_is_canonical() {
+    local path=
+    for path; do
+        case $path in
+            ([!/]*) return 1 ;;
+            (./*|../*) return 1 ;;
+            (*/.|*/..) return 1 ;;
+            (*/./*|*/../*) return 1 ;;
+        esac
+        while [ "$path" ]; do
+            [ -h "$path" ] && return 1
+            path="${path%/*}"
+        done
+    done
+    return 0
+}
+
+# Resolve directory to its canonical value
+resolve_dir() {
+    # Some shells (dash, ksh) resolve relative paths by default before cd'ing, i.e.
+    # cd /foo/bar/../baz = cd /foo/baz
+    # This is fine unless bar is a symlink, in which case the second form is
+    # invalid. Passing -P to cd fixes this behaviour.
+    REPLY="$(cd -P -- "$1" && pwd)"
+}
+
+# Resolve symlink until it's not a symlink
+resolve_file() {
+    local current="$1" target=
+
+    while [ -h "$current" ]; do
+        target="$(readlink "$current")" || return
+        case $target in
+            (/*) current="$target" ;;
+            # handle relative symlinks
+            (*) dir_name "$current"; current="$REPLY/$target" ;;
+        esac
+    done
+    REPLY="$current"
+}
+
+# Resolve path to its canonical value
+resolve() {
+    local target="$1" base=
+    REPLY=
+
+    # Verify target actually exists (and isn't too deep in symlinks)
+    if ! [ -e "$target" ]; then
+        echo >&2 "Error: No such file or directory: $target"
+        return 1
+    fi
+
+    # Realpath is way faster than repeatedly calling readlink, so use it if possible
+    if command -v realpath >/dev/null; then
+        REPLY="$(realpath "$target")" && return
+    fi
+
+    # Take shortcut for directories
+    if [ -d "$target" ]; then
+        resolve_dir "$target" && return
+    fi
+
+    # Ensure $target is not a symlink
+    resolve_file "$target" || return
+    target="$REPLY"
+
+    # Resolve parent directory if it's not absolute
+    if ! path_is_canonical "$target"; then
+        dir_name "$target"
+        resolve_dir "$REPLY" || return
+        base="$REPLY"
+
+        base_name "$target"
+        target="$base/$REPLY"
+    fi
+    REPLY="$target"
+}
+
+# ----- Find JRuby launcher based on this executable's path -------------------
+
+# Get the absolute path of the executable
+if [ "${BASH-}" ]; then
+    # shellcheck disable=2128,3028
+    script_src=${BASH_SOURCE-}
+else
+    script_src=$0
+fi
+dir_name "$script_src"
+base_dir=$(cd -P -- "$REPLY" >/dev/null && pwd -P)
+base_name "$script_src"
+resolve "$base_dir/$REPLY"
+self_path=$REPLY
+
+# Get the directory of the target script
+dir_name "$self_path"
+jruby_bin=$REPLY
+
+# Run the launcher (in the current shell as an optimization)
+. "$jruby_bin/jruby.sh"

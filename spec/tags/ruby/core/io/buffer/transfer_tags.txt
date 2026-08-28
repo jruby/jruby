@@ -1,0 +1,2 @@
+fails:IO::Buffer#transfer with a file-backed buffer created with .map transfers mapped memory to a new buffer, nullifying the original
+fails:IO::Buffer#transfer with a slice of a buffer nullifies buffer, invalidating the slice

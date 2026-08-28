@@ -1,0 +1,2 @@
+fails:Array#pack with format 'P' round-trips a string through pack and unpack
+fails:Array#pack with format 'p' round-trips a string through pack and unpack

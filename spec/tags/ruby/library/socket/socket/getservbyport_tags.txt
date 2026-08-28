@@ -1,0 +1,3 @@
+fails:Socket.getservbyport returns the service name as a String
+fails:Socket.getservbyport returns the service name when using a custom protocol name
+fails:Socket.getservbyport raises SocketError for an unknown port number

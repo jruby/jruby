@@ -1,0 +1,1 @@
+fails:Float#magnitude is an alias of Float#abs

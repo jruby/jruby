@@ -1,0 +1,1 @@
+fails:IO#advise raises a NotImplementedError if advise is not recognized

@@ -1,0 +1,5 @@
+fails:Socket::AncillaryData#cmsg_is? using :INET, :IP, :TTL as the family, level, and type returns true when comparing with IPPROTO_IP and IP_TTL
+fails:Socket::AncillaryData#cmsg_is? using :INET, :IP, :TTL as the family, level, and type returns true when comparing with :IP and :TTL
+fails:Socket::AncillaryData#cmsg_is? using :INET, :IP, :TTL as the family, level, and type returns false when comparing with :IP and :PKTINFO
+fails:Socket::AncillaryData#cmsg_is? using :INET, :IP, :TTL as the family, level, and type returns false when comparing with :SOCKET and :RIGHTS
+fails:Socket::AncillaryData#cmsg_is? using :INET, :IP, :TTL as the family, level, and type raises SocketError when comparing with :IPV6 and :RIGHTS

@@ -1,0 +1,4 @@
+fails:IO::Buffer#mapped? with a file-backed buffer created with .map is true for a regular mapping
+fails:IO::Buffer#mapped? with a file-backed buffer created with .map is true for a private mapping
+fails:IO::Buffer#mapped? with a slice of a buffer created with .new is false when slicing a mapped buffer
+fails:IO::Buffer#mapped? with a slice of a buffer created with .map is false

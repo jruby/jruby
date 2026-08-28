@@ -1,0 +1,2 @@
+fails(FreeBSD,https://github.com/jruby/jruby/issues/9431):Process::Constants on NetBSD and FreeBSD defines RLIMIT_SBSIZE
+fails(FreeBSD,https://github.com/jruby/jruby/issues/9431):Process::Constants on FreeBSD defines RLIMIT_NPTS

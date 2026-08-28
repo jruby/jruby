@@ -1,0 +1,1 @@
+fails:Range#entries is an alias of Range#to_a

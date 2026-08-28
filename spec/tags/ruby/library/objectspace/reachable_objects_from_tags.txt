@@ -1,0 +1,8 @@
+fails:ObjectSpace.reachable_objects_from returns nil for true and false
+fails:ObjectSpace.reachable_objects_from returns nil for nil
+fails:ObjectSpace.reachable_objects_from returns nil for small Integers
+fails:ObjectSpace.reachable_objects_from enumerates objects directly reachable from a given object
+fails:ObjectSpace.reachable_objects_from finds an object stored in an Array
+fails:ObjectSpace.reachable_objects_from finds an object stored in a copy-on-write Array
+fails:ObjectSpace.reachable_objects_from finds an object stored in a Queue
+fails:ObjectSpace.reachable_objects_from finds an object stored in a SizedQueue

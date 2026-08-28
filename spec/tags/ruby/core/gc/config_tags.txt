@@ -1,0 +1,1 @@
+fails:GC.config with a hash of options returns the same as GC.config but without the :implementation key

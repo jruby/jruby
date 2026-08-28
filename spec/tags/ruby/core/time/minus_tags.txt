@@ -1,0 +1,4 @@
+fails:Time#- maintains precision
+fails:Time#- maintains subseconds precision
+fails:Time#- does not return a subclass instance
+fails:Time#- returns a time with nanoseconds precision between two time objects

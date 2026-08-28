@@ -1,0 +1,93 @@
+# frozen_string_literal: true
+require_relative "utils"
+
+if defined?(OpenSSL)
+
+class OpenSSL::TestOSSL < OpenSSL::TestCase
+  def test_fixed_length_secure_compare
+    assert_raise(ArgumentError) { OpenSSL.fixed_length_secure_compare("aaa", "a") }
+    assert_raise(ArgumentError) { OpenSSL.fixed_length_secure_compare("aaa", "aa") }
+
+    assert_true(OpenSSL.fixed_length_secure_compare("aaa", "aaa"))
+    assert_true(OpenSSL.fixed_length_secure_compare(
+      OpenSSL::Digest.digest('SHA256', "aaa"), OpenSSL::Digest::SHA256.digest("aaa")
+    ))
+
+    assert_raise(ArgumentError) { OpenSSL.fixed_length_secure_compare("aaa", "aaaa") }
+    assert_false(OpenSSL.fixed_length_secure_compare("aaa", "baa"))
+    assert_false(OpenSSL.fixed_length_secure_compare("aaa", "aba"))
+    assert_false(OpenSSL.fixed_length_secure_compare("aaa", "aab"))
+    assert_raise(ArgumentError) { OpenSSL.fixed_length_secure_compare("aaa", "aaab") }
+    assert_raise(ArgumentError) { OpenSSL.fixed_length_secure_compare("aaa", "b") }
+    assert_raise(ArgumentError) { OpenSSL.fixed_length_secure_compare("aaa", "bb") }
+    assert_false(OpenSSL.fixed_length_secure_compare("aaa", "bbb"))
+    assert_raise(ArgumentError) { OpenSSL.fixed_length_secure_compare("aaa", "bbbb") }
+  end
+
+  def test_secure_compare
+    assert_false(OpenSSL.secure_compare("aaa", "a"))
+    assert_false(OpenSSL.secure_compare("aaa", "aa"))
+
+    assert_true(OpenSSL.secure_compare("aaa", "aaa"))
+
+    assert_false(OpenSSL.secure_compare("aaa", "aaaa"))
+    assert_false(OpenSSL.secure_compare("aaa", "baa"))
+    assert_false(OpenSSL.secure_compare("aaa", "aba"))
+    assert_false(OpenSSL.secure_compare("aaa", "aab"))
+    assert_false(OpenSSL.secure_compare("aaa", "aaab"))
+    assert_false(OpenSSL.secure_compare("aaa", "b"))
+    assert_false(OpenSSL.secure_compare("aaa", "bb"))
+    assert_false(OpenSSL.secure_compare("aaa", "bbb"))
+    assert_false(OpenSSL.secure_compare("aaa", "bbbb"))
+  end
+
+  def test_memcmp_timing
+    # Ensure using fixed_length_secure_compare takes almost exactly the same amount of time to compare two different strings.
+    # Regular string comparison will short-circuit on the first non-matching character, failing this test.
+    # NOTE: this test may be susceptible to noise if the system running the tests is otherwise under load.
+    a = "x" * 512_000
+    b = "#{a}y"
+    c = "y#{a}"
+    a = "#{a}x"
+
+    a_b_time = a_c_time = 0
+    100.times do
+      t1 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      100.times { OpenSSL.fixed_length_secure_compare(a, b) }
+      t2 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      100.times { OpenSSL.fixed_length_secure_compare(a, c) }
+      t3 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+
+      a_b_time += t2 - t1
+      a_c_time += t3 - t2
+    end
+    assert_operator(a_b_time, :<, a_c_time * 10, "fixed_length_secure_compare timing test failed")
+    assert_operator(a_c_time, :<, a_b_time * 10, "fixed_length_secure_compare timing test failed")
+  end if ENV["OSSL_TEST_ALL"] == "1"
+
+  def test_error_data
+    # X509V3_EXT_nconf_nid() called from
+    # OpenSSL::X509::ExtensionFactory#create_ext is a function that uses
+    # ERR_raise_data() to append additional information about the error.
+    #
+    # The generated message should look like:
+    #     "subjectAltName = IP:not.a.valid.ip.address: bad ip address (value=not.a.valid.ip.address)"
+    #     "subjectAltName = IP:not.a.valid.ip.address: error in extension (name=subjectAltName, value=IP:not.a.valid.ip.address)"
+    #
+    # The string inside parentheses is the ERR_TXT_STRING data, and is appended
+    # by ossl_make_error(), so we check it here.
+    ef = OpenSSL::X509::ExtensionFactory.new
+    e = assert_raise(OpenSSL::X509::ExtensionError) {
+      ef.create_ext("subjectAltName", "IP:not.a.valid.ip.address")
+    }
+    assert_match(/not.a.valid.ip.address\)\z/, e.message)
+
+    # We currently craft the strings based on ERR_error_string()'s style:
+    #     error:<error code in hex>:<library>:<function>:<reason> (data)
+    assert_instance_of(Array, e.errors)
+    assert_match(/\Aerror:.*not.a.valid.ip.address\)\z/, e.errors.last)
+    assert_include(e.detailed_message, "not.a.valid.ip.address")
+  end
+end
+
+end

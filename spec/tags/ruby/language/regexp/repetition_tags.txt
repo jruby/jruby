@@ -1,0 +1,1 @@
+fails(joni warns but then we cache the pattern, see https://github.com/jruby/jruby/issues/8938):Regexps with repetition does not treat {m,n}+ as possessive

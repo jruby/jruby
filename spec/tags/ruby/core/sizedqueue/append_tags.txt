@@ -1,0 +1,7 @@
+fails:SizedQueue#<< with a timeout does nothing if the timeout is nil
+fails:SizedQueue#<< with a timeout returns nil if no space is avialable and timeout is 0
+fails:SizedQueue#<< with a timeout returns nil if no space is available in time
+fails:SizedQueue#<< with a timeout raise TypeError if timeout is not a valid numeric
+fails:SizedQueue#<< with a timeout raise ArgumentError if non_block = true is passed too
+fails:SizedQueue operations with timeout fails if string is provided
+fails:SizedQueue operations with timeout fails if boolean is provided

@@ -1,0 +1,1 @@
+fails:Socket#ipv6only! enables IPv6 only mode

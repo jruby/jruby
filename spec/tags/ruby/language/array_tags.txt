@@ -1,0 +1,1 @@
+fails:The unpacking splat operator (*) does not call #to_a on nil

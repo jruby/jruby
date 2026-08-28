@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= @person.firstname %> <%= @person.surname %></title>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script>
+
+$(document).ready(function(){
+
+  $("#reload").click(function(){
+    $.getJSON("person", function(result) {
+      $("title").text(result.firstname + " " + result.surname);
+    })
+  });
+
+  $("#firstname").last().click(function(){
+    $.ajax({ url:"person",
+             contentType:"application/json",
+             type:"PATCH",
+             data: '{"firstname":"' + $("#first").val() + '"}',
+             success:function(result){
+    }});
+  });
+
+  $("#surname").last().click(function(){
+    $.ajax({ url:"person",
+             contentType:"application/json",
+             type:"PATCH",
+             data: '{"surname":"' + $("#sur").val() + '"}',
+             success:function(result){
+    }});
+  });
+
+});
+    </script>
+  </head>
+  <body>
+
+    <h1>person</h1>
+
+    <div>
+      Firstname <input type="text" size="30" id="first" value="<%=@person.firstname %>" /> <button id="firstname">update</button>
+    </div>
+
+    <div>
+      Surname <input type="text" size="30"  id="sur" value="<%=@person.surname %>" /> <button id="surname">update</button>
+    </div>
+
+     <button id="reload">update title from server data</button>
+
+</body>
+</html>

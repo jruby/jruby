@@ -1,0 +1,72 @@
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
+
+describe :kernel_remove_instance_variable, shared: true do
+  it "returns the instance variable's value" do
+    value = @instance.send :remove_instance_variable, @object
+    value.should == "hello"
+  end
+
+  it "removes the instance variable" do
+    @instance.send :remove_instance_variable, @object
+    @instance.instance_variable_defined?(@object).should == false
+  end
+end
+
+describe "Kernel#remove_instance_variable" do
+  before do
+    @instance = KernelSpecs::InstanceVariable.new
+  end
+
+  it "is a public method" do
+    Kernel.public_instance_methods(false).should.include?(:remove_instance_variable)
+  end
+
+  it "raises a NameError if the instance variable is not defined" do
+    -> do
+      @instance.send :remove_instance_variable, :@unknown
+    end.should.raise(NameError)
+  end
+
+  it "raises a NameError if the argument is not a valid instance variable name" do
+    -> do
+      @instance.send :remove_instance_variable, :"@0"
+    end.should.raise(NameError)
+  end
+
+  it "raises a TypeError if passed an Object not defining #to_str" do
+    -> do
+      obj = mock("kernel remove_instance_variable")
+      @instance.send :remove_instance_variable, obj
+    end.should.raise(TypeError)
+  end
+
+  it "raises a FrozenError if self is frozen" do
+    o = Object.new
+    o.freeze
+    -> { o.remove_instance_variable(:@foo) }.should.raise(FrozenError)
+    -> { o.remove_instance_variable(:foo) }.should.raise(NameError)
+  end
+
+  it "raises for frozen objects" do
+    -> { nil.remove_instance_variable(:@foo) }.should.raise(FrozenError)
+    -> { nil.remove_instance_variable(:foo) }.should.raise(NameError)
+    -> { :foo.remove_instance_variable(:@foo) }.should.raise(FrozenError)
+  end
+
+  describe "when passed a String" do
+    it_behaves_like :kernel_remove_instance_variable, nil, "@greeting"
+  end
+
+  describe "when passed a Symbol" do
+    it_behaves_like :kernel_remove_instance_variable, nil, :@greeting
+  end
+
+  describe "when passed an Object" do
+    it "calls #to_str to convert the argument" do
+      name = mock("kernel remove_instance_variable")
+      name.should_receive(:to_str).and_return("@greeting")
+      @instance.send :remove_instance_variable, name
+    end
+  end
+end

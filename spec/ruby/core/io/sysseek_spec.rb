@@ -1,0 +1,66 @@
+# -*- encoding: utf-8 -*-
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
+require_relative 'shared/pos'
+
+describe "IO#sysseek" do
+  it_behaves_like :io_set_pos, :sysseek
+end
+
+describe "IO#sysseek" do
+  before :each do
+    @io = IOSpecs.io_fixture "lines.txt"
+  end
+
+  after :each do
+    @io.close unless @io.closed?
+  end
+
+  it "moves the read position relative to the current position with SEEK_CUR" do
+    @io.sysseek(10, IO::SEEK_CUR)
+    @io.readline.should == "igne une.\n"
+  end
+
+  it "accepts the symbol :CUR for SEEK_CUR" do
+    @io.sysseek(10, :CUR)
+    @io.readline.should == "igne une.\n"
+  end
+
+  it "raises an error when called after buffered reads" do
+    @io.readline
+    -> do
+      @io.sysseek(-5, IO::SEEK_CUR)
+    end.should.raise(IOError, "sysseek for buffered IO")
+  end
+
+  it "seeks normally even when called immediately after a buffered IO#read" do
+    @io.read(15)
+    @io.sysseek(-5, IO::SEEK_CUR).should == 10
+  end
+
+  it "moves the read position relative to the start with SEEK_SET" do
+    @io.sysseek(43, IO::SEEK_SET)
+    @io.readline.should == "Aquí está la línea tres.\n"
+  end
+
+  it "accepts the symbol :SET for SEEK_SET" do
+    @io.sysseek(43, :SET)
+    @io.readline.should == "Aquí está la línea tres.\n"
+  end
+
+  it "moves the read position relative to the end with SEEK_END" do
+    @io.sysseek(1, IO::SEEK_END)
+
+    # this is the safest way of checking the EOF when
+    # sys-* methods are invoked
+    -> { @io.sysread(1) }.should.raise(EOFError)
+
+    @io.sysseek(-25, IO::SEEK_END)
+    @io.sysread(7).should == "cinco.\n"
+  end
+
+  it "accepts the symbol :END for SEEK_END" do
+    @io.sysseek(-25, :END)
+    @io.sysread(7).should == "cinco.\n"
+  end
+end

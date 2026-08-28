@@ -1,0 +1,3 @@
+fails:Fiber#raise raises FiberError if Fiber is not born
+fails:Fiber#raise should raise on parent fiber
+fails:Fiber#raise re-raises a previously rescued exception with cleaned backtrace and sets a new backtrace

@@ -1,0 +1,2 @@
+windows(JRUBY-4354):Kernel.spawn executes the given command
+windows:Kernel#spawn executes the given command

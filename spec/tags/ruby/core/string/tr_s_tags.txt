@@ -1,0 +1,1 @@
+fails:String#tr_s accepts c1-c1 notation to denote range of one character

@@ -1,0 +1,61 @@
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
+require_relative 'shared/dup_clone'
+
+describe "Kernel#dup" do
+  it_behaves_like :kernel_dup_clone, :dup
+
+  before :each do
+    ScratchPad.clear
+    @obj = KernelSpecs::Duplicate.new 1, :a
+  end
+
+  it "uses the internal allocator and does not call #allocate" do
+    klass = Class.new
+    instance = klass.new
+
+    def klass.allocate
+      raise "allocate should not be called"
+    end
+
+    dup = instance.dup
+    dup.class.should.equal? klass
+  end
+
+  it "does not copy frozen state from the original" do
+    @obj.freeze
+    dup = @obj.dup
+
+    dup.should_not.frozen?
+  end
+
+  it "copies instance variables" do
+    dup = @obj.dup
+    dup.one.should == 1
+    dup.two.should == :a
+  end
+
+  it "does not copy singleton methods" do
+    def @obj.special() :the_one end
+    dup = @obj.dup
+    -> { dup.special }.should.raise(NameError)
+  end
+
+  it "does not copy modules included in the singleton class" do
+    class << @obj
+      include KernelSpecs::DuplicateM
+    end
+
+    dup = @obj.dup
+    -> { dup.repr }.should.raise(NameError)
+  end
+
+  it "does not copy constants defined in the singleton class" do
+    class << @obj
+      CLONE = :clone
+    end
+
+    dup = @obj.dup
+    -> { class << dup; CLONE; end }.should.raise(NameError)
+  end
+end

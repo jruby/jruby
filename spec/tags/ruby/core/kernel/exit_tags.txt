@@ -1,0 +1,4 @@
+windows:Kernel#exit! skips ensure clauses
+windows:Kernel#exit! overrides the original exception and exit status when called from #at_exit
+windows:Kernel.exit! skips ensure clauses
+windows:Kernel.exit! overrides the original exception and exit status when called from #at_exit

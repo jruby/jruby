@@ -1,0 +1,6 @@
+fails:BasicSocket#setsockopt using a STREAM socket using separate arguments with Symbols sets an integer option
+fails:BasicSocket#setsockopt using a STREAM socket using separate arguments with Symbols sets an IPv6 boolean option
+fails:BasicSocket#setsockopt using a STREAM socket using separate arguments with constants sets an integer option
+fails:BasicSocket#setsockopt using a STREAM socket using a Socket::Option as the first argument sets an integer option
+fails:BasicSocket#setsockopt using a STREAM socket using a Socket::Option as the first argument raises ArgumentError when passing 2 arguments
+fails:BasicSocket#setsockopt using a UNIX socket sets a boolean option

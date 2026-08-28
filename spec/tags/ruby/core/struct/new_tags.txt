@@ -1,0 +1,2 @@
+fails:Struct.new on subclasses given positional and keyword arguments ignores empty keyword arguments
+fails:Struct.new on subclasses given positional and keyword arguments raises ArgumentError when all struct attribute values are specified

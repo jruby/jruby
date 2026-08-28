@@ -1,0 +1,13 @@
+fails:OpenSSL::Digest#initialize cannot be called with a digest class
+fails:OpenSSL::Digest#initialize can be called with a digest name returns a SHA1 object
+fails:OpenSSL::Digest#initialize can be called with a digest name returns a SHA256 object
+fails:OpenSSL::Digest#initialize can be called with a digest name returns a SHA384 object
+fails:OpenSSL::Digest#initialize can be called with a digest name returns a SHA512 object
+fails:OpenSSL::Digest#initialize can be called with a digest name throws an error when called with an unknown digest
+fails:OpenSSL::Digest#initialize can be called with a digest name cannot be called with a symbol
+fails:OpenSSL::Digest#initialize can be called with a digest name does not call #to_str on the argument
+fails:OpenSSL::Digest#initialize can be called with a digest object returns a SHA1 object
+fails:OpenSSL::Digest#initialize can be called with a digest object returns a SHA256 object
+fails:OpenSSL::Digest#initialize can be called with a digest object returns a SHA384 object
+fails:OpenSSL::Digest#initialize can be called with a digest object returns a SHA512 object
+fails:OpenSSL::Digest#initialize can be called with a digest object ignores the state of the digest object

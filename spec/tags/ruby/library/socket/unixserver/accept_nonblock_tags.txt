@@ -1,0 +1,2 @@
+darwin(hangs, not doing nonblock, GH-7731):UNIXServer#accept_nonblock returns :wait_readable in exceptionless mode
+darwin(hangs, not doing nonblock, GH-7731):UNIXServer#accept_nonblock without a client raises IO::WaitReadable

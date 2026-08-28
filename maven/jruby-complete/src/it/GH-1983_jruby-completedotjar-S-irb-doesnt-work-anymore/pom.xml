@@ -1,0 +1,50 @@
+<project>
+  <groupId>org.jruby</groupId>
+  <artifactId>execute-java--jar-jruby-complete_dot_jar--S-jirb</artifactId>
+  <version>1</version>
+  <modelVersion>4.0.0</modelVersion>
+
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>copy jruby-complete.jar</id>
+            <phase>process-resources</phase>
+            <goals><goal>copy</goal></goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.jruby</groupId>
+                  <artifactId>jruby-complete</artifactId>
+                  <version>${jruby.version}</version>
+                  <type>jar</type>
+                  <outputDirectory>${project.basedir}</outputDirectory>
+                </artifactItem>
+              </artifactItems>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.2</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals><goal>exec</goal></goals>
+            <configuration>
+              <executable>sh</executable>
+              <arguments>
+                <argument>irb.sh</argument>
+                <argument>${jruby.version}</argument>
+              </arguments>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

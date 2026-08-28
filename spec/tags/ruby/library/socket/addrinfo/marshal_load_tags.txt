@@ -1,0 +1,2 @@
+fails:Addrinfo#marshal_load using an IP address returns a new Addrinfo
+fails:Addrinfo#marshal_load using a UNIX socket returns a new Addrinfo

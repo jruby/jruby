@@ -1,0 +1,1 @@
+fails:Zlib::GzipReader#each_line is an alias of Zlib::GzipReader#each

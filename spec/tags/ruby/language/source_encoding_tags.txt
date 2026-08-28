@@ -1,0 +1,2 @@
+fails(low-priority missing syntax error):Source files encoded in UTF-16 LE with a BOM are invalid because they contain an invalid UTF-8 sequence before the encoding comment
+fails(low-priority missing syntax error):Source files encoded in UTF-16 BE with a BOM are invalid because they contain an invalid UTF-8 sequence before the encoding comment

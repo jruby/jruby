@@ -1,0 +1,2 @@
+windows:IO#rewind positions the instance to the beginning of input
+windows:IO#rewind sets lineno to 0

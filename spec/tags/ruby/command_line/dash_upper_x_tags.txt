@@ -1,0 +1,3 @@
+fails:The -X command line option changes the PWD when using a file
+fails:The -X command line option does not need a space after -C for the argument
+fails:The -X command line option changes the PWD when using -e

@@ -1,0 +1,2 @@
+windows:File.stat returns information for a file that has been deleted but is still open
+fails:File.stat returns an error when given missing non-ASCII path

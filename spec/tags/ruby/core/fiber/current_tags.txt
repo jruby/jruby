@@ -1,0 +1,1 @@
+fails:Fiber.current returns the current Fiber when called from a Fiber that transferred to another

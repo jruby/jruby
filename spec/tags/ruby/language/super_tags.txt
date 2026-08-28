@@ -1,0 +1,1 @@
+fails(indy issue, see https://github.com/jruby/jruby/issues/8944):The super keyword sees the included version of a module a method is alias from

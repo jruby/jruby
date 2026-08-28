@@ -1,0 +1,1 @@
+fails:Thread::Backtrace::Location#base_label returns the base label of the call frame

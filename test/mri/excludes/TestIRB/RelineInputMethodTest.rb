@@ -1,0 +1,5 @@
+exclude :test_colorize, "something in this suite terminates test run"
+exclude :test_initialization, "something in this suite terminates test run"
+exclude :test_initialization_with_use_autocomplete, "something in this suite terminates test run"
+exclude :test_initialization_with_use_autocomplete_but_without_rdoc, "something in this suite terminates test run"
+exclude :test_initialization_without_use_autocomplete, "something in this suite terminates test run"

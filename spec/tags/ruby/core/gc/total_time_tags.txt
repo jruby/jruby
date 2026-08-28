@@ -1,0 +1,2 @@
+fails:GC.total_time returns an Integer
+fails:GC.total_time increases as collections are run

@@ -1,0 +1,43 @@
+fails:Socket::AncillaryData#initialize using Integers for the family, level, and type sets the address family
+fails:Socket::AncillaryData#initialize using Integers for the family, level, and type sets the message level
+fails:Socket::AncillaryData#initialize using Integers for the family, level, and type sets the message type
+fails:Socket::AncillaryData#initialize using Integers for the family, level, and type sets the data
+fails:Socket::AncillaryData#initialize using Symbols for the family, level, and type sets the address family
+fails:Socket::AncillaryData#initialize using Symbols for the family, level, and type sets the message level
+fails:Socket::AncillaryData#initialize using Symbols for the family, level, and type sets the message type
+fails:Socket::AncillaryData#initialize using Symbols for the family, level, and type sets the data
+fails:Socket::AncillaryData#initialize using Strings for the family, level, and type sets the address family
+fails:Socket::AncillaryData#initialize using Strings for the family, level, and type sets the message level
+fails:Socket::AncillaryData#initialize using Strings for the family, level, and type sets the message type
+fails:Socket::AncillaryData#initialize using Strings for the family, level, and type sets the data
+fails:Socket::AncillaryData#initialize using custom objects with a to_str method for the family, level, and type sets the address family
+fails:Socket::AncillaryData#initialize using custom objects with a to_str method for the family, level, and type sets the message level
+fails:Socket::AncillaryData#initialize using custom objects with a to_str method for the family, level, and type sets the message type
+fails:Socket::AncillaryData#initialize using custom objects with a to_str method for the family, level, and type sets the data
+fails:Socket::AncillaryData#initialize using :AF_INET as the family and :SOCKET as the level sets the type to SCM_RIGHTS when using :RIGHTS as the type argument
+fails:Socket::AncillaryData#initialize using :AF_INET as the family and :SOCKET as the level sets the type to SCM_TIMESTAMP when using :TIMESTAMP as the type argument
+fails:Socket::AncillaryData#initialize using :AF_INET as the family and :SOCKET as the level raises TypeError when using a numeric string as the type argument
+fails:Socket::AncillaryData#initialize using :AF_INET as the family and :SOCKET as the level raises SocketError when using :RECVTTL as the type argument
+fails:Socket::AncillaryData#initialize using :AF_INET as the family and :SOCKET as the level raises SocketError when using :MOO as the type argument
+fails:Socket::AncillaryData#initialize using :AF_INET as the family and :SOCKET as the level raises SocketError when using :IP_RECVTTL as the type argument
+fails:Socket::AncillaryData#initialize using :AF_INET as the family and :IP as the level sets the type to IP_RECVTTL when using :RECVTTL as the type argument
+fails:Socket::AncillaryData#initialize using :AF_INET as the family and :IP as the level sets the type to IP_MTU when using :MTU as the type argument
+fails:Socket::AncillaryData#initialize using :AF_INET as the family and :IP as the level raises SocketError when using :RIGHTS as the type argument
+fails:Socket::AncillaryData#initialize using :AF_INET as the family and :IP as the level raises SocketError when using :MOO as the type argument
+fails:Socket::AncillaryData#initialize using :AF_INET as the family and :IPV6 as the level sets the type to IPV6_CHECKSUM when using :CHECKSUM as the type argument
+fails:Socket::AncillaryData#initialize using :AF_INET as the family and :IPV6 as the level sets the type to IPV6_NEXTHOP when using :NEXTHOP as the type argument
+fails:Socket::AncillaryData#initialize using :AF_INET as the family and :IPV6 as the level raises SocketError when using :RIGHTS as the type argument
+fails:Socket::AncillaryData#initialize using :AF_INET as the family and :IPV6 as the level raises SocketError when using :MOO as the type argument
+fails:Socket::AncillaryData#initialize using :AF_INET as the family and :TCP as the level sets the type to TCP_CORK when using :CORK as the type argument
+fails:Socket::AncillaryData#initialize using :AF_INET as the family and :TCP as the level sets the type to TCP_INFO when using :INFO as the type argument
+fails:Socket::AncillaryData#initialize using :AF_INET as the family and :TCP as the level raises SocketError when using :RIGHTS as the type argument
+fails:Socket::AncillaryData#initialize using :AF_INET as the family and :TCP as the level raises SocketError when using :MOO as the type argument
+fails:Socket::AncillaryData#initialize using :AF_INET as the family and :UDP as the level sets the type to UDP_CORK when using :CORK as the type argument
+fails:Socket::AncillaryData#initialize using :AF_INET as the family and :UDP as the level raises SocketError when using :RIGHTS as the type argument
+fails:Socket::AncillaryData#initialize using :AF_INET as the family and :UDP as the level raises SocketError when using :MOO as the type argument
+fails:Socket::AncillaryData#initialize using :AF_UNIX as the family and :SOCKET as the level sets the type to SCM_RIGHTS when using :RIGHTS as the type argument
+fails:Socket::AncillaryData#initialize using :AF_UNIX as the family and :SOCKET as the level raises SocketError when using :CORK sa the type argument
+fails:Socket::AncillaryData#initialize using :AF_UNIX as the family and :IP as the level raises SocketError
+fails:Socket::AncillaryData#initialize using :AF_UNIX as the family and :IPV6 as the level raises SocketError
+fails:Socket::AncillaryData#initialize using :AF_UNIX as the family and :TCP as the level raises SocketError
+fails:Socket::AncillaryData#initialize using :AF_UNIX as the family and :UDP as the level raises SocketError

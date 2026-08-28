@@ -1,0 +1,15 @@
+critical(hangs on OS X and Windows):Process.kill signals the process group if the PID is zero
+windows(hangs):Process.kill signals the process group if the signal number is negative
+windows(hangs):Process.kill signals the process group if the short signal name starts with a minus sign
+windows(hangs):Process.kill signals the process group if the full signal name starts with a minus sign
+unstable(travis,intermittent):Process.kill accepts a signal name without the 'SIG' prefix
+windows:Process.kill raises Errno::ESRCH if the process does not exist
+windows:Process.kill accepts a Symbol as a signal name
+windows:Process.kill accepts a String as signal name
+hangs:Process.kill accepts a String as signal name
+windows:Process.kill accepts a signal name without the 'SIG' prefix
+windows:Process.kill accepts a signal name with the 'SIG' prefix
+windows:Process.kill acceps an Integer as a signal value
+windows:Process.kill calls #to_int to coerce the pid to an Integer
+windows:Process.kill signals multiple processes
+windows:Process.kill returns the number of processes signaled

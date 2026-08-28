@@ -1,0 +1,1 @@
+fails:IO::Buffer#empty? is false for a file-mapped buffer

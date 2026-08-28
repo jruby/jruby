@@ -1,0 +1,512 @@
+# frozen_string_literal: false
+require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
+
+describe "String#sub with pattern, replacement" do
+  it "returns a copy of self when no modification is made" do
+    a = "hello"
+    b = a.sub(/w.*$/, "*")
+
+    b.should_not.equal?(a)
+    b.should == "hello"
+  end
+
+  it "returns a copy of self with all occurrences of pattern replaced with replacement" do
+    "hello".sub(/[aeiou]/, '*').should == "h*llo"
+    "hello".sub(//, ".").should == ".hello"
+  end
+
+  it "ignores a block if supplied" do
+    "food".sub(/f/, "g") { "w" }.should == "good"
+  end
+
+  it "supports \\G which matches at the beginning of the string" do
+    "hello world!".sub(/\Ghello/, "hi").should == "hi world!"
+  end
+
+  it "supports /i for ignoring case" do
+    "Hello".sub(/h/i, "j").should == "jello"
+    "hello".sub(/H/i, "j").should == "jello"
+  end
+
+  it "doesn't interpret regexp metacharacters if pattern is a string" do
+    "12345".sub('\d', 'a').should == "12345"
+    '\d'.sub('\d', 'a').should == "a"
+  end
+
+  it "replaces \\1 sequences with the regexp's corresponding capture" do
+    str = "hello"
+
+    str.sub(/([aeiou])/, '<\1>').should == "h<e>llo"
+    str.sub(/(.)/, '\1\1').should == "hhello"
+
+    str.sub(/.(.?)/, '<\0>(\1)').should == "<he>(e)llo"
+
+    str.sub(/.(.)+/, '\1').should == "o"
+
+    str = "ABCDEFGHIJKL"
+    re = /#{"(.)" * 12}/
+    str.sub(re, '\1').should == "A"
+    str.sub(re, '\9').should == "I"
+    # Only the first 9 captures can be accessed in MRI
+    str.sub(re, '\10').should == "A0"
+  end
+
+  it "treats \\1 sequences without corresponding captures as empty strings" do
+    str = "hello!"
+
+    str.sub("", '<\1>').should == "<>hello!"
+    str.sub("h", '<\1>').should == "<>ello!"
+
+    str.sub(//, '<\1>').should == "<>hello!"
+    str.sub(/./, '\1\2\3').should == "ello!"
+    str.sub(/.(.{20})?/, '\1').should == "ello!"
+  end
+
+  it "replaces \\& and \\0 with the complete match" do
+    str = "hello!"
+
+    str.sub("", '<\0>').should == "<>hello!"
+    str.sub("", '<\&>').should == "<>hello!"
+    str.sub("he", '<\0>').should == "<he>llo!"
+    str.sub("he", '<\&>').should == "<he>llo!"
+    str.sub("l", '<\0>').should == "he<l>lo!"
+    str.sub("l", '<\&>').should == "he<l>lo!"
+
+    str.sub(//, '<\0>').should == "<>hello!"
+    str.sub(//, '<\&>').should == "<>hello!"
+    str.sub(/../, '<\0>').should == "<he>llo!"
+    str.sub(/../, '<\&>').should == "<he>llo!"
+    str.sub(/(.)./, '<\0>').should == "<he>llo!"
+  end
+
+  it "replaces \\` with everything before the current match" do
+    str = "hello!"
+
+    str.sub("", '<\`>').should == "<>hello!"
+    str.sub("h", '<\`>').should == "<>ello!"
+    str.sub("l", '<\`>').should == "he<he>lo!"
+    str.sub("!", '<\`>').should == "hello<hello>"
+
+    str.sub(//, '<\`>').should == "<>hello!"
+    str.sub(/..o/, '<\`>').should == "he<he>!"
+  end
+
+  it "replaces \\' with everything after the current match" do
+    str = "hello!"
+
+    str.sub("", '<\\\'>').should == "<hello!>hello!"
+    str.sub("h", '<\\\'>').should == "<ello!>ello!"
+    str.sub("ll", '<\\\'>').should == "he<o!>o!"
+    str.sub("!", '<\\\'>').should == "hello<>"
+
+    str.sub(//, '<\\\'>').should == "<hello!>hello!"
+    str.sub(/../, '<\\\'>').should == "<llo!>llo!"
+  end
+
+  it "replaces \\\\\\+ with \\\\+" do
+    "x".sub(/x/, '\\\+').should == "\\+"
+  end
+
+  it "replaces \\+ with the last paren that actually matched" do
+    str = "hello!"
+
+    str.sub(/(.)(.)/, '\+').should == "ello!"
+    str.sub(/(.)(.)+/, '\+').should == "!"
+    str.sub(/(.)()/, '\+').should == "ello!"
+    str.sub(/(.)(.{20})?/, '<\+>').should == "<h>ello!"
+
+    str = "ABCDEFGHIJKL"
+    re = /#{"(.)" * 12}/
+    str.sub(re, '\+').should == "L"
+  end
+
+  it "treats \\+ as an empty string if there was no captures" do
+    "hello!".sub(/./, '\+').should == "ello!"
+  end
+
+  it "maps \\\\ in replacement to \\" do
+    "hello".sub(/./, '\\\\').should == '\\ello'
+  end
+
+  it "leaves unknown \\x escapes in replacement untouched" do
+    "hello".sub(/./, '\\x').should == '\\xello'
+    "hello".sub(/./, '\\y').should == '\\yello'
+  end
+
+  it "leaves \\ at the end of replacement untouched" do
+    "hello".sub(/./, 'hah\\').should == 'hah\\ello'
+  end
+
+  it "tries to convert pattern to a string using to_str" do
+    pattern = mock('.')
+    pattern.should_receive(:to_str).and_return(".")
+
+    "hello.".sub(pattern, "!").should == "hello!"
+  end
+
+  not_supported_on :opal do
+    it "raises a TypeError when pattern is a Symbol" do
+      -> { "hello".sub(:woot, "x") }.should.raise(TypeError)
+    end
+  end
+
+  it "raises a TypeError when pattern is an Array" do
+    -> { "hello".sub([], "x") }.should.raise(TypeError)
+  end
+
+  it "raises a TypeError when pattern can't be converted to a string" do
+    -> { "hello".sub(Object.new, nil) }.should.raise(TypeError)
+  end
+
+  it "tries to convert replacement to a string using to_str" do
+    replacement = mock('hello_replacement')
+    replacement.should_receive(:to_str).and_return("hello_replacement")
+
+    "hello".sub(/hello/, replacement).should == "hello_replacement"
+  end
+
+  it "raises a TypeError when replacement can't be converted to a string" do
+    -> { "hello".sub(/[aeiou]/, []) }.should.raise(TypeError)
+    -> { "hello".sub(/[aeiou]/, 99) }.should.raise(TypeError)
+  end
+
+  it "returns String instances when called on a subclass" do
+    StringSpecs::MyString.new("").sub(//, "").should.instance_of?(String)
+    StringSpecs::MyString.new("").sub(/foo/, "").should.instance_of?(String)
+    StringSpecs::MyString.new("foo").sub(/foo/, "").should.instance_of?(String)
+    StringSpecs::MyString.new("foo").sub("foo", "").should.instance_of?(String)
+  end
+
+  it "sets $~ to MatchData of match and nil when there's none" do
+    'hello.'.sub('hello', 'x')
+    $~[0].should == 'hello'
+
+    'hello.'.sub('not', 'x')
+    $~.should == nil
+
+    'hello.'.sub(/.(.)/, 'x')
+    $~[0].should == 'he'
+
+    'hello.'.sub(/not/, 'x')
+    $~.should == nil
+  end
+
+  it "replaces \\\\\\1 with \\1" do
+    "ababa".sub(/(b)/, '\\\1').should == "a\\1aba"
+  end
+
+  it "replaces \\\\\\\\1 with \\1" do
+    "ababa".sub(/(b)/, '\\\\1').should == "a\\1aba"
+  end
+
+  it "replaces \\\\\\\\\\1 with \\" do
+    "ababa".sub(/(b)/, '\\\\\1').should == "a\\baba"
+  end
+
+  it "handles a pattern in a superset encoding" do
+    result = 'abc'.force_encoding(Encoding::US_ASCII).sub('é', 'è')
+    result.should == 'abc'
+    result.encoding.should == Encoding::US_ASCII
+  end
+
+  it "handles a pattern in a subset encoding" do
+    result = 'été'.sub('t'.force_encoding(Encoding::US_ASCII), 'u')
+    result.should == 'éué'
+    result.encoding.should == Encoding::UTF_8
+  end
+end
+
+describe "String#sub with pattern and block" do
+  it "returns a copy of self with the first occurrences of pattern replaced with the block's return value" do
+    "hi".sub(/./) { |s| s + ' ' }.should == "h i"
+    "hi!".sub(/(.)(.)/) { |*a| a.inspect }.should == '["hi"]!'
+  end
+
+  it "sets $~ for access from the block" do
+    str = "hello"
+    str.sub(/([aeiou])/) { "<#{$~[1]}>" }.should == "h<e>llo"
+    str.sub(/([aeiou])/) { "<#{$1}>" }.should == "h<e>llo"
+    str.sub("l") { "<#{$~[0]}>" }.should == "he<l>lo"
+
+    offsets = []
+
+    str.sub(/([aeiou])/) do
+      md = $~
+      md.string.should == str
+      offsets << md.offset(0)
+      str
+    end.should == "hhellollo"
+
+    offsets.should == [[1, 2]]
+  end
+
+  it "sets $~ to MatchData of last match and nil when there's none for access from outside" do
+    'hello.'.sub('l') { 'x' }
+    $~.begin(0).should == 2
+    $~[0].should == 'l'
+
+    'hello.'.sub('not') { 'x' }
+    $~.should == nil
+
+    'hello.'.sub(/.(.)/) { 'x' }
+    $~[0].should == 'he'
+
+    'hello.'.sub(/not/) { 'x' }
+    $~.should == nil
+  end
+
+  it "doesn't raise a RuntimeError if the string is modified while substituting" do
+    str = "hello"
+    str.sub(//) { str[0] = 'x' }.should == "xhello"
+    str.should == "xello"
+  end
+
+  it "doesn't interpolate special sequences like \\1 for the block's return value" do
+    repl = '\& \0 \1 \` \\\' \+ \\\\ foo'
+    "hello".sub(/(.+)/) { repl }.should == repl
+  end
+
+  it "converts the block's return value to a string using to_s" do
+    obj = mock('hello_replacement')
+    obj.should_receive(:to_s).and_return("hello_replacement")
+    "hello".sub(/hello/) { obj }.should == "hello_replacement"
+
+    obj = mock('ok')
+    obj.should_receive(:to_s).and_return("ok")
+    "hello".sub(/.+/) { obj }.should == "ok"
+  end
+end
+
+describe "String#sub! with pattern, replacement" do
+  it "modifies self in place and returns self" do
+    a = "hello"
+    a.sub!(/[aeiou]/, '*').should.equal?(a)
+    a.should == "h*llo"
+  end
+
+  it "returns nil if no modifications were made" do
+    a = "hello"
+    a.sub!(/z/, '*').should == nil
+    a.sub!(/z/, 'z').should == nil
+    a.should == "hello"
+  end
+
+  it "raises a FrozenError when self is frozen" do
+    s = "hello"
+    s.freeze
+
+    -> { s.sub!(/ROAR/, "x")    }.should.raise(FrozenError)
+    -> { s.sub!(/e/, "e")       }.should.raise(FrozenError)
+    -> { s.sub!(/[aeiou]/, '*') }.should.raise(FrozenError)
+  end
+
+  it "handles a pattern in a superset encoding" do
+    string = 'abc'.force_encoding(Encoding::US_ASCII)
+
+    result = string.sub!('é', 'è')
+
+    result.should == nil
+    string.should == 'abc'
+    string.encoding.should == Encoding::US_ASCII
+  end
+
+  it "handles a pattern in a subset encoding" do
+    string = 'été'
+    pattern = 't'.force_encoding(Encoding::US_ASCII)
+
+    result = string.sub!(pattern, 'u')
+
+    result.should == string
+    string.should == 'éué'
+    string.encoding.should == Encoding::UTF_8
+  end
+end
+
+describe "String#sub! with pattern and block" do
+  it "modifies self in place and returns self" do
+    a = "hello"
+    a.sub!(/[aeiou]/) { '*' }.should.equal?(a)
+    a.should == "h*llo"
+  end
+
+  it "sets $~ for access from the block" do
+    str = "hello"
+    str.dup.sub!(/([aeiou])/) { "<#{$~[1]}>" }.should == "h<e>llo"
+    str.dup.sub!(/([aeiou])/) { "<#{$1}>" }.should == "h<e>llo"
+    str.dup.sub!("l") { "<#{$~[0]}>" }.should == "he<l>lo"
+
+    offsets = []
+
+    str.dup.sub!(/([aeiou])/) do
+      md = $~
+      md.string.should == str
+      offsets << md.offset(0)
+      str
+    end.should == "hhellollo"
+
+    offsets.should == [[1, 2]]
+  end
+
+  it "returns nil if no modifications were made" do
+    a = "hello"
+    a.sub!(/z/) { '*' }.should == nil
+    a.sub!(/z/) { 'z' }.should == nil
+    a.should == "hello"
+  end
+
+  it "raises a RuntimeError if the string is modified while substituting" do
+    str = "hello"
+    -> { str.sub!(//) { str << 'x' } }.should.raise(RuntimeError)
+  end
+
+  it "raises a FrozenError when self is frozen" do
+    s = "hello"
+    s.freeze
+
+    -> { s.sub!(/ROAR/) { "x" }    }.should.raise(FrozenError)
+    -> { s.sub!(/e/) { "e" }       }.should.raise(FrozenError)
+    -> { s.sub!(/[aeiou]/) { '*' } }.should.raise(FrozenError)
+  end
+end
+
+describe "String#sub with pattern and Hash" do
+
+  it "returns a copy of self with the first occurrence of pattern replaced with the value of the corresponding hash key" do
+    "hello".sub(/./, 'l' => 'L').should == "ello"
+    "hello!".sub(/(.)(.)/, 'he' => 'she ', 'll' => 'said').should == 'she llo!'
+    "hello".sub('l', 'l' => 'el').should == 'heello'
+  end
+
+  it "removes keys that don't correspond to matches" do
+    "hello".sub(/./, 'z' => 'b', 'o' => 'ow').should == "ello"
+  end
+
+  it "ignores non-String keys" do
+    "tattoo".sub(/(tt)/, 'tt' => 'b', tt: 'z').should == "taboo"
+  end
+
+  it "uses a key's value only a single time" do
+    "food".sub(/o/, 'o' => '0').should == "f0od"
+  end
+
+  it "uses the hash's default value for missing keys" do
+    hsh = {}
+    hsh.default='?'
+    hsh['o'] = '0'
+    "food".sub(/./, hsh).should == "?ood"
+  end
+
+  it "coerces the hash values with #to_s" do
+    hsh = {}
+    hsh.default=[]
+    hsh['o'] = 0
+    obj = mock('!')
+    obj.should_receive(:to_s).and_return('!')
+    hsh['f'] = obj
+    "food!".sub(/./, hsh).should == "!ood!"
+  end
+
+  it "uses the hash's value set from default_proc for missing keys" do
+    hsh = {}
+    hsh.default_proc = -> k, v { 'lamb' }
+    "food!".sub(/./, hsh).should == "lambood!"
+  end
+
+  it "sets $~ to MatchData of first match and nil when there's none for access from outside" do
+    'hello.'.sub('l', 'l' => 'L')
+    $~.begin(0).should == 2
+    $~[0].should == 'l'
+
+    'hello.'.sub('not', 'ot' => 'to')
+    $~.should == nil
+
+    'hello.'.sub(/.(.)/, 'o' => ' hole')
+    $~[0].should == 'he'
+
+    'hello.'.sub(/not/, 'z' => 'glark')
+    $~.should == nil
+  end
+
+  it "doesn't interpolate special sequences like \\1 for the block's return value" do
+    repl = '\& \0 \1 \` \\\' \+ \\\\ foo'
+    "hello".sub(/(.+)/, 'hello' => repl ).should == repl
+  end
+
+end
+
+describe "String#sub! with pattern and Hash" do
+
+  it "returns self with the first occurrence of pattern replaced with the value of the corresponding hash key" do
+    "hello".sub!(/./, 'l' => 'L').should == "ello"
+    "hello!".sub!(/(.)(.)/, 'he' => 'she ', 'll' => 'said').should == 'she llo!'
+    "hello".sub!('l', 'l' => 'el').should == 'heello'
+  end
+
+  it "removes keys that don't correspond to matches" do
+    "hello".sub!(/./, 'z' => 'b', 'o' => 'ow').should == "ello"
+  end
+
+  it "ignores non-String keys" do
+    "hello".sub!(/(ll)/, 'll' => 'r', ll: 'z').should == "hero"
+  end
+
+  it "uses a key's value only a single time" do
+    "food".sub!(/o/, 'o' => '0').should == "f0od"
+  end
+
+  it "uses the hash's default value for missing keys" do
+    hsh = {}
+    hsh.default='?'
+    hsh['o'] = '0'
+    "food".sub!(/./, hsh).should == "?ood"
+  end
+
+  it "coerces the hash values with #to_s" do
+    hsh = {}
+    hsh.default=[]
+    hsh['o'] = 0
+    obj = mock('!')
+    obj.should_receive(:to_s).and_return('!')
+    hsh['f'] = obj
+    "food!".sub!(/./, hsh).should == "!ood!"
+  end
+
+  it "uses the hash's value set from default_proc for missing keys" do
+    hsh = {}
+    hsh.default_proc = -> k, v { 'lamb' }
+    "food!".sub!(/./, hsh).should == "lambood!"
+  end
+
+  it "sets $~ to MatchData of first match and nil when there's none for access from outside" do
+    'hello.'.sub!('l', 'l' => 'L')
+    $~.begin(0).should == 2
+    $~[0].should == 'l'
+
+    'hello.'.sub!('not', 'ot' => 'to')
+    $~.should == nil
+
+    'hello.'.sub!(/.(.)/, 'o' => ' hole')
+    $~[0].should == 'he'
+
+    'hello.'.sub!(/not/, 'z' => 'glark')
+    $~.should == nil
+  end
+
+  it "doesn't interpolate special sequences like \\1 for the block's return value" do
+    repl = '\& \0 \1 \` \\\' \+ \\\\ foo'
+    "hello".sub!(/(.+)/, 'hello' => repl ).should == repl
+  end
+end
+
+describe "String#sub with pattern and without replacement and block" do
+  it "raises a ArgumentError" do
+    -> { "abca".sub(/a/) }.should.raise(ArgumentError)
+  end
+end
+
+describe "String#sub! with pattern and without replacement and block" do
+  it "raises a ArgumentError" do
+    -> { "abca".sub!(/a/) }.should.raise(ArgumentError)
+  end
+end

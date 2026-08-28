@@ -1,0 +1,1 @@
+windows:IO#close_read does nothing on subsequent invocations
