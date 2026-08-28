@@ -19,3 +19,6 @@ windows(hangs):IO.popen does not throw an exception if child exited and has been
 windows:IO.popen raises IOError when writing a read-only pipe
 windows:IO.popen accepts a path using the chdir: keyword argument
 windows:IO.popen accepts a path using the chdir: keyword argument and a coercible path
+fails:IO.popen options validation raises an ArgumentError if :unsetenv_others option is not a boolean or nil
+fails:IO.popen options validation raises an ArgumentError if :close_others option is not a boolean or nil
+fails:IO.popen options validation raises an ArgumentError if :new_pgroup option is not a boolean or nil
