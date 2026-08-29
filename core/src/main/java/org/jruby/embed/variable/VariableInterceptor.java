@@ -145,7 +145,8 @@ public class VariableInterceptor {
                 PersistentLocalVariable.retrieve(receiver, map);
             // continues to the default case
             default:
-                InstanceVariable.retrieve(receiver, map);
+                if (map.isSharingInstanceVariables())
+                    InstanceVariable.retrieve(receiver, map);
                 GlobalVariable.retrieve(receiver, map);
                 ClassVariable.retrieve(receiver, map);
                 Constant.retrieve(receiver, map);
@@ -176,7 +177,7 @@ public class VariableInterceptor {
             default:
                 if (GlobalVariable.isValidName(key)) {
                     GlobalVariable.retrieveByKey(receiver.getRuntime(), map, (String)key);
-                } else if (InstanceVariable.isValidName(key)) {
+                } else if (InstanceVariable.isValidName(key) && map.isSharingInstanceVariables()) {
                     InstanceVariable.retrieveByKey((RubyObject) receiver,map, (String)key);
                 } else if (ClassVariable.isValidName(key)) {
                     ClassVariable.retrieveByKey((RubyObject)receiver, map, (String)key);
