@@ -65,6 +65,10 @@ import jnr.posix.POSIX;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.transcode.EConvFlags;
+import org.jruby.anno.JRubyMethod.KeyOpt;
+import org.jruby.anno.JRubyMethod.Opt;
+import org.jruby.anno.JRubyMethod.OptValue;
+import org.jruby.anno.JRubyMethod.Req;
 import org.jruby.api.API;
 import org.jruby.api.Convert;
 import org.jruby.ast.util.ArgsUtil;
@@ -3323,6 +3327,15 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     public IRubyObject read_nonblock(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         boolean exception = ArgsUtil.extractKeywordArg(context, "exception", arg2) != context.fals;
         return doReadNonblock(context, arg0, arg1, arg2, exception);
+    }
+
+    @JRubyMethod(name = "read_nonblock", direct = true)
+    public IRubyObject read_nonblock_direct(ThreadContext context,
+                                     @Req IRubyObject length,
+                                     @Opt(OptValue.NIL) IRubyObject buffer,
+                                     @KeyOpt(OptValue.NIL) IRubyObject _exception) {
+        boolean exception = _exception != context.fals;
+        return doReadNonblock(context, length, buffer, exception);
     }
 
     // MRI: io_read_nonblock
