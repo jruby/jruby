@@ -1,0 +1,1 @@
+fails:Mutex#lock does not raise deadlock if a fiber's attempt to lock was interrupted
