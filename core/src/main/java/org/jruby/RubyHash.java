@@ -245,69 +245,6 @@ public class RubyHash extends RubyObject implements Map {
         assert this.getClass() != RubyHash.class;
     }
 
-    // Delegated constructor, to be hidden and returned to normal super constructor once no longer in use
-    @Deprecated(since = "10.0.6.0", forRemoval = true)
-    public RubyHash(Ruby runtime, RubyClass klass) {
-        super(runtime, klass);
-        // ensure no subclasses call this constructor
-        assert getClass() == RubyHash.class;
-        setDelegate(this);
-    }
-
-    // Delegated constructor, to be hidden and returned to normal super constructor once no longer in use
-    @Deprecated(since = "10.0.3.0")
-    public RubyHash(Ruby runtime, RubyClass klass, boolean objectSpace) {
-        super(runtime, klass, objectSpace);
-        // ensure no subclasses call this constructor
-        assert getClass() == RubyHash.class;
-        this.setDelegate(new RubyHashLinkedBuckets(runtime, klass, objectSpace));
-    }
-
-    // Delegated constructor, to be hidden and returned to normal super constructor once no longer in use
-    @Deprecated(since = "10.0.6.0", forRemoval = true)
-    public RubyHash(Ruby runtime, int buckets) {
-        super(runtime, runtime.getHash());
-        // ensure no subclasses call this constructor
-        assert getClass() == RubyHash.class;
-        this.setDelegate(RubyHashLinkedBuckets.newLBHash(runtime, buckets));
-    }
-
-    // Delegated constructor, to be hidden and returned to normal super constructor once no longer in use
-    @Deprecated(since = "10.0.6.0", forRemoval = true)
-    public RubyHash(Ruby runtime) {
-        super(runtime, runtime.getHash());
-        // ensure no subclasses call this constructor
-        assert getClass() == RubyHash.class;
-        this.setDelegate(RubyHashLinkedBuckets.newLBHash(runtime));
-    }
-
-    // Delegated constructor, to be hidden and returned to normal super constructor once no longer in use
-    @Deprecated(since = "10.0.6.0", forRemoval = true)
-    public RubyHash(Ruby runtime, IRubyObject defaultValue) {
-        super(runtime, runtime.getHash());
-        // ensure no subclasses call this constructor
-        assert getClass() == RubyHash.class;
-        this.setDelegate(RubyHashLinkedBuckets.newLBHash(runtime, defaultValue));
-    }
-
-    // Delegated constructor, to be hidden and returned to normal super constructor once no longer in use
-    @Deprecated(since = "10.0.6.0", forRemoval = true)
-    public RubyHash(Ruby runtime, IRubyObject defaultValue, int buckets) {
-        super(runtime, runtime.getHash());
-        // ensure no subclasses call this constructor
-        assert getClass() == RubyHash.class;
-        this.setDelegate(RubyHashLinkedBuckets.newLBHash(runtime, defaultValue, buckets));
-    }
-
-    // Delegated constructor, to be hidden and returned to normal super constructor once no longer in use
-    @Deprecated(since = "10.0.3.0", forRemoval = true)
-    public RubyHash(Ruby runtime, Map valueMap, IRubyObject defaultValue) {
-        super(runtime, runtime.getHash());
-        // ensure no subclasses call this constructor
-        assert getClass() == RubyHash.class;
-        this.setDelegate(RubyHashLinkedBuckets.newHash(runtime, valueMap, defaultValue));
-    }
-
     /* ============================
      * Here are hash internals
      * (This could be extracted to a separate class but it's not too large though)
