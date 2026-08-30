@@ -48,7 +48,7 @@ import org.jruby.ir.JIT;
 import org.jruby.java.invokers.RubyToJavaInvoker;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.Java.JCreateMethod;
-import org.jruby.javasupport.Java.JCtorCache;
+import org.jruby.javasupport.ConstructorCache;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.proxy.JavaProxyConstructor;
@@ -339,21 +339,21 @@ public class ConcreteJavaProxy extends JavaProxy {
          * Picks and converts arguments for the super call
          * Leaves ctorIndex and arguments ready for the super call
          */
-        SplitCtorData(Ruby runtime, IRubyObject[] args, JCtorCache cache) {
+        SplitCtorData(Ruby runtime, IRubyObject[] args, ConstructorCache cache) {
             this(runtime, args, cache, null, null, null, null, Block.NULL_BLOCK, null);
         }
 
-        SplitCtorData(Ruby runtime, IRubyObject[] args, JCtorCache cache,
+        SplitCtorData(Ruby runtime, IRubyObject[] args, ConstructorCache cache,
                       AbstractIRMethod method, RubyModule clazz, String name, Block block) {
             this(runtime, args, cache, method, clazz, name, null, block, null);
         }
 
-        SplitCtorData(Ruby runtime, IRubyObject[] args, JCtorCache cache,
+        SplitCtorData(Ruby runtime, IRubyObject[] args, ConstructorCache cache,
                       AbstractIRMethod method, RubyModule clazz, String name, SplitSuperState<?> state, Block block) {
             this(runtime, args, cache, method, clazz, name, state, block, null);
         }
 
-        private SplitCtorData(Ruby runtime, IRubyObject[] args, JCtorCache cache,
+        private SplitCtorData(Ruby runtime, IRubyObject[] args, ConstructorCache cache,
                               AbstractIRMethod method, RubyModule clazz, String name, SplitSuperState<?> state, Block block, SplitCtorData nested) {
             rbarguments = args;
             if (cache == null) { // (ruby < ruby < java) super call from one IRO to another IRO ctor
@@ -391,7 +391,7 @@ public class ConcreteJavaProxy extends JavaProxy {
      * Do not refactor without looking at RCG
      * @return An object used by reified code and the finishInitialize method
      */
-    public SplitCtorData splitInitialized(RubyClass base, IRubyObject[] args, Block block, JCtorCache jcc) {
+    public SplitCtorData splitInitialized(RubyClass base, IRubyObject[] args, Block block, ConstructorCache jcc) {
         final Ruby runtime = getRuntime();
         final String name = base.getClassConfig().javaCtorMethodName;
         final CacheEntry methodEntry = base.searchWithCache(name);

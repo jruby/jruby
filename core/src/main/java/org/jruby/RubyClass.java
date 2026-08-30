@@ -76,7 +76,7 @@ import org.jruby.java.codegen.Reified;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.Java;
-import org.jruby.javasupport.Java.JCtorCache;
+import org.jruby.javasupport.ConstructorCache;
 import org.jruby.javasupport.JavaConstructor;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.proxy.JavaProxyClass;
@@ -2336,7 +2336,7 @@ public class RubyClass extends RubyModule {
             cw.visitField(ACC_SYNTHETIC | ACC_FINAL | ACC_STATIC | ACC_PRIVATE, RUBY_PROXY_CLASS_FIELD,
                     ci(JavaProxyClass.class), null, null);
             cw.visitField(ACC_SYNTHETIC | ACC_FINAL | ACC_STATIC | ACC_PRIVATE, RUBY_CTOR_CACHE_FIELD,
-                    ci(JCtorCache.class), null, null);
+                    ci(ConstructorCache.class), null, null);
             return super.reify();
         }
 
@@ -2356,14 +2356,14 @@ public class RubyClass extends RubyModule {
             // extract cached ctors for lookup ordering
 
             // note: consume top of stack, lookuparray
-            m.newobj(p(JCtorCache.class));
+            m.newobj(p(ConstructorCache.class));
             m.dup_x1(); // jccache, lookuparray, jccache
             m.swap();// jccache, jccache, lookuparray
             m.pushInt(2); // ctor fields = index 2
             m.aaload(); // extract ctors, -> jccache, jccache, ctor[]
             m.checkcast(p(JavaConstructor[].class));
-            m.invokespecial(p(JCtorCache.class), "<init>", sig(void.class, JavaConstructor[].class));
-            m.putstatic(javaPath, RUBY_CTOR_CACHE_FIELD, ci(JCtorCache.class));
+            m.invokespecial(p(ConstructorCache.class), "<init>", sig(void.class, JavaConstructor[].class));
+            m.putstatic(javaPath, RUBY_CTOR_CACHE_FIELD, ci(ConstructorCache.class));
 
             // now create proxy class
             m.getstatic(javaPath, RUBY_FIELD, ci(Ruby.class));
