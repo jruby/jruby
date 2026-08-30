@@ -471,11 +471,6 @@ public class ConcreteJavaProxy extends JavaProxy {
         // Ignore other cases
     }
 
-    // used by reified classes
-    public void ensureThis(Object self) {
-        if (getObject() == null) setObject(self);
-    }
-
     @Deprecated(since = "10.0.0.0")
     protected static void initialize(final RubyClass concreteJavaProxy) {
         initialize(concreteJavaProxy.getRuntime().getCurrentContext(), concreteJavaProxy);
