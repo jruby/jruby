@@ -25,7 +25,7 @@ namespace :spec do
   rake_location = File.join(Gem.loaded_specs['rake'].full_gem_path, "lib")
 
   compile_flags = {
-    :default => :int,
+    :default => [],
     :int => ["-X-C"],
     :jit => ["-Xjit.threshold=0"],
     :aot => ["-X+C"],
