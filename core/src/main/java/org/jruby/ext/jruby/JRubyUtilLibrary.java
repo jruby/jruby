@@ -40,13 +40,16 @@ import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.javasupport.Java;
+import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.BasicLibraryService;
 import org.jruby.runtime.load.Library;
 import org.jruby.util.ClasspathLauncher;
+import org.jruby.util.cli.Options;
 
 import static org.jruby.api.Access.instanceConfig;
 import static org.jruby.api.Convert.*;
@@ -55,7 +58,7 @@ import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Warn.warn;
 import static org.jruby.api.Warn.warnDeprecated;
-import static org.jruby.api.Warn.warningDeprecated;
+import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.URLUtil.getPath;
 
 /**
@@ -110,6 +113,16 @@ public class JRubyUtilLibrary implements Library {
     @JRubyMethod(meta = true, name = "native_posix?")
     public static IRubyObject native_posix_p(ThreadContext context, IRubyObject self) {
         return asBoolean(context, context.runtime.getPosix().isNative());
+    }
+
+    @JRubyMethod(meta = true, name = "windows?")
+    public static IRubyObject windows_p(ThreadContext context, IRubyObject self) {
+        return asBoolean(context, Platform.IS_WINDOWS);
+    }
+
+    @JRubyMethod(meta = true, name = "native_exec?")
+    public static IRubyObject native_exec_p(ThreadContext context, IRubyObject self) {
+        return asBoolean(context, Options.NATIVE_EXEC.load());
     }
 
     /**
@@ -432,4 +445,17 @@ public class JRubyUtilLibrary implements Library {
     public static IRubyObject safe_recurse(ThreadContext context, IRubyObject utilModule, IRubyObject state, IRubyObject obj, IRubyObject name, Block block) {
         return context.safeRecurse(block, state, obj, name.convertToString().toString(), false);
     }
+
+    @JRubyMethod(required = 4, module = true, visibility = PRIVATE)
+    public static IRubyObject exec_old(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        IRubyObject env = args[0];
+        IRubyObject prog = args[1];
+        IRubyObject options = args[2];
+        var cmdArgs = (RubyArray<?>) args[3];
+
+        if (options instanceof RubyHash) Helpers.checkExecOptions(context, (RubyHash) options);
+
+        return Helpers.execOldCommon(context, env, prog, options, cmdArgs.toJavaArray(context));
+    }
+
 }
