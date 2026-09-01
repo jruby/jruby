@@ -46,6 +46,7 @@ import java.util.Set;
 import static org.jruby.api.Access.hashClass;
 import static org.jruby.api.Access.ioClass;
 import static org.jruby.api.Access.objectClass;
+import static org.jruby.api.Check.checkBoolean;
 import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asSymbol;
@@ -1336,11 +1337,7 @@ public class PopenExecutor {
                         throw argumentError(context, "unsetenv_others option specified twice");
                     }
                     eargp.unsetenvOthersGiven = true;
-                    if (val.isTrue()) {
-                        eargp.unsetenvOthersDo = true;
-                    } else {
-                        eargp.unsetenvOthersDo = false;
-                    }
+                    eargp.unsetenvOthersDo = toBool(context, val, "unsetenv_others");
                 }
                 else if (id.equals("chdir")) {
                     if (eargp.chdirGiven) {
@@ -1363,11 +1360,7 @@ public class PopenExecutor {
                         throw argumentError(context, "close_others option specified twice");
                     }
                     eargp.closeOthersGiven = true;
-                    if (!val.isNil()) {
-                        eargp.closeOthersDo = true;
-                    } else {
-                        eargp.closeOthersDo = false;
-                    }
+                    eargp.closeOthersDo = toBool(context, val, "close_others");
                 } else if (id.equals("in")) {
                     key = RubyFixnum.zero(context.runtime);
                     checkExecRedirect(context, key, val, eargp);
@@ -1410,7 +1403,7 @@ public class PopenExecutor {
                         throw argumentError(context, "exception option specified twice");
                     }
                     eargp.exception_given = true;
-                    eargp.exception = val.isTrue();
+                    eargp.exception = toBool(context, val, "exception");
                 }
                 else {
                     return ST_STOP;
@@ -1432,6 +1425,11 @@ public class PopenExecutor {
         }
 
         return ST_CONTINUE;
+    }
+
+    // MRI: TO_BOOL in process.c
+    private static boolean toBool(ThreadContext context, IRubyObject val, String id) {
+        return val.isNil() ? false : checkBoolean(context, val, id, true);
     }
 
     // MRI: check_exec_redirect
