@@ -1602,6 +1602,13 @@ public class RubyProcess {
 
     @JRubyMethod(rest = true, meta = true)
     public static IRubyObject exec(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        // try true native exec based on CRuby logic
+        if (Options.NATIVE_EXEC.load() || context.runtime.getPosix().isNative()) {
+            int errno = PopenExecutor.exec(context, args, context.nil);
+
+            throw context.runtime.newErrnoFromInt(errno);
+        }
+
         return RubyKernel.exec(context, self, args);
     }
 

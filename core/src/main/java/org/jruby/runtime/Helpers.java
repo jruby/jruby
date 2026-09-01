@@ -2721,8 +2721,16 @@ public class Helpers {
         return null; // not reached
     }
 
+    @SafeVarargs
     public static <T> T[] arrayOf(T... values) {
         return values;
+    }
+
+    public static String[] arrayOf(String first, String... values) {
+        String[] newValues = new String[values.length + 1];
+        newValues[0] = first;
+        System.arraycopy(values, 0, newValues, 1, values.length);
+        return newValues;
     }
 
     public static IRubyObject[] arrayOf(IRubyObject first, IRubyObject... values) {
