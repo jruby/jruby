@@ -79,6 +79,7 @@ import static org.jruby.anno.FrameField.BACKREF;
 import static org.jruby.anno.FrameField.LASTLINE;
 import static org.jruby.api.Access.encodingService;
 import static org.jruby.api.Access.instanceConfig;
+import static org.jruby.api.Check.checkBoolean;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asFloat;
@@ -95,9 +96,7 @@ import static org.jruby.api.Error.indexError;
 import static org.jruby.api.Error.runtimeError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.api.Warn.warn;
-import static org.jruby.api.Warn.warning;
 import static org.jruby.runtime.ThreadContext.hasKeywords;
-import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.StringSupport.CR_7BIT;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 
@@ -872,7 +871,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         if (arg instanceof RubyBoolean) return arg.isTrue() ? RE_OPTION_IGNORECASE : 0;
         if (arg.isNil()) return 0;
 
-        warning(context, str(context.runtime, "expected true or false as ignorecase: ", arg));
+        checkBoolean(context, arg, "ignorecase", false);
 
         return RE_OPTION_IGNORECASE;
     }
