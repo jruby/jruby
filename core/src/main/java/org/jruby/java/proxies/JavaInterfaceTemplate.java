@@ -38,7 +38,6 @@ import org.jruby.RubyClass;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.api.Convert;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
@@ -393,7 +392,7 @@ public class JavaInterfaceTemplate {
 
         @Override // method_missing impl
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            Arity.checkArgumentCount(context, name, args.length, 1, -1);
+            Arity.checkArgumentCount(context, args.length, 1, -1);
 
             return callImpl(context, clazz, block, args);
         }
