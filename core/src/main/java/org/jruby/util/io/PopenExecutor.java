@@ -438,8 +438,9 @@ public class PopenExecutor {
         }
         else {
             String abspath = null;
-            if (!eargp.command_abspath.isNil())
-                abspath = eargp.command_abspath.asJavaString();
+            RubyString commandAbspath = eargp.command_abspath;
+            if (commandAbspath != null && !commandAbspath.isNil())
+                abspath = commandAbspath.asJavaString();
             err = procExecCmd(context, abspath, eargp.argv_str.argv, eargp.envp_str); /* async-signal-safe */
         }
 
@@ -604,7 +605,7 @@ public class PopenExecutor {
     /* This function should be async-signal-safe.  Actually it is. */
     static int procExecSh(ThreadContext context, String str, String[] envp)
     {
-        if (str.matches("^[ \t\n]+$")) return Errno.ENOENT.intValue();
+        if (str.isBlank()) return Errno.ENOENT.intValue();
 
         POSIX posix = context.runtime.getPosix();
 
@@ -619,7 +620,7 @@ public class PopenExecutor {
 
     static int procExecCmd(ThreadContext context, String prog, String[] argv, String[] envp)
     {
-        if (prog == null) {
+        if (prog == null || prog.isBlank()) {
             return Errno.ENOENT.intValue();
         }
 
