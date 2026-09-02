@@ -157,8 +157,13 @@ public class AliasMethod extends DynamicMethod {
     }
 
 
+    @Override
     public String getOldName() {
-        return getRealMethod().getName();
+        DynamicMethod terminal = entry.method;
+        while (terminal instanceof AliasMethod alias) {
+            terminal = alias.entry.method;
+        }
+        return terminal.getOldName();
     }
 
     @Override
