@@ -403,12 +403,13 @@ public class PopenExecutor {
         return new BeforeExecState(jmxStopped, cwd);
     }
 
+    // Restore the state saved by beforeExec; only reached when exec failed.
     private static void afterExec(ThreadContext context, BeforeExecState bes) {
+        if (bes == null) return;
+
         if (bes.jmxStopped() && context.runtime.getBeanManager().tryRestartAgent()) context.runtime.registerMBeans();
 
         context.runtime.getPosix().chdir(bes.cwd());
-
-        throw context.runtime.newErrnoFromLastPOSIXErrno();
     }
 
     private static void prepareModifiedEnv(ThreadContext context, ExecArg eargp) {
@@ -438,8 +439,15 @@ public class PopenExecutor {
         }
         else {
             String abspath = null;
-            if (!eargp.command_abspath.isNil())
+            // command_abspath is null (or nil) when the command could not be found in PATH
+            if (eargp.command_abspath != null && !eargp.command_abspath.isNil()) {
                 abspath = eargp.command_abspath.asJavaString();
+            } else {
+                // MRI: dln_find_1 returns names containing a slash as-is, so exec reports the real errno for
+                // them (EACCES for a directory or a file without execute permission, ENOENT if missing).
+                String name = eargp.command_name.asJavaString();
+                if (name.indexOf('/') != -1) abspath = name;
+            }
             err = procExecCmd(context, abspath, eargp.argv_str.argv, eargp.envp_str); /* async-signal-safe */
         }
 

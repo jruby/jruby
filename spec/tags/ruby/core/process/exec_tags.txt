@@ -1,4 +1,3 @@
-fails:Process.exec raises Errno::EACCES when passed a directory
 fails:Process.exec sets the current directory when given the :chdir option
 fails:Process.exec with a command array uses the first element as the command name and the second as the argv[0] value
 fails:Process.exec with a command array coerces the argument using to_ary

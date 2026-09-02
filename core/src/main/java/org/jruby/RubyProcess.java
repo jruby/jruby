@@ -1606,7 +1606,10 @@ public class RubyProcess {
         if (!Platform.IS_WINDOWS && Options.NATIVE_EXEC.load() && context.runtime.getPosix().isNative()) {
             int errno = PopenExecutor.exec(context, args, context.nil);
 
-            throw context.runtime.newErrnoFromInt(errno);
+            // exec only returns when it failed; errno 0 means we never reached a syscall (e.g. command not found)
+            throw errno == 0 ?
+                    context.runtime.newErrnoFromLastPOSIXErrno() :
+                    context.runtime.newErrnoFromInt(errno);
         }
 
         return Helpers.execOldCommon(context, null, args[0], null, args);
