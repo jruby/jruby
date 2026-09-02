@@ -1666,7 +1666,7 @@ public class PopenExecutor {
 
     // rb_check_argv
     public static RubyString checkArgv(ThreadContext context, IRubyObject[] argv) {
-        Arity.checkArgumentCount(context, argv, 1, Integer.MAX_VALUE);
+        Arity.checkArgumentCount(context, argv, 1, -1);
 
         RubyString prog = null;
 
