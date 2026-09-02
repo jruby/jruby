@@ -16,4 +16,4 @@ windows:Kernel.system raises RuntimeError when `exception: true` is given and th
 windows:Kernel.system raises Errno::ENOENT when `exception: true` is given and the specified command does not exist
 windows:Kernel.system does expand shell variables when given multiples arguments
 windows:Kernel.system runs commands starting with any number of @ using shell
-fails:Kernel#system raises an ArgumentError if :exception option is not a boolean or nil
+windows:Kernel#system raises an ArgumentError if :exception option is not a boolean or nil

@@ -32,11 +32,9 @@
 package org.jruby.runtime;
 
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
+
 import org.jruby.Ruby;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.api.Error;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ArraySupport;
 import org.jruby.util.collections.IntHashMap;
@@ -202,8 +200,9 @@ public final class Arity implements Serializable {
         return checkArgumentCount(context, args.length, min, max);
     }
 
+    @Deprecated(since = "10.1.2.0")
     public static int checkArgumentCount(ThreadContext context, String name, IRubyObject[] args, int min, int max) {
-        return checkArgumentCount(context, name, args.length, min, max);
+        return checkArgumentCount(context, args.length, min, max);
     }
 
     public static int checkArgumentCount(ThreadContext context, int length, int min, int max) {
@@ -218,14 +217,16 @@ public final class Arity implements Serializable {
         return length;
     }
 
+    @Deprecated(since = "10.1.2.0")
     public static int checkArgumentCount(ThreadContext context, String name, int length, int min, int max) {
-        raiseArgumentError(context, name, length, min, max);
+        raiseArgumentError(context, length, min, max);
 
         return length;
     }
 
+    @Deprecated(since = "10.1.2.0")
     public static int checkArgumentCount(Ruby runtime, String name, int length, int min, int max, boolean hasKwargs) {
-        raiseArgumentError(runtime, name, length, min, max, hasKwargs);
+        raiseArgumentError(runtime, length, min, max, hasKwargs);
 
         return length;
     }
@@ -255,11 +256,13 @@ public final class Arity implements Serializable {
     }
 
     // FIXME: JRuby 2/next should change this name since it only sometimes raises an error
+    @Deprecated(since = "10.1.2.0")
     public static void raiseArgumentError(ThreadContext context, String name, int length, int min, int max) {
         if (length < min || (max > UNLIMITED_ARGUMENTS && length > max)) throw argumentError(context, length, min, max);
     }
 
     // FIXME: JRuby 2/next should change this name since it only sometimes raises an error
+    @Deprecated(since = "10.1.2.0")
     public static void raiseArgumentError(Ruby runtime, String name, int length, int min, int max, boolean hasKwargs) {
         if (length < min) throw argumentError(runtime.getCurrentContext(), length, min, max);
         if (max > UNLIMITED_ARGUMENTS && length > max) {
@@ -288,12 +291,12 @@ public final class Arity implements Serializable {
 
     @Deprecated(since = "10.0.0.0")
     public static int checkArgumentCount(Ruby runtime, IRubyObject[] args, int min, int max) {
-        return checkArgumentCount(runtime.getCurrentContext(), args.length, min, max);
+        return checkArgumentCount(runtime.getCurrentContext(), args, min, max);
     }
 
     @Deprecated(since = "10.0.0.0")
     public static int checkArgumentCount(Ruby runtime, String name, IRubyObject[] args, int min, int max) {
-        return checkArgumentCount(runtime.getCurrentContext(), name, args.length, min, max);
+        return checkArgumentCount(runtime.getCurrentContext(), args, min, max);
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -310,7 +313,7 @@ public final class Arity implements Serializable {
 
     @Deprecated(since = "10.0.0.0")
     public static int checkArgumentCount(Ruby runtime, String name, int length, int min, int max) {
-        raiseArgumentError(runtime.getCurrentContext(), name, length, min, max);
+        raiseArgumentError(runtime.getCurrentContext(), length, min, max);
 
         return length;
     }
@@ -334,6 +337,6 @@ public final class Arity implements Serializable {
 
     @Deprecated(since = "10.0.0.0")
     public static void raiseArgumentError(Ruby runtime, String name, int length, int min, int max) {
-        raiseArgumentError(runtime.getCurrentContext(), name, length, min, max);
+        raiseArgumentError(runtime.getCurrentContext(), length, min, max);
     }
 }

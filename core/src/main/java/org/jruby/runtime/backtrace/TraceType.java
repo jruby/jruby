@@ -27,6 +27,7 @@ import org.jruby.util.TypeConverter;
 import static java.lang.System.lineSeparator;
 import static org.jruby.api.Access.exceptionClass;
 import static org.jruby.api.Access.instanceConfig;
+import static org.jruby.api.Check.checkBoolean;
 import static org.jruby.api.Check.checkID;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asSymbol;
@@ -394,9 +395,10 @@ public class TraceType {
 
             highlightArg = optHash.fastARef(highlightSym);
 
-            if (highlightArg == null) highlightArg = context.nil;
-            if (!(highlightArg.isNil() || highlightArg == context.tru || highlightArg == context.fals)) {
-                throw argumentError(context, "expected true or false as highlight: " + highlightArg);
+            if (highlightArg == null) {
+                highlightArg = context.nil;
+            } else {
+                checkBoolean(context, highlightArg, "highlight", true);
             }
         }
 

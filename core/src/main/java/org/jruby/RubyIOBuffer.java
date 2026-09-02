@@ -1470,7 +1470,7 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "copy", required = 1, optional = 3, checkArity = false)
     public IRubyObject copy(ThreadContext context, IRubyObject[] args) {
-        Arity.checkArgumentCount(context, args, 1, 3);
+        Arity.checkArgumentCount(context, args, 1, 4);
 
         switch (args.length) {
             case 1:
@@ -1497,7 +1497,7 @@ public class RubyIOBuffer extends RubyObject {
     }
 
     public IRubyObject copy(ThreadContext context, RubyIOBuffer source, int offset, int length, int sourceOffset) {
-        if (sourceOffset > length) {
+        if (sourceOffset > source.size) {
             throw argumentError(context, "The given source offset is bigger than the source itself!");
         }
 
@@ -1510,7 +1510,7 @@ public class RubyIOBuffer extends RubyObject {
 
     // MRI: io_buffer_copy_from
     public IRubyObject copy(ThreadContext context, RubyString source, int offset, int length, int sourceOffset) {
-        if (sourceOffset > length) {
+        if (sourceOffset > source.size()) {
             throw argumentError(context, "The given source offset is bigger than the source itself!");
         }
 
@@ -1601,7 +1601,7 @@ public class RubyIOBuffer extends RubyObject {
 
     @JRubyMethod(name = "set_string", required = 1, optional = 3, checkArity = false)
     public IRubyObject set_string(ThreadContext context, IRubyObject[] args) {
-        Arity.checkArgumentCount(context, args, 1, 3);
+        Arity.checkArgumentCount(context, args, 1, 4);
 
         switch (args.length) {
             case 1:
