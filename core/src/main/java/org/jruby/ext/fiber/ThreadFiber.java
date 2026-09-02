@@ -23,6 +23,7 @@ import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ExecutionContext;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -249,6 +250,8 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         } finally {
             // MRI: fiber_switch re-reads the current fiber; control can return into a different one
             if (currentFiberData.blocking) context.getFiberCurrentThread().incrementBlocking();
+
+            context.trace(RubyEvent.FIBER_SWITCH, "resume", context.runtime.getFiber());
         }
     }
 
@@ -501,6 +504,8 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
                         // Whether we already gave up our blocking-count contribution
                         boolean handedBack = false;
+
+                        ctxt.trace(RubyEvent.FIBER_SWITCH, null, null, null, 0);
 
                         try {
                             FiberRequest result;
