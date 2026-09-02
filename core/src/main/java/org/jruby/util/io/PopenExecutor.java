@@ -5,6 +5,7 @@ import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.OpenFlags;
 import jnr.constants.platform.RLIMIT;
 import jnr.enxio.channels.NativeDeviceChannel;
+import jnr.posix.POSIX;
 import jnr.posix.SpawnAttribute;
 import jnr.posix.SpawnFileAction;
 import org.jcodings.transcode.EConvFlags;
@@ -16,7 +17,6 @@ import org.jruby.RubyFile;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
 import org.jruby.RubyIO;
-import org.jruby.RubyNumeric;
 import org.jruby.RubyProcess;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
@@ -55,6 +55,7 @@ import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.runtimeError;
+import static org.jruby.runtime.Helpers.arrayOf;
 
 /**
  * Port of MRI's popen+exec logic.
@@ -369,6 +370,82 @@ public class PopenExecutor {
         return RubyIO.ensureYieldClose(context, port, block);
     }
 
+    public static int exec(ThreadContext context, IRubyObject[] argv, IRubyObject opt) {
+        ExecArg eargp;
+
+        eargp = execargNew(context, argv, opt, true, false);
+
+        BeforeExecState bes = null;
+        try {
+            bes = beforeExec(context);
+
+            execargParentStart1(context, eargp);
+
+            return execAsyncSignalSafe(context, eargp, null);
+        } finally {
+            // should only be reached if exec fails
+            afterExec(context, bes);
+        }
+    }
+
+    record BeforeExecState(boolean jmxStopped, String cwd) {}
+
+    private static BeforeExecState beforeExec(ThreadContext context) {
+        boolean jmxStopped;
+        // attempt to shut down the JMX server
+        jmxStopped = context.runtime.getBeanManager().tryShutdownAgent();
+
+        final POSIX posix = context.runtime.getPosix();
+
+        String cwd = posix.getcwd();
+        posix.chdir(context.runtime.getCurrentDirectory());
+
+        return new BeforeExecState(jmxStopped, cwd);
+    }
+
+    private static void afterExec(ThreadContext context, BeforeExecState bes) {
+        if (bes.jmxStopped() && context.runtime.getBeanManager().tryRestartAgent()) context.runtime.registerMBeans();
+
+        context.runtime.getPosix().chdir(bes.cwd());
+
+        throw context.runtime.newErrnoFromLastPOSIXErrno();
+    }
+
+    private static void prepareModifiedEnv(ThreadContext context, ExecArg eargp) {
+        boolean clearEnv = false;
+        if (eargp.unsetenvOthersGiven && eargp.unsetenvOthersDo) {
+            // we handle this elsewhere by starting from a blank env
+            clearEnv = true;
+        }
+
+        RubyArray env = eargp.env_modification;
+        if (env != null) {
+            eargp.envp_str = ShellLauncher.getModifiedEnv(context, env, clearEnv);
+        }
+    }
+
+    static int execAsyncSignalSafe(ThreadContext context, ExecArg eargp, String[] errmsg)
+    {
+        POSIX posix = context.runtime.getPosix();
+        int err;
+
+        if (execargRunOptions(context, eargp, null, errmsg) < 0) { /* hopefully async-signal-safe */
+            return posix.errno();
+        }
+
+        if (eargp.use_shell) {
+            err = procExecSh(context, eargp.command_name.asJavaString(), eargp.envp_str); /* async-signal-safe */
+        }
+        else {
+            String abspath = null;
+            if (!eargp.command_abspath.isNil())
+                abspath = eargp.command_abspath.asJavaString();
+            err = procExecCmd(context, abspath, eargp.argv_str.argv, eargp.envp_str); /* async-signal-safe */
+        }
+
+        return err;
+    }
+
     static void execargSetenv(ThreadContext context, ExecArg eargp, IRubyObject env) {
         eargp.env_modification = !env.isNil() ? checkExecEnv(context, (RubyHash)env, eargp) : null;
     }
@@ -521,6 +598,57 @@ public class PopenExecutor {
             }
 
             return ret;
+        }
+    }
+
+    /* This function should be async-signal-safe.  Actually it is. */
+    static int procExecSh(ThreadContext context, String str, String[] envp)
+    {
+        if (str.matches("^[ \t\n]+$")) return Errno.ENOENT.intValue();
+
+        POSIX posix = context.runtime.getPosix();
+
+        if (envp != null) {
+            posix.execve("/bin/sh", arrayOf("sh", "-c", str), envp);
+        } else {
+            posix.execv("/bin/sh", arrayOf("sh", "-c", str));
+        }
+
+        return posix.errno();
+    }
+
+    static int procExecCmd(ThreadContext context, String prog, String[] argv, String[] envp)
+    {
+        if (prog == null) {
+            return Errno.ENOENT.intValue();
+        }
+
+        POSIX posix = context.runtime.getPosix();
+
+        if (envp != null) {
+            posix.execve(prog, argv, envp);
+        } else {
+            posix.execv(prog, argv);
+        }
+        int err = posix.errno();
+        tryWithSh(context, err, prog, argv, envp); /* try_with_sh() is async-signal-safe. */
+        return err;
+    }
+
+    static void tryWithSh(ThreadContext context, int errno, String prog, String[] argv, String[] envp) {
+        if (errno == Errno.ENOEXEC.intValue()) {
+            execWithSh(context, prog, argv, envp);
+        }
+    }
+
+    static void execWithSh(ThreadContext context, String prog, String[] argv, String[] envp)
+    {
+        argv = arrayOf("sh", argv);
+        POSIX posix = context.runtime.getPosix();
+        if (envp != null) {
+            posix.exec(prog, argv, envp);
+        } else {
+            posix.exec(prog, argv);
         }
     }
 
@@ -998,7 +1126,7 @@ public class PopenExecutor {
         return 0;
     }
 
-    int execargRunOptions(ThreadContext context, ExecArg eargp, ExecArg sargp, String[] errmsg) {
+    static int execargRunOptions(ThreadContext context, ExecArg eargp, ExecArg sargp, String[] errmsg) {
         IRubyObject obj;
 
         if (sargp != null) {
@@ -1016,16 +1144,7 @@ public class PopenExecutor {
             throw context.runtime.newNotImplementedError("setting rlimit in child is unsupported");
         }
 
-        boolean clearEnv = false;
-        if (eargp.unsetenvOthersGiven && eargp.unsetenvOthersDo) {
-            // we handle this elsewhere by starting from a blank env
-            clearEnv = true;
-        }
-
-        RubyArray env = eargp.env_modification;
-        if (env != null) {
-            eargp.envp_str = ShellLauncher.getModifiedEnv(context, env, clearEnv);
-        }
+        prepareModifiedEnv(context, eargp);
 
         if (eargp.umaskGiven) {
             throw context.runtime.newNotImplementedError("setting umask in child is unsupported");

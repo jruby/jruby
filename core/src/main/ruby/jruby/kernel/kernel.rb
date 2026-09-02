@@ -1,6 +1,8 @@
 module Kernel
-  module_function def exec(*args)
-    _exec_internal(*JRuby::ProcessUtil.exec_args(args))
+  if JRuby::Util.windows? || !JRuby::Util.native_exec? || !JRuby::Util.native_posix?
+    module_function def exec(*args)
+      JRuby::Util.exec_old(*JRuby::ProcessUtil.exec_args(args))
+    end
   end
 
   # Replaces Java version for better caching
