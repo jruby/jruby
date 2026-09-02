@@ -650,7 +650,7 @@ DO NOT MODIFY - GENERATED CODE
       <activation>
         <jdk>21</jdk>
         <property>
-          <name>env.CI</name>
+          <name>env.JRUBY_ERROR_PRONE</name>
         </property>
       </activation>
       <build>
