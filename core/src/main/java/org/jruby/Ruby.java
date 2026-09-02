@@ -3654,18 +3654,12 @@ public final class Ruby implements Constantizable {
 
     @Deprecated(since = "10.0.0.0")
     public RaiseException newArgumentError(String name, int got, int expected) {
-        return newArgumentError(name, got, expected, expected);
+        return newArgumentError(got, expected, expected);
     }
 
     @Deprecated(since = "10.0.0.0")
     public RaiseException newArgumentError(String name, int got, int min, int max) {
-        if (min == max) {
-            return newRaiseException(getArgumentError(), "wrong number of arguments (given " + got + ", expected " + min + ")");
-        } else if (max == UNLIMITED_ARGUMENTS) {
-            return newRaiseException(getArgumentError(), "wrong number of arguments (given " + got + ", expected " + min + "+)");
-        } else {
-            return newRaiseException(getArgumentError(), "wrong number of arguments (given " + got + ", expected " + min + ".." + max + ")");
-        }
+        return newArgumentError(got, min, max);
     }
 
     public RaiseException newErrnoEBADFError() {

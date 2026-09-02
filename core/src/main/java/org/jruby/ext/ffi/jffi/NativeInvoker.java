@@ -64,7 +64,7 @@ abstract public class NativeInvoker extends DynamicMethod {
             return call(context, self, clazz, name, args);
 
         } else {
-            Arity.checkArgumentCount(context, name, args,
+            Arity.checkArgumentCount(context, args,
                     arity.getValue() - 1, arity.getValue());
 
             IRubyObject[] params = new IRubyObject[arity.getValue()];

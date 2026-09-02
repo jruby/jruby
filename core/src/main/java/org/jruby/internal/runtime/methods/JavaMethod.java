@@ -274,13 +274,13 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         return this.nativeCall;
     }
 
-    protected static IRubyObject raiseArgumentError(JavaMethod method, ThreadContext context, String name, int given, int min, int max) {
-        Arity.raiseArgumentError(context, name, given, min, max);
+    protected static IRubyObject raiseArgumentError(ThreadContext context, int given, int min, int max) {
+        Arity.raiseArgumentError(context, given, min, max);
         throw new AssertionError("expected to throw ArgumentError"); // never reached
     }
 
-    protected static void checkArgumentCount(JavaMethod method, ThreadContext context, String name, IRubyObject[] args, int num) {
-        if (args.length != num) raiseArgumentError(method, context, name, args.length, num, num);
+    protected static void checkArgumentCount(ThreadContext context, IRubyObject[] args, int num) {
+        if (args.length != num) raiseArgumentError(context, args.length, num, num);
     }
 
     // promise to implement N with block
@@ -494,7 +494,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            if (args.length != 0) return raiseArgumentError(this, context, name, args.length, 0, 0);
+            if (args.length != 0) return raiseArgumentError(context, args.length, 0, 0);
             return call(context, self, clazz, name, block);
         }
     }
@@ -515,7 +515,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             case 1:
                 return call(context, self, clazz, name, args[0], block);
             default:
-                return raiseArgumentError(this, context, name, args.length, 0, 1);
+                return raiseArgumentError(context, args.length, 0, 1);
             }
         }
     }
@@ -538,7 +538,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             case 2:
                 return call(context, self, clazz, name, args[0], args[1], block);
             default:
-                return raiseArgumentError(this, context, name, args.length, 0, 2);
+                return raiseArgumentError(context, args.length, 0, 2);
             }
         }
     }
@@ -563,7 +563,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             case 3:
                 return call(context, self, clazz, name, args[0], args[1], args[2], block);
             default:
-                return raiseArgumentError(this, context, name, args.length, 0, 3);
+                return raiseArgumentError(context, args.length, 0, 3);
             }
         }
     }
@@ -579,7 +579,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            if (args.length != 1) return raiseArgumentError(this, context, name, args.length, 1, 1);
+            if (args.length != 1) return raiseArgumentError(context, args.length, 1, 1);
             return call(context, self, clazz, name, args[0], block);
         }
 
@@ -604,7 +604,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             case 2:
                 return call(context, self, clazz, name, args[0], args[1], block);
             default:
-                return raiseArgumentError(this, context, name, args.length, 1, 2);
+                return raiseArgumentError(context, args.length, 1, 2);
             }
         }
     }
@@ -627,7 +627,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             case 3:
                 return call(context, self, clazz, name, args[0], args[1], args[2], block);
             default:
-                return raiseArgumentError(this, context, name, args.length, 1, 3);
+                return raiseArgumentError(context, args.length, 1, 3);
             }
         }
     }
@@ -644,7 +644,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            if (args.length != 2) return raiseArgumentError(this, context, name, args.length, 2, 2);
+            if (args.length != 2) return raiseArgumentError(context, args.length, 2, 2);
             return call(context, self, clazz, name, args[0], args[1], block);
         }
     }
@@ -665,7 +665,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             case 3:
                 return call(context, self, clazz, name, args[0], args[1], args[2], block);
             default:
-                return raiseArgumentError(this, context, name, args.length, 2, 3);
+                return raiseArgumentError(context, args.length, 2, 3);
             }
         }
     }
@@ -682,7 +682,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         }
 
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            if (args.length != 3) return raiseArgumentError(this, context, name, args.length, 3, 3);
+            if (args.length != 3) return raiseArgumentError(context, args.length, 3, 3);
             return call(context, self, clazz, name, args[0], args[1], args[2], block);
         }
     }
@@ -938,7 +938,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         }
 
         public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-            if (args.length != 0) return raiseArgumentError(this, context, name, args.length, 0, 0);
+            if (args.length != 0) return raiseArgumentError(context, args.length, 0, 0);
             return call(context, self, clazz, name);
         }
 
@@ -964,7 +964,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             case 1:
                 return call(context, self, clazz, name, args[0]);
             default:
-                return raiseArgumentError(this, context, name, args.length, 0, 1);
+                return raiseArgumentError(context, args.length, 0, 1);
             }
         }
     }
@@ -988,7 +988,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             case 2:
                 return call(context, self, clazz, name, args[0], args[1]);
             default:
-                return raiseArgumentError(this, context, name, args.length, 0, 2);
+                return raiseArgumentError(context, args.length, 0, 2);
             }
         }
     }
@@ -1013,7 +1013,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             case 3:
                 return call(context, self, clazz, name, args[0], args[1], args[2]);
             default:
-                return raiseArgumentError(this, context, name, args.length, 0, 3);
+                return raiseArgumentError(context, args.length, 0, 3);
             }
         }
     }
@@ -1032,7 +1032,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         }
 
         public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-            if (args.length != 1) return raiseArgumentError(this, context, name, args.length, 1, 1);
+            if (args.length != 1) return raiseArgumentError(context, args.length, 1, 1);
             return call(context, self, clazz, name, args[0]);
         }
 
@@ -1057,7 +1057,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             case 2:
                 return call(context, self, clazz, name, args[0], args[1]);
             default:
-                return raiseArgumentError(this, context, name, args.length, 1, 2);
+                return raiseArgumentError(context, args.length, 1, 2);
             }
         }
     }
@@ -1080,7 +1080,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             case 3:
                 return call(context, self, clazz, name, args[0], args[1], args[2]);
             default:
-                return raiseArgumentError(this, context, name, args.length, 1, 3);
+                return raiseArgumentError(context, args.length, 1, 3);
             }
         }
     }
@@ -1099,7 +1099,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         }
 
         public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-            if (args.length != 2) return raiseArgumentError(this, context, name, args.length, 2, 2);
+            if (args.length != 2) return raiseArgumentError(context, args.length, 2, 2);
             return call(context, self, clazz, name, args[0], args[1]);
         }
 
@@ -1125,7 +1125,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
             case 3:
                 return call(context, self, clazz, name, args[0], args[1], args[2]);
             default:
-                return raiseArgumentError(this, context, name, args.length, 2, 3);
+                return raiseArgumentError(context, args.length, 2, 3);
             }
         }
     }
@@ -1144,7 +1144,7 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable, Met
         }
 
         public final IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-            if (args.length != 3) return raiseArgumentError(this, context, name, args.length, 3, 3);
+            if (args.length != 3) return raiseArgumentError(context, args.length, 3, 3);
             return call(context, self, clazz, name, args[0], args[1], args[2]);
         }
 

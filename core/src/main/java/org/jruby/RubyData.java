@@ -37,7 +37,7 @@ import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.keywordError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.setCallInfo;
-import static org.jruby.runtime.Arity.checkArgumentCount;
+import static org.jruby.runtime.Helpers.checkArgumentCount;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
 import static org.jruby.runtime.ThreadContext.hasNonemptyKeywords;
