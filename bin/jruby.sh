@@ -660,6 +660,8 @@ jruby_jar=
 for j in "$JRUBY_HOME"/lib/jruby.jar "$JRUBY_HOME"/lib/jruby-complete.jar; do
     if [ ! -e "$j" ]; then
         continue
+    elif [ -L "$j" ]; then
+        j=$(realpath "$j")
     fi
     if [ "${JRUBY_CP-}" ]; then
         JRUBY_CP="$JRUBY_CP$CP_DELIMITER$j"
