@@ -47,11 +47,7 @@ import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
-import jnr.constants.platform.Errno;
-import jnr.posix.POSIX;
 
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.FrameField;
@@ -61,8 +57,8 @@ import org.jruby.api.Warn;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.RubyWarnings;
 import org.jruby.exceptions.CatchThrow;
-import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.ext.jruby.JRubyUtilLibrary;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
@@ -89,7 +85,6 @@ import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.ShellLauncher;
 import org.jruby.util.TypeConverter;
-import org.jruby.util.cli.Options;
 import org.jruby.util.func.ObjectIntIntFunction;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.PopenExecutor;
@@ -98,9 +93,6 @@ import static org.jruby.RubyEnumerator.SizeFn;
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.RubyFile.fileResource;
 import static org.jruby.anno.FrameField.BACKREF;
-import static org.jruby.RubyIO.checkUnsupportedOptions;
-import static org.jruby.RubyIO.checkValidSpawnOptions;
-import static org.jruby.RubyIO.UNSUPPORTED_SPAWN_OPTIONS;
 import static org.jruby.anno.FrameField.BLOCK;
 import static org.jruby.anno.FrameField.CLASS;
 import static org.jruby.anno.FrameField.FILENAME;
@@ -353,7 +345,7 @@ public class RubyKernel {
             sites(context).puts.call(context, stderr, stderr, message);
         }
 
-        throw exit(context, new IRubyObject[] { context.fals, message }, false);
+        throw Helpers.exit(context, new IRubyObject[] { context.fals, message }, false);
     }
 
     // MRI: rb_f_array
@@ -863,15 +855,23 @@ public class RubyKernel {
         return RubyIO.select(context, recv, args);
     }
 
+    // MRI: rb_f_sleep
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject sleep(ThreadContext context, IRubyObject recv) {
+        IRubyObject scheduler = FiberScheduler.current(context);
+        if (scheduler != null) return schedulerSleep(context, scheduler);
+
         // Zero sleeps forever
         return sleepCommon(context, 0);
     }
 
+    // MRI: rb_f_sleep
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject sleep(ThreadContext context, IRubyObject recv, IRubyObject timeout) {
-        if (timeout.isNil()) return sleep(context, recv);
+        IRubyObject scheduler = FiberScheduler.current(context);
+        if (scheduler != null) return schedulerSleep(context, scheduler, timeout);
+
+        if (timeout.isNil()) return sleepCommon(context, 0);
 
         long nanoseconds = (long) (RubyTime.convertTimeInterval(context, timeout) * 1_000_000_000);
 
@@ -879,6 +879,22 @@ public class RubyKernel {
         if (nanoseconds == 0) return RubyFixnum.zero(context.runtime);
 
         return sleepCommon(context, nanoseconds);
+    }
+
+    private static RubyFixnum schedulerSleep(ThreadContext context, IRubyObject scheduler) {
+        final long startTime = System.nanoTime();
+
+        FiberScheduler.kernelSleep(context, scheduler, IRubyObject.NULL_ARRAY);
+
+        return sleptSeconds(context, startTime);
+    }
+
+    private static RubyFixnum schedulerSleep(ThreadContext context, IRubyObject scheduler, IRubyObject timeout) {
+        final long startTime = System.nanoTime();
+
+        FiberScheduler.kernelSleep(context, scheduler, timeout);
+
+        return sleptSeconds(context, startTime);
     }
 
     private static RubyFixnum sleepCommon(ThreadContext context, long nanoseconds) {
@@ -904,6 +920,10 @@ public class RubyKernel {
             if (interrupted) Thread.currentThread().interrupt();
         }
 
+        return sleptSeconds(context, startTime);
+    }
+
+    private static RubyFixnum sleptSeconds(ThreadContext context, long startTime) {
         return asFixnum(context, Math.round((System.nanoTime() - startTime) / 1_000_000_000.0));
     }
 
@@ -917,7 +937,7 @@ public class RubyKernel {
     public static IRubyObject exit(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 1);
 
-        throw exit(context, args, false);
+        throw Helpers.exit(context, args, false);
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -929,43 +949,7 @@ public class RubyKernel {
     public static IRubyObject exit_bang(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 1);
 
-        throw exit(context, args, true);
-    }
-
-    private static RuntimeException exit(ThreadContext context, IRubyObject[] args, boolean hard) {
-        int status = hard ? 1 : 0;
-        String message = null;
-
-        if (args.length > 0) {
-            RubyObject argument = (RubyObject) args[0];
-            if (argument instanceof RubyBoolean) {
-                status = argument.isFalse() ? 1 : 0;
-            } else {
-                status = toInt(context, argument);
-            }
-        }
-
-        if (args.length == 2 && args[1] instanceof RubyString string) {
-            message = string.toString();
-        }
-
-        if (hard) {
-            if (context.runtime.getInstanceConfig().isHardExit()) {
-                System.exit(status);
-            } else {
-                return new MainExitException(status, true);
-            }
-
-        }
-
-        RubySystemExit exception = message == null ?
-                RubySystemExit.newInstance(context, status, "exit") :
-                RubySystemExit.newInstance(context, status, message);
-        // MRI raises SystemExit through usual rb_longjmp -> setup_exception
-        context.setErrorInfo(exception); // set $!
-        RaiseException throwable = exception.toThrowable();
-        IRRuntimeHelpers.traceRaise(context);
-        return throwable;
+        throw Helpers.exit(context, args, true);
     }
 
 
@@ -1086,8 +1070,7 @@ public class RubyKernel {
             default -> prepareNewException(context, arg0, arg1);
         };
 
-        setGivenExceptionCause(context, cause, exception);
-        return raiseException(context, exception);
+        return raiseWithNewExceptionCause(context, exception, cause);
     }
 
     @JRubyMethod(name = {"raise", "fail"}, module = true, visibility = PRIVATE, omit = true, keywords = true)
@@ -1115,6 +1098,7 @@ public class RubyKernel {
         context.setErrorInfo(exception); // set $! early - wiring below forces toThrowable/preRaise
 
         RaiseException throwable = exception.toThrowable();
+        exception.prepareBacktrace(context);
         printDebugException(context, exception); // debug output ($DEBUG) after $! is set
         // :raise hook before throwing (MRI: EXEC_EVENT_HOOK(ec, RUBY_EVENT_RAISE, ...))
         IRRuntimeHelpers.traceRaise(context);
@@ -1226,7 +1210,13 @@ public class RubyKernel {
      * @param cause the cause
      */
     private static void setNewExceptionCause(ThreadContext context, RubyException exception, Cause cause) {
-        if ((cause.provided || exception.getCause() == null) && cause.value != exception) exception.setCause(context, cause.value);
+        if (cause.value.isNil()) {
+            if (!cause.provided && exception.getCause() == null) {
+                exception.setCause(context, cause.value);
+            }
+        } else if ((cause.provided || exception.getCause() == null) && cause.value != exception) {
+            exception.setCause(context, cause.value);
+        }
     }
 
     /**
@@ -2142,121 +2132,19 @@ public class RubyKernel {
         return args;
     }
 
+    @JRubyMethod(name = "exec", module = true, required = 1, rest = true, visibility = PRIVATE)
+    public static IRubyObject execNew(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return RubyProcess.exec(context, recv, args);
+    }
+
+    @Deprecated(since = "10.1.2.0")
     public static IRubyObject exec(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return execCommon(context, null, args[0], null, args);
+        return Helpers.execOldCommon(context, null, args[0], null, args);
     }
 
-    /* Actual exec definition which calls this internal version is specified
-     * in /core/src/main/ruby/jruby/kernel/kernel.rb.
-     */
-    @JRubyMethod(required = 4, visibility = PRIVATE)
+    @Deprecated(since = "10.1.2.0")
     public static IRubyObject _exec_internal(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        IRubyObject env = args[0];
-        IRubyObject prog = args[1];
-        IRubyObject options = args[2];
-        var cmdArgs = (RubyArray<?>) args[3];
-
-        if (options instanceof RubyHash) checkExecOptions(context, (RubyHash) options);
-
-        return execCommon(context, env, prog, options, cmdArgs.toJavaArray(context));
-    }
-
-    static void checkExecOptions(ThreadContext context, RubyHash opts) {
-        checkValidSpawnOptions(context, opts);
-        checkUnsupportedOptions(context, opts, UNSUPPORTED_SPAWN_OPTIONS, "unsupported exec option");
-    }
-
-    private static IRubyObject execCommon(ThreadContext context, IRubyObject env, IRubyObject prog, IRubyObject options, IRubyObject[] args) {
-        // This is a fairly specific hack for empty string, but it does the job
-        if (args.length == 1) {
-            RubyString command = args[0].convertToString();
-            if (command.isEmpty()) throw context.runtime.newErrnoENOENTError(command.toString());
-
-            for (byte b : command.getBytes()) {
-                if (b == 0x00) throw argumentError(context, "string contains null byte");
-            }
-        }
-
-        final Ruby runtime = context.runtime;
-
-        if (env != null && env != context.nil) {
-            RubyHash envMap = env.convertToHash();
-            if (envMap != null) {
-                runtime.getENV().merge_bang(context, new IRubyObject[]{envMap}, Block.NULL_BLOCK);
-            }
-        }
-
-        boolean nativeFailed = false;
-        boolean nativeExec = Options.NATIVE_EXEC.load();
-        boolean jmxStopped = false;
-        System.setProperty("user.dir", runtime.getCurrentDirectory());
-
-        if (nativeExec) {
-            IRubyObject oldExc = context.getErrorInfo();
-            try {
-                ShellLauncher.LaunchConfig cfg = new ShellLauncher.LaunchConfig(runtime, args, true);
-
-                // Duplicated in part from ShellLauncher.runExternalAndWait
-                if (cfg.shouldRunInShell()) {
-                    // execute command with sh -c
-                    // this does shell expansion of wildcards
-                    cfg.verifyExecutableForShell();
-                } else {
-                    cfg.verifyExecutableForDirect();
-                }
-                String progStr = cfg.getExecArgs()[0];
-
-                String[] argv = cfg.getExecArgs();
-
-                // attempt to shut down the JMX server
-                jmxStopped = runtime.getBeanManager().tryShutdownAgent();
-
-                final POSIX posix = runtime.getPosix();
-
-                posix.chdir(System.getProperty("user.dir"));
-
-                if (Platform.IS_WINDOWS) {
-                    // Windows exec logic is much more elaborate; exec() in jnr-posix attempts to duplicate it
-                    posix.exec(progStr, argv);
-                } else {
-                    // TODO: other logic surrounding this call? In jnr-posix?
-                    @SuppressWarnings("unchecked")
-                    final Map<String, String> ENV = (Map<String, String>) runtime.getENV();
-                    ArrayList<String> envStrings = new ArrayList<>(ENV.size() + 1);
-                    for ( Map.Entry<String, String> envEntry : ENV.entrySet() ) {
-                        envStrings.add( envEntry.getKey() + '=' + envEntry.getValue() );
-                    }
-                    envStrings.add(null);
-
-                    int status = posix.execve(progStr, argv, envStrings.toArray(new String[envStrings.size()]));
-                    if (Platform.IS_WSL && status == -1) { // work-around a bug in Windows Subsystem for Linux
-                        if (posix.errno() == Errno.ENOMEM.intValue()) {
-                            posix.exec(progStr, argv);
-                        }
-                    }
-                }
-
-                // Only here because native exec could not exec (always -1)
-                nativeFailed = true;
-            } catch (RaiseException e) {
-                context.setErrorInfo(oldExc); // Restore $!
-            } catch (Exception e) {
-                throw runtime.newErrnoENOENTError("cannot execute: " + e.getLocalizedMessage());
-            }
-        }
-
-        // if we get here, either native exec failed or we should try an in-process exec
-        if (nativeFailed) {
-            if (jmxStopped && runtime.getBeanManager().tryRestartAgent()) runtime.registerMBeans();
-
-            throw runtime.newErrnoFromLastPOSIXErrno();
-        }
-
-        // Fall back onto our existing code if native not available
-        // FIXME: Make jnr-posix Pure-Java backend do this as well
-        int resultCode = ShellLauncher.execAndWait(runtime, args);
-
-        throw exit(context, new IRubyObject[] {asFixnum(context, resultCode)}, true);
+        return JRubyUtilLibrary.exec_old(context, recv, args);
     }
 
     @JRubyMethod(name = "fork", module = true, visibility = PRIVATE, notImplemented = true)

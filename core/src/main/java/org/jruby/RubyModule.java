@@ -91,6 +91,7 @@ import org.jruby.internal.runtime.methods.PartialDelegatingMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.internal.runtime.methods.RefinedMarker;
 import org.jruby.internal.runtime.methods.RefinedWrapper;
+import org.jruby.internal.runtime.methods.RenamedDynamicMethod;
 import org.jruby.internal.runtime.methods.SynchronizedDynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.ir.IRClosure;
@@ -3015,7 +3016,7 @@ public class RubyModule extends RubyObject {
 
             checkValidBindTargetFrom(context, (RubyModule) method.owner(context), false);
 
-            newMethod = method.getMethod().dup();
+            newMethod = new RenamedDynamicMethod(method.getMethod().dup(), method.getMethodName());
             newMethod.setImplementationClass(this);
             newMethod.setVisibility(visibility);
         } else {
@@ -4214,7 +4215,8 @@ public class RubyModule extends RubyObject {
     // Just relying on annotations will give us: got n expected 0..3 when we want got n expected 1..3.
     @JRubyMethod(name = {"module_eval", "class_eval"}, rest = true,
             reads = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
-            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE})
+            writes = {LASTLINE, BACKREF, VISIBILITY, BLOCK, SELF, METHODNAME, LINE, CLASS, FILENAME, SCOPE},
+            keywords = true)
     public IRubyObject module_eval(ThreadContext context, IRubyObject[] args, Block block) {
         switch(args.length) {
             case 0: return module_eval(context, block);

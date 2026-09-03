@@ -193,10 +193,6 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
             data.prev = null;
         }
 
-        if (data.blocking) {
-            context.getFiberCurrentThread().decrementBlocking();
-        }
-
         if (result.type == RequestType.RAISE) {
             throw (RuntimeException) result.data;
         }
@@ -231,6 +227,9 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
     private static final FiberRequest NEVER = new FiberRequest(RubyBasicObject.NEVER, RequestType.DATA);
 
     private static FiberRequest exchangeWithFiber(ThreadContext context, FiberData currentFiberData, FiberData targetFiberData, FiberRequest request) {
+        // MRI: fiber_switch. Must precede the push, which wakes the target fiber's thread
+        if (currentFiberData.blocking) context.getFiberCurrentThread().decrementBlocking();
+
         // push should not block and does not check interrupts
         targetFiberData.queue.push(context, request);
 
@@ -241,8 +240,6 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         // interrupted again and must abandon the fiber.
 
         try {
-            adjustThreadBlocking(context, currentFiberData, targetFiberData);
-
             return currentFiberData.queue.pop(context);
         } catch (RaiseException re) {
             handleExceptionDuringExchange(context, currentFiberData, targetFiberData, re);
@@ -250,19 +247,8 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
             // if we get here, we forwarded exception so try once more
             return currentFiberData.queue.pop(context);
         } finally {
-            adjustThreadBlocking(context, targetFiberData, currentFiberData);
-        }
-    }
-
-    private static void adjustThreadBlocking(ThreadContext context, FiberData currentFiberData, FiberData targetFiberData) {
-        // if fiber we are leaving is blocking, decrement thread blocking count
-        if (currentFiberData.blocking) {
-            context.getFiberCurrentThread().decrementBlocking();
-        }
-
-        // if fiber we are entering is blocking, increment thread blocking count
-        if (targetFiberData.blocking) {
-            context.getFiberCurrentThread().incrementBlocking();
+            // MRI: fiber_switch re-reads the current fiber; control can return into a different one
+            if (currentFiberData.blocking) context.getFiberCurrentThread().incrementBlocking();
         }
     }
 
@@ -379,7 +365,9 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
         if (data.parent != context.getFiberCurrentThread()) fiberCalledAcrossThreads(runtime);
 
-        FiberRequest val = new FiberRequest(((RubyException) exception).toThrowable(), RequestType.RAISE);
+        RubyException rubyException = (RubyException) exception;
+        rubyException.prepareBacktrace(context);
+        FiberRequest val = new FiberRequest(rubyException.toThrowable(), RequestType.RAISE);
 
         data.prev = context.getFiber();
 
@@ -508,6 +496,12 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                     try {
                         FiberRequest init = data.queue.pop(ctxt);
 
+                        // MRI: rb_fiber_start. A first run does not return through a switch
+                        if (data.blocking) data.parent.incrementBlocking();
+
+                        // Whether we already gave up our blocking-count contribution
+                        boolean handedBack = false;
+
                         try {
                             FiberRequest result;
 
@@ -528,8 +522,15 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                             ThreadFiber tf = data.fiber.get();
                             if (tf != null) tf.thread = null;
 
+                            // MRI: rb_fiber_terminate, which switches away. Decrement before handing back
+                            if (data.blocking) data.parent.decrementBlocking();
+                            handedBack = true;
+
                             data.prev.data.queue.push(ctxt, result);
                         } finally {
+                            // MRI: rb_fiber_terminate, for raise, kill or flow control
+                            if (!handedBack && data.blocking) data.parent.decrementBlocking();
+
                             // Ensure we do everything for shutdown now
                             data.queue.shutdown();
                             context.runtime.getThreadService().unregisterCurrentThread(ctxt);
@@ -808,7 +809,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         // MRI: rb_fiber_s_schedule_kw and rb_fiber_s_schedule, kw passes on context
         @JRubyMethod(name = "schedule", meta = true, rest = true, keywords = true)
         public static IRubyObject schedule(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-            IRubyObject scheduler = context.getThread().getScheduler();
+            IRubyObject scheduler = context.getFiberCurrentThread().getScheduler();
             if (scheduler.isNil()) throw runtimeError(context, "No scheduler is available!");
             return scheduler.callMethod(context, "fiber", args, block);
         }

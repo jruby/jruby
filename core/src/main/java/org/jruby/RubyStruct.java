@@ -523,7 +523,7 @@ public class RubyStruct extends RubyObject {
         return context.nil;
     }
 
-    @JRubyMethod(visibility = PRIVATE)
+    @JRubyMethod(visibility = PRIVATE, keywords = true)
     @Override
     public IRubyObject initialize(ThreadContext context) {
         IRubyObject nil = context.nil;
@@ -1087,7 +1087,7 @@ public class RubyStruct extends RubyObject {
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            Arity.checkArgumentCount(context, name, args, 0, 0);
+            Arity.checkArgumentCount(context, args, 0, 0);
             return ((RubyStruct)self).get(index);
         }
 
@@ -1116,7 +1116,7 @@ public class RubyStruct extends RubyObject {
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            Arity.checkArgumentCount(context, name, args, 1, 1);
+            Arity.checkArgumentCount(context, args, 1, 1);
             return ((RubyStruct)self).set(context, args[0], index);
         }
 

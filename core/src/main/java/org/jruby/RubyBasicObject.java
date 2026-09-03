@@ -538,7 +538,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         MetaClass klass = new MetaClass(context.runtime, superClass, this); // rb_class_boot
         setMetaClass(klass);
 
-        klass.setMetaClass(superClass.getRealClass().metaClass);
+        // MRI: SET_METACLASS_OF(metaclass, ENSURE_EIGENCLASS(tmp))
+        RubyClass effectiveSuper = superClass.isIncluded() ? superClass.getRealClass() : superClass;
+        klass.setMetaClass(effectiveSuper.singletonClass(context));
 
         return klass;
     }
@@ -972,6 +974,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
                 }
             } else if (isFrozen()) {
                 clone.setFrozen(true);
+                if (clone.getMetaClass().isSingleton()) clone.getMetaClass().setFrozen(true);
             }
         } else { // will always be true or false (MRI has bulletproofing to catch odd values (rb_bug explodes).
             // FIXME: MRI uses C module variables to make a single hash ever for this setup.  We build every time.
@@ -1028,6 +1031,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         MetaClass clone = new MetaClass(context.runtime, klass.getSuperClass(), attach);
         clone.flags = klass.flags;
+        // dup (unlike clone) never preserves frozen state; cloneSetup() re-applies it
+        // explicitly for #clone via setFrozen() below, so it's safe to clear it here.
+        clone.setFrozen(false);
 
         if (this instanceof RubyClass) {
             clone.setMetaClass(clone);

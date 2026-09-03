@@ -51,6 +51,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.CallBlock;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ObjectMarshal;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
@@ -90,7 +91,6 @@ import static org.jruby.api.Create.newStruct;
 import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.notImplementedError;
-import static org.jruby.api.Error.rangeError;
 import static org.jruby.api.Warn.warn;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.Helpers.nullToNil;
@@ -1602,7 +1602,17 @@ public class RubyProcess {
 
     @JRubyMethod(rest = true, meta = true)
     public static IRubyObject exec(ThreadContext context, IRubyObject self, IRubyObject[] args) {
-        return RubyKernel.exec(context, self, args);
+        // try true native exec based on CRuby logic
+        if (!Platform.IS_WINDOWS && Options.NATIVE_EXEC.load() && context.runtime.getPosix().isNative()) {
+            int errno = PopenExecutor.exec(context, args, context.nil);
+
+            // exec only returns when it failed; errno 0 means we never reached a syscall (e.g. command not found)
+            throw errno == 0 ?
+                    context.runtime.newErrnoFromLastPOSIXErrno() :
+                    context.runtime.newErrnoFromInt(errno);
+        }
+
+        return Helpers.execOldCommon(context, null, args[0], null, args);
     }
 
     /**

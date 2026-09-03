@@ -262,7 +262,7 @@ public class RubyProc extends RubyObject implements DataType {
     }
 
     private RubyProc procDup() {
-        return newProc(getRuntime(), getMetaClass(), block, type, file, line);
+        return newProc(getRuntime(), getMetaClass().getRealClass(), block, type, file, line);
     }
 
     @Override
@@ -333,6 +333,11 @@ public class RubyProc extends RubyObject implements DataType {
         if (type != other.type) return context.fals;
 
         return asBoolean(context, getBlock().equals(other.block));
+    }
+
+    @JRubyMethod
+    public RubyFixnum hash(ThreadContext context) {
+        return asFixnum(context, block.hashCode());
     }
 
     private static IRubyObject[] checkArityForLambda(ThreadContext context, Block.Type type, BlockBody blockBody, IRubyObject... args) {
@@ -482,7 +487,7 @@ public class RubyProc extends RubyObject implements DataType {
         return context.nil;
     }
 
-    @JRubyMethod
+    @JRubyMethod(keywords = true)
     public IRubyObject parameters(ThreadContext context) {
         return parametersCommon(context, isLambda());
     }

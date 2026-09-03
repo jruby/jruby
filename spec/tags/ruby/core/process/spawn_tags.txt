@@ -69,5 +69,7 @@ windows:Process.spawn with a command array calls #to_ary to convert the argument
 fails:Process.spawn sets $? to exit status 127 when the command does not exist
 fails:Process.spawn sets $? to exit status 127 when the file does not exist
 fails:Process.spawn raises an Errno::EACCES when the path is a directory
-fails:Process.spawn raises an Errno::ENOENT when a non-executable file is found in PATH
 fails:Process.spawn when passed :chdir raises an Errno::ENOENT when a given path doesn't exist
+windows:Process.spawn raises an ArgumentError if :unsetenv_others option is not a boolean or nil
+windows:Process.spawn raises an ArgumentError if :close_others option is not a boolean or nil
+fails:Process.spawn raises an ArgumentError if :new_pgroup option is not a boolean or nil

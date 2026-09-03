@@ -66,6 +66,7 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.transcode.EConvFlags;
 import org.jruby.api.API;
+import org.jruby.api.Convert;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
@@ -73,7 +74,6 @@ import org.jruby.exceptions.EOFError;
 import org.jruby.exceptions.IOError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.fcntl.FcntlLibrary;
-import org.jruby.internal.runtime.ThreadedRunnable;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
@@ -89,6 +89,7 @@ import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.ShellLauncher.POpenProcess;
 import org.jruby.util.*;
+import org.jruby.util.cli.JVMConsole;
 import org.jruby.util.cli.Options;
 import org.jruby.util.io.ChannelFD;
 import org.jruby.util.io.EncodingUtils;
@@ -103,7 +104,6 @@ import org.jruby.util.io.POSIXProcess;
 import org.jruby.util.io.PopenExecutor;
 import org.jruby.util.io.PosixShim;
 import org.jruby.util.io.SelectExecutor;
-import org.jruby.util.io.STDIO;
 
 import static com.headius.backport9.buffer.Buffers.clearBuffer;
 import static com.headius.backport9.buffer.Buffers.flipBuffer;
@@ -114,7 +114,6 @@ import static org.jruby.anno.FrameField.LASTLINE;
 import static org.jruby.api.Access.argsFile;
 import static org.jruby.api.Access.encodingService;
 import static org.jruby.api.Access.fileClass;
-import static org.jruby.api.Access.floatClass;
 import static org.jruby.api.Access.globalVariables;
 import static org.jruby.api.Access.ioClass;
 import static org.jruby.api.Convert.asBoolean;
@@ -1086,12 +1085,12 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return this;
     }
 
-    @JRubyMethod(name = "initialize", visibility = PRIVATE)
+    @JRubyMethod(name = "initialize", visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject fileNumber, Block unused) {
         return initializeCommon(context, toInt(context, fileNumber), null, context.nil);
     }
 
-    @JRubyMethod(name = "initialize", visibility = PRIVATE)
+    @JRubyMethod(name = "initialize", visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject fileNumber, IRubyObject second, Block unused) {
         int fileno = toInt(context, fileNumber);
         IRubyObject vmode = null;
@@ -2235,23 +2234,23 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     public RubyBoolean tty_p(ThreadContext context) {
         Ruby runtime = context.runtime;
         POSIX posix = runtime.getPosix();
-        OpenFile fptr;
-
-        fptr = getOpenFileChecked();
+        OpenFile fptr = getOpenFileChecked();
 
         fptr.lock();
         try {
             if (posix.isNative() && fptr.fd().realFileno != -1) {
-                return posix.libc().isatty(fptr.getFileno()) == 0 ? runtime.getFalse() : runtime.getTrue();
-            } else if (fptr.isStdio()) {
-                // This is a bit of a hack for platforms where we can't do native stdio
-                return runtime.getTrue();
+                // IO is native and we can call isatty
+                return Convert.asBoolean(context, posix.libc().isatty(fptr.getFileno()) == 1);
+            } else if (fptr.isStdio() && runtime.getInstanceConfig().isMain()) {
+                // IO is stdio and JRuby was started through Main, use JVM console status
+                return Convert.asBoolean(context, JVMConsole.isTerminal);
+            } else {
+                // Cannot determine if stdio is a terminal
+                return context.fals;
             }
         } finally {
             fptr.unlock();
         }
-
-        return runtime.getFalse();
     }
 
     // MRI: rb_io_init_copy
@@ -2672,7 +2671,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
      */
 
     // rb_io_gets_m
-    @JRubyMethod(name = "gets", writes = LASTLINE)
+    @JRubyMethod(name = "gets", writes = LASTLINE, keywords = true)
     public IRubyObject gets(ThreadContext context) {
         return Getline.getlineCall(context, GETLINE, this, getReadEncoding(context));
     }
@@ -3119,7 +3118,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     /** Read a line.
      *
      */
-    @JRubyMethod(name = "readline", writes = LASTLINE)
+    @JRubyMethod(name = "readline", writes = LASTLINE, keywords = true)
     public IRubyObject readline(ThreadContext context) {
         IRubyObject line = gets(context);
 
@@ -3882,7 +3881,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return this;
     }
 
-    @JRubyMethod
+    @JRubyMethod(keywords = true)
     public IRubyObject each(final ThreadContext context, final Block block) {
         if (!block.isGiven()) return enumeratorize(context.runtime, this, "each");
 
@@ -3929,7 +3928,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
-    @JRubyMethod
+    @JRubyMethod(keywords = true)
     public IRubyObject each_line(final ThreadContext context, final Block block) {
         if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line");
 
@@ -3986,7 +3985,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
 
-    @JRubyMethod(name = "readlines")
+    @JRubyMethod(name = "readlines", keywords = true)
     public RubyArray readlines(ThreadContext context) {
         return Getline.getlineCall(context, GETLINE_ARY, this, getReadEncoding(context));
     }
@@ -4725,7 +4724,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             }
 
             if (options != null) {
-                checkUnsupportedOptions(context, options, UNSUPPORTED_SPAWN_OPTIONS, "unsupported popen option");
+                Helpers.checkUnsupportedPopenOptions(context, options);
             }
 
             io.setupPopen(context, modes, process);
@@ -5403,59 +5402,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     private static boolean isTrue(IRubyObject val) { return val != null && val.isTrue(); }
-
-    static final Set<String> ALL_SPAWN_OPTIONS;
-    static final String[] UNSUPPORTED_SPAWN_OPTIONS;
-
-    static {
-        String[] SPAWN_OPTIONS = new String[] {
-                "unsetenv_others",
-                "prgroup",
-                "new_pgroup",
-                "rlimit_resourcename",
-                "chdir",
-                "umask",
-                "in",
-                "out",
-                "err",
-                "close_others"
-        };
-        UNSUPPORTED_SPAWN_OPTIONS = new String[] {
-                "unsetenv_others",
-                "prgroup",
-                "new_pgroup",
-                "rlimit_resourcename",
-                "chdir",
-                "umask",
-                "in",
-                "out",
-                "err",
-                "close_others"
-        };
-
-        ALL_SPAWN_OPTIONS = new HashSet<>(Arrays.asList(SPAWN_OPTIONS));
-    }
-
-    static void checkUnsupportedOptions(ThreadContext context, RubyHash opts, String[] unsupported, String error) {
-        for (String key : unsupported) {
-            if (opts.fastARef(asSymbol(context, key)) != null) warn(context, error + ": " + key);
-        }
-    }
-
-    static void checkValidSpawnOptions(ThreadContext context, RubyHash opts) {
-        for (Object opt : opts.directKeySet()) {
-            if (opt instanceof RubySymbol) {
-                if (!ALL_SPAWN_OPTIONS.contains(((RubySymbol) opt).idString())) {
-                    throw argumentError(context, "wrong exec option symbol: " + opt);
-                }
-            }
-            else if (opt instanceof RubyString) {
-                if (!ALL_SPAWN_OPTIONS.contains(((RubyString) opt).toString())) {
-                    throw argumentError(context, "wrong exec option: " + opt);
-                }
-            }
-        }
-    }
 
     /**
      * Try for around 1s to destroy the child process. This is to work around

@@ -211,6 +211,16 @@ public abstract class DelegatingDynamicMethod extends DynamicMethod {
     public abstract DynamicMethod dup();
 
     @Override
+    public String getOldName() {
+        return delegate.getOldName();
+    }
+
+    @Override
+    public RubyModule getDefinedClass() {
+        return delegate.getDefinedClass();
+    }
+
+    @Override
     /**
      * We override equals so that for method identity checks we treat delegating wrappers the same as the original
      * methods. See e.g. RubyClass.finvokeChecked and its method_missing comparison.

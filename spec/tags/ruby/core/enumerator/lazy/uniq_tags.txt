@@ -1,0 +1,2 @@
+fails:Enumerator::Lazy#uniq value packing of source yields (matches Enumerable#uniq) yields a single nil for a zero-argument source yield
+fails:Enumerator::Lazy#uniq value packing of source yields (matches Enumerable#uniq) yields a packed Array for a multi-argument source yield

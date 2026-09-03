@@ -11,7 +11,7 @@ DO NOT MODIFY - GENERATED CODE
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.jruby</groupId>
   <artifactId>jruby-parent</artifactId>
-  <version>10.1.1.0-SNAPSHOT</version>
+  <version>10.1.2.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>JRuby</name>
   <description>JRuby is the effort to recreate the Ruby (https://www.ruby-lang.org) interpreter in Java.</description>
@@ -346,7 +346,7 @@ DO NOT MODIFY - GENERATED CODE
       <plugin>
         <groupId>org.sonatype.central</groupId>
         <artifactId>central-publishing-maven-plugin</artifactId>
-        <version>0.7.0</version>
+        <version>0.11.0</version>
         <extensions>true</extensions>
         <configuration>
           <publishingServerId>central</publishingServerId>

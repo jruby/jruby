@@ -19,3 +19,7 @@ windows:IO#reopen with an IO at EOF resets the EOF status to false
 windows:IO#reopen with an IO always resets the close-on-exec flag to true on non-STDIO objects
 windows:IO#reopen with an IO may change the class of the instance
 windows:IO#reopen with an IO sets path equals to the other IO's path if other IO is File
+fails:IO#reopen with a String opens the file in read mode if the IO is read-only
+fails:IO#reopen with a String opens the file in write mode if the IO is write-only
+fails:IO#reopen with a String opens the file in read-write mode if the IO is read-write
+fails:IO#reopen with a String opens the file in append mode if the IO appends

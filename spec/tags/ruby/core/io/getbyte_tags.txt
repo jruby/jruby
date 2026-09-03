@@ -1,1 +1,2 @@
 windows:IO#getbyte returns the next byte from the stream
+fails:IO#getbyte reads after ungetc without character conversion

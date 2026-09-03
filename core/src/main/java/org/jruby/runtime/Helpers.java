@@ -26,8 +26,10 @@ import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
@@ -37,6 +39,7 @@ import java.util.stream.Collectors;
 
 import com.headius.invokebinder.Binder;
 import jnr.constants.platform.Errno;
+import jnr.posix.POSIX;
 import org.jruby.*;
 import org.jruby.api.Create;
 import org.jruby.ast.ArgsNode;
@@ -48,9 +51,9 @@ import org.jruby.ast.types.INameNode;
 import org.jruby.ast.RequiredKeywordArgumentValueNode;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.ArgumentError;
+import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.NoMethodError;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.exceptions.Unrescuable;
 import org.jruby.internal.runtime.methods.*;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScopeType;
@@ -63,6 +66,7 @@ import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.proxy.ReifiedJavaProxy;
 import org.jruby.parser.StaticScope;
 import org.jruby.parser.StaticScopeFactory;
+import org.jruby.platform.Platform;
 import org.jruby.runtime.JavaSites.HelpersSites;
 import org.jruby.runtime.backtrace.BacktraceData;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -73,6 +77,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.CommonByteLists;
 import org.jruby.util.MurmurHash;
+import org.jruby.util.ShellLauncher;
 import org.jruby.util.TypeConverter;
 
 import org.jcodings.Encoding;
@@ -89,7 +94,9 @@ import static org.jruby.api.Access.kernelModule;
 import static org.jruby.api.Access.moduleClass;
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asSymbol;
+import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Convert.toInteger;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newEmptyArray;
@@ -110,6 +117,7 @@ import static org.jruby.util.RubyStringBuilder.ids;
 import static org.jruby.util.RubyStringBuilder.types;
 import static org.jruby.util.StringSupport.EMPTY_STRING_ARRAY;
 
+import org.jruby.util.cli.Options;
 import org.jruby.util.io.EncodingUtils;
 
 /**
@@ -654,6 +662,207 @@ public class Helpers {
         l |= (long) charValues[index + 2] << 32;
         l |= (long) charValues[index + 3] << 48;
         return l;
+    }
+
+    public static IRubyObject execOldCommon(ThreadContext context, IRubyObject env, IRubyObject prog, IRubyObject options, IRubyObject[] args) {
+        // This is a fairly specific hack for empty string, but it does the job
+        if (args.length == 1) {
+            RubyString command = args[0].convertToString();
+            if (command.isEmpty()) throw context.runtime.newErrnoENOENTError(command.toString());
+
+            for (byte b : command.getBytes()) {
+                if (b == 0x00) throw argumentError(context, "string contains null byte");
+            }
+        }
+
+        final Ruby runtime = context.runtime;
+
+        if (env != null && env != context.nil) {
+            RubyHash envMap = env.convertToHash();
+            if (envMap != null) {
+                runtime.getENV().merge_bang(context, new IRubyObject[]{envMap}, Block.NULL_BLOCK);
+            }
+        }
+
+        boolean nativeFailed = false;
+        boolean nativeExec = Options.NATIVE_EXEC.load();
+        boolean jmxStopped = false;
+        System.setProperty("user.dir", runtime.getCurrentDirectory());
+
+        if (nativeExec) {
+            IRubyObject oldExc = context.getErrorInfo();
+            try {
+                ShellLauncher.LaunchConfig cfg = new ShellLauncher.LaunchConfig(runtime, args, true);
+
+                // Duplicated in part from ShellLauncher.runExternalAndWait
+                if (cfg.shouldRunInShell()) {
+                    // execute command with sh -c
+                    // this does shell expansion of wildcards
+                    // this does shell expansion of wildcards
+                    cfg.verifyExecutableForShell();
+                } else {
+                    cfg.verifyExecutableForDirect();
+                }
+                String progStr = cfg.getExecArgs()[0];
+
+                String[] argv = cfg.getExecArgs();
+
+                // attempt to shut down the JMX server
+                jmxStopped = runtime.getBeanManager().tryShutdownAgent();
+
+                final POSIX posix = runtime.getPosix();
+
+                posix.chdir(System.getProperty("user.dir"));
+
+                if (Platform.IS_WINDOWS) {
+                    // Windows exec logic is much more elaborate; exec() in jnr-posix attempts to duplicate it
+                    posix.exec(progStr, argv);
+                } else {
+                    // TODO: other logic surrounding this call? In jnr-posix?
+                    @SuppressWarnings("unchecked")
+                    final Map<String, String> ENV = (Map<String, String>) runtime.getENV();
+                    ArrayList<String> envStrings = new ArrayList<>(ENV.size() + 1);
+                    for ( Map.Entry<String, String> envEntry : ENV.entrySet() ) {
+                        envStrings.add( envEntry.getKey() + '=' + envEntry.getValue() );
+                    }
+                    envStrings.add(null);
+
+                    int status = posix.execve(progStr, argv, envStrings.toArray(new String[envStrings.size()]));
+                    if (Platform.IS_WSL && status == -1) { // work-around a bug in Windows Subsystem for Linux
+                        if (posix.errno() == Errno.ENOMEM.intValue()) {
+                            posix.exec(progStr, argv);
+                        }
+                    }
+                }
+
+                // Only here because native exec could not exec (always -1)
+                nativeFailed = true;
+            } catch (RaiseException e) {
+                context.setErrorInfo(oldExc); // Restore $!
+            } catch (Exception e) {
+                throw runtime.newErrnoENOENTError("cannot execute: " + e.getLocalizedMessage());
+            }
+        }
+
+        // if we get here, either native exec failed or we should try an in-process exec
+        if (nativeFailed) {
+            if (jmxStopped && runtime.getBeanManager().tryRestartAgent()) runtime.registerMBeans();
+
+            throw runtime.newErrnoFromLastPOSIXErrno();
+        }
+
+        // Fall back onto our existing code if native not available
+        // FIXME: Make jnr-posix Pure-Java backend do this as well
+        int resultCode = ShellLauncher.execAndWait(runtime, args);
+
+        throw exit(context, new IRubyObject[] {asFixnum(context, resultCode)}, true);
+    }
+
+    /**
+     * Hard exit the JVM or return a RuntimeException to simulate exiting.
+     *
+     * @param context the current context
+     * @param args the exit arguments, including an exit code and optional message
+     * @param hard whether to use System.exit to terminate immediately
+     * @return a RuntimeException to throw if hard exiting was not requested
+     */
+    public static RuntimeException exit(ThreadContext context, IRubyObject[] args, boolean hard) {
+        int status = hard ? 1 : 0;
+        String message = null;
+
+        if (args.length > 0) {
+            RubyObject argument = (RubyObject) args[0];
+            if (argument instanceof RubyBoolean) {
+                status = argument.isFalse() ? 1 : 0;
+            } else {
+                status = toInt(context, argument);
+            }
+        }
+
+        if (args.length == 2 && args[1] instanceof RubyString string) {
+            message = string.toString();
+        }
+
+        if (hard) {
+            if (context.runtime.getInstanceConfig().isMain()) {
+                // JRuby was started through Main, use a hard exit
+                System.exit(status);
+            } else {
+                return new MainExitException(status, true);
+            }
+
+        }
+
+        RubySystemExit exception = message == null ?
+                RubySystemExit.newInstance(context, status, "exit") :
+                RubySystemExit.newInstance(context, status, message);
+        // MRI raises SystemExit through usual rb_longjmp -> setup_exception
+        context.setErrorInfo(exception); // set $!
+        RaiseException throwable = exception.toThrowable();
+        IRRuntimeHelpers.traceRaise(context);
+        return throwable;
+    }
+
+    public static void checkExecOptions(ThreadContext context, RubyHash opts) {
+        checkValidSpawnOptions(context, opts);
+        checkUnsupportedOptions(context, opts, UNSUPPORTED_SPAWN_OPTIONS, "unsupported exec option");
+    }
+
+    public static void checkUnsupportedPopenOptions(ThreadContext context, RubyHash options) {
+        checkUnsupportedOptions(context, options, UNSUPPORTED_SPAWN_OPTIONS, "unsupported popen option");
+    }
+
+    public static void checkUnsupportedOptions(ThreadContext context, RubyHash opts, String[] unsupported, String error) {
+        for (String key : unsupported) {
+            if (opts.fastARef(asSymbol(context, key)) != null) warn(context, error + ": " + key);
+        }
+    }
+
+    static void checkValidSpawnOptions(ThreadContext context, RubyHash opts) {
+        for (Object opt : opts.directKeySet()) {
+            if (opt instanceof RubySymbol) {
+                if (!ALL_SPAWN_OPTIONS.contains(((RubySymbol) opt).idString())) {
+                    throw argumentError(context, "wrong exec option symbol: " + opt);
+                }
+            }
+            else if (opt instanceof RubyString) {
+                if (!ALL_SPAWN_OPTIONS.contains(((RubyString) opt).toString())) {
+                    throw argumentError(context, "wrong exec option: " + opt);
+                }
+            }
+        }
+    }
+
+    static final Set<String> ALL_SPAWN_OPTIONS;
+    static final String[] UNSUPPORTED_SPAWN_OPTIONS;
+
+    static {
+        String[] SPAWN_OPTIONS = new String[] {
+                "unsetenv_others",
+                "prgroup",
+                "new_pgroup",
+                "rlimit_resourcename",
+                "chdir",
+                "umask",
+                "in",
+                "out",
+                "err",
+                "close_others"
+        };
+        UNSUPPORTED_SPAWN_OPTIONS = new String[] {
+                "unsetenv_others",
+                "prgroup",
+                "new_pgroup",
+                "rlimit_resourcename",
+                "chdir",
+                "umask",
+                "in",
+                "out",
+                "err",
+                "close_others"
+        };
+
+        ALL_SPAWN_OPTIONS = new HashSet<>(Arrays.asList(SPAWN_OPTIONS));
     }
 
     /**
@@ -2514,7 +2723,7 @@ public class Helpers {
         Visibility visibility = method.getVisibility();
 
         if (visibility != Visibility.PRIVATE &&
-                (visibility != Visibility.PROTECTED || metaClass.getRealClass().isInstance(self)) && !method.isUndefined()) {
+                (visibility != Visibility.PROTECTED || method.getImplementationClass().isInstance(self)) && !method.isUndefined()) {
             return definedMessage;
         }
 
@@ -2721,8 +2930,16 @@ public class Helpers {
         return null; // not reached
     }
 
+    @SafeVarargs
     public static <T> T[] arrayOf(T... values) {
         return values;
+    }
+
+    public static String[] arrayOf(String first, String... values) {
+        String[] newValues = new String[values.length + 1];
+        newValues[0] = first;
+        System.arraycopy(values, 0, newValues, 1, values.length);
+        return newValues;
     }
 
     public static IRubyObject[] arrayOf(IRubyObject first, IRubyObject... values) {
