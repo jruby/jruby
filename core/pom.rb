@@ -313,7 +313,7 @@ project 'JRuby Base' do
       jdk('21')
       # opt-in: one CI job sets this, so the other jobs neither run the check nor resolve the
       # error-prone processor tree from Maven Central
-      property(name: 'env.JRUBY_ERROR_PRONE')
+      property(name: 'env.ERROR_PRONE')
     end
 
     plugin :compiler do

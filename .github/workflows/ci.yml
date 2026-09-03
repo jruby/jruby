@@ -45,7 +45,7 @@ jobs:
     name: error-prone (Java 21)
 
     env:
-      JRUBY_ERROR_PRONE: true
+      ERROR_PRONE: true
 
     steps:
       - name: checkout
