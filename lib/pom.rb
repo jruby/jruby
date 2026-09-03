@@ -74,7 +74,7 @@ default_gems = [
   ['rake-ant', '1.0.6'],
   ['rdoc', '6.14.0'],
   ['reline', '0.6.0'],
-  ['resolv', '0.6.3'],
+  ['resolv', '0.7.2'],
   ['ruby2_keywords', '0.0.5'],
   ['securerandom', '0.4.1'],
   ['shellwords', '0.2.2'],
