@@ -23,6 +23,7 @@ public class ScopedParserState {
     private boolean[] namedCaptures;
     private Map<RubySymbol, Integer> definedVariables;
     private Set<RubySymbol> usedVariables;
+    private boolean enclosingWarnOnUnusedVariables;
 
     // block scope constructor
     public ScopedParserState(ScopedParserState enclosingScope) {
@@ -51,6 +52,14 @@ public class ScopedParserState {
 
     public long getCommandArgumentStack() {
         return commandArgumentStack;
+    }
+
+    public void setEnclosingWarnOnUnusedVariables(boolean enclosingWarnOnUnusedVariables) {
+        this.enclosingWarnOnUnusedVariables = enclosingWarnOnUnusedVariables;
+    }
+
+    public boolean getEnclosingWarnOnUnusedVariables() {
+        return enclosingWarnOnUnusedVariables;
     }
 
     public ScopedParserState getEnclosingScope() {
