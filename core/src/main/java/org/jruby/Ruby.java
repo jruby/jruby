@@ -3377,6 +3377,9 @@ public final class Ruby implements Constantizable {
             context.pushScope(new ManyVarsDynamicScope(topStaticScope, null));
         }
 
+        // MRI: rb_ec_teardown. Run out this thread's scheduler before any at-exit handler
+        context.getFiberCurrentThread().setFiberScheduler(context, context.nil);
+
         // Run all exit functions from user hooks like at_exit
         while (!exitBlocks.isEmpty()) {
             ExitFunction fun = exitBlocks.remove(0);

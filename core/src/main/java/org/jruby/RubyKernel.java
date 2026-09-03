@@ -855,15 +855,23 @@ public class RubyKernel {
         return RubyIO.select(context, recv, args);
     }
 
+    // MRI: rb_f_sleep
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject sleep(ThreadContext context, IRubyObject recv) {
+        IRubyObject scheduler = FiberScheduler.current(context);
+        if (scheduler != null) return schedulerSleep(context, scheduler);
+
         // Zero sleeps forever
         return sleepCommon(context, 0);
     }
 
+    // MRI: rb_f_sleep
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject sleep(ThreadContext context, IRubyObject recv, IRubyObject timeout) {
-        if (timeout.isNil()) return sleep(context, recv);
+        IRubyObject scheduler = FiberScheduler.current(context);
+        if (scheduler != null) return schedulerSleep(context, scheduler, timeout);
+
+        if (timeout.isNil()) return sleepCommon(context, 0);
 
         long nanoseconds = (long) (RubyTime.convertTimeInterval(context, timeout) * 1_000_000_000);
 
@@ -871,6 +879,22 @@ public class RubyKernel {
         if (nanoseconds == 0) return RubyFixnum.zero(context.runtime);
 
         return sleepCommon(context, nanoseconds);
+    }
+
+    private static RubyFixnum schedulerSleep(ThreadContext context, IRubyObject scheduler) {
+        final long startTime = System.nanoTime();
+
+        FiberScheduler.kernelSleep(context, scheduler, IRubyObject.NULL_ARRAY);
+
+        return sleptSeconds(context, startTime);
+    }
+
+    private static RubyFixnum schedulerSleep(ThreadContext context, IRubyObject scheduler, IRubyObject timeout) {
+        final long startTime = System.nanoTime();
+
+        FiberScheduler.kernelSleep(context, scheduler, timeout);
+
+        return sleptSeconds(context, startTime);
     }
 
     private static RubyFixnum sleepCommon(ThreadContext context, long nanoseconds) {
@@ -896,6 +920,10 @@ public class RubyKernel {
             if (interrupted) Thread.currentThread().interrupt();
         }
 
+        return sleptSeconds(context, startTime);
+    }
+
+    private static RubyFixnum sleptSeconds(ThreadContext context, long startTime) {
         return asFixnum(context, Math.round((System.nanoTime() - startTime) / 1_000_000_000.0));
     }
 
