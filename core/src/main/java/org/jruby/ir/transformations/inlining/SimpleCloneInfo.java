@@ -11,14 +11,21 @@ import org.jruby.ir.operands.Variable;
 public class SimpleCloneInfo extends CloneInfo {
     private final boolean isEnsureBlock;
     private final boolean refinementsClone;
+    private final boolean refinementsCloneRoot;
     private boolean cloneIPC;
 
-    public SimpleCloneInfo(IRScope scope, boolean isEnsureBlock, boolean cloneIPC, boolean refinementsClone) {
+    public SimpleCloneInfo(IRScope scope, boolean isEnsureBlock, boolean cloneIPC, boolean refinementsClone,
+                           boolean refinementsCloneRoot) {
         super(scope);
 
         this.isEnsureBlock = isEnsureBlock;
         this.cloneIPC = cloneIPC;
         this.refinementsClone = refinementsClone;
+        this.refinementsCloneRoot = refinementsCloneRoot;
+    }
+
+    public SimpleCloneInfo(IRScope scope, boolean isEnsureBlock, boolean cloneIPC, boolean refinementsClone) {
+        this(scope, isEnsureBlock, cloneIPC, refinementsClone, false);
     }
 
     public SimpleCloneInfo(IRScope scope, boolean isEnsureBlock, boolean cloneIPC) {
@@ -36,6 +43,11 @@ public class SimpleCloneInfo extends CloneInfo {
     @Override
     public boolean isRefinementsClone() {
         return this.refinementsClone;
+    }
+
+    @Override
+    public boolean isRefinementsCloneRoot() {
+        return this.refinementsCloneRoot;
     }
 
     public boolean shouldCloneIPC() {
