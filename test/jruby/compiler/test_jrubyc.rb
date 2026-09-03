@@ -26,6 +26,9 @@ class TestJRubyc < Test::Unit::TestCase
     $stdout.reopen(@old_stdout) if @old_stdout
     $stderr.reopen(@old_stderr) if @old_stderr
 
+    @tempfile_stdout.close rescue nil
+    @tempfile_stderr.close rescue nil
+
     $compile_test = nil; $encoding = nil
   end
 
