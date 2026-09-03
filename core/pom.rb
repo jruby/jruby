@@ -311,7 +311,9 @@ project 'JRuby Base' do
   profile 'error-prone' do
     activation do
       jdk('21')
-      property(name: 'env.CI') # for keeping fast development cycle, by default only run on CI
+      # opt-in: one CI job sets this, so the other jobs neither run the check nor resolve the
+      # error-prone processor tree from Maven Central
+      property(name: 'env.ERROR_PRONE')
     end
 
     plugin :compiler do
