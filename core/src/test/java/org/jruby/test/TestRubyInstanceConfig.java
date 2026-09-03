@@ -148,19 +148,19 @@ public class TestRubyInstanceConfig extends Base {
 
     public void testBytecodeVersion() throws Exception {
         assertEquals("it uses Opcodes.V21 for '21'", Opcodes.V21, RubyInstanceConfig.calculateBytecodeVersion("21"));
-        assertEquals("it uses Opcodes.V23 for '23'", Opcodes.V23, RubyInstanceConfig.calculateBytecodeVersion("23"));
+        assertEquals("it uses Opcodes.V25 for '27'", Opcodes.V27, RubyInstanceConfig.calculateBytecodeVersion("27"));
 
         PrintStream err = System.err;
         String specVersion = System.getProperty("java.specification.version");
 
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); PrintStream ps = new PrintStream(baos)) {
-            System.setProperty( "java.specification.version", "22");
+            System.setProperty("java.specification.version", "22");
             assertEquals("it falls back on java.specification.version for unsupported versions", Opcodes.V22, RubyInstanceConfig.calculateBytecodeVersion("999"));
             assertEquals("it falls back on java.specification.version for unsupported versions", Opcodes.V22, RubyInstanceConfig.calculateBytecodeVersion("1.7"));
             assertEquals("it falls back on java.specification.version for unsupported versions", Opcodes.V22, RubyInstanceConfig.calculateBytecodeVersion("gobbledygook"));
 
             System.setErr(ps);
-            System.setProperty( "java.specification.version", "gobbledygook");
+            System.setProperty("java.specification.version", "gobbledygook");
             assertEquals("it falls back on 21 when given version and system version are both unsupported", Opcodes.V21, RubyInstanceConfig.calculateBytecodeVersion("jabberwocky"));
             assertEquals("it outputs a warning when given version and system version are both unsupported", "unsupported Java version jabberwocky and default version gobbledygook, using 21", new String(baos.toByteArray()).replaceAll("[\\n\\r]", ""));
         } finally {
