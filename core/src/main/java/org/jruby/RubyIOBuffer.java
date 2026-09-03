@@ -1814,7 +1814,9 @@ public class RubyIOBuffer extends RubyObject {
         if (_length.isNil()) return read(context, io);
 
         IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
-        RubyInteger lengthInteger = toInteger(context, _length);
+        int length = toInteger(context, _length).asInt(context);
+        if (length == 0) length = size;
+        RubyInteger lengthInteger = asFixnum(context, length);
 
         if (!scheduler.isNil()) {
             IRubyObject result = FiberScheduler.ioRead(context, scheduler, io, this, lengthInteger, RubyFixnum.zero(context.runtime));
@@ -1822,7 +1824,7 @@ public class RubyIOBuffer extends RubyObject {
             if (result != null) return result;
         }
 
-        return read(context, io, lengthInteger.asInt(context), 0);
+        return read(context, io, length, 0);
     }
 
     @JRubyMethod(name = "read")
@@ -1831,17 +1833,15 @@ public class RubyIOBuffer extends RubyObject {
         RubyInteger offset = toInteger(context, _offset);
 
         int length;
-        RubyInteger lengthInteger;
         if (_length.isNil()) {
             length = size - offset.asInt(context);
-            lengthInteger = null;
         } else {
-            lengthInteger = toInteger(context, _length);
-            length = lengthInteger.asInt(context);
+            length = toInteger(context, _length).asInt(context);
+            if (length == 0) length = size - offset.asInt(context);
         }
+        RubyInteger lengthInteger = asFixnum(context, length);
 
         if (!scheduler.isNil()) {
-            if (lengthInteger == null) lengthInteger = asFixnum(context, length);
             IRubyObject result = FiberScheduler.ioRead(context, scheduler, io, this, lengthInteger, offset);
 
             if (result != UNDEF) {
@@ -2050,28 +2050,32 @@ public class RubyIOBuffer extends RubyObject {
     @JRubyMethod(name = "write")
     public IRubyObject write(ThreadContext context, IRubyObject io, IRubyObject length) {
         IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
-        RubyInteger lengthInteger = toInteger(context, length);
+        int len = toInteger(context, length).asInt(context);
+        if (len == 0) len = size;
+        RubyInteger lengthInteger = asFixnum(context, len);
 
         if (!scheduler.isNil()) {
             IRubyObject result = FiberScheduler.ioWrite(context, scheduler, io, this, lengthInteger, RubyFixnum.zero(context.runtime));
             if (result != null) return result;
         }
 
-        return write(context, io, lengthInteger.asInt(context), 0);
+        return write(context, io, len, 0);
     }
 
     @JRubyMethod(name = "write")
     public IRubyObject write(ThreadContext context, IRubyObject io, IRubyObject length, IRubyObject offset) {
         IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
-        RubyInteger lengthInteger = toInteger(context, length);
         RubyInteger offsetInteger = toInteger(context, offset);
+        int len = toInteger(context, length).asInt(context);
+        if (len == 0) len = size - offsetInteger.asInt(context);
+        RubyInteger lengthInteger = asFixnum(context, len);
 
         if (!scheduler.isNil()) {
             IRubyObject result = FiberScheduler.ioWrite(context, scheduler, io, this, lengthInteger, offsetInteger);
             if (result != null) return result;
         }
 
-        return write(context, io, lengthInteger.asInt(context), offsetInteger.asInt(context));
+        return write(context, io, len, offsetInteger.asInt(context));
     }
 
     public IRubyObject write(ThreadContext context, IRubyObject io, int length, int offset) {

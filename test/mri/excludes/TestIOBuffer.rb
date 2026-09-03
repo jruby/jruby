@@ -9,7 +9,6 @@ exclude :test_file_mapped_negative_offset, "open files can't be memory-mapped du
 exclude :test_file_mapped_size_too_large, "open files can't be memory-mapped due to jnr-enxio (https://github.com/jruby/jruby/issues/8714)"
 exclude :test_file_mapped_zero_size, "open files can't be memory-mapped due to jnr-enxio (https://github.com/jruby/jruby/issues/8714)"
 exclude :test_private, "open files can't be memory-mapped due to jnr-enxio (https://github.com/jruby/jruby/issues/8714)"
-exclude :test_read_with_length_and_offset, "read of zero is supposed to read as much as it can"
 exclude :test_resize_zero_external, "missing AccessError"
 exclude :test_set_string_null_destination, "needs investigation"
 exclude :test_string_mapped_buffer_locked, "missing RuntimeError"
