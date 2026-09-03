@@ -26,6 +26,7 @@
 
 package org.jruby.ir.interpreter;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
@@ -33,12 +34,9 @@ import java.util.List;
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.CallBase;
-import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.instructions.Instr;
-import org.jruby.parser.StaticScope;
-import org.jruby.runtime.DynamicScope;
+import org.jruby.ir.instructions.JavaCtorSuperInstr;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 public class ExitableInterpreterContext extends InterpreterContext {
 
@@ -46,7 +44,6 @@ public class ExitableInterpreterContext extends InterpreterContext {
 
     private final static ExitableInterpreterEngine EXITABLE_INTERPRETER = new ExitableInterpreterEngine();
 	
-    private final CallBase superCall;
     private final int exitIPC;
 
     public ExitableInterpreterContext(InterpreterContext originalIC, CallBase superCall, int exitIPC) {
@@ -54,9 +51,8 @@ public class ExitableInterpreterContext extends InterpreterContext {
     }
 
     private ExitableInterpreterContext(IRScope scope, List<Instr> instructions, int temporaryVariableCount, EnumSet<IRFlags> flags, CallBase superCall, int exitIPC) {
-        super(scope, instructions, temporaryVariableCount, flags);
+        super(scope, splitInstructions(scope, instructions, superCall, exitIPC), temporaryVariableCount, flags);
 
-        this.superCall = superCall;
         this.exitIPC = exitIPC;
     }
 
@@ -73,14 +69,12 @@ public class ExitableInterpreterContext extends InterpreterContext {
     	return EXITABLE_INTERPRETER;
     }
 
-    /**
-     * @return the live ruby values for the operand to the original super call.
-      */
-    public IRubyObject[] getArgs(ThreadContext context, IRubyObject self, StaticScope currScope, DynamicScope currDynScope, Object[] temps) {
-    	IRubyObject[] args = superCall.prepareArguments(context, self, currScope, currDynScope, temps);
+    private static List<Instr> splitInstructions(IRScope scope, List<Instr> instructions, CallBase superCall, int exitIPC) {
+        if (instructions == null) return null;
 
-        IRRuntimeHelpers.setCallInfo(context, superCall.getFlags());
+        List<Instr> splitInstructions = new ArrayList<>(instructions);
+        splitInstructions.set(exitIPC, new JavaCtorSuperInstr(scope, superCall));
 
-        return args;
+        return splitInstructions;
     }
 }

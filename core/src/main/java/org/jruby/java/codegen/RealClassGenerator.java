@@ -68,7 +68,7 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.java.proxies.ConcreteJavaProxy;
 import org.jruby.java.proxies.ConcreteJavaProxy.SplitCtorData;
 import org.jruby.java.proxies.MapJavaProxy;
-import org.jruby.javasupport.Java.JCtorCache;
+import org.jruby.javasupport.ConstructorCache;
 import org.jruby.javasupport.JavaConstructor;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
@@ -872,36 +872,29 @@ public abstract class RealClassGenerator {
             IRubyObject[].class, Block.class, Ruby.class, RubyClass.class);
 
     /**
-     * Main switch constructor. Required for concrete reification
+     * Main switch constructor. Required for concrete reification.
+     *
+     * Generates roughly:
+     * <pre>{@code
+     *   protected MyClass(ConcreteJavaProxy cjp, boolean isSuperCall, IRubyObject[] args,
+     *                     Block block, Ruby runtime, RubyClass rubyClass) {
+     *       this.this$rubyObject = cjp;
+     *       SplitCtorData d = cjp.splitInitialized(
+     *               isSuperCall ? rubyClass : rubyClass, args, block, this$rubyCtorCache);
+     *       Object[] a = d.arguments;
+     *       switch (d.ctorIndex) {
+     *       case 0:  super((String) a[0], (Boolean) a[1]); break;
+     *       case 1:  super(((Number) a[0]).intValue(), (String) a[1]); break;
+     *       default: throw runtime.newNoMethodError("No available java superconstructors match that type signature",
+     *               "super.<init>", d.rbarguments);
+     *       }
+     *       cjp.setObject(this);
+     *       cjp.finishInitialize(d);
+     *   }
+     * }</pre>
      */
-    public static void makeConcreteConstructorSwitch(ClassWriter cw, PositionAware initPosition, int superpos,
+    public static void makeConcreteConstructorSwitch(ClassWriter cw, PositionAware initPosition,
             boolean hasParent, ConcreteJavaReifier cjr, JavaConstructor[] constructors) {
-        // TODO: add source position of super call?
-
-        /*
-         * This generates the code template in lines of //// show what code is being generated
-         * TODO: link and put on wiki?
-         * Generated method:
-   // $FF: synthetic method
-   protected MyClass(ConcreteJavaProxy var1, boolean var2, IRubyObject[] var3, Block var4, Ruby var5, RubyClass var6) {
-      this.this$rubyObject = var1;
-      SplitCtorData var10000 = var1.splitInitialized(var2 ? rubyClass : var6, var3, var4, this$rubyCtorCache);
-      Object[] var7 = var10000.arguments;
-      switch(var10000.ctorIndex) {
-      case 0:
-         super((String)var7[0], (Boolean)var7[1]);
-         break;
-      case 1:
-         super(((Number)var7[0]).intValue(), (String)var7[1]);
-         break;
-      default:
-         throw var5.newNoMethodError("No available java superconstructors match that type signature", "super.<init>", var10000.rbarguments);
-      }
-
-      var1.setObject(this);
-      var1.finishInitialize(var10000);
-   }
-         */
         // (rubyobject, isSuperCall, args, block, ruby, class)
         SkinnyMethodAdapter m = new SkinnyMethodAdapter(cw, ACC_PROTECTED | ACC_SYNTHETIC, "<init>", CONCRETE_CTOR_SIG,
                 null, null);
@@ -940,16 +933,14 @@ public abstract class RealClassGenerator {
         m.aload(rubyArrayIndex);
         m.aload(blockIndex); // load block from arg 3
         if (!hasParent) {
-            m.getstatic(cjr.javaPath, cjr.RUBY_CTOR_CACHE_FIELD, ci(JCtorCache.class));
+            m.getstatic(cjr.javaPath, cjr.RUBY_CTOR_CACHE_FIELD, ci(ConstructorCache.class));
         } else {
             m.aconst_null();
         }
         m.invokevirtual(cjr.rubyPath, "splitInitialized",
-                sig(SplitCtorData.class, RubyClass.class, IRubyObject[].class, Block.class, JCtorCache.class)); // pushes splitctordata
+                sig(SplitCtorData.class, RubyClass.class, IRubyObject[].class, Block.class, ConstructorCache.class)); // pushes splitctordata
 
         m.dup(); // splitctordata (results of splitInitialized)
-
-        m.line(superpos); // mark this line as the super call, so the stack trace is slightly accurate.
 
         // top of stack is now the arg list ruby array
 
