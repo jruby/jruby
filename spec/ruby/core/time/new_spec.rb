@@ -570,6 +570,24 @@ describe "Time.new with a timezone argument" do
       }.should raise_error(ArgumentError, /missing min part: 00 |can't parse:/)
     end
 
+    # These strings end exactly at the byte where the parser expects a ':', so
+    # the message has no offending byte to append. The other error cases here
+    # all carry a trailing zone, which left that boundary unexercised
+    # (jruby/jruby#9623 read past the end of the string there).
+    it "raises ArgumentError if the time string ends where a ':' is expected" do
+      -> {
+        Time.new("2020-12-25 00:56")
+      }.should raise_error(ArgumentError, /\Amissing sec part: 00:56\z|can't parse:/)
+
+      -> {
+        Time.new("2020-12-25T00:56")
+      }.should raise_error(ArgumentError, /\Amissing sec part: 00:56\z|can't parse:/)
+
+      -> {
+        Time.new("2020-12-25 00")
+      }.should raise_error(ArgumentError, /\Amissing min part: 00\z|can't parse:/)
+    end
+
     ruby_version_is "3.2.3" do
       it "raises ArgumentError if the time part is missing" do
         -> {
