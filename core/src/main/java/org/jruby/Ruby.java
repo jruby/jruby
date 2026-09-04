@@ -79,6 +79,7 @@ import org.jruby.util.StrptimeToken;
 import org.jruby.util.WeakIdentityHashMap;
 import org.jruby.util.collections.ConcurrentWeakHashMap;
 import org.jruby.util.collections.IntHashMap;
+import org.jruby.util.collections.WeakValuedMap;
 import org.jruby.util.io.EncodingUtils;
 import org.objectweb.asm.util.TraceClassVisitor;
 
@@ -176,6 +177,7 @@ import java.io.Writer;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.VarHandle;
 import java.lang.ref.WeakReference;
+import java.math.BigInteger;
 import java.net.BindException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
@@ -205,6 +207,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.ToIntFunction;
 import java.util.regex.Pattern;
 
@@ -4756,6 +4759,22 @@ public final class Ruby implements Constantizable {
         return runtimeCache;
     }
 
+    public IRubyObject cacheFixnum(Long value) {
+        return cacheImmutableLiteral(value, (v) -> newFixnum(v));
+    }
+
+    public IRubyObject cacheFloat(Double value) {
+        return cacheImmutableLiteral(value, (v) -> newFloat(v));
+    }
+
+    public IRubyObject cacheBignum(BigInteger value) {
+        return cacheImmutableLiteral(value, (v) -> RubyBignum.newBignum(this, v));
+    }
+
+    public <T> IRubyObject cacheImmutableLiteral(T key, Function<T, IRubyObject> constructor) {
+        return literalCache.computeIfAbsent(key, (k) -> constructor.apply((T) k));
+    }
+
     public List<StrptimeToken> getCachedStrptimePattern(String pattern) {
         List<StrptimeToken> tokens = strptimeFormatCache.get(pattern);
 
@@ -5523,6 +5542,9 @@ public final class Ruby implements Constantizable {
 
     // A global cache for Java-to-Ruby calls
     private final RuntimeCache runtimeCache;
+
+    // A global cache for literal values represented as objects
+    private final Map<Object, IRubyObject> literalCache = Collections.synchronizedMap(new WeakValuedMap<>());
 
     // Message for Errno exceptions that will not generate a backtrace
     public static final String ERRNO_BACKTRACE_MESSAGE = "errno backtraces disabled; run with -Xerrno.backtrace=true to enable";

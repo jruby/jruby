@@ -1,7 +1,5 @@
 package org.jruby.ir.targets.indy;
 
-import org.jruby.RubyEncoding;
-import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -20,14 +18,12 @@ import static org.jruby.util.CodegenUtils.sig;
 * Created by headius on 10/23/14.
 */
 public class SymbolObjectSite extends LazyObjectSite {
-    private final String value;
-    private final String encoding;
+    protected final Symbol symbol;
 
-    public SymbolObjectSite(MethodType type, String value, String encoding) {
+    public SymbolObjectSite(MethodType type, ByteList bytes) {
         super(type);
 
-        this.value = value;
-        this.encoding = encoding;
+        this.symbol = new Symbol(bytes);
     }
 
     public static final Handle BOOTSTRAP = new Handle(
@@ -38,11 +34,13 @@ public class SymbolObjectSite extends LazyObjectSite {
             false);
 
     public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, String value, String encoding) {
-        return new SymbolObjectSite(type, value, encoding).bootstrap(lookup);
+        return new SymbolObjectSite(type, StringBootstrap.bytelist(value, encoding)).bootstrap(lookup);
     }
 
     public IRubyObject construct(ThreadContext context) {
-        return asSymbol(context,
-                new ByteList(RubyEncoding.encodeISO(value), IRRuntimeHelpers.retrieveJCodingsEncoding(context, encoding), false));
+        return context.runtime.cacheImmutableLiteral(symbol,
+                (s) -> asSymbol(context, s.bytes));
     }
+
+    protected record Symbol(ByteList bytes) {}
 }
