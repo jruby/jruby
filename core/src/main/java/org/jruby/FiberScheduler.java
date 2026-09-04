@@ -218,7 +218,8 @@ public class FiberScheduler {
         return result(runtime.getCurrentContext(), result, error);
     }
 
+    // MRI: rb_fiber_scheduler_io_result
     public static IRubyObject result(ThreadContext context, int result, Errno error) {
-        return asFixnum(context, result == -1 ? error.value(): result);
+        return asFixnum(context, result < 0 ? -error.value() : result);
     }
 }
