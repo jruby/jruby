@@ -2057,7 +2057,6 @@ public class RubyClass extends RubyModule {
             }
         }
 
-        //TODO: only generate that are overrideable (javaproxyclass)
         protected void defineInstanceMethods(ThreadContext context, Set<String> instanceMethods) {
             Set<String> defined = new HashSet<>();
             for (Map.Entry<String,DynamicMethod> methodEntry : getMethods().entrySet()) { // TODO: explicitly included but not-yet defined methods?
@@ -2079,11 +2078,10 @@ public class RubyClass extends RubyModule {
 
                 Class<?>[] methodSignature = getMethodSignatures().get(callid); // ruby side, use callid
 
-                // for concrete extension, see if the method is one we are overriding,
-                // even if we didn't specify it manually
+                // For concrete extensions, implicit signatures come from overridden Java methods; explicit signatures
+                // are also generated so Ruby methods can expose new Java-visible entry points.
                 if (methodSignature == null) {
-                    // TODO: should inherited search for java mangledName?
-                    for (Class<?>[] sig : searchInheritedSignatures(id, arity)) { // id (vs callid) here as this is searching in java
+                    for (Class<?>[] sig : searchInheritedSignatures(JavaNameMangler.mangleMethodName(id), arity)) {
                         String signature = defineInstanceMethod(context, id, callid, arity, position, sig);
                         if (signature != null) instanceMethods.add(signature);
                     }

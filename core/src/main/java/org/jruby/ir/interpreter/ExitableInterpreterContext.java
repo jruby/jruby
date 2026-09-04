@@ -29,14 +29,29 @@ package org.jruby.ir.interpreter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JavaCtorSuperInstr;
+import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
+import org.jruby.ir.instructions.ReceiveRestArgInstr;
+import org.jruby.ir.instructions.ResultInstr;
+import org.jruby.ir.instructions.ReturnInstr;
+import org.jruby.ir.operands.ImmutableLiteral;
+import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.Splat;
+import org.jruby.ir.operands.Variable;
+import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
+
+import static org.jruby.runtime.ThreadContext.CALL_SPLATS;
 
 public class ExitableInterpreterContext extends InterpreterContext {
 
@@ -45,6 +60,12 @@ public class ExitableInterpreterContext extends InterpreterContext {
     private final static ExitableInterpreterEngine EXITABLE_INTERPRETER = new ExitableInterpreterEngine();
 	
     private final int exitIPC;
+    private final boolean exitsAtReturn;
+    private final boolean directSuperNoArgs;
+    private final boolean directSuperAllArgs;
+    private final int directSuperMinArgs;
+    private final int directSuperRequiredArgs;
+    private final Operand[] terminalLiteralSuperArgs;
 
     public ExitableInterpreterContext(InterpreterContext originalIC, CallBase superCall, int exitIPC) {
         this(originalIC.getScope(), Arrays.asList(originalIC.getInstructions()), originalIC.getTemporaryVariableCount(), originalIC.getFlags(), superCall, exitIPC);
@@ -54,6 +75,13 @@ public class ExitableInterpreterContext extends InterpreterContext {
         super(scope, splitInstructions(scope, instructions, superCall, exitIPC), temporaryVariableCount, flags);
 
         this.exitIPC = exitIPC;
+        this.exitsAtReturn = exitsAtReturn(instructions, superCall, exitIPC);
+        this.directSuperNoArgs = directSuperNoArgs(instructions, superCall, exitIPC) && getStaticScope().getSignature().isNoArguments();
+        this.directSuperAllArgs = (directSuperAllArgs(instructions, superCall, exitIPC) && isRestOnlySignature()) ||
+                directSuperAllZSuperArgs(instructions, superCall, exitIPC);
+        this.directSuperMinArgs = directSuperAllArgs ? getStaticScope().getSignature().required() : 0;
+        this.directSuperRequiredArgs = directSuperRequiredArgs(instructions, superCall, exitIPC);
+        this.terminalLiteralSuperArgs = terminalLiteralSuperArgs(instructions, superCall, exitIPC);
     }
 
     public ExitableInterpreterEngineState getEngineState() {
@@ -62,6 +90,58 @@ public class ExitableInterpreterContext extends InterpreterContext {
 
     public int getExitIPC() {
         return exitIPC;
+    }
+
+    public boolean exitsAtReturn() {
+        return exitsAtReturn;
+    }
+
+    public boolean canEscapeAtSuper() {
+        int[] rescuePCs = getRescueIPCs();
+
+        return exitsAtReturn && (rescuePCs == null || rescuePCs[exitIPC] == -1);
+    }
+
+    public boolean directSuperNoArgs() {
+        return directSuperNoArgs;
+    }
+
+    public boolean directSuperAllArgs() {
+        return directSuperAllArgs;
+    }
+
+    public int directSuperRequiredArgs() {
+        return directSuperRequiredArgs;
+    }
+
+    public boolean directSuperForwardable(int argsLength) {
+        return directSuperNoArgs && argsLength == 0 ||
+                directSuperRequiredArgs == argsLength ||
+                directSuperAllArgs && argsLength >= directSuperMinArgs;
+    }
+
+    public boolean isTerminalLiteralSuper() {
+        return terminalLiteralSuperArgs != null;
+    }
+
+    /**
+     * Returns true when erminal literal `super` fast path applies for the given argument count;
+     * only safe with zero incoming args: receives no positional args, any extra arg must fall back to
+     * split interpreter for CHECK_ARITY.
+     */
+    public boolean terminalLiteralSuperForwardable(int argsLength) {
+        return terminalLiteralSuperArgs != null && argsLength == 0;
+    }
+
+    public IRubyObject[] getTerminalLiteralSuperArgs(ThreadContext context) {
+        Operand[] operands = terminalLiteralSuperArgs;
+        IRubyObject[] args = new IRubyObject[operands.length];
+
+        for (int i = 0; i < operands.length; i++) {
+            args[i] = (IRubyObject) ((ImmutableLiteral<?>) operands[i]).cachedObject(context);
+        }
+
+        return args;
     }
     
     @Override
@@ -76,5 +156,195 @@ public class ExitableInterpreterContext extends InterpreterContext {
         splitInstructions.set(exitIPC, new JavaCtorSuperInstr(scope, superCall));
 
         return splitInstructions;
+    }
+
+    private static boolean exitsAtReturn(List<Instr> instructions, CallBase superCall, int exitIPC) {
+        if (instructions == null || exitIPC + 1 >= instructions.size()) return false;
+
+        Instr instr = instructions.get(exitIPC + 1);
+
+        return instr instanceof ReturnInstr && ((ReturnInstr) instr).getReturnValue().equals(superCall.getResult());
+    }
+
+    private static boolean directSuperNoArgs(List<Instr> instructions, CallBase superCall, int exitIPC) {
+        if (instructions == null || !exitsAtReturn(instructions, superCall, exitIPC) || superCall.getArgsCount() != 0) return false;
+
+        for (int i = 0; i < exitIPC; i++) {
+            Operation operation = instructions.get(i).getOperation();
+
+            switch (operation) {
+                case CHECK_ARITY:
+                case COPY:
+                case LINE_NUM:
+                case LOAD_IMPLICIT_CLOSURE:
+                case LOAD_FRAME_CLOSURE:
+                case RECV_KW:
+                case RECV_SELF:
+                    break;
+                default:
+                    return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static boolean directSuperAllArgs(List<Instr> instructions, CallBase superCall, int exitIPC) {
+        if (instructions == null || !exitsAtReturn(instructions, superCall, exitIPC) ||
+                superCall.getArgsCount() != 1 || superCall.getFlags() != CALL_SPLATS) return false;
+
+        for (int i = 0; i < exitIPC; i++) {
+            Operation operation = instructions.get(i).getOperation();
+
+            switch (operation) {
+                case BUILD_SPLAT:
+                case CHECK_ARITY:
+                case COPY:
+                case LINE_NUM:
+                case LOAD_IMPLICIT_CLOSURE:
+                case LOAD_FRAME_CLOSURE:
+                case RECV_KW:
+                case RECV_REST_ARG:
+                case RECV_SELF:
+                    break;
+                default:
+                    return false;
+            }
+        }
+
+        return true;
+    }
+
+    private boolean directSuperAllZSuperArgs(List<Instr> instructions, CallBase superCall, int exitIPC) {
+        if (instructions == null || !exitsAtReturn(instructions, superCall, exitIPC) || superCall.getFlags() != 0) return false;
+
+        var signature = getStaticScope().getSignature();
+        int required = signature.required();
+        if (superCall.getArgsCount() != required + 1 || signature.opt() != 0 || !signature.hasRest() ||
+                signature.post() != 0 || signature.hasKwargs()) return false;
+
+        Map<Variable, Integer> receivedArgs = new HashMap<>();
+        Variable restArg = null;
+
+        for (int i = 0; i < exitIPC; i++) {
+            Instr instr = instructions.get(i);
+            Operation operation = instr.getOperation();
+
+            if (instr instanceof ResultInstr resultInstr) {
+                Variable result = resultInstr.getResult();
+                if (receivedArgs.containsKey(result) || result.equals(restArg)) return false;
+            }
+
+            switch (operation) {
+                case CHECK_ARITY:
+                case COPY:
+                case LINE_NUM:
+                case LOAD_IMPLICIT_CLOSURE:
+                case LOAD_FRAME_CLOSURE:
+                case RECV_KW:
+                case RECV_SELF:
+                    break;
+                case RECV_PRE_REQD_ARG:
+                    ReceivePreReqdArgInstr receive = (ReceivePreReqdArgInstr) instr;
+                    receivedArgs.put(receive.getResult(), receive.getArgIndex());
+                    break;
+                case RECV_REST_ARG:
+                    ReceiveRestArgInstr rest = (ReceiveRestArgInstr) instr;
+                    if (rest.getArgIndex() != required || rest.required != required) return false;
+                    restArg = rest.getResult();
+                    break;
+                default:
+                    return false;
+            }
+        }
+
+        Operand[] superArgs = superCall.getCallArgs();
+        for (int i = 0; i < required; i++) {
+            if (!(superArgs[i] instanceof Variable variable) || receivedArgs.get(variable) == null || receivedArgs.get(variable) != i) {
+                return false;
+            }
+        }
+
+        return superArgs[required] instanceof Splat splat && splat.getArray().equals(restArg);
+    }
+
+    private static Operand[] terminalLiteralSuperArgs(List<Instr> instructions, CallBase superCall, int exitIPC) {
+        if (instructions == null || !exitsAtReturn(instructions, superCall, exitIPC) || superCall.getFlags() != 0 ||
+                superCall.getClosureArg() instanceof WrappedIRClosure) return null;
+
+        for (int i = 0; i < exitIPC; i++) {
+            Operation operation = instructions.get(i).getOperation();
+
+            switch (operation) {
+                case CHECK_ARITY:
+                case COPY:
+                case LINE_NUM:
+                case LOAD_IMPLICIT_CLOSURE:
+                case LOAD_FRAME_CLOSURE:
+                case RECV_KW:
+                case RECV_SELF:
+                    break;
+                default:
+                    return null;
+            }
+        }
+
+        Operand[] args = superCall.getCallArgs();
+        for (Operand arg : args) {
+            if (!(arg instanceof ImmutableLiteral<?>)) return null;
+        }
+
+        return args;
+    }
+
+    private int directSuperRequiredArgs(List<Instr> instructions, CallBase superCall, int exitIPC) {
+        if (instructions == null || !exitsAtReturn(instructions, superCall, exitIPC) || superCall.getFlags() != 0) return -1;
+
+        var signature = getStaticScope().getSignature();
+        int required = signature.required();
+        if (required == 0 || superCall.getArgsCount() != required || signature.opt() != 0 || signature.hasRest() ||
+                signature.post() != 0 || signature.hasKwargs()) return -1;
+
+        Map<Variable, Integer> receivedArgs = new HashMap<>();
+
+        for (int i = 0; i < exitIPC; i++) {
+            Instr instr = instructions.get(i);
+            Operation operation = instr.getOperation();
+
+            if (instr instanceof ResultInstr resultInstr && receivedArgs.containsKey(resultInstr.getResult())) return -1;
+
+            switch (operation) {
+                case CHECK_ARITY:
+                case COPY:
+                case LINE_NUM:
+                case LOAD_IMPLICIT_CLOSURE:
+                case LOAD_FRAME_CLOSURE:
+                case RECV_KW:
+                case RECV_SELF:
+                    break;
+                case RECV_PRE_REQD_ARG:
+                    ReceivePreReqdArgInstr receive = (ReceivePreReqdArgInstr) instr;
+                    receivedArgs.put(receive.getResult(), receive.getArgIndex());
+                    break;
+                default:
+                    return -1;
+            }
+        }
+
+        Operand[] superArgs = superCall.getCallArgs();
+        for (int i = 0; i < required; i++) {
+            if (!(superArgs[i] instanceof Variable variable) || receivedArgs.get(variable) == null || receivedArgs.get(variable) != i) {
+                return -1;
+            }
+        }
+
+        return required;
+    }
+
+    private boolean isRestOnlySignature() {
+        var signature = getStaticScope().getSignature();
+
+        return signature.pre() == 0 && signature.opt() == 0 && signature.post() == 0 &&
+                signature.hasRest() && !signature.hasKwargs();
     }
 }

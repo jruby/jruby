@@ -30,14 +30,19 @@ import org.jruby.internal.runtime.methods.ExitableReturn;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class SplitSuperState<T extends InternalSplitState> {
-    public final IRubyObject[] callArgs;
-    public final Block callBlockArgs;
-    public final T state;
+public final class SplitSuperCall extends RuntimeException {
+    private final ExitableReturn result;
 
-    public SplitSuperState(ExitableReturn result, T state) {
-        callArgs = result.getArguments();
-        callBlockArgs = result.getBlock();
-        this.state = state;
+    public SplitSuperCall(IRubyObject[] args, Block block) {
+        this.result = new ExitableReturn(args, block);
+    }
+
+    public ExitableReturn getResult() {
+        return result;
+    }
+
+    @Override
+    public Throwable fillInStackTrace() {
+        return this;
     }
 }
