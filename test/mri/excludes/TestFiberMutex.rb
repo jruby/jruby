@@ -1,5 +1,4 @@
 exclude :test_condition_variable, "hangs on macos m1"
-exclude :test_mutex_deadlock, "subprocess times out probably not raising deadlock error"
 exclude :test_mutex_fiber_raise, "hangs on macos m1"
 exclude :test_mutex_interleaved_locking, "Thread::Mutex#lock does not defer to Fiber::Scheduler, so a fiber sleeping under the lock blocks its siblings"
 exclude :test_queue, "Thread::Queue#pop does not defer to Fiber::Scheduler, so it blocks the thread that has to run the scheduler"
