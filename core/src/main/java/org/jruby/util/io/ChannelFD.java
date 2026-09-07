@@ -136,12 +136,7 @@ public class ChannelFD implements Closeable {
                 throw new ClosedChannelException();
             }
 
-            // if channel is already closed, we're no longer valid
-            if (!ch.isOpen()) {
-                throw new ClosedChannelException();
-            }
-
-            // otherwise decrement and possibly close as normal
+            // decrement and possibly close as normal
             int count = refs.decrementAndGet();
 
             if (count <= 0) {
