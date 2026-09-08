@@ -1514,7 +1514,7 @@ public class OpenFile implements Finalizable {
         if (fptr.fiberScheduler) {
             IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
             if (!scheduler.isNil()) {
-                IRubyObject result = FiberScheduler.ioReadMemory(context, scheduler, fptr.io, buffer, buf, count);
+                IRubyObject result = FiberScheduler.ioReadMemory(context, scheduler, fptr.io, buffer, count, 0);
 
                 if (result != null) {
                     return FiberScheduler.resultApply(context, result);
@@ -2522,7 +2522,7 @@ public class OpenFile implements Finalizable {
         if (fptr.fiberScheduler) {
             IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
             if (!scheduler.isNil()) {
-                IRubyObject result = FiberScheduler.ioWriteMemory(context, scheduler, fptr.io, bufBytes, buf, count);
+                IRubyObject result = FiberScheduler.ioWriteMemory(context, scheduler, fptr.io, bufBytes, count, 0);
 
                 if (result != null) {
                     return FiberScheduler.resultApply(context, result);
