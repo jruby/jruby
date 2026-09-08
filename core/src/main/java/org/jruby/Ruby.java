@@ -634,11 +634,19 @@ public final class Ruby implements Constantizable {
             else {
                 jrubyClassLoader = new SelfFirstJRubyClassLoader(config.getLoader());
             }
+            addReadsUnnamed(jrubyClassLoader);
+            addReadsUnnamed(config.getLoader());
         }
         else {
             jrubyClassLoader = null; // a NullClassLoader object would be better ...
         }
         return jrubyClassLoader;
+    }
+
+    // An automatic module's read edge to unnamed modules comes from Module.defineModules, which
+    // a CDS/AOT archived boot layer skips, so ask for it rather than assume it (jruby/jruby#9319).
+    private static void addReadsUnnamed(ClassLoader loader) {
+        if (loader != null && JRUBY_MODULE.isNamed()) JRUBY_MODULE.addReads(loader.getUnnamedModule());
     }
 
     private void initDefaultEncodings(ThreadContext context) {
