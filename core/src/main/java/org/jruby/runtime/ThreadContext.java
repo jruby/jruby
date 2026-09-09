@@ -148,7 +148,7 @@ public final class ThreadContext {
     private RubyThread thread;
     private static final WeakReference<ThreadFiber> NULL_FIBER_REF = new WeakReference<ThreadFiber>(null);
     private WeakReference<ThreadFiber> fiber = NULL_FIBER_REF;
-    private ThreadFiber rootFiber; // hard anchor for root threads' fibers
+    private volatile ThreadFiber rootFiber; // hard anchor for root threads' fibers, read from fiber threads
     // Cache format string because it is expensive to create on demand
     private RubyDateFormatter dateFormatter;
 
@@ -397,6 +397,10 @@ public final class ThreadContext {
      */
     public void useRecursionGuardsFrom(ThreadContext context) {
         this.symToGuards = context.symToGuards;
+    }
+
+    public ThreadFiber getRootFiber() {
+        return rootFiber;
     }
 
     public void setRootFiber(ThreadFiber rootFiber) {
