@@ -397,6 +397,10 @@ public final class ThreadContext {
         this.symToGuards = context.symToGuards;
     }
 
+    public ThreadFiber getRootFiber() {
+        return rootFiber;
+    }
+
     public void setRootFiber(ThreadFiber rootFiber) {
         this.rootFiber = rootFiber;
     }

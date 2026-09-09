@@ -504,6 +504,25 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         return true;
     }
     
+    // MRI: return_fiber. A fiber entered via Fiber#transfer terminates without a resumer, so there is
+    // nobody in prev to hand control back to; fall back to the thread's root fiber. Returns null if the
+    // parent thread is already gone and there is nobody left to notify.
+    private static ThreadFiber returnFiber(FiberData data) {
+        ThreadFiber prev = data.prev;
+        if (prev != null) return prev;
+
+        ThreadContext parentContext = data.parent.getContext();
+        if (parentContext == null) return null;
+
+        return parentContext.getRootFiber();
+    }
+
+    // Hand a result back to the fiber that should regain control, if it is still around.
+    private static void pushToReturnFiber(ThreadContext context, FiberData data, FiberRequest request) {
+        ThreadFiber returnFiber = returnFiber(data);
+        if (returnFiber != null) returnFiber.data.queue.push(context, request);
+    }
+
     static RubyThread createThread(ThreadContext context, final FiberData data, final FiberQueue queue, final Block block) {
         final AtomicReference<RubyThread> fiberThread = new AtomicReference();
 
@@ -547,7 +566,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                             ThreadFiber tf = data.fiber.get();
                             if (tf != null) tf.thread = null;
 
-                            data.prev.data.queue.push(ctxt, result);
+                            pushToReturnFiber(ctxt, data, result);
                         } finally {
                             // Ensure we do everything for shutdown now
                             data.queue.shutdown();
