@@ -4095,7 +4095,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
             if (!scheduler.isNil()) {
                 IRubyObject result = FiberScheduler.ioSelectv(context, scheduler, argv);
-                if (result != UNDEF) return result;
+                if (result != null) return result;
             }
         }
 
@@ -4138,7 +4138,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         long tv = prepareTimeout(context, argv);
         if (fptr.readPending() != 0) return context.tru;
 
-        return doWait(context, fptr, tv, SelectionKey.OP_READ | SelectionKey.OP_ACCEPT);
+        return doWait(context, fptr, tv, SelectionKey.OP_READ | SelectionKey.OP_ACCEPT, waitTimeout(context, argv));
     }
 
     /**
@@ -4152,7 +4152,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         long tv = prepareTimeout(context, argv);
 
-        return doWait(context, fptr, tv, SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE);
+        return doWait(context, fptr, tv, SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE, waitTimeout(context, argv));
     }
 
     @JRubyMethod(optional = 2)
@@ -4202,14 +4202,55 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         long tv = prepareTimeout(context, argv);
 
-        return doWait(context, fptr, tv, ops);
+        return doWait(context, fptr, tv, ops, waitTimeout(context, argv));
     }
 
-    private IRubyObject doWait(ThreadContext context, OpenFile fptr, long tv, int ops) {
+    private IRubyObject doWait(ThreadContext context, OpenFile fptr, long tv, int ops, IRubyObject timeout) {
+        IRubyObject scheduled = schedulerWait(context, this, ops, timeout);
+        if (scheduled != null) return scheduled;
+
         boolean ready = fptr.ready(context.runtime, context.getThread(), ops, tv);
         fptr.checkClosed();
         if (ready) return this;
         return context.nil;
+    }
+
+    /**
+     * MRI: rb_io_wait, followed by the mask handling in io_wait_event.
+     *
+     * Returns null when there is no fiber scheduler to defer to, so that callers fall through to
+     * the blocking select path. Otherwise returns the IO when the scheduler reported any of the
+     * requested events, and nil when it did not.
+     */
+    private static IRubyObject schedulerWait(ThreadContext context, RubyIO io, int ops, IRubyObject timeout) {
+        IRubyObject scheduler = FiberScheduler.current(context);
+        if (scheduler == null) return null;
+
+        int events = ioEvents(ops);
+        IRubyObject result = FiberScheduler.ioWait(context, scheduler, io, asFixnum(context, events), timeout);
+
+        if (!result.isTrue()) return context.nil;
+
+        return (toInt(context, result) & events) != 0 ? io : context.nil;
+    }
+
+    /**
+     * Translate the NIO selection ops used by the blocking wait path into the IO::READABLE and
+     * IO::WRITABLE mask that the fiber scheduler's io_wait hook expects.
+     */
+    private static int ioEvents(int ops) {
+        int events = 0;
+        if ((ops & (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) != 0) events |= IOEvent.IO_READABLE.value;
+        if ((ops & (SelectionKey.OP_WRITE | SelectionKey.OP_CONNECT)) != 0) events |= IOEvent.IO_WRITABLE.value;
+        return events;
+    }
+
+    /**
+     * The timeout argument as the scheduler wants it: seconds, or nil for no timeout. The blocking
+     * path uses prepareTimeout instead, which also validates it.
+     */
+    private static IRubyObject waitTimeout(ThreadContext context, IRubyObject[] argv) {
+        return argv.length > 0 ? argv[0] : context.nil;
     }
 
     private static long prepareTimeout(ThreadContext context, IRubyObject[] argv) {
