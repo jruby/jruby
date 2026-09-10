@@ -89,6 +89,14 @@ describe "Fiber#kill" do
     fiber.kill.should.equal?(fiber)
   end
 
+  it "returns false when the fiber was already killed" do
+    fiber = Fiber.new { Fiber.yield }
+    fiber.resume
+
+    fiber.kill.should.equal?(fiber)
+    fiber.kill.should == false
+  end
+
   it "does nothing when killing a fiber twice" do
     fiber = Fiber.new { Fiber.yield }
     fiber.resume
