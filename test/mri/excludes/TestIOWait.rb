@@ -1,4 +1,2 @@
-exclude :test_wait_eof, "JDK select appears to produce ready for read when pipe closes?!"
-exclude :test_wait_mask_readable, "unsupported new wait modes"
-exclude :test_wait_mask_writable, "unsupported new wait modes"
-exclude :test_wait_writable_EPIPE, "hangs, maybe due to write buffering?"
+exclude :test_wait_mask_readable, "test_io_wait_uncommon.rb shares the run and requires 'io/wait', whose jar redefines IO#wait with the pre-10.0 implementation"
+exclude :test_wait_mask_writable, "test_io_wait_uncommon.rb shares the run and requires 'io/wait', whose jar redefines IO#wait with the pre-10.0 implementation"
