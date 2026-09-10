@@ -38,7 +38,9 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
+import org.jruby.RubyString;
 import static org.jruby.api.Convert.asBoolean;
+import static org.jruby.util.Inspector.inspectPrefix;
 import static org.jruby.api.Convert.castAsHash;
 import static org.jruby.api.Create.newHash;
 import static org.jruby.api.Error.*;
@@ -104,6 +106,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
         inheritFiberStorage(context);
 
+        setSourceLocation(block);
         data = new FiberData(new FiberQueue(runtime), context.getFiberCurrentThread(), this, false);
 
         FiberData currentFiberData = context.getFiber().data;
@@ -141,6 +144,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
             }
         }
 
+        setSourceLocation(block);
         data = new FiberData(new FiberQueue(context.runtime), context.getFiberCurrentThread(), this, blocking);
 
         FiberData currentFiberData = context.getFiber().data;
@@ -453,6 +457,36 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
         if (currentFiberData.queue.isShutdown()) throw runtime.newFiberError("dead fiber yielded");
         return currentFiberData;
+    }
+
+    private void setSourceLocation(Block block) {
+        if (block.getBody().getFile() instanceof String file) {
+            this.file = file;
+            this.line = block.getBody().getLine() + 1;
+        }
+    }
+
+    // MRI: fiber_status_name
+    private String status(ThreadContext context) {
+        FiberData fiberData = this.data;
+
+        if (fiberData == null || !alive()) return "terminated";
+        if (context.getFiber() == this) return "resumed";
+        if (fiberData.resumingFiber != null) return "suspended by resuming";
+        if (!fiberData.started) return "created";
+
+        return "suspended";
+    }
+
+    @JRubyMethod(name = "to_s", alias = "inspect")
+    public IRubyObject to_s(ThreadContext context) {
+        RubyString string = inspectPrefix(context, type(), inspectHashCode());
+
+        if (file != null) string.catStringUnsafe(" " + file + ":" + line);
+
+        string.catStringUnsafe(" (" + status(context) + ")>");
+
+        return string;
     }
 
     @JRubyMethod(name = "alive?")
@@ -911,6 +945,8 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
     
     volatile FiberData data;
     volatile RubyThread thread;
+    String file;
+    int line;
     RubyHash storage;
     final boolean root;
 }
