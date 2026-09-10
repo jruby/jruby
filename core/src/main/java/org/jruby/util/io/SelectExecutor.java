@@ -187,8 +187,20 @@ public class SelectExecutor {
 
                     // ensure any pending connections get finished
                     if (writeKeyList != null && writeKeyList.get(i).isConnectable()) {
-                        if (fptr.fd().ch instanceof SocketChannel sock) {
-                            sock.finishConnect();
+                        ChannelFD channelFD = fptr.fd();
+                        if (channelFD.ch instanceof SocketChannel sock) {
+                            try {
+                                sock.finishConnect();
+                            } catch (IOException ioe) {
+                                // select(2) reports a non-blocking connect that failed as writable
+                                // and leaves the error for getsockopt(SO_ERROR) or the next
+                                // operation on the socket; it does not fail the select itself.
+                                // finishConnect() throws (and closes the channel) instead, so stash
+                                // the error and carry on. Socket.tcp's Happy Eyeballs v2 logic
+                                // depends on this to fall back to the other address family.
+                                // See jruby/jruby#8786.
+                                channelFD.connectError = ioe;
+                            }
                         }
                     }
 

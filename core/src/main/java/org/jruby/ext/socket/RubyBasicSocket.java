@@ -28,6 +28,7 @@
 
 package org.jruby.ext.socket;
 
+import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.IPProto;
 import jnr.constants.platform.ProtocolFamily;
@@ -58,6 +59,7 @@ import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -400,6 +402,23 @@ public class RubyBasicSocket extends RubyIO {
         return handleReturnBytes(context, bytes, str, "read_nonblock", exception);
     }
 
+    /**
+     * The errno of a non-blocking connect that failed on this socket, the way POSIX
+     * getsockopt(SOL_SOCKET, SO_ERROR) would report it, or zero if there is none.
+     *
+     * See jruby/jruby#8786.
+     */
+    private int connectErrno() {
+        OpenFile fptr = getOpenFile();
+        if (fptr == null) return 0;
+
+        ChannelFD fd = fptr.fd();
+        if (fd == null || fd.connectError == null) return 0;
+
+        Errno errno = Helpers.errnoFromException(fd.connectError);
+        return errno == null ? 0 : errno.intValue();
+    }
+
     @JRubyMethod
     public IRubyObject getsockopt(ThreadContext context, IRubyObject _level, IRubyObject _opt) {
         SocketLevel level = SocketUtils.levelFromArg(context, _level);
@@ -413,6 +432,13 @@ public class RubyBasicSocket extends RubyIO {
             case SOL_SOCKET:
                 if (opt == SocketOption.__UNKNOWN_CONSTANT__) {
                     throw context.runtime.newErrnoENOPROTOOPTError();
+                }
+
+                if (opt == SocketOption.SO_ERROR) {
+                    // Java exposes no equivalent socket option, so the only error we can
+                    // report is one left behind by a failed non-blocking connect.
+                    return new Option(context.runtime, ProtocolFamily.PF_INET, level, opt,
+                            Option.packInt(connectErrno()));
                 }
 
                 int value = SocketType.forChannel(channel).getSocketOption(channel, opt);
