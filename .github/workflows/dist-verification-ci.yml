@@ -39,7 +39,7 @@ jobs:
       - name: build release artifacts
         run: |
           ./mvnw -ntp clean package -Pall
-      - uses: cedx/SetupAnt@v6
+      - uses: cedx/SetupAnt@v7
       - name: install dependencies
         run: bin/jruby -S bundle install
       - name: cache release artifacts
@@ -96,7 +96,7 @@ jobs:
       - name: build release artifacts
         run: |
           ./mvnw -ntp clean package -Pall
-      - uses: cedx/SetupAnt@v6
+      - uses: cedx/SetupAnt@v7
       - name: install dependencies
         run: bin/jruby -S bundle install
       - name: build installer
