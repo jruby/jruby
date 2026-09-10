@@ -91,6 +91,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         ThreadFiber rootFiber = new ThreadFiber(runtime, runtime.getFiber(), true);
 
         rootFiber.data = new FiberData(new FiberQueue(runtime), currentThread, rootFiber, true);
+        rootFiber.data.started = true;
         rootFiber.thread = currentThread;
         context.setRootFiber(rootFiber);
     }
@@ -353,6 +354,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         Ruby runtime = context.runtime;
 
         if (!alive()) throw runtime.newFiberError("dead fiber called");
+        if (!data.started) throw runtime.newFiberError("cannot raise exception on unborn fiber");
 
         FiberData currentFiberData = context.getFiber().data;
 
@@ -538,6 +540,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
                     try {
                         FiberRequest init = data.queue.pop(ctxt);
+                        data.started = true;
 
                         // MRI: rb_fiber_start. A first run does not return through a switch
                         if (data.blocking) data.parent.incrementBlocking();
@@ -831,9 +834,13 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
             throw new FiberKill();
         }
 
+        // MRI: killing a dead fiber does nothing, and an unborn one has no thread of its own to check
+        if (!alive()) return this;
+        if (data.started && data.parent != context.getFiberCurrentThread()) fiberCalledAcrossThreads(context.runtime);
+
         data.queue.push(context, new FiberRequest(new FiberKill(), RequestType.RAISE));
 
-        return context.nil;
+        return this;
     }
 
     public static class FiberSchedulerSupport {
@@ -897,6 +904,8 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         volatile boolean transferredTo;
         // parked inside Fiber.yield. MRI: fiber->yielding
         volatile boolean yielding;
+        // our block has begun running. MRI: status != FIBER_CREATED
+        volatile boolean started;
         volatile boolean blocking;
     }
     
