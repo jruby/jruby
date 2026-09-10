@@ -136,10 +136,8 @@ public class ChannelFD implements Closeable {
                 throw new ClosedChannelException();
             }
 
-            // if channel is already closed, we're no longer valid ... unless it was closed
-            // out from under us by a failed non-blocking connect, which POSIX would have
-            // left open for the application to close (jruby/jruby#8786)
-            if (!ch.isOpen() && connectError == null) {
+            // if channel is already closed, we're no longer valid
+            if (!ch.isOpen()) {
                 throw new ClosedChannelException();
             }
 
@@ -209,16 +207,6 @@ public class ChannelFD implements Closeable {
     public FileChannel chFile;
     public SocketChannel chSock;
     public NativeSelectableChannel chNative;
-    /**
-     * The error from a non-blocking connect that failed, if any.
-     *
-     * POSIX leaves the error of a failed connect on the descriptor, for
-     * getsockopt(SOL_SOCKET, SO_ERROR) to report, and the descriptor stays valid until
-     * the application closes it. {@link SocketChannel#finishConnect()} instead throws
-     * and closes the channel, so we stash the error here and reproduce the POSIX
-     * behaviour for both getsockopt and close. See jruby/jruby#8786.
-     */
-    public volatile IOException connectError;
     public int realFileno;
     public int fakeFileno;
     private AtomicInteger refs;

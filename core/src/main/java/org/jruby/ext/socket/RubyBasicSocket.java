@@ -403,20 +403,50 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     /**
+     * Remember the error from a non-blocking connect on this socket that failed.
+     *
+     * POSIX leaves that error on the socket, for getsockopt(SOL_SOCKET, SO_ERROR) to
+     * report, and leaves the descriptor valid until the application closes it.
+     * {@link java.nio.channels.SocketChannel#finishConnect()} instead throws and closes
+     * the channel, so {@link org.jruby.util.io.SelectExecutor} hands us the error here
+     * and we reproduce the POSIX behaviour for both getsockopt and close.
+     *
+     * See jruby/jruby#8786.
+     */
+    public void setConnectError(IOException connectError) {
+        this.connectError = connectError;
+    }
+
+    /**
      * The errno of a non-blocking connect that failed on this socket, the way POSIX
      * getsockopt(SOL_SOCKET, SO_ERROR) would report it, or zero if there is none.
      *
      * See jruby/jruby#8786.
      */
     private int connectErrno() {
-        OpenFile fptr = getOpenFile();
-        if (fptr == null) return 0;
+        IOException connectError = this.connectError;
+        if (connectError == null) return 0;
 
-        ChannelFD fd = fptr.fd();
-        if (fd == null || fd.connectError == null) return 0;
-
-        Errno errno = Helpers.errnoFromException(fd.connectError);
+        Errno errno = Helpers.errnoFromException(connectError);
         return errno == null ? 0 : errno.intValue();
+    }
+
+    @Override
+    protected IRubyObject rbIoClose(ThreadContext context) {
+        if (connectError != null) {
+            OpenFile fptr = getOpenFile();
+
+            if (fptr != null && fptr.fd() != null && !fptr.fd().ch.isOpen()) {
+                // The connect failed and the JDK closed the channel with it, so the normal
+                // close path would report EBADF for a descriptor POSIX still considers
+                // open. Release it without raising, exactly as RubySocket.tryConnect does
+                // for a connect that failed synchronously. See jruby/jruby#8786.
+                fptr.cleanup(context.runtime, true);
+                return context.nil;
+            }
+        }
+
+        return super.rbIoClose(context);
     }
 
     @JRubyMethod
@@ -1052,6 +1082,10 @@ public class RubyBasicSocket extends RubyIO {
 
     // By default we always reverse lookup unless do_not_reverse_lookup set.
     private boolean doNotReverseLookup = false;
+
+    // The error from a non-blocking connect on this socket that failed, if any.
+    // See setConnectError and jruby/jruby#8786.
+    private volatile IOException connectError;
 
     protected static class ReceiveTuple {
         ReceiveTuple() {}
