@@ -299,8 +299,9 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         // Otherwise, we want to forward the exception to the target fiber
         // since it has the ball
         final ThreadFiber fiber = targetFiberData.fiber.get();
-        if ( fiber != null && fiber.alive() ) {
-            fiber.thread.raise(re.getException());
+        final RubyThread fiberThread = fiber == null ? null : fiber.thread;
+        if ( fiberThread != null && fiber.alive() ) {
+            fiberThread.raise(re.getException());
         } else {
             // target fiber has gone away, it's our ball now
             throw re;
@@ -410,7 +411,10 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
     // MRI: fiber_switch with yielding set, which lets Fiber#transfer reject us as a target
     private static IRubyObject exchangeWithPrevFiber(ThreadContext context, Ruby runtime, FiberRequest request) {
         FiberData currentFiberData = verifyCurrentFiber(context, runtime);
-        FiberData prevFiberData = currentFiberData.prev.data;
+
+        ThreadFiber prev = currentFiberData.prev;
+        FiberData prevFiberData = prev == null ? null : prev.data;
+        if (prevFiberData == null) throw runtime.newFiberError("attempt to yield on a not resumed fiber");
 
         FiberRequest result;
         currentFiberData.yielding = true;
@@ -451,9 +455,6 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         FiberData currentFiberData = context.getFiber().data;
 
         if (currentFiberData.parent == null) throw runtime.newFiberError("can't yield from root fiber");
-
-        if (currentFiberData.prev == null)
-            throw runtime.newFiberError("attempt to yield on a not resumed fiber");
 
         if (currentFiberData.queue.isShutdown()) throw runtime.newFiberError("dead fiber yielded");
         return currentFiberData;
@@ -506,7 +507,8 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
     
     final boolean alive() {
         RubyThread thread = this.thread;
-        if (thread == null || !thread.isAlive() || data.queue.isShutdown()) {
+        FiberData data = this.data;
+        if (thread == null || data == null || !thread.isAlive() || data.queue.isShutdown()) {
             return false;
         }
 
@@ -525,13 +527,18 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         ThreadFiber fiber = parentContext.getRootFiber();
         if (fiber == null) return null;
 
-        for (FiberData fiberData; (fiberData = fiber.data) != null && fiberData.resumingFiber != null; ) {
-            fiber = fiberData.resumingFiber;
-        }
+        while (true) {
+            FiberData fiberData = fiber.data;
+            if (fiberData == null) return null;
 
-        // only hand over if it is parked in a transfer; an async kill can leave nobody waiting
-        FiberData fiberData = fiber.data;
-        return fiberData != null && fiberData.transferred ? fiber : null;
+            ThreadFiber resuming = fiberData.resumingFiber;
+            if (resuming == null) {
+                // only hand over if it is parked in a transfer; an async kill can leave nobody waiting
+                return fiberData.transferred ? fiber : null;
+            }
+
+            fiber = resuming;
+        }
     }
 
     // forward a control-flow exception to whoever regains control, if it is still around
