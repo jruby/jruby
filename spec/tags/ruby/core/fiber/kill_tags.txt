@@ -2,3 +2,6 @@ fails:Fiber#kill kills a non-resumed fiber
 fails:Fiber#kill kills a resumed fiber
 fails:Fiber#kill executes the ensure block
 fails:Fiber#kill repeatedly kills a fiber
+fails:Fiber#kill propagates an exception raised by the ensure block to the killing fiber
+fails:Fiber#kill kills a fiber which transferred, from the fiber it transferred to
+fails:Fiber#kill kills a fiber whose ensure block transfers to another fiber

@@ -20,6 +20,54 @@ describe "Fiber#transfer" do
     f2.transfer.should == :fiber_2
   end
 
+  it "returns control to the transferring fiber when the target finishes" do
+    states = []
+    runner = Fiber.new do
+      Fiber.new { states << :target_end }.transfer
+      states << :runner_resumed
+    end
+
+    runner.resume
+    states.should == [:target_end, :runner_resumed]
+  end
+
+  it "returns control to a transferring fiber which was itself entered by Fiber#raise" do
+    states = []
+    target = Fiber.new do
+      begin
+        Fiber.yield
+      rescue RuntimeError
+        Fiber.new { states << :inner_end }.transfer
+        states << :target_after_transfer
+      end
+    end
+
+    target.resume
+    target.raise "raised"
+    states.should == [:inner_end, :target_after_transfer]
+  end
+
+  it "returns control according to the resume chain, not to the Fiber which transferred" do
+    states = []
+    outer = Fiber.new do
+      middle = Fiber.new do
+        inner = Fiber.new do
+          Fiber.new { states << :leaf_end }.transfer
+          states << :inner_after_transfer
+        end
+        inner.resume
+        states << :middle_after_resume
+      end
+      middle.transfer
+      states << :outer_after_transfer
+    end
+
+    outer.resume
+    # The leaf has no resumer, so control follows resumes down from the root Fiber and
+    # stops at outer. inner, which transferred to the leaf, stays suspended.
+    states.should == [:leaf_end, :outer_after_transfer]
+  end
+
   it "can be invoked from the same Fiber it transfers control to" do
     states = []
     fiber = Fiber.new { states << :start; fiber.transfer; states << :end }
