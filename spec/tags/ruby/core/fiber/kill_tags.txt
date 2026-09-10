@@ -5,4 +5,4 @@ fails:Fiber#kill repeatedly kills a fiber
 fails:Fiber#kill propagates an exception raised by the ensure block to the killing fiber
 fails:Fiber#kill kills a fiber which transferred, from the fiber it transferred to
 fails:Fiber#kill kills a fiber whose ensure block transfers to another fiber
-fails:Fiber#kill returns false when the fiber was already killed
+fails:Fiber#kill does nothing when killing a fiber twice

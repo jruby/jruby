@@ -875,11 +875,21 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
             throw new FiberKill();
         }
 
+        FiberData fiberData = this.data;
+        if (fiberData == null) return this;
+
+        // MRI: a second kill answers false, while a fiber that ran to completion still answers itself.
+        // Both are dead by the time we get here, so only the flag separates them and it has to be
+        // read before alive(), which would otherwise claim both as the completed case.
+        if (fiberData.killed) return context.fals;
+
         // MRI: killing a dead fiber does nothing, and an unborn one has no thread of its own to check
         if (!alive()) return this;
-        if (data.started && data.parent != context.getFiberCurrentThread()) fiberCalledAcrossThreads(context.runtime);
+        if (fiberData.started && fiberData.parent != context.getFiberCurrentThread()) fiberCalledAcrossThreads(context.runtime);
 
-        data.queue.push(context, new FiberRequest(new FiberKill(), RequestType.RAISE));
+        // mark before the push, which can block, so a second kill cannot slip in behind it
+        fiberData.killed = true;
+        fiberData.queue.push(context, new FiberRequest(new FiberKill(), RequestType.RAISE));
 
         return this;
     }
@@ -947,6 +957,8 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         volatile boolean yielding;
         // our block has begun running. MRI: status != FIBER_CREATED
         volatile boolean started;
+        // Fiber#kill has been delivered. MRI: fiber->killed
+        volatile boolean killed;
         volatile boolean blocking;
     }
     
