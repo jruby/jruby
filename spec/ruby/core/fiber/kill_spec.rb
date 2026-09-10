@@ -75,6 +75,116 @@ describe "Fiber#kill" do
     rescue_executed.should == false
   end
 
+  it "returns the fiber" do
+    fiber = Fiber.new { Fiber.yield }
+    fiber.resume
+
+    fiber.kill.should.equal?(fiber)
+  end
+
+  it "returns the fiber when it is already dead" do
+    fiber = Fiber.new { :done }
+    fiber.resume
+
+    fiber.kill.should.equal?(fiber)
+  end
+
+  it "returns false when the fiber was already killed" do
+    fiber = Fiber.new { Fiber.yield }
+    fiber.resume
+
+    fiber.kill.should.equal?(fiber)
+    fiber.kill.should == false
+  end
+
+  it "does nothing when killing a fiber twice" do
+    fiber = Fiber.new { Fiber.yield }
+    fiber.resume
+
+    fiber.kill
+    fiber.kill
+    fiber.alive?.should == false
+  end
+
+  it "runs the ensure block in the fiber being killed, while it is still alive" do
+    states = []
+
+    fiber = Fiber.new do
+      Fiber.yield
+    ensure
+      states << Fiber.current.equal?(fiber) << fiber.alive?
+    end
+
+    fiber.resume
+    fiber.kill
+    states.should == [true, true]
+  end
+
+  it "propagates an exception raised by the ensure block to the killing fiber" do
+    fiber = Fiber.new do
+      Fiber.yield
+    ensure
+      raise "from ensure"
+    end
+
+    fiber.resume
+    -> { fiber.kill }.should.raise(RuntimeError, "from ensure")
+  end
+
+  it "raises a FiberError when killing a fiber from a different Thread" do
+    fiber = Fiber.new { Fiber.yield }
+    fiber.resume
+
+    Thread.new do
+      -> { fiber.kill }.should.raise(FiberError)
+    end.join
+  end
+
+  it "kills a fiber which transferred, from the fiber it transferred to" do
+    states = []
+    outer = nil
+
+    outer = Fiber.new do
+      Fiber.new do
+        outer.kill
+        states << :inner_resumed
+      end.transfer
+      states << :outer_resumed
+    end
+
+    outer.resume
+    # Killing outer transfers into it to unwind, and the inner fiber is left
+    # suspended, so neither fiber runs again.
+    states.should == []
+    outer.alive?.should == false
+  end
+
+  it "kills a fiber whose ensure block transfers to another fiber" do
+    other = Fiber.new { :other }
+
+    fiber = Fiber.new do
+      Fiber.yield
+    ensure
+      other.transfer
+    end
+
+    fiber.resume
+    fiber.kill
+    fiber.alive?.should == false
+    other.alive?.should == false
+  end
+
+  it "returns control to the transferring fiber when killing a fiber entered by Fiber#transfer" do
+    states = []
+    runner = Fiber.new do
+      Fiber.new { Fiber.current.kill; states << :unreachable }.transfer
+      states << :runner_resumed
+    end
+
+    runner.resume
+    states.should == [:runner_resumed]
+  end
+
   it "repeatedly kills a fiber" do
     fiber = Fiber.new do
       while true; Fiber.yield; end

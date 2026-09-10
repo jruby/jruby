@@ -17,6 +17,30 @@ describe "Fiber#raise" do
     -> { FiberSpecs::NewFiberToRaise.raise }.should.raise(RuntimeError)
   end
 
+  it "raises in a Fiber which is resuming the current Fiber, without resuming the current Fiber again" do
+    states = []
+    outer = inner = nil
+
+    outer = Fiber.new do
+      inner = Fiber.new do
+        outer.raise RuntimeError, "raised"
+        states << :inner_continued
+      end
+
+      begin
+        inner.resume
+        states << :resume_returned
+      rescue RuntimeError
+        states << :outer_rescued
+      end
+
+      states << :outer_done
+    end
+
+    outer.transfer
+    states.should == [:outer_rescued, :outer_done]
+  end
+
   it "raises FiberError if Fiber is not born" do
     fiber = Fiber.new { true }
     -> { fiber.raise }.should.raise(FiberError, "cannot raise exception on unborn fiber")
