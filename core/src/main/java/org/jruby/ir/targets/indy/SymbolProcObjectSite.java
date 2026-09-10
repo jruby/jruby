@@ -1,6 +1,5 @@
 package org.jruby.ir.targets.indy;
 
-import org.jruby.RubyEncoding;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -16,15 +15,13 @@ import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
 
-public class SymbolProcObjectSite extends LazyObjectSite {
-    private final String value;
-    private final String encoding;
+public class SymbolProcObjectSite extends SymbolObjectSite {
+    private final SymbolProc symbolProc;
 
-    public SymbolProcObjectSite(MethodType type, String value, String encoding) {
-        super(type);
+    public SymbolProcObjectSite(MethodType type, ByteList bytes) {
+        super(type, bytes);
 
-        this.value = value;
-        this.encoding = encoding;
+        symbolProc = new SymbolProc(symbol);
     }
 
     public static final Handle BOOTSTRAP = new Handle(
@@ -35,13 +32,13 @@ public class SymbolProcObjectSite extends LazyObjectSite {
             false);
 
     public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, String value, String encoding) {
-        return new SymbolProcObjectSite(type, value, encoding).bootstrap(lookup);
+        return new SymbolProcObjectSite(type, StringBootstrap.bytelist(value, encoding)).bootstrap(lookup);
     }
 
     public IRubyObject construct(ThreadContext context) {
-        var symbol = asSymbol(context, new ByteList(RubyEncoding.encodeISO(value),
-                IRRuntimeHelpers.retrieveJCodingsEncoding(context, encoding), false));
-
-        return IRRuntimeHelpers.newSymbolProc(context, symbol);
+        return context.runtime.cacheImmutableLiteral(symbolProc,
+                (sp) -> IRRuntimeHelpers.newSymbolProc(context, asSymbol(context, sp.symbol.bytes())));
     }
+
+    record SymbolProc(Symbol symbol) {}
 }
