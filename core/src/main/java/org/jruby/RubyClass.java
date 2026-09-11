@@ -774,7 +774,7 @@ public class RubyClass extends RubyModule {
     // MRI: rb_check_funcall_default
     private IRubyObject checkFuncallDefault(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites, IRubyObject[] args) {
         final RubyClass klass = this;
-        if (!checkFuncallRespondTo(context, klass, self, sites.respond_to_X)) return null; // return def;
+        if (!checkFuncallRespondTo(context, klass, self, sites)) return null; // return def;
 
         CacheEntry entry = sites.site.retrieveCache(klass);
         DynamicMethod method = entry.method;
@@ -787,7 +787,7 @@ public class RubyClass extends RubyModule {
     // MRI: rb_check_funcall_default
     private IRubyObject checkFuncallDefault(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites) {
         final RubyClass klass = this;
-        if (!checkFuncallRespondTo(context, klass, self, sites.respond_to_X)) return null; // return def;
+        if (!checkFuncallRespondTo(context, klass, self, sites)) return null; // return def;
 
         CacheEntry entry = sites.site.retrieveCache(klass);
         DynamicMethod method = entry.method;
@@ -817,7 +817,7 @@ public class RubyClass extends RubyModule {
     /**
      * Check if the method has a custom respond_to? and call it if so with the method ID we're hoping to call.
      *
-     * MRI: check_funcall_respond_to
+     * MRI: check_funcall_respond_to and the dispatch half of vm_respond_to
      */
     private static boolean checkFuncallRespondTo(ThreadContext context, RubyClass klass, IRubyObject recv, String mid) {
         CacheEntry entry = klass.searchWithCache("respond_to?");
@@ -827,28 +827,68 @@ public class RubyClass extends RubyModule {
         //       respond_to_missing? Same effect, I believe.
         if (me == null || me.isUndefined() || me.isBuiltin()) return true;
 
-        return me.callRespondTo(context, recv, "respond_to?", entry.sourceModule, asSymbol(context, mid));
+        RubySymbol name = asSymbol(context, mid);
+
+        return (respondToArgCount(context, me) == 1 ?
+                me.call(context, recv, entry.sourceModule, "respond_to?", name) :
+                me.call(context, recv, entry.sourceModule, "respond_to?", name, context.tru)).isTrue();
     }
 
     /**
      * Check if the method has a custom respond_to? and call it if so with the method ID we're hoping to call.
      *
-     * MRI: check_funcall_respond_to
+     * MRI: check_funcall_respond_to and the dispatch half of vm_respond_to
      */
-    private static boolean checkFuncallRespondTo(ThreadContext context, RubyClass klass, IRubyObject recv, RespondToCallSite respondToSite) {
+    private static boolean checkFuncallRespondTo(ThreadContext context, RubyClass klass, IRubyObject recv, JavaSites.CheckedSites sites) {
+        RespondToCallSite respondToSite = sites.respond_to_X;
         DynamicMethod me = respondToSite.retrieveCache(klass).method;
 
         // NOTE: isBuiltin here would be NOEX_BASIC in MRI, a flag only added to respond_to?, method_missing, and
         //       respond_to_missing? Same effect, I believe.
         if (me.isUndefined() || me.isBuiltin()) return true;
 
-        int required = me.getSignature().required();
-
-        if (required > 2) throw argumentError(context, "respond_to? must accept 1 or 2 arguments (requires " + required + ")");
-
-        return required == 1 ?
+        return respondToArgCount(context, me) == 1 ?
                 respondToSite.respondsTo(context, recv, recv) :
                 respondToSite.respondsTo(context, recv, recv, true);
+    }
+
+    /**
+     * How many arguments to pass a user-defined respond_to?. Arity only matters here because these are
+     * the paths that ask about private methods; {@link DynamicMethod#callRespondTo} is the priv-false
+     * counterpart and deliberately uses a different rule.
+     *
+     * MRI: vm_respond_to, the argument count
+     */
+    private static int respondToArgCount(ThreadContext context, DynamicMethod me) {
+        Signature signature = me.getSignature();
+
+        // Optional and rest keywords give MRI a negative arity, so they never reach its one-parameter case.
+        // Required keywords do reach it, but the call raises either way, so they are folded in here.
+        if (!signature.isFixed() || signature.hasKwargs()) return 2;
+
+        int required = signature.required();
+
+        if (required > 2) {
+            throw argumentError(context, "respond_to? must accept 1 or 2 arguments (requires " + required + ")");
+        }
+
+        // Anything else is called with two arguments and left to raise its own arity error, as MRI does.
+        return required == 1 ? 1 : 2;
+    }
+
+    /**
+     * Ask the receiver whether it handles the given method via respond_to_missing?.
+     *
+     * This goes through rb_check_funcall, so it may also call a user-defined respond_to? and, if
+     * respond_to_missing? has been undefined, method_missing.
+     *
+     * MRI: check_respond_to_missing
+     */
+    public static boolean checkRespondToMissing(ThreadContext context, IRubyObject recv, String mid) {
+        IRubyObject result = getMetaClass(recv).finvokeChecked(context, recv, "respond_to_missing?",
+                asSymbol(context, mid), context.fals);
+
+        return result != null && result.isTrue();
     }
 
     // MRI: check_funcall_callable

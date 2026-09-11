@@ -135,6 +135,18 @@ describe "The defined? keyword when called with a method name" do
       obj.should_receive(:respond_to_missing?).and_return(true)
       defined?(obj.something_undefined).should == "method"
     end
+
+    it "does not call #respond_to_missing? if #respond_to?(:respond_to_missing?) returns false" do
+      obj = DefinedSpecs::RespondToFalse.new
+      defined?(obj.an_undefined_method).should == nil
+      ScratchPad.recorded.should == nil
+    end
+
+    it "calls #respond_to_missing? if #respond_to?(:respond_to_missing?) returns true" do
+      obj = DefinedSpecs::RespondToTrue.new
+      defined?(obj.an_undefined_method).should == "method"
+      ScratchPad.recorded.should == :defined_specs_respond_to_missing
+    end
   end
 
   describe "having an instance variable as receiver" do

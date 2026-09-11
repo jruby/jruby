@@ -254,7 +254,10 @@ public abstract class DynamicMethod {
     }
 
     /*
-     * Will call respond_to?/respond_to_missing? on object and name
+     * Will call respond_to?/respond_to_missing? on object and name.
+     *
+     * Reached with priv false, where MRI passes one argument without looking at arity at all. Do not fold
+     * this into RubyClass's argument count rule, which is the priv-true side.
      */
     public boolean callRespondTo(ThreadContext context, IRubyObject self, String respondToMethodName, RubyModule klazz, RubySymbol name) {
         Signature signature = getSignature();

@@ -326,6 +326,32 @@ module DefinedSpecs
   class ProtectedIncluderB
     include ProtectedInModule
   end
+
+  # #respond_to? is consulted before #respond_to_missing?, so returning false vetoes the
+  # #respond_to_missing? call entirely.
+  class RespondToFalse
+    def respond_to?(name, include_all = false)
+      false
+    end
+
+    def respond_to_missing?(name, include_all)
+      ScratchPad.record :defined_specs_respond_to_missing
+      true
+    end
+  end
+
+  # Returning true from #respond_to? lets the #respond_to_missing? call through.
+  class RespondToTrue
+    def respond_to?(name, include_all = false)
+      true
+    end
+
+    def respond_to_missing?(name, include_all)
+      ScratchPad.record :defined_specs_respond_to_missing
+      true
+    end
+  end
+
 end
 
 class Object
