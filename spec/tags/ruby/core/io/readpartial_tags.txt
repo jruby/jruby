@@ -1,0 +1,2 @@
+fails:IO#readpartial raises EOFError on EOF
+fails:IO#readpartial discards the existing buffer content upon EOFError
