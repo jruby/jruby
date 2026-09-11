@@ -1,5 +1,6 @@
 require 'rspec'
 
+# GH-6864
 # JRuby has separate codepaths for 1 char and >1 char.
 describe "A Range of strings >1 char long" do
   it "works" do
