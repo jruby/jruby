@@ -1,0 +1,10 @@
+fails:String#rstrip when given character selectors arguments removes trailing characters in the intersection of sets removed
+fails:String#rstrip when given character selectors arguments negates sets starting with ^
+fails:String#rstrip when given character selectors arguments removes trailing characters in a sequence
+fails:String#rstrip when given character selectors arguments removes trailing multibyte characters
+fails:String#rstrip when given character selectors arguments respects backslash for escaping
+fails:String#rstrip when given character selectors arguments tries to convert each argument to a string using to_str
+fails:String#rstrip when given character selectors arguments raises a TypeError when an argument can't be converted to a string
+fails:String#rstrip when given character selectors arguments returns String instances when called on a subclass
+fails:String#rstrip when given character selectors arguments returns a String in the same encoding as self
+fails:String#rstrip when given character selectors arguments raises an Encoding::CompatibilityError when the encodings are incompatible

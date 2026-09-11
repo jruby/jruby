@@ -24,24 +24,54 @@ describe "IO::Buffer#write" do
     @file.read.should == "Hello"
   end
 
-  it "writes only the given length, starting at the given offset" do
-    @buffer.write(@file, 4, 1).should == 4
+  ruby_version_is ""..."4.1" do
+    it "writes only the given length, starting at the given offset" do
+      @buffer.write(@file, 4, 1).should == 4
 
-    @file.rewind
-    @file.read.should == "ello"
+      @file.rewind
+      @file.read.should == "ello"
+    end
+  end
+  ruby_version_is "4.1" do
+    it "writes only the given length, starting at the given offset" do
+      @buffer.write(@file, 1, 4).should == 4
+
+      @file.rewind
+      @file.read.should == "ello"
+    end
   end
 
-  it "writes as much as fits in the buffer when length is 0" do
-    @buffer.write(@file, 0).should == 5
+  ruby_version_is ""..."4.1" do
+    it "writes as much as fits in the buffer when length is 0" do
+      @buffer.write(@file, 0).should == 5
 
-    @file.rewind
-    @file.read.should == "Hello"
+      @file.rewind
+      @file.read.should == "Hello"
+    end
+  end
+  ruby_version_is "4.1" do
+    it "writes 0 bytes when length is 0" do
+      @buffer.write(@file, 0, 0).should == 0
+
+      @file.rewind
+      @file.read.should == ""
+    end
   end
 
-  it "writes from offset to the end of the buffer when length is 0 and offset is given" do
-    @buffer.write(@file, 0, 1).should == 4
+  ruby_version_is ""..."4.1" do
+    it "writes from offset to the end of the buffer when length is 0 and offset is given" do
+      @buffer.write(@file, 0, 1).should == 4
 
-    @file.rewind
-    @file.read.should == "ello"
+      @file.rewind
+      @file.read.should == "ello"
+    end
+  end
+  ruby_version_is "4.1" do
+    it "writes 0 bytes when length is 0 and offset is given" do
+      @buffer.write(@file, 1, 0).should == 0
+
+      @file.rewind
+      @file.read.should == ""
+    end
   end
 end

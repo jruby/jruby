@@ -1,2 +1,3 @@
 fails:IO::Buffer#free with a file-backed buffer created with .map frees mapped memory and nullifies the buffer
 fails:IO::Buffer#free with a slice of a buffer nullifies buffer, invalidating the slice
+fails:IO::Buffer#free resets the buffer to a valid empty state
