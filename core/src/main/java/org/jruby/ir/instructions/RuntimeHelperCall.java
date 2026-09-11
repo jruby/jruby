@@ -34,7 +34,7 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
         IS_DEFINED_BACKREF, IS_DEFINED_NTH_REF, IS_DEFINED_GLOBAL,
         IS_DEFINED_CLASS_VAR, IS_DEFINED_SUPER, IS_DEFINED_METHOD, IS_DEFINED_CALL,
         IS_DEFINED_CONSTANT_OR_METHOD, MERGE_KWARGS, IS_HASH_EMPTY, HASH_CHECK, ARRAY_LENGTH,
-        TRACE_RESCUE, RESET_GVAR_UNDERSCORE;
+        TRACE_RESCUE, RESET_GVAR_UNDERSCORE, CAPTURE_CALL_INFO, RESTORE_CALL_INFO;
 
         private static final Methods[] VALUES = values();
 
@@ -108,6 +108,8 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
 
         // These have special operands[0] that we may not want to execute
         switch (helperMethod) {
+            case CAPTURE_CALL_INFO:
+                return IRRuntimeHelpers.captureCallInfo(context);
             case RESET_GVAR_UNDERSCORE:
                 return context.setErrorInfo((IRubyObject) operands[0].retrieve(context, self, currScope, currDynScope, temp));
             case IS_DEFINED_BACKREF:
@@ -127,6 +129,8 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
             case TRACE_RESCUE:
                 IRRuntimeHelpers.traceRescue(context, ((Stringable) operands[0]).getString(), (int) ((Integer) operands[1]).getValue());
                 return context.nil;
+            case RESTORE_CALL_INFO:
+                return IRRuntimeHelpers.restoreCallInfo(context, (IRubyObject) operands[0].retrieve(context, self, currScope, currDynScope, temp));
         }
 
         Object arg1 = operands[0].retrieve(context, self, currScope, currDynScope, temp);

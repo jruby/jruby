@@ -53,6 +53,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static org.jruby.api.Warn.warning;
 import static org.jruby.ir.IRFlags.*;
@@ -67,6 +68,7 @@ import static org.jruby.runtime.CallType.FUNCTIONAL;
 import static org.jruby.runtime.CallType.NORMAL;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD_REST;
+import static org.jruby.runtime.ThreadContext.CALL_FORWARDING;
 import static org.jruby.util.RubyStringBuilder.str;
 
 public abstract class IRBuilder<U, V, W, X, Y, Z> {
@@ -86,6 +88,9 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     public boolean underscoreVariableSeen = false;
     int lastProcessedLineNum = -1;
     private Variable currentModuleVariable = null;
+
+    // Used for forwarding callInfo in argument-forwarding methods
+    protected Variable forwardingCallInfo;
 
     // FIXME: AST does not use this but Prism does.  AST could put encoding up to RootNode since it is same
     protected Encoding encoding;
@@ -2803,20 +2808,30 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         int[] flags = new int[] { 0 };
         Operand[] args = setupCallArgs(argsNode, flags);
 
+        // propagate callInfo when forwarding arguments
+        if (forwardingCallInfo != null) flags[0] = CALL_FORWARDING;
+
         determineIfWeNeedLineNumber(line, isNewline, false, false); // backtrace needs line of call in case of exception.
         if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
             Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
             if_else(test, tru(),
                     () -> receiveBreakException(block,
-                            determineSuperInstr(result, removeArg(args), block, flags[0], inClassBody, isInstanceMethod)),
+                            determineSuperInstr(result, removeArg(args), block, forwardingCallInfo, flags[0], inClassBody, isInstanceMethod)),
                     () -> receiveBreakException(block,
-                            determineSuperInstr(result, args, block, flags[0], inClassBody, isInstanceMethod)));
+                            determineSuperInstr(result, args, block, forwardingCallInfo, flags[0], inClassBody, isInstanceMethod)));
         } else {
             receiveBreakException(block,
-                    determineSuperInstr(result, args, block, flags[0], inClassBody, isInstanceMethod));
+                    determineSuperInstr(result, args, block, forwardingCallInfo, flags[0], inClassBody, isInstanceMethod));
         }
 
         return result;
+    }
+
+    private CallInstr forwardCallInfo(Operand forwardingCallInfo, Supplier<CallInstr> operandToWrap) {
+        if (forwardingCallInfo != null) {
+            addInstr(new RuntimeHelperCall(temp(), RESTORE_CALL_INFO, new Operand[] { forwardingCallInfo }));
+        }
+        return operandToWrap.get();
     }
 
     protected Operand buildUndef(Operand name) {
@@ -2914,13 +2929,13 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { keywordRest }));
             if_else(test, tru(),
                     () -> receiveBreakException(block,
-                            determineSuperInstr(zsuperResult, args, block, flags[0], inClassBody, isInstanceMethod)),
+                            determineSuperInstr(zsuperResult, args, block, null, flags[0], inClassBody, isInstanceMethod)),
                     () -> receiveBreakException(block,
-                            determineSuperInstr(zsuperResult, addArg(args, keywordRest), block, flags[0], inClassBody, isInstanceMethod)));
+                            determineSuperInstr(zsuperResult, addArg(args, keywordRest), block, null, flags[0], inClassBody, isInstanceMethod)));
         } else {
             Operand[] args = getZSuperCallOperands(scope, callArgs, keywordArgs, flags);
             receiveBreakException(block,
-                    determineSuperInstr(zsuperResult, args, block, flags[0], inClassBody, isInstanceMethod));
+                    determineSuperInstr(zsuperResult, args, block, null, flags[0], inClassBody, isInstanceMethod));
         }
 
         return zsuperResult;
@@ -3154,19 +3169,23 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         // check for refinement calls before building any closure
         if (callType == FUNCTIONAL) determineIfMaybeRefined(name, args);
         Operand block = setupCallClosure(argsNode, iter);
+
+        // propagate callInfo when forwarding arguments
+        if (forwardingCallInfo != null) flags[0] = CALL_FORWARDING;
+
         determineIfWeNeedLineNumber(line, isNewline, false, false); // backtrace needs line of call in case of exception.
         if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
             Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
             if_else(test, tru(),
                     () -> receiveBreakException(block,
-                            CallInstr.create(scope, callType, result, name, receiver, removeArg(args), block, flags[0])),
+                            forwardCallInfo(forwardingCallInfo, () -> CallInstr.create(scope, callType, result, name, receiver, removeArg(args), block, flags[0]))),
                     () -> receiveBreakException(block,
-                            CallInstr.create(scope, callType, result, name, receiver, args, block, flags[0])));
+                            forwardCallInfo(forwardingCallInfo, () -> CallInstr.create(scope, callType, result, name, receiver, args, block, flags[0]))));
         } else {
             if (callType == FUNCTIONAL) checkForOptimizableDefineMethod(name, iter, block);
 
             receiveBreakException(block,
-                    CallInstr.create(scope, callType, result, name, receiver, args, block, flags[0]));
+                    forwardCallInfo(forwardingCallInfo, () -> CallInstr.create(scope, callType, result, name, receiver, args, block, flags[0])));
         }
 
         return result;
@@ -3205,18 +3224,19 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         if (refinement) scope.setIsMaybeUsingRefinements();
     }
 
-    protected CallInstr determineSuperInstr(Variable result, Operand[] args, Operand block, int flags,
-                                          boolean inClassBody, boolean isInstanceMethod) {
-        if (result == null) result = temp();
-        return inClassBody ?
-                isInstanceMethod ?
-                        new InstanceSuperInstr(scope, result, getCurrentModuleVariable(), getName(), args, block, flags, scope.maybeUsingRefinements()) :
-                        new ClassSuperInstr(scope, result, getCurrentModuleVariable(), getName(), args, block, flags, scope.maybeUsingRefinements()) :
-                // We dont always know the method name we are going to be invoking if the super occurs in a closure.
-                // This is because the super can be part of a block that will be used by 'define_method' to define
-                // a new method.  In that case, the method called by super will be determined by the 'name' argument
-                // to 'define_method'.
-                new UnresolvedSuperInstr(scope, result, buildSelf(), args, block, flags, scope.maybeUsingRefinements());
+    protected CallInstr determineSuperInstr(Variable result, Operand[] args, Operand block, Operand forwardingCallInfo,
+                                            int flags, boolean inClassBody, boolean isInstanceMethod) {
+        final Variable result2 = result == null ? temp() : result;
+        return forwardCallInfo(forwardingCallInfo, () ->
+                inClassBody ?
+                        isInstanceMethod ?
+                                new InstanceSuperInstr(scope, result2, getCurrentModuleVariable(), getName(), args, block, flags, scope.maybeUsingRefinements()) :
+                                new ClassSuperInstr(scope, result2, getCurrentModuleVariable(), getName(), args, block, flags, scope.maybeUsingRefinements()) :
+                        // We dont always know the method name we are going to be invoking if the super occurs in a closure.
+                        // This is because the super can be part of a block that will be used by 'define_method' to define
+                        // a new method.  In that case, the method called by super will be determined by the 'name' argument
+                        // to 'define_method'.
+                        new UnresolvedSuperInstr(scope, result2, buildSelf(), args, block, flags, scope.maybeUsingRefinements()));
     }
 
     protected Operand findContainerModule() {
