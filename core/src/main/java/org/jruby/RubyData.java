@@ -396,6 +396,8 @@ public class RubyData {
         Ruby runtime = context.runtime;
 
         RubyClass subclass = RubyClass.newClass(runtime, superClass);
+        subclass.makeMetaClass(context, superClass.metaClass);
+        superClass.invokeInherited(context, superClass, subclass);
 
         VariableTableManager vtm = subclass.getVariableTableManager();
         VariableAccessor[] accessors = new VariableAccessor[keySet.size()];
