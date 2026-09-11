@@ -38,12 +38,15 @@ import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Error.*;
 import static org.jruby.api.Warn.warn;
+import static org.jruby.api.Warn.warnDeprecated;
 import static org.jruby.runtime.ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.runtime.Visibility.PUBLIC;
 import static org.jruby.util.CodegenUtils.ci;
 import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
+import static org.jruby.util.RubyStringBuilder.ids;
+import static org.jruby.util.RubyStringBuilder.str;
 import static org.objectweb.asm.Opcodes.ACC_BRIDGE;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
@@ -827,9 +830,10 @@ public class RubyClass extends RubyModule {
         //       respond_to_missing? Same effect, I believe.
         if (me == null || me.isUndefined() || me.isBuiltin()) return true;
 
+        int argc = respondToArgCountAndWarn(context, klass, recv, me, mid);
         RubySymbol name = asSymbol(context, mid);
 
-        return (respondToArgCount(context, me) == 1 ?
+        return (argc == 1 ?
                 me.call(context, recv, entry.sourceModule, "respond_to?", name) :
                 me.call(context, recv, entry.sourceModule, "respond_to?", name, context.tru)).isTrue();
     }
@@ -847,9 +851,29 @@ public class RubyClass extends RubyModule {
         //       respond_to_missing? Same effect, I believe.
         if (me.isUndefined() || me.isBuiltin()) return true;
 
-        return respondToArgCount(context, me) == 1 ?
+        return respondToArgCountAndWarn(context, klass, recv, me, sites.methodName) == 1 ?
                 respondToSite.respondsTo(context, recv, recv) :
                 respondToSite.respondsTo(context, recv, recv, true);
+    }
+
+    // MRI: vm_respond_to, minus the dispatch
+    private static int respondToArgCountAndWarn(ThreadContext context, RubyClass klass, IRubyObject recv, DynamicMethod me, String mid) {
+        int argc = respondToArgCount(context, me);
+
+        // Checked up front because building the message calls the receiver's to_s
+        if (argc == 1 && context.runtime.warningsEnabled() && context.runtime.getWarnings().hasDeprecationWarningEnabled()) {
+            boolean singleton = klass.isSingleton();
+            Ruby runtime = context.runtime;
+
+            warnDeprecated(context, str(runtime, singleton ? recv : klass, (singleton ? "." : "#") + "respond_to?(:",
+                    ids(runtime, mid), ") uses the deprecated method signature, which takes one parameter"));
+
+            String file = me.getSourceFile();
+            int line = me.getSourceLine();
+            if (file != null && line > 0) warnDeprecated(context, file, line, "respond_to? is defined here");
+        }
+
+        return argc;
     }
 
     /**

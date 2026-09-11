@@ -352,6 +352,21 @@ module DefinedSpecs
     end
   end
 
+  # A deprecated one-parameter #respond_to?, which warns when Warning[:deprecated] is set.
+  class RespondToOneParameter
+    def respond_to?(name)
+      false
+    end
+  end
+
+  # The warning names the receiver, so building it calls #to_s. Used to check that nothing is built
+  # when the warning is disabled.
+  class RespondToRecordingToS
+    def to_s
+      ScratchPad.record :defined_specs_to_s
+      super
+    end
+  end
 end
 
 class Object
