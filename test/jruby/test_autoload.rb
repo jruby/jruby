@@ -180,7 +180,7 @@ class TestAutoload < Test::Unit::TestCase
     path = "#{AUTOLOAD_REQUIRED}/pair.rb"
     Siblings.autoload(:PairA, path)
     Siblings.autoload(:PairB, path)
-    Siblings::PairA
+    assert_kind_of Class, Siblings::PairA
     assert_equal [path], $autoload_required_loads
     assert_nil Siblings.autoload?(:PairB)
     assert_same Siblings::PairA, table_slot(Siblings, :PairA)
@@ -194,7 +194,7 @@ class TestAutoload < Test::Unit::TestCase
     Circular.autoload(:First, "#{AUTOLOAD_REQUIRED}/circular_first.rb")
     Circular.autoload(:Second, "#{AUTOLOAD_REQUIRED}/circular_second.rb")
     verbose, $VERBOSE = $VERBOSE, nil
-    Circular::First
+    assert_kind_of Class, Circular::First
     $VERBOSE = verbose
     assert_nil Circular.autoload?(:Second)
     assert_same Circular::First, table_slot(Circular, :First)
