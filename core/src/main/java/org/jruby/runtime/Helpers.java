@@ -2729,15 +2729,14 @@ public class Helpers {
         DynamicMethod method = metaClass.searchMethod(name);
         Visibility visibility = method.getVisibility();
 
-        if (visibility != Visibility.PRIVATE &&
-                (visibility != Visibility.PROTECTED || method.getImplementationClass().isInstance(self)) && !method.isUndefined()) {
-            return definedMessage;
+        // MRI only falls back on respond_to_missing? when there is no method entry at all
+        if (!method.isUndefined()) {
+            return visibility != Visibility.PRIVATE &&
+                    (visibility != Visibility.PROTECTED || method.getImplementationClass().isInstance(self)) ?
+                    definedMessage : null;
         }
 
-        if (receiver.callMethod(context, "respond_to_missing?", new IRubyObject[]{asSymbol(context, name), context.fals}).isTrue()) {
-            return definedMessage;
-        }
-        return null;
+        return RubyClass.checkRespondToMissing(context, receiver, name) ? definedMessage : null;
     }
 
     public static IRubyObject invokedynamic(ThreadContext context, IRubyObject self, MethodNames method) {
