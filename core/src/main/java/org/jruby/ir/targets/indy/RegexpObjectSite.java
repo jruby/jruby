@@ -1,6 +1,5 @@
 package org.jruby.ir.targets.indy;
 
-import org.jruby.RubyRegexp;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -20,14 +19,12 @@ import static org.jruby.util.CodegenUtils.sig;
 * Created by headius on 10/23/14.
 */
 public class RegexpObjectSite extends LazyObjectSite {
-    protected final ByteList pattern;
-    protected final RegexpOptions options;
+    protected final Regexp regexp;
 
-    public RegexpObjectSite(MethodType type, ByteList pattern, int embeddedOptions) {
+    public RegexpObjectSite(MethodType type, ByteList pattern, RegexpOptions options) {
         super(type);
 
-        this.pattern = pattern;
-        this.options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
+        this.regexp = new Regexp(pattern, options);
     }
 
     public static final Handle BOOTSTRAP = new Handle(
@@ -38,13 +35,14 @@ public class RegexpObjectSite extends LazyObjectSite {
             false);
 
     public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, String value, String encodingName, int options) {
-        return new RegexpObjectSite(type, StringBootstrap.bytelist(value, encodingName), options).bootstrap(lookup);
+        return new RegexpObjectSite(type, StringBootstrap.bytelist(value, encodingName), RegexpOptions.fromEmbeddedOptions(options)).bootstrap(lookup);
     }
 
     // normal regexp
     public IRubyObject construct(ThreadContext context) {
-        RubyRegexp regexp = IRRuntimeHelpers.newLiteralRegexp(context, pattern, options);
-
-        return regexp;
+        return context.runtime.cacheImmutableLiteral(regexp,
+                (r) -> IRRuntimeHelpers.newLiteralRegexp(context, r.pattern, r.options));
     }
+
+    record Regexp(ByteList pattern, RegexpOptions options) {}
 }
