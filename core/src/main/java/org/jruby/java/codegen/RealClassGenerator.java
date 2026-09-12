@@ -56,6 +56,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyClass.ConcreteJavaReifier;
@@ -971,8 +972,11 @@ public abstract class RealClassGenerator {
                 m.ldc("super.<init>");
                 m.swap();
                 m.getfield(p(SplitCtorData.class), "rbarguments", ci(IRubyObject[].class));
+                m.getstatic(cjr.javaPath, cjr.RUBY_FIELD, ci(Ruby.class));
+                m.swap();
+                m.invokestatic(p(RubyArray.class), "newArrayMayCopy", sig(RubyArray.class, Ruby.class, IRubyObject[].class));
                 m.invokevirtual(p(Ruby.class), "newNoMethodError",
-                        sig(RaiseException.class, String.class, String.class, IRubyObject[].class));
+                        sig(RaiseException.class, String.class, String.class, IRubyObject.class));
                 m.athrow();
 
                 // case n:
