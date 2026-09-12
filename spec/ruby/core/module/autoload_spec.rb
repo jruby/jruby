@@ -320,6 +320,108 @@ describe "Module#autoload" do
     end
   end
 
+  describe "after the autoload was satisfied by requiring the file directly" do
+    before :each do
+      @path = fixture(__FILE__, "autoload_satisfied_by_require.rb")
+      ModuleSpecs::Autoload.autoload :SatisfiedByRequire, @path
+      @remove << :SatisfiedByRequire
+      ScratchPad.record []
+    end
+
+    it "defines a regular constant that no longer depends on $LOADED_FEATURES" do
+      require @path
+      ScratchPad.recorded.should == [:loaded]
+      ModuleSpecs::Autoload.autoload?(:SatisfiedByRequire).should be_nil
+      klass = ModuleSpecs::Autoload::SatisfiedByRequire
+      data = Marshal.dump(klass.new)
+
+      $LOADED_FEATURES.replace(@loaded_features)
+      Thread.new { Marshal.load(data).class }.value.should equal(klass)
+      ScratchPad.recorded.should == [:loaded]
+    end
+
+    it "defines a regular constant that no longer depends on $LOAD_PATH" do
+      ModuleSpecs::Autoload.autoload :SatisfiedByRequire, "autoload_satisfied_by_require"
+      $:.push File.dirname(@path)
+      begin
+        require "autoload_satisfied_by_require.rb"
+      ensure
+        $:.pop
+      end
+      ScratchPad.recorded.should == [:loaded]
+      klass = ModuleSpecs::Autoload::SatisfiedByRequire
+      data = Marshal.dump(klass.new)
+
+      Thread.new { Marshal.load(data).class }.value.should equal(klass)
+      ScratchPad.recorded.should == [:loaded]
+    end
+
+    it "returns the constant from remove_const" do
+      require @path
+      klass = ModuleSpecs::Autoload::SatisfiedByRequire
+      @remove.delete(:SatisfiedByRequire)
+
+      ModuleSpecs::Autoload.send(:remove_const, :SatisfiedByRequire).should equal(klass)
+      ModuleSpecs::Autoload.const_defined?(:SatisfiedByRequire).should be_false
+    end
+
+    it "can be registered as an autoload again after remove_const" do
+      require @path
+      klass = ModuleSpecs::Autoload::SatisfiedByRequire
+      ModuleSpecs::Autoload.send(:remove_const, :SatisfiedByRequire)
+      $LOADED_FEATURES.replace(@loaded_features)
+
+      ModuleSpecs::Autoload.autoload :SatisfiedByRequire, @path
+      ModuleSpecs::Autoload.autoload?(:SatisfiedByRequire).should == @path
+      ModuleSpecs::Autoload::SatisfiedByRequire.should_not equal(klass)
+      ScratchPad.recorded.should == [:loaded, :loaded]
+    end
+
+    it "keeps the constant defined by the file when the require raises afterwards" do
+      path = fixture(__FILE__, "autoload_satisfied_by_require_raise.rb")
+      ModuleSpecs::Autoload.autoload :SatisfiedByRequireRaise, path
+      @remove << :SatisfiedByRequireRaise
+
+      -> { require path }.should raise_error(RuntimeError, "raised after defining the constant")
+      ScratchPad.recorded.should == [:loaded]
+      ModuleSpecs::Autoload.autoload?(:SatisfiedByRequireRaise).should be_nil
+      klass = ModuleSpecs::Autoload::SatisfiedByRequireRaise
+      data = Marshal.dump(klass.new)
+
+      Thread.new { Marshal.load(data).class }.value.should equal(klass)
+      ScratchPad.recorded.should == [:loaded]
+    end
+
+    it "applies to an autoload the required file declares for a nested constant" do
+      nested = fixture(__FILE__, "autoload_satisfied_by_require_nested.rb")
+      inner = fixture(__FILE__, "autoload_satisfied_by_require_nested_inner.rb")
+      ModuleSpecs::Autoload.autoload :SatisfiedByRequireNested, nested
+      @remove << :SatisfiedByRequireNested
+
+      require nested
+      ModuleSpecs::Autoload::SatisfiedByRequireNested.autoload?(:Inner).should == inner
+      require inner
+      ModuleSpecs::Autoload::SatisfiedByRequireNested.autoload?(:Inner).should be_nil
+      klass = ModuleSpecs::Autoload::SatisfiedByRequireNested::Inner
+      data = Marshal.dump(klass.new)
+
+      $LOADED_FEATURES.replace(@loaded_features)
+      Thread.new { Marshal.load(data).class }.value.should equal(klass)
+      ScratchPad.recorded.should == [:nested_loaded, :inner_loaded]
+    end
+
+    it "applies when the file was loaded with require_relative" do
+      require fixture(__FILE__, "autoload_satisfied_by_require_relative.rb")
+      ScratchPad.recorded.should == [:loaded]
+      klass = ModuleSpecs::Autoload::SatisfiedByRequire
+      data = Marshal.dump(klass.new)
+
+      $LOADED_FEATURES.replace(@loaded_features)
+      Thread.new { Marshal.load(data).class }.value.should equal(klass)
+      ScratchPad.recorded.should == [:loaded]
+    end
+  end
+
   describe "after the autoload is triggered by require" do
     before :each do
       @path = tmp("autoload.rb")
