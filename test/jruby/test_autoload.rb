@@ -51,6 +51,8 @@ class TestAutoload < Test::Unit::TestCase
 
   module Eager; end
   module Imported; end
+  module Siblings; end
+  module Circular; end
 
   def setup
     $autoload_required_loads = []
@@ -171,6 +173,32 @@ class TestAutoload < Test::Unit::TestCase
       $LOADED_FEATURES.replace(loaded)
     end
     assert_equal files, $autoload_required_loads
+  end
+
+  # One file defines two autoloaded constants (ActiveSupport's autoload_at shape); no direct require.
+  def test_sibling_constant_defined_by_the_same_autoload_stores_constant_in_table
+    path = "#{AUTOLOAD_REQUIRED}/pair.rb"
+    Siblings.autoload(:PairA, path)
+    Siblings.autoload(:PairB, path)
+    Siblings::PairA
+    assert_equal [path], $autoload_required_loads
+    assert_nil Siblings.autoload?(:PairB)
+    assert_same Siblings::PairA, table_slot(Siblings, :PairA)
+    assert_same Siblings::PairB, table_slot(Siblings, :PairB)
+    assert_same Siblings::PairB, in_thread { Marshal.load(Marshal.dump(TestAutoload::Siblings::PairB.new)).class }
+    assert_equal [path], $autoload_required_loads
+  end
+
+  # The autoloaded file requires another autoloaded file, which requires the first one back.
+  def test_circular_require_between_autoloaded_files_stores_both_constants
+    Circular.autoload(:First, "#{AUTOLOAD_REQUIRED}/circular_first.rb")
+    Circular.autoload(:Second, "#{AUTOLOAD_REQUIRED}/circular_second.rb")
+    verbose, $VERBOSE = $VERBOSE, nil
+    Circular::First
+    $VERBOSE = verbose
+    assert_nil Circular.autoload?(:Second)
+    assert_same Circular::First, table_slot(Circular, :First)
+    assert_same Circular::Second, table_slot(Circular, :Second)
   end
 
 end

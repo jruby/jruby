@@ -422,6 +422,36 @@ describe "Module#autoload" do
     end
   end
 
+  describe "when one file defines several autoloaded constants" do
+    before :each do
+      @path = fixture(__FILE__, "autoload_siblings.rb")
+      ModuleSpecs::Autoload.autoload :SiblingA, @path
+      ModuleSpecs::Autoload.autoload :SiblingB, @path
+      @remove << :SiblingA << :SiblingB
+      ScratchPad.record []
+    end
+
+    it "defines every constant the file declares as a regular constant" do
+      ModuleSpecs::Autoload::SiblingA
+      ScratchPad.recorded.should == [:loaded]
+      ModuleSpecs::Autoload.autoload?(:SiblingB).should be_nil
+      klass = ModuleSpecs::Autoload::SiblingB
+      data = Marshal.dump(klass.new)
+
+      $LOADED_FEATURES.replace(@loaded_features)
+      Thread.new { Marshal.load(data).class }.value.should equal(klass)
+      ScratchPad.recorded.should == [:loaded]
+    end
+
+    it "returns the sibling constant from remove_const" do
+      ModuleSpecs::Autoload::SiblingA
+      klass = ModuleSpecs::Autoload::SiblingB
+      @remove.delete(:SiblingB)
+
+      ModuleSpecs::Autoload.send(:remove_const, :SiblingB).should equal(klass)
+    end
+  end
+
   describe "after the autoload is triggered by require" do
     before :each do
       @path = tmp("autoload.rb")
