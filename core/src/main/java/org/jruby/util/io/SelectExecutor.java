@@ -6,6 +6,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyIO;
 import org.jruby.RubyThread;
 import org.jruby.api.Create;
+import org.jruby.ext.socket.RubyBasicSocket;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
@@ -187,8 +188,22 @@ public class SelectExecutor {
 
                     // ensure any pending connections get finished
                     if (writeKeyList != null && writeKeyList.get(i).isConnectable()) {
-                        if (fptr.fd().ch instanceof SocketChannel sock) {
-                            sock.finishConnect();
+                        if (fptr.fd().ch instanceof SocketChannel socketChannel) {
+                            try {
+                                socketChannel.finishConnect();
+                            } catch (IOException ioe) {
+                                // select(2) reports a non-blocking connect that failed as writable
+                                // and leaves the error on the socket, for getsockopt(SO_ERROR) or
+                                // the next operation to report; it does not fail the select itself.
+                                // finishConnect() throws instead (and closes the channel), so hand
+                                // the error to the socket and carry on. Socket.tcp's Happy Eyeballs
+                                // v2 logic depends on this to fall back from one address family to
+                                // the other. See jruby/jruby#8786.
+                                // Only a socket can hold the error, so anything else still fails
+                                // the select the way it did before.
+                                if (!(write_io instanceof RubyBasicSocket socket)) throw ioe;
+                                socket.setConnectError(ioe);
+                            }
                         }
                     }
 

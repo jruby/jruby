@@ -8,6 +8,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Array;
 
+import java.net.ConnectException;
 import java.net.PortUnreachableException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.NonReadableChannelException;
@@ -287,6 +288,12 @@ public class Helpers {
             return Errno.ENOTDIR;
         } catch (AccessDeniedException ade) {
             return Errno.EACCES;
+        } catch (ConnectException ce) {
+            // The message varies by platform and JDK version ("Connection refused",
+            // "Connection refused (connect failed)", localized forms), so only fall back
+            // to ECONNREFUSED when the message is not one we already recognize.
+            Errno errno = errnoFromMessage(ce);
+            return errno == null ? Errno.ECONNREFUSED : errno;
         } catch (IOException be) {
             return errnoFromMessage(be);
         } catch (NotYetConnectedException nyce) {
