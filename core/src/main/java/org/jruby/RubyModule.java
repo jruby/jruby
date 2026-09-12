@@ -6689,11 +6689,14 @@ public class RubyModule extends RubyObject {
                 // This method needs to be synchronized for removing Autoload
                 // from autoloadMap when it's loaded.
                 LoadService loadService = loadService(context);
-                if (!loadService.featureAlreadyLoaded(path.asJavaString())) {
-                    if (loadService.autoloadRequire(path)) {
-                        // Do not finish autoloading by cyclic autoload
-                        finishAutoload(context, symbol);
-                    }
+                if (loadService.featureAlreadyLoaded(path.asJavaString())) {
+                    // Nothing to load here: the feature is loaded, or a direct require of it is in
+                    // progress. Keeping the claim would make that require's definition of the
+                    // constant look like this autoload's own and leave UNDEF in the constant table.
+                    this.ctx = null;
+                } else if (loadService.autoloadRequire(path)) {
+                    // Do not finish autoloading by cyclic autoload
+                    finishAutoload(context, symbol);
                 }
             } catch (LoadError | RuntimeError lre) {
                 // reset ctx to null for a future attempt to load
