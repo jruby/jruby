@@ -10,7 +10,7 @@ on:
 
 
 env:
-  JAVA_OPTS: '-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xms60M -Xmx1G -XX:InitialCodeCacheSize=40M -XX:ReservedCodeCacheSize=120M'
+  JAVA_OPTS: '-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xms60M -Xmx2g -XX:InitialCodeCacheSize=40M -XX:ReservedCodeCacheSize=120M'
 
 permissions:
   contents: read
