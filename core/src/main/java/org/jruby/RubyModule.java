@@ -6149,10 +6149,15 @@ public class RubyModule extends RubyObject {
 
     public IRubyObject storeConstant(ThreadContext context, String name, IRubyObject value, boolean hidden,
                                      String file, int line) {
+        return storeConstant(context, name, value, hidden, false, file, line);
+    }
+
+    private IRubyObject storeConstant(ThreadContext context, String name, IRubyObject value, boolean hidden,
+                                      boolean deprecated, String file, int line) {
         assert value != null : "value is null";
 
         checkAndRaiseIfFrozen(context);
-        constantTableStore(name, value, hidden, false, file, line);
+        constantTableStore(name, value, hidden, deprecated, file, line);
 
         if (file != null && file != BUILTIN_CONSTANT) callMethod(context, "const_added", asSymbol(context, name));
 
@@ -6376,7 +6381,14 @@ public class RubyModule extends RubyObject {
         final IRubyObject value = autoload.getValue();
 
         if (value != null && value != UNDEF) {
-            storeConstant(context, name, value, autoload.hidden, autoload.getFile(), autoload.getLine());
+            // private_constant, public_constant and deprecate_constant mark the autoload's UNDEF entry,
+            // whether they run before the file is loaded or while it loads. Those flags describe the
+            // constant, not the autoload, so they have to survive the entry being replaced.
+            ConstantEntry undefEntry = constantEntryFetch(name);
+            boolean hidden = undefEntry != null ? undefEntry.hidden : autoload.hidden;
+            boolean deprecated = undefEntry != null && undefEntry.deprecated;
+
+            storeConstant(context, name, value, hidden, deprecated, autoload.getFile(), autoload.getLine());
             invalidateConstantCache(context, name);
         }
 
