@@ -513,9 +513,10 @@ public class CGIEscape implements Library {
 
         RubyModule rb_mEscapeExt =
                 Define.defineModuleUnder(context, rb_cCGI, "EscapeExt")
-                        .defineMethods(context, CGIEscape.class)
-                        .extendObject(context, rb_cCGI);
+                        .defineMethods(context, CGIEscape.class);
 
+        // MRI also calls rb_extend_object here. We don't: escape.rb has already run "extend Escape",
+        // so the prepend covers CGI's singleton too and extending again would just duplicate EscapeExt.
         Define.defineModuleUnder(context, rb_cCGI, "Escape")
                 .prependModule(context, rb_mEscapeExt);
     }
