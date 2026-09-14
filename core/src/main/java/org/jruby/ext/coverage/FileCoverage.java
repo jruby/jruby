@@ -26,8 +26,8 @@
 
 package org.jruby.ext.coverage;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.jruby.util.collections.IntList;
 
@@ -41,10 +41,13 @@ import org.jruby.util.collections.IntList;
  * <li>{@link #getMethods()}: one {@link MethodCoverage} for every method entry defined from this file since
  * coverage was set up, in definition order.</li>
  * </ul>
+ *
+ * <p>Instances are only ever touched while holding the {@link CoverageData} lock (registration, clearing and
+ * result conversion all synchronize on it), so the collections need no synchronization of their own.</p>
  */
 public final class FileCoverage {
     private IntList lines;
-    private final List<MethodCoverage> methods = new CopyOnWriteArrayList<>();
+    private final List<MethodCoverage> methods = new ArrayList<>();
 
     public IntList getLines() {
         return lines;
