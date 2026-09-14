@@ -2915,7 +2915,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         // propagate callInfo when forwarding arguments
         if (forwardingCallInfo != null) flags[0] = CALL_FORWARDING;
 
-        determineIfWeNeedLineNumber(line, isNewline, false, false); // backtrace needs line of call in case of exception.
+        determineIfWeNeedLineNumberForCall(line, isNewline); // backtrace needs line of call in case of exception.
         if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
             Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
             if_else(test, tru(),
@@ -3334,7 +3334,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         // propagate callInfo when forwarding arguments
         if (forwardingCallInfo != null) flags[0] = CALL_FORWARDING;
 
-        determineIfWeNeedLineNumber(line, isNewline, false, false); // backtrace needs line of call in case of exception.
+        determineIfWeNeedLineNumberForCall(line, isNewline); // backtrace needs line of call in case of exception.
         if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
             Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
             if_else(test, tru(),
@@ -3350,6 +3350,19 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         }
 
         return result;
+    }
+
+    /**
+     * A call that is a statement of its own already had its line (and coverage) event emitted when the
+     * statement started; if building its receiver or arguments moved the current line elsewhere, restore the
+     * call's line for backtraces without counting the statement a second time.
+     */
+    protected void determineIfWeNeedLineNumberForCall(int line, boolean isNewline) {
+        if (line != lastProcessedLineNum) {
+            if (isNewline) needsLineNumInfo = LineInfo.Backtrace;
+
+            lastProcessedLineNum = line;
+        }
     }
 
     protected void determineIfWeNeedLineNumber(int line, boolean isNewline, boolean implicitNil, boolean def) {
