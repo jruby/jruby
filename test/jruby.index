@@ -3,6 +3,7 @@
 jruby/test_globals
 
 jruby/test_addrinfo
+jruby/test_alias_chaining
 jruby/test_argf
 jruby/test_array
 jruby/test_autoload

@@ -159,11 +159,14 @@ public class AliasMethod extends DynamicMethod {
 
     @Override
     public String getOldName() {
-        DynamicMethod terminal = entry.method;
-        while (terminal instanceof AliasMethod alias) {
-            terminal = alias.entry.method;
-        }
-        return terminal.getOldName();
+        return entry.method.getOldName();
+    }
+
+    /**
+     * The entry this alias points at, so that aliasing an alias can reuse it rather than wrap us.
+     */
+    public CacheEntry getEntry() {
+        return entry;
     }
 
     @Override

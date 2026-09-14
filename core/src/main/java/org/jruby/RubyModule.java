@@ -2493,6 +2493,14 @@ public class RubyModule extends RubyObject {
     public void putAlias(ThreadContext context, String id, DynamicMethod method, String oldName) {
         if (id.equals(oldName)) return;
 
+        // point at what the old alias points at instead of wrapping it
+        if (method instanceof AliasMethod alias) {
+            // flags it as aliased, which is how defineAlias knows not to warn when the name is redefined
+            alias.setAliased();
+            oldName = alias.getOldName();
+            method = alias.getRealMethod();
+        }
+
         putMethod(context.runtime, id, new AliasMethod(this, new CacheEntry(method, method.getImplementationClass(), generation), id, oldName));
 
         if (isRefinement()) addRefinedMethodEntry(context, id, method);
@@ -2516,6 +2524,13 @@ public class RubyModule extends RubyObject {
             // See hack in Rails to silence redefinition warnings: https://github.com/rails/rails/pull/29233
             entry.method.setAliased();
             return;
+        }
+
+        // see the DynamicMethod overload above
+        if (entry.method instanceof AliasMethod alias) {
+            alias.setAliased();
+            oldName = alias.getOldName();
+            entry = alias.getEntry();
         }
 
         putMethod(context.runtime, id, new AliasMethod(this, entry, id, oldName));
