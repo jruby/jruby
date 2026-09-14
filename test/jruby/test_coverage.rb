@@ -116,6 +116,17 @@ class TestCoverage < Test::Unit::TestCase
     end
   end
 
+  def test_method_coverage_leaves_nothing_behind_when_a_define_method_call_fails
+    source = "class Covered\n  BLK = proc { |a| a }\n  define_method(:blk, &BLK)\nend\n"
+    with_source(source) do |path|
+      Coverage.start(methods: true)
+      load path
+      assert_raise(ArgumentError) { Covered.new.blk }
+      Covered::BLK.call(1) # the same block body run as a plain block, which is not a call of the method
+      assert_equal 0, Coverage.result[path][:methods][key(Covered, :blk, 2, '{', '}')]
+    end
+  end
+
   def test_method_coverage_follows_suspend_resume_and_clear
     with_source(METHODS) do |path|
       Coverage.setup(methods: true)
