@@ -2413,6 +2413,16 @@ public abstract class RubyParserBase {
     }
 
     /**
+     * Forget that a line has code on it (a statement marked by newline_node that turned out not to be a line
+     * event, such as a lone statement inside a string interpolation): the line reads as nil in the results
+     * unless another statement marks it.
+     */
+    public void uncoverLine(int i) {
+        if (i < 0 || coverage == null || i >= coverage.length) return;
+        if (isCoverageEnabled()) coverage[i] = -1;
+    }
+
+    /**
      *  Called by coverLine to grow it large enough to add new covered line.
      *  Also called at end up parse to pick up any extra non-code lines which
      *  should be marked -1 for not valid code lines.

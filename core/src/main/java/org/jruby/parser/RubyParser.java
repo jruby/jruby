@@ -5921,7 +5921,12 @@ states[665] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                    p.setHeredocLineIndent(-1);
 
                    /*%%%*/
-                   if (((Node)yyVals[-1+yyTop].value) != null) ((Node)yyVals[-1+yyTop].value).unsetNewline();
+                   if (((Node)yyVals[-1+yyTop].value) != null) {
+                       /* A lone statement in an interpolation is not a line event of its own (MRI); the*/
+                       /* string it is part of is. Several statements in one interpolation each remain one.*/
+                       ((Node)yyVals[-1+yyTop].value).unsetNewline();
+                       p.uncoverLine(yyVals[yyTop - count + 6].start());
+                   }
                    yyVal = p.newEvStrNode(yyVals[yyTop - count + 6].start(), ((Node)yyVals[-1+yyTop].value));
                    /*% %*/
                    /*% ripper: string_embexpr!($6) %*/
@@ -6844,7 +6849,7 @@ states[826] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4851 "parse.y"
+					// line 4856 "parse.y"
 
 }
-					// line 15176 "-"
+					// line 15181 "-"

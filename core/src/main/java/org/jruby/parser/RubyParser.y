@@ -4027,7 +4027,12 @@ string_content  : tSTRING_CONTENT {
                    p.setHeredocLineIndent(-1);
 
                    /*%%%*/
-                   if ($6 != null) $6.unsetNewline();
+                   if ($6 != null) {
+                       // A lone statement in an interpolation is not a line event of its own (MRI); the
+                       // string it is part of is. Several statements in one interpolation each remain one.
+                       $6.unsetNewline();
+                       p.uncoverLine(@6.start());
+                   }
                    $$ = p.newEvStrNode(@6.start(), $6);
                    /*% %*/
                    /*% ripper: string_embexpr!($6) %*/
