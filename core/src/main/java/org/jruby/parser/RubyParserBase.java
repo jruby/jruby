@@ -2417,12 +2417,23 @@ public abstract class RubyParserBase {
     }
 
     /**
+     * Does this parse need the per-line array of starting counts? Only when lines are being counted: methods mode
+     * has no use for it and oneshot_lines starts from an empty list (see CoverageData#prepareCoverage).
+     */
+    private boolean isLineCountingEnabled() {
+        if (!isCoverageEnabled()) return false;
+
+        CoverageData data = runtime.getCoverageData();
+        return data.isLinesEnabled() && !data.isOneshot();
+    }
+
+    /**
      * Zero out coverable lines as they're encountered
      */
     public void coverLine(int i) {
         // We had an overflow so we cannot mark whatever line this is as covered.
         if (i < 0) return;
-        if (isCoverageEnabled()) {
+        if (isLineCountingEnabled()) {
             growCoverageLines(i);
             coverage[i] = 0;
         }
@@ -2452,7 +2463,8 @@ public abstract class RubyParserBase {
     public CoverageData finishCoverage(String file, int lines) {
         if (!isCoverageEnabled()) return null;
 
-        growCoverageLines(lines);
+        // the file is registered with Coverage in every mode; the line array is only filled in when lines are counted
+        if (isLineCountingEnabled()) growCoverageLines(lines);
         CoverageData data = runtime.getCoverageData();
         data.prepareCoverage(file, coverage);
         return data;

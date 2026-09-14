@@ -211,7 +211,8 @@ public class CoverageData {
      * when lines are being measured.
      *
      * @param filename the file just parsed
-     * @param startingLines the initial per-line counts computed by the parser (-1 for lines without code)
+     * @param startingLines the initial per-line counts computed by the parser (-1 for lines without code); only
+     *                      consulted when lines are being counted
      * @return the file's entry, or null when coverage is not set up or the file has no name
      */
     public synchronized FileCoverage prepareCoverage(String filename, int[] startingLines) {
