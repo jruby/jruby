@@ -288,11 +288,18 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
             ExitableInterpreterContext ic) {
         if (callCount >= 0) tryJit(context, this, false);
 
+        return super.startSplitSuperCall(context, self, clazz, name, args, block, ic);
+    }
+
+    @Override
+    public SplitSuperState<?> splitSuperCall(ThreadContext context, IRubyObject self,
+            RubyModule clazz, String name, IRubyObject[] args, Block block,
+            ExitableInterpreterContext ic) {
         if (actualMethod instanceof AbstractIRMethod irMethod) {
-            return irMethod.startSplitSuperCall(context, self, clazz, name, args, block, ic);
+            return irMethod.splitSuperCall(context, self, clazz, name, args, block, ic);
         }
 
-        return super.startSplitSuperCall(context, self, clazz, name, args, block, ic);
+        return super.splitSuperCall(context, self, clazz, name, args, block, ic);
     }
 
     private void doDebug() {

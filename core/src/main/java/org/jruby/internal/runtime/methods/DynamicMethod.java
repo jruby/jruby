@@ -684,6 +684,16 @@ public abstract class DynamicMethod {
     }
 
     /**
+     * Count a call of this entry whose body is not going to run at all: the initialize of a Java subclass that is a
+     * plain super forwarding its arguments is elided by ConcreteJavaProxy, but MRI still fires the CALL event for
+     * it. Callers have already established that the arguments match the method's arity.
+     */
+    public final void coverElidedCall(ThreadContext context) {
+        MethodCoverage methodCoverage = this.methodCoverage;
+        if (methodCoverage != null && context.runtime.getCoverageData().isRunning()) methodCoverage.cover();
+    }
+
+    /**
      * Indicates the method will behave like a ruby2 keywords accepting method.
      * This must be a Ruby implementation to work.  See Module#ruby2_keywords
      * for information on the semantics of a method which is marked this way.

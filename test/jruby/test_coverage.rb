@@ -127,6 +127,34 @@ class TestCoverage < Test::Unit::TestCase
     end
   end
 
+  JAVA_SUBCLASSES = <<~'RUBY'
+    class Covered < java.util.ArrayList
+      def initialize(x)
+        super()
+        @x = x
+      end
+    end
+    class Sub < java.util.ArrayList
+      def initialize(x)
+        super(x)
+      end
+    end
+  RUBY
+
+  # A Java subclass's initialize is run through the split-constructor machinery (or skipped entirely when it is a
+  # plain super), not through a regular method call.
+  def test_method_coverage_counts_java_subclass_initialize
+    with_source(JAVA_SUBCLASSES) do |path|
+      Coverage.start(methods: true)
+      load path
+      3.times { Covered.new(1) }
+      3.times { Sub.new(1) }
+      methods = Coverage.result[path][:methods]
+      assert_equal 3, methods[[Covered, :initialize, 2, 2, 5, 5]]
+      assert_equal 3, methods[[Sub, :initialize, 8, 2, 10, 5]]
+    end
+  end
+
   def test_method_coverage_follows_suspend_resume_and_clear
     with_source(METHODS) do |path|
       Coverage.setup(methods: true)
