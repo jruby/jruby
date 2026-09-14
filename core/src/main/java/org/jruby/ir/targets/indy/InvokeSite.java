@@ -369,6 +369,10 @@ public abstract class InvokeSite extends MutableCallSite {
         DynamicMethod method = entry.method;
         RubyModule sourceModule = entry.sourceModule;
 
+        // A method whose calls Coverage is counting must be invoked through DynamicMethod.call, which hands
+        // the counter to the body.
+        if (method.getMethodCoverage() != null) return null;
+
         if (method instanceof CompiledIRMethod) {
             compiledIRMethod = (CompiledIRMethod)method;
         } else if (method instanceof MixedModeIRMethod) {

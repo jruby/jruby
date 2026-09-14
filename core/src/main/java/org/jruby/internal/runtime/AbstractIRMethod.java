@@ -171,6 +171,7 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
         try {
             AbstractIRMethod clone = (AbstractIRMethod) super.clone();
             clone.callCount = 0;
+            clone.methodCoverage = null; // a dup is a new method entry; Coverage registers it when it is added
             if (clone instanceof MixedModeIRMethod mixedMode) {
                 mixedMode.reset();
             }

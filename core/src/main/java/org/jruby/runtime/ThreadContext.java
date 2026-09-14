@@ -45,6 +45,7 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyProc;
+import org.jruby.ext.coverage.MethodCoverage;
 import org.jruby.exceptions.CatchThrow;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
@@ -202,6 +203,21 @@ public final class ThreadContext {
     /**
      * Constructor for Context.
      */
+    // Coverage (methods mode): the MethodCoverage counter of the DynamicMethod being invoked on this thread. Set by
+    // DynamicMethod#prepareMethodCoverage right before the method body runs and taken by the body's first
+    // instruction (ReceiveMethodCoverageInstr), which counts the call once the arguments have been received.
+    private MethodCoverage pendingMethodCoverage;
+
+    public void setPendingMethodCoverage(MethodCoverage coverage) {
+        pendingMethodCoverage = coverage;
+    }
+
+    public MethodCoverage takePendingMethodCoverage() {
+        MethodCoverage coverage = pendingMethodCoverage;
+        if (coverage != null) pendingMethodCoverage = null;
+        return coverage;
+    }
+
     private ThreadContext(Ruby runtime) {
         this.runtime = runtime;
         this.nil = runtime.getNil();

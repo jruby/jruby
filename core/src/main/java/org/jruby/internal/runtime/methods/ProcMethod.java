@@ -59,6 +59,7 @@ public class ProcMethod extends DynamicMethod implements PositionAware, IRMethod
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
+        prepareMethodCoverage(context);
         return proc.call(context, args, self, klazz, block);
     }
     

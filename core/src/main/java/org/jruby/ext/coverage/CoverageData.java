@@ -26,12 +26,29 @@
 
 package org.jruby.ext.coverage;
 
-import java.util.HashMap;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.Map;
+
+import org.jruby.RubyModule;
+import org.jruby.internal.runtime.AbstractIRMethod;
+import org.jruby.internal.runtime.methods.AliasMethod;
+import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.MethodMethod;
+import org.jruby.internal.runtime.methods.PartialDelegatingMethod;
+import org.jruby.internal.runtime.methods.ProcMethod;
+import org.jruby.ir.IRMethod;
+import org.jruby.ir.IRScope;
+import org.jruby.runtime.BlockBody;
+import org.jruby.runtime.IRBlockBody;
 import org.jruby.util.collections.IntList;
 
 import static org.jruby.ext.coverage.CoverageData.CoverageDataState.*;
 
+/**
+ * The runtime-wide state of the Coverage library: which measurement modes are enabled, whether measurement is
+ * running, and a {@link FileCoverage} for every file parsed since coverage was set up.
+ */
 public class CoverageData {
     public enum CoverageDataState {
         IDLE,
@@ -39,7 +56,7 @@ public class CoverageData {
         RUNNING
     };
 
-    private volatile Map<String, IntList> coverage;
+    private volatile Map<String, FileCoverage> coverage;
     private volatile int mode;                      // actual mode (currentMode == 0 is mode of LINES).
     private volatile int currentMode;               // listed mode for sake of reporting.
     private volatile CoverageDataState state = IDLE;
@@ -78,7 +95,24 @@ public class CoverageData {
         return (mode & ONESHOT_LINES) != 0;
     }
 
-    public Map<String, IntList> getCoverage() {
+    /**
+     * Are line execution counts being measured (lines or oneshot_lines mode)?
+     */
+    public boolean isLinesEnabled() {
+        return (mode & LINES) != 0;
+    }
+
+    /**
+     * Are method calls being counted (methods mode)?
+     */
+    public boolean isMethodsEnabled() {
+        return (mode & METHODS) != 0;
+    }
+
+    /**
+     * The data collected so far, by file name; null when coverage is not set up.
+     */
+    public Map<String, FileCoverage> getCoverage() {
       return coverage;
     }
 
@@ -89,13 +123,17 @@ public class CoverageData {
      * @param line
      */
     public synchronized void coverLine(String filename, int line) {
-        Map<String, IntList> coverage = this.coverage;
+        Map<String, FileCoverage> coverage = this.coverage;
 
         // negative lines are not included in coverage
         if (line < 0) return;
 
         if (coverage != null) {
-            IntList lines = coverage.get(filename);
+            FileCoverage file = coverage.get(filename);
+
+            if (file == null) return;
+
+            IntList lines = file.getLines();
 
             if (lines == null) return;
 
@@ -108,28 +146,36 @@ public class CoverageData {
         }
     }
 
+    /**
+     * Zero all counts collected so far but keep measuring (Coverage.result(clear: true)).
+     */
     public synchronized void clearCoverage() {
-        Map<String, IntList> coverage = this.coverage;
+        Map<String, FileCoverage> coverage = this.coverage;
 
         if (coverage != null) {
-            Map<String, IntList> cov = coverage;
-            if ((mode & ONESHOT_LINES) != 0) {
-                for (IntList value: cov.values()) {
-                    value.clear();
-                }
-            } else {
-                for (IntList value: cov.values()) {
-                    for (int i = 0; i < value.size(); i++) {
-                        int v = value.get(i);
-                        if (v != -1) value.set(i, 0);
+            for (FileCoverage file : coverage.values()) {
+                IntList lines = file.getLines();
+
+                if (lines != null) {
+                    if (isOneshot()) {
+                        lines.clear();
+                    } else {
+                        for (int i = 0; i < lines.size(); i++) {
+                            int v = lines.get(i);
+                            if (v != -1) lines.set(i, 0);
+                        }
                     }
+                }
+
+                for (MethodCoverage method : file.getMethods()) {
+                    method.clear();
                 }
             }
         }
     }
 
     public synchronized void resumeCoverage() {
-        setupLines();
+        setupCoverage();
 
         this.state = RUNNING;
     }
@@ -142,17 +188,16 @@ public class CoverageData {
         this.state = state;
         this.mode = mode;
         this.currentMode = currentMode;
-        setupLines();
+        setupCoverage();
     }
 
-    private void setupLines() {
-        Map<String, IntList> coverage = this.coverage;
-
-        if (coverage == null && ((mode & (LINES|ONESHOT_LINES|EVAL)) != 0)) this.coverage = new HashMap<>();
+    private void setupCoverage() {
+        // files are reported in the order they were parsed, as MRI does
+        if (this.coverage == null) this.coverage = new LinkedHashMap<>();
     }
 
-    public synchronized Map<String, IntList> resetCoverage() {
-        Map<String, IntList> coverage = this.coverage;
+    public synchronized Map<String, FileCoverage> resetCoverage() {
+        Map<String, FileCoverage> coverage = this.coverage;
 
         this.coverage = null;
         this.mode = CoverageData.NONE;
@@ -160,38 +205,45 @@ public class CoverageData {
         return coverage;
     }
 
-    private static boolean hasCodeBeenPartiallyCovered(IntList lines) {
-        for (int i = 0; i < lines.size(); i++) {
-            if (lines.get(i) > 0) return true;
-        }
-
-        return false;
-    }
-
-    public synchronized Map<String, IntList> prepareCoverage(String filename, int[] startingLines) {
-        Map<String, IntList> coverage = this.coverage;
+    /**
+     * Start tracking a file that has just been parsed: every file parsed while coverage is set up gets a
+     * {@link FileCoverage} entry (that is what makes it appear in Coverage.result), and line counts are prepared
+     * when lines are being measured.
+     *
+     * @param filename the file just parsed
+     * @param startingLines the initial per-line counts computed by the parser (-1 for lines without code)
+     * @return the file's entry, or null when coverage is not set up or the file has no name
+     */
+    public synchronized FileCoverage prepareCoverage(String filename, int[] startingLines) {
+        Map<String, FileCoverage> coverage = this.coverage;
 
         if (filename == null) {
             // null filename from certain evals, Ruby.executeScript, etc (jruby/jruby#5111)
             // we opt to ignore scripts with no filename, since coverage means nothing
-            return coverage;
+            return null;
         }
 
-        if (coverage != null) {
+        if (coverage == null) return null;
+
+        FileCoverage file = coverage.get(filename);
+
+        if (file == null) {
+            file = new FileCoverage();
+            coverage.put(filename, file);
+        }
+
+        if (isLinesEnabled()) {
             if (isOneshot()) {
-                coverage.put(filename, new IntList());
+                file.setLines(new IntList());
             } else {
-                IntList existing = coverage.get(filename);
-                if (existing != null) {
-                    // Two files with the same path and name just overlay the coverage...weird but true.
-                    coverage.put(filename, mergeLines(existing, startingLines));
-                } else {
-                    coverage.put(filename, new IntList(startingLines));
-                }
+                IntList existing = file.getLines();
+
+                // Two files with the same path and name just overlay the coverage...weird but true.
+                file.setLines(existing == null ? new IntList(startingLines) : mergeLines(existing, startingLines));
             }
         }
 
-        return coverage;
+        return file;
     }
 
     private IntList mergeLines(IntList existing, int[] startingLines) {
@@ -202,7 +254,7 @@ public class CoverageData {
         if (existingSize < startingLinesLength) {
             int[] newLines = new int[startingLinesLength];
             System.arraycopy(existing.toIntArray(), 0, newLines, 0, existingSize);
-            java.util.Arrays.fill(newLines, existingSize, startingLinesLength, -1);
+            Arrays.fill(newLines, existingSize, startingLinesLength, -1);
             result = new IntList(newLines);
         }
 
@@ -220,6 +272,66 @@ public class CoverageData {
         }
 
         return result;
+    }
+
+    /**
+     * A method entry is being added to a module: if methods are being measured and the method was defined from a
+     * file being tracked, create its {@link MethodCoverage} counter and attach it to the entry so that its calls
+     * get counted. This is the equivalent of MRI's per-method-entry counters; like MRI, an entry that merely
+     * forwards to another entry (an alias, a visibility change of an inherited method) gets no counter of its own
+     * because its calls count toward the entry it forwards to.
+     *
+     * @param method the method entry being added (after any wrapping/duplication the module performs)
+     */
+    public synchronized void registerMethod(DynamicMethod method) {
+        if (!isMethodsEnabled()) return;
+
+        Map<String, FileCoverage> coverage = this.coverage;
+        if (coverage == null) return;
+
+        if (method instanceof AliasMethod || method instanceof PartialDelegatingMethod || method instanceof MethodMethod) return;
+
+        DynamicMethod real = method.getRealMethod();
+        if (real.getMethodCoverage() != null) return; // already an entry being counted
+
+        IRScope scope = definitionScope(real);
+        if (scope == null) return;
+
+        FileCoverage file = coverage.get(scope.getFile());
+        if (file == null) return;
+
+        int startLine = scope.getLine() + 1;
+        if (startLine <= 0) return; // MRI ignores methods with non-positive line numbers (eval with a line offset)
+
+        RubyModule owner = method.getImplementationClass();
+        if (owner == null) return;
+
+        MethodCoverage methodCoverage = new MethodCoverage(scope, owner.getOrigin(), real.getName(),
+                startLine, scope.getStartColumn(), scope.getEndLine() + 1, scope.getEndColumn());
+
+        file.getMethods().add(methodCoverage);
+        real.setMethodCoverage(methodCoverage);
+    }
+
+    /**
+     * The scope holding the Ruby source of a method entry: the IRMethod of a def (or of a block define_method
+     * converted into a method), or the IRClosure of a block/lambda passed to define_method. Null for anything
+     * else (native methods, attr accessors, precompiled code without IR).
+     */
+    private static IRScope definitionScope(DynamicMethod method) {
+        if (method instanceof AbstractIRMethod irMethod) {
+            IRScope scope = irMethod.getIRScope();
+
+            return scope instanceof IRMethod ? scope : null;
+        }
+
+        if (method instanceof ProcMethod procMethod) {
+            BlockBody body = procMethod.getProc().getBlock().getBody();
+
+            return body instanceof IRBlockBody irBody ? irBody.getScope() : null;
+        }
+
+        return null;
     }
 
     public CoverageDataState getCurrentState() {

@@ -2542,6 +2542,7 @@ states[71] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop,
 };
 states[72] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     ((DefHolder)yyVals[0+yyTop].value).line = yyVals[yyTop - count + 1].start();
+                    ((DefHolder)yyVals[0+yyTop].value).column = ProductionState.column(yyVals[yyTop - count + 1].start);
                     yyVal = ((DefHolder)yyVals[0+yyTop].value);
   return yyVal;
 };
@@ -2554,6 +2555,7 @@ states[73] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop,
 states[74] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.setState(EXPR_ENDFN|EXPR_LABEL);
                     ((DefHolder)yyVals[0+yyTop].value).line = yyVals[yyTop - count + 1].start();
+                    ((DefHolder)yyVals[0+yyTop].value).column = ProductionState.column(yyVals[yyTop - count + 1].start);
                     yyVal = ((DefHolder)yyVals[0+yyTop].value);
                        ((DefHolder)yyVal).value = p.new_array(((IRubyObject)yyVals[-3+yyTop].value), ((IRubyObject)yyVals[-2+yyTop].value), ((DefHolder)yyVal).value);
 
@@ -6681,7 +6683,7 @@ states[826] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 }
-					// line 4688 "ripper_RubyParser.out"
+					// line 4690 "ripper_RubyParser.out"
 
 }
-					// line 15013 "-"
+					// line 15015 "-"

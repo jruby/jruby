@@ -42,11 +42,18 @@ public abstract class MethodDefNode extends Node implements INameNode, DefNode {
     protected final StaticScope scope;
     protected final Node bodyNode;
     protected final int endLine;
+    protected final int startColumn;
+    protected final int endColumn;
     // We lazily compile methods in IR but Ruby expects next and break to raise syntax error so we will eagerly
     // build methods which contain those two keywords.
     protected boolean containsNextBreak = false;
 
     public MethodDefNode(int line, RubySymbol name, ArgsNode argsNode, StaticScope scope, Node bodyNode, int endLine) {
+        this(line, -1, name, argsNode, scope, bodyNode, endLine, -1);
+    }
+
+    public MethodDefNode(int line, int startColumn, RubySymbol name, ArgsNode argsNode, StaticScope scope, Node bodyNode,
+                         int endLine, int endColumn) {
         super(line, bodyNode.containsVariableAssignment());
 
         this.name = name;
@@ -54,6 +61,8 @@ public abstract class MethodDefNode extends Node implements INameNode, DefNode {
         this.scope = scope;
         this.bodyNode = bodyNode;
         this.endLine = endLine;
+        this.startColumn = startColumn;
+        this.endColumn = endColumn;
     }
 
     /**
@@ -96,6 +105,14 @@ public abstract class MethodDefNode extends Node implements INameNode, DefNode {
      */
     public int getEndLine() {
         return endLine;
+    }
+
+    public int getStartColumn() {
+        return startColumn;
+    }
+
+    public int getEndColumn() {
+        return endColumn;
     }
 
     public void setContainsNextBreak() {

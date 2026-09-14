@@ -436,6 +436,22 @@ public abstract class RubyParserBase {
         return argsNode.isEmpty();
     }
 
+    // Packed (line, column) position where the parameter list of the lambda currently being parsed starts.  This is
+    // stashed by the f_larglist production and consumed immediately afterward (before any nested lambda can be
+    // parsed) so that the lambda's source span can be recorded like MRI does: from the start of the parameter list
+    // (or from just past '->' when there is none) through the end of the body.
+    private long lambdaArgsStart;
+
+    public void setLambdaArgsStart(long position) {
+        lambdaArgsStart = position;
+    }
+
+    public long takeLambdaArgsStart() {
+        long position = lambdaArgsStart;
+        lambdaArgsStart = 0;
+        return position;
+    }
+
     // We know it has to be tLABEL or tIDENTIFIER so none of the other assignable logic is needed
     public AssignableNode assignableLabelOrIdentifier(ByteList byteName, Node value) {
         RubySymbol name = symbolID(byteName);

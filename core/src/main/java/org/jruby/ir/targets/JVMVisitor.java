@@ -52,6 +52,7 @@ import org.jruby.ir.targets.IRBytecodeAdapter.BlockPassType;
 import org.jruby.ir.targets.ValueCompiler.DStringElement;
 import org.jruby.ir.targets.ValueCompiler.DStringElementType;
 import org.jruby.ir.targets.indy.CallTraceSite;
+import org.jruby.ext.coverage.MethodCoverage;
 import org.jruby.ir.targets.indy.CoverageSite;
 import org.jruby.ir.targets.indy.MetaClassBootstrap;
 import org.jruby.parser.StaticScope;
@@ -2529,6 +2530,21 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadSelfBlock();
         jvmAdapter().invokevirtual(p(Block.class), "getVisibility", sig(Visibility.class));
         jvmStoreLocal(instr.getResult());
+    }
+
+    @Override
+    public void ReceiveMethodCoverageInstr(ReceiveMethodCoverageInstr instr) {
+        jvmMethod().loadContext();
+        jvmAdapter().invokevirtual(p(ThreadContext.class), "takePendingMethodCoverage", sig(MethodCoverage.class));
+        jvmStoreLocal(instr.getResult());
+    }
+
+    @Override
+    public void CoverMethodInstr(CoverMethodInstr instr) {
+        jvmMethod().loadContext();
+        jvmMethod().loadStaticScope();
+        visit(instr.getCoverage());
+        jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "coverMethod", sig(void.class, ThreadContext.class, StaticScope.class, Object.class));
     }
 
     @Override

@@ -767,7 +767,7 @@ command_asgn    : lhs '=' lex_ctxt command_rhs {
                     p.endless_method_name($1, @1);
                     p.restore_defun($1);
                     /*%%%*/
-                    $$ = new DefnNode($1.line, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), @4.end());
+                    $$ = new DefnNode($1.line, $1.column, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), ProductionState.line(@4.end), ProductionState.column(@4.end));
                     // Changed from MRI
                     /*% %*/
                     /*% ripper: def!(get_value($1), $2, bodystmt!($4, Qnil, Qnil, Qnil)) %*/
@@ -777,7 +777,7 @@ command_asgn    : lhs '=' lex_ctxt command_rhs {
                     p.endless_method_name($1, @1);
                     p.restore_defun($1);
                     /*%%%*/
-                    $$ = new DefsNode($1.line, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), @4.end());
+                    $$ = new DefsNode($1.line, $1.column, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), ProductionState.line(@4.end), ProductionState.column(@4.end));
                     /*% %*/                    
                     /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, bodystmt!($4, Qnil, Qnil, Qnil)) %*/
                     p.popCurrentScope();
@@ -878,6 +878,7 @@ def_name        : fname {
 // [!null] - DefHolder
 defn_head       : k_def def_name {
                     $2.line = @1.start();
+                    $2.column = ProductionState.column(@1.start);
                     $$ = $2;
                 };
 
@@ -889,6 +890,7 @@ defs_head       : k_def singleton dot_or_colon {
                 } def_name {
                     p.setState(EXPR_ENDFN|EXPR_LABEL);
                     $5.line = @1.start();
+                    $5.column = ProductionState.column(@1.start);
                     $$ = $5;
                     /*%%%*/
                     $5.setSingleton($2);
@@ -1917,7 +1919,7 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     p.endless_method_name($1, @1);
                     p.restore_defun($1);
                     /*%%%*/
-                    $$ = new DefnNode($1.line, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), @4.end());
+                    $$ = new DefnNode($1.line, $1.column, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), ProductionState.line(@4.end), ProductionState.column(@4.end));
                     if (p.isNextBreak) $<DefnNode>$.setContainsNextBreak();
                     // Changed from MRI (combined two stmts)
                     /*% %*/
@@ -1928,7 +1930,7 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     p.endless_method_name($1, @1);
                     p.restore_defun($1);
                     /*%%%*/
-                    $$ = new DefsNode($1.line, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), @4.end());
+                    $$ = new DefsNode($1.line, $1.column, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), ProductionState.line(@4.end), ProductionState.column(@4.end));
                     if (p.isNextBreak) $<DefsNode>$.setContainsNextBreak();
                     /*% %*/
                     /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, bodystmt!($4, Qnil, Qnil, Qnil)) %*/
@@ -2089,7 +2091,7 @@ call_args       : command {
                     p.endless_method_name($1, @1);
                     p.restore_defun($1);
                     /*%%%*/
-                    $$ = new DefnNode($1.line, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), @4.end());
+                    $$ = new DefnNode($1.line, $1.column, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), ProductionState.line(@4.end), ProductionState.column(@4.end));
                     if (p.isNextBreak) $<DefnNode>$.setContainsNextBreak();
                     // Changed from MRI (combined two stmts)
                     /*% %*/
@@ -2100,7 +2102,7 @@ call_args       : command {
                     p.endless_method_name($1, @1);
                     p.restore_defun($1);
                     /*%%%*/
-                    $$ = new DefsNode($1.line, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), @4.end());
+                    $$ = new DefsNode($1.line, $1.column, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), ProductionState.line(@4.end), ProductionState.column(@4.end));
                     if (p.isNextBreak) $<DefsNode>$.setContainsNextBreak();
                     /*% %*/
                     /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, bodystmt!($4, Qnil, Qnil, Qnil)) %*/
@@ -2516,7 +2518,7 @@ primary         : literal
                     p.restore_defun($1);
                     /*%%%*/
                     Node body = p.reduce_nodes(p.remove_begin(p.makeNullNil($4)));
-                    $$ = new DefnNode($1.line, $1.name, $2, p.getCurrentScope(), body, @4.end());
+                    $$ = new DefnNode($1.line, $1.column, $1.name, $2, p.getCurrentScope(), body, ProductionState.line(@5.end), ProductionState.column(@5.end));
                     if (p.isNextBreak) $<DefnNode>$.setContainsNextBreak();
                     /*% %*/
                     /*% ripper: def!(get_value($1), $2, $4) %*/
@@ -2528,7 +2530,7 @@ primary         : literal
                     p.restore_defun($1);
                     /*%%%*/
                     Node body = p.reduce_nodes(p.remove_begin(p.makeNullNil($4)));
-                    $$ = new DefsNode($1.line, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), body, @4.end());
+                    $$ = new DefsNode($1.line, $1.column, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), body, ProductionState.line(@5.end), ProductionState.column(@5.end));
                     if (p.isNextBreak) $<DefsNode>$.setContainsNextBreak();
                     // Changed from MRI (no more get_value)
                     /*% %*/                    
@@ -2952,6 +2954,9 @@ lambda          : tLAMBDA {
                     p.setLeftParenBegin(p.getParenNest());
                 } max_numparam numparam it_id allow_exits f_larglist {
                     p.getCmdArgumentState().push0();
+                    /*%%%*/
+                    $$ = p.takeLambdaArgsStart();
+                    /*% %*/
                 } lambda_body {
                     @@prod_type@@ it_id = p.it_id();
                     int max_numparam = p.restoreMaxNumParam($<Integer>3);
@@ -2961,6 +2966,7 @@ lambda          : tLAMBDA {
                     /*%%%*/
                     ArgsNode args = p.args_with_numbered($7, max_numparam, it_id);
                     $$ = new LambdaNode(@1.start(), args, $9, p.getCurrentScope(), p.src_line());
+                    $<LambdaNode>$.setSourceSpan(ProductionState.column($<Long>8), ProductionState.line(@9.end), ProductionState.column(@9.end));
                     /*% %*/
                     /*% ripper: lambda!($5, $7) %*/
                     p.setLeftParenBegin($<Integer>2);
@@ -2973,6 +2979,7 @@ f_larglist      : '(' f_args opt_bv_decl ')' {
                     /*%%%*/
                     $$ = $2;
                     p.ordinalMaxNumParam();
+                    p.setLambdaArgsStart(@1.start);
                     /*% %*/
                     /*% ripper: paren!($2) %*/
                 }
@@ -2981,6 +2988,11 @@ f_larglist      : '(' f_args opt_bv_decl ')' {
                     /*%%%*/
                     if (!p.isArgsInfoEmpty($1)) {
                         p.ordinalMaxNumParam();
+                        p.setLambdaArgsStart(@1.start);
+                    } else {
+                        // No parameter list: like MRI the lambda's source starts just past '->' (the end of the
+                        // preceding token, which is where an empty production's location ends).
+                        p.setLambdaArgsStart(@1.end);
                     }
                     /*% %*/
                     $$ = $1;
@@ -2999,6 +3011,7 @@ lambda_body     : tLAMBEG compstmt '}' {
 do_block        : k_do_block do_body k_end {
                     $$ = $2;
                     /*%%%*/
+                    $2.setSourceSpan(ProductionState.column(@1.start), ProductionState.line(@3.end), ProductionState.column(@3.end));
                     /*% %*/
                 };
 
@@ -3110,12 +3123,14 @@ brace_block     : '{' brace_body '}' {
                     $$ = $2;
                     /*%%%*/
                     $2.setLine(@1.end());
+                    $2.setSourceSpan(ProductionState.column(@1.start), ProductionState.line(@3.end), ProductionState.column(@3.end));
                     /*% %*/
                 }
                 | k_do do_body k_end {
                     $$ = $2;
                     /*%%%*/
                     $2.setLine(@1.end());
+                    $2.setSourceSpan(ProductionState.column(@1.start), ProductionState.line(@3.end), ProductionState.column(@3.end));
                     /*% %*/
                 };
 

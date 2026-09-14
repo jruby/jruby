@@ -73,6 +73,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args,
             Block block) {
+        prepareMethodCoverage(context);
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         if (callCount >= 0) promoteToFullBuild(context);
@@ -84,6 +85,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name,
             IRubyObject[] args) {
+        prepareMethodCoverage(context);
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         if (callCount >= 0) promoteToFullBuild(context);
@@ -94,6 +96,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
+        prepareMethodCoverage(context);
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         if (callCount >= 0) promoteToFullBuild(context);
@@ -104,6 +107,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+        prepareMethodCoverage(context);
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         if (callCount >= 0) promoteToFullBuild(context);
@@ -115,6 +119,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0,
             Block block) {
+        prepareMethodCoverage(context);
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         if (callCount >= 0) promoteToFullBuild(context);
@@ -125,6 +130,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
+        prepareMethodCoverage(context);
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         if (callCount >= 0) promoteToFullBuild(context);
@@ -136,6 +142,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0,
             IRubyObject arg1, Block block) {
+        prepareMethodCoverage(context);
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         if (callCount >= 0) promoteToFullBuild(context);
@@ -147,6 +154,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0,
             IRubyObject arg1) {
+        prepareMethodCoverage(context);
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         if (callCount >= 0) promoteToFullBuild(context);
@@ -158,6 +166,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0,
             IRubyObject arg1, IRubyObject arg2, Block block) {
+        prepareMethodCoverage(context);
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         if (callCount >= 0) promoteToFullBuild(context);
@@ -169,6 +178,7 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0,
             IRubyObject arg1, IRubyObject arg2) {
+        prepareMethodCoverage(context);
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         if (callCount >= 0) promoteToFullBuild(context);

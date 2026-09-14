@@ -95,6 +95,7 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args,
             Block block) {
+        prepareMethodCoverage(context);
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         // try jit before checking actualMethod, so we use jitted version immediately if
@@ -131,6 +132,7 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
+        prepareMethodCoverage(context);
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         // try jit before checking actualMethod, so we use jitted version immediately if
@@ -168,6 +170,7 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0,
             Block block) {
+        prepareMethodCoverage(context);
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         // try jit before checking actualMethod, so we use jitted version immediately if
@@ -205,6 +208,7 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0,
             IRubyObject arg1, Block block) {
+        prepareMethodCoverage(context);
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         // try jit before checking actualMethod, so we use jitted version immediately if
@@ -242,6 +246,7 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0,
             IRubyObject arg1, IRubyObject arg2, Block block) {
+        prepareMethodCoverage(context);
         if (IRRuntimeHelpers.isDebug()) doDebug();
 
         // try jit before checking actualMethod, so we use jitted version immediately if
