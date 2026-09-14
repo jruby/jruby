@@ -59,6 +59,29 @@ module ObjectSpaceFixtures
 
   SECOND_LEVEL_CONSTANT = ObjectToBeFound.new(:second_level_constant)
 
+  # The key (or the value) is created in this frame and dropped on return, so the entry
+  # only stays in the map for as long as the map itself keeps it alive.
+  def self.weakmap_add_unreachable_key(map, value)
+    map[Object.new] = value
+    nil
+  end
+
+  def self.weakmap_add_unreachable_value(map, key)
+    map[key] = Object.new
+    nil
+  end
+
+  # GC.start is only a hint on some implementations, so churn garbage between attempts
+  # until the block holds (true) or the attempts run out (false).
+  def self.collect_until(attempts = 1000)
+    attempts.times do
+      GC.start
+      return true if yield
+      @churn = Array.new(100) { "x" * 25_000 }
+    end
+    false
+  end
+
 end
 
 OBJECT_SPACE_TOP_LEVEL_CONSTANT = ObjectSpaceFixtures::ObjectToBeFound.new(:top_level_constant)
