@@ -142,6 +142,8 @@ public final class ThreadContext {
     // generally live detected info at a callsite that we are passing an empty hash as kwrest.
     // it is also statically determined by literal **{} (which is only found in test suites).
     public final static int CALL_KEYWORD_EMPTY = 1 << 3;
+    // The callInfo for this call has been restored from an enclosing forwarding argument list.
+    public final static int CALL_FORWARDING =    1 << 4;
 
     public int callInfo;
 

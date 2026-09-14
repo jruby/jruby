@@ -961,6 +961,10 @@ public class IRRuntimeHelpers {
 
     @JIT @Interp
     public static void setCallInfo(ThreadContext context, int flags) {
+        // Forwarding args set callInfo elsewhere based on the incoming call structure.
+        // We leave them as-is and return.
+        if ((flags & CALL_FORWARDING) != 0) return;
+
         // CALL_KEYWORD_EMPTY is set dynamically while building this call's arguments (argsPush,
         // isHashEmpty, irSplat) when a keyword-rest or splat turns out to be empty, and it must
         // survive into the call so the callee treats the kwargs as explicitly empty. It is only
@@ -974,6 +978,17 @@ public class IRRuntimeHelpers {
         } else {
             context.callInfo = flags;
         }
+    }
+
+    @JIT @Interp
+    public static RubyFixnum captureCallInfo(ThreadContext context) {
+        return context.runtime.newFixnum(context.callInfo);
+    }
+
+    @JIT @Interp
+    public static IRubyObject restoreCallInfo(ThreadContext context, IRubyObject callInfo) {
+        context.callInfo = (int) ((RubyFixnum) callInfo).getValue();
+        return callInfo;
     }
 
     public static void checkForExtraUnwantedKeywordArgs(ThreadContext context, final StaticScope scope, RubyHash keywordArgs) {
