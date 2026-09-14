@@ -11,6 +11,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.ext.ffi.NativeType;
+import org.jruby.ext.ffi.Platform;
 import org.jruby.ext.ffi.StructLayout;
 import org.jruby.ext.ffi.Type;
 import org.jruby.runtime.ThreadContext;
@@ -120,36 +121,7 @@ public final class FFIUtil {
 
         if (layout.isUnion()) {
 
-            //
-            // The jffi union type is broken, so emulate a union with a Struct type, containing
-            // an array of elements of the correct alignment.
-            //
-            com.kenai.jffi.Type[] alignmentTypes = {
-                    com.kenai.jffi.Type.SINT8,
-                    com.kenai.jffi.Type.SINT16,
-                    com.kenai.jffi.Type.SINT32,
-                    com.kenai.jffi.Type.SINT64,
-                    com.kenai.jffi.Type.FLOAT,
-                    com.kenai.jffi.Type.DOUBLE,
-                    com.kenai.jffi.Type.LONGDOUBLE,
-            };
-
-            com.kenai.jffi.Type alignmentType = null;
-            for (com.kenai.jffi.Type t : alignmentTypes) {
-                if (t.alignment() == layout.getNativeAlignment()) {
-                    alignmentType = t;
-                    break;
-                }
-            }
-            if (alignmentType == null) {
-                throw layout.getRuntime().newRuntimeError("cannot discern base alignment type for union of alignment "
-                        + layout.getNativeAlignment());
-            }
-
-            com.kenai.jffi.Type[] fields = new com.kenai.jffi.Type[layout.getNativeSize() / alignmentType.size()];
-            Arrays.fill(fields, alignmentType);
-
-            return com.kenai.jffi.Struct.newStruct(fields);
+            return newUnion(layout);
 
         } else {
 
@@ -164,6 +136,111 @@ public final class FFIUtil {
             }
 
             return com.kenai.jffi.Struct.newStruct(fields.toArray(new com.kenai.jffi.Type[fields.size()]));
+        }
+    }
+
+    private static final boolean SYSV_X86_64 = Platform.getPlatform().getCPU() == Platform.CPU_TYPE.X86_64
+            && Platform.getPlatform().getOS() != Platform.OS_TYPE.WINDOWS;
+
+    private static final com.kenai.jffi.Type[] INTEGER_FILLERS = {
+            com.kenai.jffi.Type.SINT8, com.kenai.jffi.Type.SINT16, com.kenai.jffi.Type.SINT32,
+            com.kenai.jffi.Type.SINT64, com.kenai.jffi.Type.LONGDOUBLE,
+    };
+
+    private record Leaf(NativeType type, int offset, int size) {}
+
+    /**
+     * Creates a new JFFI Struct descriptor for a union. libffi has no union type, so the union is
+     * described as a struct of filler cells that libffi classifies the way the C ABI classifies the union.
+     *
+     * @param layout The union layout
+     * @return A new Struct descriptor.
+     */
+    static final com.kenai.jffi.Aggregate newUnion(org.jruby.ext.ffi.StructLayout layout) {
+        final int size = layout.getNativeSize(), alignment = layout.getNativeAlignment();
+
+        java.util.List<Leaf> leaves = new java.util.ArrayList<>();
+        for (StructLayout.Member m : layout.getMembers()) {
+            collectLeaves(m.type(), m.offset(), leaves);
+        }
+
+        NativeType homogeneous = leaves.isEmpty() ? null : leaves.get(0).type();
+        for (Leaf leaf : leaves) {
+            if (leaf.type() != homogeneous) homogeneous = null;
+        }
+
+        com.kenai.jffi.Type filler = null;
+        if (homogeneous != null && isFloatingPoint(homogeneous)) {
+            // Every member is made of one floating type: a homogeneous floating-point aggregate
+            // on AArch64 (and PPC64 ELFv2), SSE class on SysV x86_64. Keep the real type.
+            filler = getFFIType(homogeneous);
+
+        } else if (SYSV_X86_64 && alignment >= 4 && alignment <= 8 && size <= 16) {
+            // SysV x86_64 classifies each eightbyte separately: SSE only if every field
+            // overlapping it is float or double, INTEGER otherwise.
+            com.kenai.jffi.Type[] cells = new com.kenai.jffi.Type[size / alignment];
+            for (int i = 0; i < cells.length; i++) {
+                int eightbyte = (i * alignment) & ~7;
+                boolean sse = true;
+                for (Leaf leaf : leaves) {
+                    if (leaf.offset() < eightbyte + 8 && leaf.offset() + leaf.size() > eightbyte
+                            && leaf.type() != NativeType.FLOAT && leaf.type() != NativeType.DOUBLE) {
+                        sse = false;
+                        break;
+                    }
+                }
+                cells[i] = sse
+                        ? (alignment == 8 ? com.kenai.jffi.Type.DOUBLE : com.kenai.jffi.Type.FLOAT)
+                        : (alignment == 8 ? com.kenai.jffi.Type.SINT64 : com.kenai.jffi.Type.SINT32);
+            }
+            return com.kenai.jffi.Struct.newStruct(cells);
+        }
+
+        if (filler == null) {
+            // Anything else travels in integer registers or memory: an integer of the union's alignment.
+            for (com.kenai.jffi.Type t : INTEGER_FILLERS) {
+                if (t.alignment() == alignment) {
+                    filler = t;
+                    break;
+                }
+            }
+        }
+        if (filler == null) {
+            throw layout.getRuntime().newRuntimeError("cannot discern base alignment type for union of alignment "
+                    + alignment);
+        }
+
+        com.kenai.jffi.Type[] fields = new com.kenai.jffi.Type[size / filler.size()];
+        Arrays.fill(fields, filler);
+
+        return com.kenai.jffi.Struct.newStruct(fields);
+    }
+
+    private static boolean isFloatingPoint(NativeType type) {
+        return type == NativeType.FLOAT || type == NativeType.DOUBLE || type == NativeType.LONGDOUBLE;
+    }
+
+    /** Flattens arrays, nested structs/unions and mapped types into scalar leaves with their offsets. */
+    private static void collectLeaves(Type type, int offset, java.util.List<Leaf> leaves) {
+        if (type instanceof Type.Array array) {
+            Type component = array.getComponentType();
+            for (int i = 0; i < array.length(); i++) {
+                collectLeaves(component, offset + i * component.getNativeSize(), leaves);
+            }
+
+        } else if (type instanceof org.jruby.ext.ffi.StructByValue sbv) {
+            collectLeaves(sbv.getStructLayout(), offset, leaves);
+
+        } else if (type instanceof StructLayout struct) {
+            for (StructLayout.Member m : struct.getMembers()) {
+                collectLeaves(m.type(), offset + m.offset(), leaves);
+            }
+
+        } else if (type instanceof org.jruby.ext.ffi.MappedType mapped) {
+            collectLeaves(mapped.getRealType(), offset, leaves);
+
+        } else {
+            leaves.add(new Leaf(type.getNativeType(), offset, type.getNativeSize()));
         }
     }
 
