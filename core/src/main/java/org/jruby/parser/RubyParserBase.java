@@ -451,6 +451,116 @@ public abstract class RubyParserBase {
         return position;
     }
 
+    // ---- source spans and branch information for Coverage (positions are ProductionState-packed) ----
+
+    public Node span(Node node, long start, long end) {
+        if (node != null) node.setSourceSpan(start, end);
+        return node;
+    }
+
+    public Node lock_span(Node node) {
+        if (node != null) node.lockSourceSpan();
+        return node;
+    }
+
+    public Node paren_span(Node node, long start, long end) {
+        if (node != null) node.setParenSpan(start, end);
+        return node;
+    }
+
+    /**
+     * 0 unless MRI's compiler would fold the predicate (a nil, true, false, number, string or symbol literal,
+     * or && / || of those), 1 when it folds to true, -1 when to false.
+     */
+    private static int constantPredicate(Node node) {
+        if (node == null) return 0;
+        switch (node.getNodeType()) {
+            case NILNODE: case FALSENODE: return -1;
+            case TRUENODE: case FIXNUMNODE: case BIGNUMNODE: case FLOATNODE: case SYMBOLNODE: return 1;
+            case STRNODE: return node instanceof FileNode ? 0 : 1;
+            case ANDNODE: {
+                int left = constantPredicate(((AndNode) node).getFirstNode());
+                int right = constantPredicate(((AndNode) node).getSecondNode());
+                return left == 0 || right == 0 ? 0 : left < 0 ? -1 : right;
+            }
+            case ORNODE: {
+                int left = constantPredicate(((OrNode) node).getFirstNode());
+                int right = constantPredicate(((OrNode) node).getSecondNode());
+                return left == 0 || right == 0 ? 0 : left > 0 ? 1 : right;
+            }
+            default: return 0;
+        }
+    }
+
+    private static void markBranch(Node node, Node predicate, boolean unless, boolean elsif, long predicateEnd, long elseStart) {
+        if (node instanceof IfNode ifNode) {
+            ifNode.markBranch(unless, elsif, predicateEnd, elseStart);
+            ifNode.setConstantPredicate(constantPredicate(predicate));
+        }
+    }
+
+    /** if ... [elsif ...] [else ...] end */
+    public Node branch_if(Node node, Node predicate, long predicateEnd, long elseStart, long end) {
+        markBranch(node, predicate, false, false, predicateEnd, elseStart);
+        if (node instanceof IfNode ifNode) {
+            // MRI reports every elsif clause as reaching the shared 'end'
+            for (Node tail = ifNode.getElseBody(); tail instanceof IfNode elsif && elsif.isElsif(); tail = elsif.getElseBody()) {
+                elsif.setSourceSpanEnd(end);
+            }
+        }
+        return node;
+    }
+
+    /** unless ... [else ...] end (then/else are swapped in the IfNode) */
+    public Node branch_unless(Node node, Node predicate, long predicateEnd) {
+        markBranch(node, predicate, true, false, predicateEnd, -1);
+        return node;
+    }
+
+    /** elsif ... (nested as the else body of the enclosing if) */
+    public Node branch_elsif(Node node, Node predicate, long predicateEnd, long elseStart) {
+        markBranch(node, predicate, false, true, predicateEnd, elseStart);
+        return node;
+    }
+
+    /** cond ? a : b */
+    public Node branch_ternary(Node node, Node predicate, long predicateEnd) {
+        markBranch(node, predicate, false, false, predicateEnd, -1);
+        return node;
+    }
+
+    /** stmt if cond / stmt unless cond */
+    public Node branch_modifier(Node node, Node predicate, Node statement, boolean unless, long predicateEnd) {
+        markBranch(node, predicate, unless, false, predicateEnd, -1);
+        if (node instanceof IfNode ifNode) ifNode.setSourceBody(statement);
+        return node;
+    }
+
+    /** when a, b [then] body: the clause spans from 'when' through 'then' (or the last value) */
+    public Node branch_when(Node node, long start, Long thenEnd, long argsEnd, long elseStart) {
+        if (node instanceof WhenNode when) {
+            when.setSourceSpan(start, thenEnd != null ? thenEnd : argsEnd);
+            when.setElseStart(elseStart);
+        }
+        return node;
+    }
+
+    /** in pattern [then] body */
+    public Node branch_in(Node node, long start, Long thenEnd, long patternEnd, long elseStart) {
+        if (node instanceof InNode in) {
+            in.setSourceSpan(start, thenEnd != null ? thenEnd : patternEnd);
+            in.setElseStart(elseStart);
+        }
+        return node;
+    }
+
+    /** stmt while cond / stmt until cond: the body is the statement as written (begin/end included) */
+    public Node loop_body(Node node, long start, long end) {
+        if (node instanceof WhileNode loop) loop.setBodySpan(start, end);
+        if (node instanceof UntilNode loop) loop.setBodySpan(start, end);
+        return node;
+    }
+
     // We know it has to be tLABEL or tIDENTIFIER so none of the other assignable logic is needed
     public AssignableNode assignableLabelOrIdentifier(ByteList byteName, Node value) {
         RubySymbol name = symbolID(byteName);
@@ -1241,11 +1351,11 @@ public abstract class RubyParserBase {
             for (int i = 0; i < list.size(); i++) {
                 Node expression = list.get(i);
 
-                if (expression instanceof SplatNode || expression instanceof ArgsCatNode) {
-                    cases.add(new WhenNode(line, expression, bodyNode, null));
-                } else {
-                    cases.add(new WhenOneArgNode(line, expression, bodyNode, null));
-                }
+                WhenNode when = expression instanceof SplatNode || expression instanceof ArgsCatNode ?
+                        new WhenNode(line, expression, bodyNode, null) :
+                        new WhenOneArgNode(line, expression, bodyNode, null);
+                when.copyBranchInfo(sourceWhen);
+                cases.add(when);
             }
         } else {
             cases.add(sourceWhen);

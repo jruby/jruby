@@ -1,6 +1,8 @@
 package org.jruby.ir.targets.indy;
 
 import com.headius.invokebinder.Binder;
+import org.jruby.ext.coverage.BranchTarget;
+import org.jruby.ext.coverage.FileCoverage;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.ThreadContext;
 import org.objectweb.asm.Handle;
@@ -11,6 +13,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
+import java.util.Map;
 
 import static java.lang.invoke.MethodHandles.insertArguments;
 import static java.lang.invoke.MethodType.methodType;
@@ -34,6 +37,40 @@ public class CoverageSite {
         site.setTarget(handle);
 
         return site;
+    }
+
+    public static final Handle COVER_BRANCH_BOOTSTRAP = new Handle(
+                Opcodes.H_INVOKESTATIC,
+                p(CoverageSite.class),
+                "coverBranchBootstrap",
+                sig(CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class, String.class, int.class),
+                false);
+
+    /**
+     * Branch coverage: the first call finds the file's branch target by index and binds the site straight to
+     * its counter (or to a no-op when the file is no longer being measured).
+     */
+    public static CallSite coverBranchBootstrap(MethodHandles.Lookup lookup, String name, MethodType type, String filename, int index) throws Throwable {
+        MutableCallSite site = new MutableCallSite(type);
+        MethodHandle handle = lookup.findStatic(CoverageSite.class, "coverBranchFallback", methodType(void.class, MutableCallSite.class, ThreadContext.class, String.class, int.class));
+        handle = handle.bindTo(site);
+        handle = insertArguments(handle, 1, filename, index);
+        site.setTarget(handle);
+        return site;
+    }
+
+    public static void coverBranchFallback(MutableCallSite site, ThreadContext context, String filename, int index) throws Throwable {
+        Map<String, FileCoverage> coverage = context.runtime.getCoverageData().getCoverage();
+        FileCoverage file = coverage == null ? null : coverage.get(filename);
+        BranchTarget target = file == null ? null : file.getBranchTarget(index);
+
+        if (target == null) {
+            site.setTarget(Binder.from(void.class, ThreadContext.class).dropAll().nop());
+            return;
+        }
+
+        target.cover(context);
+        site.setTarget(MethodHandles.lookup().findVirtual(BranchTarget.class, "cover", methodType(void.class, ThreadContext.class)).bindTo(target));
     }
 
     public static void coverLineFallback(MutableCallSite site, ThreadContext context, String filename, int line, boolean oneshot) throws Throwable {

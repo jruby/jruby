@@ -1977,9 +1977,14 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
             yyVal = yyLen[yyn] > 0 ? yystates[yytop - yyLen[yyn] + 1].value : null;
         } else {
             int count = yyLen[yyn];
-            start = yystates[yytop - count + 1].start;
+            // an empty production is located, empty, right after the previous symbol (as bison does)
+            start = count > 0 ? yystates[yytop - count + 1].start : yystates[yytop].end;
             end = yystates[yytop].end;
             yyVal = parserState.execute(this, yyVal, yystates, yytop, count, yytoken);
+            // record the production's source span on the node it produced (see Node#setAutoSourceSpan: each
+            // enclosing production handing the node along widens it until an explicit span locks it; a node
+            // made by an empty production has no source of its own)
+            if (count > 0 && yyVal instanceof org.jruby.ast.Node node) node.setAutoSourceSpan(start, end);
         }
 // ACTIONS_END (line used by optimize_parser)
         yytop -= yyLen[yyn];
@@ -4602,6 +4607,15 @@ states[417] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
                     }
   return yyVal;
 };
+states[418] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+  return yyVal;
+};
+states[419] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+  return yyVal;
+};
+states[420] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+  return yyVal;
+};
 states[424] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
 {IRubyObject v1, v2, v3, v4;
                     v1 = ((IRubyObject)yyVals[-3+yyTop].value);
@@ -6683,7 +6697,7 @@ states[826] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 }
-					// line 4690 "ripper_RubyParser.out"
+					// line 4693 "ripper_RubyParser.out"
 
 }
-					// line 15015 "-"
+					// line 15035 "-"

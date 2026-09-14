@@ -10,6 +10,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.ArgReceiver;
 import org.jruby.ir.instructions.BreakInstr;
 import org.jruby.ir.instructions.CheckArityInstr;
+import org.jruby.ir.instructions.CoverBranchInstr;
 import org.jruby.ir.instructions.CoverMethodInstr;
 import org.jruby.ir.instructions.CheckForLJEInstr;
 import org.jruby.ir.instructions.CopyInstr;
@@ -438,6 +439,9 @@ public class InterpreterEngine {
                 break;
             case COVER_METHOD:
                 ((CoverMethodInstr) instr).cover(context, currScope, currDynScope, self, temp);
+                break;
+            case COVER_BRANCH:
+                ((CoverBranchInstr) instr).cover(context);
                 break;
             case TRACE:
                 instr.interpret(context, currScope, currDynScope, self, temp);

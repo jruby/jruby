@@ -34,6 +34,7 @@ package org.jruby.ast;
 
 import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.parser.ProductionState;
 
 /** 
  * Represents an until statement.
@@ -95,5 +96,40 @@ public class UntilNode extends Node {
      */
     public boolean evaluateAtStart() {
         return evaluateAtStart;
+    }
+
+    // ---- branch coverage: span of the loop body as written (a modifier loop's statement, including any
+    // begin/end around it), when it differs from the body node's own span ----
+
+    private int bodyStartLine = -1;
+    private int bodyStartColumn = -1;
+    private int bodyEndLine = -1;
+    private int bodyEndColumn = -1;
+
+    public void setBodySpan(long start, long end) {
+        bodyStartLine = ProductionState.line(start);
+        bodyStartColumn = ProductionState.column(start);
+        bodyEndLine = ProductionState.line(end);
+        bodyEndColumn = ProductionState.column(end);
+    }
+
+    public boolean hasBodySpan() {
+        return bodyStartColumn >= 0;
+    }
+
+    public int getBodyStartLine() {
+        return bodyStartLine;
+    }
+
+    public int getBodyStartColumn() {
+        return bodyStartColumn;
+    }
+
+    public int getBodyEndLine() {
+        return bodyEndLine;
+    }
+
+    public int getBodyEndColumn() {
+        return bodyEndColumn;
     }
 }

@@ -1977,9 +1977,14 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
             yyVal = yyLen[yyn] > 0 ? yystates[yytop - yyLen[yyn] + 1].value : null;
         } else {
             int count = yyLen[yyn];
-            start = yystates[yytop - count + 1].start;
+            // an empty production is located, empty, right after the previous symbol (as bison does)
+            start = count > 0 ? yystates[yytop - count + 1].start : yystates[yytop].end;
             end = yystates[yytop].end;
             yyVal = parserState.execute(this, yyVal, yystates, yytop, count, yytoken);
+            // record the production's source span on the node it produced (see Node#setAutoSourceSpan: each
+            // enclosing production handing the node along widens it until an explicit span locks it; a node
+            // made by an empty production has no source of its own)
+            if (count > 0 && yyVal instanceof org.jruby.ast.Node node) node.setAutoSourceSpan(start, end);
         }
 // ACTIONS_END (line used by optimize_parser)
         yytop -= yyLen[yyn];
@@ -2119,6 +2124,9 @@ states[15] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
 };
 states[16] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                   yyVal = p.void_stmts(((Node)yyVals[-1+yyTop].value));
+                  /*%%%*/
+                  p.lock_span(((Node)yyVal)); /* the statements' own span, not the terminators after them*/
+                  /*% %*/
   return yyVal;
 };
 states[17] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -2138,6 +2146,7 @@ states[18] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
 states[19] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                    /*%%%*/
                     yyVal = p.appendToBlock(((Node)yyVals[-2+yyTop].value), p.newline_node(((Node)yyVals[0+yyTop].value), yyVals[yyTop - count + 3].start()));
+                    p.span(((Node)yyVal), ((Node)yyVals[-2+yyTop].value) == null ? yyVals[yyTop - count + 3].start : yyVals[yyTop - count + 1].start, yyVals[yyTop - count + 3].end);
                    /*% %*/
                    /*% ripper: stmts_add!($1, $3) %*/
   return yyVal;
@@ -2207,6 +2216,7 @@ states[31] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
                     /*%%%*/
                     yyVal = p.new_if(yyVals[yyTop - count + 1].start(), ((Node)yyVals[0+yyTop].value), p.remove_begin(((Node)yyVals[-2+yyTop].value)), null);
                     p.fixpos(((Node)yyVal), ((Node)yyVals[0+yyTop].value));
+                    p.branch_modifier(((Node)yyVal), ((Node)yyVals[0+yyTop].value), ((Node)yyVals[-2+yyTop].value), false, yyVals[yyTop - count + 3].end);
                     /*% %*/
                     /*% ripper: if_mod!($3, $1) %*/
   return yyVal;
@@ -2215,6 +2225,7 @@ states[32] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
                     /*%%%*/
                     yyVal = p.new_if(yyVals[yyTop - count + 1].start(), ((Node)yyVals[0+yyTop].value), null, p.remove_begin(((Node)yyVals[-2+yyTop].value)));
                     p.fixpos(((Node)yyVal), ((Node)yyVals[0+yyTop].value));
+                    p.branch_modifier(((Node)yyVal), ((Node)yyVals[0+yyTop].value), ((Node)yyVals[-2+yyTop].value), true, yyVals[yyTop - count + 3].end);
                     /*% %*/
                     /*% ripper: unless_mod!($3, $1) %*/
   return yyVal;
@@ -2226,6 +2237,7 @@ states[33] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
                     } else {
                         yyVal = new WhileNode(yyVals[yyTop - count + 1].start(), p.cond(((Node)yyVals[0+yyTop].value)), ((Node)yyVals[-2+yyTop].value), true);
                     }
+                    p.loop_body(((Node)yyVal), yyVals[yyTop - count + 1].start, yyVals[yyTop - count + 1].end);
                     /*% %*/
                     /*% ripper: while_mod!($3, $1) %*/
   return yyVal;
@@ -2237,6 +2249,7 @@ states[34] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
                     } else {
                         yyVal = new UntilNode(yyVals[yyTop - count + 1].start(), p.cond(((Node)yyVals[0+yyTop].value)), ((Node)yyVals[-2+yyTop].value), true);
                     }
+                    p.loop_body(((Node)yyVal), yyVals[yyTop - count + 1].start, yyVals[yyTop - count + 1].end);
                     /*% %*/
                     /*% ripper: until_mod!($3, $1) %*/
   return yyVal;
@@ -2271,6 +2284,7 @@ states[38] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
 states[39] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = node_assign(((Node)yyVals[-3+yyTop].value), ((Node)yyVals[0+yyTop].value), ((LexContext)yyVals[-1+yyTop].value));
+                    p.span(((Node)yyVal), yyVals[yyTop - count + 1].start, yyVals[yyTop - count + 4].end);
                     /*% %*/
                     /*% ripper: assign!($1, $4) %*/
   return yyVal;
@@ -2300,6 +2314,7 @@ states[43] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
 states[44] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = node_assign(((Node)yyVals[-3+yyTop].value), ((Node)yyVals[0+yyTop].value), ((LexContext)yyVals[-1+yyTop].value));
+                    p.span(((Node)yyVal), yyVals[yyTop - count + 1].start, yyVals[yyTop - count + 4].end);
                     /*% %*/
                     /*% ripper: assign!($1, $4) %*/
   return yyVal;
@@ -2578,6 +2593,7 @@ states[89] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
 states[90] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = p.new_call(((Node)yyVals[-4+yyTop].value), ((ByteList)yyVals[-3+yyTop].value), ((ByteList)yyVals[-2+yyTop].value), ((Node)yyVals[-1+yyTop].value), ((IterNode)yyVals[0+yyTop].value), yyVals[yyTop - count + 3].start());
+                    p.span(((Node)yyVal), yyVals[yyTop - count + 1].start, yyVals[yyTop - count + 4].end);
                     /*% %*/
                     /*% ripper: method_add_block!(command_call!($1, $2, $3, $4), $5) %*/
   return yyVal;
@@ -3458,6 +3474,7 @@ states[242] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[243] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = node_assign(((Node)yyVals[-3+yyTop].value), ((Node)yyVals[0+yyTop].value), ((LexContext)yyVals[-1+yyTop].value));
+                    p.span(((Node)yyVal), yyVals[yyTop - count + 1].start, yyVals[yyTop - count + 4].end);
                     /*% %*/
                     /*% ripper: assign!($1, $4) %*/
   return yyVal;
@@ -3714,6 +3731,7 @@ states[286] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     /*%%%*/
                     p.value_expr(((Node)yyVals[-5+yyTop].value));
                     yyVal = p.new_if(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-5+yyTop].value), ((Node)yyVals[-3+yyTop].value), ((Node)yyVals[0+yyTop].value));
+                    p.branch_ternary(((Node)yyVal), ((Node)yyVals[-5+yyTop].value), yyVals[yyTop - count + 1].end);
                     /*% %*/
                     /*% ripper: ifop!($1, $3, $6) %*/
   return yyVal;
@@ -4105,6 +4123,7 @@ states[354] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[355] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = ((Node)yyVals[-2+yyTop].value);
+                    p.paren_span(((Node)yyVal), yyVals[yyTop - count + 1].start, yyVals[yyTop - count + 4].end);
                     /*% %*/
                     /*% ripper: paren!($2) %*/
   return yyVal;
@@ -4118,6 +4137,7 @@ states[356] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     } else {
                         yyVal = new NilNode(((Integer)yyVals[-2+yyTop].value));
                     }
+                    p.paren_span(((Node)yyVal), yyVals[yyTop - count + 1].start, yyVals[yyTop - count + 3].end);
                     /*% %*/
                     /*% ripper: paren!($2) %*/
   return yyVal;
@@ -4224,6 +4244,7 @@ states[371] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[372] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = p.new_if(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-4+yyTop].value), ((Node)yyVals[-2+yyTop].value), ((Node)yyVals[-1+yyTop].value));
+                    p.branch_if(((Node)yyVal), ((Node)yyVals[-4+yyTop].value), yyVals[yyTop - count + 2].end, ((Node)yyVals[-1+yyTop].value) == null ? -1 : yyVals[yyTop - count + 5].start, yyVals[yyTop - count + 6].end);
                     /*% %*/
                     /*% ripper: if!($2, $4, escape_Qundef($5)) %*/
   return yyVal;
@@ -4231,6 +4252,7 @@ states[372] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[373] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = p.new_if(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-4+yyTop].value), ((Node)yyVals[-1+yyTop].value), ((Node)yyVals[-2+yyTop].value));
+                    p.branch_unless(((Node)yyVal), ((Node)yyVals[-4+yyTop].value), yyVals[yyTop - count + 2].end);
                     /*% %*/
                     /*% ripper: unless!($2, $4, escape_Qundef($5)) %*/
   return yyVal;
@@ -4525,9 +4547,28 @@ states[417] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     }
   return yyVal;
 };
+states[418] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+                    /*%%%*/
+                    yyVal = null;
+                    /*% %*/
+  return yyVal;
+};
+states[419] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+                    /*%%%*/
+                    yyVal = yyVals[yyTop - count + 1].end;
+                    /*% %*/
+  return yyVal;
+};
+states[420] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+                    /*%%%*/
+                    yyVal = yyVals[yyTop - count + 2].end;
+                    /*% %*/
+  return yyVal;
+};
 states[424] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = p.new_if(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-3+yyTop].value), ((Node)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value));
+                    p.branch_elsif(((Node)yyVal), ((Node)yyVals[-3+yyTop].value), yyVals[yyTop - count + 2].end, ((Node)yyVals[0+yyTop].value) == null ? -1 : yyVals[yyTop - count + 5].start);
                     /*% %*/
                     /*% ripper: elsif!($2, $4, escape_Qundef($5)) %*/
   return yyVal;
@@ -4907,6 +4948,7 @@ states[489] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[490] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = p.new_call(((Node)yyVals[-4+yyTop].value), ((ByteList)yyVals[-3+yyTop].value), ((ByteList)yyVals[-2+yyTop].value), ((Node)yyVals[-1+yyTop].value), ((IterNode)yyVals[0+yyTop].value), yyVals[yyTop - count + 3].start());
+                    p.span(((Node)yyVal), yyVals[yyTop - count + 1].start, yyVals[yyTop - count + 4].end);
                     /*% %*/
                     /*% ripper: opt_event(:method_add_block!, command_call!($1, $2, $3, $4), $5) %*/
   return yyVal;
@@ -4914,6 +4956,7 @@ states[490] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[491] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = p.new_call(((Node)yyVals[-4+yyTop].value), ((ByteList)yyVals[-3+yyTop].value), ((ByteList)yyVals[-2+yyTop].value), ((Node)yyVals[-1+yyTop].value), ((IterNode)yyVals[0+yyTop].value), yyVals[yyTop - count + 3].start());
+                    p.span(((Node)yyVal), yyVals[yyTop - count + 1].start, yyVals[yyTop - count + 4].end);
                     /*% %*/
                     /*% ripper: method_add_block!(command_call!($1, $2, $3, $4), $5) %*/
   return yyVal;
@@ -5074,6 +5117,7 @@ states[510] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[511] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = p.newWhenNode(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-3+yyTop].value), ((Node)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value));
+                    p.branch_when(((Node)yyVal), yyVals[yyTop - count + 1].start, ((Long)yyVals[-2+yyTop].value), yyVals[yyTop - count + 2].end, ((Node)yyVals[0+yyTop].value) == null || ((Node)yyVals[0+yyTop].value) instanceof WhenNode ? -1 : yyVals[yyTop - count + 5].start);
                     /*% %*/
                     /*% ripper: when!($2, $4, escape_Qundef($5)) %*/
   return yyVal;
@@ -5102,6 +5146,7 @@ states[517] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[518] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = p.newIn(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-4+yyTop].value), ((Node)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value));
+                    p.branch_in(((Node)yyVal), yyVals[yyTop - count + 1].start, ((Long)yyVals[-3+yyTop].value), yyVals[yyTop - count + 5].end, ((Node)yyVals[0+yyTop].value) == null || ((Node)yyVals[0+yyTop].value) instanceof InNode ? -1 : yyVals[yyTop - count + 9].start);
                     /*% %*/
                     /*% ripper: in!($5, $8, escape_Qundef($9)) %*/
   return yyVal;
@@ -6863,7 +6908,7 @@ states[826] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4870 "parse.y"
+					// line 4904 "parse.y"
 
 }
-					// line 15195 "-"
+					// line 15246 "-"

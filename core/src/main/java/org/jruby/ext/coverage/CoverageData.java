@@ -114,6 +114,13 @@ public class CoverageData {
     }
 
     /**
+     * True when branches are counted (branches mode).
+     */
+    public boolean isBranchesEnabled() {
+        return (mode & BRANCHES) != 0;
+    }
+
+    /**
      * Data collected so far, by file name. Null when Coverage is not set up.
      */
     public Map<String, FileCoverage> getCoverage() {

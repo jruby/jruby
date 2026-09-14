@@ -83,7 +83,6 @@ public class CoverageModule {
                 mode |= EVAL;
             }
             if (ArgsUtil.extractKeywordArg(context, "branches", keywords).isTrue()) {
-                warn(context, "branch coverage is not supported");
                 mode |= CoverageData.BRANCHES;
             }
             if (ArgsUtil.extractKeywordArg(context, "methods", keywords).isTrue()) {
@@ -216,7 +215,8 @@ public class CoverageModule {
         RubySymbol mode = castAsSymbol(context, arg);
 
         return mode == asSymbol(context, "lines") || mode == asSymbol(context, "oneshot_lines") ||
-                mode == asSymbol(context, "eval") || mode == asSymbol(context, "methods") ?
+                mode == asSymbol(context, "eval") || mode == asSymbol(context, "methods") ||
+                mode == asSymbol(context, "branches") ?
                 context.tru : context.fals;
     }
 
@@ -241,7 +241,7 @@ public class CoverageModule {
                     fileHash.fastASetSmall(asSymbol(context, oneshot ? "oneshot_lines" : "lines"), linesToRuby(context, file.getLines(), oneshot));
                 }
                 if ((mode & CoverageData.BRANCHES) != 0) {
-                    fileHash.fastASetSmall(asSymbol(context, "branches"), newSmallHash(context));
+                    fileHash.fastASetSmall(asSymbol(context, "branches"), branchesToRuby(context, file.getBranches()));
                 }
                 if ((mode & CoverageData.METHODS) != 0) {
                     fileHash.fastASetSmall(asSymbol(context, "methods"), methodsToRuby(context, file.getMethods()));
@@ -271,6 +271,34 @@ public class CoverageModule {
         }
 
         return ary;
+    }
+
+    /**
+     * {[type, id, start_line, start_column, end_line, end_column] => {[label, id, start_line, start_column,
+     * end_line, end_column] => count}}: each construct followed by its targets, numbered consecutively in that
+     * order like MRI does.
+     */
+    private static RubyHash branchesToRuby(ThreadContext context, List<BranchCoverage> branches) {
+        RubyHash hash = newHash(context);
+        long id = 0;
+
+        for (BranchCoverage branch : branches) {
+            RubyArray key = newArray(context, asSymbol(context, branch.getType()), asFixnum(context, id++),
+                    asFixnum(context, branch.getStartLine()), asFixnum(context, branch.getStartColumn()),
+                    asFixnum(context, branch.getEndLine()), asFixnum(context, branch.getEndColumn()));
+            RubyHash targets = newHash(context);
+
+            for (BranchTarget target : branch.getTargets()) {
+                RubyArray targetKey = newArray(context, asSymbol(context, target.getLabel()), asFixnum(context, id++),
+                        asFixnum(context, target.getStartLine()), asFixnum(context, target.getStartColumn()),
+                        asFixnum(context, target.getEndLine()), asFixnum(context, target.getEndColumn()));
+                targets.fastASet(targetKey, asFixnum(context, target.getCount()));
+            }
+
+            hash.fastASet(key, targets);
+        }
+
+        return hash;
     }
 
     /**

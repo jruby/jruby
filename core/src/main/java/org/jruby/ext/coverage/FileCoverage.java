@@ -27,7 +27,10 @@
 package org.jruby.ext.coverage;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.jruby.util.collections.IntList;
 
@@ -39,14 +42,24 @@ import org.jruby.util.collections.IntList;
  * <li>{@link #getLines()}: count per line, -1 for lines without code. Null unless lines are measured.</li>
  * <li>{@link #getMethods()}: one {@link MethodCoverage} per method entry defined from this file, in
  * definition order.</li>
+ * <li>{@link #getBranches()}: one {@link BranchCoverage} per branching construct of the file, in the order the
+ * IR builder met them. That is the order MRI's compiler meets and numbers them in.</li>
  * </ul>
  *
- * <p>All access to a live instance happens under the {@link CoverageData} lock, so the collections are not
- * synchronized.  {@link #snapshot} produces an unshared copy that can be read without it.</p>
+ * <p>The lines and the method entries are only touched under the {@link CoverageData} lock, so those need no
+ * synchronization of their own. Branches are declared by the IR builder and their targets looked up by running
+ * code, neither of which holds that lock, so declaring synchronizes on this instance and the lists are safe to
+ * read while that happens.</p>
+ *
+ * <p>{@link #snapshot} takes an unshared copy, so a result can be built without holding the
+ * {@link CoverageData} lock while Ruby code runs.</p>
  */
 public final class FileCoverage {
     private IntList lines;
     private final List<MethodCoverage> methods = new ArrayList<>();
+    private final List<BranchCoverage> branches = new CopyOnWriteArrayList<>();
+    private final Map<String, BranchCoverage> branchesByKey = new HashMap<>();
+    private final List<BranchTarget> branchTargets = new CopyOnWriteArrayList<>();
 
     public IntList getLines() {
         return lines;
@@ -61,8 +74,52 @@ public final class FileCoverage {
     }
 
     /**
+     * Declare (or find) the branching construct of the given type at the given source span.
+     *
+     * @param type if, unless, case, while, until or &amp;.
+     * @param startLine one-based line where the construct starts
+     * @param startColumn zero-based byte column where it starts
+     * @param endLine one-based line where it ends
+     * @param endColumn zero-based byte column just past its end
+     */
+    public synchronized BranchCoverage declareBranch(String type, int startLine, int startColumn, int endLine, int endColumn) {
+        String key = type + ':' + startLine + ':' + startColumn + ':' + endLine + ':' + endColumn;
+        BranchCoverage branch = branchesByKey.get(key);
+
+        if (branch == null) {
+            branch = new BranchCoverage(this, type, startLine, startColumn, endLine, endColumn);
+            branchesByKey.put(key, branch);
+            branches.add(branch);
+        }
+
+        return branch;
+    }
+
+    /**
+     * The branching constructs in declaration order.
+     */
+    public List<BranchCoverage> getBranches() {
+        return branches;
+    }
+
+    /**
+     * The branch target with the given {@link BranchTarget#getIndex() index}, or null.
+     */
+    public BranchTarget getBranchTarget(int index) {
+        return index >= 0 && index < branchTargets.size() ? branchTargets.get(index) : null;
+    }
+
+    synchronized int registerBranchTarget() {
+        return branchTargets.size();
+    }
+
+    synchronized void addBranchTarget(BranchTarget target) {
+        branchTargets.add(target);
+    }
+
+    /**
      * A copy of this file's data, for building a result without holding the {@link CoverageData} lock while
-     * Ruby code runs.  When clear is true the counts are reset as they are read, so nothing counted while the
+     * Ruby code runs. When clear is true the counts are reset as they are read, so nothing counted while the
      * result is being built is reported twice or not at all.
      *
      * @param clear reset the counts as they are read (Coverage.result(clear: true))
@@ -87,6 +144,10 @@ public final class FileCoverage {
 
         for (MethodCoverage method : methods) {
             copy.methods.add(method.snapshot(clear));
+        }
+
+        for (BranchCoverage branch : branches) {
+            copy.branches.add(branch.snapshot(clear));
         }
 
         return copy;

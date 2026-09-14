@@ -36,6 +36,7 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.parser.ProductionState;
 
 /**
  * an 'if' statement.
@@ -93,5 +94,93 @@ public class IfNode extends Node {
     
     public List<Node> childNodes() {
         return Node.createList(condition, thenBody, elseBody);
+    }
+
+    // ---- branch coverage (recorded by the parser, read by the IR builder) ----
+
+    private boolean branch;                 // a Ruby-level conditional MRI reports (not e.g. a pattern guard)
+    private boolean unless;                 // written as unless: then/else bodies are swapped
+    private boolean elsif;                  // an elsif clause of an enclosing if
+    private int predicateEndLine = -1;      // zero-based position just past the condition (an empty then arm is reported there)
+    private int predicateEndColumn = -1;
+    private int elseStartLine = -1;         // zero-based position of the 'else' keyword, when there is one
+    private int elseStartColumn = -1;
+    private Node sourceBody;                // for a modifier: the statement as written (before begin/end unwrapping)
+    private int constantPredicate;          // 0: not a literal; 1: a literal MRI folds to true; -1: one it folds to false
+
+    public void markBranch(boolean unless, boolean elsif, long predicateEnd, long elseStart) {
+        this.branch = true;
+        this.unless = unless;
+        this.elsif = elsif;
+        if (predicateEnd >= 0) {
+            predicateEndLine = ProductionState.line(predicateEnd);
+            predicateEndColumn = ProductionState.column(predicateEnd);
+        }
+        if (elseStart >= 0) {
+            elseStartLine = ProductionState.line(elseStart);
+            elseStartColumn = ProductionState.column(elseStart);
+        }
+    }
+
+    public boolean isBranch() {
+        return branch;
+    }
+
+    public boolean isUnless() {
+        return unless;
+    }
+
+    public boolean isElsif() {
+        return elsif;
+    }
+
+    public boolean hasPredicateEnd() {
+        return predicateEndColumn >= 0;
+    }
+
+    public int getPredicateEndLine() {
+        return predicateEndLine;
+    }
+
+    public int getPredicateEndColumn() {
+        return predicateEndColumn;
+    }
+
+    public boolean hasElseStart() {
+        return elseStartColumn >= 0;
+    }
+
+    public int getElseStartLine() {
+        return elseStartLine;
+    }
+
+    public int getElseStartColumn() {
+        return elseStartColumn;
+    }
+
+    public void setSourceBody(Node sourceBody) {
+        this.sourceBody = sourceBody;
+    }
+
+    /**
+     * MRI folds a conditional on a literal predicate away, reporting no branch for it and compiling nothing of
+     * the arm that cannot run.
+     *
+     * @param constantPredicate 0 when the predicate is not a literal, 1 when it is a truthy one, -1 a falsy one
+     */
+    public void setConstantPredicate(int constantPredicate) {
+        this.constantPredicate = constantPredicate;
+    }
+
+    public boolean hasConstantPredicate() {
+        return constantPredicate != 0;
+    }
+
+    public boolean isConstantlyTrue() {
+        return constantPredicate > 0;
+    }
+
+    public Node getSourceBody() {
+        return sourceBody;
     }
 }

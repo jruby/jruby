@@ -548,6 +548,9 @@ bodystmt      : compstmt lex_ctxt opt_rescue k_else {
 
 compstmt      : stmts opt_terms {
                   $$ = p.void_stmts($1);
+                  /*%%%*/
+                  p.lock_span($<Node>$); // the statements' own span, not the terminators after them
+                  /*% %*/
               };
 
 stmts         : none {
@@ -565,6 +568,7 @@ stmts         : none {
                 | stmts terms stmt_or_begin {
                    /*%%%*/
                     $$ = p.appendToBlock($1, p.newline_node($3, @3.start()));
+                    p.span($<Node>$, $1 == null ? @3.start : @1.start, @3.end);
                    /*% %*/
                    /*% ripper: stmts_add!($1, $3) %*/
                 };
@@ -624,6 +628,7 @@ stmt            : keyword_alias fitem {
                     /*%%%*/
                     $$ = p.new_if(@1.start(), $3, p.remove_begin($1), null);
                     p.fixpos($<Node>$, $3);
+                    p.branch_modifier($<Node>$, $3, $1, false, @3.end);
                     /*% %*/
                     /*% ripper: if_mod!($3, $1) %*/
                 }
@@ -631,6 +636,7 @@ stmt            : keyword_alias fitem {
                     /*%%%*/
                     $$ = p.new_if(@1.start(), $3, null, p.remove_begin($1));
                     p.fixpos($<Node>$, $3);
+                    p.branch_modifier($<Node>$, $3, $1, true, @3.end);
                     /*% %*/
                     /*% ripper: unless_mod!($3, $1) %*/
                 }
@@ -641,6 +647,7 @@ stmt            : keyword_alias fitem {
                     } else {
                         $$ = new WhileNode(@1.start(), p.cond($3), $1, true);
                     }
+                    p.loop_body($<Node>$, @1.start, @1.end);
                     /*% %*/
                     /*% ripper: while_mod!($3, $1) %*/
                 }
@@ -651,6 +658,7 @@ stmt            : keyword_alias fitem {
                     } else {
                         $$ = new UntilNode(@1.start(), p.cond($3), $1, true);
                     }
+                    p.loop_body($<Node>$, @1.start, @1.end);
                     /*% %*/
                     /*% ripper: until_mod!($3, $1) %*/
                 }
@@ -682,6 +690,7 @@ stmt            : keyword_alias fitem {
                 | lhs '=' lex_ctxt mrhs {
                     /*%%%*/
                     $$ = node_assign($1, $4, $3);
+                    p.span($<Node>$, @1.start, @4.end);
                     /*% %*/
                     /*% ripper: assign!($1, $4) %*/
                 }
@@ -708,6 +717,7 @@ stmt            : keyword_alias fitem {
 command_asgn    : lhs '=' lex_ctxt command_rhs {
                     /*%%%*/
                     $$ = node_assign($1, $4, $3);
+                    p.span($<Node>$, @1.start, @4.end);
                     /*% %*/
                     /*% ripper: assign!($1, $4) %*/
                 }
@@ -975,6 +985,7 @@ command        : fcall command_args %prec tLOWEST {
                 | primary_value call_op operation2 command_args cmd_brace_block {
                     /*%%%*/
                     $$ = p.new_call($1, $2, $3, $4, $5, @3.start());
+                    p.span($<Node>$, @1.start, @4.end);
                     /*% %*/
                     /*% ripper: method_add_block!(command_call!($1, $2, $3, $4), $5) %*/
                 }
@@ -1730,6 +1741,7 @@ reswords        : keyword__LINE__ {
 arg             : lhs '=' lex_ctxt arg_rhs {
                     /*%%%*/
                     $$ = node_assign($1, $4, $3);
+                    p.span($<Node>$, @1.start, @4.end);
                     /*% %*/
                     /*% ripper: assign!($1, $4) %*/
                 } 
@@ -1943,6 +1955,7 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     /*%%%*/
                     p.value_expr($1);
                     $$ = p.new_if(@1.start(), $1, $3, $6);
+                    p.branch_ternary($<Node>$, $1, @1.end);
                     /*% %*/
                     /*% ripper: ifop!($1, $3, $6) %*/
                 }
@@ -2313,6 +2326,7 @@ primary         : literal
                 } ')' {
                     /*%%%*/
                     $$ = $2;
+                    p.paren_span($<Node>$, @1.start, @4.end);
                     /*% %*/
                     /*% ripper: paren!($2) %*/
                 }
@@ -2325,6 +2339,7 @@ primary         : literal
                     } else {
                         $$ = new NilNode($1);
                     }
+                    p.paren_span($<Node>$, @1.start, @3.end);
                     /*% %*/
                     /*% ripper: paren!($2) %*/
                 }
@@ -2417,12 +2432,14 @@ primary         : literal
                 | k_if expr_value then compstmt if_tail k_end {
                     /*%%%*/
                     $$ = p.new_if(@1.start(), $2, $4, $5);
+                    p.branch_if($<Node>$, $2, @2.end, $5 == null ? -1 : @5.start, @6.end);
                     /*% %*/
                     /*% ripper: if!($2, $4, escape_Qundef($5)) %*/
                 }
                 | k_unless expr_value then compstmt opt_else k_end {
                     /*%%%*/
                     $$ = p.new_if(@1.start(), $2, $5, $4);
+                    p.branch_unless($<Node>$, $2, @2.end);
                     /*% %*/
                     /*% ripper: unless!($2, $4, escape_Qundef($5)) %*/
                 }
@@ -2688,9 +2705,21 @@ k_yield         : keyword_yield {
                     }
                 };
 
-then            : term
-                | keyword_then
-                | term keyword_then;
+then            : term {
+                    /*%%%*/
+                    $$ = null;
+                    /*% %*/
+                }
+                | keyword_then {
+                    /*%%%*/
+                    $$ = @1.end;
+                    /*% %*/
+                }
+                | term keyword_then {
+                    /*%%%*/
+                    $$ = @2.end;
+                    /*% %*/
+                };
 
 do              : term
                 | keyword_do_cond;
@@ -2699,6 +2728,7 @@ if_tail         : opt_else
                 | k_elsif expr_value then compstmt if_tail {
                     /*%%%*/
                     $$ = p.new_if(@1.start(), $2, $4, $5);
+                    p.branch_elsif($<Node>$, $2, @2.end, $5 == null ? -1 : @5.start);
                     /*% %*/
                     /*% ripper: elsif!($2, $4, escape_Qundef($5)) %*/
                 };
@@ -3051,12 +3081,14 @@ block_call      : command do_block {
                 | block_call call_op2 operation2 opt_paren_args brace_block {
                     /*%%%*/
                     $$ = p.new_call($1, $2, $3, $4, $5, @3.start());
+                    p.span($<Node>$, @1.start, @4.end);
                     /*% %*/
                     /*% ripper: opt_event(:method_add_block!, command_call!($1, $2, $3, $4), $5) %*/
                 }
                 | block_call call_op2 operation2 command_args do_block {
                     /*%%%*/
                     $$ = p.new_call($1, $2, $3, $4, $5, @3.start());
+                    p.span($<Node>$, @1.start, @4.end);
                     /*% %*/
                     /*% ripper: method_add_block!(command_call!($1, $2, $3, $4), $5) %*/
                 };
@@ -3202,6 +3234,7 @@ case_args	: arg_value {
 case_body       : k_when case_args then compstmt cases {
                     /*%%%*/
                     $$ = p.newWhenNode(@1.start(), $2, $4, $5);
+                    p.branch_when($<Node>$, @1.start, $<Long>3, @2.end, $5 == null || $5 instanceof WhenNode ? -1 : @5.start);
                     /*% %*/
                     /*% ripper: when!($2, $4, escape_Qundef($5)) %*/
                 };
@@ -3233,6 +3266,7 @@ p_case_body     : keyword_in p_in_kwarg p_pvtbl p_pktbl p_top_expr then {
                 } compstmt p_cases {
                     /*%%%*/
                     $$ = p.newIn(@1.start(), $5, $8, $9);
+                    p.branch_in($<Node>$, @1.start, $<Long>6, @5.end, $9 == null || $9 instanceof InNode ? -1 : @9.start);
                     /*% %*/
                     /*% ripper: in!($5, $8, escape_Qundef($9)) %*/
                 };

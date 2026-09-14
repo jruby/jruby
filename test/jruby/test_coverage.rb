@@ -9,7 +9,7 @@ class TestCoverage < Test::Unit::TestCase
   def teardown
     Coverage.result if Coverage.state != :idle
     # each test loads METHODS again; drop the classes so definitions do not pile up across tests
-    [:Sub, :Prepended, :Mixin, :Covered].each { |c| Object.send(:remove_const, c) if Object.const_defined?(c, false) }
+    [:Sub, :Prepended, :Mixin, :Covered, :Branchy].each { |c| Object.send(:remove_const, c) if Object.const_defined?(c, false) }
   end
 
   def test_coverage_handles_null_filename # jruby/jruby#5099
@@ -316,6 +316,203 @@ class TestCoverage < Test::Unit::TestCase
       assert_include expected, "Covered plain #{span(2, 'def', 'end')} => 6\n"
       assert_include expected, "Covered strict #{span(10, 'def', 'end')} => 0\n"
       assert_include expected, "#<Class:Mixin> mixed #{span(18, 'def', 'end')} => 3\n"
+
+      ['-X-C', '-X+C', '-Xjit.threshold=0 -Xjit.background=false',
+       '-Xcompile.invokedynamic=true -Xjit.threshold=0 -Xjit.background=false'].each do |flags|
+        assert_equal expected, jruby("#{flags} #{script}").lines, flags
+      end
+    end
+  end
+
+  # Branch coverage. The expected result below is what CRuby reports for the same file and calls.
+
+  BRANCHES = <<~'RUBY'
+    class Branchy
+      def classify(x)
+        if x > 0
+          :positive
+        elsif x < 0
+          :negative
+        else
+          :zero
+        end
+      end
+
+      def describe(x)
+        kind = x.zero? ? :zero : :nonzero
+        kind = :big unless x < 100
+        case x
+        when 0 then :none
+        when 1, 2
+          :few
+        else
+          :many
+        end
+      end
+
+      def count_down(x)
+        while x > 0
+          x -= 1
+        end
+        x += 1 until x > 2
+        x
+      end
+
+      def safe(x)
+        x&.abs
+      end
+
+      def match(x)
+        case x
+        in Integer => n if n > 10 then :large
+        in Integer
+          :small
+        end
+      end
+    end
+  RUBY
+
+  EXPECTED_BRANCHES = {
+        [:if, 0, 3, 4, 9, 7] => {
+          [:then, 1, 4, 6, 4, 15] => 1,
+          [:else, 2, 5, 4, 9, 7] => 2,
+        },
+        [:if, 3, 5, 4, 9, 7] => {
+          [:then, 4, 6, 6, 6, 15] => 1,
+          [:else, 5, 8, 6, 8, 11] => 1,
+        },
+        [:if, 6, 13, 11, 13, 37] => {
+          [:then, 7, 13, 21, 13, 26] => 1,
+          [:else, 8, 13, 29, 13, 37] => 2,
+        },
+        [:unless, 9, 14, 4, 14, 30] => {
+          [:else, 10, 14, 4, 14, 30] => 2,
+          [:then, 11, 14, 4, 14, 15] => 1,
+        },
+        [:case, 12, 15, 4, 21, 7] => {
+          [:when, 13, 16, 16, 16, 21] => 1,
+          [:when, 14, 18, 6, 18, 10] => 1,
+          [:else, 15, 20, 6, 20, 11] => 1,
+        },
+        [:while, 16, 25, 4, 27, 7] => {
+          [:body, 17, 26, 6, 26, 12] => 3,
+        },
+        [:until, 18, 28, 4, 28, 22] => {
+          [:body, 19, 28, 4, 28, 10] => 3,
+        },
+        [:"&.", 20, 33, 4, 33, 10] => {
+          [:then, 21, 33, 4, 33, 10] => 1,
+          [:else, 22, 33, 4, 33, 10] => 1,
+        },
+        [:case, 23, 37, 4, 41, 7] => {
+          [:in, 24, 38, 35, 38, 41] => 1,
+          [:in, 25, 40, 6, 40, 12] => 1,
+          [:else, 26, 37, 4, 41, 7] => 0,
+        },
+  }
+
+  def exercise_branches
+    b = Branchy.new
+    b.classify(1); b.classify(-1); b.classify(0)
+    b.describe(0); b.describe(1); b.describe(200)
+    b.count_down(3)
+    b.safe(nil); b.safe(-2)
+    b.match(20); b.match(3)
+  end
+
+  def test_branch_coverage_keys_and_counts
+    with_source(BRANCHES) do |path|
+      Coverage.start(branches: true)
+      load path
+      exercise_branches
+      assert_equal EXPECTED_BRANCHES, Coverage.result[path][:branches]
+    end
+  end
+
+  def test_branch_coverage_result_shape_per_mode
+    with_source("x = 1\ny = x > 0 ? :pos : :neg\n") do |path|
+      Coverage.start(branches: true)
+      load path
+      result = Coverage.result[path]
+      assert_equal [:branches], result.keys
+      assert_equal({ [:if, 0, 2, 4, 2, 23] => { [:then, 1, 2, 12, 2, 16] => 1, [:else, 2, 2, 19, 2, 23] => 0 } }, result[:branches])
+
+      Coverage.start(:all)
+      load path
+      result = Coverage.result[path]
+      assert_equal [:lines, :branches, :methods], result.keys
+      assert_equal 1, result[:branches].size
+    end
+  end
+
+  def test_branch_coverage_follows_suspend_resume_and_clear
+    with_source(BRANCHES) do |path|
+      Coverage.setup(branches: true)
+      load path
+      b = Branchy.new
+      key = [:if, 0, 3, 4, 9, 7]
+      b.classify(1)                                # set up but not running: not counted
+      Coverage.resume
+      b.classify(1)
+      Coverage.suspend
+      b.classify(1)                                # suspended: not counted
+      assert_equal({ [:then, 1, 4, 6, 4, 15] => 1, [:else, 2, 5, 4, 9, 7] => 0 }, Coverage.peek_result[path][:branches][key])
+      Coverage.resume
+      b.classify(-1)
+      assert_equal({ [:then, 1, 4, 6, 4, 15] => 1, [:else, 2, 5, 4, 9, 7] => 1 }, Coverage.result(stop: false, clear: true)[path][:branches][key])
+      assert_equal({ [:then, 1, 4, 6, 4, 15] => 0, [:else, 2, 5, 4, 9, 7] => 0 }, Coverage.peek_result[path][:branches][key])
+      b.classify(0)
+      assert_equal({ [:then, 1, 4, 6, 4, 15] => 0, [:else, 2, 5, 4, 9, 7] => 1 }, Coverage.result[path][:branches][key])
+      assert_equal :idle, Coverage.state
+    end
+  end
+
+  def test_branch_coverage_counts_are_exact_under_parallel_calls
+    source = "def pick(x)\n  x.odd? ? :odd : :even\nend\ndef spin(n)\n  n -= 1 while n > 0\nend\n"
+    with_source(source) do |path|
+      Coverage.start(branches: true)
+      load path
+      threads, calls = 8, 5000
+      threads.times.map { Thread.new { calls.times { |i| pick(i); spin(3) } } }.each(&:join)
+      branches = Coverage.result[path][:branches]
+      assert_equal({ [:then, 1, 2, 11, 2, 15] => threads * calls / 2, [:else, 2, 2, 18, 2, 23] => threads * calls / 2 }, branches[[:if, 0, 2, 2, 2, 23]])
+      assert_equal({ [:body, 4, 5, 2, 5, 8] => threads * calls * 3 }, branches[[:while, 3, 5, 2, 5, 20]])
+    end
+  end
+
+  def test_branch_coverage_of_blocks_turned_into_methods_and_reloaded_files
+    source = "class Reloaded\n  define_method(:sign) { |x| x < 0 ? :neg : :pos }\nend\n"
+    with_source(source) do |path|
+      Coverage.start(branches: true)
+      load path
+      Reloaded.new.sign(1)
+      load path                                    # the same branches, declared again: counts continue
+      Reloaded.new.sign(-1)
+      branches = Coverage.result[path][:branches]
+      assert_equal({ [:if, 0, 2, 29, 2, 48] => { [:then, 1, 2, 37, 2, 41] => 1, [:else, 2, 2, 44, 2, 48] => 1 } }, branches)
+    end
+  ensure
+    Object.send(:remove_const, :Reloaded) if Object.const_defined?(:Reloaded, false)
+  end
+
+  def test_branch_coverage_across_execution_modes
+    with_source(BRANCHES) do |path|
+      script = File.join(File.dirname(path), 'driver.rb')
+      File.write(script, <<~RUBY)
+        require 'coverage'
+        Coverage.start(branches: true)
+        load #{path.inspect}
+        b = Branchy.new
+        b.classify(1); b.classify(-1); b.classify(0)
+        b.describe(0); b.describe(1); b.describe(200)
+        b.count_down(3)
+        b.safe(nil); b.safe(-2)
+        b.match(20); b.match(3)
+        Coverage.result[#{path.inspect}][:branches].each { |k, v| puts k.inspect; v.each { |kk, vv| puts "  \#{kk.inspect} => \#{vv}" } }
+      RUBY
+
+      expected = jruby(script).lines
+      assert_equal 27, expected.size, expected.join
 
       ['-X-C', '-X+C', '-Xjit.threshold=0 -Xjit.background=false',
        '-Xcompile.invokedynamic=true -Xjit.threshold=0 -Xjit.background=false'].each do |flags|
