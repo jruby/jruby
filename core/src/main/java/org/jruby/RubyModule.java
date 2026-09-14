@@ -5614,7 +5614,10 @@ public class RubyModule extends RubyObject {
      */
     private IRubyObject setConstantCommon(ThreadContext context, String name, IRubyObject value, Boolean hiddenObj,
                                           boolean warn, String file, int line) {
-        ConstantEntry oldEntry = fetchConstantEntry(context, name, true);
+        // Deliberately not fetchConstantEntry: assigning to a deprecated constant warns that it was
+        // already initialized, not that it is deprecated. Private constants are visible here either
+        // way, so the raw fetch loses nothing else.
+        ConstantEntry oldEntry = constantEntryFetch(name);
 
         setParentForModule(context, name, value);
 
@@ -5629,11 +5632,11 @@ public class RubyModule extends RubyObject {
                             (this.equals(objectClass(context)) ? name : (this + "::" + name)));
                 }
 
-                storeConstant(context, name, value, hidden, file, line);
+                storeConstant(context, name, value, hidden, oldEntry.deprecated, file, line);
             } else {
                 if (value == UNDEF) {
                     // original autoload was not loaded, just update visibility
-                    storeConstant(context, name, value, hidden, file, line);
+                    storeConstant(context, name, value, hidden, oldEntry.deprecated, file, line);
                 } else {
                     boolean autoloading = setAutoloadConstant(context, name, value, hidden, file, line);
                     if (autoloading) {
