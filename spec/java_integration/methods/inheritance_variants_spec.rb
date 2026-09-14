@@ -288,6 +288,71 @@ describe "Java subclassing - constructor argument variants" do
     end
   end
 
+  describe "module inclusion (Ruby subclass includes a module)" do
+    it "constructs when an included module does not define initialize (GH-9655)" do
+      cls = Class.new(MultiCtorBase) do
+        include Enumerable
+        def initialize; super(7); end
+      end
+      obj = cls.new
+      expect(obj.ctor).to eq("(int)")
+      expect(obj.trace.to_a).to eq(["Java (int) ctor with 7"])
+    end
+
+    it "constructs with a no-arg super through an included module without initialize" do
+      mod = Module.new { def size; 42; end }
+      cls = Class.new(MultiCtorBase) do
+        include mod
+        def initialize; super(); end
+      end
+      expect(cls.new.ctor).to eq("()")
+    end
+
+    # NOTE: older JRuby silently skipped an included module's initialize here
+    it "runs an included module's initialize between the class and the Java ctor" do
+      mod = Module.new do
+        attr_reader :mod_marker
+        def initialize(s)
+          super(s)
+          @mod_marker = "mod-#{s}"
+        end
+      end
+      cls = Class.new(MultiCtorBase) do
+        include mod
+        attr_reader :cls_marker
+        def initialize(s)
+          super(s)
+          @cls_marker = "cls-#{s}"
+        end
+      end
+
+      obj = cls.new("x")
+      expect(obj.ctor).to eq("(String)")
+      expect(obj.mod_marker).to eq("mod-x")
+      expect(obj.cls_marker).to eq("cls-x")
+      expect(obj.trace.to_a).to eq(["Java (String) ctor with x"])
+    end
+
+    it "forwards args through an included module's direct super" do
+      mod = Module.new { def initialize(*args); super(*args); end }
+      cls = Class.new(MultiCtorBase) do
+        include mod
+        def initialize(*args); super(*args); end
+      end
+      expect(cls.new("hi").ctor).to eq("(String)")
+      expect(cls.new(7).ctor).to eq("(int)")
+    end
+
+    it "constructs when a module without initialize is prepended" do
+      mod = Module.new { def size; 42; end }
+      cls = Class.new(MultiCtorBase) do
+        prepend mod
+        def initialize; super(); end
+      end
+      expect(cls.new.ctor).to eq("()")
+    end
+  end
+
   describe "blocks (terminal super shouldn't break when a block is passed)" do
     it "ignores a passed block (no Java ctor accepts one)" do
       cls = Class.new(MultiCtorBase) { def initialize; super("blockless"); end }

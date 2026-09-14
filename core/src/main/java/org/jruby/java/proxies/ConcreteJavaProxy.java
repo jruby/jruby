@@ -546,7 +546,7 @@ public class ConcreteJavaProxy extends JavaProxy {
         }
 
         // jcreate is for nested ruby classes from a java class
-        if (shouldSplitJavaConstructorInitialize(plan.isLateral, fromRubySuper, plan.methodSource) && air != null) {
+        if (shouldSplitJavaConstructorInitialize(plan, fromRubySuper) && air != null) {
             if (plan.canSkipDirectSuper(args)) {
                 return splitSuperInitialized(plan, args, block, jcc);
             }
@@ -589,25 +589,32 @@ public class ConcreteJavaProxy extends JavaProxy {
     }
 
     private SplitCtorData splitSuperInitialized(final SplitCtorPlan plan, final IRubyObject[] args,
-                                               final Block block, final ConstructorCache jcc) {
-        RubyClass next = nextRubyConstructorSource(plan.effectiveSource, jcc);
+                                                final Block block, final ConstructorCache cache) {
+        RubyClass next = nextRubyConstructorSource(plan, cache);
 
-        if (next == null) return new SplitCtorData(getRuntime(), args, jcc);
-        if (!next.getDelegate().getJavaProxy()) return new SplitCtorData(getRuntime(), args, null);
+        if (next == null) return new SplitCtorData(getRuntime(), args, cache);
+        if (!next.getDelegate().getJavaProxy() && !next.isIncluded() && !next.isPrepended()) {
+            // an intermediate Ruby class: bubble the forwarded args up to its reified parent
+            return new SplitCtorData(getRuntime(), args, null);
+        }
 
-        return splitInitialized(plan.superPlan(next), args, block, jcc, true);
+        return splitInitialized(plan.superPlan(next), args, block, cache, true);
     }
 
-    private static RubyClass nextRubyConstructorSource(final RubyModule methodSource, final ConstructorCache jcc) {
-        if (jcc == null || methodSource.getDelegate().getJavaProxy()) return null;
+    private static RubyClass nextRubyConstructorSource(final SplitCtorPlan plan, final ConstructorCache cache) {
+        if (cache == null || plan.effectiveSource.getDelegate().getJavaProxy()) return null;
 
-        return methodSource.getMethodLocation().getSuperClass();
+        RubyClass superClass = plan.effectiveSource.getMethodLocation().getSuperClass();
+        // skip over included/prepended modules that don't define the constructor method
+        while (superClass != null && !superClass.getDelegate().getJavaProxy() && superClass.getMethods().get(plan.name) == null) {
+            superClass = superClass.getSuperClass();
+        }
+        return superClass;
     }
 
-    private static boolean shouldSplitJavaConstructorInitialize(final boolean isLateral,
-                                                               final boolean fromRubySuper,
-                                                               final RubyModule methodSource) {
-        return isLateral || (fromRubySuper && methodSource.getDelegate().getJavaProxy());
+    private static boolean shouldSplitJavaConstructorInitialize(final SplitCtorPlan plan,
+                                                                final boolean fromRubySuper) {
+        return plan.isLateral || (fromRubySuper && plan.methodSource.getDelegate().getJavaProxy());
     }
 
     private static boolean isPrependedJavaCtorWrapper(final RubyClass methodSource, final RubyClass klass) {
