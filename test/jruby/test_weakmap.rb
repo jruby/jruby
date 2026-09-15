@@ -21,13 +21,16 @@ class TestWeakMap < Test::Unit::TestCase
 
   def test_immediate_keys_stay
     map = ObjectSpace::WeakMap.new
-    map[LIVE.object_id] = LIVE
-    map[:sym] = LIVE
-    map[nil] = LIVE
-    3.times { java.lang.System.gc }
-    assert_same LIVE, map[LIVE.object_id]
-    assert_equal 3, map.size
-    assert map.key?(:sym) && map.key?(nil)
+    keys = [LIVE.object_id, 2.5, :sym, nil]
+    keys.each { |k| map[k] = LIVE }
+    sentinel = dropped_sentinel
+    collected = gc_until do
+      keys.each { |k| assert_same LIVE, map[k], "key #{k.inspect} lost before a collection was seen" }
+      sentinel.refersTo(nil)
+    end
+    assert collected, "sentinel stayed alive: no collection observed"
+    keys.each { |k| assert_same LIVE, map[k], "key #{k.inspect} lost after a collection" }
+    assert_equal keys.size, map.size
   end
 
   private
@@ -41,6 +44,11 @@ class TestWeakMap < Test::Unit::TestCase
 
   def make_unreferenced_weakref(obj)
     java.lang.ref.WeakReference.new(WeakRef.new(obj))
+  end
+
+  # an object nothing holds strongly; once it is cleared a collection has certainly run
+  def dropped_sentinel
+    java.lang.ref.WeakReference.new(Object.new)
   end
 
   def gc_until(rounds = 10)
