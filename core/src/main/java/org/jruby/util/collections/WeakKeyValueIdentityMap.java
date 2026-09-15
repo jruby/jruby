@@ -42,6 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Map-like that holds both its keys and its values weakly and compares keys by identity
  * (backed by a concurrent hash map). An entry goes away once its key or its value has been
  * collected; iteration only ever sees entries whose key and value are both still alive.
+ * Null keys and null values are not supported.
  * @param <Key> key
  * @param <Value> value
  */
@@ -109,7 +110,7 @@ public class WeakKeyValueIdentityMap<Key, Value> extends AbstractMap<Key, Value>
             if (ref instanceof ValueRef) {
                 ValueRef<Key, Value> valueRef = (ValueRef<Key, Value>) ref;
                 map.remove(valueRef.key, valueRef);
-            } else {
+            } else if (ref instanceof KeyRef) {
                 map.remove(ref);
             }
         }
