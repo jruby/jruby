@@ -4095,7 +4095,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
             if (!scheduler.isNil()) {
                 IRubyObject result = FiberScheduler.ioSelectv(context, scheduler, argv);
-                if (result != UNDEF) return result;
+                if (result != null) return result;
             }
         }
 
@@ -4129,109 +4129,140 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return args.go(context);
     }
 
+    // MRI: io_wait_readable
     @JRubyMethod(optional = 1)
     public IRubyObject wait_readable(ThreadContext context, IRubyObject[] argv) {
         OpenFile fptr = this.getOpenFileChecked();
 
         fptr.checkReadable(context);
 
-        long tv = prepareTimeout(context, argv);
         if (fptr.readPending() != 0) return context.tru;
 
-        return doWait(context, fptr, tv, SelectionKey.OP_READ | SelectionKey.OP_ACCEPT);
+        return ioWaitEvent(context, IOEvent.IO_READABLE.value, argv.length == 1 ? argv[0] : context.nil, true);
     }
 
-    /**
-     * waits until input available or timed out and returns self, or nil when EOF reached.
-     */
+    // MRI: io_wait_writable
     @JRubyMethod(optional = 1)
     public IRubyObject wait_writable(ThreadContext context, IRubyObject[] argv) {
         OpenFile fptr = this.getOpenFileChecked();
 
         fptr.checkWritable(context);
 
-        long tv = prepareTimeout(context, argv);
-
-        return doWait(context, fptr, tv, SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE);
+        return ioWaitEvent(context, IOEvent.IO_WRITABLE.value, argv.length == 1 ? argv[0] : context.nil, true);
     }
 
-    @JRubyMethod(optional = 2)
+    // MRI: io_wait
+    @JRubyMethod(rest = true)
     public IRubyObject wait(ThreadContext context, IRubyObject[] argv) {
         OpenFile fptr = this.getOpenFileChecked();
 
-        int ops = 0;
+        IRubyObject timeout = UNDEF;
+        int events = 0;
+        boolean returnIO = false;
 
-        if (argv.length == 2) {
-            if (argv[1] instanceof RubySymbol) {
-                RubySymbol sym = (RubySymbol) argv[1];
-                switch (sym.asJavaString()) { // 7 bit comparison
-                    case "r":
-                    case "read":
-                    case "readable":
-                        ops |= SelectionKey.OP_ACCEPT | SelectionKey.OP_READ;
-                        break;
-                    case "w":
-                    case "write":
-                    case "writable":
-                        ops |= SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE;
-                        break;
-                    case "rw":
-                    case "read_write":
-                    case "readable_writable":
-                        ops |= SelectionKey.OP_ACCEPT | SelectionKey.OP_READ | SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE;
-                        break;
-                    default:
-                        throw argumentError(context, "unsupported mode: " + sym);
+        if (argv.length != 2 || argv[0] instanceof RubySymbol || argv[1] instanceof RubySymbol) {
+            // Only the events mask form answers with a mask, this one answers with the IO
+            returnIO = true;
+
+            // Slow path: a single timeout is allowed in any position, among any number of modes
+            for (int i = 0; i < argv.length; i++) {
+                if (argv[i] instanceof RubySymbol mode) {
+                    events |= waitModeSym(context, mode);
+                } else if (timeout == UNDEF) {
+                    timeout = argv[i];
+                    RubyTime.convertTimeInterval(context, timeout); // for the type check alone
+                } else {
+                    throw argumentError(context, "timeout given more than once");
                 }
-            } else if (argv[1] instanceof RubyFixnum fix) {
-                var fixint = fix.asInt(context);
-                if ((fixint & IOEvent.IO_READABLE.value) != 0) {
-                    ops |= SelectionKey.OP_ACCEPT | SelectionKey.OP_READ;
-                }
-                if ((fixint & IOEvent.IO_WRITABLE.value) != 0) {
-                    ops |= SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE;
-                }
-            } else {
-                throw argumentError(context, "unsupported mode: " + argv[1].getType());
             }
+
+            if (timeout == UNDEF) timeout = context.nil;
+            if (events == 0) events = IOEvent.IO_READABLE.value;
         } else {
-            ops |= SelectionKey.OP_ACCEPT | SelectionKey.OP_READ;
+            events = ioEventFromValue(context, argv[0]);
+            timeout = argv[1];
         }
 
-        if ((ops & SelectionKey.OP_READ) == SelectionKey.OP_READ && fptr.readPending() != 0) return context.tru;
+        if ((events & IOEvent.IO_READABLE.value) != 0 && fptr.readPending() != 0) {
+            // true is the original behavior, the events mask form always answers with a mask
+            return returnIO ? context.tru : asFixnum(context, IOEvent.IO_READABLE.value);
+        }
 
-        long tv = prepareTimeout(context, argv);
-
-        return doWait(context, fptr, tv, ops);
+        return ioWaitEvent(context, events, timeout, returnIO);
     }
 
-    private IRubyObject doWait(ThreadContext context, OpenFile fptr, long tv, int ops) {
-        boolean ready = fptr.ready(context.runtime, context.getThread(), ops, tv);
+    // MRI: io_wait_event
+    private IRubyObject ioWaitEvent(ThreadContext context, int events, IRubyObject timeout, boolean returnIO) {
+        IRubyObject result = ioWait(context, events, timeout);
+
+        if (!result.isTrue()) return context.nil;
+
+        if ((toInt(context, result) & events) == 0) return context.fals;
+
+        return returnIO ? this : result;
+    }
+
+    // MRI: rb_io_wait, returning the mask of events that became ready or false on timeout
+    private IRubyObject ioWait(ThreadContext context, int events, IRubyObject timeout) {
+        IRubyObject scheduler = FiberScheduler.current(context);
+
+        if (scheduler != null) {
+            return FiberScheduler.ioWait(context, scheduler, this, asFixnum(context, events), timeout);
+        }
+
+        OpenFile fptr = getOpenFileChecked();
+
+        // An IO with its own timeout falls back on it, as MRI does
+        if (timeout.isNil()) timeout = fptr.getTimeout();
+
+        long tv = timeoutMillis(context, timeout);
+
+        int ready = ioEvents(fptr.readyOps(context.getThread(), selectionOps(events), tv));
+
         fptr.checkClosed();
-        if (ready) return this;
-        return context.nil;
+
+        return ready == 0 ? context.fals : asFixnum(context, ready);
     }
 
-    private static long prepareTimeout(ThreadContext context, IRubyObject[] argv) {
-        IRubyObject timeout;
-        long tv;
-        switch (argv.length) {
-            case 2:
-            case 1:
-                timeout = argv[0];
-                break;
-            default:
-                timeout = context.nil;
-        }
+    // MRI: wait_mode_sym
+    private static int waitModeSym(ThreadContext context, RubySymbol mode) {
+        return switch (mode.asJavaString()) { // 7 bit comparison
+            case "r", "read", "readable" -> IOEvent.IO_READABLE.value;
+            case "w", "write", "writable" -> IOEvent.IO_WRITABLE.value;
+            case "rw", "read_write", "readable_writable" -> IOEvent.IO_READABLE.value | IOEvent.IO_WRITABLE.value;
+            default -> throw argumentError(context, "unsupported mode: " + mode);
+        };
+    }
 
-        if (timeout.isNil()) {
-            tv = -1;
-        }
-        else {
-            tv = (long)(RubyTime.convertTimeInterval(context, timeout) * 1000);
-            if (tv < 0) throw argumentError(context, "time interval must be positive");
-        }
-        return tv;
+    // MRI: io_event_from_value
+    private static int ioEventFromValue(ThreadContext context, IRubyObject value) {
+        int events = toInt(context, value);
+
+        if (events <= 0) throw argumentError(context, "Events must be positive integer!");
+
+        return events;
+    }
+
+    // NIO selection ops to the IO::READABLE/IO::WRITABLE mask IO#wait and io_wait speak
+    private static int ioEvents(int ops) {
+        int events = 0;
+        if ((ops & (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) != 0) events |= IOEvent.IO_READABLE.value;
+        if ((ops & (SelectionKey.OP_WRITE | SelectionKey.OP_CONNECT)) != 0) events |= IOEvent.IO_WRITABLE.value;
+        return events;
+    }
+
+    // The reverse, except that IO::PRIORITY has no NIO equivalent and maps to nothing
+    private static int selectionOps(int events) {
+        int ops = 0;
+        if ((events & IOEvent.IO_READABLE.value) != 0) ops |= SelectionKey.OP_READ | SelectionKey.OP_ACCEPT;
+        if ((events & IOEvent.IO_WRITABLE.value) != 0) ops |= SelectionKey.OP_WRITE | SelectionKey.OP_CONNECT;
+        return ops;
+    }
+
+    private static long timeoutMillis(ThreadContext context, IRubyObject timeout) {
+        if (timeout.isNil()) return -1;
+
+        return (long) (RubyTime.convertTimeInterval(context, timeout) * 1000);
     }
 
     // MRI: rb_io_advise
@@ -5206,87 +5237,6 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         int written = OpenFile.pwriteInternal(context, fptr, fd, wrap, off, length);
 
         return asFixnum(context, written);
-    }
-
-    @JRubyMethod(optional = 1)
-    public static IRubyObject wait_readable(ThreadContext context, IRubyObject _io, IRubyObject[] argv) {
-        RubyIO io = (RubyIO)_io;
-        OpenFile fptr = io.getOpenFileChecked();
-
-        fptr.checkReadable(context);
-
-        long tv = prepareTimeout(context, argv);
-
-        if (fptr.readPending() != 0) return context.tru;
-
-        return doWait(context, io, fptr, tv, SelectionKey.OP_READ | SelectionKey.OP_ACCEPT);
-    }
-
-    /**
-     * waits until input available or timed out and returns self, or nil when EOF reached.
-     */
-    @JRubyMethod(optional = 1)
-    public static IRubyObject wait_writable(ThreadContext context, IRubyObject _io, IRubyObject[] argv) {
-        RubyIO io = (RubyIO)_io;
-
-        OpenFile fptr = io.getOpenFileChecked();
-
-        fptr.checkWritable(context);
-
-        long tv = prepareTimeout(context, argv);
-
-        return doWait(context, io, fptr, tv, SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE);
-    }
-
-    @JRubyMethod(optional = 2)
-    public static IRubyObject wait(ThreadContext context, IRubyObject _io, IRubyObject[] argv) {
-        RubyIO io = (RubyIO)_io;
-
-        OpenFile fptr = io.getOpenFileChecked();
-
-        int ops = 0;
-
-        if (argv.length == 2) {
-            if (argv[1] instanceof RubySymbol) {
-                RubySymbol sym = (RubySymbol) argv[1];
-                switch (sym.asJavaString()) { // 7 bit comparison
-                    case "r":
-                    case "read":
-                    case "readable":
-                        ops |= SelectionKey.OP_ACCEPT | SelectionKey.OP_READ;
-                        break;
-                    case "w":
-                    case "write":
-                    case "writable":
-                        ops |= SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE;
-                        break;
-                    case "rw":
-                    case "read_write":
-                    case "readable_writable":
-                        ops |= SelectionKey.OP_ACCEPT | SelectionKey.OP_READ | SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE;
-                        break;
-                    default:
-                        throw argumentError(context, "unsupported mode: " + sym);
-                }
-            } else {
-                throw argumentError(context, "unsupported mode: " + argv[1].getType());
-            }
-        } else {
-            ops |= SelectionKey.OP_ACCEPT | SelectionKey.OP_READ;
-        }
-
-        if ((ops & SelectionKey.OP_READ) == SelectionKey.OP_READ && fptr.readPending() != 0) return context.tru;
-
-        long tv = prepareTimeout(context, argv);
-
-        return doWait(context, io, fptr, tv, ops);
-    }
-
-    private static IRubyObject doWait(ThreadContext context, RubyIO io, OpenFile fptr, long tv, int ops) {
-        boolean ready = fptr.ready(context.runtime, context.getThread(), ops, tv);
-        fptr.checkClosed();
-        if (ready) return io;
-        return context.nil;
     }
 
     @JRubyMethod(name = {"path", "to_path"})

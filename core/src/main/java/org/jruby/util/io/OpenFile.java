@@ -68,6 +68,7 @@ public class OpenFile implements Finalizable {
         writeconvAsciicompat = null;
         writeconvPreEcopts = nil;
         encs.ecopts = nil;
+        timeout = nil;
         posix = new PosixShim(runtime);
         fiberScheduler = Options.FIBER_SCHEDULER.load();
     }
@@ -575,27 +576,30 @@ public class OpenFile implements Finalizable {
      * @return
      */
     public boolean ready(Ruby runtime, RubyThread thread, int ops, long timeout) {
+        return readyOps(thread, ops, timeout) != 0;
+    }
+
+    // MRI: rb_thread_io_wait
+    public int readyOps(RubyThread thread, int ops, long timeout) {
         boolean locked = lock();
         try {
             if (fd.chSelect != null) {
                 int realOps = ops & fd.chSelect.validOps();
 
-                if ((realOps & SelectionKey.OP_WRITE) != (ops & SelectionKey.OP_WRITE)) {
-                    // MRI or poll or select appears to return ready for write select on a read-only channel
-                    return true;
-                }
+                // MRI or poll or select appears to return ready for write select on a read-only channel
+                int alwaysReady = ops & ~realOps & SelectionKey.OP_WRITE;
 
-                return thread.select(fd.chSelect, this, realOps, timeout);
+                // Nothing the channel can actually select for was asked
+                if (realOps == 0) return alwaysReady;
 
-            } else if (fd.chSeek != null) {
-                return fd.chSeek.position() != -1
-                        && fd.chSeek.size() != -1
-                        && fd.chSeek.position() < fd.chSeek.size();
+                // Something is ready already, so ask about the rest without blocking
+                if (alwaysReady != 0) return alwaysReady | thread.selectReadyOps(fd.chSelect, this, realOps, 0);
+
+                return thread.selectReadyOps(fd.chSelect, this, realOps, timeout);
             }
 
-            return false;
-        } catch (IOException ioe) {
-            throw runtime.newIOErrorFromException(ioe);
+            // Channels that cannot be selected, regular files among them, are always ready
+            return ops;
         } finally {
             if (locked) unlock();
         }
