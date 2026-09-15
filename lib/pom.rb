@@ -46,7 +46,7 @@ default_gems = [
   ['io-console', '0.8.2'],
   # https://github.com/ruby/io-nonblock/issues/4
   # ['io-nonblock', '0.3.2'],
-  ['io-wait', '0.4.0'],
+  ['io-wait', '1.0.0'],
   ['ipaddr', '1.2.8'],
   ['jar-dependencies', '0.6.0'],
   ['jruby-readline', '1.3.7'],
