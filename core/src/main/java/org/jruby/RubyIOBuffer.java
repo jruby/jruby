@@ -1823,7 +1823,7 @@ public class RubyIOBuffer extends RubyObject {
         if (!scheduler.isNil()) {
             IRubyObject result = FiberScheduler.ioRead(context, scheduler, io, this, asFixnum(context, size), asFixnum(context, 0));
 
-            if (result != UNDEF) return result;
+            if (result != null) return result;
         }
 
         return read(context, io, size, 0);
@@ -1864,7 +1864,7 @@ public class RubyIOBuffer extends RubyObject {
         if (!scheduler.isNil()) {
             IRubyObject result = FiberScheduler.ioRead(context, scheduler, io, this, lengthInteger, offset);
 
-            if (result != UNDEF) {
+            if (result != null) {
                 return result;
             }
         }
@@ -1918,7 +1918,7 @@ public class RubyIOBuffer extends RubyObject {
             IRubyObject result = FiberScheduler.ioPRead(context, scheduler, io, this, fromInteger,
                     asFixnum(context, length), asFixnum(context, 0));
 
-            if (result != UNDEF) return result;
+            if (result != null) return result;
         }
 
         int from = toInt(context, _from);
@@ -1937,7 +1937,7 @@ public class RubyIOBuffer extends RubyObject {
 
         if (!scheduler.isNil()) {
             IRubyObject result = FiberScheduler.ioPRead(context, scheduler, io, this, fromInteger, lengthInteger, asFixnum(context, 0));
-            if (result != UNDEF) return result;
+            if (result != null) return result;
         }
 
         int from = toInt(context, fromInteger);
@@ -1972,7 +1972,7 @@ public class RubyIOBuffer extends RubyObject {
 
         if (!scheduler.isNil()) {
             IRubyObject result = FiberScheduler.ioPRead(context, scheduler, io, this, fromInteger, lengthInteger, offsetInteger);
-            if (result != UNDEF) return result;
+            if (result != null) return result;
         }
 
         int from = toInt(context, fromInteger);
