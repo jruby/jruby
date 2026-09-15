@@ -27,7 +27,10 @@ project 'JRuby Base' do
              "jruby.test.memory": '3G',
              "jruby.compile.memory": '2G',
 
-             "create.sources.jar": false)
+             "create.sources.jar": false,
+
+             "prism.parser.version": '0.0.5-SNAPSHOT',
+ )
 
   IO.foreach(File.join(basedir, '..', 'default.build.properties')) do |line|
     line.chomp!
@@ -80,9 +83,10 @@ project 'JRuby Base' do
 
   jar 'org.crac:crac:1.5.0'
 
-  jar 'org.jruby:jruby-prism:2.0.4'
-
   jar 'ch.randelshofer:fastdoubleparser:2.0.1'
+
+  jar 'org.ruby-lang:prism-parser-api:${prism.parser.version}'
+  jar 'org.ruby-lang:prism-parser-wasm:${prism.parser.version}'
 
   plugin_management do
     plugin('org.eclipse.m2e:lifecycle-mapping:1.0.0',
