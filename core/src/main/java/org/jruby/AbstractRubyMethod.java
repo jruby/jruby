@@ -42,9 +42,7 @@ import org.jruby.internal.runtime.methods.PartialDelegatingMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Helpers;
-import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.marshal.DataType;
@@ -155,21 +153,11 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
     }
 
     public String getFilename() {
-        DynamicMethod realMethod = method.getRealMethod(); // Follow Aliases
-        if (realMethod instanceof PositionAware) {
-            PositionAware poser = (PositionAware) realMethod;
-            return TraceType.maskInternalFiles(poser.getFile());
-        }
-        return null;
+        return method.getSourceFile();
     }
 
     public int getLine() {
-        DynamicMethod realMethod = method.getRealMethod(); // Follow Aliases
-        if (realMethod instanceof PositionAware) {
-            PositionAware poser = (PositionAware) realMethod;
-            return poser.getLine() + 1;
-        }
-        return -1;
+        return method.getSourceLine();
     }
 
     @JRubyMethod(name = "parameters")
