@@ -73,118 +73,78 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args,
             Block block) {
-        prepareMethodCoverage(context);
-        if (IRRuntimeHelpers.isDebug()) doDebug();
-
-        if (callCount >= 0) promoteToFullBuild(context);
-
-        ensureInstrsReady();
+        prepareCall(context);
         return Interpreter.INTERPRET_METHOD(context, method, clazz, self, name, args, block);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name,
             IRubyObject[] args) {
-        prepareMethodCoverage(context);
-        if (IRRuntimeHelpers.isDebug()) doDebug();
-
-        if (callCount >= 0) promoteToFullBuild(context);
-
-        ensureInstrsReady();
+        prepareCall(context);
         return Interpreter.INTERPRET_METHOD(context, method, clazz, self, name, args, Block.NULL_BLOCK);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-        prepareMethodCoverage(context);
-        if (IRRuntimeHelpers.isDebug()) doDebug();
-
-        if (callCount >= 0) promoteToFullBuild(context);
-
-        ensureInstrsReady();
+        prepareCall(context);
         return Interpreter.INTERPRET_METHOD(context, method, clazz, self, name, block);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-        prepareMethodCoverage(context);
-        if (IRRuntimeHelpers.isDebug()) doDebug();
-
-        if (callCount >= 0) promoteToFullBuild(context);
-
-        ensureInstrsReady();
+        prepareCall(context);
         return Interpreter.INTERPRET_METHOD(context, method, clazz, self, name, Block.NULL_BLOCK);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0,
             Block block) {
-        prepareMethodCoverage(context);
-        if (IRRuntimeHelpers.isDebug()) doDebug();
-
-        if (callCount >= 0) promoteToFullBuild(context);
-
-        ensureInstrsReady();
+        prepareCall(context);
         return Interpreter.INTERPRET_METHOD(context, method, clazz, self, name, arg0, block);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
-        prepareMethodCoverage(context);
-        if (IRRuntimeHelpers.isDebug()) doDebug();
-
-        if (callCount >= 0) promoteToFullBuild(context);
-
-        ensureInstrsReady();
+        prepareCall(context);
         return Interpreter.INTERPRET_METHOD(context, method, clazz, self, name, arg0, Block.NULL_BLOCK);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0,
             IRubyObject arg1, Block block) {
-        prepareMethodCoverage(context);
-        if (IRRuntimeHelpers.isDebug()) doDebug();
-
-        if (callCount >= 0) promoteToFullBuild(context);
-
-        ensureInstrsReady();
+        prepareCall(context);
         return Interpreter.INTERPRET_METHOD(context, method, clazz, self, name, arg0, arg1, block);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0,
             IRubyObject arg1) {
-        prepareMethodCoverage(context);
-        if (IRRuntimeHelpers.isDebug()) doDebug();
-
-        if (callCount >= 0) promoteToFullBuild(context);
-
-        ensureInstrsReady();
+        prepareCall(context);
         return Interpreter.INTERPRET_METHOD(context, method, clazz, self, name, arg0, arg1, Block.NULL_BLOCK);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0,
             IRubyObject arg1, IRubyObject arg2, Block block) {
-        prepareMethodCoverage(context);
-        if (IRRuntimeHelpers.isDebug()) doDebug();
-
-        if (callCount >= 0) promoteToFullBuild(context);
-
-        ensureInstrsReady();
+        prepareCall(context);
         return Interpreter.INTERPRET_METHOD(context, method, clazz, self, name, arg0, arg1, arg2, block);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0,
             IRubyObject arg1, IRubyObject arg2) {
+        prepareCall(context);
+        return Interpreter.INTERPRET_METHOD(context, method, clazz, self, name, arg0, arg1, arg2, Block.NULL_BLOCK);
+    }
+
+    /**
+     * Work done before every call: debug output, JIT promotion, and the hand-off of this entry's Coverage counter.
+     */
+    private void prepareCall(ThreadContext context) {
         prepareMethodCoverage(context);
         if (IRRuntimeHelpers.isDebug()) doDebug();
-
         if (callCount >= 0) promoteToFullBuild(context);
-
         ensureInstrsReady();
-        return Interpreter.INTERPRET_METHOD(context, method, clazz, self, name, arg0, arg1, arg2, Block.NULL_BLOCK);
     }
 
     protected void doDebug() {

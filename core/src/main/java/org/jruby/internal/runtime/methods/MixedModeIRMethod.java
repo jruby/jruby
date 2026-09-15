@@ -95,12 +95,7 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args,
             Block block) {
-        prepareMethodCoverage(context);
-        if (IRRuntimeHelpers.isDebug()) doDebug();
-
-        // try jit before checking actualMethod, so we use jitted version immediately if
-        // it's ready
-        if (callCount >= 0) tryJit(context, this, false);
+        prepareCall(context);
 
         DynamicMethod jittedMethod = actualMethod;
         if (jittedMethod != null) {
@@ -132,12 +127,7 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-        prepareMethodCoverage(context);
-        if (IRRuntimeHelpers.isDebug()) doDebug();
-
-        // try jit before checking actualMethod, so we use jitted version immediately if
-        // it's ready
-        if (callCount >= 0) tryJit(context, this, false);
+        prepareCall(context);
 
         DynamicMethod jittedMethod = actualMethod;
         if (jittedMethod != null) {
@@ -170,12 +160,7 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0,
             Block block) {
-        prepareMethodCoverage(context);
-        if (IRRuntimeHelpers.isDebug()) doDebug();
-
-        // try jit before checking actualMethod, so we use jitted version immediately if
-        // it's ready
-        if (callCount >= 0) tryJit(context, this, false);
+        prepareCall(context);
 
         DynamicMethod jittedMethod = actualMethod;
         if (jittedMethod != null) {
@@ -208,12 +193,7 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0,
             IRubyObject arg1, Block block) {
-        prepareMethodCoverage(context);
-        if (IRRuntimeHelpers.isDebug()) doDebug();
-
-        // try jit before checking actualMethod, so we use jitted version immediately if
-        // it's ready
-        if (callCount >= 0) tryJit(context, this, false);
+        prepareCall(context);
 
         DynamicMethod jittedMethod = actualMethod;
         if (jittedMethod != null) {
@@ -246,12 +226,7 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0,
             IRubyObject arg1, IRubyObject arg2, Block block) {
-        prepareMethodCoverage(context);
-        if (IRRuntimeHelpers.isDebug()) doDebug();
-
-        // try jit before checking actualMethod, so we use jitted version immediately if
-        // it's ready
-        if (callCount >= 0) tryJit(context, this, false);
+        prepareCall(context);
 
         DynamicMethod jittedMethod = actualMethod;
         if (jittedMethod != null) {
@@ -300,6 +275,18 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         }
 
         return super.splitSuperCall(context, self, clazz, name, args, block, ic);
+    }
+
+    /**
+     * Work done before every call: debug output, the JIT attempt, and the hand-off of this entry's Coverage counter.
+     */
+    private void prepareCall(ThreadContext context) {
+        prepareMethodCoverage(context);
+        if (IRRuntimeHelpers.isDebug()) doDebug();
+
+        // try jit before checking actualMethod, so we use jitted version immediately if
+        // it's ready
+        if (callCount >= 0) tryJit(context, this, false);
     }
 
     private void doDebug() {
