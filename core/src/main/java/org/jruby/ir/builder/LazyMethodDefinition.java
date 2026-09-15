@@ -9,14 +9,14 @@ public interface LazyMethodDefinition<U, V, W, X, Y, Z> {
     int getEndLine();
 
     /**
-     * Zero-based byte column at which the definition starts (-1 if unknown).
+     * Zero-based byte column where the definition starts. -1 if unknown.
      */
     default int getStartColumn() {
         return -1;
     }
 
     /**
-     * Zero-based byte column just past the end of the definition (-1 if unknown).
+     * Zero-based byte column just after the definition ends. -1 if unknown.
      */
     default int getEndColumn() {
         return -1;

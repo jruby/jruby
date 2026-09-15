@@ -33,22 +33,19 @@ import org.jruby.RubyModule;
 import org.jruby.ir.IRScope;
 
 /**
- * The call counter for a single method entry: one definition of a Ruby-level method (<code>def</code> or
- * <code>define_method</code>) into one owner module. This is JRuby's equivalent of the per-method-entry
- * counters MRI keeps while Coverage measures methods, and one instance corresponds to one key of the
- * <code>:methods</code> hash returned by <code>Coverage.result</code>:
+ * Call counter for one method entry: one definition of a Ruby method (def or define_method) in one owner
+ * module. This is JRuby's equivalent of the per-method-entry counters MRI keeps in methods mode. Each instance
+ * becomes one key of the :methods hash in Coverage.result:
  * <code>[owner, name, start_line, start_column, end_line, end_column]</code>.
  *
- * <p>Lifecycle: {@link CoverageData#registerMethod} creates the counter when the method is added to its owner
- * and attaches it to the {@link org.jruby.internal.runtime.methods.DynamicMethod}. Every call of that method
- * hands the counter to the method body through the calling thread's {@link org.jruby.runtime.ThreadContext}
- * (see {@link org.jruby.ir.instructions.ReceiveMethodCoverageInstr}), and the body increments it once its
- * arguments have been received ({@link org.jruby.ir.instructions.CoverMethodInstr}). Calls that fail while
- * receiving arguments (arity errors, missing keywords, raising default values) are therefore not counted,
- * exactly like MRI's CALL event.</p>
+ * <p>How a call is counted: {@link CoverageData#registerMethod} creates the counter when the method is added
+ * to its owner and attaches it to the {@link org.jruby.internal.runtime.methods.DynamicMethod}. On each call,
+ * the entry passes the counter to its body through the {@link org.jruby.runtime.ThreadContext}. The body
+ * takes it before receiving arguments ({@link org.jruby.ir.instructions.ReceiveMethodCoverageInstr}) and
+ * increments it after ({@link org.jruby.ir.instructions.CoverMethodInstr}). So a call that fails while
+ * receiving arguments is not counted, same as MRI's CALL event.</p>
  *
- * <p>Counting is a single lock-free atomic add, so threads calling the same method in parallel neither
- * serialize on a lock nor lose increments.</p>
+ * <p>The increment is one lock-free atomic add. Parallel calls neither block nor lose counts.</p>
  */
 public final class MethodCoverage {
     private static final VarHandle COUNT;
@@ -81,15 +78,15 @@ public final class MethodCoverage {
     }
 
     /**
-     * Is this the counter for the given method or block body? A body only counts a counter handed to it for
-     * its own scope, which protects against a stale hand-off ever being attributed to the wrong method.
+     * True if this counter belongs to the given method or block scope. A body only counts its own counter, so
+     * a stale hand-off is never charged to another method.
      */
     public boolean isFor(IRScope scope) {
         return this.scope == scope;
     }
 
     /**
-     * Record one call of the method.
+     * Count one call.
      */
     public void cover() {
         COUNT.getAndAdd(this, 1L);
@@ -100,49 +97,49 @@ public final class MethodCoverage {
     }
 
     /**
-     * Reset the call count to zero (Coverage.result(clear: true)).
+     * Reset the count to zero. Used by Coverage.result(clear: true).
      */
     public void clear() {
         count = 0;
     }
 
     /**
-     * The module the method was defined into (MRI: the method entry's owner).
+     * The module the method was defined in.
      */
     public RubyModule getOwner() {
         return owner;
     }
 
     /**
-     * The name the method was originally defined with; aliases count toward this entry.
+     * The name the method was defined with. Calls through aliases count here.
      */
     public String getName() {
         return name;
     }
 
     /**
-     * One-based line of the start of the method's source (the 'def' keyword, or the block passed to define_method).
+     * One-based line where the definition starts: the def keyword, or the block passed to define_method.
      */
     public int getStartLine() {
         return startLine;
     }
 
     /**
-     * Zero-based byte column of the start of the method's source.
+     * Zero-based byte column where the definition starts.
      */
     public int getStartColumn() {
         return startColumn;
     }
 
     /**
-     * One-based line of the end of the method's source (its 'end' keyword or closing brace).
+     * One-based line where the definition ends: its end keyword or closing brace.
      */
     public int getEndLine() {
         return endLine;
     }
 
     /**
-     * Zero-based byte column just past the end of the method's source.
+     * Zero-based byte column just after the end of the definition.
      */
     public int getEndColumn() {
         return endColumn;

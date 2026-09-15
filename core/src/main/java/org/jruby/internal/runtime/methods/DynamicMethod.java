@@ -80,7 +80,7 @@ public abstract class DynamicMethod {
     protected Object handle;
     /** Has this method been aliased. */
     protected boolean aliased;
-    /** Coverage (methods mode) call counter for this method entry; null unless Coverage registered the entry. */
+    /** Coverage call counter for this entry (methods mode). Null unless Coverage registered the entry. */
     protected MethodCoverage methodCoverage;
 
     private static final int BUILTIN_FLAG = 0b1;
@@ -662,8 +662,7 @@ public abstract class DynamicMethod {
     }
 
     /**
-     * The Coverage (methods mode) call counter attached to this method entry, or null if Coverage is not counting
-     * calls of this entry.
+     * The Coverage call counter attached to this entry, or null when its calls are not counted.
      */
     public MethodCoverage getMethodCoverage() {
         return methodCoverage;
@@ -674,9 +673,8 @@ public abstract class DynamicMethod {
     }
 
     /**
-     * Hand this entry's coverage counter, if any, to the method body about to run on the current thread. Called
-     * by every Ruby-level call path (see ReceiveMethodCoverageInstr for the other end); a no-op when Coverage
-     * is not counting this entry.
+     * Pass this entry's Coverage counter, if any, to the body about to run on this thread. Every Ruby-level call
+     * path calls this. ReceiveMethodCoverageInstr is the other end. No-op when the entry has no counter.
      */
     protected final void prepareMethodCoverage(ThreadContext context) {
         MethodCoverage methodCoverage = this.methodCoverage;
@@ -684,9 +682,8 @@ public abstract class DynamicMethod {
     }
 
     /**
-     * Count a call of this entry whose body is not going to run at all: the initialize of a Java subclass that is a
-     * plain super forwarding its arguments is elided by ConcreteJavaProxy, but MRI still fires the CALL event for
-     * it. Callers have already established that the arguments match the method's arity.
+     * Count a call whose body is skipped. ConcreteJavaProxy skips the initialize of a Java subclass when it is a
+     * plain super that forwards its arguments. MRI still fires CALL for it. Callers have checked the arity already.
      */
     public final void coverElidedCall(ThreadContext context) {
         MethodCoverage methodCoverage = this.methodCoverage;

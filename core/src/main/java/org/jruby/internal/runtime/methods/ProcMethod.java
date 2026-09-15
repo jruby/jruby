@@ -61,9 +61,9 @@ public class ProcMethod extends DynamicMethod implements PositionAware, IRMethod
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
         if (methodCoverage == null) return proc.call(context, args, self, klazz, block);
 
-        // Unlike a def, whose arity check is in the body after ReceiveMethodCoverageInstr has taken the counter, the
-        // lambda arity check runs in Java before the body. A call failing it must not leave the counter pending on
-        // the thread for the next run of this block body to take (e.g. a plain call of the same proc).
+        // A def checks arity inside its body, after ReceiveMethodCoverageInstr has taken the counter. A lambda checks
+        // arity in Java, before the body runs. If that check fails, the counter must not stay pending on the thread.
+        // Otherwise the next run of this block, such as a plain call of the proc, would take it.
         prepareMethodCoverage(context);
         try {
             return proc.call(context, args, self, klazz, block);

@@ -2990,8 +2990,8 @@ f_larglist      : '(' f_args opt_bv_decl ')' {
                         p.ordinalMaxNumParam();
                         p.setLambdaArgsStart(@1.start);
                     } else {
-                        // No parameter list: like MRI the lambda's source starts just past '->' (the end of the
-                        // preceding token, which is where an empty production's location ends).
+                        // No parameter list: the lambda's source starts just after '->', as in MRI. That is the
+                        // end of the previous token, which is where an empty production's location ends.
                         p.setLambdaArgsStart(@1.end);
                     }
                     /*% %*/

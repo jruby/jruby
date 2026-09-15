@@ -8,7 +8,7 @@ class TestCoverage < Test::Unit::TestCase
 
   def teardown
     Coverage.result if Coverage.state != :idle
-    # each test loads METHODS afresh; drop the classes so definitions do not accumulate across tests
+    # each test loads METHODS again; drop the classes so definitions do not pile up across tests
     [:Sub, :Prepended, :Mixin, :Covered].each { |c| Object.send(:remove_const, c) if Object.const_defined?(c, false) }
   end
 
@@ -18,8 +18,8 @@ class TestCoverage < Test::Unit::TestCase
     assert_nothing_raised { Coverage.result }
   end
 
-  # The MRI test suite covers the basics of method coverage; these tests cover what is specific to JRuby: the
-  # different execution engines, true parallelism, and the many ways a method entry can come into being.
+  # The MRI suite covers the basics of method coverage. These tests cover what is specific to JRuby: the
+  # execution engines, real parallelism, and the ways a method entry can be created.
 
   METHODS = <<~'RUBY'
     class Covered
@@ -122,7 +122,7 @@ class TestCoverage < Test::Unit::TestCase
       Coverage.start(methods: true)
       load path
       assert_raise(ArgumentError) { Covered.new.blk }
-      Covered::BLK.call(1) # the same block body run as a plain block, which is not a call of the method
+      Covered::BLK.call(1) # the same block run as a plain block; not a call of the method
       assert_equal 0, Coverage.result[path][:methods][key(Covered, :blk, 2, '{', '}')]
     end
   end
@@ -141,8 +141,8 @@ class TestCoverage < Test::Unit::TestCase
     end
   RUBY
 
-  # A Java subclass's initialize is run through the split-constructor machinery (or skipped entirely when it is a
-  # plain super), not through a regular method call.
+  # The initialize of a Java subclass runs through the split-constructor path, or is skipped when it is a plain
+  # super. It does not go through a regular method call.
   def test_method_coverage_counts_java_subclass_initialize
     with_source(JAVA_SUBCLASSES) do |path|
       Coverage.start(methods: true)
@@ -248,14 +248,14 @@ class TestCoverage < Test::Unit::TestCase
     @source = nil
   end
 
-  # The key Coverage reports for a single-line method definition: [owner, name, line, start_column, line, end_column],
-  # with the columns located from the source text of that line.
+  # The key Coverage reports for a one-line definition: [owner, name, line, start_column, line, end_column].
+  # The columns are found in the source text of that line.
   def key(owner, name, line, from, to)
     text = source_line(line)
     [owner, name, line, text.index(from), line, text.rindex(to) + to.length]
   end
 
-  # "line start_column line end_column" for a single-line definition, as printed by the driver script above
+  # "line start_column line end_column" for a one-line definition, as printed by the driver script above
   def span(line, from, to)
     key(nil, nil, line, from, to).drop(2).join(' ')
   end

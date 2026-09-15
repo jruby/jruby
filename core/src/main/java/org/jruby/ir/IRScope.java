@@ -125,8 +125,8 @@ public abstract class IRScope implements ParseResult {
 
     private int coverageMode;
 
-    // Source span of this scope beyond its starting line (see getLine()); all -1 when unknown. Only methods and
-    // closures record it (their builders get it from the parser) and it identifies method entries for Coverage.
+    // Source span of this scope beyond its start line (see getLine()). All -1 when unknown. Set for methods and
+    // closures only, from the parser. Coverage uses it to identify method entries.
     private int startColumn = -1;
     private int endLine = -1;
     private int endColumn = -1;
@@ -504,12 +504,11 @@ public abstract class IRScope implements ParseResult {
     }
 
     /**
-     * Record where the source of this scope ends and which column it starts at (its starting line is getLine()).
+     * Record where the source of this scope starts and ends. The start line is getLine().
      *
-     * @param startColumn zero-based byte column of the first character of the definition (the 'def' keyword, the
-     *                    opening brace of a block, ...)
-     * @param endLine zero-based line of the last character of the definition (its 'end' keyword or closing brace)
-     * @param endColumn zero-based byte column just past that last character
+     * @param startColumn zero-based byte column of the first character: the def keyword, the opening brace, ...
+     * @param endLine zero-based line of the last character: the end keyword or closing brace
+     * @param endColumn zero-based byte column just after that character
      */
     public void setSourceSpan(int startColumn, int endLine, int endColumn) {
         this.startColumn = startColumn;

@@ -436,10 +436,9 @@ public abstract class RubyParserBase {
         return argsNode.isEmpty();
     }
 
-    // Packed (line, column) position where the parameter list of the lambda currently being parsed starts.  This is
-    // stashed by the f_larglist production and consumed immediately afterward (before any nested lambda can be
-    // parsed) so that the lambda's source span can be recorded like MRI does: from the start of the parameter list
-    // (or from just past '->' when there is none) through the end of the body.
+    // Packed (line, column) start of the parameter list of the lambda being parsed. The f_larglist production
+    // stores it and the lambda production takes it right after, before any nested lambda is parsed. It gives the
+    // lambda's source span the same start as in MRI: the parameter list, or just after '->' when there is none.
     private long lambdaArgsStart;
 
     public void setLambdaArgsStart(long position) {
@@ -2417,8 +2416,8 @@ public abstract class RubyParserBase {
     }
 
     /**
-     * Does this parse need the per-line array of starting counts? Only when lines are being counted: methods mode
-     * has no use for it and oneshot_lines starts from an empty list (see CoverageData#prepareCoverage).
+     * True when this parse needs the per-line array of starting counts. Only lines mode needs it: methods mode
+     * has no use for it, and oneshot_lines starts from an empty list (see CoverageData#prepareCoverage).
      */
     private boolean isLineCountingEnabled() {
         if (!isCoverageEnabled()) return false;
@@ -2463,7 +2462,7 @@ public abstract class RubyParserBase {
     public CoverageData finishCoverage(String file, int lines) {
         if (!isCoverageEnabled()) return null;
 
-        // the file is registered with Coverage in every mode; the line array is only filled in when lines are counted
+        // the file is registered in every mode; the line array is filled only in lines mode
         if (isLineCountingEnabled()) growCoverageLines(lines);
         CoverageData data = runtime.getCoverageData();
         data.prepareCoverage(file, coverage);

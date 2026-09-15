@@ -680,16 +680,16 @@ public class IRRuntimeHelpers {
     }
 
     /**
-     * Count one call of the executing method for Coverage's methods mode (the second half of the hand-off started
-     * by DynamicMethod#prepareMethodCoverage; see CoverMethodInstr).
+     * Count one call of the running method for Coverage's methods mode. This is the second half of the hand-off
+     * started by DynamicMethod#prepareMethodCoverage. See CoverMethodInstr.
      *
-     * @param scope the static scope of the executing method or block body
-     * @param coverage the MethodCoverage received at the start of the body, or null/nil when there was none (a
-     *                 block running as a plain block, a method Coverage is not counting)
+     * @param scope the static scope of the running method or block body
+     * @param coverage the MethodCoverage taken at the start of the body. Null or nil when there was none: a block
+     *                 running as a block, or a method that is not counted.
      */
     public static void coverMethod(ThreadContext context, StaticScope scope, Object coverage) {
         if (!(coverage instanceof MethodCoverage methodCoverage)) return;
-        if (!methodCoverage.isFor(scope.getIRScope())) return; // never attribute a stale hand-off to another method
+        if (!methodCoverage.isFor(scope.getIRScope())) return; // never charge a stale hand-off to another method
         if (!context.runtime.getCoverageData().isRunning()) return;
 
         methodCoverage.cover();
@@ -709,7 +709,7 @@ public class IRRuntimeHelpers {
     /**
      * Update coverage data for the given file and zero-based line number.
      *
-     * @return whether the line was counted (coverage is running); a oneshot_lines probe must stay armed until then
+     * @return true if the line was counted. A oneshot_lines probe stays armed until this returns true.
      */
     public static boolean coverLine(ThreadContext context, String filename, int line) {
         Ruby runtime = context.runtime;

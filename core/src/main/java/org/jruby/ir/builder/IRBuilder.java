@@ -1607,7 +1607,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
         boolean forNode = scope instanceof IRFor;
 
-        // Any block may end up running as a method (define_method), so blocks get method coverage probes too.
+        // Any block can become a method through define_method, so blocks get the method coverage probes too.
         Variable methodCoverage = forNode ? null : receiveMethodCoverage();
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
@@ -3067,9 +3067,9 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
     /**
-     * Method coverage, first half: the body takes the {@link org.jruby.ext.coverage.MethodCoverage} counter the
-     * calling DynamicMethod handed off (if any) before anything else runs, so a nested call made while receiving
-     * arguments cannot consume it. Returns null when methods are not being measured.
+     * Method coverage, step one: take the {@link org.jruby.ext.coverage.MethodCoverage} counter passed by the
+     * calling DynamicMethod, if any. This runs before anything else in the body, so a nested call made while
+     * receiving arguments cannot take the counter first. Returns null when methods are not measured.
      */
     private Variable receiveMethodCoverage() {
         if ((coverageMode & CoverageData.METHODS) == 0) return null;
@@ -3078,8 +3078,8 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
     /**
-     * Method coverage, second half: count the call once the arguments have been received (where MRI fires the
-     * CALL event), so calls failing on their arguments are not counted.
+     * Method coverage, step two: count the call after the arguments have been received. This is where MRI fires
+     * CALL, so a call that fails on its arguments is not counted.
      */
     private void coverMethod(Variable methodCoverage) {
         if (methodCoverage != null) addInstr(new CoverMethodInstr(methodCoverage));

@@ -7,13 +7,13 @@ import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 
 /**
- * Receives the {@link org.jruby.ext.coverage.MethodCoverage} counter, if any, that the DynamicMethod invoking
- * this scope handed off through the ThreadContext (see DynamicMethod#prepareMethodCoverage).
+ * Take the {@link org.jruby.ext.coverage.MethodCoverage} counter, if any, that the calling DynamicMethod
+ * passed through the ThreadContext (see DynamicMethod#prepareMethodCoverage).
  *
- * <p>Emitted as the very first instruction of every method and block body built while Coverage measures
- * methods: before arguments are received, so that no nested call made while receiving them (a default
- * argument expression, a to_ary conversion, ...) can take the counter first. {@link CoverMethodInstr} does
- * the matching increment once the arguments are in.</p>
+ * <p>Emitted as the first instruction of every method and block body built in methods mode. It runs before
+ * the arguments are received, so a nested call made while receiving them (a default value, a to_ary
+ * conversion) cannot take the counter first. {@link CoverMethodInstr} does the increment after the arguments
+ * are in.</p>
  */
 public class ReceiveMethodCoverageInstr extends NoOperandResultBaseInstr implements FixedArityInstr {
     public ReceiveMethodCoverageInstr(Variable result) {

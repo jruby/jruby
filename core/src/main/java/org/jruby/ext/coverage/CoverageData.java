@@ -46,8 +46,8 @@ import org.jruby.util.collections.IntList;
 import static org.jruby.ext.coverage.CoverageData.CoverageDataState.*;
 
 /**
- * The runtime-wide state of the Coverage library: which measurement modes are enabled, whether measurement is
- * running, and a {@link FileCoverage} for every file parsed since coverage was set up.
+ * Runtime-wide Coverage state: the enabled modes, whether measurement is running, and one {@link FileCoverage}
+ * per file parsed since Coverage was set up.
  */
 public class CoverageData {
     public enum CoverageDataState {
@@ -96,21 +96,21 @@ public class CoverageData {
     }
 
     /**
-     * Are line execution counts being measured (lines or oneshot_lines mode)?
+     * True when line counts are collected (lines or oneshot_lines mode).
      */
     public boolean isLinesEnabled() {
         return (mode & LINES) != 0;
     }
 
     /**
-     * Are method calls being counted (methods mode)?
+     * True when method calls are counted (methods mode).
      */
     public boolean isMethodsEnabled() {
         return (mode & METHODS) != 0;
     }
 
     /**
-     * The data collected so far, by file name; null when coverage is not set up.
+     * Data collected so far, by file name. Null when Coverage is not set up.
      */
     public Map<String, FileCoverage> getCoverage() {
       return coverage;
@@ -147,7 +147,7 @@ public class CoverageData {
     }
 
     /**
-     * Zero all counts collected so far but keep measuring (Coverage.result(clear: true)).
+     * Reset all counts to zero but keep measuring. Used by Coverage.result(clear: true).
      */
     public synchronized void clearCoverage() {
         Map<String, FileCoverage> coverage = this.coverage;
@@ -192,7 +192,7 @@ public class CoverageData {
     }
 
     private void setupCoverage() {
-        // files are reported in the order they were parsed, as MRI does
+        // files are reported in parse order, as in MRI
         if (this.coverage == null) this.coverage = new LinkedHashMap<>();
     }
 
@@ -206,14 +206,12 @@ public class CoverageData {
     }
 
     /**
-     * Start tracking a file that has just been parsed: every file parsed while coverage is set up gets a
-     * {@link FileCoverage} entry (that is what makes it appear in Coverage.result), and line counts are prepared
-     * when lines are being measured.
+     * Register a file that was just parsed. Every file parsed while Coverage is set up gets a {@link FileCoverage},
+     * which makes it appear in Coverage.result. Line counts are only prepared in lines mode.
      *
-     * @param filename the file just parsed
-     * @param startingLines the initial per-line counts computed by the parser (-1 for lines without code); only
-     *                      consulted when lines are being counted
-     * @return the file's entry, or null when coverage is not set up or the file has no name
+     * @param filename the parsed file
+     * @param startingLines per-line counts from the parser (-1 for lines without code). Ignored unless lines are counted.
+     * @return the file's entry. Null when Coverage is not set up or the file has no name.
      */
     public synchronized FileCoverage prepareCoverage(String filename, int[] startingLines) {
         Map<String, FileCoverage> coverage = this.coverage;
@@ -276,13 +274,14 @@ public class CoverageData {
     }
 
     /**
-     * A method entry is being added to a module: if methods are being measured and the method was defined from a
-     * file being tracked, create its {@link MethodCoverage} counter and attach it to the entry so that its calls
-     * get counted. This is the equivalent of MRI's per-method-entry counters; like MRI, an entry that merely
-     * forwards to another entry (an alias, a visibility change of an inherited method) gets no counter of its own
-     * because its calls count toward the entry it forwards to.
+     * Called when a method entry is added to a module. In methods mode, if the method comes from a tracked file,
+     * this creates a {@link MethodCoverage} counter and attaches it to the entry. This is the equivalent of MRI's
+     * per-method-entry counters.
      *
-     * @param method the method entry being added (after any wrapping/duplication the module performs)
+     * <p>Entries that only forward to another entry (aliases, visibility changes of inherited methods) get no
+     * counter. Their calls count toward the entry they forward to, as in MRI.</p>
+     *
+     * @param method the entry being added, after any wrapping or duplication done by the module
      */
     public synchronized void registerMethod(DynamicMethod method) {
         if (!isMethodsEnabled()) return;
@@ -293,7 +292,7 @@ public class CoverageData {
         if (method instanceof AliasMethod || method instanceof PartialDelegatingMethod || method instanceof MethodMethod) return;
 
         DynamicMethod real = method.getRealMethod();
-        if (real.getMethodCoverage() != null) return; // already an entry being counted
+        if (real.getMethodCoverage() != null) return; // already counted
 
         IRScope scope = definitionScope(real);
         if (scope == null) return;
@@ -302,7 +301,7 @@ public class CoverageData {
         if (file == null) return;
 
         int startLine = scope.getLine() + 1;
-        if (startLine <= 0) return; // MRI ignores methods with non-positive line numbers (eval with a line offset)
+        if (startLine <= 0) return; // MRI skips methods with a non-positive line (eval with a line offset)
 
         RubyModule owner = method.getImplementationClass();
         if (owner == null) return;
@@ -315,9 +314,8 @@ public class CoverageData {
     }
 
     /**
-     * The scope holding the Ruby source of a method entry: the IRMethod of a def (or of a block define_method
-     * converted into a method), or the IRClosure of a block/lambda passed to define_method. Null for anything
-     * else (native methods, attr accessors, precompiled code without IR).
+     * The IR scope holding the Ruby source of a method entry: the IRMethod of a def, or the IRClosure of a block
+     * or lambda passed to define_method. Null for anything else, such as native methods and attr accessors.
      */
     private static IRScope definitionScope(DynamicMethod method) {
         if (method instanceof AbstractIRMethod irMethod) {

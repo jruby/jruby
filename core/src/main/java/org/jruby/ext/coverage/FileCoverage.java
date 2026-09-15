@@ -32,18 +32,16 @@ import java.util.List;
 import org.jruby.util.collections.IntList;
 
 /**
- * Everything Coverage has collected for one source file: the value side of the hash returned by
- * <code>Coverage.result</code>. An instance is created when a file is parsed while coverage is set up.
+ * All Coverage data for one source file. This is the value side of the hash returned by Coverage.result.
+ * An instance is created when a file is parsed while Coverage is set up.
  *
  * <ul>
- * <li>{@link #getLines()}: execution count per line (-1 for lines that hold no code), present only while
- * lines are being measured;</li>
- * <li>{@link #getMethods()}: one {@link MethodCoverage} for every method entry defined from this file since
- * coverage was set up, in definition order.</li>
+ * <li>{@link #getLines()}: count per line, -1 for lines without code. Null unless lines are measured.</li>
+ * <li>{@link #getMethods()}: one {@link MethodCoverage} per method entry defined from this file, in
+ * definition order.</li>
  * </ul>
  *
- * <p>Instances are only ever touched while holding the {@link CoverageData} lock (registration, clearing and
- * result conversion all synchronize on it), so the collections need no synchronization of their own.</p>
+ * <p>All access happens under the {@link CoverageData} lock, so the collections are not synchronized.</p>
  */
 public final class FileCoverage {
     private IntList lines;

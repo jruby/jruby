@@ -200,12 +200,9 @@ public final class ThreadContext {
 
     private Encoding[] encodingHolder;
 
-    /**
-     * Constructor for Context.
-     */
-    // Coverage (methods mode): the MethodCoverage counter of the DynamicMethod being invoked on this thread. Set by
-    // DynamicMethod#prepareMethodCoverage right before the method body runs and taken by the body's first
-    // instruction (ReceiveMethodCoverageInstr), which counts the call once the arguments have been received.
+    // Coverage (methods mode): the counter of the method entry being called on this thread. Set by
+    // DynamicMethod#prepareMethodCoverage just before the body runs. Taken by the body's first instruction,
+    // ReceiveMethodCoverageInstr. The body counts the call after receiving its arguments.
     private MethodCoverage pendingMethodCoverage;
 
     public void setPendingMethodCoverage(MethodCoverage coverage) {
@@ -218,6 +215,9 @@ public final class ThreadContext {
         return coverage;
     }
 
+    /**
+     * Constructor for Context.
+     */
     private ThreadContext(Ruby runtime) {
         this.runtime = runtime;
         this.nil = runtime.getNil();

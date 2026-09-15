@@ -148,8 +148,8 @@ public enum Operation {
     LINE_NUM(OpFlags.f_is_book_keeping_op | OpFlags.f_is_debug_op),
     TRACE(OpFlags.f_is_book_keeping_op | OpFlags.f_is_debug_op | OpFlags.f_has_side_effect),
     COVERAGE(OpFlags.f_is_book_keeping_op | OpFlags.f_is_debug_op | OpFlags.f_has_side_effect),
-    // Method coverage: receive the counter handed off by the calling DynamicMethod, then count the call once
-    // the arguments have been received.
+    // Method coverage: take the counter passed by the calling DynamicMethod, then count the call once the
+    // arguments have been received.
     RECV_METHOD_COVERAGE(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
     COVER_METHOD(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
 

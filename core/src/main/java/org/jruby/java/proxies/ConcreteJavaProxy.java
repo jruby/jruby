@@ -464,7 +464,7 @@ public class ConcreteJavaProxy extends JavaProxy {
         private boolean canSkipDirectSuper(ThreadContext context, IRubyObject[] args) {
             if (eic == null || !eic.directSuperForwardable(args.length)) return false;
 
-            air.coverElidedCall(context); // the Ruby initialize is skipped entirely, but it is still a call of it
+            air.coverElidedCall(context); // the Ruby initialize is skipped, but this is still a call of it
             return true;
         }
 
@@ -480,7 +480,7 @@ public class ConcreteJavaProxy extends JavaProxy {
             ExitableInterpreterContext ic = eic;
             if (ic == null || !ic.terminalLiteralSuperForwardable(argsLength)) return null;
 
-            air.coverElidedCall(context); // as above: the Ruby initialize is skipped entirely
+            air.coverElidedCall(context); // same as above
 
             IRubyObject[] cached = cachedTerminalLiteralArgs;
             if (cached != null) return cached;

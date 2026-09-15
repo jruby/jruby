@@ -34,15 +34,15 @@ public interface DefNode {
     int getEndLine();
 
     /**
-     * Column (zero-offset, in bytes) where the source of this definition starts (e.g. at the 'def' keyword or
-     * the opening brace of a block).  -1 if unknown.
+     * Zero-based byte column where the source of this definition starts: the def keyword, or the opening brace
+     * of a block. -1 if unknown.
      * @return the column
      */
     int getStartColumn();
 
     /**
-     * Column (zero-offset, in bytes) just past the end of the source of this definition (e.g. after the 'end'
-     * keyword or the closing brace of a block).  -1 if unknown.
+     * Zero-based byte column just after the source of this definition ends: after the end keyword, or after
+     * the closing brace of a block. -1 if unknown.
      * @return the column
      */
     int getEndColumn();

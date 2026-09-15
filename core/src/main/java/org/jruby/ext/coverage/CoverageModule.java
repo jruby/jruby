@@ -177,7 +177,7 @@ public class CoverageModule {
 
         if (!coverageData.isCoverageEnabled()) throw runtimeError(context, "coverage measurement is not enabled");
 
-        // other threads may be parsing files and defining methods while we walk the data
+        // other threads may parse files and define methods while the result is built
         synchronized (coverageData) {
             return convertCoverageToRuby(context, coverageData.getCoverage(), coverageData.getCurrentMode());
         }
@@ -221,10 +221,10 @@ public class CoverageModule {
             IRubyObject value;
 
             if (mode == 0) {
-                // Coverage.start with no arguments: the file maps straight to its lines array
+                // Coverage.start with no arguments: the value is the lines array itself
                 value = linesToRuby(context, file.getLines(), false);
             } else {
-                // Coverage.start(some modes): the file maps to a hash with one entry per requested mode
+                // Coverage.start(modes): the value is a hash with one entry per requested mode
                 RubyHash fileHash = newSmallHash(context);
 
                 if ((mode & CoverageData.LINES) != 0) {
@@ -265,8 +265,8 @@ public class CoverageModule {
     }
 
     /**
-     * {[owner, name, start_line, start_column, end_line, end_column] => call count}. Entries sharing a key (a
-     * method defined twice from the same place, define_method(name, instance_method(name))) are summed like MRI.
+     * Build {[owner, name, start_line, start_column, end_line, end_column] => count}. Entries that share a key
+     * (a method defined twice at the same place) have their counts added, as in MRI.
      */
     private static RubyHash methodsToRuby(ThreadContext context, List<MethodCoverage> methods) {
         RubyHash hash = newHash(context);

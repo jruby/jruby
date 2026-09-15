@@ -4845,8 +4845,8 @@ states[483] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                         p.ordinalMaxNumParam();
                         p.setLambdaArgsStart(yyVals[yyTop - count + 1].start);
                     } else {
-                        /* No parameter list: like MRI the lambda's source starts just past '->' (the end of the*/
-                        /* preceding token, which is where an empty production's location ends).*/
+                        /* No parameter list: the lambda's source starts just after '->', as in MRI. That is the*/
+                        /* end of the previous token, which is where an empty production's location ends.*/
                         p.setLambdaArgsStart(yyVals[yyTop - count + 1].end);
                     }
                     /*% %*/
