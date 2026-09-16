@@ -41,7 +41,8 @@ import org.jruby.util.collections.IntList;
  * definition order.</li>
  * </ul>
  *
- * <p>All access happens under the {@link CoverageData} lock, so the collections are not synchronized.</p>
+ * <p>All access to a live instance happens under the {@link CoverageData} lock, so the collections are not
+ * synchronized.  {@link #snapshot()} produces an unshared copy that can be read without it.</p>
  */
 public final class FileCoverage {
     private IntList lines;
@@ -57,5 +58,19 @@ public final class FileCoverage {
 
     public List<MethodCoverage> getMethods() {
         return methods;
+    }
+
+    /**
+     * A copy of this file's collections, for building a result without holding the {@link CoverageData} lock
+     * while Ruby code runs.  The {@link MethodCoverage} instances themselves are shared: all that is read from
+     * them afterwards is final state and the volatile count.
+     */
+    FileCoverage snapshot() {
+        FileCoverage copy = new FileCoverage();
+
+        if (lines != null) copy.lines = new IntList(lines.toIntArray());
+        copy.methods.addAll(methods);
+
+        return copy;
     }
 }

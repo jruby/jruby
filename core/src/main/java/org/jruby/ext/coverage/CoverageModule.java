@@ -26,6 +26,7 @@
 
 package org.jruby.ext.coverage;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -177,10 +178,27 @@ public class CoverageModule {
 
         if (!coverageData.isCoverageEnabled()) throw runtimeError(context, "coverage measurement is not enabled");
 
-        // other threads may parse files and define methods while the result is built
+        Map<String, FileCoverage> snapshot = null;
+        int mode;
+
+        // Other threads may parse files and define methods while the result is built, so take a copy under the
+        // lock.  The conversion itself must happen outside it: the :methods keys are Arrays, and hashing one
+        // dispatches Ruby's Array#hash and Module#hash, which can define methods and so needs the method table
+        // lock.  RubyModule#addMethodInternal takes those two locks the other way round.
         synchronized (coverageData) {
-            return convertCoverageToRuby(context, coverageData.getCoverage(), coverageData.getCurrentMode());
+            Map<String, FileCoverage> coverage = coverageData.getCoverage();
+            mode = coverageData.getCurrentMode();
+
+            if (coverage != null) {
+                snapshot = new LinkedHashMap<>(coverage.size());
+
+                for (Map.Entry<String, FileCoverage> entry : coverage.entrySet()) {
+                    snapshot.put(entry.getKey(), entry.getValue().snapshot());
+                }
+            }
         }
+
+        return convertCoverageToRuby(context, snapshot, mode);
     }
 
     @JRubyMethod(name = "running?", module = true)
