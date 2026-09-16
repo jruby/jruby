@@ -494,7 +494,7 @@ public abstract class RubyParserBase {
     // This is the last node made in the AST unintuitively so so post-processing can occur here.
     public Node addRootNode(Node topOfAST) {
         int line;
-        CoverageData coverageData = finishCoverage(lexer.getFile(), lexer.lineno());
+        CoverageData coverageData = finishCoverage(lexer.getFile(), lexer.lastLineno());
         if (result.getBeginNodes().isEmpty()) {
             if (topOfAST == null) {
                 topOfAST = NilImplicitNode.NIL;
