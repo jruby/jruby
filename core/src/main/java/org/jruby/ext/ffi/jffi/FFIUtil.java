@@ -162,6 +162,10 @@ public final class FFIUtil {
                                                    Platform.CPU_TYPE cpu, Platform.OS_TYPE os) {
         final int size = layout.getNativeSize(), alignment = layout.getNativeAlignment();
         final boolean sysvX86_64 = cpu == Platform.CPU_TYPE.X86_64 && os != Platform.OS_TYPE.WINDOWS;
+        // Where a union of one floating type travels in floating-point registers: an HFA on AArch64,
+        // ARM and PPC64 ELFv2, SSE on x86_64. riscv64, loongarch64 and s390x pass every union as integers.
+        final boolean hfaUnions = cpu == Platform.CPU_TYPE.AARCH64 || cpu == Platform.CPU_TYPE.ARM
+                || cpu == Platform.CPU_TYPE.POWERPC64LE || cpu == Platform.CPU_TYPE.X86_64;
 
         java.util.List<Leaf> leaves = new java.util.ArrayList<>();
         for (StructLayout.Member m : layout.getMembers()) {
@@ -174,7 +178,7 @@ public final class FFIUtil {
         }
 
         com.kenai.jffi.Type filler = null;
-        if (homogeneous != null && isFloatingPoint(homogeneous)) {
+        if (hfaUnions && homogeneous != null && isFloatingPoint(homogeneous)) {
             // Every member is made of one floating type: a homogeneous floating-point aggregate
             // on AArch64 (and PPC64 ELFv2), SSE class on SysV x86_64. Keep the real type.
             filler = getFFIType(homogeneous);
