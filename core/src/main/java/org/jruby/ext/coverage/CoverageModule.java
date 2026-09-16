@@ -26,7 +26,6 @@
 
 package org.jruby.ext.coverage;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -156,13 +155,13 @@ public class CoverageModule {
             clear = ArgsUtil.extractKeywordArg(context, "clear", keywords).isTrue();
         }
 
-        IRubyObject result = peek_result(context, self);
         if (stop && !clear) {
             warn(context, "stop implies clear");
             clear = true;
         }
 
-        if (clear) data.clearCoverage();
+        IRubyObject result = buildResult(context, data, clear);
+
         if (stop) {
             if (data.getCurrentState() == RUNNING) data.suspendCoverage();
             data.resetCoverage(context);
@@ -178,27 +177,19 @@ public class CoverageModule {
 
         if (!coverageData.isCoverageEnabled()) throw runtimeError(context, "coverage measurement is not enabled");
 
-        Map<String, FileCoverage> snapshot = null;
-        int mode;
+        return buildResult(context, coverageData, false);
+    }
 
-        // Other threads may parse files and define methods while the result is built, so take a copy under the
-        // lock.  The conversion itself must happen outside it: the :methods keys are Arrays, and hashing one
-        // dispatches Ruby's Array#hash and Module#hash, which can define methods and so needs the method table
-        // lock.  RubyModule#addMethodInternal takes those two locks the other way round.
-        synchronized (coverageData) {
-            Map<String, FileCoverage> coverage = coverageData.getCoverage();
-            mode = coverageData.getCurrentMode();
-
-            if (coverage != null) {
-                snapshot = new LinkedHashMap<>(coverage.size());
-
-                for (Map.Entry<String, FileCoverage> entry : coverage.entrySet()) {
-                    snapshot.put(entry.getKey(), entry.getValue().snapshot());
-                }
-            }
-        }
-
-        return convertCoverageToRuby(context, snapshot, mode);
+    /**
+     * The Ruby result for the data collected so far, clearing the counts as it reads them if asked.
+     *
+     * <p>Only the copy is taken under the CoverageData lock. The conversion must run outside it: the :methods
+     * keys are Arrays, and hashing one dispatches Ruby's Array#hash and Module#hash, which can define a method
+     * and so needs the method table lock. RubyModule.addMethodInternal takes those two locks the other way
+     * round.</p>
+     */
+    private static IRubyObject buildResult(ThreadContext context, CoverageData data, boolean clear) {
+        return convertCoverageToRuby(context, data.snapshot(clear), data.getCurrentMode());
     }
 
     @JRubyMethod(name = "running?", module = true)

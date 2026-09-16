@@ -155,31 +155,29 @@ public class CoverageData {
     }
 
     /**
-     * Reset all counts to zero but keep measuring. Used by Coverage.result(clear: true).
+     * The data collected so far, as an unshared copy that can be read without holding this lock. A result is
+     * built from the copy, since converting it runs Ruby code, which must not run under this lock.
+     *
+     * <p>When clear is true the counts are reset as they are read, in one step. A call counted while the
+     * result is being built is then reported once rather than dropped, which is what
+     * Coverage.result(clear: true) needs.</p>
+     *
+     * @param clear reset the counts as they are read, but keep measuring
+     * @return a copy by file name, or null when coverage is not set up
      */
-    public synchronized void clearCoverage() {
+    public synchronized Map<String, FileCoverage> snapshot(boolean clear) {
         Map<String, FileCoverage> coverage = this.coverage;
 
-        if (coverage != null) {
-            for (FileCoverage file : coverage.values()) {
-                IntList lines = file.getLines();
+        if (coverage == null) return null;
 
-                if (lines != null) {
-                    if (isOneshot()) {
-                        lines.clear();
-                    } else {
-                        for (int i = 0; i < lines.size(); i++) {
-                            int v = lines.get(i);
-                            if (v != -1) lines.set(i, 0);
-                        }
-                    }
-                }
+        Map<String, FileCoverage> snapshot = new LinkedHashMap<>(coverage.size());
+        boolean oneshot = isOneshot();
 
-                for (MethodCoverage method : file.getMethods()) {
-                    method.clear();
-                }
-            }
+        for (Map.Entry<String, FileCoverage> entry : coverage.entrySet()) {
+            snapshot.put(entry.getKey(), entry.getValue().snapshot(clear, oneshot));
         }
+
+        return snapshot;
     }
 
     public synchronized void resumeCoverage() {

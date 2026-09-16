@@ -42,7 +42,7 @@ import org.jruby.util.collections.IntList;
  * </ul>
  *
  * <p>All access to a live instance happens under the {@link CoverageData} lock, so the collections are not
- * synchronized.  {@link #snapshot()} produces an unshared copy that can be read without it.</p>
+ * synchronized.  {@link #snapshot} produces an unshared copy that can be read without it.</p>
  */
 public final class FileCoverage {
     private IntList lines;
@@ -61,15 +61,33 @@ public final class FileCoverage {
     }
 
     /**
-     * A copy of this file's collections, for building a result without holding the {@link CoverageData} lock
-     * while Ruby code runs.  The {@link MethodCoverage} instances themselves are shared: all that is read from
-     * them afterwards is final state and the volatile count.
+     * A copy of this file's data, for building a result without holding the {@link CoverageData} lock while
+     * Ruby code runs.  When clear is true the counts are reset as they are read, so nothing counted while the
+     * result is being built is reported twice or not at all.
+     *
+     * @param clear reset the counts as they are read (Coverage.result(clear: true))
+     * @param oneshot the lines are a list of the lines that were hit, not a count per line
      */
-    FileCoverage snapshot() {
+    FileCoverage snapshot(boolean clear, boolean oneshot) {
         FileCoverage copy = new FileCoverage();
 
-        if (lines != null) copy.lines = new IntList(lines.toIntArray());
-        copy.methods.addAll(methods);
+        if (lines != null) {
+            copy.lines = new IntList(lines.toIntArray());
+
+            if (clear) {
+                if (oneshot) {
+                    lines.clear();
+                } else {
+                    for (int i = 0; i < lines.size(); i++) {
+                        if (lines.get(i) != -1) lines.set(i, 0);
+                    }
+                }
+            }
+        }
+
+        for (MethodCoverage method : methods) {
+            copy.methods.add(method.snapshot(clear));
+        }
 
         return copy;
     }

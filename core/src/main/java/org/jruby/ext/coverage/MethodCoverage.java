@@ -71,6 +71,22 @@ public final class MethodCoverage {
     private final int endColumn;
     private volatile long count;
 
+    /**
+     * An inert copy of another counter, holding a count read from it at one instant. Only ever read from, so it
+     * shares the entry and scope of the counter it was taken from.
+     */
+    private MethodCoverage(MethodCoverage source, long count) {
+        this.entry = source.entry;
+        this.scope = source.scope;
+        this.owner = source.owner;
+        this.name = source.name;
+        this.startLine = source.startLine;
+        this.startColumn = source.startColumn;
+        this.endLine = source.endLine;
+        this.endColumn = source.endColumn;
+        this.count = count;
+    }
+
     MethodCoverage(DynamicMethod entry, IRScope scope, RubyModule owner, String name, int startLine, int startColumn,
                    int endLine, int endColumn) {
         this.entry = new WeakReference<>(entry);
@@ -118,12 +134,15 @@ public final class MethodCoverage {
     }
 
     /**
-     * Reset the count to zero. Used by Coverage.result(clear: true). Atomic, like {@link #cover}: clearing
-     * runs under the CoverageData lock but counting does not, so a plain store here would drop the increments
-     * of calls in flight.
+     * A copy of this counter holding the count it has now, for building a result. When clear is true the count
+     * is read and reset in one step, so a call counted while the result is being built is reported once rather
+     * than dropped.
+     *
+     * <p>Reading and resetting are atomic, like {@link #cover}: a result is built under the CoverageData lock
+     * but counting happens without it.</p>
      */
-    public void clear() {
-        COUNT.getAndSet(this, 0L);
+    MethodCoverage snapshot(boolean clear) {
+        return new MethodCoverage(this, clear ? (long) COUNT.getAndSet(this, 0L) : count);
     }
 
     /**
