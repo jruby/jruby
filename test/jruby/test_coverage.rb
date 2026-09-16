@@ -26,6 +26,16 @@ class TestCoverage < Test::Unit::TestCase
     RUBY
   end
 
+  def test_call_on_a_later_line_keeps_the_statement_count
+    assert_equal [1, 1, nil, 1, nil], line_coverage(<<~'RUBY')
+      o = Struct.new(:b).new
+      o.b =
+        [].size
+      o.b.to_s.concat(
+        [].size.to_s)
+    RUBY
+  end
+
   private
 
   def line_coverage(code)

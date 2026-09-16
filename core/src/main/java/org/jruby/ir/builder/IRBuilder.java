@@ -104,6 +104,11 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     // How deep the builder is in the tree it builds, and how deep the statement whose line number is pending is.
     int buildDepth = 0;
     int needsLineNumInfoDepth = 0;
+    // The line coverage counts the pending statement on. Calls built before its first instruction move
+    // lastProcessedLineNum, the line backtraces report, but not this one.
+    int needsLineNumInfoLine = -1;
+    // The line of the last statement that was a line event, with coverage on.
+    int lastLineEventLine = -1;
 
     // SSS FIXME: Currently only used for retries -- we should be able to eliminate this
     // Stack of nested rescue blocks -- this just tracks the start label of the blocks
@@ -378,7 +383,10 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         LineInfo type = needsLineNumInfo;
         needsLineNumInfo = null;
 
-        if (type == LineInfo.Coverage) {
+        if (type == LineInfo.Coverage && coverageMode != 0) {
+            addInstr(new LineNumberInstr(needsLineNumInfoLine, coverageMode));
+            if (needsLineNumInfoLine != lastProcessedLineNum) addInstr(manager.newLineNumber(lastProcessedLineNum));
+        } else if (type == LineInfo.Coverage) {
             addInstr(new LineNumberInstr(lastProcessedLineNum, coverageMode));
         } else {
             addInstr(manager.newLineNumber(lastProcessedLineNum));
@@ -3185,29 +3193,47 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
      */
     protected void determineIfWeNeedLineNumberForCall(int line, boolean isNewline) {
         if (line != lastProcessedLineNum) {
-            if (isNewline) needsLineNumInfo = LineInfo.Backtrace;
+            // A pending coverage event also restores this line for backtraces when it is emitted
+            if (isNewline && needsLineNumInfo == null) needsLineNumInfo = LineInfo.Backtrace;
 
             lastProcessedLineNum = line;
         }
     }
 
     protected void determineIfWeNeedLineNumber(int line, boolean isNewline, boolean implicitNil, boolean def) {
-        if (line != lastProcessedLineNum && !implicitNil) {
+        if (coverageMode != 0 && isNewline && !implicitNil) {
+            determineIfWeNeedCoverageLine(line);
+        } else if (line != lastProcessedLineNum && !implicitNil) {
             LineInfo needsCoverage = isNewline ? LineInfo.Coverage : null;
             // DefNode will set it's own line number as part of impl but if it is for coverage we emit as instr also.
-            if (needsCoverage != null && (!def || coverageMode != 0)) { // Do not emit multiple line number instrs for the same line
-                // A statement inside one whose line has not been emitted yet (one of several statements in an
-                // interpolation, say) would replace that line, and coverage would never count it: emit it first.
-                if (coverageMode != 0 && needsLineNumInfo == LineInfo.Coverage && needsLineNumInfoDepth < buildDepth) {
-                    addLineNumInfo();
-                }
+            if (needsCoverage != null && !def) { // Do not emit multiple line number instrs for the same line
                 needsLineNumInfo = needsCoverage;
-                needsLineNumInfoDepth = buildDepth;
             }
 
             // This line is already process either by linenum or by instr which emits its own.
             lastProcessedLineNum = line;
         }
+    }
+
+    /**
+     * A statement is a line event unless the last one was on the same line (as in MRI, calls in between do not
+     * matter).
+     */
+    private void determineIfWeNeedCoverageLine(int line) {
+        if (line != lastLineEventLine) {
+            // A statement inside one whose event is still pending (one of several statements in an interpolation,
+            // say) would replace that event, and coverage would never count the outer statement: emit it first.
+            if (needsLineNumInfo == LineInfo.Coverage && needsLineNumInfoDepth < buildDepth) addLineNumInfo();
+
+            needsLineNumInfo = LineInfo.Coverage;
+            needsLineNumInfoDepth = buildDepth;
+            needsLineNumInfoLine = line;
+            lastLineEventLine = line;
+        } else if (line != lastProcessedLineNum && needsLineNumInfo == null) {
+            needsLineNumInfo = LineInfo.Backtrace;
+        }
+
+        lastProcessedLineNum = line;
     }
 
     // FIXME: This needs to be called on super/zsuper too
