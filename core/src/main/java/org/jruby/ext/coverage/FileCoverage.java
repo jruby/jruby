@@ -1,5 +1,4 @@
-/*
- ***** BEGIN LICENSE BLOCK *****
+/***** BEGIN LICENSE BLOCK *****
  * Version: EPL 2.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Eclipse Public
@@ -12,12 +11,6 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2001-2002 Benoit Cerrina <b.cerrina@wanadoo.fr>
- * Copyright (C) 2001-2002 Jan Arne Petersen <jpetersen@uni-bonn.de>
- * Copyright (C) 2002 Anders Bengtsson <ndrsbngtssn@yahoo.se>
- * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
- * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
- * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -28,40 +21,41 @@
  * decision by deleting the provisions above and replace them with the notice
  * and other provisions required by the GPL or the LGPL. If you do not delete
  * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the EPL, the GPL or the LGPL.
+ * the terms of any of the EPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
 
-package org.jruby.ast;
+package org.jruby.ext.coverage;
 
+import java.util.ArrayList;
 import java.util.List;
 
-import org.jruby.RubySymbol;
-import org.jruby.ast.types.INameNode;
-import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.parser.StaticScope;
+import org.jruby.util.collections.IntList;
 
 /**
- * method definition node.
+ * All Coverage data for one source file. This is the value side of the hash returned by Coverage.result.
+ * An instance is created when a file is parsed while Coverage is set up.
+ *
+ * <ul>
+ * <li>{@link #getLines()}: count per line, -1 for lines without code. Null unless lines are measured.</li>
+ * <li>{@link #getMethods()}: one {@link MethodCoverage} per method entry defined from this file, in
+ * definition order.</li>
+ * </ul>
+ *
+ * <p>All access happens under the {@link CoverageData} lock, so the collections are not synchronized.</p>
  */
-public class DefnNode extends MethodDefNode implements INameNode {
-    public DefnNode(int line, RubySymbol name, ArgsNode argsNode, StaticScope scope, Node bodyNode, int endLine) {
-        super(line, name, argsNode, scope, bodyNode, endLine);
+public final class FileCoverage {
+    private IntList lines;
+    private final List<MethodCoverage> methods = new ArrayList<>();
+
+    public IntList getLines() {
+        return lines;
     }
 
-    public DefnNode(int line, int startColumn, RubySymbol name, ArgsNode argsNode, StaticScope scope, Node bodyNode,
-                    int endLine, int endColumn) {
-        super(line, startColumn, name, argsNode, scope, bodyNode, endLine, endColumn);
+    void setLines(IntList lines) {
+        this.lines = lines;
     }
 
-    public NodeType getNodeType() {
-        return NodeType.DEFNNODE;
-    }
-
-    public <T> T accept(NodeVisitor<T> iVisitor) {
-        return iVisitor.visitDefnNode(this);
-    }
-    
-    public List<Node> childNodes() {
-        return Node.createList(argsNode, bodyNode);
+    public List<MethodCoverage> getMethods() {
+        return methods;
     }
 }

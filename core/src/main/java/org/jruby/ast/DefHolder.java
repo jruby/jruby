@@ -14,6 +14,7 @@ public class DefHolder {
     public IRubyObject value;
 
     public int line;
+    public int column = -1;
     public Object singleton = null;
     public ByteList dotOrColon;
 

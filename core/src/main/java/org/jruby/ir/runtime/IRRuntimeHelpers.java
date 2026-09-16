@@ -34,6 +34,7 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.coverage.CoverageData;
+import org.jruby.ext.coverage.MethodCoverage;
 import org.jruby.internal.runtime.SplitSuperCall;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.CompiledIRNoProtocolMethod;
@@ -679,6 +680,22 @@ public class IRRuntimeHelpers {
     }
 
     /**
+     * Count one call of the running method for Coverage's methods mode. This is the second half of the hand-off
+     * started by DynamicMethod#prepareMethodCoverage. See CoverMethodInstr.
+     *
+     * @param scope the static scope of the running method or block body
+     * @param coverage the MethodCoverage taken at the start of the body. Null or nil when there was none: a block
+     *                 running as a block, or a method that is not counted.
+     */
+    public static void coverMethod(ThreadContext context, StaticScope scope, Object coverage) {
+        if (!(coverage instanceof MethodCoverage methodCoverage)) return;
+        if (!methodCoverage.isFor(scope.getIRScope())) return; // never charge a stale hand-off to another method
+        if (!context.runtime.getCoverageData().isRunning()) return;
+
+        methodCoverage.cover();
+    }
+
+    /**
      * Update coverage data for the given file and zero-based line number.
      *
      * @param context
@@ -686,13 +703,24 @@ public class IRRuntimeHelpers {
      * @param line
      */
     public static void updateCoverage(ThreadContext context, String filename, int line) {
+        coverLine(context, filename, line);
+    }
+
+    /**
+     * Update coverage data for the given file and zero-based line number.
+     *
+     * @return true if the line was counted. A oneshot_lines probe stays armed until this returns true.
+     */
+    public static boolean coverLine(ThreadContext context, String filename, int line) {
         Ruby runtime = context.runtime;
 
-        if (!runtime.isCoverageEnabled()) return;
+        if (!runtime.isCoverageEnabled()) return false;
 
         CoverageData data = runtime.getCoverageData();
 
-        if (data.isRunning()) data.coverLine(filename, line);
+        if (!data.isRunning()) return false;
+
+        return data.coverLine(filename, line);
     }
 
     @JIT @Interp

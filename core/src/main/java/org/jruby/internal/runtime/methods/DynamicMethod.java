@@ -41,6 +41,7 @@ import java.util.Collections;
 import org.jruby.MetaClass;
 import org.jruby.PrependedModule;
 import org.jruby.RubyModule;
+import org.jruby.ext.coverage.MethodCoverage;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -79,6 +80,8 @@ public abstract class DynamicMethod {
     protected Object handle;
     /** Has this method been aliased. */
     protected boolean aliased;
+    /** Coverage call counter for this entry (methods mode). Null unless Coverage registered the entry. */
+    protected MethodCoverage methodCoverage;
 
     private static final int BUILTIN_FLAG = 0b1;
     private static final int NOTIMPL_FLAG = 0b10;
@@ -656,6 +659,35 @@ public abstract class DynamicMethod {
 
     public boolean isAliased() {
         return this.aliased;
+    }
+
+    /**
+     * The Coverage call counter attached to this entry, or null when its calls are not counted.
+     */
+    public MethodCoverage getMethodCoverage() {
+        return methodCoverage;
+    }
+
+    public void setMethodCoverage(MethodCoverage methodCoverage) {
+        this.methodCoverage = methodCoverage;
+    }
+
+    /**
+     * Pass this entry's Coverage counter, if any, to the body about to run on this thread. Every Ruby-level call
+     * path calls this. ReceiveMethodCoverageInstr is the other end. No-op when the entry has no counter.
+     */
+    protected final void prepareMethodCoverage(ThreadContext context) {
+        MethodCoverage methodCoverage = this.methodCoverage;
+        if (methodCoverage != null) context.setPendingMethodCoverage(methodCoverage);
+    }
+
+    /**
+     * Count a call whose body is skipped. ConcreteJavaProxy skips the initialize of a Java subclass when it is a
+     * plain super that forwards its arguments. MRI still fires CALL for it. Callers have checked the arity already.
+     */
+    public final void coverElidedCall(ThreadContext context) {
+        MethodCoverage methodCoverage = this.methodCoverage;
+        if (methodCoverage != null && context.runtime.getCoverageData().isRunning()) methodCoverage.cover();
     }
 
     /**

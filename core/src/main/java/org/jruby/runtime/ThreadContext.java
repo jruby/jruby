@@ -45,6 +45,7 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyProc;
+import org.jruby.ext.coverage.MethodCoverage;
 import org.jruby.exceptions.CatchThrow;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
@@ -198,6 +199,21 @@ public final class ThreadContext {
     private RubyMatchData matchData;
 
     private Encoding[] encodingHolder;
+
+    // Coverage (methods mode): the counter of the method entry being called on this thread. Set by
+    // DynamicMethod#prepareMethodCoverage just before the body runs. Taken by the body's first instruction,
+    // ReceiveMethodCoverageInstr. The body counts the call after receiving its arguments.
+    private MethodCoverage pendingMethodCoverage;
+
+    public void setPendingMethodCoverage(MethodCoverage coverage) {
+        pendingMethodCoverage = coverage;
+    }
+
+    public MethodCoverage takePendingMethodCoverage() {
+        MethodCoverage coverage = pendingMethodCoverage;
+        if (coverage != null) pendingMethodCoverage = null;
+        return coverage;
+    }
 
     /**
      * Constructor for Context.

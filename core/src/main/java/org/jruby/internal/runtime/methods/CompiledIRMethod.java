@@ -134,6 +134,7 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+        prepareMethodCoverage(context);
         try {
             return (IRubyObject) ((MethodHandle) this.handle).invokeExact(context, staticScope, self, args, block, clazz, name);
         }
@@ -145,6 +146,7 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
+        prepareMethodCoverage(context);
         if (specificArity != 0) return call(context, self, clazz, name, IRubyObject.NULL_ARRAY, block);
 
         try {
@@ -158,6 +160,7 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
+        prepareMethodCoverage(context);
         if (specificArity != 1) return call(context, self, clazz, name, new IRubyObject[]{arg0}, block);
 
         try {
@@ -171,6 +174,7 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+        prepareMethodCoverage(context);
         if (specificArity != 2) return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1}, block);
 
         try {
@@ -184,6 +188,7 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        prepareMethodCoverage(context);
         if (specificArity != 3) return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1, arg2 }, block);
 
         try {
@@ -197,6 +202,7 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
+        prepareMethodCoverage(context);
         try {
             return (IRubyObject) ((MethodHandle) this.handle).invokeExact(context, staticScope, self, args, Block.NULL_BLOCK, clazz, name);
         }
@@ -208,6 +214,7 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+        prepareMethodCoverage(context);
         if (specificArity != 0) return call(context, self, clazz, name, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
 
         try {
@@ -221,6 +228,7 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
+        prepareMethodCoverage(context);
         if (specificArity != 1) return call(context, self, clazz, name, new IRubyObject[]{arg0}, Block.NULL_BLOCK);
 
         try {
@@ -234,6 +242,7 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
+        prepareMethodCoverage(context);
         if (specificArity != 2) return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1}, Block.NULL_BLOCK);
 
         try {
@@ -247,6 +256,7 @@ public class CompiledIRMethod extends AbstractIRMethod implements Compilable<Dyn
     
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        prepareMethodCoverage(context);
         if (specificArity != 3) return call(context, self, clazz, name, new IRubyObject[] {arg0, arg1, arg2 }, Block.NULL_BLOCK);
 
         try {
