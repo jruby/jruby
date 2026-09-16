@@ -136,7 +136,7 @@ test/rails
 test/jruby/testapp/testapp
 reference.txt
 rubyspec_temp
-.polyglot.pom.rb
+.polyglot.*
 
 # binaries
 !bin/gem
@@ -194,6 +194,7 @@ nbproject/private
 .settings
 .factorypath
 build.eclipse
+/maven/jruby-jars/bin/
 
 # mx
 /mx.jruby/*pyc
