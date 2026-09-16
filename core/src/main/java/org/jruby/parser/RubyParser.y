@@ -2337,11 +2337,12 @@ primary         : literal
                 }
                 | tLBRACK aref_args ']' {
                     /*%%%*/
-                    Integer position = @2.start();
+                    Integer position = @1.start();
                     if ($2 == null) {
                         $$ = new ZArrayNode(position); /* zero length array */
                     } else {
                         $$ = $2;
+                        $<Node>$.setLine(position); /* where it starts, not where its first element is */
                     }
                     /*% %*/
                     /*% ripper: array!(escape_Qundef($2)) %*/
@@ -2350,6 +2351,7 @@ primary         : literal
                     /*%%%*/
                     $$ = $2;
                     $<HashNode>$.setIsLiteral();
+                    $<HashNode>$.setLine(@1.start());
                     /*% %*/
                     /*% ripper: hash!(escape_Qundef($2)) %*/
                 }
@@ -3805,6 +3807,7 @@ string          : tCHAR {
 string1         : tSTRING_BEG string_contents tSTRING_END {
                     /*%%%*/
                     p.heredoc_dedent($2);
+                    if ($2 != null) $2.setLine(@1.start()); /* where it starts, not where its contents end */
                     $$ = $2;
                     /*% %*/
                     /*% ripper: string_literal!(heredoc_dedent(p, $2)) %*/
@@ -3812,7 +3815,7 @@ string1         : tSTRING_BEG string_contents tSTRING_END {
 
 xstring         : tXSTRING_BEG xstring_contents tSTRING_END {
                     /*%%%*/
-                    int line = @2.start();
+                    int line = @1.start();
 
                     p.heredoc_dedent($2);
 
@@ -3832,7 +3835,7 @@ xstring         : tXSTRING_BEG xstring_contents tSTRING_END {
                 };
 
 regexp          : tREGEXP_BEG regexp_contents tREGEXP_END {
-                    $$ = p.new_regexp(@2.start(), $2, $3);
+                    $$ = p.new_regexp(@1.start(), $2, $3);
                 };
 
 words_sep       : ' ' {
@@ -3844,6 +3847,7 @@ words_sep       : ' ' {
 words           : tWORDS_BEG words_sep word_list tSTRING_END {
                     /*%%%*/
                     $$ = $3;
+                    $<Node>$.setLine(@1.start());
                     /*% %*/
                     /*% ripper: array!($3) %*/
                 };
@@ -3858,7 +3862,7 @@ word_list       : /* none */ {
                 }
                 | word_list word words_sep {
                     /*%%%*/
-                     $$ = $1.add($2 instanceof EvStrNode ? new DStrNode(@1.start(), p.getEncoding()).add($2) : $2);
+                     $$ = $1.add($2 instanceof EvStrNode ? new DStrNode(@2.start(), p.getEncoding()).add($2) : $2);
                     /*% %*/
                     /*% ripper: words_add!($1, $2) %*/
                 };
@@ -3878,6 +3882,7 @@ word            : string_content {
 symbols         : tSYMBOLS_BEG words_sep symbol_list tSTRING_END {
                     /*%%%*/
                     $$ = $3;
+                    $<Node>$.setLine(@1.start());
                     /*% %*/
                     /*% ripper: array!($3) %*/
                 };
@@ -3890,7 +3895,7 @@ symbol_list     : /* none */ {
                 }
                 | symbol_list word words_sep {
                     /*%%%*/
-                    $$ = $1.add($2 instanceof EvStrNode ? new DSymbolNode(@1.start()).add($2) : p.asSymbol(@1.start(), $2));
+                    $$ = $1.add($2 instanceof EvStrNode ? new DSymbolNode(@2.start()).add($2) : p.asSymbol(@2.start(), $2));
                     /*% %*/
                     /*% ripper: symbols_add!($1, $2) %*/
                 };
@@ -3899,6 +3904,7 @@ symbol_list     : /* none */ {
 qwords          : tQWORDS_BEG words_sep qword_list tSTRING_END {
                     /*%%%*/
                     $$ = $3;
+                    $<Node>$.setLine(@1.start());
                     /*% %*/
                     /*% ripper: array!($3) %*/
                 };
@@ -3907,6 +3913,7 @@ qwords          : tQWORDS_BEG words_sep qword_list tSTRING_END {
 qsymbols        : tQSYMBOLS_BEG words_sep qsym_list tSTRING_END {
                     /*%%%*/
                     $$ = $3;
+                    $<Node>$.setLine(@1.start());
                     /*% %*/
                     /*% ripper: array!($3) %*/
                 };
@@ -3935,7 +3942,7 @@ qsym_list      : /* none */ {
                 }
                 | qsym_list tSTRING_CONTENT words_sep {
                     /*%%%*/
-                    $$ = $1.add(p.asSymbol(@1.start(), $2));
+                    $$ = $1.add(p.asSymbol(@2.start(), $2));
                     /*% %*/
                     /*% ripper: qsymbols_add!($1, $2) %*/
                 };
@@ -4086,11 +4093,11 @@ dsym            : tSYMBEG string_contents tSTRING_END {
                     if ($2 == null) {
                         $$ = p.asSymbol(p.src_line(), new ByteList(new byte[] {}));
                     } else if ($2 instanceof DStrNode) {
-                        $$ = new DSymbolNode(@2.start(), $<DStrNode>2);
+                        $$ = new DSymbolNode(@1.start(), $<DStrNode>2);
                     } else if ($2 instanceof StrNode) {
-                        $$ = p.asSymbol(@2.start(), $2);
+                        $$ = p.asSymbol(@1.start(), $2);
                     } else {
-                        $$ = new DSymbolNode(@2.start());
+                        $$ = new DSymbolNode(@1.start());
                         $<DSymbolNode>$.add($2);
                     }
                     /*% %*/
@@ -4823,11 +4830,11 @@ assoc           : arg_value tASSOC arg_value {
                 | tSTRING_BEG string_contents tLABEL_END arg_value {
                     /*%%%*/
                     if ($2 instanceof StrNode) {
-                        DStrNode dnode = new DStrNode(@2.start(), p.getEncoding());
+                        DStrNode dnode = new DStrNode(@1.start(), p.getEncoding());
                         dnode.add($2);
-                        $$ = p.createKeyValue(new DSymbolNode(@2.start(), dnode), $4);
+                        $$ = p.createKeyValue(new DSymbolNode(@1.start(), dnode), $4);
                     } else if ($2 instanceof DStrNode) {
-                        $$ = p.createKeyValue(new DSymbolNode(@2.start(), $<DStrNode>2), $4);
+                        $$ = p.createKeyValue(new DSymbolNode(@1.start(), $<DStrNode>2), $4);
                     } else {
                         p.compile_error("Uknown type for assoc in strings: " + $2);
                     }
