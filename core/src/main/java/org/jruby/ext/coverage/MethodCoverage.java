@@ -118,10 +118,12 @@ public final class MethodCoverage {
     }
 
     /**
-     * Reset the count to zero. Used by Coverage.result(clear: true).
+     * Reset the count to zero. Used by Coverage.result(clear: true). Atomic, like {@link #cover}: clearing
+     * runs under the CoverageData lock but counting does not, so a plain store here would drop the increments
+     * of calls in flight.
      */
     public void clear() {
-        count = 0;
+        COUNT.getAndSet(this, 0L);
     }
 
     /**
