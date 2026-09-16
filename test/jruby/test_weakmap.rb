@@ -26,20 +26,21 @@ class TestWeakMap < Test::Unit::TestCase
     map = ObjectSpace::WeakMap.new
     keys = [LIVE.object_id, 2.5, :sym, nil]
     keys.each { |k| map[k] = LIVE }
+    lookups = -> { [LIVE.object_id, 2.5 + 0, :sym, nil] } # equal values, fresh number objects
     sentinel = dropped_sentinel
     collected = gc_until do
-      keys.each { |k| assert_same LIVE, map[k], "key #{k.inspect} lost before a collection was seen" }
+      lookups.call.each { |k| assert_same LIVE, map[k], "key #{k.inspect} lost before a collection was seen" }
       sentinel.refersTo(nil)
     end
     assert collected, "sentinel stayed alive: no collection observed"
-    keys.each { |k| assert_same LIVE, map[k], "key #{k.inspect} lost after a collection" }
+    lookups.call.each { |k| assert_same LIVE, map[k], "key #{k.inspect} lost after a collection" }
     assert_equal keys.size, map.size
   end
 
   def test_integer_keys
     map = ObjectSpace::WeakMap.new
     INTEGERS.each { |i| map[i] = LIVE }
-    INTEGERS.each { |i| assert_same LIVE, map[i], "key #{i}" }
+    INTEGERS.each { |i| assert_same LIVE, map[i + 0], "key #{i}" }
     assert_equal INTEGERS.size, map.size
   end
 
@@ -54,7 +55,7 @@ class TestWeakMap < Test::Unit::TestCase
   def test_float_keys
     map = ObjectSpace::WeakMap.new
     FLOATS.each { |f| map[f] = LIVE }
-    FLOATS.each { |f| assert_same LIVE, map[f], "key #{f}" }
+    FLOATS.each { |f| assert_same LIVE, map[f + 0.0], "key #{f}" }
     assert_equal FLOATS.size, map.size
   end
 
