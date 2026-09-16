@@ -720,9 +720,7 @@ public class IRRuntimeHelpers {
 
         if (!data.isRunning()) return false;
 
-        data.coverLine(filename, line);
-
-        return true;
+        return data.coverLine(filename, line);
     }
 
     @JIT @Interp

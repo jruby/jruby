@@ -119,31 +119,35 @@ public class CoverageData {
     /**
      * Update coverage data for the given file and line number.
      *
-     * @param filename
-     * @param line
+     * @param filename the file the line belongs to
+     * @param line zero-based line number
+     * @return true if the line was counted. False if there is nowhere to count it: a negative line, an
+     *         untracked file, a file with no line counts, or a line past the end of them.
      */
-    public synchronized void coverLine(String filename, int line) {
+    public synchronized boolean coverLine(String filename, int line) {
         Map<String, FileCoverage> coverage = this.coverage;
 
+        if (coverage == null) return false;
+
         // negative lines are not included in coverage
-        if (line < 0) return;
+        if (line < 0) return false;
 
-        if (coverage != null) {
-            FileCoverage file = coverage.get(filename);
+        FileCoverage file = coverage.get(filename);
 
-            if (file == null) return;
+        if (file == null) return false;
 
-            IntList lines = file.getLines();
+        IntList lines = file.getLines();
 
-            if (lines == null) return;
+        if (lines == null) return false;
 
-            if (isOneshot()) {
-                lines.add(line);
-            } else {
-                if (lines.size() <= line) return;
-                lines.set(line, lines.get(line) + 1);
-            }
+        if (isOneshot()) {
+            lines.add(line);
+        } else {
+            if (lines.size() <= line) return false;
+            lines.set(line, lines.get(line) + 1);
         }
+
+        return true;
     }
 
     /**
