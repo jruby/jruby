@@ -314,8 +314,12 @@ public class CoverageData {
         RubyModule owner = method.getImplementationClass();
         if (owner == null) return;
 
+        // -1 means no span was recorded (Prism does not supply them yet). Keep the marker, do not make it line 0.
+        int endLine = scope.getEndLine();
+        if (endLine >= 0) endLine++;
+
         MethodCoverage methodCoverage = new MethodCoverage(scope, owner.getOrigin(), real.getName(),
-                startLine, scope.getStartColumn(), scope.getEndLine() + 1, scope.getEndColumn());
+                startLine, scope.getStartColumn(), endLine, scope.getEndColumn());
 
         file.getMethods().add(methodCoverage);
         real.setMethodCoverage(methodCoverage);
