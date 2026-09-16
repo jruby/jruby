@@ -2495,8 +2495,6 @@ public class RubyModule extends RubyObject {
 
         // point at what the old alias points at instead of wrapping it
         if (method instanceof AliasMethod alias) {
-            // flags it as aliased, which is how defineAlias knows not to warn when the name is redefined
-            alias.setAliased();
             oldName = alias.getOldName();
             method = alias.getRealMethod();
         }
@@ -2520,15 +2518,14 @@ public class RubyModule extends RubyObject {
      */
     public void putAlias(ThreadContext context, String id, CacheEntry entry, String oldName) {
         if (id.equals(oldName)) {
-            // Increment alias count even if we don't redefine anything.
+            // Mark as aliased even if we don't redefine anything.
             // See hack in Rails to silence redefinition warnings: https://github.com/rails/rails/pull/29233
-            entry.method.setAliased();
+            entry.method.getRealMethod().setAliased();
             return;
         }
 
         // see the DynamicMethod overload above
         if (entry.method instanceof AliasMethod alias) {
-            alias.setAliased();
             oldName = alias.getOldName();
             entry = alias.getEntry();
         }
@@ -5642,7 +5639,7 @@ public class RubyModule extends RubyObject {
 
         DynamicMethod method = getMethods().get(name);
         if (method != null && entry.method.getRealMethod() != method.getRealMethod() && !method.isUndefined()) {
-            if (!method.isAliased()) {
+            if (!method.getRealMethod().isAliased()) {
                 if (method instanceof PositionAware posAware) {
                     warning(context, "method redefined; discarding old " + name + "\n" + posAware.getFile() + ":" + (posAware.getLine() + 1) + ": warning: previous definition of " + name + " was here");
                 } else {
