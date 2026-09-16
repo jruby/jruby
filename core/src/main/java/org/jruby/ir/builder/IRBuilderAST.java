@@ -14,6 +14,7 @@ import org.jruby.ext.coverage.BranchTarget;
 import org.jruby.ext.coverage.FileCoverage;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
+import org.jruby.ast.util.LineEvents;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.IRClosure;
@@ -173,14 +174,14 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return new NotCompilableException(message + " (" + what + ").");
     }
 
-    // The line coverage counts a statement on, which the parser marked (newline_node): a begin statement's is its body's.
-    private static int statementLine(Node node) {
-        while (node instanceof BeginNode begin && begin.getBodyNode() != null) node = begin.getBodyNode();
-        return node.getLine();
-    }
-
     private Operand buildOperand(Variable result, Node node) throws NotCompilableException {
-        if (node.isNewline()) determineIfWeNeedLineNumber(statementLine(node), true, node instanceof NilImplicitNode, node instanceof DefNode);
+        if (node.isNewline()) {
+            if (coverageMode != 0 && !(node instanceof NilImplicitNode)) {
+                determineIfWeNeedCoverageLine(node.getLine(), LineEvents.firstInstruction(node));
+            } else {
+                determineIfWeNeedLineNumber(node.getLine(), true, node instanceof NilImplicitNode, node instanceof DefNode);
+            }
+        }
 
         switch (node.getNodeType()) {
             case ALIASNODE: return buildAlias((AliasNode) node);

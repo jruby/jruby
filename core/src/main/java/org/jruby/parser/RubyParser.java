@@ -5994,11 +5994,14 @@ states[665] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                    /*%%%*/
                    if (((Node)yyVals[-1+yyTop].value) != null) {
                        /* A lone statement in an interpolation is not a line event of its own (MRI); the*/
-                       /* string it is part of is. Several statements in one interpolation each remain one.*/
+                       /* string it is part of is. Several statements in one interpolation each remain one, and so*/
+                       /* does a lone conditional, as MRI counts its branches.*/
                        /* MRI's compiler marks coverable lines from the newline flag, but newline_node marked*/
                        /* this one already, so undo that too (it was the last line newline_node marked).*/
-                       if (((Node)yyVals[-1+yyTop].value).isNewline()) p.uncoverLastLine();
-                       ((Node)yyVals[-1+yyTop].value).unsetNewline();
+                       if (!(((Node)yyVals[-1+yyTop].value) instanceof IfNode)) {
+                           if (((Node)yyVals[-1+yyTop].value).isNewline()) p.uncoverLastLine();
+                           ((Node)yyVals[-1+yyTop].value).unsetNewline();
+                       }
                    }
                    yyVal = p.newEvStrNode(yyVals[yyTop - count + 6].start(), ((Node)yyVals[-1+yyTop].value));
                    /*% %*/
@@ -6922,7 +6925,7 @@ states[826] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4918 "parse.y"
+					// line 4921 "parse.y"
 
 }
-					// line 15260 "-"
+					// line 15263 "-"
