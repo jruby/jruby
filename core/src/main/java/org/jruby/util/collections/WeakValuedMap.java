@@ -180,11 +180,13 @@ public class WeakValuedMap<Key, Value> implements Map<Key, Value>, Serializable 
 
     }
 
+    // a dead value removes only the entry it was stored with: a value put after the collector
+    // cleared this one, but before the queue delivered it, must not be evicted
     @SuppressWarnings("unchecked")
     private void cleanReferences() {
         KeyedReference<Key, Value> ref;
         while ( ( ref = (KeyedReference) deadRefs.poll() ) != null ) {
-            map.remove( ref.key );
+            map.remove( ref.key, ref );
         }
     }
 
