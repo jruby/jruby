@@ -33,6 +33,7 @@ import static org.jruby.api.Warn.warnExperimental;
 
 public class RubyIOBuffer extends RubyObject {
 
+    private static final ByteBuffer EMPTY_BASE = ByteBuffer.allocate(0);
     private static final BigInteger MIN_S128 = BigInteger.ONE.shiftLeft(127).negate();
     private static final BigInteger MAX_S128 = BigInteger.ONE.shiftLeft(127).subtract(BigInteger.ONE);
 
@@ -317,8 +318,8 @@ public class RubyIOBuffer extends RubyObject {
 
         ByteBuffer base = null;
 
-        if (baseBytes != null) {
-            // If we are provided a pointer, we use it.
+        if (baseBytes != null && size != 0) {
+            // If we are provided a non-empty array, we use it. An empty one leaves the buffer null, like CRuby.
             base = ByteBuffer.wrap(baseBytes);
         } else if (size != 0) {
             base = newBufferBase(context.runtime, size, flags);
@@ -661,7 +662,7 @@ public class RubyIOBuffer extends RubyObject {
         int offset = toInt(context, _offset);
         if (offset < 0) throw argumentError(context, "Offset can't be negative!");
 
-        return slice(context, offset, size - offset);
+        return slice(context, offset, defaultLength(context, offset));
     }
 
     @JRubyMethod(name = "slice")
@@ -679,6 +680,9 @@ public class RubyIOBuffer extends RubyObject {
     public IRubyObject slice(ThreadContext context, int offset, int length) {
         validateRange(context, offset, length);
 
+        // only a zero-length slice gets past validateRange on a null buffer, and like CRuby it is null and keeps READONLY
+        if (base == null) return new RubyIOBuffer(context.runtime, context.runtime.getIOBuffer(), null, 0, flags & READONLY);
+
         // gross, but slice(int, int) is 13+
         base.position(offset);
         base.limit(offset + length);
@@ -693,9 +697,18 @@ public class RubyIOBuffer extends RubyObject {
         if (offset + length > size) throw argumentError(context, "Specified offset+length is bigger than the buffer size!");
     }
 
+    // MRI: range checks in io_buffer_memmove
+    private void validateCopyRange(ThreadContext context, int offset, int sourceOffset, int sourceSize, int length) {
+        validateRange(context, offset, length);
+        if (sourceOffset + length > sourceSize) throw argumentError(context, "The computed source range exceeds the size of the source buffer!");
+    }
+
     @JRubyMethod(name = "<=>")
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
-        return asFixnum(context, base.compareTo(((RubyIOBuffer) other).base));
+        ByteBuffer base = getBufferForReading(context);
+        ByteBuffer otherBase = ((RubyIOBuffer) other).getBufferForReading(context);
+
+        return asFixnum(context, base.compareTo(otherBase));
     }
 
     @JRubyMethod(name = "resize")
@@ -779,6 +792,8 @@ public class RubyIOBuffer extends RubyObject {
             return base;
         }
 
+        if (size == 0) return EMPTY_BASE;
+
         throw context.runtime.newBufferAllocationError("The buffer is not allocated!");
     }
 
@@ -788,6 +803,8 @@ public class RubyIOBuffer extends RubyObject {
         if (base != null) {
             return base;
         }
+
+        if (size == 0) return EMPTY_BASE;
 
         throw context.runtime.newBufferAllocationError("The buffer is not allocated!");
     }
@@ -1519,14 +1536,17 @@ public class RubyIOBuffer extends RubyObject {
         return asFixnum(context, length);
     }
 
+    // MRI: io_buffer_memmove
     private void bufferCopy(ThreadContext context, int offset, ByteBuffer sourceBuffer, int sourceOffset, int sourceSize, int length) {
         ByteBuffer destBuffer = getBufferForWriting(context);
+        validateCopyRange(context, offset, sourceOffset, sourceSize, length);
 
         destBuffer.put(offset, sourceBuffer, sourceOffset, length);
     }
 
     private void bufferCopy(ThreadContext context, int offset, ByteList sourceBuffer, int sourceOffset, int sourceSize, int length) {
         ByteBuffer destBuffer = getBufferForWriting(context);
+        validateCopyRange(context, offset, sourceOffset, sourceSize, length);
 
         destBuffer.put(offset, sourceBuffer.getUnsafeBytes(), sourceBuffer.begin() + sourceOffset, length);
     }
@@ -1594,7 +1614,8 @@ public class RubyIOBuffer extends RubyObject {
     public IRubyObject set_string(ThreadContext context, IRubyObject _string, IRubyObject _offset, IRubyObject _length) {
         RubyString string = _string.convertToString();
         int offset = extractOffset(context, _offset);
-        int length = extractLength(context, _length, offset);
+        // a nil length copies the rest of the string, not the rest of the buffer
+        int length = _length.isNil() ? string.size() : extractLength(context, _length, offset);
 
         return copy(context, string, offset, length, 0);
     }
@@ -1620,8 +1641,8 @@ public class RubyIOBuffer extends RubyObject {
     public IRubyObject set_string(ThreadContext context, IRubyObject _string, IRubyObject _offset, IRubyObject _length, IRubyObject _stringOffset) {
         RubyString string = _string.convertToString();
         int offset = toInt(context, _offset);
-        int length = toInt(context, _length);
         int stringOffset = toInt(context, _stringOffset);
+        int length = _length.isNil() ? string.size() - stringOffset : toInt(context, _length);
 
         return copy(context, string, offset, length, stringOffset);
     }
@@ -1803,7 +1824,7 @@ public class RubyIOBuffer extends RubyObject {
         if (!scheduler.isNil()) {
             IRubyObject result = FiberScheduler.ioRead(context, scheduler, io, this, asFixnum(context, size), asFixnum(context, 0));
 
-            if (result != UNDEF) return result;
+            if (result != null) return result;
         }
 
         return read(context, io, size, 0);
@@ -1844,7 +1865,7 @@ public class RubyIOBuffer extends RubyObject {
         if (!scheduler.isNil()) {
             IRubyObject result = FiberScheduler.ioRead(context, scheduler, io, this, lengthInteger, offset);
 
-            if (result != UNDEF) {
+            if (result != null) {
                 return result;
             }
         }
@@ -1898,7 +1919,7 @@ public class RubyIOBuffer extends RubyObject {
             IRubyObject result = FiberScheduler.ioPRead(context, scheduler, io, this, fromInteger,
                     asFixnum(context, length), asFixnum(context, 0));
 
-            if (result != UNDEF) return result;
+            if (result != null) return result;
         }
 
         int from = toInt(context, _from);
@@ -1917,7 +1938,7 @@ public class RubyIOBuffer extends RubyObject {
 
         if (!scheduler.isNil()) {
             IRubyObject result = FiberScheduler.ioPRead(context, scheduler, io, this, fromInteger, lengthInteger, asFixnum(context, 0));
-            if (result != UNDEF) return result;
+            if (result != null) return result;
         }
 
         int from = toInt(context, fromInteger);
@@ -1952,7 +1973,7 @@ public class RubyIOBuffer extends RubyObject {
 
         if (!scheduler.isNil()) {
             IRubyObject result = FiberScheduler.ioPRead(context, scheduler, io, this, fromInteger, lengthInteger, offsetInteger);
-            if (result != UNDEF) return result;
+            if (result != null) return result;
         }
 
         int from = toInt(context, fromInteger);
