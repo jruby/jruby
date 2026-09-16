@@ -640,6 +640,14 @@ class TestCoverage < Test::Unit::TestCase
     RUBY
   end
 
+  def test_heredoc_ending_the_file
+    assert_equal [nil, 1, nil], line_coverage(<<~'RUBY')
+      x = <<~EOS
+        #{1.to_s}
+      EOS
+    RUBY
+  end
+
   private
 
   def with_source(source)
