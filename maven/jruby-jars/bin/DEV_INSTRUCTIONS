@@ -1,0 +1,6 @@
+In order to build a new jruby-jars gem, here is the process:
+
+* cd ../../
+* ./mvnw -Pjruby-jars
+
+the gem will be in ./pkg directory
