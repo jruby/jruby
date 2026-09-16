@@ -1973,6 +1973,12 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     public void receiveArgs(final ArgsNode argsNode) {
         Signature signature = scope.getStaticScope().getSignature();
 
+        // If the method is forwarding arguments, preserve callInfo for later use.
+        if (scope instanceof IRMethod && scope.getStaticScope().exists(CommonByteLists.FWD_ALL.toString()) >= 0) {
+            forwardingCallInfo = temp();
+            addInstr(new RuntimeHelperCall(forwardingCallInfo, CAPTURE_CALL_INFO, Operand.EMPTY_ARRAY));
+        }
+
         Variable keywords = addResultInstr(new ReceiveKeywordsInstr(temp(), signature.hasRest(), argsNode.hasKwargs()));
 
         KeywordRestArgNode keyRest = argsNode.getKeyRest();
