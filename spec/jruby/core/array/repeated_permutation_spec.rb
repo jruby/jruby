@@ -4,4 +4,4 @@ describe "Array#repeated_permutation" do
   it "has arity one" do
     expect([].method(:repeated_permutation).arity).to eq(1)
   end
-end if RUBY_VERSION >= "1.9"
+end
