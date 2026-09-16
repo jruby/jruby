@@ -1,4 +1,0 @@
-exclude :test_raise_exception_with_different_encoding_containing_invalid_byte_sequence, "needs investigation"
-exclude :test_raise_exception_with_invalid_byte_sequence, "needs investigation"
-exclude :test_raise_exception_with_message_exception, "needs investigation"
-exclude :test_raise_exception_with_nil_backtrace, "needs investigation"
