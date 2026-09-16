@@ -197,6 +197,11 @@ class TestCoverage < Test::Unit::TestCase
     with_source(JAVA_SUBCLASSES) do |path|
       Coverage.start(methods: true)
       load path
+      # Sub#initialize is a plain forwarding super: the body is skipped and coverElidedCall counts the call.
+      # Check we take that path, since the counts below pass either way. Must run before the first Sub.new,
+      # which replaces the entry with the Java constructor wrapper.
+      assert JRuby.reference(Sub).searchMethod('initialize').getJavaConstructorContext.directSuperForwardable(1)
+
       3.times { Covered.new(1) }
       3.times { Sub.new(1) }
       methods = Coverage.result[path][:methods]
