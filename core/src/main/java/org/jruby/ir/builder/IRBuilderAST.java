@@ -169,8 +169,14 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return new NotCompilableException(message + " (" + what + ").");
     }
 
+    // The line coverage counts a statement on, which the parser marked (newline_node): a begin statement's is its body's.
+    private static int statementLine(Node node) {
+        while (node instanceof BeginNode begin && begin.getBodyNode() != null) node = begin.getBodyNode();
+        return node.getLine();
+    }
+
     private Operand buildOperand(Variable result, Node node) throws NotCompilableException {
-        if (node.isNewline()) determineIfWeNeedLineNumber(node.getLine(), true, node instanceof NilImplicitNode, node instanceof DefNode);
+        if (node.isNewline()) determineIfWeNeedLineNumber(statementLine(node), true, node instanceof NilImplicitNode, node instanceof DefNode);
 
         switch (node.getNodeType()) {
             case ALIASNODE: return buildAlias((AliasNode) node);
@@ -288,6 +294,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         if (node == null) return null;
 
         boolean savedExecuteOnce = executesOnce;
+        buildDepth++;
         try {
             if (executesOnce) executesOnce = node.executesOnce();
 
@@ -299,6 +306,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
 
             return operand;
         } finally {
+            buildDepth--;
             executesOnce = savedExecuteOnce;
         }
     }

@@ -18,7 +18,7 @@ class TestCoverage < Test::Unit::TestCase
   end
 
   def test_several_statements_in_interpolation_each_cover_their_line
-    assert_equal 1, line_coverage(<<~'RUBY')[1]
+    assert_equal [1, 1, 1, nil], line_coverage(<<~'RUBY')
       x = "#{
         a = 1
         a

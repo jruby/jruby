@@ -101,6 +101,10 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
     LineInfo needsLineNumInfo = null;
 
+    // How deep the builder is in the tree it builds, and how deep the statement whose line number is pending is.
+    int buildDepth = 0;
+    int needsLineNumInfoDepth = 0;
+
     // SSS FIXME: Currently only used for retries -- we should be able to eliminate this
     // Stack of nested rescue blocks -- this just tracks the start label of the blocks
     final Deque<RescueBlockInfo> activeRescueBlockStack = new ArrayDeque<>(4);
@@ -370,21 +374,23 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         return loopStack.peek();
     }
 
-    public void addInstr(Instr instr) {
-        if (needsLineNumInfo != null) {
-            LineInfo type = needsLineNumInfo;
-            needsLineNumInfo = null;
+    private void addLineNumInfo() {
+        LineInfo type = needsLineNumInfo;
+        needsLineNumInfo = null;
 
-            if (type == LineInfo.Coverage) {
-                addInstr(new LineNumberInstr(lastProcessedLineNum, coverageMode));
-            } else {
-                addInstr(manager.newLineNumber(lastProcessedLineNum));
-            }
-
-            if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                addInstr(new TraceInstr(RubyEvent.LINE, getCurrentModuleVariable(), methodNameFor(), getFileName(), lastProcessedLineNum + 1));
-            }
+        if (type == LineInfo.Coverage) {
+            addInstr(new LineNumberInstr(lastProcessedLineNum, coverageMode));
+        } else {
+            addInstr(manager.newLineNumber(lastProcessedLineNum));
         }
+
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            addInstr(new TraceInstr(RubyEvent.LINE, getCurrentModuleVariable(), methodNameFor(), getFileName(), lastProcessedLineNum + 1));
+        }
+    }
+
+    public void addInstr(Instr instr) {
+        if (needsLineNumInfo != null) addLineNumInfo();
 
         // If we are building an ensure body, stash the instruction
         // in the ensure body's list. If not, add it to the scope directly.
@@ -3190,7 +3196,13 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             LineInfo needsCoverage = isNewline ? LineInfo.Coverage : null;
             // DefNode will set it's own line number as part of impl but if it is for coverage we emit as instr also.
             if (needsCoverage != null && (!def || coverageMode != 0)) { // Do not emit multiple line number instrs for the same line
+                // A statement inside one whose line has not been emitted yet (one of several statements in an
+                // interpolation, say) would replace that line, and coverage would never count it: emit it first.
+                if (coverageMode != 0 && needsLineNumInfo == LineInfo.Coverage && needsLineNumInfoDepth < buildDepth) {
+                    addLineNumInfo();
+                }
                 needsLineNumInfo = needsCoverage;
+                needsLineNumInfoDepth = buildDepth;
             }
 
             // This line is already process either by linenum or by instr which emits its own.
