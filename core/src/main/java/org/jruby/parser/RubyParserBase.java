@@ -54,6 +54,7 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.ast.*;
+import org.jruby.ast.util.LineEvents;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.OperatorCallNode;
 import org.jruby.common.IRubyWarnings;
@@ -484,10 +485,7 @@ public abstract class RubyParserBase {
     public Node newline_node(Node node, int line) {
         if (node == null) return null;
 
-        Node newNode = remove_begin(node);
-        // Conservative fix...try and use line unless we see remove has been removed then use the newNode.
-        if (newNode != node) line = newNode.getLine();
-        coverLine(line);
+        coverLine(LineEvents.lineOf(node));
         node.setNewline();
 
         return node;

@@ -36,6 +36,55 @@ class TestCoverage < Test::Unit::TestCase
     RUBY
   end
 
+  def test_statement_counts_on_the_line_of_its_first_instruction
+    assert_equal [nil, 1, nil, 1, nil, nil, nil, 1, 1], line_coverage(<<~'RUBY')
+      x =
+        [].size
+      y = <<~EOS
+        #{[].size}
+        #{[].size}
+      EOS
+      z = {
+        a: [].size }
+      x = y
+    RUBY
+  end
+
+  def test_literal_array_and_hash_count_on_their_first_line
+    assert_equal [1, nil, nil, 1, nil, nil], line_coverage(<<~'RUBY')
+      x = [
+        1,
+        2]
+      y = {
+        a: :b,
+        c: 1.0}
+    RUBY
+  end
+
+  def test_statement_in_begin_counts_once
+    assert_equal [1, 1, nil, 1, nil, 1, nil, nil, 1], line_coverage(<<~'RUBY')
+      def g
+        x = 1
+        begin
+          [].size
+        ensure
+          x = 2
+        end
+      end
+      g
+    RUBY
+  end
+
+  def test_conditional_in_interpolation_counts
+    assert_equal [1, nil, 1, nil, 1], line_coverage(<<~'RUBY')
+      x = <<~EOS
+        abc
+        #{[].empty? ? "a" : "b"}
+      EOS
+      x = x
+    RUBY
+  end
+
   private
 
   def line_coverage(code)

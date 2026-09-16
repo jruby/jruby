@@ -107,8 +107,9 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     // The line coverage counts the pending statement on. Calls built before its first instruction move
     // lastProcessedLineNum, the line backtraces report, but not this one.
     int needsLineNumInfoLine = -1;
-    // The line of the last statement that was a line event, with coverage on.
+    // With coverage on, the line the last statement that was a line event starts on, and its first instruction's node.
     int lastLineEventLine = -1;
+    U lastLineEventFirstInstruction = null;
 
     // SSS FIXME: Currently only used for retries -- we should be able to eliminate this
     // Stack of nested rescue blocks -- this just tracks the start label of the blocks
@@ -209,7 +210,12 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         if (isRescue) ebi.savedGlobalException = savedGlobalException;
 
         // Record body of ensure and push to ensure body stack if there is an actual ensure body.
+        // It comes after the protected body, so its line events must not be the last ones the protected body sees.
+        int savedLineEventLine = lastLineEventLine;
+        U savedLineEventFirstInstruction = lastLineEventFirstInstruction;
         Operand ensureRetVal = processEnsureBody(ensureNode, ebi);
+        lastLineEventLine = savedLineEventLine;
+        lastLineEventFirstInstruction = savedLineEventFirstInstruction;
 
         // ------------ Build the protected region ------------
         activeEnsureBlockStack.push(ebi);
@@ -3201,12 +3207,10 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
     protected void determineIfWeNeedLineNumber(int line, boolean isNewline, boolean implicitNil, boolean def) {
-        if (coverageMode != 0 && isNewline && !implicitNil) {
-            determineIfWeNeedCoverageLine(line);
-        } else if (line != lastProcessedLineNum && !implicitNil) {
+        if (line != lastProcessedLineNum && !implicitNil) {
             LineInfo needsCoverage = isNewline ? LineInfo.Coverage : null;
             // DefNode will set it's own line number as part of impl but if it is for coverage we emit as instr also.
-            if (needsCoverage != null && !def) { // Do not emit multiple line number instrs for the same line
+            if (needsCoverage != null && (!def || coverageMode != 0)) { // Do not emit multiple line number instrs for the same line
                 needsLineNumInfo = needsCoverage;
             }
 
@@ -3216,21 +3220,25 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
     /**
-     * A statement is a line event unless the last one was on the same line (as in MRI, calls in between do not
-     * matter).
+     * With coverage on: as in MRI, a statement is a line event unless the last one started on the same line (calls
+     * built in between do not matter), and coverage counts it on the line of its first instruction, which comes from
+     * firstInstruction (see LineEvents).
      */
-    private void determineIfWeNeedCoverageLine(int line) {
-        if (line != lastLineEventLine) {
-            // A statement inside one whose event is still pending (one of several statements in an interpolation,
-            // say) would replace that event, and coverage would never count the outer statement: emit it first.
+    protected void determineIfWeNeedCoverageLine(int line, U firstInstruction) {
+        // A statement inside the last line event's statement, starting with the same instruction, shares its event
+        if (line != lastLineEventLine && firstInstruction != lastLineEventFirstInstruction) {
+            // A statement inside one whose event is still pending would replace that event, which coverage would
+            // then never count: emit it first.
             if (needsLineNumInfo == LineInfo.Coverage && needsLineNumInfoDepth < buildDepth) addLineNumInfo();
 
             needsLineNumInfo = LineInfo.Coverage;
             needsLineNumInfoDepth = buildDepth;
-            needsLineNumInfoLine = line;
+            needsLineNumInfoLine = getLine(firstInstruction);
             lastLineEventLine = line;
-        } else if (line != lastProcessedLineNum && needsLineNumInfo == null) {
-            needsLineNumInfo = LineInfo.Backtrace;
+            lastLineEventFirstInstruction = firstInstruction;
+        } else {
+            lastLineEventLine = line;
+            if (line != lastProcessedLineNum && needsLineNumInfo == null) needsLineNumInfo = LineInfo.Backtrace;
         }
 
         lastProcessedLineNum = line;
