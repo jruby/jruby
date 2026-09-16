@@ -320,13 +320,19 @@ public class CoverageData {
      *           method carries: define_method(:new, old_method) copies old_method, and the copy keeps its name.
      * @param method the entry being added, after any wrapping or duplication done by the module
      */
-    public synchronized void registerMethod(String id, DynamicMethod method) {
-        if (!isMethodsEnabled()) return;
-
-        Map<String, FileCoverage> coverage = this.coverage;
-        if (coverage == null) return;
+    public void registerMethod(String id, DynamicMethod method) {
+        // Every method entry in the process comes through here whenever coverage is set up, so decide without
+        // taking the lock that coverLine holds: in lines-only mode there is nothing to do.
+        if (!isMethodsEnabled() || this.coverage == null) return;
 
         if (method instanceof AliasMethod || method instanceof PartialDelegatingMethod || method instanceof MethodMethod) return;
+
+        registerMethodLocked(id, method);
+    }
+
+    private synchronized void registerMethodLocked(String id, DynamicMethod method) {
+        Map<String, FileCoverage> coverage = this.coverage;
+        if (coverage == null) return;
 
         DynamicMethod real = method.getRealMethod();
         if (real.getMethodCoverage() != null) return; // already counted
