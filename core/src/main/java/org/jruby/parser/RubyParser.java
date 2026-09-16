@@ -2540,7 +2540,8 @@ states[84] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
 states[85] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((IterNode)yyVals[-1+yyTop].value);
                     /*%%%*/
-                    /* FIXME: Missing loc stuff here.*/
+                    ((IterNode)yyVals[-1+yyTop].value).setLine(yyVals[yyTop - count + 1].end());
+                    ((IterNode)yyVals[-1+yyTop].value).setSourceSpan(ProductionState.column(yyVals[yyTop - count + 1].start), ProductionState.line(yyVals[yyTop - count + 3].end), ProductionState.column(yyVals[yyTop - count + 3].end));
                     /*% %*/
   return yyVal;
 };
@@ -2597,6 +2598,8 @@ states[92] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
 };
 states[93] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
+                    ((IterNode)yyVals[-1+yyTop].value).setLine(yyVals[yyTop - count + 4].end());
+                    ((IterNode)yyVals[-1+yyTop].value).setSourceSpan(ProductionState.column(yyVals[yyTop - count + 4].start), ProductionState.line(yyVals[yyTop - count + 6].end), ProductionState.column(yyVals[yyTop - count + 6].end));
                     yyVal = p.new_call(((Node)yyVals[-5+yyTop].value), ((ByteList)yyVals[-3+yyTop].value), null, ((IterNode)yyVals[-1+yyTop].value));
                     /*% %*/
                     /*% ripper: method_add_block!(command_call!($:1, $:2, $:3, Qnil), $:5) %*/
@@ -4869,6 +4872,7 @@ states[486] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[487] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     yyVal = ((IterNode)yyVals[-1+yyTop].value);
                     /*%%%*/
+                    ((IterNode)yyVals[-1+yyTop].value).setLine(yyVals[yyTop - count + 1].end());
                     ((IterNode)yyVals[-1+yyTop].value).setSourceSpan(ProductionState.column(yyVals[yyTop - count + 1].start), ProductionState.line(yyVals[yyTop - count + 3].end), ProductionState.column(yyVals[yyTop - count + 3].end));
                     /*% %*/
   return yyVal;
@@ -6859,7 +6863,7 @@ states[826] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4866 "parse.y"
+					// line 4870 "parse.y"
 
 }
-					// line 15191 "-"
+					// line 15195 "-"

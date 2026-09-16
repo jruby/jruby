@@ -939,7 +939,8 @@ block_command   : block_call
 cmd_brace_block : tLBRACE_ARG brace_body '}' {
                     $$ = $2;
                     /*%%%*/
-                    // FIXME: Missing loc stuff here.
+                    $2.setLine(@1.end());
+                    $2.setSourceSpan(ProductionState.column(@1.start), ProductionState.line(@3.end), ProductionState.column(@3.end));
                     /*% %*/
                 };
 
@@ -991,6 +992,8 @@ command        : fcall command_args %prec tLOWEST {
                 }
                 | primary_value tCOLON2 tCONSTANT '{' brace_body '}' {
                     /*%%%*/
+                    $5.setLine(@4.end());
+                    $5.setSourceSpan(ProductionState.column(@4.start), ProductionState.line(@6.end), ProductionState.column(@6.end));
                     $$ = p.new_call($1, $3, null, $5);
                     /*% %*/
                     /*% ripper: method_add_block!(command_call!($:1, $:2, $:3, Qnil), $:5) %*/
@@ -3011,6 +3014,7 @@ lambda_body     : tLAMBEG compstmt '}' {
 do_block        : k_do_block do_body k_end {
                     $$ = $2;
                     /*%%%*/
+                    $2.setLine(@1.end());
                     $2.setSourceSpan(ProductionState.column(@1.start), ProductionState.line(@3.end), ProductionState.column(@3.end));
                     /*% %*/
                 };

@@ -104,6 +104,37 @@ class TestCoverage < Test::Unit::TestCase
     end
   end
 
+  COMMAND_BLOCKS = <<~'RUBY'
+    class Covered
+      def self.Make(&b) = b
+      define_method (:brace) { |x| x }
+      define_method (
+        :do_block
+      ) do |x|
+        x
+      end
+    end
+    made = Covered::Make { |x| x }
+    Covered.define_method(:constant_call, &made)
+  RUBY
+
+  # A block that follows an argument list, or a call of a method named like a constant, comes through its own
+  # grammar rule. Each of those rules has to record where the block starts and ends.
+  def test_method_coverage_spans_blocks_that_follow_command_arguments
+    with_source(COMMAND_BLOCKS) do |path|
+      Coverage.start(methods: true)
+      load path
+      c = Covered.new
+      c.brace(1)
+      c.do_block(1)
+      c.constant_call(1)
+      methods = Coverage.result[path][:methods]
+      assert_equal 1, methods[key(Covered, :brace, 3, '{', '}')]
+      assert_equal 1, methods[[Covered, :do_block, 6, source_line(6).index('do'), 8, 5]]
+      assert_equal 1, methods[key(Covered, :constant_call, 10, '{', '}')]
+    end
+  end
+
   def test_method_coverage_counts_only_calls_that_get_past_argument_processing
     with_source(METHODS) do |path|
       Coverage.start(methods: true)
