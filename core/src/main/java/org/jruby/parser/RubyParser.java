@@ -2198,6 +2198,9 @@ states[29] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
 };
 states[30] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
+                    /* The statement starts at undef, not at the first name it undefines*/
+                    if (((Node)yyVals[0+yyTop].value) instanceof BlockNode block) block.get(0).setLine(yyVals[yyTop - count + 1].start());
+                    ((Node)yyVals[0+yyTop].value).setLine(yyVals[yyTop - count + 1].start());
                     yyVal = ((Node)yyVals[0+yyTop].value);
                     /*% %*/
                     /*% ripper: undef!($2) %*/
@@ -6861,7 +6864,7 @@ states[826] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4868 "parse.y"
+					// line 4871 "parse.y"
 
 }
-					// line 15193 "-"
+					// line 15196 "-"

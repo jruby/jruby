@@ -616,6 +616,9 @@ stmt            : keyword_alias fitem {
                 }
                 | keyword_undef undef_list {
                     /*%%%*/
+                    // The statement starts at undef, not at the first name it undefines
+                    if ($2 instanceof BlockNode block) block.get(0).setLine(@1.start());
+                    $2.setLine(@1.start());
                     $$ = $2;
                     /*% %*/
                     /*% ripper: undef!($2) %*/

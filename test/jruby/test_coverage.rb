@@ -93,6 +93,17 @@ class TestCoverage < Test::Unit::TestCase
     RUBY
   end
 
+  def test_undef_counts_on_its_keyword_line
+    assert_equal [2, 1, 1, nil, nil, nil], line_coverage(<<~'RUBY')
+      class UndefCoverage; def a; end; def b; end; end
+      class UndefCoverage
+        x = 1; undef
+          a,
+          b
+      end
+    RUBY
+  end
+
   private
 
   def line_coverage(code)
