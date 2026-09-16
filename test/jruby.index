@@ -81,6 +81,7 @@ jruby/test_thread_backtrace
 jruby/test_threaded_nonlocal_return
 jruby/test_time
 jruby/test_unmarshal
+jruby/test_weakmap
 jruby/test_win32
 jruby/test_zlib
 jruby/test_yaml_charset
