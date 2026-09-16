@@ -297,6 +297,10 @@ public class CoverageData {
         IRScope scope = definitionScope(real);
         if (scope == null) return;
 
+        // The body only counts its calls if it was parsed with the counting instructions in it, which code parsed
+        // before methods mode was on was not. Leave such a method out rather than list it with a count stuck at zero.
+        if ((scope.getCoverageMode() & METHODS) == 0) return;
+
         FileCoverage file = coverage.get(scope.getFile());
         if (file == null) return;
 

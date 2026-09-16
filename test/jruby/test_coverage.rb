@@ -85,6 +85,25 @@ class TestCoverage < Test::Unit::TestCase
     end
   end
 
+  EVALED = <<~'RUBY'
+    class Covered
+      class_eval <<-INNER, __FILE__, __LINE__ + 1
+        def from_eval(x); x; end
+      INNER
+    end
+  RUBY
+
+  # An eval that is not covered still counts the calls of the methods it defines, as in MRI. Only its lines are
+  # left out (see Coverage.setup's eval option).
+  def test_method_coverage_counts_methods_defined_by_an_eval
+    with_source(EVALED) do |path|
+      Coverage.start(methods: true)
+      load path
+      3.times { Covered.new.from_eval(1) }
+      assert_equal 3, Coverage.result[path][:methods][key(Covered, :from_eval, 3, 'def', 'end')]
+    end
+  end
+
   def test_method_coverage_counts_only_calls_that_get_past_argument_processing
     with_source(METHODS) do |path|
       Coverage.start(methods: true)

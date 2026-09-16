@@ -528,11 +528,7 @@ public abstract class RubyParserBase {
             topOfAST = newTopOfAST;
         }
 
-        int coverageMode = coverageData == null ?
-                CoverageData.NONE :
-                coverageData.getMode();
-
-        return new RootNode(line, result.getScope(), topOfAST, lexer.getFile(), coverageMode);
+        return new RootNode(line, result.getScope(), topOfAST, lexer.getFile(), coverageMode(coverageData));
     }
     
     /* MRI: block_append */
@@ -2413,6 +2409,21 @@ public abstract class RubyParserBase {
     public boolean isCoverageEnabled() {
         Ruby runtime = this.runtime;
         return runtime.isCoverageEnabled() && !isEval() || runtime.getCoverageData().isEvalCovered();
+    }
+
+    /**
+     * The modes this parse emits coverage instructions for. Usually every enabled mode, but an eval whose lines
+     * are not covered still counts its method calls: MRI counts a method defined by an eval like any other,
+     * only its lines are left out.
+     *
+     * @param coverageData the data this parse registered its file with, or null when it registered none
+     */
+    private int coverageMode(CoverageData coverageData) {
+        if (coverageData != null) return coverageData.getMode();
+
+        return runtime.isCoverageEnabled() && runtime.getCoverageData().isMethodsEnabled() ?
+                CoverageData.METHODS :
+                CoverageData.NONE;
     }
 
     /**
