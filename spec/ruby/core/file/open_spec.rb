@@ -711,3 +711,66 @@ platform_is_not :windows do
     it_behaves_like :open_directory, :open
   end
 end
+
+platform_is :windows do
+  describe "File.open on Windows" do
+    before :each do
+      @fname = tmp("file_open_text_mode.txt")
+    end
+
+    after :each do
+      rm_r @fname
+    end
+
+    def written_with(*args, **kwargs)
+      rm_r @fname
+      File.open(@fname, *args, **kwargs) { |f| f.write "a\nb\n" }
+      File.binread(@fname)
+    end
+
+    def read_with(*args, **kwargs)
+      File.binwrite(@fname, "a\r\nb\r\n")
+      File.open(@fname, *args, **kwargs) { |f| f.read }
+    end
+
+    it "writes CRLF for LF in text mode" do
+      written_with("w").should == "a\r\nb\r\n"
+      written_with("wt").should == "a\r\nb\r\n"
+      written_with("w", textmode: true).should == "a\r\nb\r\n"
+      written_with("a").should == "a\r\nb\r\n"
+    end
+
+    it "writes LF for LF in binary mode" do
+      written_with("wb").should == "a\nb\n"
+      written_with("w", binmode: true).should == "a\nb\n"
+      written_with(File::WRONLY | File::CREAT | File::TRUNC | File::BINARY).should == "a\nb\n"
+    end
+
+    it "reads LF for CRLF in text mode" do
+      read_with("r").should == "a\nb\n"
+      read_with("rt").should == "a\nb\n"
+      read_with("r", textmode: true).should == "a\nb\n"
+      read_with("r", newline: :universal).should == "a\nb\n"
+      read_with("r:UTF-8").should == "a\nb\n"
+      read_with("r", encoding: "UTF-8").should == "a\nb\n"
+    end
+
+    it "reads CRLF for CRLF in binary mode" do
+      read_with("rb").should == "a\r\nb\r\n"
+      read_with("r", binmode: true).should == "a\r\nb\r\n"
+      read_with(File::RDONLY | File::BINARY).should == "a\r\nb\r\n"
+      read_with("rb:UTF-8").should == "a\r\nb\r\n"
+    end
+
+    it "reads and writes without normalizing after #binmode" do
+      File.open(@fname, "w") { |f| f.binmode; f.write "a\nb\n" }
+      File.binread(@fname).should == "a\nb\n"
+      File.binwrite(@fname, "a\r\nb\r\n")
+      File.open(@fname, "r") { |f| f.binmode; f.read }.should == "a\r\nb\r\n"
+    end
+
+    it "raises ArgumentError for a newline option in binary mode" do
+      -> { File.open(@fname, "wb", newline: :crlf) {} }.should raise_error(ArgumentError)
+    end
+  end
+end

@@ -977,20 +977,35 @@ public class OpenFile implements Finalizable {
 
     // MRI: NEED_READCONV
     public boolean needsReadConversion() {
-        return Platform.IS_WINDOWS ?
-                (encs.enc2 != null || (encs.ecflags & ~EConvFlags.CRLF_NEWLINE_DECORATOR) != 0) || isTextMode()
+        return needsReadConversion(Platform.IS_WINDOWS, encs.enc2, mode, encs.ecflags);
+    }
+
+    // MRI: NEED_READCONV with the platform passed in; crlfEnvironment is MRI's RUBY_CRLF_ENVIRONMENT (Windows)
+    static boolean needsReadConversion(boolean crlfEnvironment, Encoding enc2, int mode, int ecflags) {
+        return crlfEnvironment ?
+                (enc2 != null || (ecflags & ~EConvFlags.CRLF_NEWLINE_DECORATOR) != 0) || (mode & TEXTMODE) != 0
                 :
-                (encs.enc2 != null || NEED_NEWLINE_DECORATOR_ON_READ());
+                (enc2 != null || (mode & TEXTMODE) != 0);
+    }
+
+    // MRI: the ecflags make_readconv opens the read converter with
+    static int readConversionFlags(boolean crlfEnvironment, int mode, int ecflags) {
+        return ecflags & ~EConvFlags.NEWLINE_DECORATOR_WRITE_MASK;
     }
 
     // MRI: NEED_WRITECONV
     public boolean needsWriteConversion(ThreadContext context) {
         Encoding ascii8bit = encodingService(context).getAscii8bitEncoding();
 
-        return Platform.IS_WINDOWS ?
-                ((encs.enc != null && encs.enc != ascii8bit) || (encs.ecflags & ((EConvFlags.DECORATOR_MASK & ~EConvFlags.CRLF_NEWLINE_DECORATOR)|EConvFlags.STATEFUL_DECORATOR_MASK)) != 0)
+        return needsWriteConversion(Platform.IS_WINDOWS, encs.enc, ascii8bit, mode, encs.ecflags);
+    }
+
+    // MRI: NEED_WRITECONV with the platform passed in
+    static boolean needsWriteConversion(boolean crlfEnvironment, Encoding enc, Encoding ascii8bit, int mode, int ecflags) {
+        return crlfEnvironment ?
+                ((enc != null && enc != ascii8bit) || (ecflags & ((EConvFlags.DECORATOR_MASK & ~EConvFlags.CRLF_NEWLINE_DECORATOR)|EConvFlags.STATEFUL_DECORATOR_MASK)) != 0)
                 :
-                ((encs.enc != null && encs.enc != ascii8bit) || NEED_NEWLINE_DECORATOR_ON_WRITE() || (encs.ecflags & (EConvFlags.DECORATOR_MASK|EConvFlags.STATEFUL_DECORATOR_MASK)) != 0);
+                ((enc != null && enc != ascii8bit) || (mode & TEXTMODE) != 0 || (ecflags & (EConvFlags.DECORATOR_MASK|EConvFlags.STATEFUL_DECORATOR_MASK)) != 0);
     }
 
     // MRI: make_readconv
@@ -999,7 +1014,7 @@ public class OpenFile implements Finalizable {
             int ecflags;
             IRubyObject ecopts;
             byte[] sname, dname;
-            ecflags = encs.ecflags & ~EConvFlags.NEWLINE_DECORATOR_WRITE_MASK;
+            ecflags = readConversionFlags(Platform.IS_WINDOWS, mode, encs.ecflags);
             ecopts = encs.ecopts;
             if (encs.enc2 != null) {
                 sname = encs.enc2.getName();

@@ -272,11 +272,65 @@ platform_is :windows do
       File.binread(@fname).should == "a\r\nb\r\nc"
     end
 
+    it "normalizes line endings in the default mode" do
+      @io = new_io(@fname, "w")
+      @io.write "a\nb\nc"
+      @io.close
+      File.binread(@fname).should == "a\r\nb\r\nc"
+    end
+
+    it "normalizes line endings when opened with integer flags" do
+      @io = File.new(@fname, File::WRONLY | File::CREAT | File::TRUNC)
+      @io.write "a\nb\n"
+      @io.close
+      File.binread(@fname).should == "a\r\nb\r\n"
+    end
+
+    it "normalizes an existing CRLF to CR CR LF in text mode" do
+      @io = new_io(@fname, "w")
+      @io.write "a\r\nb"
+      @io.close
+      File.binread(@fname).should == "a\r\r\nb"
+    end
+
     it "does not normalize line endings in binary mode" do
       @io = new_io(@fname, "wb")
       @io.write "a\r\nb\r\nc"
       @io.close
       File.binread(@fname).should == "a\r\nb\r\nc"
+    end
+
+    it "does not normalize line endings when opened with File::BINARY" do
+      @io = File.new(@fname, File::WRONLY | File::CREAT | File::TRUNC | File::BINARY)
+      @io.write "a\nb\n"
+      @io.close
+      File.binread(@fname).should == "a\nb\n"
+    end
+
+    it "does not normalize line endings after #binmode" do
+      @io = new_io(@fname, "w")
+      @io.write "a\n"
+      @io.binmode
+      @io.write "b\n"
+      @io.close
+      File.binread(@fname).should == "a\r\nb\n"
+    end
+
+    it "does not normalize line endings when opened with newline: :cr" do
+      @io = new_io(@fname, "w", newline: :cr)
+      @io.write "a\nb\n"
+      @io.close
+      File.binread(@fname).should == "a\rb\r"
+    end
+
+    it "normalizes line endings written to a redirected STDOUT" do
+      ruby_exe('STDOUT.write "a\nb\n"', args: "> \"#{@fname}\"")
+      File.binread(@fname).should == "a\r\nb\r\n"
+    end
+
+    it "normalizes line endings written to a redirected STDERR" do
+      ruby_exe('STDERR.write "a\nb\n"', args: "2> \"#{@fname}\"")
+      File.binread(@fname).should == "a\r\nb\r\n"
     end
   end
 end
