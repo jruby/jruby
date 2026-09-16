@@ -564,6 +564,23 @@ class TestCoverage < Test::Unit::TestCase
     Object.send(:remove_method, :folds) if Object.private_method_defined?(:folds)
   end
 
+  def test_lone_statement_in_interpolation_keeps_earlier_statement_on_its_line
+    assert_equal [1, 1, 1], line_coverage(<<~'RUBY')
+      def foo(*) = nil
+      foo([1].map {
+        y = 1; nil }, "#{3}")
+    RUBY
+  end
+
+  def test_several_statements_in_interpolation_each_cover_their_line
+    assert_equal 1, line_coverage(<<~'RUBY')[1]
+      x = "#{
+        a = 1
+        a
+      }"
+    RUBY
+  end
+
   private
 
   def with_source(source)
@@ -591,5 +608,13 @@ class TestCoverage < Test::Unit::TestCase
 
   def source_line(line)
     @source.lines[line - 1]
+  end
+
+  def line_coverage(code)
+    with_source(code) do |path|
+      Coverage.start(lines: true)
+      load path
+      Coverage.result.fetch(path)[:lines]
+    end
   end
 end
