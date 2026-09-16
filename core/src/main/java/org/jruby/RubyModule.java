@@ -681,7 +681,7 @@ public class RubyModule extends RubyObject {
             method.setImplementationClass(methodLocation);
         }
 
-        if (context.runtime.isCoverageEnabled()) context.runtime.getCoverageData().registerMethod(method);
+        if (context.runtime.isCoverageEnabled()) context.runtime.getCoverageData().registerMethod(id, method);
 
         DynamicMethod oldMethod = methodLocation.getMethodsForWrite().put(id, method);
 

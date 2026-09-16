@@ -285,9 +285,11 @@ public class CoverageData {
      * <p>Entries that only forward to another entry (aliases, visibility changes of inherited methods) get no
      * counter. Their calls count toward the entry they forward to, as in MRI.</p>
      *
+     * @param id the name the entry is added under, which MRI keys it by. Not always the name the underlying
+     *           method carries: define_method(:new, old_method) copies old_method, and the copy keeps its name.
      * @param method the entry being added, after any wrapping or duplication done by the module
      */
-    public synchronized void registerMethod(DynamicMethod method) {
+    public synchronized void registerMethod(String id, DynamicMethod method) {
         if (!isMethodsEnabled()) return;
 
         Map<String, FileCoverage> coverage = this.coverage;
@@ -318,7 +320,7 @@ public class CoverageData {
         int endLine = scope.getEndLine();
         if (endLine >= 0) endLine++;
 
-        MethodCoverage methodCoverage = new MethodCoverage(scope, owner.getOrigin(), real.getName(),
+        MethodCoverage methodCoverage = new MethodCoverage(scope, owner.getOrigin(), id,
                 startLine, scope.getStartColumn(), endLine, scope.getEndColumn());
 
         file.getMethods().add(methodCoverage);
