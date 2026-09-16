@@ -607,6 +607,7 @@ public final class Ruby implements Constantizable {
         loadService.provide("ruby2_keywords.rb");
         loadService.provide("set.rb");
         loadService.provide("pathname.rb");
+        loadService.provide("io/wait.rb");
 
         // Load preludes
         initRubyPreludes();
