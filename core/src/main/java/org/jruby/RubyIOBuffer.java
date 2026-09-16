@@ -33,6 +33,7 @@ import static org.jruby.api.Warn.warnExperimental;
 
 public class RubyIOBuffer extends RubyObject {
 
+    private static final ByteBuffer EMPTY_BASE = ByteBuffer.allocate(0);
     private static final BigInteger MIN_S128 = BigInteger.ONE.shiftLeft(127).negate();
     private static final BigInteger MAX_S128 = BigInteger.ONE.shiftLeft(127).subtract(BigInteger.ONE);
 
@@ -679,8 +680,8 @@ public class RubyIOBuffer extends RubyObject {
     public IRubyObject slice(ThreadContext context, int offset, int length) {
         validateRange(context, offset, length);
 
-        // only a zero-length slice gets past validateRange on a null buffer, and like CRuby it is null too
-        if (base == null) return new RubyIOBuffer(context.runtime, context.runtime.getIOBuffer());
+        // only a zero-length slice gets past validateRange on a null buffer, and like CRuby it is null and keeps READONLY
+        if (base == null) return new RubyIOBuffer(context.runtime, context.runtime.getIOBuffer(), null, 0, flags & READONLY);
 
         // gross, but slice(int, int) is 13+
         base.position(offset);
@@ -791,7 +792,7 @@ public class RubyIOBuffer extends RubyObject {
             return base;
         }
 
-        if (size == 0) return ByteBuffer.allocate(0);
+        if (size == 0) return EMPTY_BASE;
 
         throw context.runtime.newBufferAllocationError("The buffer is not allocated!");
     }
@@ -803,7 +804,7 @@ public class RubyIOBuffer extends RubyObject {
             return base;
         }
 
-        if (size == 0) return ByteBuffer.allocate(0);
+        if (size == 0) return EMPTY_BASE;
 
         throw context.runtime.newBufferAllocationError("The buffer is not allocated!");
     }
