@@ -18,6 +18,17 @@ public class Warn {
     }
 
     /**
+     * Produce a warning for the given source location if deprecated is set (e.g. Warning[:deprecated] = true)
+     * @param context the current context
+     * @param fileName the filename for the warning
+     * @param lineNumber the line number for the warning
+     * @param message to be displayed as a warning
+     */
+    public static void warnDeprecated(ThreadContext context, String fileName, int lineNumber, String message) {
+        context.runtime.getWarnings().warnDeprecated(fileName, lineNumber, message);
+    }
+
+    /**
      * Produce a warning if deprecated is set (e.g. Warning[:deprecated] = true)
      * @param context the current context
      * @param message to be displayed as a warning

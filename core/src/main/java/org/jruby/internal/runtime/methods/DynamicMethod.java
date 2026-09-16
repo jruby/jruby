@@ -44,9 +44,11 @@ import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
+import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ivars.MethodData;
 import org.jruby.util.CodegenUtils;
@@ -253,8 +255,26 @@ public abstract class DynamicMethod {
         return name;
     }
 
+    /**
+     * The file this method was defined in, or null if it has no position (native methods). Follows aliases.
+     */
+    public String getSourceFile() {
+        return getRealMethod() instanceof PositionAware poser ? TraceType.maskInternalFiles(poser.getFile()) : null;
+    }
+
+    /**
+     * The line this method was defined on, 1-based, or non-positive if it has no usable position.
+     * Follows aliases.
+     */
+    public int getSourceLine() {
+        return getRealMethod() instanceof PositionAware poser ? poser.getLine() + 1 : -1;
+    }
+
     /*
-     * Will call respond_to?/respond_to_missing? on object and name
+     * Will call respond_to?/respond_to_missing? on object and name.
+     *
+     * Reached with priv false, where MRI passes one argument without looking at arity at all. Do not fold
+     * this into RubyClass's argument count rule, which is the priv-true side.
      */
     public boolean callRespondTo(ThreadContext context, IRubyObject self, String respondToMethodName, RubyModule klazz, RubySymbol name) {
         Signature signature = getSignature();

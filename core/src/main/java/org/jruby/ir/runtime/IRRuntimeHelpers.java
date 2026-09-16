@@ -1123,7 +1123,7 @@ public class IRRuntimeHelpers {
             defined = !checkIfPublic || method.getVisibility() == Visibility.PUBLIC;
         } else {
             // If we did not find the method, check respond_to_missing?
-            defined = receiver.respondsToMissing(name, checkIfPublic);
+            defined = RubyClass.checkRespondToMissing(context, receiver, name);
         }
 
         return defined ? definedMessage : context.nil;
