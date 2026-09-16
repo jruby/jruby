@@ -28,8 +28,10 @@ package org.jruby.ext.coverage;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
+import java.lang.ref.WeakReference;
 
 import org.jruby.RubyModule;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.ir.IRScope;
 
 /**
@@ -58,6 +60,8 @@ public final class MethodCoverage {
         }
     }
 
+    // The entry this counter is attached to, weak so it does not keep a discarded method alive. Used to detach.
+    private final WeakReference<DynamicMethod> entry;
     private final IRScope scope;
     private final RubyModule owner;
     private final String name;
@@ -67,7 +71,9 @@ public final class MethodCoverage {
     private final int endColumn;
     private volatile long count;
 
-    MethodCoverage(IRScope scope, RubyModule owner, String name, int startLine, int startColumn, int endLine, int endColumn) {
+    MethodCoverage(DynamicMethod entry, IRScope scope, RubyModule owner, String name, int startLine, int startColumn,
+                   int endLine, int endColumn) {
+        this.entry = new WeakReference<>(entry);
         this.scope = scope;
         this.owner = owner;
         this.name = name;
@@ -94,6 +100,21 @@ public final class MethodCoverage {
 
     public long getCount() {
         return count;
+    }
+
+    /**
+     * Remove this counter from the method entry it was attached to, leaving the entry uninstrumented.
+     *
+     * @return true if an entry was still attached and was detached
+     */
+    boolean detach() {
+        DynamicMethod method = entry.get();
+
+        if (method == null || method.getMethodCoverage() != this) return false;
+
+        method.setMethodCoverage(null);
+
+        return true;
     }
 
     /**

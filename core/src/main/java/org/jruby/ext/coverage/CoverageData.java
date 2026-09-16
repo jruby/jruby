@@ -27,8 +27,11 @@
 package org.jruby.ext.coverage;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.AbstractIRMethod;
@@ -41,6 +44,7 @@ import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.IRBlockBody;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.util.collections.IntList;
 
 import static org.jruby.ext.coverage.CoverageData.CoverageDataState.*;
@@ -200,11 +204,38 @@ public class CoverageData {
         if (this.coverage == null) this.coverage = new LinkedHashMap<>();
     }
 
-    public synchronized Map<String, FileCoverage> resetCoverage() {
-        Map<String, FileCoverage> coverage = this.coverage;
+    /**
+     * Stop measuring and hand back what was collected. Detaches every counter from its method entry, so no
+     * method is left instrumented after a run.
+     *
+     * @param context the current thread context
+     * @return the data collected since coverage was set up
+     */
+    public Map<String, FileCoverage> resetCoverage(ThreadContext context) {
+        Map<String, FileCoverage> coverage;
+        // By identity: RubyModule#hashCode can dispatch to a Ruby hash method, which must not run here.
+        Set<RubyModule> detached = Collections.newSetFromMap(new IdentityHashMap<>());
 
-        this.coverage = null;
-        this.mode = CoverageData.NONE;
+        synchronized (this) {
+            coverage = this.coverage;
+
+            this.coverage = null;
+            this.mode = CoverageData.NONE;
+
+            if (coverage != null) {
+                for (FileCoverage file : coverage.values()) {
+                    for (MethodCoverage method : file.getMethods()) {
+                        if (method.detach()) detached.add(method.getOwner());
+                    }
+                }
+            }
+        }
+
+        // Lets call sites bound to the counting path re-resolve. Kept outside our lock to avoid a deadlock: this
+        // takes the hierarchy lock, and a method being defined holds the method table lock then waits here.
+        for (RubyModule owner : detached) {
+            owner.invalidateCacheDescendants(context);
+        }
 
         return coverage;
     }
@@ -320,7 +351,7 @@ public class CoverageData {
         int endLine = scope.getEndLine();
         if (endLine >= 0) endLine++;
 
-        MethodCoverage methodCoverage = new MethodCoverage(scope, owner.getOrigin(), id,
+        MethodCoverage methodCoverage = new MethodCoverage(real, scope, owner.getOrigin(), id,
                 startLine, scope.getStartColumn(), endLine, scope.getEndColumn());
 
         file.getMethods().add(methodCoverage);

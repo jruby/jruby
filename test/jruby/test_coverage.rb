@@ -240,6 +240,26 @@ class TestCoverage < Test::Unit::TestCase
     end
   end
 
+  # Once measurement stops nothing stays instrumented: the counter is detached, so later calls do not pay for it.
+  def test_method_coverage_detaches_counters_when_measurement_stops
+    with_source("class Covered\n  def ping; end\nend\n") do |path|
+      Coverage.start(methods: true)
+      load path
+      entry = JRuby.reference(Covered).searchMethod('ping')
+      Covered.new.ping
+      assert_not_nil entry.getMethodCoverage
+
+      Coverage.result
+      assert_nil entry.getMethodCoverage
+
+      # A later run measures the file again from scratch rather than counting into the discarded counter.
+      Coverage.start(methods: true)
+      load path
+      Covered.new.ping
+      assert_equal 1, Coverage.result[path][:methods][key(Covered, :ping, 2, 'def', 'end')]
+    end
+  end
+
   def test_method_coverage_counts_are_exact_under_parallel_calls
     source = "def hot(x); x; end\nObject.send(:define_method, :hot_block) { |x| x }\n"
     with_source(source) do |path|

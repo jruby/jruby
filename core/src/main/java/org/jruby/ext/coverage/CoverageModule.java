@@ -164,7 +164,7 @@ public class CoverageModule {
         if (clear) data.clearCoverage();
         if (stop) {
             if (data.getCurrentState() == RUNNING) data.suspendCoverage();
-            data.resetCoverage();
+            data.resetCoverage(context);
             data.setCurrentState(IDLE);
         }
 
