@@ -21,8 +21,8 @@ end
 default_gems = [
   # treat RGs update special:
   # - we do not want bin/update_rubygems or bin/gem overrides
-  ['rubygems-update', '4.0.3', { bin: false, require_paths: ['lib'] }],
-  ['bundler', '4.0.3'],
+  ['rubygems-update', '4.0.21', { bin: false, require_paths: ['lib'] }],
+  ['bundler', '4.0.21'],
   # Currently using a stub gem for JRuby until we can incorporate our code.
   # https://github.com/ruby/date/issues/48
   ['date', '3.5.1'],
@@ -31,29 +31,29 @@ default_gems = [
   ['digest', '3.2.1'],
   ['english', '0.8.1'],
   # Ongoing discussion about the -java gem, since it just omits the ext: https://github.com/ruby/erb/issues/52
-  ['erb', '6.0.1.1'],
-  ['error_highlight', '0.7.1'],
+  ['erb', '6.0.7'],
+  ['error_highlight', '0.7.2'],
   # https://github.com/ruby/etc/issues/19
   # ['etc', '1.4.6'],
   # https://github.com/ruby/fcntl/issues/9
   # ['fcntl', '1.3.0'],
-  ['ffi', '1.17.0'],
+  ['ffi', '1.17.4'],
   # Temporarily moved back to default gems, see https://github.com/jruby/jruby/issues/9278
   ['fiddle', '1.1.8'],
   ['fileutils', '1.8.0'],
   ['find', '0.2.0'],
   ['forwardable', '1.4.0'],
-  ['io-console', '0.8.2'],
+  ['io-console', '0.9.3'],
   # https://github.com/ruby/io-nonblock/issues/4
   # ['io-nonblock', '0.3.2'],
   ['io-wait', '1.0.0'],
-  ['ipaddr', '1.2.8'],
+  ['ipaddr', '1.2.9'],
   ['jar-dependencies', '0.6.0'],
   ['jruby-readline', '1.3.7'],
   ['jruby-openssl', '0.16.2'],
-  ['json', '2.18.0'],
+  ['json', '3.0.2'],
   ['net-http', '0.9.1'],
-  ['net-protocol', '0.2.2'],
+  ['net-protocol', '0.3.0'],
   ['open-uri', '0.5.0'],
   ['open3', '0.2.1'],
   # https://github.com/ruby/openssl/issues/20#issuecomment-1022872855
@@ -61,11 +61,11 @@ default_gems = [
   ['optparse', '0.8.1'],
   # https://github.com/ruby/pathname/issues/17
   # ['pathname', '0.4.0'],
-  ['pp', '0.6.3'],
+  ['pp', '0.6.4'],
   ['prettyprint', '0.2.0'],
   # Not ready to ship in the box yet (native dependencies)
   # ['prism', '1.6.0'],
-  ['psych', '5.3.1'],
+  ['psych', '5.5.0'],
   ['rake-ant', '1.0.6'],
   ['resolv', '0.7.2'],
   ['ruby2_keywords', '0.0.5'],
@@ -73,22 +73,22 @@ default_gems = [
   ['shellwords', '0.2.2'],
   ['singleton', '0.3.0'],
   ['stringio', '3.2.0'],
-  ['strscan', '3.1.6'],
+  ['strscan', '3.1.8'],
   ['subspawn', '0.1.1'], # has 3 transitive deps:
   ['subspawn-posix', '0.1.1'],
   ['ffi-binary-libfixposix', '0.5.1.1'],
   ['ffi-bindings-libfixposix', '0.5.1.0'],
-  ['syntax_suggest', '2.0.2'],
+  ['syntax_suggest', '3.0.0'],
   ['tempfile', '0.3.1'],
   ['time', '0.4.2'],
-  ['timeout', '0.6.0'],
+  ['timeout', '0.6.1'],
   # https://github.com/ruby/tmpdir/issues/13
   # ['tmpdir', '0.3.1'],
   ['tsort', '0.2.0'],
   ['un', '0.3.0'],
   ['uri', '1.1.1'],
   ['weakref', '0.1.4'],
-  ['win32-registry', '0.1.1'],
+  ['win32-registry', '0.1.2'],
   # https://github.com/ruby/win32ole/issues/12
   # ['win32ole', '1.9.0'],
   ['yaml', '0.4.0']
@@ -101,8 +101,8 @@ bundled_gems = [
   ['base64', '0.3.0'],
   ['benchmark', '0.5.0'],
   # Extension still lives in JRuby. See https://github.com/ruby/bigdecimal/issues/268
-  ['bigdecimal', '4.0.1'],
-  ['csv', '3.3.5'],
+  ['bigdecimal', '4.1.3'],
+  ['csv', '3.3.6'],
   # Newer versions require deep control over CRuby internals, needs work to support JRuby.
   # ['debug', '1.11.1'],
   ['debug', '0.2.1'],
@@ -111,23 +111,23 @@ bundled_gems = [
   ['irb', '1.16.0'],
   ['logger', '1.7.0'],
   ['matrix', '0.4.3'],
-  ['minitest', '6.0.0'],
+  ['minitest', '6.0.6'],
   ['mutex_m', '0.3.0'],
   ['net-ftp', '0.3.9'],
-  ['net-imap', '0.6.2'],
+  ['net-imap', '0.6.7'],
   ['net-pop', '0.1.2'],
   ['net-smtp', '0.5.1'],
-  ['nkf', '0.2.0'],
+  ['nkf', '0.3.0'],
   ['observer', '0.1.2'],
   ['ostruct', '0.6.3'],
   ['power_assert', '3.0.1'],
   ['prime', '0.1.4'],
-  ['pstore', '0.2.0'],
+  ['pstore', '0.2.1'],
   ['racc', '1.8.1'],
   ['rake', '${rake.version}'],
-  # Depends on many CRuby internals
-  # ['rbs', '3.10.0'],
-  ['rdoc', '7.0.3'],
+  # supported with WASM now but required libraries not yet exposed
+  # ['rbs', '4.2.0'],
+  ['rdoc', '8.0.0'],
   # Ext removed from CRuby in 3.3, equivalent for us would be to remove jruby-readline but unknown implications.
   # The gem below just attempts to load the extension, and failing that loads reline. Our current readline.rb in
   # jruby-readline does largely the same, but it finds the extension and does not load reline.
@@ -135,15 +135,15 @@ bundled_gems = [
   # ['readline', '0.0.4'],
   # Will be solved with readline
   # ['readline-ext', '0.2.0'],
-  ['reline', '0.6.3'],
+  ['reline', '0.7.0'],
   # Depends on prism gem with native ext
   # ['repl_type_completer', '0.1.12'],
-  ['resolv-replace', '0.1.1'],
+  ['resolv-replace', '0.2.0'],
   ['rexml', '3.4.4'],
   ['rinda', '0.2.0'],
-  ['rss', '0.3.2'],
+  ['rss', '0.3.3'],
   ['syslog', '0.4.0'],
-  ['test-unit', '3.7.5']
+  ['test-unit', '3.7.8']
   # Depends on many CRuby internals
   # ['typeprof', '0.31.1'],
 ]
