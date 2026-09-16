@@ -119,6 +119,9 @@ public abstract class RubyParserBase {
 
     private int[] coverage = EMPTY_COVERAGE;
 
+    // The line the most recent coverLine call marked, or -1 if an earlier statement had already marked it.
+    private int lastNewlyCoveredLine = -1;
+
     private static final int[] EMPTY_COVERAGE = new int[0];
 
     private StringStyle stringStyle = Chilled;
@@ -2404,22 +2407,25 @@ public abstract class RubyParserBase {
      * Zero out coverable lines as they're encountered
      */
     public void coverLine(int i) {
+        lastNewlyCoveredLine = -1;
         // We had an overflow so we cannot mark whatever line this is as covered.
         if (i < 0) return;
         if (isCoverageEnabled()) {
             growCoverageLines(i);
+            if (coverage[i] != 0) lastNewlyCoveredLine = i;
             coverage[i] = 0;
         }
     }
 
     /**
-     * Forget that a line has code on it (a statement marked by newline_node that turned out not to be a line
+     * Undo the most recent coverLine (a statement marked by newline_node that turned out not to be a line
      * event, such as a lone statement inside a string interpolation): the line reads as nil in the results
-     * unless another statement marks it.
+     * unless another statement marks it. A line some earlier statement had already marked stays marked.
      */
-    public void uncoverLine(int i) {
-        if (i < 0 || coverage == null || i >= coverage.length) return;
-        if (isCoverageEnabled()) coverage[i] = -1;
+    public void uncoverLastLine() {
+        if (lastNewlyCoveredLine < 0) return;
+        coverage[lastNewlyCoveredLine] = -1;
+        lastNewlyCoveredLine = -1;
     }
 
     /**

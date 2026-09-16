@@ -4030,8 +4030,10 @@ string_content  : tSTRING_CONTENT {
                    if ($6 != null) {
                        // A lone statement in an interpolation is not a line event of its own (MRI); the
                        // string it is part of is. Several statements in one interpolation each remain one.
+                       // MRI's compiler marks coverable lines from the newline flag, but newline_node marked
+                       // this one already, so undo that too (it was the last line newline_node marked).
+                       if ($6.isNewline()) p.uncoverLastLine();
                        $6.unsetNewline();
-                       p.uncoverLine(@6.start());
                    }
                    $$ = p.newEvStrNode(@6.start(), $6);
                    /*% %*/
