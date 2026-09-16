@@ -54,8 +54,7 @@ public class UnionFillerTest extends TestCase {
         assertCells("darwin aarch64", doubles, CPU_TYPE.AARCH64, OS_TYPE.DARWIN, Type.DOUBLE, Type.DOUBLE);
         assertCells("windows x86_64", doubles, CPU_TYPE.X86_64, OS_TYPE.WINDOWS, Type.DOUBLE, Type.DOUBLE);
 
-        // riscv64 has no CPU_TYPE of its own and is reported as UNKNOWN.
-        for (CPU_TYPE cpu : new CPU_TYPE[] { CPU_TYPE.S390X, CPU_TYPE.LOONGARCH64, CPU_TYPE.UNKNOWN }) {
+        for (CPU_TYPE cpu : new CPU_TYPE[] { CPU_TYPE.RISCV64, CPU_TYPE.S390X, CPU_TYPE.LOONGARCH64, CPU_TYPE.UNKNOWN }) {
             assertCells(cpu.name(), doubles, cpu, OS_TYPE.LINUX, Type.SINT64, Type.SINT64);
         }
     }
