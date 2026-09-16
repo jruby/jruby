@@ -9,7 +9,7 @@ import org.jruby.ext.ffi.Platform.OS_TYPE;
 import org.jruby.ext.ffi.StructLayout;
 
 import java.lang.reflect.Field;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -34,15 +34,26 @@ public class UnionFillerTest extends TestCase {
                 "require 'ffi'; Class.new(FFI::Union) { layout " + members + " }.layout");
     }
 
-    private static List<Type> cells(Aggregate descriptor) throws Exception {
+    private static List<String> cells(Aggregate descriptor) throws Exception {
         Field fields = descriptor.getClass().getDeclaredField("fields");
         fields.setAccessible(true);
-        return Arrays.asList((Type[]) fields.get(descriptor));
+        return names((Type[]) fields.get(descriptor));
+    }
+
+    /** jffi types print as Type$Builtin@hash; name the ones a union filler can be, so a failure reads. */
+    private static List<String> names(Type... types) {
+        List<String> names = new ArrayList<>();
+        for (Type t : types) {
+            names.add(t == Type.DOUBLE ? "DOUBLE" : t == Type.FLOAT ? "FLOAT" : t == Type.SINT64 ? "SINT64"
+                    : t == Type.SINT32 ? "SINT32" : t == Type.SINT16 ? "SINT16" : t == Type.SINT8 ? "SINT8"
+                    : "type" + t.type() + "/" + t.size());
+        }
+        return names;
     }
 
     private static void assertCells(String message, StructLayout layout, CPU_TYPE cpu, OS_TYPE os, Type... expected)
             throws Exception {
-        assertEquals(message, Arrays.asList(expected), cells(FFIUtil.newUnion(layout, cpu, os)));
+        assertEquals(message, names(expected), cells(FFIUtil.newUnion(layout, cpu, os)));
     }
 
     public void testHomogeneousDoublesUseTheFloatFillerOnlyWhereUnionsCanBeFloatingAggregates() throws Exception {
