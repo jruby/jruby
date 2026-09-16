@@ -139,9 +139,6 @@ public final class FFIUtil {
         }
     }
 
-    private static final boolean SYSV_X86_64 = Platform.getPlatform().getCPU() == Platform.CPU_TYPE.X86_64
-            && Platform.getPlatform().getOS() != Platform.OS_TYPE.WINDOWS;
-
     private static final com.kenai.jffi.Type[] INTEGER_FILLERS = {
             com.kenai.jffi.Type.SINT8, com.kenai.jffi.Type.SINT16, com.kenai.jffi.Type.SINT32,
             com.kenai.jffi.Type.SINT64, com.kenai.jffi.Type.LONGDOUBLE,
@@ -157,7 +154,14 @@ public final class FFIUtil {
      * @return A new Struct descriptor.
      */
     static final com.kenai.jffi.Aggregate newUnion(org.jruby.ext.ffi.StructLayout layout) {
+        return newUnion(layout, Platform.getPlatform().getCPU(), Platform.getPlatform().getOS());
+    }
+
+    /** The same choice for a given CPU and OS, so the ABI rules can be checked off the host. */
+    static final com.kenai.jffi.Aggregate newUnion(org.jruby.ext.ffi.StructLayout layout,
+                                                   Platform.CPU_TYPE cpu, Platform.OS_TYPE os) {
         final int size = layout.getNativeSize(), alignment = layout.getNativeAlignment();
+        final boolean sysvX86_64 = cpu == Platform.CPU_TYPE.X86_64 && os != Platform.OS_TYPE.WINDOWS;
 
         java.util.List<Leaf> leaves = new java.util.ArrayList<>();
         for (StructLayout.Member m : layout.getMembers()) {
@@ -175,7 +179,7 @@ public final class FFIUtil {
             // on AArch64 (and PPC64 ELFv2), SSE class on SysV x86_64. Keep the real type.
             filler = getFFIType(homogeneous);
 
-        } else if (SYSV_X86_64 && alignment >= 4 && alignment <= 8 && size <= 16) {
+        } else if (sysvX86_64 && alignment >= 4 && alignment <= 8 && size <= 16) {
             // SysV x86_64 classifies each eightbyte separately: SSE only if every field overlapping it
             // is float or double, INTEGER otherwise. Decide per cell: libffi merges the cells into
             // eightbytes at the union's offset inside an enclosing struct, so the result holds there too.
