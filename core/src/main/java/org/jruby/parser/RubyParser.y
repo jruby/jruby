@@ -1940,7 +1940,8 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                 | arg '?' arg opt_nl ':' arg {
                     /*%%%*/
                     p.value_expr($1);
-                    $$ = p.new_if(@1.start(), $1, $3, $6);
+                    // Each arm of a ternary is a statement of its own for line events, as in MRI.
+                    $$ = p.new_if(@1.start(), $1, p.newline_node($3, @3.start()), p.newline_node($6, @6.start()));
                     /*% %*/
                     /*% ripper: ifop!($1, $3, $6) %*/
                 }

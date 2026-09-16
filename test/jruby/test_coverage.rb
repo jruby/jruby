@@ -104,6 +104,19 @@ class TestCoverage < Test::Unit::TestCase
     RUBY
   end
 
+  def test_ternary_arms_are_line_events
+    assert_equal [1, 1, 1, 1, 0, 1, 1, nil], line_coverage(<<~'RUBY')
+      y = [1]
+      x = y.size ?
+        1 : 2
+      if y.empty? ?
+           y.first :
+           y.last
+        z = 1
+      end
+    RUBY
+  end
+
   private
 
   def line_coverage(code)
