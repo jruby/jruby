@@ -72,6 +72,28 @@ describe 'Union by value calling convention' do
     attach_function :union_f64x4_callback, [:double, :double, :double, :double, :f64x4_cb], :double
     attach_function :union_f32_f64_callback, [:double, :f32_f64_cb], :double
     attach_function :union_f64x4_callback_ret_t, [:f64x4_make_cb], :double
+
+    class F32x2I32 < FFI::Union
+      layout :f, [:float, 2], :i, :int32
+    end
+    class StructUnionAt4 < FFI::Struct
+      layout :a, :int32, :u, F32x2I32
+    end
+    class F32x3I32 < FFI::Union
+      layout :f, [:float, 3], :i, :int32
+    end
+    class StructUnion12At4 < FFI::Struct
+      layout :a, :int32, :u, F32x3I32
+    end
+    attach_function :struct_union_at4_make, [:int32, :float, :float], StructUnionAt4.by_value
+    attach_function :struct_union_at4_get_a, [StructUnionAt4.by_value], :int32
+    attach_function :struct_union_at4_get_f1, [StructUnionAt4.by_value], :float
+    attach_function :struct_union12_at4_make, [:int32, :float, :float, :float], StructUnion12At4.by_value
+    attach_function :struct_union12_at4_get_f2, [StructUnion12At4.by_value], :float
+    callback :struct_union_at4_cb, [StructUnionAt4.by_value], :float
+    callback :struct_union_at4_make_cb, [:int32, :float, :float], StructUnionAt4.by_value
+    attach_function :struct_union_at4_callback, [:int32, :float, :float, :struct_union_at4_cb], :float
+    attach_function :struct_union_at4_callback_ret_f1, [:struct_union_at4_make_cb], :float
   end
 
   it 'passes and returns a union of int64 and double as an integer' do
@@ -136,5 +158,32 @@ describe 'Union by value calling convention' do
       u
     end
     expect(t).to eq(4.5)
+  end
+  it 'passes and returns a struct holding a mixed union at offset four' do
+    s = UnionByValueLibTest.struct_union_at4_make(7, 1.5, 2.5)
+    expect(s[:a]).to eq(7)
+    expect(s[:u][:f].to_a).to eq([1.5, 2.5])
+    expect(UnionByValueLibTest.struct_union_at4_get_a(s)).to eq(7)
+    expect(UnionByValueLibTest.struct_union_at4_get_f1(s)).to eq(2.5)
+  end
+
+  it 'passes and returns a struct holding a twelve-byte mixed union at offset four' do
+    s = UnionByValueLibTest.struct_union12_at4_make(7, 1.5, 2.5, 3.5)
+    expect(s[:u][:f].to_a).to eq([1.5, 2.5, 3.5])
+    expect(UnionByValueLibTest.struct_union12_at4_get_f2(s)).to eq(3.5)
+  end
+
+  it 'passes a struct holding a mixed union at offset four to a callback' do
+    r = UnionByValueLibTest.struct_union_at4_callback(7, 1.5, 2.5) { |s| s[:u][:f][1] - s[:a] }
+    expect(r).to eq(-4.5)
+  end
+
+  it 'returns a struct holding a mixed union at offset four from a callback' do
+    r = UnionByValueLibTest.struct_union_at4_callback_ret_f1 do |a, f0, f1|
+      s = UnionByValueLibTest::StructUnionAt4.new
+      s[:a] = a; s[:u][:f][0] = f0; s[:u][:f][1] = f1
+      s
+    end
+    expect(r).to eq(2.5)
   end
 end

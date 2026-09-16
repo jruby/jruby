@@ -92,3 +92,48 @@ double union_f32_f64_callback(double d, double (*cb)(union_f32_f64_t)) {
 double union_f64x4_callback_ret_t(union_f64x4_t (*cb)(double, double, double, double)) {
     return cb(1.5, 2.5, 3.5, 4.5).coord.t;
 }
+
+/*
+ * A 4-aligned union whose cells differ in class, placed at offset 4 in a struct:
+ * the outer eightbytes are (INTEGER, SSE) on SysV x86_64, so the union's own
+ * eightbyte boundaries do not apply.
+ */
+typedef union {
+    float f[2];
+    int32_t i;
+} union_f32x2_i32_t;
+
+typedef struct {
+    int32_t a;
+    union_f32x2_i32_t u;
+} struct_union_at4_t;
+
+typedef union {
+    float f[3];
+    int32_t i;
+} union_f32x3_i32_t;
+
+typedef struct {
+    int32_t a;
+    union_f32x3_i32_t u;
+} struct_union12_at4_t;
+
+struct_union_at4_t struct_union_at4_make(int32_t a, float f0, float f1) {
+    struct_union_at4_t s; s.a = a; s.u.f[0] = f0; s.u.f[1] = f1; return s;
+}
+int32_t struct_union_at4_get_a(struct_union_at4_t s) { return s.a; }
+float struct_union_at4_get_f1(struct_union_at4_t s) { return s.u.f[1]; }
+
+struct_union12_at4_t struct_union12_at4_make(int32_t a, float f0, float f1, float f2) {
+    struct_union12_at4_t s; s.a = a; s.u.f[0] = f0; s.u.f[1] = f1; s.u.f[2] = f2; return s;
+}
+float struct_union12_at4_get_f2(struct_union12_at4_t s) { return s.u.f[2]; }
+
+float struct_union_at4_callback(int32_t a, float f0, float f1, float (*cb)(struct_union_at4_t)) {
+    struct_union_at4_t s; s.a = a; s.u.f[0] = f0; s.u.f[1] = f1;
+    return cb(s);
+}
+
+float struct_union_at4_callback_ret_f1(struct_union_at4_t (*cb)(int32_t, float, float)) {
+    return cb(7, 1.5f, 2.5f).u.f[1];
+}
