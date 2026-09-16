@@ -1743,6 +1743,7 @@ public abstract class RubyParserBase {
                 if (front.getValue().getRealSize() > 0) {
                     return new StrNode(head.getLine(), front, (StrNode) tail);
                 } else {
+                    tail.setLine(head.getLine());
                     return tail;
                 }
             } 
@@ -2187,7 +2188,7 @@ public abstract class RubyParserBase {
             ByteList meat = (ByteList) ((StrNode) contents).getValue().clone();
             lexer.checkRegexpFragment(runtime, meat, options);
             lexer.checkRegexpSyntax(runtime, meat, options.withoutOnce());
-            return new RegexpNode(contents.getLine(), meat, options.withoutOnce());
+            return new RegexpNode(line, meat, options.withoutOnce());
         } else if (contents instanceof DStrNode) {
             DStrNode dStrNode = (DStrNode) contents;
             

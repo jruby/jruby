@@ -4158,11 +4158,12 @@ states[358] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[359] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    Integer position = yyVals[yyTop - count + 2].start();
+                    Integer position = yyVals[yyTop - count + 1].start();
                     if (((Node)yyVals[-1+yyTop].value) == null) {
                         yyVal = new ZArrayNode(position); /* zero length array */
                     } else {
                         yyVal = ((Node)yyVals[-1+yyTop].value);
+                        ((Node)yyVal).setLine(position); /* where it starts, not where its first element is */
                     }
                     /*% %*/
                     /*% ripper: array!(escape_Qundef($2)) %*/
@@ -4172,6 +4173,7 @@ states[360] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     /*%%%*/
                     yyVal = ((HashNode)yyVals[-1+yyTop].value);
                     ((HashNode)yyVal).setIsLiteral();
+                    ((HashNode)yyVal).setLine(yyVals[yyTop - count + 1].start());
                     /*% %*/
                     /*% ripper: hash!(escape_Qundef($2)) %*/
   return yyVal;
@@ -5757,6 +5759,7 @@ states[632] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[633] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     p.heredoc_dedent(((Node)yyVals[-1+yyTop].value));
+                    if (((Node)yyVals[-1+yyTop].value) != null) ((Node)yyVals[-1+yyTop].value).setLine(yyVals[yyTop - count + 1].start()); /* where it starts, not where its contents end */
                     yyVal = ((Node)yyVals[-1+yyTop].value);
                     /*% %*/
                     /*% ripper: string_literal!(heredoc_dedent(p, $2)) %*/
@@ -5764,7 +5767,7 @@ states[633] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[634] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    int line = yyVals[yyTop - count + 2].start();
+                    int line = yyVals[yyTop - count + 1].start();
 
                     p.heredoc_dedent(((Node)yyVals[-1+yyTop].value));
 
@@ -5784,7 +5787,7 @@ states[634] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[635] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.new_regexp(yyVals[yyTop - count + 2].start(), ((Node)yyVals[-1+yyTop].value), ((RegexpNode)yyVals[0+yyTop].value));
+                    yyVal = p.new_regexp(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-1+yyTop].value), ((RegexpNode)yyVals[0+yyTop].value));
   return yyVal;
 };
 states[636] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -5793,6 +5796,7 @@ states[636] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[638] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = ((ListNode)yyVals[-1+yyTop].value);
+                    ((Node)yyVal).setLine(yyVals[yyTop - count + 1].start());
                     /*% %*/
                     /*% ripper: array!($3) %*/
   return yyVal;
@@ -5806,7 +5810,7 @@ states[639] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[640] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                     yyVal = ((ListNode)yyVals[-2+yyTop].value).add(((Node)yyVals[-1+yyTop].value) instanceof EvStrNode ? new DStrNode(yyVals[yyTop - count + 1].start(), p.getEncoding()).add(((Node)yyVals[-1+yyTop].value)) : ((Node)yyVals[-1+yyTop].value));
+                     yyVal = ((ListNode)yyVals[-2+yyTop].value).add(((Node)yyVals[-1+yyTop].value) instanceof EvStrNode ? new DStrNode(yyVals[yyTop - count + 2].start(), p.getEncoding()).add(((Node)yyVals[-1+yyTop].value)) : ((Node)yyVals[-1+yyTop].value));
                     /*% %*/
                     /*% ripper: words_add!($1, $2) %*/
   return yyVal;
@@ -5826,6 +5830,7 @@ states[642] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[643] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = ((ListNode)yyVals[-1+yyTop].value);
+                    ((Node)yyVal).setLine(yyVals[yyTop - count + 1].start());
                     /*% %*/
                     /*% ripper: array!($3) %*/
   return yyVal;
@@ -5839,7 +5844,7 @@ states[644] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[645] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = ((ListNode)yyVals[-2+yyTop].value).add(((Node)yyVals[-1+yyTop].value) instanceof EvStrNode ? new DSymbolNode(yyVals[yyTop - count + 1].start()).add(((Node)yyVals[-1+yyTop].value)) : p.asSymbol(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-1+yyTop].value)));
+                    yyVal = ((ListNode)yyVals[-2+yyTop].value).add(((Node)yyVals[-1+yyTop].value) instanceof EvStrNode ? new DSymbolNode(yyVals[yyTop - count + 2].start()).add(((Node)yyVals[-1+yyTop].value)) : p.asSymbol(yyVals[yyTop - count + 2].start(), ((Node)yyVals[-1+yyTop].value)));
                     /*% %*/
                     /*% ripper: symbols_add!($1, $2) %*/
   return yyVal;
@@ -5847,6 +5852,7 @@ states[645] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[646] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = ((ListNode)yyVals[-1+yyTop].value);
+                    ((Node)yyVal).setLine(yyVals[yyTop - count + 1].start());
                     /*% %*/
                     /*% ripper: array!($3) %*/
   return yyVal;
@@ -5854,6 +5860,7 @@ states[646] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[647] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = ((ListNode)yyVals[-1+yyTop].value);
+                    ((Node)yyVal).setLine(yyVals[yyTop - count + 1].start());
                     /*% %*/
                     /*% ripper: array!($3) %*/
   return yyVal;
@@ -5881,7 +5888,7 @@ states[650] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[651] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = ((ListNode)yyVals[-2+yyTop].value).add(p.asSymbol(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-1+yyTop].value)));
+                    yyVal = ((ListNode)yyVals[-2+yyTop].value).add(p.asSymbol(yyVals[yyTop - count + 2].start(), ((Node)yyVals[-1+yyTop].value)));
                     /*% %*/
                     /*% ripper: qsymbols_add!($1, $2) %*/
   return yyVal;
@@ -6025,11 +6032,11 @@ states[675] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     if (((Node)yyVals[-1+yyTop].value) == null) {
                         yyVal = p.asSymbol(p.src_line(), new ByteList(new byte[] {}));
                     } else if (((Node)yyVals[-1+yyTop].value) instanceof DStrNode) {
-                        yyVal = new DSymbolNode(yyVals[yyTop - count + 2].start(), ((DStrNode)yyVals[-1+yyTop].value));
+                        yyVal = new DSymbolNode(yyVals[yyTop - count + 1].start(), ((DStrNode)yyVals[-1+yyTop].value));
                     } else if (((Node)yyVals[-1+yyTop].value) instanceof StrNode) {
-                        yyVal = p.asSymbol(yyVals[yyTop - count + 2].start(), ((Node)yyVals[-1+yyTop].value));
+                        yyVal = p.asSymbol(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-1+yyTop].value));
                     } else {
-                        yyVal = new DSymbolNode(yyVals[yyTop - count + 2].start());
+                        yyVal = new DSymbolNode(yyVals[yyTop - count + 1].start());
                         ((DSymbolNode)yyVal).add(((Node)yyVals[-1+yyTop].value));
                     }
                     /*% %*/
@@ -6815,11 +6822,11 @@ states[793] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[794] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     if (((Node)yyVals[-2+yyTop].value) instanceof StrNode) {
-                        DStrNode dnode = new DStrNode(yyVals[yyTop - count + 2].start(), p.getEncoding());
+                        DStrNode dnode = new DStrNode(yyVals[yyTop - count + 1].start(), p.getEncoding());
                         dnode.add(((Node)yyVals[-2+yyTop].value));
-                        yyVal = p.createKeyValue(new DSymbolNode(yyVals[yyTop - count + 2].start(), dnode), ((Node)yyVals[0+yyTop].value));
+                        yyVal = p.createKeyValue(new DSymbolNode(yyVals[yyTop - count + 1].start(), dnode), ((Node)yyVals[0+yyTop].value));
                     } else if (((Node)yyVals[-2+yyTop].value) instanceof DStrNode) {
-                        yyVal = p.createKeyValue(new DSymbolNode(yyVals[yyTop - count + 2].start(), ((DStrNode)yyVals[-2+yyTop].value)), ((Node)yyVals[0+yyTop].value));
+                        yyVal = p.createKeyValue(new DSymbolNode(yyVals[yyTop - count + 1].start(), ((DStrNode)yyVals[-2+yyTop].value)), ((Node)yyVals[0+yyTop].value));
                     } else {
                         p.compile_error("Uknown type for assoc in strings: " + ((Node)yyVals[-2+yyTop].value));
                     }
@@ -6915,7 +6922,7 @@ states[826] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4911 "parse.y"
+					// line 4918 "parse.y"
 
 }
-					// line 15253 "-"
+					// line 15260 "-"
