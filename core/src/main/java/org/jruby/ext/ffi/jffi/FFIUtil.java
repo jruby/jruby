@@ -176,14 +176,15 @@ public final class FFIUtil {
             filler = getFFIType(homogeneous);
 
         } else if (SYSV_X86_64 && alignment >= 4 && alignment <= 8 && size <= 16) {
-            // SysV x86_64 classifies each eightbyte separately: SSE only if every field
-            // overlapping it is float or double, INTEGER otherwise.
+            // SysV x86_64 classifies each eightbyte separately: SSE only if every field overlapping it
+            // is float or double, INTEGER otherwise. Decide per cell: libffi merges the cells into
+            // eightbytes at the union's offset inside an enclosing struct, so the result holds there too.
             com.kenai.jffi.Type[] cells = new com.kenai.jffi.Type[size / alignment];
             for (int i = 0; i < cells.length; i++) {
-                int eightbyte = (i * alignment) & ~7;
+                int cell = i * alignment;
                 boolean sse = true;
                 for (Leaf leaf : leaves) {
-                    if (leaf.offset() < eightbyte + 8 && leaf.offset() + leaf.size() > eightbyte
+                    if (leaf.offset() < cell + alignment && leaf.offset() + leaf.size() > cell
                             && leaf.type() != NativeType.FLOAT && leaf.type() != NativeType.DOUBLE) {
                         sse = false;
                         break;
