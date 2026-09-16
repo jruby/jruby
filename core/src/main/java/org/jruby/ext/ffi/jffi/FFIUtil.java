@@ -141,7 +141,7 @@ public final class FFIUtil {
 
     private static final com.kenai.jffi.Type[] INTEGER_FILLERS = {
             com.kenai.jffi.Type.SINT8, com.kenai.jffi.Type.SINT16, com.kenai.jffi.Type.SINT32,
-            com.kenai.jffi.Type.SINT64, com.kenai.jffi.Type.LONGDOUBLE,
+            com.kenai.jffi.Type.SINT64,
     };
 
     private record Leaf(NativeType type, int offset, int size) {}
@@ -226,7 +226,7 @@ public final class FFIUtil {
     }
 
     private static boolean isFloatingPoint(NativeType type) {
-        return type == NativeType.FLOAT || type == NativeType.DOUBLE || type == NativeType.LONGDOUBLE;
+        return type == NativeType.FLOAT || type == NativeType.DOUBLE;
     }
 
     /** Flattens arrays, nested structs/unions and mapped types into scalar leaves with their offsets. */
