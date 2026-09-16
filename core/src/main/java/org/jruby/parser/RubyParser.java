@@ -3733,7 +3733,8 @@ states[285] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[286] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     p.value_expr(((Node)yyVals[-5+yyTop].value));
-                    yyVal = p.new_if(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-5+yyTop].value), ((Node)yyVals[-3+yyTop].value), ((Node)yyVals[0+yyTop].value));
+                    /* Each arm of a ternary is a statement of its own for line events, as in MRI.*/
+                    yyVal = p.new_if(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-5+yyTop].value), p.newline_node(((Node)yyVals[-3+yyTop].value), yyVals[yyTop - count + 3].start()), p.newline_node(((Node)yyVals[0+yyTop].value), yyVals[yyTop - count + 6].start()));
                     p.branch_ternary(((Node)yyVal), ((Node)yyVals[-5+yyTop].value), yyVals[yyTop - count + 1].end);
                     /*% %*/
                     /*% ripper: ifop!($1, $3, $6) %*/
@@ -6928,7 +6929,7 @@ states[826] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4924 "parse.y"
+					// line 4925 "parse.y"
 
 }
-					// line 15266 "-"
+					// line 15267 "-"
