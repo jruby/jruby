@@ -4,3 +4,15 @@ windows:IO.copy_stream from a file name to a file name copies only length bytes 
 windows:IO.copy_stream from a file name to an IO copies only length bytes from the offset
 windows:IO.copy_stream with non-IO Objects calls #read on the source Object
 windows:IO.copy_stream from an IO does change the IO offset when an offset is not specified
+windows:IO.copy_stream from an IO to a file name returns the number of bytes copied
+windows:IO.copy_stream from an IO to an IO returns the number of bytes copied
+windows:IO.copy_stream from an IO to an IO leaves the destination IO position at the last write
+windows:IO.copy_stream from an IO to a Tempfile returns the number of bytes copied
+windows:IO.copy_stream from an IO to a Tempfile leaves the destination IO position at the last write
+windows:IO.copy_stream from a file name to a file name returns the number of bytes copied
+windows:IO.copy_stream from a file name to an IO returns the number of bytes copied
+windows:IO.copy_stream from a file name to an IO leaves the destination IO position at the last write
+windows:IO.copy_stream from a pipe IO to a file name returns the number of bytes copied
+windows:IO.copy_stream from a pipe IO to an IO returns the number of bytes copied
+windows:IO.copy_stream from a pipe IO to an IO leaves the destination IO position at the last write
+windows:IO.copy_stream with non-IO Objects calls #write on the destination Object

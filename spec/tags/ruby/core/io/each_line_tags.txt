@@ -1,1 +1,5 @@
 hangs:IO#each_line with limit when limit is 0 raises an ArgumentError
+windows:IO#each_line with no separator yields each line starting from the current position
+windows:IO#each_line when passed nil as a separator yields self's content starting from the current position when the passed separator is nil
+windows:IO#each_line with both separator and limit when a block is given when passed nil as a separator yields self's content starting from the current position when the passed separator is nil
+windows:IO#each_line when passed chomp and nil as a separator yields self's content

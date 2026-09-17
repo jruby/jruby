@@ -1,0 +1,1 @@
+windows:ARGF.each_codepoint yields each codepoint of all streams
