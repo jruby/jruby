@@ -296,6 +296,7 @@ platform_is :windows do
     it "returns the number of bytes given, not the number written, in text mode" do
       @io = new_io(@fname, "w")
       @io.write("a\nb\n").should == 4
+      @io.close
     end
 
     it "does not normalize line endings in binary mode" do
