@@ -1003,17 +1003,26 @@ public class OpenFile implements Finalizable {
     public boolean needsWriteConversion(ThreadContext context) {
         Encoding ascii8bit = encodingService(context).getAscii8bitEncoding();
 
-        return needsWriteConversion(Platform.IS_WINDOWS, encs.enc, ascii8bit, mode, encs.ecflags);
+        return needsWriteConversion(Platform.IS_WINDOWS, crtTranslatesWrites(), encs.enc, ascii8bit, mode, encs.ecflags);
+    }
+
+    // MRI: rb_w32_write lets the C runtime insert the CRs only on a file or on the process's own stdout
+    // and stderr; a pipe is written raw even in text mode, so the default CRLF marker alone must not
+    // select the write converter there.
+    boolean crtTranslatesWrites() {
+        return fd != null && (fd.chFile != null || isStdio());
     }
 
     // MRI: NEED_WRITECONV with the platform passed in. MRI leaves the CRLF decorator out of its Windows
     // mask because the C runtime's O_TEXT descriptors write CRLF; the JDK has no text mode, so the write
-    // converter must apply it.
-    static boolean needsWriteConversion(boolean crlfEnvironment, Encoding enc, Encoding ascii8bit, int mode, int ecflags) {
-        return crlfEnvironment ?
-                ((enc != null && enc != ascii8bit) || (ecflags & (EConvFlags.DECORATOR_MASK|EConvFlags.STATEFUL_DECORATOR_MASK)) != 0)
-                :
-                ((enc != null && enc != ascii8bit) || (mode & TEXTMODE) != 0 || (ecflags & (EConvFlags.DECORATOR_MASK|EConvFlags.STATEFUL_DECORATOR_MASK)) != 0);
+    // converter must apply it where the C runtime would (crtTranslatesWrites).
+    static boolean needsWriteConversion(boolean crlfEnvironment, boolean crtTranslatesWrites, Encoding enc, Encoding ascii8bit, int mode, int ecflags) {
+        if (crlfEnvironment) {
+            int decorators = crtTranslatesWrites ?
+                    EConvFlags.DECORATOR_MASK : EConvFlags.DECORATOR_MASK & ~EConvFlags.CRLF_NEWLINE_DECORATOR;
+            return (enc != null && enc != ascii8bit) || (ecflags & (decorators|EConvFlags.STATEFUL_DECORATOR_MASK)) != 0;
+        }
+        return (enc != null && enc != ascii8bit) || (mode & TEXTMODE) != 0 || (ecflags & (EConvFlags.DECORATOR_MASK|EConvFlags.STATEFUL_DECORATOR_MASK)) != 0;
     }
 
     // MRI: make_readconv

@@ -32,6 +32,18 @@ class TestIOTextMode < Test::Unit::TestCase
     with_open("w") { |of| assert_false of.binmode? }
   end
 
+  # A pipe's write end never converts newlines, on Windows included (MRI writes pipes raw).
+  def test_pipe_write_end_does_not_convert_newlines
+    r, w = IO.pipe
+    w.write "a\nb\n"
+    w.close
+    r.binmode
+    assert_equal "a\nb\n", r.read
+  ensure
+    r.close
+    w.close unless w.closed?
+  end
+
   def test_binmode_leaves_text_mode
     File.open(@path, "w") do |io|
       io.binmode

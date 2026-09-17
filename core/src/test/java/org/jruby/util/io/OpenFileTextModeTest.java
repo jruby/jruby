@@ -55,23 +55,34 @@ public class OpenFileTextModeTest {
 
     @Test
     public void textModeWriteOnWindowsUsesTheConverter() {
-        assertTrue(OpenFile.needsWriteConversion(true, null, BINARY, WINDOWS_TEXT_WRITE, CRLF));
+        assertTrue(OpenFile.needsWriteConversion(true, true, null, BINARY, WINDOWS_TEXT_WRITE, CRLF));
     }
 
     @Test
     public void textModeWriteOnWindowsWithAnEncodingUsesTheConverter() {
-        assertTrue(OpenFile.needsWriteConversion(true, UTF8, BINARY, WINDOWS_TEXT_WRITE, CRLF));
+        assertTrue(OpenFile.needsWriteConversion(true, true, UTF8, BINARY, WINDOWS_TEXT_WRITE, CRLF));
+    }
+
+    @Test
+    public void textModeWriteToAWindowsPipeDoesNotUseTheConverter() {
+        assertFalse(OpenFile.needsWriteConversion(true, false, null, BINARY, WINDOWS_TEXT_WRITE, CRLF));
+    }
+
+    @Test
+    public void explicitDecoratorOrEncodingOnAWindowsPipeUsesTheConverter() {
+        assertTrue(OpenFile.needsWriteConversion(true, false, null, BINARY, WINDOWS_TEXT_WRITE, EConvFlags.CR_NEWLINE_DECORATOR));
+        assertTrue(OpenFile.needsWriteConversion(true, false, UTF8, BINARY, WINDOWS_TEXT_WRITE, CRLF));
     }
 
     @Test
     public void binmodeWriteOnWindowsDoesNotUseTheConverter() {
-        assertFalse(OpenFile.needsWriteConversion(true, BINARY, BINARY, OpenFile.WRITABLE | OpenFile.BINMODE, 0));
+        assertFalse(OpenFile.needsWriteConversion(true, true, BINARY, BINARY, OpenFile.WRITABLE | OpenFile.BINMODE, 0));
     }
 
     @Test
     public void writeOffWindowsIsUnchanged() {
-        assertFalse(OpenFile.needsWriteConversion(false, null, BINARY, OpenFile.WRITABLE, 0));
-        assertTrue(OpenFile.needsWriteConversion(false, null, BINARY, OpenFile.WRITABLE | OpenFile.TEXTMODE, CRLF));
-        assertTrue(OpenFile.needsWriteConversion(false, UTF8, BINARY, OpenFile.WRITABLE, 0));
+        assertFalse(OpenFile.needsWriteConversion(false, true, null, BINARY, OpenFile.WRITABLE, 0));
+        assertTrue(OpenFile.needsWriteConversion(false, true, null, BINARY, OpenFile.WRITABLE | OpenFile.TEXTMODE, CRLF));
+        assertTrue(OpenFile.needsWriteConversion(false, false, UTF8, BINARY, OpenFile.WRITABLE, 0));
     }
 }

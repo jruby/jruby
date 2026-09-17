@@ -12,7 +12,4 @@ windows:IO.copy_stream from an IO to a Tempfile leaves the destination IO positi
 windows:IO.copy_stream from a file name to a file name returns the number of bytes copied
 windows:IO.copy_stream from a file name to an IO returns the number of bytes copied
 windows:IO.copy_stream from a file name to an IO leaves the destination IO position at the last write
-windows:IO.copy_stream from a pipe IO to a file name returns the number of bytes copied
-windows:IO.copy_stream from a pipe IO to an IO returns the number of bytes copied
-windows:IO.copy_stream from a pipe IO to an IO leaves the destination IO position at the last write
 windows:IO.copy_stream with non-IO Objects calls #write on the destination Object
