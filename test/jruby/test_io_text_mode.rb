@@ -29,7 +29,6 @@ class TestIOTextMode < Test::Unit::TestCase
     with_open("wb") { |of| assert_true of.binmode?; assert_false of.text_mode? }
     with_open("rb") { |of| assert_true of.binmode?; assert_false of.text_mode? }
     with_open("w", binmode: true) { |of| assert_true of.binmode?; assert_false of.text_mode? }
-    with_open(File::RDONLY | File::BINARY) { |of| assert_true of.binmode?; assert_false of.text_mode? }
     with_open("w") { |of| assert_false of.binmode? }
   end
 
@@ -44,6 +43,7 @@ class TestIOTextMode < Test::Unit::TestCase
 
   if WINDOWS
     def test_default_mode_is_text_mode_on_windows
+      with_open(File::RDONLY | File::BINARY) { |of| assert_true of.binmode?; assert_false of.text_mode? }
       with_open("w") { |of| assert_true of.text_mode? }
       with_open("r") { |of| assert_true of.text_mode? }
       with_open("r+") { |of| assert_true of.text_mode? }
