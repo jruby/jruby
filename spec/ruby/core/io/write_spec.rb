@@ -317,7 +317,7 @@ platform_is :windows do
     end
 
     it "does not normalize line endings when opened with newline: :cr" do
-      @io = new_io(@fname, "w", newline: :cr)
+      @io = File.new(@fname, "w", newline: :cr)
       @io.write "a\nb\n"
       @io.close
       File.binread(@fname).should == "a\rb\r"

@@ -12,3 +12,5 @@ fails:IO.readlines when passed name, separator, limit, keyword arguments calls #
 fails:IO.readlines when passed name, separator, limit, keyword arguments when passed chomp, nil as a separator, and a limit yields each line of limit size without truncating trailing new line character
 windows:IO.readlines warns about deprecation given a path with a pipe
 windows:IO.readlines when passed a string that starts with a | gets data from the standard out of the subprocess
+windows:IO#readlines when passed no arguments updates self's position
+windows:IO#readlines when passed a separator updates self's position based on the number of characters read

@@ -988,9 +988,15 @@ public class OpenFile implements Finalizable {
                 (enc2 != null || (mode & TEXTMODE) != 0);
     }
 
-    // MRI: the ecflags make_readconv opens the read converter with
+    // MRI: the ecflags make_readconv opens the read converter with. MRI leaves the default text-mode
+    // newline conversion (the CRLF marker in ecflags) to the C runtime's O_TEXT descriptors; the JDK has
+    // no text mode, so the read converter does it here with the universal newline decorator.
     static int readConversionFlags(boolean crlfEnvironment, int mode, int ecflags) {
-        return ecflags & ~EConvFlags.NEWLINE_DECORATOR_WRITE_MASK;
+        int readFlags = ecflags & ~EConvFlags.NEWLINE_DECORATOR_WRITE_MASK;
+        if (crlfEnvironment && (mode & TEXTMODE) != 0 && (ecflags & EConvFlags.CRLF_NEWLINE_DECORATOR) != 0) {
+            readFlags |= EConvFlags.UNIVERSAL_NEWLINE_DECORATOR;
+        }
+        return readFlags;
     }
 
     // MRI: NEED_WRITECONV
@@ -1000,10 +1006,12 @@ public class OpenFile implements Finalizable {
         return needsWriteConversion(Platform.IS_WINDOWS, encs.enc, ascii8bit, mode, encs.ecflags);
     }
 
-    // MRI: NEED_WRITECONV with the platform passed in
+    // MRI: NEED_WRITECONV with the platform passed in. MRI leaves the CRLF decorator out of its Windows
+    // mask because the C runtime's O_TEXT descriptors write CRLF; the JDK has no text mode, so the write
+    // converter must apply it.
     static boolean needsWriteConversion(boolean crlfEnvironment, Encoding enc, Encoding ascii8bit, int mode, int ecflags) {
         return crlfEnvironment ?
-                ((enc != null && enc != ascii8bit) || (ecflags & ((EConvFlags.DECORATOR_MASK & ~EConvFlags.CRLF_NEWLINE_DECORATOR)|EConvFlags.STATEFUL_DECORATOR_MASK)) != 0)
+                ((enc != null && enc != ascii8bit) || (ecflags & (EConvFlags.DECORATOR_MASK|EConvFlags.STATEFUL_DECORATOR_MASK)) != 0)
                 :
                 ((enc != null && enc != ascii8bit) || (mode & TEXTMODE) != 0 || (ecflags & (EConvFlags.DECORATOR_MASK|EConvFlags.STATEFUL_DECORATOR_MASK)) != 0);
     }
