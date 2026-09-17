@@ -1,7 +1,11 @@
 package org.jruby.util.io;
 
 import java.io.Closeable;
+import java.io.Console;
 import java.io.IOException;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.FileChannel;
@@ -2333,8 +2337,7 @@ public class OpenFile implements Finalizable {
 
     // MRI: io_fwrite
     public long fwrite(ThreadContext context, RubyString str, boolean nosync) {
-        // The System.console null check is our poor-man's isatty for Windows. See jruby/jruby#3292
-        if (Platform.IS_WINDOWS && isStdio() && System.console() != null) {
+        if (Platform.IS_WINDOWS && isStdio() && stdioIsConsole()) {
             return rbW32WriteConsole(str);
         }
 
@@ -2358,8 +2361,7 @@ public class OpenFile implements Finalizable {
 
     // MRI: io_fwrite with source bytes
     public int fwrite(ThreadContext context, byte[] bytes, int start, int length, Encoding encoding, boolean nosync) {
-        // The System.console null check is our poor-man's isatty for Windows. See jruby/jruby#3292
-        if (Platform.IS_WINDOWS && isStdio() && System.console() != null) {
+        if (Platform.IS_WINDOWS && isStdio() && stdioIsConsole()) {
             return rbW32WriteConsole(bytes, start, length, encoding);
         }
 
@@ -2375,6 +2377,29 @@ public class OpenFile implements Finalizable {
 
         int n = binwriteInt(context, bytes, start, length, nosync);
         return crtNewlines && n == length ? requested : n;
+    }
+
+    // Poor man's isatty for stdio on Windows (jruby/jruby#3292). System.console() is non-null on JDK 22-24
+    // even when the standard streams are redirected; Console#isTerminal (JDK 22+) tells the cases apart.
+    static boolean stdioIsConsole() {
+        Console console = System.console();
+        if (console == null) return false;
+        if (CONSOLE_IS_TERMINAL == null) return true;
+        try {
+            return (boolean) CONSOLE_IS_TERMINAL.invoke(console);
+        } catch (Throwable t) {
+            return true;
+        }
+    }
+
+    private static final MethodHandle CONSOLE_IS_TERMINAL = lookupConsoleIsTerminal();
+
+    private static MethodHandle lookupConsoleIsTerminal() {
+        try {
+            return MethodHandles.publicLookup().findVirtual(Console.class, "isTerminal", MethodType.methodType(boolean.class));
+        } catch (NoSuchMethodException | IllegalAccessException e) {
+            return null;
+        }
     }
 
     // MRI: rb_w32_write_console
