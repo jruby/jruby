@@ -48,6 +48,11 @@ public class DefnNode extends MethodDefNode implements INameNode {
         super(line, name, argsNode, scope, bodyNode, endLine);
     }
 
+    public DefnNode(int line, int startColumn, RubySymbol name, ArgsNode argsNode, StaticScope scope, Node bodyNode,
+                    int endLine, int endColumn) {
+        super(line, startColumn, name, argsNode, scope, bodyNode, endLine, endColumn);
+    }
+
     public NodeType getNodeType() {
         return NodeType.DEFNNODE;
     }
