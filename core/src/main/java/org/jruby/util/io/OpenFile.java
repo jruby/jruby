@@ -2338,9 +2338,22 @@ public class OpenFile implements Finalizable {
             return rbW32WriteConsole(str);
         }
 
+        int requested = str.getByteList().length();
+        boolean crtNewlines = crtNewlinesOnly(context);
         str = doWriteconv(context, str);
         ByteList strByteList = str.getByteList();
-        return binwriteInt(context, strByteList.unsafeBytes(), strByteList.begin(), strByteList.length(), nosync);
+        long n = binwriteInt(context, strByteList.unsafeBytes(), strByteList.begin(), strByteList.length(), nosync);
+        // MRI: _write reports the caller's byte count, not the CRs the C runtime inserted
+        return crtNewlines && n == strByteList.length() ? requested : n;
+    }
+
+    // Windows text mode where the default CRLF marker is the only reason for a write converter: MRI
+    // leaves those CRs to the C runtime, whose _write does not count them in its return value.
+    private boolean crtNewlinesOnly(ThreadContext context) {
+        if (!Platform.IS_WINDOWS || !crtTranslatesWrites()) return false;
+        Encoding ascii8bit = encodingService(context).getAscii8bitEncoding();
+        return needsWriteConversion(true, true, encs.enc, ascii8bit, mode, encs.ecflags)
+                && !needsWriteConversion(true, false, encs.enc, ascii8bit, mode, encs.ecflags);
     }
 
     // MRI: io_fwrite with source bytes
@@ -2350,6 +2363,8 @@ public class OpenFile implements Finalizable {
             return rbW32WriteConsole(bytes, start, length, encoding);
         }
 
+        int requested = length;
+        boolean crtNewlines = crtNewlinesOnly(context);
         ByteList str = doWriteconv(context, bytes, start, length, encoding);
 
         if (str != null) {
@@ -2358,7 +2373,8 @@ public class OpenFile implements Finalizable {
             length = str.realSize();
         }
 
-        return binwriteInt(context, bytes, start, length, nosync);
+        int n = binwriteInt(context, bytes, start, length, nosync);
+        return crtNewlines && n == length ? requested : n;
     }
 
     // MRI: rb_w32_write_console

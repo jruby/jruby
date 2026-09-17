@@ -293,6 +293,11 @@ platform_is :windows do
       File.binread(@fname).should == "a\r\r\nb"
     end
 
+    it "returns the number of bytes given, not the number written, in text mode" do
+      @io = new_io(@fname, "w")
+      @io.write("a\nb\n").should == 4
+    end
+
     it "does not normalize line endings in binary mode" do
       @io = new_io(@fname, "wb")
       @io.write "a\r\nb\r\nc"
