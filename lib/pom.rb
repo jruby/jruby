@@ -43,7 +43,7 @@ default_gems = [
   ['fileutils', '1.8.0'],
   ['find', '0.2.0'],
   ['forwardable', '1.4.0'],
-  ['io-console', '0.9.3'],
+  ['io-console', '0.9.4'],
   # https://github.com/ruby/io-nonblock/issues/4
   # ['io-nonblock', '0.3.2'],
   ['io-wait', '1.0.0'],
@@ -51,9 +51,9 @@ default_gems = [
   ['jar-dependencies', '0.6.0'],
   ['jruby-readline', '1.3.7'],
   ['jruby-openssl', '0.16.2'],
-  ['json', '3.0.2'],
+  ['json', '2.21.2'],
   ['net-http', '0.9.1'],
-  ['net-protocol', '0.3.0'],
+  ['net-protocol', '0.4.0'],
   ['open-uri', '0.5.0'],
   ['open3', '0.2.1'],
   # https://github.com/ruby/openssl/issues/20#issuecomment-1022872855
@@ -64,10 +64,10 @@ default_gems = [
   ['pp', '0.6.4'],
   ['prettyprint', '0.2.0'],
   # Not ready to ship in the box yet (native dependencies)
-  # ['prism', '1.6.0'],
+  # ['prism', '1.9.0'],
   ['psych', '5.5.0'],
   ['rake-ant', '1.0.6'],
-  ['resolv', '0.7.2'],
+  ['resolv', '0.8.0'],
   ['ruby2_keywords', '0.0.5'],
   ['securerandom', '0.4.1'],
   ['shellwords', '0.2.2'],
@@ -111,7 +111,7 @@ bundled_gems = [
   ['irb', '1.16.0'],
   ['logger', '1.7.0'],
   ['matrix', '0.4.3'],
-  ['minitest', '6.0.6'],
+  ['minitest', '5.27.0'],
   ['mutex_m', '0.3.0'],
   ['net-ftp', '0.3.9'],
   ['net-imap', '0.6.7'],
@@ -127,7 +127,7 @@ bundled_gems = [
   ['rake', '${rake.version}'],
   # supported with WASM now but required libraries not yet exposed
   # ['rbs', '4.2.0'],
-  ['rdoc', '8.0.0'],
+  ['rdoc', '7.2.0'],
   # Ext removed from CRuby in 3.3, equivalent for us would be to remove jruby-readline but unknown implications.
   # The gem below just attempts to load the extension, and failing that loads reline. Our current readline.rb in
   # jruby-readline does largely the same, but it finds the extension and does not load reline.
