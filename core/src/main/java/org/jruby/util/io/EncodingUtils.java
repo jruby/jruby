@@ -70,9 +70,21 @@ import static org.jruby.util.StringSupport.CR_UNKNOWN;
 import static org.jruby.util.StringSupport.searchNonAscii;
 
 public class EncodingUtils {
-    public static final int ECONV_DEFAULT_NEWLINE_DECORATOR = Platform.IS_WINDOWS ? EConvFlags.CRLF_NEWLINE_DECORATOR : 0;
+    /*
+    CRuby uses CRLF_NEWLINE here, which it uses to detect that *only* CRLF conversion is needed. If no explicit
+    conversion has been specified (with UNIVERSAL_NEWLINE or "rt" textmode flags) CRuby will fall back on using the
+    O_TEXT file mode, allowing the Windows C library to handle the conversion more efficiently.
+
+    We do not have access to the O_TEXT mode via JDK classes, so we must always use the explicit UNIVERSAL_NEWLINE mode
+    here and set up a transcoder to convert newlines.
+
+    See the following commit for the first introduction of this optimization into CRuby:
+
+    https://github.com/ruby/ruby/commit/f9a6a1dd0c687dfc6e63e5d20bc3812416def301#diff-686754e19b3c08fbc0880fade77986fed2c09fdd27dcc163fc68e0a7e22b7913R318-R321
+     */
+    public static final int ECONV_DEFAULT_NEWLINE_DECORATOR = Platform.IS_WINDOWS ? EConvFlags.UNIVERSAL_NEWLINE_DECORATOR : 0;
     public static final int DEFAULT_TEXTMODE = Platform.IS_WINDOWS ? OpenFile.TEXTMODE : 0;
-    public static final int TEXTMODE_NEWLINE_DECORATOR_ON_WRITE = Platform.IS_WINDOWS ? EConvFlags.CRLF_NEWLINE_DECORATOR : 0;
+    public static final int TEXTMODE_NEWLINE_DECORATOR_ON_WRITE = Platform.IS_WINDOWS ? EConvFlags.UNIVERSAL_NEWLINE_DECORATOR : 0;
 
     private static final byte[] NULL_BYTE_ARRAY = ByteList.NULL_ARRAY;
 
