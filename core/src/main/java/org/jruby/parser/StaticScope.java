@@ -134,6 +134,11 @@ public class StaticScope implements Serializable, Cloneable {
 
     private BitSet keywordIndices = null;
 
+    /**
+     * Whether this scope should execute class-level changes against a singleton class.
+     */
+    private boolean singleton = false;
+
     // This is set for Prism since it knows all names for a scope right after parse but does not know which
     // ones are keywords until we are actually processing those keywords in builder.
     public void setKeywordIndices(BitSet keywordIndices) {
@@ -142,6 +147,14 @@ public class StaticScope implements Serializable, Cloneable {
 
     public BitSet getKeywordIndices() {
         return keywordIndices == null ? new BitSet() : keywordIndices;
+    }
+
+    public boolean isSingleton() {
+        return singleton;
+    }
+
+    public void setSingleton(boolean singleton) {
+        this.singleton = singleton;
     }
 
     public enum Type {
