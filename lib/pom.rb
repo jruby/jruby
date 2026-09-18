@@ -64,7 +64,7 @@ default_gems = [
   ['pp', '0.6.4'],
   ['prettyprint', '0.2.0'],
   # Not ready to ship in the box yet (native dependencies)
-  # ['prism', '1.6.0'],
+  # ['prism', '1.9.0'],
   ['psych', '5.5.0'],
   ['rake-ant', '1.0.6'],
   ['resolv', '0.8.0'],
