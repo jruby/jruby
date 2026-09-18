@@ -111,7 +111,7 @@ bundled_gems = [
   ['irb', '1.16.0'],
   ['logger', '1.7.0'],
   ['matrix', '0.4.3'],
-  ['minitest', '6.0.6'],
+  ['minitest', '5.27.0'],
   ['mutex_m', '0.3.0'],
   ['net-ftp', '0.3.9'],
   ['net-imap', '0.6.7'],
@@ -127,7 +127,7 @@ bundled_gems = [
   ['rake', '${rake.version}'],
   # supported with WASM now but required libraries not yet exposed
   # ['rbs', '4.2.0'],
-  ['rdoc', '8.0.0'],
+  ['rdoc', '7.2.0'],
   # Ext removed from CRuby in 3.3, equivalent for us would be to remove jruby-readline but unknown implications.
   # The gem below just attempts to load the extension, and failing that loads reline. Our current readline.rb in
   # jruby-readline does largely the same, but it finds the extension and does not load reline.

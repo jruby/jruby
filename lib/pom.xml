@@ -840,7 +840,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>minitest</artifactId>
-      <version>6.0.6</version>
+      <version>5.27.0</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -1022,7 +1022,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>rdoc</artifactId>
-      <version>8.0.0</version>
+      <version>7.2.0</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -1206,7 +1206,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/irb-1.16.0*</include>
           <include>specifications/logger-1.7.0*</include>
           <include>specifications/matrix-0.4.3*</include>
-          <include>specifications/minitest-6.0.6*</include>
+          <include>specifications/minitest-5.27.0*</include>
           <include>specifications/mutex_m-0.3.0*</include>
           <include>specifications/net-ftp-0.3.9*</include>
           <include>specifications/net-imap-0.6.7*</include>
@@ -1220,7 +1220,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/pstore-0.2.1*</include>
           <include>specifications/racc-1.8.1*</include>
           <include>specifications/rake-${rake.version}*</include>
-          <include>specifications/rdoc-8.0.0*</include>
+          <include>specifications/rdoc-7.2.0*</include>
           <include>specifications/reline-0.7.0*</include>
           <include>specifications/resolv-replace-0.2.0*</include>
           <include>specifications/rexml-3.4.4*</include>
@@ -1290,7 +1290,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/irb-1.16.0*/**/*</include>
           <include>gems/logger-1.7.0*/**/*</include>
           <include>gems/matrix-0.4.3*/**/*</include>
-          <include>gems/minitest-6.0.6*/**/*</include>
+          <include>gems/minitest-5.27.0*/**/*</include>
           <include>gems/mutex_m-0.3.0*/**/*</include>
           <include>gems/net-ftp-0.3.9*/**/*</include>
           <include>gems/net-imap-0.6.7*/**/*</include>
@@ -1304,7 +1304,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/pstore-0.2.1*/**/*</include>
           <include>gems/racc-1.8.1*/**/*</include>
           <include>gems/rake-${rake.version}*/**/*</include>
-          <include>gems/rdoc-8.0.0*/**/*</include>
+          <include>gems/rdoc-7.2.0*/**/*</include>
           <include>gems/reline-0.7.0*/**/*</include>
           <include>gems/resolv-replace-0.2.0*/**/*</include>
           <include>gems/rexml-3.4.4*/**/*</include>
@@ -1374,7 +1374,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/irb-1.16.0*</include>
           <include>cache/logger-1.7.0*</include>
           <include>cache/matrix-0.4.3*</include>
-          <include>cache/minitest-6.0.6*</include>
+          <include>cache/minitest-5.27.0*</include>
           <include>cache/mutex_m-0.3.0*</include>
           <include>cache/net-ftp-0.3.9*</include>
           <include>cache/net-imap-0.6.7*</include>
@@ -1388,7 +1388,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/pstore-0.2.1*</include>
           <include>cache/racc-1.8.1*</include>
           <include>cache/rake-${rake.version}*</include>
-          <include>cache/rdoc-8.0.0*</include>
+          <include>cache/rdoc-7.2.0*</include>
           <include>cache/reline-0.7.0*</include>
           <include>cache/resolv-replace-0.2.0*</include>
           <include>cache/rexml-3.4.4*</include>
@@ -1458,7 +1458,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>extensions/universal-java/4.0.0/irb-1.16.0/*</include>
           <include>extensions/universal-java/4.0.0/logger-1.7.0/*</include>
           <include>extensions/universal-java/4.0.0/matrix-0.4.3/*</include>
-          <include>extensions/universal-java/4.0.0/minitest-6.0.6/*</include>
+          <include>extensions/universal-java/4.0.0/minitest-5.27.0/*</include>
           <include>extensions/universal-java/4.0.0/mutex_m-0.3.0/*</include>
           <include>extensions/universal-java/4.0.0/net-ftp-0.3.9/*</include>
           <include>extensions/universal-java/4.0.0/net-imap-0.6.7/*</include>
@@ -1472,7 +1472,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>extensions/universal-java/4.0.0/pstore-0.2.1/*</include>
           <include>extensions/universal-java/4.0.0/racc-1.8.1/*</include>
           <include>extensions/universal-java/4.0.0/rake-${rake.version}/*</include>
-          <include>extensions/universal-java/4.0.0/rdoc-8.0.0/*</include>
+          <include>extensions/universal-java/4.0.0/rdoc-7.2.0/*</include>
           <include>extensions/universal-java/4.0.0/reline-0.7.0/*</include>
           <include>extensions/universal-java/4.0.0/resolv-replace-0.2.0/*</include>
           <include>extensions/universal-java/4.0.0/rexml-3.4.4/*</include>
