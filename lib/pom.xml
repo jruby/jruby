@@ -320,7 +320,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>net-protocol</artifactId>
-      <version>0.3.0</version>
+      <version>0.4.0</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -424,7 +424,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>resolv</artifactId>
-      <version>0.7.2</version>
+      <version>0.8.0</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -1166,7 +1166,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/jruby-openssl-0.16.2*</include>
           <include>specifications/json-3.0.2*</include>
           <include>specifications/net-http-0.9.1*</include>
-          <include>specifications/net-protocol-0.3.0*</include>
+          <include>specifications/net-protocol-0.4.0*</include>
           <include>specifications/open-uri-0.5.0*</include>
           <include>specifications/open3-0.2.1*</include>
           <include>specifications/optparse-0.8.1*</include>
@@ -1174,7 +1174,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/prettyprint-0.2.0*</include>
           <include>specifications/psych-5.5.0*</include>
           <include>specifications/rake-ant-1.0.6*</include>
-          <include>specifications/resolv-0.7.2*</include>
+          <include>specifications/resolv-0.8.0*</include>
           <include>specifications/ruby2_keywords-0.0.5*</include>
           <include>specifications/securerandom-0.4.1*</include>
           <include>specifications/shellwords-0.2.2*</include>
@@ -1250,7 +1250,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/jruby-openssl-0.16.2*/**/*</include>
           <include>gems/json-3.0.2*/**/*</include>
           <include>gems/net-http-0.9.1*/**/*</include>
-          <include>gems/net-protocol-0.3.0*/**/*</include>
+          <include>gems/net-protocol-0.4.0*/**/*</include>
           <include>gems/open-uri-0.5.0*/**/*</include>
           <include>gems/open3-0.2.1*/**/*</include>
           <include>gems/optparse-0.8.1*/**/*</include>
@@ -1258,7 +1258,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/prettyprint-0.2.0*/**/*</include>
           <include>gems/psych-5.5.0*/**/*</include>
           <include>gems/rake-ant-1.0.6*/**/*</include>
-          <include>gems/resolv-0.7.2*/**/*</include>
+          <include>gems/resolv-0.8.0*/**/*</include>
           <include>gems/ruby2_keywords-0.0.5*/**/*</include>
           <include>gems/securerandom-0.4.1*/**/*</include>
           <include>gems/shellwords-0.2.2*/**/*</include>
@@ -1334,7 +1334,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/jruby-openssl-0.16.2*</include>
           <include>cache/json-3.0.2*</include>
           <include>cache/net-http-0.9.1*</include>
-          <include>cache/net-protocol-0.3.0*</include>
+          <include>cache/net-protocol-0.4.0*</include>
           <include>cache/open-uri-0.5.0*</include>
           <include>cache/open3-0.2.1*</include>
           <include>cache/optparse-0.8.1*</include>
@@ -1342,7 +1342,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/prettyprint-0.2.0*</include>
           <include>cache/psych-5.5.0*</include>
           <include>cache/rake-ant-1.0.6*</include>
-          <include>cache/resolv-0.7.2*</include>
+          <include>cache/resolv-0.8.0*</include>
           <include>cache/ruby2_keywords-0.0.5*</include>
           <include>cache/securerandom-0.4.1*</include>
           <include>cache/shellwords-0.2.2*</include>
@@ -1418,7 +1418,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>extensions/universal-java/4.0.0/jruby-openssl-0.16.2/*</include>
           <include>extensions/universal-java/4.0.0/json-3.0.2/*</include>
           <include>extensions/universal-java/4.0.0/net-http-0.9.1/*</include>
-          <include>extensions/universal-java/4.0.0/net-protocol-0.3.0/*</include>
+          <include>extensions/universal-java/4.0.0/net-protocol-0.4.0/*</include>
           <include>extensions/universal-java/4.0.0/open-uri-0.5.0/*</include>
           <include>extensions/universal-java/4.0.0/open3-0.2.1/*</include>
           <include>extensions/universal-java/4.0.0/optparse-0.8.1/*</include>
@@ -1426,7 +1426,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>extensions/universal-java/4.0.0/prettyprint-0.2.0/*</include>
           <include>extensions/universal-java/4.0.0/psych-5.5.0/*</include>
           <include>extensions/universal-java/4.0.0/rake-ant-1.0.6/*</include>
-          <include>extensions/universal-java/4.0.0/resolv-0.7.2/*</include>
+          <include>extensions/universal-java/4.0.0/resolv-0.8.0/*</include>
           <include>extensions/universal-java/4.0.0/ruby2_keywords-0.0.5/*</include>
           <include>extensions/universal-java/4.0.0/securerandom-0.4.1/*</include>
           <include>extensions/universal-java/4.0.0/shellwords-0.2.2/*</include>

@@ -53,7 +53,7 @@ default_gems = [
   ['jruby-openssl', '0.16.2'],
   ['json', '3.0.2'],
   ['net-http', '0.9.1'],
-  ['net-protocol', '0.3.0'],
+  ['net-protocol', '0.4.0'],
   ['open-uri', '0.5.0'],
   ['open3', '0.2.1'],
   # https://github.com/ruby/openssl/issues/20#issuecomment-1022872855
@@ -67,7 +67,7 @@ default_gems = [
   # ['prism', '1.6.0'],
   ['psych', '5.5.0'],
   ['rake-ant', '1.0.6'],
-  ['resolv', '0.7.2'],
+  ['resolv', '0.8.0'],
   ['ruby2_keywords', '0.0.5'],
   ['securerandom', '0.4.1'],
   ['shellwords', '0.2.2'],
