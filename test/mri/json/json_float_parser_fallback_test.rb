@@ -1,6 +1,9 @@
 # frozen_string_literal: true
-
 require_relative 'test_helper'
+begin
+  require 'bigdecimal'
+rescue LoadError
+end
 
 class JSONFloatParserFallbackTest < Test::Unit::TestCase
   include JSON
