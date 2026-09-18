@@ -55,3 +55,24 @@ describe "IO.binread" do
     end
   end
 end
+
+platform_is :windows do
+  describe "IO.binread on Windows" do
+    before :each do
+      @fname = tmp("io_binread.txt")
+      touch(@fname, "wb") { |f| f.write "a\r\nb\r\nc" }
+    end
+
+    after :each do
+      rm_r @fname
+    end
+
+    it "does not normalize line endings" do
+      IO.binread(@fname).should == "a\r\nb\r\nc"
+    end
+
+    it "does not normalize line endings when a length is given" do
+      IO.binread(@fname, 3).should == "a\r\n"
+    end
+  end
+end

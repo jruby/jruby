@@ -169,6 +169,7 @@ public class RubyArgsFile extends RubyObject {
             inited = false;
             this.argv = argv;
             this.inPlace = runtime.getFalse();
+            this.binmode = false; // MRI: a new instance is not in binmode, whatever ARGF.binmode did before
         }
 
         public boolean next_argv(ThreadContext context) {
