@@ -33,9 +33,9 @@ jobs:
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
       - name: bootstrap
-        run: ./mvnw -ntp -Pbootstrap clean package
+        run: tool/ci-retry.sh ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
-        run: bin/jruby --dev -S bundle install
+        run: tool/ci-retry.sh bin/jruby --dev -S bundle install
       - name: rake ${{ matrix.target }}
         run: bin/jruby -S rake ${{ matrix.target }}
 
@@ -61,9 +61,9 @@ jobs:
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
       - name: bootstrap
-        run: ./mvnw -ntp -Pbootstrap clean package
+        run: tool/ci-retry.sh ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
-        run: bin/jruby --dev -S bundle install
+        run: tool/ci-retry.sh bin/jruby --dev -S bundle install
       - name: rake ${{ matrix.target }}
         run: bin/jruby -S rake ${{ matrix.target }}
 
@@ -84,9 +84,9 @@ jobs:
           java-version: 21
           cache: 'maven'
       - name: bootstrap
-        run: ./mvnw -ntp -Pbootstrap clean package
+        run: tool/ci-retry.sh ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
-        run: bin/jruby --dev -S bundle install
+        run: tool/ci-retry.sh bin/jruby --dev -S bundle install
       - name: run specs
         env:
           JAVA_OPTS: '-XX:TieredStopAtLevel=1'
@@ -110,9 +110,9 @@ jobs:
           java-version: 21
           cache: 'maven'
       - name: bootstrap
-        run: ./mvnw -ntp -Pbootstrap clean package
+        run: tool/ci-retry.sh ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
-        run: bin/jruby --dev -S bundle install
+        run: tool/ci-retry.sh bin/jruby --dev -S bundle install
       - name: rake test:jruby
         run: bin/jruby --dev -S rake test:jruby
 
@@ -142,9 +142,9 @@ jobs:
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
       - name: bootstrap
-        run: ./mvnw -ntp -Pbootstrap clean package
+        run: tool/ci-retry.sh ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
-        run: bin/jruby --dev -S bundle install
+        run: tool/ci-retry.sh bin/jruby --dev -S bundle install
       - name: rake ${{ matrix.target }}
         run: bin/jruby -S rake ${{ matrix.target }}
 
@@ -171,9 +171,9 @@ jobs:
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
       - name: bootstrap
-        run: ./mvnw -ntp -Pbootstrap clean package
+        run: tool/ci-retry.sh ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
-        run: bin/jruby --dev -S bundle install
+        run: tool/ci-retry.sh bin/jruby --dev -S bundle install
       - name: mvn package ${{ matrix.package-flags }}
         run: tool/maven-ci-script.sh
         env:
@@ -203,9 +203,9 @@ jobs:
           java-version: ${{ matrix.java-version }}
           cache: 'maven'
       - name: bootstrap
-        run: ./mvnw -ntp -Pbootstrap clean package
+        run: tool/ci-retry.sh ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
-        run: bin/jruby --dev -S bundle install
+        run: tool/ci-retry.sh bin/jruby --dev -S bundle install
       - name: mvn package ${{ matrix.package-flags }}
         run: tool/maven-ci-script.sh
         env:
@@ -229,9 +229,9 @@ jobs:
           java-version: 21
           cache: 'maven'
       - name: bootstrap
-        run: ./mvnw -ntp -Pbootstrap clean package
+        run: tool/ci-retry.sh ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
-        run: bin/jruby --dev -S bundle install
+        run: tool/ci-retry.sh bin/jruby --dev -S bundle install
       - name: rake spec:regression
         run: bin/jruby -S rake spec:regression
 
@@ -400,9 +400,9 @@ jobs:
           java-version: 21
           cache: 'maven'
       - name: bootstrap
-        run: ./mvnw -ntp -Pbootstrap clean package
+        run: tool/ci-retry.sh ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
-        run: bin/jruby --dev -S bundle install
+        run: tool/ci-retry.sh bin/jruby --dev -S bundle install
       - name: sequel
         run: tool/sequel-github-actions.sh
 
@@ -421,9 +421,9 @@ jobs:
           java-version: 21
           cache: 'maven'
       - name: bootstrap
-        run: ./mvnw -ntp -Pbootstrap clean package
+        run: tool/ci-retry.sh ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
-        run: bin/jruby --dev -S bundle install
+        run: tool/ci-retry.sh bin/jruby --dev -S bundle install
       - name: concurrent-ruby
         run: tool/concurrent-ruby-github-actions.sh
 
@@ -444,9 +444,9 @@ jobs:
           java-version: '21'
           cache: 'maven'
       - name: bootstrap
-        run: ./mvnw -ntp -Pbootstrap clean package
+        run: tool/ci-retry.sh ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
-        run: bin/jruby -S bundle install
+        run: tool/ci-retry.sh bin/jruby -S bundle install
       - name: test profile
         run: "tool/maven-ci-script.sh"
         env:
