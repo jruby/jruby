@@ -542,7 +542,7 @@ public abstract class IRScope implements ParseResult {
 
         boolean usesEval = usesEval();
 
-        for (IRScope child : getClosures()) {
+        for (IRScope child : getLexicalScopes()) {
             usesEval |= child.anyUsesEval();
         }
 
