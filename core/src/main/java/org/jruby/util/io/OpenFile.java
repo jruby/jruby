@@ -547,7 +547,7 @@ public class OpenFile implements Finalizable {
                 case EAGAIN:
                 case EWOULDBLOCK:
                     if (fiberScheduler && !scheduler.isNil()) {
-                        return FiberScheduler.ioWaitReadable(context, scheduler, RubyIO.newIO(context.runtime, channel())).isTrue();
+                        return schedulerWaitReadable(context, scheduler);
                     }
 
                     ready(runtime, context.getThread(), SelectionKey.OP_READ, timeout);
@@ -563,6 +563,17 @@ public class OpenFile implements Finalizable {
     // rb_io_wait_readable
     public boolean waitReadable(ThreadContext context) {
         return waitReadable(context, -1);
+    }
+
+    // Release the IO lock while io_wait parks this fiber, as selectForRead does, or a sibling
+    // fiber closing or reading this IO would block on the lock and never wake us.
+    private boolean schedulerWaitReadable(ThreadContext context, IRubyObject scheduler) {
+        unlock();
+        try {
+            return FiberScheduler.ioWaitReadable(context, scheduler, io).isTrue();
+        } finally {
+            lock();
+        }
     }
 
     /**
@@ -1353,7 +1364,7 @@ public class OpenFile implements Finalizable {
 
                     if (r < 0) {
                         Errno errno = posix.getErrno();
-                        if (errno == Errno.EAGAIN || errno == Errno.EWOULDBLOCK
+                        if ((errno == Errno.EAGAIN || errno == Errno.EWOULDBLOCK)
                                 && waitReadable(context, fd)) {
                             continue retry;
                         }
@@ -1523,6 +1534,12 @@ public class OpenFile implements Finalizable {
                 if (result != null) {
                     return FiberScheduler.resultApply(context, result);
                 }
+
+                // MRI's sockets and pipes are nonblocking, so its plain read yields in io_wait on
+                // EAGAIN. Ours block and would park the fiber's thread, so emulate that here.
+                if (fd.chSelect != null && fptr.isBlocking()) {
+                    return schedulerRead(context, fptr, buffer, buf, count);
+                }
             }
         }
 
@@ -1543,6 +1560,26 @@ public class OpenFile implements Finalizable {
 
         selectForRead(context, fptr, fd);
 
+        return executeRead(context, fptr, buffer, buf, count);
+    }
+
+    // Can go away once our sockets and pipes default to nonblocking.
+    private static int schedulerRead(ThreadContext context, OpenFile fptr,
+                                     ByteBuffer buffer, int buf, int count) {
+        try {
+            fptr.setNonblock(context.runtime);
+
+            while (true) {
+                int read = executeRead(context, fptr, buffer, buf, count);
+
+                if (read >= 0 || !fptr.waitReadable(context)) return read;
+            }
+        } finally {
+            if (fptr.isOpen()) fptr.setBlock(context.runtime);
+        }
+    }
+
+    private static int executeRead(ThreadContext context, OpenFile fptr, ByteBuffer buffer, int buf, int count) {
         try {
             return context.getThread().executeReadWrite(context, fptr, buffer, buf, count, READ_TASK);
         } catch (InterruptedException ie) {
@@ -1641,6 +1678,12 @@ public class OpenFile implements Finalizable {
                     && posix.getErrno() != Errno.EWOULDBLOCK && posix.getErrno() != Errno.EINTR) {
                 // Encountered a permanent error. Don't read again.
                 return false;
+            }
+
+            IRubyObject scheduler = fiberScheduler ? context.getFiberCurrentThread().getSchedulerCurrent() : null;
+
+            if (scheduler != null && !scheduler.isNil()) {
+                return schedulerWaitReadable(context, scheduler);
             }
 
             if (fd.chSelect != null) {
