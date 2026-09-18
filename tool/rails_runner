@@ -52,7 +52,7 @@ Dir.chdir(rails_app) do
 end
 
 begin
-  system("#{$jruby} #{File.join(File.dirname(__FILE__), "verify_rails")}")
+  system("#{$jruby} #{File.join(File.dirname(__FILE__), "verify_rails")}") or fail "Rails verification failed, see output"
 ensure
   puts "shutting down server"
   case RbConfig::CONFIG['host_os']
