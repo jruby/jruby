@@ -216,7 +216,7 @@ DO NOT MODIFY - GENERATED CODE
     <dependency>
       <groupId>rubygems</groupId>
       <artifactId>io-console</artifactId>
-      <version>0.9.3</version>
+      <version>0.9.4</version>
       <type>gem</type>
       <scope>provided</scope>
       <exclusions>
@@ -1158,7 +1158,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>specifications/fileutils-1.8.0*</include>
           <include>specifications/find-0.2.0*</include>
           <include>specifications/forwardable-1.4.0*</include>
-          <include>specifications/io-console-0.9.3*</include>
+          <include>specifications/io-console-0.9.4*</include>
           <include>specifications/io-wait-1.0.0*</include>
           <include>specifications/ipaddr-1.2.9*</include>
           <include>specifications/jar-dependencies-0.6.0*</include>
@@ -1242,7 +1242,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>gems/fileutils-1.8.0*/**/*</include>
           <include>gems/find-0.2.0*/**/*</include>
           <include>gems/forwardable-1.4.0*/**/*</include>
-          <include>gems/io-console-0.9.3*/**/*</include>
+          <include>gems/io-console-0.9.4*/**/*</include>
           <include>gems/io-wait-1.0.0*/**/*</include>
           <include>gems/ipaddr-1.2.9*/**/*</include>
           <include>gems/jar-dependencies-0.6.0*/**/*</include>
@@ -1326,7 +1326,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>cache/fileutils-1.8.0*</include>
           <include>cache/find-0.2.0*</include>
           <include>cache/forwardable-1.4.0*</include>
-          <include>cache/io-console-0.9.3*</include>
+          <include>cache/io-console-0.9.4*</include>
           <include>cache/io-wait-1.0.0*</include>
           <include>cache/ipaddr-1.2.9*</include>
           <include>cache/jar-dependencies-0.6.0*</include>
@@ -1410,7 +1410,7 @@ DO NOT MODIFY - GENERATED CODE
           <include>extensions/universal-java/4.0.0/fileutils-1.8.0/*</include>
           <include>extensions/universal-java/4.0.0/find-0.2.0/*</include>
           <include>extensions/universal-java/4.0.0/forwardable-1.4.0/*</include>
-          <include>extensions/universal-java/4.0.0/io-console-0.9.3/*</include>
+          <include>extensions/universal-java/4.0.0/io-console-0.9.4/*</include>
           <include>extensions/universal-java/4.0.0/io-wait-1.0.0/*</include>
           <include>extensions/universal-java/4.0.0/ipaddr-1.2.9/*</include>
           <include>extensions/universal-java/4.0.0/jar-dependencies-0.6.0/*</include>
