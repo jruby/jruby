@@ -101,6 +101,16 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
     LineInfo needsLineNumInfo = null;
 
+    // How deep the builder is in the tree it builds, and how deep the statement whose line number is pending is.
+    int buildDepth = 0;
+    int needsLineNumInfoDepth = 0;
+    // The line coverage counts the pending statement on. Calls built before its first instruction move
+    // lastProcessedLineNum, the line backtraces report, but not this one.
+    int needsLineNumInfoLine = -1;
+    // With coverage on, the line the last statement that was a line event starts on, and its first instruction's node.
+    int lastLineEventLine = -1;
+    U lastLineEventFirstInstruction = null;
+
     // SSS FIXME: Currently only used for retries -- we should be able to eliminate this
     // Stack of nested rescue blocks -- this just tracks the start label of the blocks
     final Deque<RescueBlockInfo> activeRescueBlockStack = new ArrayDeque<>(4);
@@ -200,7 +210,12 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         if (isRescue) ebi.savedGlobalException = savedGlobalException;
 
         // Record body of ensure and push to ensure body stack if there is an actual ensure body.
+        // It comes after the protected body, so its line events must not be the last ones the protected body sees.
+        int savedLineEventLine = lastLineEventLine;
+        U savedLineEventFirstInstruction = lastLineEventFirstInstruction;
         Operand ensureRetVal = processEnsureBody(ensureNode, ebi);
+        lastLineEventLine = savedLineEventLine;
+        lastLineEventFirstInstruction = savedLineEventFirstInstruction;
 
         // ------------ Build the protected region ------------
         activeEnsureBlockStack.push(ebi);
@@ -370,21 +385,26 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         return loopStack.peek();
     }
 
-    public void addInstr(Instr instr) {
-        if (needsLineNumInfo != null) {
-            LineInfo type = needsLineNumInfo;
-            needsLineNumInfo = null;
+    private void addLineNumInfo() {
+        LineInfo type = needsLineNumInfo;
+        needsLineNumInfo = null;
 
-            if (type == LineInfo.Coverage) {
-                addInstr(new LineNumberInstr(lastProcessedLineNum, coverageMode));
-            } else {
-                addInstr(manager.newLineNumber(lastProcessedLineNum));
-            }
-
-            if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                addInstr(new TraceInstr(RubyEvent.LINE, getCurrentModuleVariable(), methodNameFor(), getFileName(), lastProcessedLineNum + 1));
-            }
+        if (type == LineInfo.Coverage && coverageMode != 0) {
+            addInstr(new LineNumberInstr(needsLineNumInfoLine, coverageMode));
+            if (needsLineNumInfoLine != lastProcessedLineNum) addInstr(manager.newLineNumber(lastProcessedLineNum));
+        } else if (type == LineInfo.Coverage) {
+            addInstr(new LineNumberInstr(lastProcessedLineNum, coverageMode));
+        } else {
+            addInstr(manager.newLineNumber(lastProcessedLineNum));
         }
+
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            addInstr(new TraceInstr(RubyEvent.LINE, getCurrentModuleVariable(), methodNameFor(), getFileName(), lastProcessedLineNum + 1));
+        }
+    }
+
+    public void addInstr(Instr instr) {
+        if (needsLineNumInfo != null) addLineNumInfo();
 
         // If we are building an ensure body, stash the instruction
         // in the ensure body's list. If not, add it to the scope directly.
@@ -2803,7 +2823,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         int[] flags = new int[] { 0 };
         Operand[] args = setupCallArgs(argsNode, flags);
 
-        determineIfWeNeedLineNumber(line, isNewline, false, false); // backtrace needs line of call in case of exception.
+        determineIfWeNeedLineNumberForCall(line, isNewline); // backtrace needs line of call in case of exception.
         if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
             Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
             if_else(test, tru(),
@@ -3154,7 +3174,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         // check for refinement calls before building any closure
         if (callType == FUNCTIONAL) determineIfMaybeRefined(name, args);
         Operand block = setupCallClosure(argsNode, iter);
-        determineIfWeNeedLineNumber(line, isNewline, false, false); // backtrace needs line of call in case of exception.
+        determineIfWeNeedLineNumberForCall(line, isNewline); // backtrace needs line of call in case of exception.
         if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
             Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
             if_else(test, tru(),
@@ -3172,6 +3192,20 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         return result;
     }
 
+    /**
+     * A call that is a statement of its own already had its line (and coverage) event emitted when the
+     * statement started; if building its receiver or arguments moved the current line elsewhere, restore the
+     * call's line for backtraces without counting the statement a second time.
+     */
+    protected void determineIfWeNeedLineNumberForCall(int line, boolean isNewline) {
+        if (line != lastProcessedLineNum) {
+            // A pending coverage event also restores this line for backtraces when it is emitted
+            if (isNewline && needsLineNumInfo == null) needsLineNumInfo = LineInfo.Backtrace;
+
+            lastProcessedLineNum = line;
+        }
+    }
+
     protected void determineIfWeNeedLineNumber(int line, boolean isNewline, boolean implicitNil, boolean def) {
         if (line != lastProcessedLineNum && !implicitNil) {
             LineInfo needsCoverage = isNewline ? LineInfo.Coverage : null;
@@ -3183,6 +3217,31 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             // This line is already process either by linenum or by instr which emits its own.
             lastProcessedLineNum = line;
         }
+    }
+
+    /**
+     * With coverage on: as in MRI, a statement is a line event unless the last one started on the same line (calls
+     * built in between do not matter), and coverage counts it on the line of its first instruction, which comes from
+     * firstInstruction (see LineEvents).
+     */
+    protected void determineIfWeNeedCoverageLine(int line, U firstInstruction) {
+        // A statement inside the last line event's statement, starting with the same instruction, shares its event
+        if (line != lastLineEventLine && firstInstruction != lastLineEventFirstInstruction) {
+            // A statement inside one whose event is still pending would replace that event, which coverage would
+            // then never count: emit it first.
+            if (needsLineNumInfo == LineInfo.Coverage && needsLineNumInfoDepth < buildDepth) addLineNumInfo();
+
+            needsLineNumInfo = LineInfo.Coverage;
+            needsLineNumInfoDepth = buildDepth;
+            needsLineNumInfoLine = getLine(firstInstruction);
+            lastLineEventLine = line;
+            lastLineEventFirstInstruction = firstInstruction;
+        } else {
+            lastLineEventLine = line;
+            if (line != lastProcessedLineNum && needsLineNumInfo == null) needsLineNumInfo = LineInfo.Backtrace;
+        }
+
+        lastProcessedLineNum = line;
     }
 
     // FIXME: This needs to be called on super/zsuper too
