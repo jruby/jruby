@@ -125,7 +125,9 @@ public class OpenFile implements Finalizable {
         public void finalize(Ruby runtime, OpenFile fptr, boolean noraise);
     }
 
-    private ChannelFD fd;
+    // volatile so a close in another thread is visible to the accessors below, which read fd
+    // outside the lock, and so the ChannelFD they hand out is safely published.
+    private volatile ChannelFD fd;
     private int mode;
     private long pid = -1;
     private Process process;
