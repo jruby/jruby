@@ -8,11 +8,15 @@ gem_version=${jar_version/-/.}
 
 rm -rf maven/*/target/*
 
-./mvnw -ntp install -Pbootstrap
-./mvnw -ntp -Pcomplete
-./mvnw -ntp -Pdist
-./mvnw -ntp -Pjruby-jars
-./mvnw -ntp -Pmain
+# Retry the builds: a transient fetch failure used to leave no jars behind and
+# report every artefact below as "not found". The checks themselves never retry.
+set -e
+tool/ci-retry.sh ./mvnw -ntp install -Pbootstrap
+tool/ci-retry.sh ./mvnw -ntp -Pcomplete
+tool/ci-retry.sh ./mvnw -ntp -Pdist
+tool/ci-retry.sh ./mvnw -ntp -Pjruby-jars
+tool/ci-retry.sh ./mvnw -ntp -Pmain
+set +e
 
 declare -a failed
 failed[0]=0
