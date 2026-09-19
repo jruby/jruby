@@ -461,7 +461,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v6
       - name: install shellcheck
-        run: sudo apt install shellcheck
+        run: tool/ci-retry.sh sudo apt install shellcheck
       - name: run shellcheck
         run: shellcheck bin/jruby.sh
 

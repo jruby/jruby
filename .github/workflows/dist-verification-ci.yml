@@ -38,10 +38,10 @@ jobs:
           cache: 'maven'
       - name: build release artifacts
         run: |
-          ./mvnw -ntp clean package -Pall
+          tool/ci-retry.sh ./mvnw -ntp clean package -Pall
       - uses: cedx/SetupAnt@v7
       - name: install dependencies
-        run: bin/jruby -S bundle install
+        run: tool/ci-retry.sh bin/jruby -S bundle install
       - name: cache release artifacts
         run: |
           mv maven/jruby-dist/target/jruby-dist*-bin.tar.gz jruby-dist-bin.tar.gz
@@ -95,10 +95,10 @@ jobs:
           license: ${{ secrets.INSTALL4J_LICENSE }}
       - name: build release artifacts
         run: |
-          ./mvnw -ntp clean package -Pall
+          tool/ci-retry.sh ./mvnw -ntp clean package -Pall
       - uses: cedx/SetupAnt@v7
       - name: install dependencies
-        run: bin/jruby -S bundle install
+        run: tool/ci-retry.sh bin/jruby -S bundle install
       - name: build installer
         run: bin/jruby -S rake installer INSTALL4J_EXECUTABLE=/opt/install4j/bin/install4jc
       - name: cache release artifacts
