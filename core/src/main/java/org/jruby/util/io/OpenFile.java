@@ -2823,7 +2823,7 @@ public class OpenFile implements Finalizable {
     }
 
     public int getFileno() {
-        return fd.bestFileno(true);
+        return checkedFD().bestFileno(true);
     }
 
     // rb_thread_flock
