@@ -24,11 +24,6 @@ cext-output.txt
 bench-results.json
 bench-results-processed.json
 failures
-!spec/ruby/fixtures/code/a/*.bundle
-!spec/ruby/fixtures/code/a/*.so
-!spec/ruby/fixtures/code/*.bundle
-!spec/ruby/fixtures/code/*.so
-!test/bogus.so
 !test/jruby/testapp/Makefile
 
 .DS_Store
