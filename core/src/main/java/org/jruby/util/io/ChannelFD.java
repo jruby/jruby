@@ -139,10 +139,10 @@ public class ChannelFD implements Closeable {
             // otherwise decrement and possibly close as normal
             int count = refs.decrementAndGet();
 
-            // The channel may already be closed without Ruby having closed the stream: the JDK
-            // closes an interruptible channel when the thread blocked on it is interrupted, which
-            // is how we unblock IO for Thread#kill. There is nothing left to close, and no error.
-            if (count <= 0 && ch.isOpen()) {
+            // Deliberately no isOpen check: the JDK closes an interruptible channel when the
+            // thread blocked on it is interrupted, which is how Thread#kill unblocks IO. Ruby
+            // never closed that stream, and Channel#close is a no-op once the channel is closed.
+            if (count <= 0) {
                 // if we're the last referrer, close the channel
                 try {
                     ch.close();
