@@ -23,7 +23,7 @@ public class TestRubyThread extends Base {
         thread.setAbortOnException(false);
         context.runtime.evalScriptlet("$run_thread = true");
 
-        Thread.sleep(100);
+        waitForExitingException(thread, 3000);
 
         assertNotNull(thread.getExitingException());
         assertSame(RuntimeException.class, thread.getExitingException().getClass());
@@ -41,16 +41,19 @@ public class TestRubyThread extends Base {
         thread.setAbortOnException(false);
 
         final AtomicReference exception = new AtomicReference(null);
+        final CountDownLatch uncaughtLatch = new CountDownLatch(1);
         thread.getNativeThread().setUncaughtExceptionHandler((t, uncaught) -> {
             exception.set(uncaught);
+            uncaughtLatch.countDown();
         });
 
         context.runtime.evalScriptlet("$run_thread = true");
 
-        Thread.sleep(100);
+        waitForExitingException(thread, 3000);
 
         assertTrue(thread.getExitingException() instanceof AssertionError);
         // but bubbles out to Java handler :
+        assertTrue(uncaughtLatch.await(3, TimeUnit.SECONDS));
         assertNotNull(exception.get());
         assertEquals("java.lang.AssertionError: 42", exception.get().toString());
 
@@ -101,5 +104,16 @@ public class TestRubyThread extends Base {
         assertSame(context.fals, local);
 
         latch2.countDown();
+    }
+
+    /**
+     * Polls the given thread's exiting exception until it is set or the timeout elapses,
+     * avoiding a fixed sleep duration that could be flaky under load.
+     */
+    private static void waitForExitingException(RubyThread thread, long timeoutMillis) throws InterruptedException {
+        final long deadline = System.currentTimeMillis() + timeoutMillis;
+        while (thread.getExitingException() == null && System.currentTimeMillis() < deadline) {
+            Thread.sleep(10);
+        }
     }
 }
