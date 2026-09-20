@@ -126,7 +126,9 @@ public class OpenFile implements Finalizable {
         public void finalize(Ruby runtime, OpenFile fptr, boolean noraise);
     }
 
-    private ChannelFD fd;
+    // volatile so a close in another thread is visible to the accessors below, which read fd
+    // outside the lock, and so the ChannelFD they hand out is safely published.
+    private volatile ChannelFD fd;
     private int mode;
     private long pid = -1;
     private Process process;
@@ -583,6 +585,8 @@ public class OpenFile implements Finalizable {
     public int readyOps(RubyThread thread, int ops, long timeout) {
         boolean locked = lock();
         try {
+            ChannelFD fd = checkedFD();
+
             if (fd.chSelect != null) {
                 int realOps = ops & fd.chSelect.validOps();
 
@@ -752,6 +756,16 @@ public class OpenFile implements Finalizable {
         if (fd == null) {
             throw runtime.newIOError(RubyIO.CLOSED_STREAM_MSG);
         }
+    }
+
+    /**
+     * Read the fd field once and then check it, so a concurrent close cannot null it between the
+     * check and the dereference and turn a closed-stream IOError into a NullPointerException.
+     */
+    private ChannelFD checkedFD() {
+        ChannelFD fd = this.fd;
+        if (fd == null) throw runtime.newIOError(RubyIO.CLOSED_STREAM_MSG);
+        return fd;
     }
 
     public boolean isBinmode() {
@@ -2553,38 +2567,31 @@ public class OpenFile implements Finalizable {
     public Channel channel() {
         // MRI equivalent: rb_io_check_closed(fptr) + fptr->fd access in io.c
         // when an IO was closed from another thread MRI raises IOError("closed stream") via io_fd_check_closed (io.c)
-        checkClosed();
-        return fd.ch;
+        return checkedFD().ch;
     }
 
     public ReadableByteChannel readChannel() {
-        checkClosed();
-        return fd.chRead;
+        return checkedFD().chRead;
     }
 
     public WritableByteChannel writeChannel() {
-        checkClosed();
-        return fd.chWrite;
+        return checkedFD().chWrite;
     }
 
     public SeekableByteChannel seekChannel() {
-        checkClosed();
-        return fd.chSeek;
+        return checkedFD().chSeek;
     }
 
     public SelectableChannel selectChannel() {
-        checkClosed();
-        return fd.chSelect;
+        return checkedFD().chSelect;
     }
 
     public FileChannel fileChannel() {
-        checkClosed();
-        return fd.chFile;
+        return checkedFD().chFile;
     }
 
     public SocketChannel socketChannel() {
-        checkClosed();
-        return fd.chSock;
+        return checkedFD().chSock;
     }
 
     IRubyObject finishWriteconv(ThreadContext context, boolean noalloc) {
@@ -2678,9 +2685,7 @@ public class OpenFile implements Finalizable {
             // and make those channels act like non-blocking
             nonblock = !blocking;
 
-            ChannelFD fd = this.fd;
-
-            checkClosed();
+            ChannelFD fd = checkedFD();
 
             if (fd.chSelect != null) {
                 try {
@@ -2747,7 +2752,7 @@ public class OpenFile implements Finalizable {
     }
 
     public int getFileno() {
-        return fd.bestFileno(true);
+        return checkedFD().bestFileno(true);
     }
 
     // rb_thread_flock
