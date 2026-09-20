@@ -698,4 +698,18 @@ class TestIO < Test::Unit::TestCase
     assert true
   end
 
+  # The JDK closes an interruptible channel when the thread blocked on it is interrupted,
+  # which is how Thread#kill unblocks IO. Ruby never closed the stream, so the close that
+  # follows must succeed rather than report the vanished channel as Errno::EBADF.
+  def test_close_when_channel_closed_underneath
+    require 'jruby'
+
+    read, write = IO.pipe
+    @to_close << write
+    JRuby.reference(read).open_file.fd.ch.close
+
+    assert_nothing_raised { read.close }
+    assert read.closed?
+  end
+
 end

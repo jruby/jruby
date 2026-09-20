@@ -136,15 +136,13 @@ public class ChannelFD implements Closeable {
                 throw new ClosedChannelException();
             }
 
-            // if channel is already closed, we're no longer valid
-            if (!ch.isOpen()) {
-                throw new ClosedChannelException();
-            }
-
             // otherwise decrement and possibly close as normal
             int count = refs.decrementAndGet();
 
-            if (count <= 0) {
+            // The channel may already be closed without Ruby having closed the stream: the JDK
+            // closes an interruptible channel when the thread blocked on it is interrupted, which
+            // is how we unblock IO for Thread#kill. There is nothing left to close, and no error.
+            if (count <= 0 && ch.isOpen()) {
                 // if we're the last referrer, close the channel
                 try {
                     ch.close();
