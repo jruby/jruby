@@ -2246,9 +2246,13 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         fptr.lock();
         try {
-            if (posix.isNative() && fptr.fd().realFileno != -1) {
+            // read fd once: a close in another thread nulls it between the check above and here
+            ChannelFD fd = fptr.fd();
+            if (fd == null) throw runtime.newIOError(CLOSED_STREAM_MSG);
+
+            if (posix.isNative() && fd.realFileno != -1) {
                 // IO is native and we can call isatty
-                return Convert.asBoolean(context, posix.libc().isatty(fptr.getFileno()) == 1);
+                return Convert.asBoolean(context, posix.libc().isatty(fd.bestFileno(true)) == 1);
             } else if (fptr.isStdio() && runtime.getInstanceConfig().isMain()) {
                 // IO is stdio and JRuby was started through Main, use JVM console status
                 return Convert.asBoolean(context, JVMConsole.isTerminal);
