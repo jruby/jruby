@@ -17,9 +17,9 @@ def aot_cache_supported?
 end
 
 describe 'a Java class loaded from the JRuby class loader' do
-  before { skip 'requires a JVM with AOT cache support' unless aot_cache_supported? }
-
   it 'keeps its bound methods when the boot layer comes from an AOT cache' do
+    skip 'requires a JVM with AOT cache support' unless aot_cache_supported?
+
     # --nocache avoids -XX:SharedArchiveFile, which the JVM rejects alongside AOT cache flags.
     jruby = "#{ENV_JAVA['jruby.home']}/bin/jruby --nocache"
 
