@@ -35,7 +35,7 @@ failures
 .debug.properties
 .redcar
 /.rbx/
-build.properties
+/build.properties
 build_graph.png
 core/src/main/java/org/jruby/runtime/Constants.java
 dependency-reduced-pom.xml
@@ -57,7 +57,6 @@ lib/jruby*.jar
 lib/jruby*.jsa*
 lib/native
 lib/ruby/gems
-!samples/jnlp/build.properties
 
 # Ruby stdlib files installed from external sources
 lib/ruby/stdlib/**/maven-metadata-local.xml
