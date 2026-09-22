@@ -239,7 +239,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             }
         }
 
-        prepStdioEcflags(fptr, fmode);
+        setDefaultTextModeEcflags(fptr, fmode);
         fptr.stdio_file = f;
 
         // We checkTTY again here because we're using stdout/stdin to indicate this is stdio
@@ -263,7 +263,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             }
         }
 
-        prepStdioEcflags(fptr, fmode);
+        setDefaultTextModeEcflags(fptr, fmode);
         fptr.stdio_file = f;
 
         return recheckTTY(runtime, fptr, io);
@@ -276,8 +276,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return io;
     }
 
-    // MRI: part of prep_stdio
-    private static void prepStdioEcflags(OpenFile fptr, int fmode) {
+    // MRI: the newline decorators prep_stdio and pipe_open give an IO in the default text mode
+    private static void setDefaultTextModeEcflags(OpenFile fptr, int fmode) {
         boolean locked = fptr.lock();
         try {
             fptr.encs.ecflags |= EncodingUtils.ECONV_DEFAULT_NEWLINE_DECORATOR;
@@ -4597,6 +4597,12 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     private void setupPopen(ThreadContext context, ModeFlags modes, POpenProcess process) throws RaiseException {
         openFile.setMode(modes.getOpenFileFlags() | OpenFile.SYNC);
         openFile.setProcess(process);
+
+        // MRI: pipe_open; a popen pipe is in the platform's default text mode unless opened in binmode
+        if (EncodingUtils.DEFAULT_TEXTMODE != 0 && !openFile.isBinmode()) {
+            openFile.setTextMode();
+            setDefaultTextModeEcflags(openFile, openFile.getMode());
+        }
 
         if (openFile.isReadable()) {
             Channel inChannel;

@@ -1,1 +1,0 @@
-windows:IO#getc returns the next character from the stream

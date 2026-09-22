@@ -1,7 +1,11 @@
 package org.jruby.util.io;
 
 import java.io.Closeable;
+import java.io.Console;
 import java.io.IOException;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.FileChannel;
@@ -991,20 +995,52 @@ public class OpenFile implements Finalizable {
 
     // MRI: NEED_READCONV
     public boolean needsReadConversion() {
-        return Platform.IS_WINDOWS ?
-                (encs.enc2 != null || (encs.ecflags & ~EConvFlags.CRLF_NEWLINE_DECORATOR) != 0) || isTextMode()
+        return needsReadConversion(Platform.IS_WINDOWS, encs.enc2, mode, encs.ecflags);
+    }
+
+    // MRI: NEED_READCONV with the platform passed in; crlfEnvironment is MRI's RUBY_CRLF_ENVIRONMENT (Windows)
+    static boolean needsReadConversion(boolean crlfEnvironment, Encoding enc2, int mode, int ecflags) {
+        return crlfEnvironment ?
+                (enc2 != null || (ecflags & ~EConvFlags.CRLF_NEWLINE_DECORATOR) != 0) || (mode & TEXTMODE) != 0
                 :
-                (encs.enc2 != null || NEED_NEWLINE_DECORATOR_ON_READ());
+                (enc2 != null || (mode & TEXTMODE) != 0);
+    }
+
+    // MRI: the ecflags make_readconv opens the read converter with. MRI leaves the default text-mode
+    // newline conversion (the CRLF marker in ecflags) to the C runtime's O_TEXT descriptors; the JDK has
+    // no text mode, so the read converter does it here with the universal newline decorator.
+    static int readConversionFlags(boolean crlfEnvironment, int mode, int ecflags) {
+        int readFlags = ecflags & ~EConvFlags.NEWLINE_DECORATOR_WRITE_MASK;
+        if (crlfEnvironment && (mode & TEXTMODE) != 0 && (ecflags & EConvFlags.CRLF_NEWLINE_DECORATOR) != 0) {
+            readFlags |= EConvFlags.UNIVERSAL_NEWLINE_DECORATOR;
+        }
+        return readFlags;
     }
 
     // MRI: NEED_WRITECONV
     public boolean needsWriteConversion(ThreadContext context) {
         Encoding ascii8bit = encodingService(context).getAscii8bitEncoding();
 
-        return Platform.IS_WINDOWS ?
-                ((encs.enc != null && encs.enc != ascii8bit) || (encs.ecflags & ((EConvFlags.DECORATOR_MASK & ~EConvFlags.CRLF_NEWLINE_DECORATOR)|EConvFlags.STATEFUL_DECORATOR_MASK)) != 0)
-                :
-                ((encs.enc != null && encs.enc != ascii8bit) || NEED_NEWLINE_DECORATOR_ON_WRITE() || (encs.ecflags & (EConvFlags.DECORATOR_MASK|EConvFlags.STATEFUL_DECORATOR_MASK)) != 0);
+        return needsWriteConversion(Platform.IS_WINDOWS, crtTranslatesWrites(), encs.enc, ascii8bit, mode, encs.ecflags);
+    }
+
+    // MRI: rb_w32_write lets the C runtime insert the CRs only on a file or on the process's own stdout
+    // and stderr; a pipe is written raw even in text mode, so the default CRLF marker alone must not
+    // select the write converter there.
+    boolean crtTranslatesWrites() {
+        return fd != null && (fd.chFile != null || isStdio());
+    }
+
+    // MRI: NEED_WRITECONV with the platform passed in. MRI leaves the CRLF decorator out of its Windows
+    // mask because the C runtime's O_TEXT descriptors write CRLF; the JDK has no text mode, so the write
+    // converter must apply it where the C runtime would (crtTranslatesWrites).
+    static boolean needsWriteConversion(boolean crlfEnvironment, boolean crtTranslatesWrites, Encoding enc, Encoding ascii8bit, int mode, int ecflags) {
+        if (crlfEnvironment) {
+            int decorators = crtTranslatesWrites ?
+                    EConvFlags.DECORATOR_MASK : EConvFlags.DECORATOR_MASK & ~EConvFlags.CRLF_NEWLINE_DECORATOR;
+            return (enc != null && enc != ascii8bit) || (ecflags & (decorators|EConvFlags.STATEFUL_DECORATOR_MASK)) != 0;
+        }
+        return (enc != null && enc != ascii8bit) || (mode & TEXTMODE) != 0 || (ecflags & (EConvFlags.DECORATOR_MASK|EConvFlags.STATEFUL_DECORATOR_MASK)) != 0;
     }
 
     // MRI: make_readconv
@@ -1013,7 +1049,7 @@ public class OpenFile implements Finalizable {
             int ecflags;
             IRubyObject ecopts;
             byte[] sname, dname;
-            ecflags = encs.ecflags & ~EConvFlags.NEWLINE_DECORATOR_WRITE_MASK;
+            ecflags = readConversionFlags(Platform.IS_WINDOWS, mode, encs.ecflags);
             ecopts = encs.ecopts;
             if (encs.enc2 != null) {
                 sname = encs.enc2.getName();
@@ -2315,23 +2351,36 @@ public class OpenFile implements Finalizable {
 
     // MRI: io_fwrite
     public long fwrite(ThreadContext context, RubyString str, boolean nosync) {
-        // The System.console null check is our poor-man's isatty for Windows. See jruby/jruby#3292
-        if (Platform.IS_WINDOWS && isStdio() && System.console() != null) {
+        if (Platform.IS_WINDOWS && isStdio() && stdioIsConsole()) {
             return rbW32WriteConsole(str);
         }
 
+        int requested = str.getByteList().length();
+        boolean crtNewlines = crtNewlinesOnly(context);
         str = doWriteconv(context, str);
         ByteList strByteList = str.getByteList();
-        return binwriteInt(context, strByteList.unsafeBytes(), strByteList.begin(), strByteList.length(), nosync);
+        long n = binwriteInt(context, strByteList.unsafeBytes(), strByteList.begin(), strByteList.length(), nosync);
+        // MRI: _write reports the caller's byte count, not the CRs the C runtime inserted
+        return crtNewlines && n == strByteList.length() ? requested : n;
+    }
+
+    // Windows text mode where the default CRLF marker is the only reason for a write converter: MRI
+    // leaves those CRs to the C runtime, whose _write does not count them in its return value.
+    private boolean crtNewlinesOnly(ThreadContext context) {
+        if (!Platform.IS_WINDOWS || !crtTranslatesWrites()) return false;
+        Encoding ascii8bit = encodingService(context).getAscii8bitEncoding();
+        return needsWriteConversion(true, true, encs.enc, ascii8bit, mode, encs.ecflags)
+                && !needsWriteConversion(true, false, encs.enc, ascii8bit, mode, encs.ecflags);
     }
 
     // MRI: io_fwrite with source bytes
     public int fwrite(ThreadContext context, byte[] bytes, int start, int length, Encoding encoding, boolean nosync) {
-        // The System.console null check is our poor-man's isatty for Windows. See jruby/jruby#3292
-        if (Platform.IS_WINDOWS && isStdio() && System.console() != null) {
+        if (Platform.IS_WINDOWS && isStdio() && stdioIsConsole()) {
             return rbW32WriteConsole(bytes, start, length, encoding);
         }
 
+        int requested = length;
+        boolean crtNewlines = crtNewlinesOnly(context);
         ByteList str = doWriteconv(context, bytes, start, length, encoding);
 
         if (str != null) {
@@ -2340,7 +2389,31 @@ public class OpenFile implements Finalizable {
             length = str.realSize();
         }
 
-        return binwriteInt(context, bytes, start, length, nosync);
+        int n = binwriteInt(context, bytes, start, length, nosync);
+        return crtNewlines && n == length ? requested : n;
+    }
+
+    // Poor man's isatty for stdio on Windows (jruby/jruby#3292). System.console() is non-null on JDK 22-24
+    // even when the standard streams are redirected; Console#isTerminal (JDK 22+) tells the cases apart.
+    static boolean stdioIsConsole() {
+        Console console = System.console();
+        if (console == null) return false;
+        if (CONSOLE_IS_TERMINAL == null) return true;
+        try {
+            return (boolean) CONSOLE_IS_TERMINAL.invoke(console);
+        } catch (Throwable t) {
+            return true;
+        }
+    }
+
+    private static final MethodHandle CONSOLE_IS_TERMINAL = lookupConsoleIsTerminal();
+
+    private static MethodHandle lookupConsoleIsTerminal() {
+        try {
+            return MethodHandles.publicLookup().findVirtual(Console.class, "isTerminal", MethodType.methodType(boolean.class));
+        } catch (NoSuchMethodException | IllegalAccessException e) {
+            return null;
+        }
     }
 
     // MRI: rb_w32_write_console

@@ -77,3 +77,38 @@ describe "IO#seek" do
     end
   end
 end
+
+platform_is :windows do
+  describe "IO#seek on Windows" do
+    before :each do
+      @fname = tmp("io_seek.txt")
+      touch(@fname, "wb") { |f| f.write "line one\r\nline two\r\n" }
+    end
+
+    after :each do
+      @io.close if @io
+      rm_r @fname
+    end
+
+    it "seeks to a byte offset and reads a normalized line in text mode" do
+      @io = new_io(@fname, "r")
+      @io.seek(10)
+      @io.readline.should == "line two\n"
+    end
+
+    it "seeks to a byte offset after reading a normalized line in text mode" do
+      @io = new_io(@fname, "r")
+      @io.readline.should == "line one\n"
+      @io.seek(0)
+      @io.readline.should == "line one\n"
+      @io.seek(10, IO::SEEK_SET)
+      @io.readline.should == "line two\n"
+    end
+
+    it "seeks to a byte offset and reads a raw line in binary mode" do
+      @io = new_io(@fname, "rb")
+      @io.seek(10)
+      @io.readline.should == "line two\r\n"
+    end
+  end
+end
