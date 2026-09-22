@@ -43,6 +43,7 @@ DO NOT MODIFY - GENERATED CODE
     <parser.dir>core/src/main/java/org/jruby/parser</parser.dir>
     <polyglot.dump.pom>pom.xml</polyglot.dump.pom>
     <polyglot.dump.readonly>true</polyglot.dump.readonly>
+    <prism.parser.version>0.0.5-SNAPSHOT</prism.parser.version>
     <rails.dir>${test.dir}/rails</rails.dir>
     <rails.git.repo>git://github.com/rails/rails.git</rails.git.repo>
     <rake.args></rake.args>
@@ -238,14 +239,19 @@ DO NOT MODIFY - GENERATED CODE
       <version>1.5.0</version>
     </dependency>
     <dependency>
-      <groupId>org.jruby</groupId>
-      <artifactId>jruby-prism</artifactId>
-      <version>2.0.4</version>
-    </dependency>
-    <dependency>
       <groupId>ch.randelshofer</groupId>
       <artifactId>fastdoubleparser</artifactId>
       <version>2.0.1</version>
+    </dependency>
+    <dependency>
+      <groupId>org.ruby-lang</groupId>
+      <artifactId>prism-parser-api</artifactId>
+      <version>${prism.parser.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.ruby-lang</groupId>
+      <artifactId>prism-parser-wasm</artifactId>
+      <version>${prism.parser.version}</version>
     </dependency>
   </dependencies>
   <build>
