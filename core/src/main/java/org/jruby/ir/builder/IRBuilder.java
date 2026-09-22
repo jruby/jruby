@@ -1558,8 +1558,14 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
     protected Operand buildIter(U var, U body, StaticScope staticScope, Signature signature, int line, int endLine) {
+        return buildIter(var, body, staticScope, signature, line, -1, endLine, -1);
+    }
+
+    protected Operand buildIter(U var, U body, StaticScope staticScope, Signature signature, int line, int startColumn,
+                                int endLine, int endColumn) {
         ByteList prefix = createPrefixForIter(var);
         IRClosure closure = new IRClosure(getManager(), scope, line, staticScope, signature, prefix, coverageMode);
+        closure.setSourceSpan(startColumn, endLine, endColumn);
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
         getManager().getBuilderFactory().newIRBuilder(getManager(), closure, this, encoding).buildIterInner(methodName, var, body, endLine);
@@ -1601,6 +1607,9 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
         boolean forNode = scope instanceof IRFor;
 
+        // Any block can become a method through define_method, so blocks get the method coverage probes too.
+        Variable methodCoverage = forNode ? null : receiveMethodCoverage();
+
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             addInstr(new TraceInstr(RubyEvent.B_CALL, getCurrentModuleVariable(), getName(), getFileName(), scope.getLine() + 1));
         }
@@ -1610,6 +1619,8 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         } else {
             receiveBlockArgs(var);
         }
+
+        coverMethod(methodCoverage);
 
         // conceptually abstract prologue scope instr creation so we can put this at the end of it instead of replicate it.
         afterPrologueIndex = instructions.size();
@@ -1637,8 +1648,14 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
     public Operand buildLambda(U args, U body, StaticScope staticScope, Signature signature, int line) {
+        return buildLambda(args, body, staticScope, signature, line, -1, -1, -1);
+    }
+
+    public Operand buildLambda(U args, U body, StaticScope staticScope, Signature signature, int line, int startColumn,
+                               int endLine, int endColumn) {
         IRClosure closure = new IRClosure(getManager(), scope, line, staticScope, signature,
                 createPrefixForLambda(args), coverageMode);
+        closure.setSourceSpan(startColumn, endLine, endColumn);
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
         getManager().getBuilderFactory().newIRBuilder(getManager(), closure, this, encoding).buildLambdaInner(args, body);
@@ -1653,7 +1670,11 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         long time = 0;
         if (parserTiming) time = System.nanoTime();
 
+        Variable methodCoverage = receiveMethodCoverage();
+
         receiveBlockArgs(blockArgs);
+
+        coverMethod(methodCoverage);
 
         Operand closureRetVal = build(body);
 
@@ -2992,6 +3013,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     protected IRMethod defineNewMethod(LazyMethodDefinition<U, V, W, X, Y, Z> defn, ByteList name, int line, StaticScope scope, boolean isInstanceMethod) {
         IRMethod method = new IRMethod(getManager(), this.scope, defn, name, isInstanceMethod, line, scope, coverageMode);
+        method.setSourceSpan(defn.getStartColumn(), defn.getEndLine(), defn.getEndColumn());
 
         // poorly placed next/break expects a syntax error so we eagerly build methods which contain them.
         if (!canBeLazyMethod(defn.getMethod())) method.lazilyAcquireInterpreterContext();
@@ -3005,6 +3027,8 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         if (parserTiming) time = System.nanoTime();
         this.coverageMode = coverageMode;
 
+        Variable methodCoverage = receiveMethodCoverage();
+
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             // Explicit line number here because we need a line number for trace before we process any nodes
             addInstr(getManager().newLineNumber(scope.getLine() + 1));
@@ -3012,6 +3036,8 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         }
 
         receiveMethodArgs(defNode.getMethod());
+
+        coverMethod(methodCoverage);
 
         Operand rv = build(defNode.getMethodBody());
 
@@ -3038,6 +3064,25 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
 
         if (parserTiming) manager.getRuntime().getParserManager().getParserStats().addIRBuildTime(System.nanoTime() - time);
+    }
+
+    /**
+     * Method coverage, step one: take the {@link org.jruby.ext.coverage.MethodCoverage} counter passed by the
+     * calling DynamicMethod, if any. This runs before anything else in the body, so a nested call made while
+     * receiving arguments cannot take the counter first. Returns null when methods are not measured.
+     */
+    private Variable receiveMethodCoverage() {
+        if ((coverageMode & CoverageData.METHODS) == 0) return null;
+
+        return addResultInstr(new ReceiveMethodCoverageInstr(temp()));
+    }
+
+    /**
+     * Method coverage, step two: count the call after the arguments have been received. This is where MRI fires
+     * CALL, so a call that fails on its arguments is not counted.
+     */
+    private void coverMethod(Variable methodCoverage) {
+        if (methodCoverage != null) addInstr(new CoverMethodInstr(methodCoverage));
     }
 
     private void prependUsedImplicitState(IRScope parent) {

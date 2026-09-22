@@ -461,8 +461,11 @@ public class ConcreteJavaProxy extends JavaProxy {
          * Returns true when {@code args} can be forwarded directly to the Java superclass constructor without
          * entering the split interpreter (e.g. {@code def initialize(*args); super(*args); end}).
          */
-        private boolean canSkipDirectSuper(IRubyObject[] args) {
-            return eic != null && eic.directSuperForwardable(args.length);
+        private boolean canSkipDirectSuper(ThreadContext context, IRubyObject[] args) {
+            if (eic == null || !eic.directSuperForwardable(args.length)) return false;
+
+            air.coverElidedCall(context); // the Ruby initialize is skipped, but this is still a call of it
+            return true;
         }
 
         /**
@@ -476,6 +479,8 @@ public class ConcreteJavaProxy extends JavaProxy {
         private IRubyObject[] terminalLiteralSuperArgs(ThreadContext context, int argsLength) {
             ExitableInterpreterContext ic = eic;
             if (ic == null || !ic.terminalLiteralSuperForwardable(argsLength)) return null;
+
+            air.coverElidedCall(context); // same as above
 
             IRubyObject[] cached = cachedTerminalLiteralArgs;
             if (cached != null) return cached;
@@ -522,6 +527,7 @@ public class ConcreteJavaProxy extends JavaProxy {
 
     private SplitCtorData splitInitialized(SplitCtorPlan plan, IRubyObject[] args, Block block, ConstructorCache jcc, boolean fromRubySuper) {
         final Ruby runtime = getRuntime();
+        final ThreadContext context = runtime.getCurrentContext();
         final AbstractIRMethod air = plan.air;
         final ExitableInterpreterContext eic = plan.eic;
         final String name = plan.name;
@@ -529,16 +535,16 @@ public class ConcreteJavaProxy extends JavaProxy {
         final RubyModule effectiveSource = plan.effectiveSource;
 
         if (plan.prependedJavaCtorWrapper && air != null) {
-            if (plan.canSkipDirectSuper(args)) {
+            if (plan.canSkipDirectSuper(context, args)) {
                 return splitInitialized(plan.prependedSuperPlan(sourceLocation.getSuperClass()), args, block, jcc, true);
             }
 
-            IRubyObject[] literalArgs = plan.terminalLiteralSuperArgs(runtime.getCurrentContext(), args.length);
+            IRubyObject[] literalArgs = plan.terminalLiteralSuperArgs(context, args.length);
             if (literalArgs != null) {
                 return splitInitialized(plan.prependedSuperPlan(sourceLocation.getSuperClass()), literalArgs, block, jcc, true);
             }
 
-            SplitSuperState<?> state = air.startSplitSuperCall(runtime.getCurrentContext(), this, effectiveSource, name, args, block, eic);
+            SplitSuperState<?> state = air.startSplitSuperCall(context, this, effectiveSource, name, args, block, eic);
             IRubyObject[] forwardedArgs = state == null ? args : state.callArgs;
             Block forwardedBlock = state == null ? block : state.callBlockArgs;
             SplitCtorData ctorData = splitInitialized(plan.prependedSuperPlan(sourceLocation.getSuperClass()), forwardedArgs, forwardedBlock, jcc, true);
@@ -547,11 +553,11 @@ public class ConcreteJavaProxy extends JavaProxy {
 
         // jcreate is for nested ruby classes from a java class
         if (shouldSplitJavaConstructorInitialize(plan, fromRubySuper) && air != null) {
-            if (plan.canSkipDirectSuper(args)) {
+            if (plan.canSkipDirectSuper(context, args)) {
                 return splitSuperInitialized(plan, args, block, jcc);
             }
 
-            IRubyObject[] literalArgs = plan.terminalLiteralSuperArgs(runtime.getCurrentContext(), args.length);
+            IRubyObject[] literalArgs = plan.terminalLiteralSuperArgs(context, args.length);
             if (literalArgs != null) {
                 SplitCtorData cachedTerminator = plan.cachedLiteralSuperTerminator;
                 if (cachedTerminator != null) return cachedTerminator;
@@ -561,7 +567,7 @@ public class ConcreteJavaProxy extends JavaProxy {
                 return terminator;
             }
 
-            SplitSuperState<?> state = air.startSplitSuperCall(runtime.getCurrentContext(), this, effectiveSource, name, args, block, eic);
+            SplitSuperState<?> state = air.startSplitSuperCall(context, this, effectiveSource, name, args, block, eic);
             if (state == null) { // no super in method
                 return new SplitCtorData(runtime, args, jcc, air, effectiveSource, name, block);
             }

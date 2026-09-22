@@ -171,6 +171,7 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
         try {
             AbstractIRMethod clone = (AbstractIRMethod) super.clone();
             clone.callCount = 0;
+            clone.methodCoverage = null; // a dup is a new entry; Coverage registers it when it is added to a module
             if (clone instanceof MixedModeIRMethod mixedMode) {
                 mixedMode.reset();
             }
@@ -241,8 +242,24 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
         if (ic == null) return null;
 
         SplitSuperState<MethodSplitState> directState = MethodSplitState.directSuperState(context, ic, args, block);
-        if (directState != null) return directState;
+        if (directState != null) {
+            coverElidedCall(context); // the body is skipped, so it cannot count the call itself
+            return directState;
+        }
 
+        // The body runs through interpretSplit or a compiled split, not through DynamicMethod#call, so the Coverage
+        // hand-off happens here.
+        prepareMethodCoverage(context);
+
+        return splitSuperCall(context, self, klazz, name, args, block, ic);
+    }
+
+    /**
+     * Run a split method up to its super call. Compiled when the method can escape at the super, interpreted otherwise.
+     */
+    public SplitSuperState<?> splitSuperCall(ThreadContext context, IRubyObject self,
+                                             RubyModule klazz, String name, IRubyObject[] args, Block block,
+                                             ExitableInterpreterContext ic) {
         if (ic.canEscapeAtSuper()) {
             SplitSuperState<MethodSplitState> compiledState = tryCompiledTerminalSplit(context, self, klazz, name, args, block, ic);
             if (compiledState != null) return compiledState;
