@@ -1791,8 +1791,14 @@ public abstract class RubyParserBase {
         int length = identifier.length();
         byte last = (byte) identifier.get(length - 1);
         if (last == '=') {
-            if (length > 1 && identifier.charAt(length - 2) == '=') {
-                return Local;
+            if (length > 1) {
+                char secondLast = identifier.charAt(length - 2);
+                // Comparison operators (==, ===, !=, <=, >=) end in '=' but
+                // are not setter (attrset) names. Genuine setters (foo=, []=)
+                // never have '=', '!', '<' or '>' as their second to last char.
+                if (secondLast == '=' || secondLast == '!' || secondLast == '<' || secondLast == '>') {
+                    return Local;
+                }
             }
             return AttrSet;
         }
