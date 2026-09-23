@@ -3,9 +3,10 @@ package org.jruby.util;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.Channel;
-import java.nio.channels.Channels;
 import java.nio.file.attribute.FileTime;
 import java.util.jar.JarEntry;
+
+import org.jruby.util.io.SeekableInputStreamChannel;
 
 /**
  * Represents a file in a jar.
@@ -71,7 +72,7 @@ class JarFileResource extends JarResource {
 
     @Override
     public Channel openChannel(int flags, int perm) throws IOException {
-        return Channels.newChannel(openInputStream());
+        return new SeekableInputStreamChannel(this::openInputStream, entry.getSize(), absolutePath());
     }
 
     @Override

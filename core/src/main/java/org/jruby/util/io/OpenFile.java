@@ -1473,8 +1473,26 @@ public class OpenFile implements Finalizable {
                     } else if (read == -1) {
                         throw runtime.newErrnoFromInt(runtime.getPosix().errno());
                     }
+                } else if (fd.chSeek instanceof SeekableInputStreamChannel ch) {
+                    read = ch.read(bytes, from);
+
+                    if (read == -1) {
+                        throw runtime.newEOFError();
+                    }
+                } else if (fd.chSeek != null) {
+                    final long pos = fd.chSeek.position();
+                    try {
+                        read = fd.chSeek.position(from).read(bytes);
+                    } finally {
+                        fd.chSeek.position(pos);
+                    }
+
+                    if (read == -1) {
+                        throw runtime.newEOFError();
+                    }
                 } else if (fd.chRead != null) {
-                    read = fd.chRead.read(bytes);
+                    // NOTE: reading from the current position would silently return wrong data
+                    throw runtime.newErrnoESPIPEError();
                 } else {
                     throw runtime.newIOError("not opened for reading");
                 }
