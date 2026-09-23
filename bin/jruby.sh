@@ -468,6 +468,16 @@ if [ -z "${JAVACMD-}" ]; then
             # use java_home command when none is set (on MacOS)
             JAVA_HOME="$("$java_home_command")" &&
             JAVACMD="$JAVA_HOME"/bin/java
+        elif command -v asdf >/dev/null; then
+            # use asdf to find java executable
+            JAVACMD="$(asdf which java)" &&
+            resolve "$JAVACMD" &&
+            JAVACMD="$REPLY"
+            if [ -z "${JAVA_HOME-}" ]; then
+                # If JAVA_HOME is not set, use the directory of the java executable
+                dir_name "$JAVACMD"
+                JAVA_HOME="$REPLY"
+            fi
         else
             # Linux and others have a chain of symlinks
             JAVACMD="$(command -v java)" &&
