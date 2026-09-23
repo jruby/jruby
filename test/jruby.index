@@ -96,6 +96,7 @@ jruby/test_jruby_synchronized
 jruby/test_jruby_4198
 jruby/test_context_classloader
 jruby/test_uri_classloader
+jruby/test_io_jar_seek
 jruby/test_rexml_document
 jruby/test_missing_jruby_home
 jruby/test_ast_inspector
