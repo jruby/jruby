@@ -677,7 +677,7 @@ public class OpenFile implements Finalizable {
     @CRuby(value = "io_flush_buffer_sync", file = "io.c")
     private int flushBufferSync() {
         int l = writableLength(wbuf.len);
-        int r = posix.write(fd, wbuf.ptr, wbuf.off, l, nonblock);
+        int r = writeInternal2(fd, wbuf.ptr, wbuf.off, l);
 
         if (wbuf.len <= r) {
             wbuf.off = 0;
@@ -1568,7 +1568,7 @@ public class OpenFile implements Finalizable {
                 IRubyObject result = FiberScheduler.ioReadMemory(context, scheduler, fptr.io, buffer, count, 0);
 
                 if (result != null) {
-                    return FiberScheduler.resultApply(context, result);
+                    return fptr.schedulerResult(context, result);
                 }
 
                 // MRI's sockets and pipes are nonblocking, so its plain read yields in io_wait on
@@ -1631,7 +1631,7 @@ public class OpenFile implements Finalizable {
                 IRubyObject result = FiberScheduler.ioPReadMemory(context, scheduler, fptr.io, buffer, from, length, 0);
 
                 if (result != null) {
-                    return FiberScheduler.resultApply(context, result);
+                    return fptr.schedulerResult(context, result);
                 }
             }
         }
@@ -1652,7 +1652,7 @@ public class OpenFile implements Finalizable {
                 IRubyObject result = FiberScheduler.ioPWriteMemory(context, scheduler, fptr.io, buffer, from, length, 0);
 
                 if (result != null) {
-                    return FiberScheduler.resultApply(context, result);
+                    return fptr.schedulerResult(context, result);
                 }
             }
         }
@@ -2607,7 +2607,7 @@ public class OpenFile implements Finalizable {
                 IRubyObject result = FiberScheduler.ioWriteMemory(context, scheduler, fptr.io, bufBytes, count, 0);
 
                 if (result != null) {
-                    return FiberScheduler.resultApply(context, result);
+                    return fptr.schedulerResult(context, result);
                 }
             }
         }
@@ -2619,9 +2619,30 @@ public class OpenFile implements Finalizable {
         }
     }
 
-    // rb_write_internal2 (no GVL version...we just don't use executeTask as above.
+    // MRI's rb_write_internal2, which 3.1 folded into rb_write_internal (now rb_io_write_memory).
+    // Offers the write to the fiber scheduler first, then writes directly instead of through executeTask like writeInternal.
     int writeInternal2(ChannelFD fd, byte[] bufBytes, int buf, int count) {
+        if (fiberScheduler) {
+            ThreadContext context = runtime.getCurrentContext();
+            IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
+            if (!scheduler.isNil()) {
+                IRubyObject result = FiberScheduler.ioWriteMemory(context, scheduler, io, ByteBuffer.wrap(bufBytes, buf, count), count, 0);
+
+                if (result != null) return schedulerResult(context, result);
+            }
+        }
+
         return posix.write(fd, bufBytes, buf, count, nonblock);
+    }
+
+    // MRI: rb_fiber_scheduler_io_result_apply, setting our errno, which is where callers look for it
+    int schedulerResult(ThreadContext context, IRubyObject result) {
+        if (result instanceof RubyFixnum fixnum && fixnum.getValue() < 0) {
+            posix.setErrno(Errno.valueOf(-fixnum.getValue()));
+            return -1;
+        }
+
+        return FiberScheduler.resultApply(context, result);
     }
 
     public ChannelFD fd() {
