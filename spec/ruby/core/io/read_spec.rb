@@ -774,3 +774,33 @@ describe "IO#read with large data" do
     ScratchPad.recorded.should == @data[0, read_size]
   end
 end
+
+describe "IO#read with a Fiber scheduler that implements io_read" do
+  require_relative '../fiber/fixtures/scheduler'
+
+  before :each do
+    @name = tmp("io_read_scheduler.txt")
+    File.write(@name, "Hello World!")
+
+    scheduler = Class.new(FiberSpecs::LoggingScheduler) do
+      def io_read(io, buffer, length, offset)
+        @events << { event: :io_read }
+        Fiber.blocking { buffer.read(io, length, offset) }
+      end
+    end.new
+    Fiber.set_scheduler(scheduler)
+  end
+
+  after :each do
+    Fiber.set_scheduler(nil)
+    rm_r @name
+  end
+
+  it "reads the whole file through the scheduler" do
+    result = nil
+    Fiber.schedule { result = File.read(@name) }
+
+    result.should == "Hello World!"
+    Fiber.scheduler.events.map { |e| e[:event] }.should.include?(:io_read)
+  end
+end
