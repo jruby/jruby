@@ -188,3 +188,50 @@ describe "IO.select with infinite timeout" do
     end
   end
 end
+
+platform_is_not :windows do
+  describe "IO.select with a FIFO" do
+    before :each do
+      @path = tmp("io_select_fifo")
+      rm_r @path
+      File.mkfifo(@path)
+      @writer = File.open(@path, "w+")
+      @reader = File.open(@path, "r")
+    end
+
+    after :each do
+      @reader.close if @reader
+      @writer.close if @writer
+      rm_r @path
+    end
+
+    it "reports the FIFO as readable once data is written to it" do
+      IO.select([@reader], nil, nil, 0).should == nil
+
+      @writer.write("x")
+      @writer.flush
+
+      IO.select([@reader], nil, nil, 1).should == [[@reader], [], []]
+    end
+
+    it "reports the FIFO as writable" do
+      IO.select(nil, [@writer], nil, 1).should == [[], [@writer], []]
+    end
+  end
+
+  describe "IO.select with a character device" do
+    before :each do
+      @reader = File.open(File::NULL, "r")
+      @writer = File.open(File::NULL, "w")
+    end
+
+    after :each do
+      @reader.close if @reader
+      @writer.close if @writer
+    end
+
+    it "reports the device as readable and writable" do
+      IO.select([@reader], [@writer], nil, 1).should == [[@reader], [@writer], []]
+    end
+  end
+end
