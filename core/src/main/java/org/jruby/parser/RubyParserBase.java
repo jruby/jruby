@@ -54,6 +54,7 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.ast.*;
+import org.jruby.ast.util.LineEvents;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.OperatorCallNode;
 import org.jruby.common.IRubyWarnings;
@@ -118,6 +119,9 @@ public abstract class RubyParserBase {
     protected ParserType type;
 
     private int[] coverage = EMPTY_COVERAGE;
+
+    // The line the most recent coverLine call marked, or -1 if an earlier statement had already marked it.
+    private int lastNewlyCoveredLine = -1;
 
     private static final int[] EMPTY_COVERAGE = new int[0];
 
@@ -481,10 +485,7 @@ public abstract class RubyParserBase {
     public Node newline_node(Node node, int line) {
         if (node == null) return null;
 
-        Node newNode = remove_begin(node);
-        // Conservative fix...try and use line unless we see remove has been removed then use the newNode.
-        if (newNode != node) line = newNode.getLine();
-        coverLine(line);
+        coverLine(LineEvents.lineOf(node));
         node.setNewline();
 
         return node;
@@ -493,7 +494,7 @@ public abstract class RubyParserBase {
     // This is the last node made in the AST unintuitively so so post-processing can occur here.
     public Node addRootNode(Node topOfAST) {
         int line;
-        CoverageData coverageData = finishCoverage(lexer.getFile(), lexer.lineno());
+        CoverageData coverageData = finishCoverage(lexer.getFile(), lexer.lastLineno());
         if (result.getBeginNodes().isEmpty()) {
             if (topOfAST == null) {
                 topOfAST = NilImplicitNode.NIL;
@@ -1494,6 +1495,7 @@ public abstract class RubyParserBase {
                 if (front.getValue().getRealSize() > 0) {
                     return new StrNode(head.getLine(), front, (StrNode) tail);
                 } else {
+                    tail.setLine(head.getLine());
                     return tail;
                 }
             } 
@@ -1932,7 +1934,7 @@ public abstract class RubyParserBase {
             ByteList meat = (ByteList) ((StrNode) contents).getValue().clone();
             lexer.checkRegexpFragment(runtime, meat, options);
             lexer.checkRegexpSyntax(runtime, meat, options.withoutOnce());
-            return new RegexpNode(contents.getLine(), meat, options.withoutOnce());
+            return new RegexpNode(line, meat, options.withoutOnce());
         } else if (contents instanceof DStrNode) {
             DStrNode dStrNode = (DStrNode) contents;
             
@@ -2404,12 +2406,25 @@ public abstract class RubyParserBase {
      * Zero out coverable lines as they're encountered
      */
     public void coverLine(int i) {
+        lastNewlyCoveredLine = -1;
         // We had an overflow so we cannot mark whatever line this is as covered.
         if (i < 0) return;
         if (isCoverageEnabled()) {
             growCoverageLines(i);
+            if (coverage[i] != 0) lastNewlyCoveredLine = i;
             coverage[i] = 0;
         }
+    }
+
+    /**
+     * Undo the most recent coverLine (a statement marked by newline_node that turned out not to be a line
+     * event, such as a lone statement inside a string interpolation): the line reads as nil in the results
+     * unless another statement marks it. A line some earlier statement had already marked stays marked.
+     */
+    public void uncoverLastLine() {
+        if (lastNewlyCoveredLine < 0) return;
+        coverage[lastNewlyCoveredLine] = -1;
+        lastNewlyCoveredLine = -1;
     }
 
     /**

@@ -368,10 +368,22 @@ public class RubyLexer extends LexingCommon {
     public void heredoc_dedent(Node root) {
         int indent = heredoc_indent;
 
-        if (indent <= 0) return;
+        if (indent > 0) {
+            heredoc_indent = 0;
+            dedent(root, indent);
+        }
 
-        heredoc_indent = 0;
+        // The newline flag only marked where the heredoc's lines start for dedenting; they are not statements.
+        if (root instanceof StrNode) {
+            root.unsetNewline();
+        } else if (root instanceof ListNode list) {
+            for (int i = 0; i < list.size(); i++) {
+                if (list.get(i) instanceof StrNode child) child.unsetNewline();
+            }
+        }
+    }
 
+    private void dedent(Node root, int indent) {
         if (root == null) return;
 
         if (root instanceof StrNode) {
