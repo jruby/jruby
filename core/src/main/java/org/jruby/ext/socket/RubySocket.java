@@ -59,6 +59,7 @@ import org.jruby.api.Create;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -328,7 +329,7 @@ public class RubySocket extends RubyBasicSocket {
     }
 
     @JRubyMethod(name = {"socketpair", "pair"}, meta = true)
-    public static IRubyObject socketpair(ThreadContext context, IRubyObject recv, IRubyObject domain, IRubyObject type, IRubyObject protocol) {
+    public static IRubyObject socketpair(ThreadContext context, IRubyObject recv, IRubyObject domain, IRubyObject type, IRubyObject protocol, Block block) {
         ProtocolFamily pf = SocketUtils.protocolFamilyFromArg(context, protocol);
         if (pf == null ) pf = ProtocolFamily.PF_UNIX;
 
@@ -336,11 +337,11 @@ public class RubySocket extends RubyBasicSocket {
             throw context.runtime.newErrnoEOPNOTSUPPError("Socket.socketpair only supports streaming UNIX sockets");
         }
 
-        return socketpair(context, recv, domain, type);
+        return socketpair(context, recv, domain, type, block);
     }
 
     @JRubyMethod(name = {"socketpair", "pair"}, meta = true)
-    public static IRubyObject socketpair(ThreadContext context, IRubyObject recv, IRubyObject domain, IRubyObject type) {
+    public static IRubyObject socketpair(ThreadContext context, IRubyObject recv, IRubyObject domain, IRubyObject type, Block block) {
         AddressFamily af = SocketUtils.addressFamilyFromArg(context, domain);
         if (af == null) af = AddressFamily.AF_UNIX;
         Sock s = SocketUtils.sockFromArg(context, type);
@@ -355,25 +356,25 @@ public class RubySocket extends RubyBasicSocket {
         // TODO: type and protocol
 
         UnixSocketChannel[] sp;
+        final RubyClass socketClass = Access.getClass(context, "Socket");
+        RubySocket sock0 = new RubySocket(runtime, socketClass);
+        RubySocket sock1 = new RubySocket(runtime, socketClass);
 
         try {
             sp = UnixSocketChannel.pair();
-            final RubyClass socketClass = Access.getClass(context, "Socket");
 
-            RubySocket sock0 = new RubySocket(runtime, socketClass);
             ChannelFD fd0 = newChannelFD(runtime, sp[0]);
             sock0.initFieldsFromDescriptor(runtime, fd0);
             sock0.initSocket(fd0);
 
-            RubySocket sock1 = new RubySocket(runtime, socketClass);
             ChannelFD fd1 = newChannelFD(runtime, sp[1]);
             sock1.initFieldsFromDescriptor(runtime, fd1);
             sock1.initSocket(fd1);
-
-            return newArray(context, sock0, sock1);
         } catch (IOException ioe) {
             throw runtime.newIOErrorFromException(ioe);
         }
+
+        return yieldPair(context, sock0, sock1, block);
     }
 
     private void initFieldsFromDescriptor(Ruby runtime, ChannelFD fd) {
