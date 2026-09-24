@@ -30,6 +30,7 @@ import jnr.constants.platform.Sock;
 import jnr.constants.platform.SocketOption;
 import jnr.unixsocket.UnixSocketAddress;
 import jnr.unixsocket.UnixSocketChannel;
+import jnr.unixsocket.UnixSocketOptions;
 
 import java.io.File;
 import java.io.IOException;
@@ -246,6 +247,30 @@ public enum SocketType {
 
         public SocketAddress getLocalSocketAddress(Channel channel) {
             return new UnixSocketAddress(new File(""));
+        }
+
+        public int getSendBufferSize(Channel channel) throws IOException {
+            return toSocket(channel).getOption(UnixSocketOptions.SO_SNDBUF);
+        }
+
+        public void setSendBufferSize(Channel channel, int size) throws IOException {
+            toSocket(channel).setOption(UnixSocketOptions.SO_SNDBUF, size);
+        }
+
+        public int getReceiveBufferSize(Channel channel) throws IOException {
+            return toSocket(channel).getOption(UnixSocketOptions.SO_RCVBUF);
+        }
+
+        public void setReceiveBufferSize(Channel channel, int size) throws IOException {
+            toSocket(channel).setOption(UnixSocketOptions.SO_RCVBUF, size);
+        }
+
+        public boolean getKeepAlive(Channel channel) throws IOException {
+            return toSocket(channel).getOption(UnixSocketOptions.SO_KEEPALIVE);
+        }
+
+        public void setKeepAlive(Channel channel, boolean keepAlive) throws IOException {
+            toSocket(channel).setOption(UnixSocketOptions.SO_KEEPALIVE, keepAlive);
         }
     },
 

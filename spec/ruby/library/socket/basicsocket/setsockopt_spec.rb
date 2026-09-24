@@ -332,3 +332,32 @@ describe 'BasicSocket#setsockopt' do
     end
   end
 end
+
+platform_is_not :windows do
+  describe "BasicSocket#setsockopt on a UNIXSocket" do
+    before :each do
+      @a, @b = UNIXSocket.pair
+    end
+
+    after :each do
+      @a.close
+      @b.close
+    end
+
+    it "sets the send and receive buffer sizes" do
+      @a.setsockopt(Socket::SOL_SOCKET, Socket::SO_SNDBUF, 16384).should == 0
+      @a.setsockopt(Socket::SOL_SOCKET, Socket::SO_RCVBUF, 16384).should == 0
+
+      @a.getsockopt(Socket::SOL_SOCKET, Socket::SO_SNDBUF).int.should >= 16384
+      @a.getsockopt(Socket::SOL_SOCKET, Socket::SO_RCVBUF).int.should >= 16384
+    end
+
+    it "sets SO_KEEPALIVE" do
+      @a.setsockopt(Socket::SOL_SOCKET, Socket::SO_KEEPALIVE, true).should == 0
+      @a.getsockopt(Socket::SOL_SOCKET, Socket::SO_KEEPALIVE).bool.should == true
+
+      @a.setsockopt(Socket::SOL_SOCKET, Socket::SO_KEEPALIVE, false).should == 0
+      @a.getsockopt(Socket::SOL_SOCKET, Socket::SO_KEEPALIVE).bool.should == false
+    end
+  end
+end
