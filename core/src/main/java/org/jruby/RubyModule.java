@@ -6475,12 +6475,17 @@ public class RubyModule extends RubyObject {
         private final RubyString path;
         public String file;
         public int line;
+        // Held while loading. A Thread::Mutex rather than a monitor, so a fiber waiting on another fiber's
+        // autoload waits through the fiber scheduler instead of blocking the thread both run on.
+        // MRI: autoload_mutex
+        private final org.jruby.ext.thread.Mutex loading;
 
         Autoload(String symbol, RubyString path, String file, int line) {
             this.symbol = symbol;
             this.path = path;
             this.file = file;
             this.line = line;
+            this.loading = new org.jruby.ext.thread.Mutex(path.getRuntime(), path.getRuntime().getMutex());
         }
 
         public String getFile() {
@@ -6497,7 +6502,19 @@ public class RubyModule extends RubyObject {
 
         // Returns an object for the constant if the caller is the autoloading thread.
         // Otherwise, try to start autoloading and returns the defined object by autoload.
-        synchronized IRubyObject load(ThreadContext context) {
+        IRubyObject load(ThreadContext context) {
+            // a constant referenced while its own autoload runs; we already hold the lock
+            if (isSelf(context)) return getValue();
+
+            loading.lock(context);
+            try {
+                return loadLocked(context);
+            } finally {
+                loading.unlock(context);
+            }
+        }
+
+        private IRubyObject loadLocked(ThreadContext context) {
             if (this.ctx == null) {
                 this.ctx = context;
             } else if (isSelf(context)) {
@@ -6547,9 +6564,21 @@ public class RubyModule extends RubyObject {
             return isSelf;
         }
 
-        // Returns an object for the constant defined by autoload.
-        synchronized IRubyObject getValue() {
-            return value;
+        // Returns an object for the constant defined by autoload, once any load by another thread or fiber is
+        // done, since the value is set as soon as the constant is defined, before the file finishes loading.
+        IRubyObject getValue() {
+            if (loading.isLocked()) {
+                ThreadContext context = getRuntime().getCurrentContext();
+
+                if (!isSelf(context) && !loading.owned_p(context).isTrue()) {
+                    loading.lock(context);
+                    loading.unlock(context);
+                }
+            }
+
+            synchronized (this) {
+                return value;
+            }
         }
 
         // Returns the assigned feature.
