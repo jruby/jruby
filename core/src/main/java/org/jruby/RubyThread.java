@@ -45,6 +45,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.Queue;
@@ -108,6 +109,7 @@ import static org.jruby.api.Access.runtimeErrorClass;
 import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asFloat;
 import static org.jruby.api.Convert.toDouble;
 import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Create.newString;
@@ -228,6 +230,11 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     /** Whether or not this thread has been disposed of */
     private volatile boolean disposed = false;
+
+    // a fiber joining this thread through a fiber scheduler. MRI: join_list
+    private record SchedulerJoiner(IRubyObject scheduler, IRubyObject fiber) {}
+
+    private List<SchedulerJoiner> schedulerJoiners;
 
     /** Interrupt flags */
     private volatile int interruptFlag = 0;
@@ -452,6 +459,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public void dispose() {
         if (disposed) return;
 
+        List<SchedulerJoiner> joiners;
+
         synchronized (this) {
             if (disposed) return;
 
@@ -473,10 +482,22 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
             // mark thread as DEAD
             beDead();
+
+            joiners = schedulerJoiners;
+            schedulerJoiners = null;
         }
 
-        // unregister from runtime's ThreadService
-        getRuntime().getThreadService().unregisterThread(this);
+        try {
+            // MRI: rb_threadptr_join_list_wakeup
+            if (joiners != null) {
+                for (SchedulerJoiner joiner : joiners) {
+                    FiberScheduler.unblock(getContext(), joiner.scheduler(), this, joiner.fiber());
+                }
+            }
+        } finally {
+            // unregister from runtime's ThreadService
+            getRuntime().getThreadService().unregisterThread(this);
+        }
     }
 
     public static RubyClass createThreadClass(ThreadContext context, RubyClass Object) {
@@ -1282,6 +1303,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         RubyThread currentThread = context.getThread();
 
+        IRubyObject scheduler = FiberScheduler.current(context);
+        if (scheduler != null && !schedulerJoin(context, scheduler, timeoutMillis)) return context.nil;
+
         try {
             currentThread.enterSleep();
 
@@ -1319,6 +1343,38 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         currentThread.pollThreadEvents(context);
 
         return threadImpl.isAlive() ? context.nil : this;
+    }
+
+    // MRI: thread_join_sleep, which blocks the fiber through the scheduler until the thread is dead,
+    // passing what is left of the timeout each time. Returns false if the timeout expired first.
+    private boolean schedulerJoin(ThreadContext context, IRubyObject scheduler, long timeoutMillis) {
+        SchedulerJoiner joiner = new SchedulerJoiner(scheduler, context.getFiber());
+        long end = timeoutMillis == Long.MAX_VALUE ? Long.MAX_VALUE : System.currentTimeMillis() + timeoutMillis;
+
+        while (true) {
+            IRubyObject timeout = context.nil;
+
+            synchronized (this) {
+                if (disposed) return true;
+
+                if (end != Long.MAX_VALUE) {
+                    long left = end - System.currentTimeMillis();
+                    if (left <= 0) return false;
+                    timeout = asFloat(context, left / 1000.0);
+                }
+
+                if (schedulerJoiners == null) schedulerJoiners = new ArrayList<>(1);
+                schedulerJoiners.add(joiner);
+            }
+
+            try {
+                FiberScheduler.block(context, scheduler, this, timeout);
+            } finally {
+                synchronized (this) {
+                    if (schedulerJoiners != null) schedulerJoiners.remove(joiner);
+                }
+            }
+        }
     }
 
     @JRubyMethod
