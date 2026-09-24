@@ -1371,6 +1371,34 @@ describe "An endless method definition" do
       m("meow", num: 2).should == "meow" * 4
     end
   end
+
+  context "with an operator name ending in `=`" do
+    it "defines the operator methods" do
+      eval <<-ruby
+        class OpEndlessOperator
+          def !=(other) = "not-equal"
+          def <=(other) = "less-or-equal"
+          def >=(other) = "greater-or-equal"
+        end
+      ruby
+
+      obj = OpEndlessOperator.new
+      obj.send(:!=, 1).should == "not-equal"
+      obj.send(:<=, 1).should == "less-or-equal"
+      obj.send(:>=, 1).should == "greater-or-equal"
+    end
+  end
+
+  context "with a setter name" do
+    it "raises a SyntaxError" do
+      -> {
+        eval("class SetterEndless; def foo=(x) = x; end")
+      }.should.raise(SyntaxError)
+      -> {
+        eval("class SetterEndless; def []=(k, v) = v; end")
+      }.should.raise(SyntaxError)
+    end
+  end
 end
 
 describe "Keyword arguments are now separated from positional arguments" do
