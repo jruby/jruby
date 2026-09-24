@@ -49,6 +49,23 @@ describe "Socket#connect_nonblock" do
     @socket.read(6).should == "hello!"
   end
 
+  it "connects the socket once IO.select with a zero timeout reports it writable" do
+    begin
+      @socket.connect_nonblock(@addr)
+    rescue IO::WaitWritable
+    end
+
+    Thread.pass until IO.select(nil, [@socket], nil, 0)
+
+    @socket.write("hello")
+    conn = @server.accept
+    begin
+      conn.read(5).should == "hello"
+    ensure
+      conn.close
+    end
+  end
+
   platform_is_not :freebsd, :aix do
     it "raises Errno::EINPROGRESS when the connect would block" do
       -> do

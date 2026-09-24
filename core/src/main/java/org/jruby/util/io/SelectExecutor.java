@@ -54,6 +54,11 @@ public class SelectExecutor {
     }
 
     IRubyObject selectCall(ThreadContext context) throws IOException {
+        if (timeout != null && timeout == 0) {
+            IRubyObject result = PollSelect.selectNow(context, read, write, except);
+            if (result != null) return result;
+        }
+
         return selectInternal(context);
     }
 
