@@ -91,6 +91,7 @@ import static org.jruby.api.Create.newStruct;
 import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.notImplementedError;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.api.Warn.warn;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.Helpers.nullToNil;
@@ -105,11 +106,15 @@ import static org.jruby.util.WindowsFFI.kernel32;
 @JRubyModule(name="Process")
 public class RubyProcess {
 
+    // FIXME: these should come from jnr-constants
+    private static final int WNOHANG = 1;
+    private static final int WUNTRACED = 2;
+
     public static RubyModule createProcessModule(ThreadContext context, RubyClass Object, RubyClass Struct) {
         RubyModule Process = defineModule(context, "Process").
                 defineMethods(context, RubyProcess.class).
-                defineConstant(context, "WNOHANG", asFixnum(context, 1)).   // FIXME: should come from jnr-constants
-                defineConstant(context, "WUNTRACED", asFixnum(context, 2)). // FIXME: should come from jnr-constants
+                defineConstant(context, "WNOHANG", asFixnum(context, WNOHANG)).
+                defineConstant(context, "WUNTRACED", asFixnum(context, WUNTRACED)).
                 defineConstant(context, "CLOCK_REALTIME", asSymbol(context, CLOCK_REALTIME)).
                 defineConstant(context, "CLOCK_MONOTONIC", asSymbol(context, CLOCK_MONOTONIC)).
                 tap(c -> c.defineConstantsFrom(context, jnr.constants.platform.PRIO.class));
@@ -237,6 +242,7 @@ public class RubyProcess {
     public static class RubyStatus extends RubyObject {
         private long status;
         private long pid; // pid or -1 to indicate status was allocate()d and is uninitalized.
+        private int error; // errno of a failed wait, like MRI's rb_process_status.error
 
         private static final long EXIT_SUCCESS = 0L;
         public RubyStatus(Ruby runtime, RubyClass metaClass, long status, long pid) {
@@ -255,6 +261,9 @@ public class RubyProcess {
 
             long pid = argc > 0 ? toInt(context, args[0]) : -1;
             int flags = argc > 1 ? toInt(context, args[1]) : 0;
+
+            IRubyObject status = schedulerProcessWait(context, pid, flags);
+            if (status != null) return status;
 
             return waitpidStatus(context, pid, flags);
             //checkErrno(runtime, pid, ECHILD);
@@ -998,7 +1007,19 @@ public class RubyProcess {
 
         int res = pthreadKillable(context, ctx -> posix.waitpid(pid, status, flags));
 
-        return RubyProcess.RubyStatus.newProcessStatus(runtime, status[0], res);
+        RubyStatus result = RubyProcess.RubyStatus.newProcessStatus(runtime, status[0], res);
+        if (res == -1) result.error = posix.errno();
+        return result;
+    }
+
+    // MRI: the scheduler check in rb_process_status_wait. Returns null if we should wait ourselves.
+    private static IRubyObject schedulerProcessWait(ThreadContext context, long pid, int flags) {
+        if ((flags & WNOHANG) != 0) return null;
+
+        IRubyObject scheduler = FiberScheduler.current(context);
+        if (scheduler == null) return null;
+
+        return FiberScheduler.processWait(context, scheduler, pid, flags);
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -1011,6 +1032,24 @@ public class RubyProcess {
         var posix = context.runtime.getPosix();
 
         posix.errno(0);
+
+        IRubyObject scheduled = schedulerProcessWait(context, pid, flags);
+        if (scheduled != null) {
+            if (scheduled.isNil()) return 0;
+            if (!(scheduled instanceof RubyStatus status)) {
+                throw typeError(context, scheduled, "Process::Status");
+            }
+
+            long res = status.pid;
+
+            // The failed waitpid ran inside the scheduler, possibly on another thread.
+            // Copy its errno here so our caller can raise the right error.
+            if (res == -1) posix.errno(status.error);
+
+            context.setLastExitStatus(res > 0 ? status : context.nil);
+
+            return res;
+        }
 
         int[] status = new int[1];
         int res = pthreadKillable(context, ctx -> posix.waitpid(pid, status, flags));
@@ -1105,7 +1144,7 @@ public class RubyProcess {
     }
 
     public static IRubyObject wait(ThreadContext context, IRubyObject[] args) {
-        if (args.length > 0) return waitpid(context, args);
+        if (args.length > 0 || FiberScheduler.current(context) != null) return waitpid(context, args);
 
         int[] status = new int[1];
         POSIX posix = context.runtime.getPosix();
