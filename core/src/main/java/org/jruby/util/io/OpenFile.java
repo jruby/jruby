@@ -513,7 +513,7 @@ public class OpenFile implements Finalizable {
                 case EAGAIN:
                 case EWOULDBLOCK:
                     if (fiberScheduler && !scheduler.isNil()) {
-                        return FiberScheduler.ioWaitWritable(context, scheduler, RubyIO.newIO(context.runtime, channel())).isTrue();
+                        return schedulerWaitWritable(context, scheduler);
                     }
 
                     ready(runtime, context.getThread(), SelectExecutor.WRITE_CONNECT_OPS, timeout);
@@ -529,6 +529,16 @@ public class OpenFile implements Finalizable {
     // rb_io_wait_writable
     public boolean waitWritable(ThreadContext context) {
         return waitWritable(context, 0);
+    }
+
+    // Unlock while io_wait parks us, so sibling fibers can still write to or close this IO.
+    private boolean schedulerWaitWritable(ThreadContext context, IRubyObject scheduler) {
+        unlock();
+        try {
+            return FiberScheduler.ioWaitWritable(context, scheduler, io).isTrue();
+        } finally {
+            lock();
+        }
     }
 
     // rb_io_wait_readable
