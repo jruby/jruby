@@ -62,7 +62,7 @@ default_gems = [
   ['irb', '1.4.2'],
   ['jar-dependencies', '0.5.4'],
   ['jruby-readline', '1.3.7'],
-  ['jruby-openssl', '0.16.0'],
+  ['jruby-openssl', '0.16.3'],
   ['json', '2.7.1'],
   ['logger', '1.5.1'],
   ['mutex_m', '0.1.1'],
@@ -84,7 +84,7 @@ default_gems = [
   ['psych', '5.2.3'],
   ['racc', '1.6.0'],
   ['rake-ant', '1.0.6'],
-  ['rdoc', '6.4.1.1'],
+  ['rdoc', '6.6.3.1'],
   # https://github.com/ruby/readline/issues/5
   # ['readline', '0.0.3'],
   # Will be solved with readline
@@ -117,7 +117,7 @@ default_gems = [
   # ['tmpdir', '0.1.2'],
   ['tsort', '0.1.0'],
   ['un', '0.2.0'],
-  ['uri', '0.12.4'],
+  ['uri', '0.12.5'],
   ['weakref', '0.1.1'],
   # https://github.com/ruby/win32ole/issues/12
   # ['win32ole', '1.8.8'],
@@ -132,7 +132,7 @@ bundled_gems = [
   ['matrix', '0.4.2'],
   ['minitest', '5.15.0'],
   ['net-ftp', '0.3.7'],
-  ['net-imap', '0.2.5'],
+  ['net-imap', '0.6.7'],
   ['net-pop', '0.1.1'],
   ['net-smtp', '0.3.1.1'],
   ['prime', '0.1.2'],
