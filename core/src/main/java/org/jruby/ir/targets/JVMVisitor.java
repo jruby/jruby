@@ -2395,6 +2395,17 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void RuntimeHelperCall(RuntimeHelperCall runtimehelpercall) {
         switch (runtimehelpercall.getHelperMethod()) {
+            case CAPTURE_CALL_INFO:
+                jvmMethod().loadContext();
+                jvmMethod().invokeIRHelper("captureCallInfo", sig(RubyFixnum.class, ThreadContext.class));
+                jvmStoreLocal(runtimehelpercall.getResult());
+                break;
+            case RESTORE_CALL_INFO:
+                jvmMethod().loadContext();
+                visit(runtimehelpercall.getArgs()[0]);
+                jvmMethod().invokeIRHelper("restoreCallInfo", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
+                jvmStoreLocal(runtimehelpercall.getResult());
+                break;
             case RESET_GVAR_UNDERSCORE:
                 jvmMethod().loadContext();
                 visit(runtimehelpercall.getArgs()[0]);
