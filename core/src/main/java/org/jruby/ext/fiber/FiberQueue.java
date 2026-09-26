@@ -30,6 +30,7 @@ package org.jruby.ext.fiber;
 
 import org.jruby.Ruby;
 import org.jruby.RubyThread;
+import org.jruby.anno.CRuby;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.fiber.ThreadFiber.FiberRequest;
 import org.jruby.runtime.ThreadContext;
@@ -87,11 +88,16 @@ public class FiberQueue {
         }
     }
 
+    // MRI's fiber_switch never waits, so loop like its sleep_forever: deliverable interrupts raise out of
+    // executeTaskBlocking, and one deferred by Thread.handle_interrupt stays pending while we wait again
+    @CRuby(value = "sleep_forever", file = "thread.c")
     public FiberRequest pop(ThreadContext context) {
-        try {
-            return context.getThread().executeTaskBlocking(context, this, TAKE_TASK);
-        } catch (InterruptedException ie) {
-            throw context.runtime.newThreadError("interrupted in FiberQueue.pop");
+        while (true) {
+            try {
+                return context.getThread().executeTaskBlocking(context, this, TAKE_TASK);
+            } catch (InterruptedException ie) {
+                // nothing deliverable, keep waiting
+            }
         }
     }
 
