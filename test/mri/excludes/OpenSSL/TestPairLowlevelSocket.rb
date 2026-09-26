@@ -2,4 +2,3 @@ exclude :test_connect_accept_nonblock_no_exception, "SSLError: Cannot change mod
 exclude :test_gets_chomp, "needs investigation"
 exclude :test_readbyte, "undefined method 'readbyte' for an instance of OpenSSL::SSL::SSLSocket"
 exclude :test_readbyte_eof, "undefined method 'readbyte' for an instance of OpenSSL::SSL::SSLSocket"
-exclude :test_partial_tls_record_read_nonblock, "hangs in 0.19.0"
