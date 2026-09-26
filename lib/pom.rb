@@ -50,7 +50,7 @@ default_gems = [
   ['ipaddr', '1.2.9'],
   ['jar-dependencies', '0.6.1'],
   ['jruby-readline', '1.3.7'],
-  ['jruby-openssl', '0.19.1'],
+  ['jruby-openssl', '0.19.2'],
   ['json', '2.21.2'],
   ['net-http', '0.9.1'],
   ['net-protocol', '0.4.0'],
