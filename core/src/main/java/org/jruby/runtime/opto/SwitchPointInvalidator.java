@@ -73,6 +73,7 @@ public class SwitchPointInvalidator implements Invalidator {
         if (switchPoint == invalidated) switchPoint = DUMMY;
     }
     
+    @Deprecated(since = "10.0.8.0", forRemoval = true)
     public synchronized SwitchPoint replaceSwitchPoint() {
         SwitchPoint switchPoint = this.switchPoint;
         if (switchPoint == DUMMY) return switchPoint;
