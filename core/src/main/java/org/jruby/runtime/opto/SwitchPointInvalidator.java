@@ -54,15 +54,23 @@ public class SwitchPointInvalidator implements Invalidator {
         for (int i = 0; i < invalidators.size(); i++) {
             Invalidator invalidator = invalidators.get(i);
             assert invalidator instanceof SwitchPointInvalidator;
-            switchPoints[i] = ((SwitchPointInvalidator)invalidator).replaceSwitchPoint();
+            switchPoints[i] = ((SwitchPointInvalidator)invalidator).switchPoint;
         }
         
         SwitchPoint.invalidateAll(switchPoints);
+
+        for (int i = 0; i < invalidators.size(); i++) {
+            ((SwitchPointInvalidator)invalidators.get(i)).clearSwitchPoint(switchPoints[i]);
+        }
     }
     
     public synchronized Object getData() {
         SwitchPoint switchPoint = this.switchPoint;
-        return switchPoint == DUMMY ? this.switchPoint = new SwitchPoint() : switchPoint;
+        return switchPoint == DUMMY || switchPoint.hasBeenInvalidated() ? this.switchPoint = new SwitchPoint() : switchPoint;
+    }
+
+    private synchronized void clearSwitchPoint(SwitchPoint invalidated) {
+        if (switchPoint == invalidated) switchPoint = DUMMY;
     }
     
     public synchronized SwitchPoint replaceSwitchPoint() {
