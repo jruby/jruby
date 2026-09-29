@@ -58,6 +58,27 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
         return helperMethod;
     }
 
+    public boolean hasSideEffects() {
+        return switch (helperMethod) {
+            case CAPTURE_CALL_INFO -> false;
+            default -> super.hasSideEffects();
+        };
+    }
+
+    public boolean canRaiseException() {
+        return switch (helperMethod) {
+            case CAPTURE_CALL_INFO -> false;
+            default -> super.canRaiseException();
+        };
+    }
+
+    public boolean transfersControl() {
+        return switch (helperMethod) {
+            case CAPTURE_CALL_INFO -> false;
+            default -> super.transfersControl();
+        };
+    }
+
     /**
      * Does this instruction do anything the scope is interested in?
      *
