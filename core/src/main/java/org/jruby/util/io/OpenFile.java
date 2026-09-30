@@ -1484,6 +1484,12 @@ public class OpenFile implements Finalizable {
                     } else if (read == -1) {
                         throw runtime.newErrnoFromInt(runtime.getPosix().errno());
                     }
+                } else if (fd.chSeek != null) {
+                    // Note this is no longer an atomic operation, but seekable channels do not provide a pread
+                    long oldPos = fd.chSeek.position();
+                    fd.chSeek.position(from);
+                    read = fd.chSeek.read(bytes);
+                    fd.chSeek.position(oldPos);
                 } else if (fd.chRead != null) {
                     read = fd.chRead.read(bytes);
                 } else {

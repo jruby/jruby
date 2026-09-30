@@ -16,6 +16,7 @@ import jnr.posix.FileStat;
 
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.util.io.SeekableByteChannelImpl;
 
 public class URLResource implements FileResource, DummyResourceStat.FileResourceExt {
 
@@ -164,7 +165,26 @@ public class URLResource implements FileResource, DummyResourceStat.FileResource
 
     @Override
     public Channel openChannel( int flags, int perm ) throws IOException {
-        return Channels.newChannel(openInputStream());
+        URL url = this.url;
+        if (pathname != null) {
+            url = cl.getResource(pathname);
+        }
+
+        if (url == null) {
+            throw new ResourceException.NotFound(absolutePath());
+        }
+
+        // read jar resources fully to allow seeking (jruby/jruby#9727)
+        if (url.getProtocol().contains("jar")) {
+            // jar resource, read fully and return a seekable stream
+            try (InputStream in = cl.getResourceAsStream(pathname)) {
+                byte[] buf = in.readAllBytes();
+                return new SeekableByteChannelImpl(new ByteArrayInputStream(buf));
+            }
+        }
+
+        // all other URLs open as readable channel with no seeking
+        return Channels.newChannel(url.openStream());
     }
 
     @Override
