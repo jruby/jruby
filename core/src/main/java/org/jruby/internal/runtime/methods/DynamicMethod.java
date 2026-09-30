@@ -41,12 +41,15 @@ import java.util.Collections;
 import org.jruby.MetaClass;
 import org.jruby.PrependedModule;
 import org.jruby.RubyModule;
+import org.jruby.ext.coverage.MethodCoverage;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
+import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ivars.MethodData;
 import org.jruby.util.CodegenUtils;
@@ -79,6 +82,8 @@ public abstract class DynamicMethod {
     protected Object handle;
     /** Has this method been aliased. */
     protected boolean aliased;
+    /** Coverage call counter for this entry (methods mode). Null unless Coverage registered the entry. */
+    protected MethodCoverage methodCoverage;
 
     private static final int BUILTIN_FLAG = 0b1;
     private static final int NOTIMPL_FLAG = 0b10;
@@ -253,8 +258,26 @@ public abstract class DynamicMethod {
         return name;
     }
 
+    /**
+     * The file this method was defined in, or null if it has no position (native methods). Follows aliases.
+     */
+    public String getSourceFile() {
+        return getRealMethod() instanceof PositionAware poser ? TraceType.maskInternalFiles(poser.getFile()) : null;
+    }
+
+    /**
+     * The line this method was defined on, 1-based, or non-positive if it has no usable position.
+     * Follows aliases.
+     */
+    public int getSourceLine() {
+        return getRealMethod() instanceof PositionAware poser ? poser.getLine() + 1 : -1;
+    }
+
     /*
-     * Will call respond_to?/respond_to_missing? on object and name
+     * Will call respond_to?/respond_to_missing? on object and name.
+     *
+     * Reached with priv false, where MRI passes one argument without looking at arity at all. Do not fold
+     * this into RubyClass's argument count rule, which is the priv-true side.
      */
     public boolean callRespondTo(ThreadContext context, IRubyObject self, String respondToMethodName, RubyModule klazz, RubySymbol name) {
         Signature signature = getSignature();
@@ -656,6 +679,35 @@ public abstract class DynamicMethod {
 
     public boolean isAliased() {
         return this.aliased;
+    }
+
+    /**
+     * The Coverage call counter attached to this entry, or null when its calls are not counted.
+     */
+    public MethodCoverage getMethodCoverage() {
+        return methodCoverage;
+    }
+
+    public void setMethodCoverage(MethodCoverage methodCoverage) {
+        this.methodCoverage = methodCoverage;
+    }
+
+    /**
+     * Pass this entry's Coverage counter, if any, to the body about to run on this thread. Every Ruby-level call
+     * path calls this. ReceiveMethodCoverageInstr is the other end. No-op when the entry has no counter.
+     */
+    protected final void prepareMethodCoverage(ThreadContext context) {
+        MethodCoverage methodCoverage = this.methodCoverage;
+        if (methodCoverage != null) context.setPendingMethodCoverage(methodCoverage);
+    }
+
+    /**
+     * Count a call whose body is skipped. ConcreteJavaProxy skips the initialize of a Java subclass when it is a
+     * plain super that forwards its arguments. MRI still fires CALL for it. Callers have checked the arity already.
+     */
+    public final void coverElidedCall(ThreadContext context) {
+        MethodCoverage methodCoverage = this.methodCoverage;
+        if (methodCoverage != null && context.runtime.getCoverageData().isRunning()) methodCoverage.cover();
     }
 
     /**

@@ -21,14 +21,17 @@ class SimpleHTTPServer
       loop do
         client = @server.accept
         handle_request(client)
-        client.close
+      ensure
+        client&.close
       end
+    ensure
+      @server.close
     end
   end
 
   def shutdown
-    @thread.kill
-    @server.close
+    @thread&.kill
+    @thread&.join
   end
 
   private

@@ -37,8 +37,8 @@ public class CoverageSite {
     }
 
     public static void coverLineFallback(MutableCallSite site, ThreadContext context, String filename, int line, boolean oneshot) throws Throwable {
-        IRRuntimeHelpers.updateCoverage(context, filename, line);
+        boolean covered = IRRuntimeHelpers.coverLine(context, filename, line);
 
-        if (oneshot) site.setTarget(Binder.from(void.class, ThreadContext.class).dropAll().nop());
+        if (covered && oneshot) site.setTarget(Binder.from(void.class, ThreadContext.class).dropAll().nop());
     }
 }

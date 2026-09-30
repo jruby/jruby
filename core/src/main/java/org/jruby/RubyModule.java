@@ -681,6 +681,8 @@ public class RubyModule extends RubyObject {
             method.setImplementationClass(methodLocation);
         }
 
+        if (context.runtime.isCoverageEnabled()) context.runtime.getCoverageData().registerMethod(id, method);
+
         DynamicMethod oldMethod = methodLocation.getMethodsForWrite().put(id, method);
 
         if (oldMethod != null && oldMethod.isRefined()) {
@@ -2501,6 +2503,12 @@ public class RubyModule extends RubyObject {
     public void putAlias(ThreadContext context, String id, DynamicMethod method, String oldName) {
         if (id.equals(oldName)) return;
 
+        // point at what the old alias points at instead of wrapping it
+        if (method instanceof AliasMethod alias) {
+            oldName = alias.getOldName();
+            method = alias.getRealMethod();
+        }
+
         putMethod(context.runtime, id, new AliasMethod(this, new CacheEntry(method, method.getImplementationClass(), generation), id, oldName));
 
         if (isRefinement()) addRefinedMethodEntry(context, id, method);
@@ -2520,10 +2528,16 @@ public class RubyModule extends RubyObject {
      */
     public void putAlias(ThreadContext context, String id, CacheEntry entry, String oldName) {
         if (id.equals(oldName)) {
-            // Increment alias count even if we don't redefine anything.
+            // Mark as aliased even if we don't redefine anything.
             // See hack in Rails to silence redefinition warnings: https://github.com/rails/rails/pull/29233
-            entry.method.setAliased();
+            entry.method.getRealMethod().setAliased();
             return;
+        }
+
+        // see the DynamicMethod overload above
+        if (entry.method instanceof AliasMethod alias) {
+            oldName = alias.getOldName();
+            entry = alias.getEntry();
         }
 
         putMethod(context.runtime, id, new AliasMethod(this, entry, id, oldName));
@@ -5654,7 +5668,7 @@ public class RubyModule extends RubyObject {
 
         DynamicMethod method = getMethods().get(name);
         if (method != null && entry.method.getRealMethod() != method.getRealMethod() && !method.isUndefined()) {
-            if (!method.isAliased()) {
+            if (!method.getRealMethod().isAliased()) {
                 if (method instanceof PositionAware posAware) {
                     warning(context, "method redefined; discarding old " + name + "\n" + posAware.getFile() + ":" + (posAware.getLine() + 1) + ": warning: previous definition of " + name + " was here");
                 } else {
@@ -6591,11 +6605,14 @@ public class RubyModule extends RubyObject {
                 // This method needs to be synchronized for removing Autoload
                 // from autoloadMap when it's loaded.
                 LoadService loadService = loadService(context);
-                if (!loadService.featureAlreadyLoaded(path.asJavaString())) {
-                    if (loadService.autoloadRequire(path)) {
-                        // Do not finish autoloading by cyclic autoload
-                        finishAutoload(context, symbol);
-                    }
+                if (loadService.featureAlreadyLoaded(path.asJavaString())) {
+                    // Nothing to load here: the feature is loaded, or a direct require of it is in
+                    // progress. Keeping the claim would make that require's definition of the
+                    // constant look like this autoload's own and leave UNDEF in the constant table.
+                    this.ctx = null;
+                } else if (loadService.autoloadRequire(path)) {
+                    // Do not finish autoloading by cyclic autoload
+                    finishAutoload(context, symbol);
                 }
             } catch (LoadError | RuntimeError lre) {
                 // reset ctx to null for a future attempt to load

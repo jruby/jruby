@@ -57,6 +57,8 @@ public class Mutex extends RubyObject implements DataType {
      * thread.
      */
     volatile RubyThread lockingThread;
+    /** The fiber within {@link #lockingThread} that currently holds the lock. */
+    volatile IRubyObject lockingFiber;
 
     @JRubyMethod(name = "new", rest = true, meta = true)
     public static Mutex newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
@@ -94,7 +96,10 @@ public class Mutex extends RubyObject implements DataType {
         }
         boolean locked = context.getThread().tryLock(lock);
 
-        if (locked) this.lockingThread = context.getThread();
+        if (locked) {
+            this.lockingThread = context.getFiberCurrentThread();
+            this.lockingFiber = context.getFiber();
+        }
 
         return locked;
     }
@@ -106,8 +111,7 @@ public class Mutex extends RubyObject implements DataType {
 
         checkRelocking(context);
 
-        RubyThread lockingThread = this.lockingThread;
-        if (lockingThread == parentThread && context.getFiber() != lockingThread.getContext().getFiber()) {
+        if (this.lockingThread == parentThread && this.lockingFiber != context.getFiber()) {
             throw context.runtime.newThreadError("deadlock; lock already owned by another fiber belonging to the same thread");
         }
 
@@ -135,8 +139,9 @@ public class Mutex extends RubyObject implements DataType {
             Helpers.throwException(t);
         }
 
-        // set locking thread once successfully locked with no interrupts
+        // set locking thread and fiber once successfully locked with no interrupts
         this.lockingThread = parentThread;
+        this.lockingFiber = context.getFiber();
 
         return this;
     }
@@ -152,6 +157,7 @@ public class Mutex extends RubyObject implements DataType {
 
         boolean hasQueued = lock.hasQueuedThreads();
         this.lockingThread = null;
+        this.lockingFiber = null;
         context.getThread().unlock(lock);
         return hasQueued ? context.nil : this;
     }

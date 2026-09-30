@@ -660,6 +660,8 @@ jruby_jar=
 for j in "$JRUBY_HOME"/lib/jruby.jar "$JRUBY_HOME"/lib/jruby-complete.jar; do
     if [ ! -e "$j" ]; then
         continue
+    elif [ -L "$j" ]; then
+        j=$(realpath "$j")
     fi
     if [ "${JRUBY_CP-}" ]; then
         JRUBY_CP="$JRUBY_CP$CP_DELIMITER$j"
@@ -872,14 +874,23 @@ fi
 if [ -n "${JRUBY_JSA-}" ]; then
     # Allow overriding default JSA file location
     jruby_jsa_file="$JRUBY_JSA"
+
+    # Only use specified JSA file
+    assign jruby_jsa_files "$jruby_jsa_file"
 else
     # Default JVM Class Data Sharing Archive (jsa) file for JVMs that support it
-    jruby_jsa_file="$JRUBY_HOME/lib/jruby-java$java_runtime_version.jsa"
+    if [ -n "${JRUBY_JSA_HOME-}" ]; then
+        jruby_jsa_home="$JRUBY_JSA_HOME"
+    else
+        jruby_jsa_home="$JRUBY_HOME/lib"
+    fi
+    mkdir -p "$jruby_jsa_home"
+    jruby_jsa_file="$jruby_jsa_home/jruby-java$java_runtime_version.jsa"
+
+    # Find JSAs for all Java versions
+    assign jruby_jsa_files "$jruby_jsa_home"/jruby-java*.jsa
 fi
 readonly jruby_jsa_file
-
-# Find JSAs for all Java versions
-assign jruby_jsa_files "$JRUBY_HOME"/lib/jruby-java*.jsa
 readonly jruby_jsa_files
 
 # Ensure the AppCDS parent directory is actually writable

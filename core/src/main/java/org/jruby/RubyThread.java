@@ -2373,6 +2373,17 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      *         it timed out or was not selectable.
      */
     public boolean select(Channel channel, OpenFile fptr, int ops, long timeout) {
+        return selectReadyOps(channel, fptr, ops, timeout) != 0;
+    }
+
+    /**
+     * Like {@link RubyThread#select(Channel, OpenFile, int, long)} but reports which operations
+     * became ready rather than just whether any did. A channel that cannot be selected, or a
+     * selector that does not report ready operations, counts everything requested as ready.
+     *
+     * @return a non-zero mask of the ops considered ready, or zero if none became ready in time
+     */
+    public int selectReadyOps(Channel channel, OpenFile fptr, int ops, long timeout) {
         // Use selectables but only if they're not associated with a file (which has odd select semantics)
         ChannelFD fd = fptr == null ? null : fptr.fd();
         if (channel instanceof SelectableChannel && fd != null) {
@@ -2415,11 +2426,14 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                             Set<SelectionKey> keySet = currentSelector.selectedKeys();
 
                             if (keySet.contains(key) && key.isValid()) {
-                                return true;
+                                // jnr-enxio's PollSelector reports character devices as selected
+                                // without setting readyOps, so treat that as ready for all of ops
+                                int readyOps = key.readyOps() & ops;
+                                return readyOps != 0 ? readyOps : ops;
                             }
                         }
 
-                        return false;
+                        return 0;
                     } catch (IOException ioe) {
                         throw getRuntime().newIOErrorFromException(ioe);
                     } finally {
@@ -2461,8 +2475,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                 }
             }
         } else {
-            // can't select, just have to do a blocking call
-            return true;
+            // can't select, so report everything asked for as ready, like select(2) does for files
+            return ops;
         }
     }
 

@@ -28,6 +28,7 @@
 
 package org.jruby.ext.socket;
 
+import jnr.constants.platform.Errno;
 import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.IPProto;
 import jnr.constants.platform.ProtocolFamily;
@@ -58,6 +59,7 @@ import org.jruby.ast.util.ArgsUtil;
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -400,6 +402,53 @@ public class RubyBasicSocket extends RubyIO {
         return handleReturnBytes(context, bytes, str, "read_nonblock", exception);
     }
 
+    /**
+     * Remember the error from a non-blocking connect on this socket that failed.
+     *
+     * POSIX leaves that error on the socket, for getsockopt(SOL_SOCKET, SO_ERROR) to
+     * report, and leaves the descriptor valid until the application closes it.
+     * {@link java.nio.channels.SocketChannel#finishConnect()} instead throws and closes
+     * the channel, so {@link org.jruby.util.io.SelectExecutor} hands us the error here
+     * and we reproduce the POSIX behaviour for both getsockopt and close.
+     *
+     * See jruby/jruby#8786.
+     */
+    public void setConnectError(IOException connectError) {
+        this.connectError = connectError;
+    }
+
+    /**
+     * The errno of a non-blocking connect that failed on this socket, the way POSIX
+     * getsockopt(SOL_SOCKET, SO_ERROR) would report it, or zero if there is none.
+     *
+     * See jruby/jruby#8786.
+     */
+    private int connectErrno() {
+        IOException connectError = this.connectError;
+        if (connectError == null) return 0;
+
+        Errno errno = Helpers.errnoFromException(connectError);
+        return errno == null ? 0 : errno.intValue();
+    }
+
+    @Override
+    protected IRubyObject rbIoClose(ThreadContext context) {
+        if (connectError != null) {
+            OpenFile fptr = getOpenFile();
+
+            if (fptr != null && fptr.fd() != null && !fptr.fd().ch.isOpen()) {
+                // The connect failed and the JDK closed the channel with it, so the normal
+                // close path would report EBADF for a descriptor POSIX still considers
+                // open. Release it without raising, exactly as RubySocket.tryConnect does
+                // for a connect that failed synchronously. See jruby/jruby#8786.
+                fptr.cleanup(context.runtime, true);
+                return context.nil;
+            }
+        }
+
+        return super.rbIoClose(context);
+    }
+
     @JRubyMethod
     public IRubyObject getsockopt(ThreadContext context, IRubyObject _level, IRubyObject _opt) {
         SocketLevel level = SocketUtils.levelFromArg(context, _level);
@@ -413,6 +462,13 @@ public class RubyBasicSocket extends RubyIO {
             case SOL_SOCKET:
                 if (opt == SocketOption.__UNKNOWN_CONSTANT__) {
                     throw context.runtime.newErrnoENOPROTOOPTError();
+                }
+
+                if (opt == SocketOption.SO_ERROR) {
+                    // Java exposes no equivalent socket option, so the only error we can
+                    // report is one left behind by a failed non-blocking connect.
+                    return new Option(context.runtime, ProtocolFamily.PF_INET, level, opt,
+                            Option.packInt(connectErrno()));
                 }
 
                 int value = SocketType.forChannel(channel).getSocketOption(channel, opt);
@@ -991,6 +1047,10 @@ public class RubyBasicSocket extends RubyIO {
 
     // By default we always reverse lookup unless do_not_reverse_lookup set.
     private boolean doNotReverseLookup = false;
+
+    // The error from a non-blocking connect on this socket that failed, if any.
+    // See setConnectError and jruby/jruby#8786.
+    private volatile IOException connectError;
 
     protected static class ReceiveTuple {
         ReceiveTuple() {}

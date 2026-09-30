@@ -45,11 +45,11 @@ project 'JRuby Base' do
 
   # exclude jnr-ffi to avoid problems with shading and relocation of the asm packages
   jar 'com.github.jnr:jnr-netdb:1.2.0', exclusions: ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-enxio:0.33.1', exclusions: ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-unixsocket:0.39.3', exclusions: ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-posix:3.2.2', exclusions: ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-constants:0.11.0', exclusions: ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-ffi:2.3.1'
+  jar 'com.github.jnr:jnr-enxio:0.33.3', exclusions: ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-unixsocket:0.39.5', exclusions: ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-posix:3.2.4', exclusions: ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-constants:0.11.2', exclusions: ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-ffi:2.3.3'
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
@@ -311,7 +311,9 @@ project 'JRuby Base' do
   profile 'error-prone' do
     activation do
       jdk('21')
-      property(name: 'env.CI') # for keeping fast development cycle, by default only run on CI
+      # opt-in: one CI job sets this, so the other jobs neither run the check nor resolve the
+      # error-prone processor tree from Maven Central
+      property(name: 'env.ERROR_PRONE')
     end
 
     plugin :compiler do

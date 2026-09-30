@@ -8,6 +8,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Array;
 
+import java.net.ConnectException;
 import java.net.PortUnreachableException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.NonReadableChannelException;
@@ -287,6 +288,12 @@ public class Helpers {
             return Errno.ENOTDIR;
         } catch (AccessDeniedException ade) {
             return Errno.EACCES;
+        } catch (ConnectException ce) {
+            // The message varies by platform and JDK version ("Connection refused",
+            // "Connection refused (connect failed)", localized forms), so only fall back
+            // to ECONNREFUSED when the message is not one we already recognize.
+            Errno errno = errnoFromMessage(ce);
+            return errno == null ? Errno.ECONNREFUSED : errno;
         } catch (IOException be) {
             return errnoFromMessage(be);
         } catch (NotYetConnectedException nyce) {
@@ -2722,15 +2729,14 @@ public class Helpers {
         DynamicMethod method = metaClass.searchMethod(name);
         Visibility visibility = method.getVisibility();
 
-        if (visibility != Visibility.PRIVATE &&
-                (visibility != Visibility.PROTECTED || method.getImplementationClass().isInstance(self)) && !method.isUndefined()) {
-            return definedMessage;
+        // MRI only falls back on respond_to_missing? when there is no method entry at all
+        if (!method.isUndefined()) {
+            return visibility != Visibility.PRIVATE &&
+                    (visibility != Visibility.PROTECTED || method.getImplementationClass().isInstance(self)) ?
+                    definedMessage : null;
         }
 
-        if (receiver.callMethod(context, "respond_to_missing?", new IRubyObject[]{asSymbol(context, name), context.fals}).isTrue()) {
-            return definedMessage;
-        }
-        return null;
+        return RubyClass.checkRespondToMissing(context, receiver, name) ? definedMessage : null;
     }
 
     public static IRubyObject invokedynamic(ThreadContext context, IRubyObject self, MethodNames method) {

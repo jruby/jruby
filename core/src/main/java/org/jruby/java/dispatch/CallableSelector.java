@@ -745,7 +745,7 @@ public class CallableSelector {
                 javaClassOrProcHashCode(a3);
     }
 
-    private static int argsHashCode(final IRubyObject[] args) {
+    public static int argsHashCode(final IRubyObject[] args) {
         final int last = args.length - 1;
         if ( last == -1 ) return 0;
 

@@ -304,7 +304,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     public Operand buildLambda(LambdaNode node) {
-        return buildLambda(node.getArgs(), node.getBody(), node.getScope(), Signature.from(node), node.getLine());
+        return buildLambda(node.getArgs(), node.getBody(), node.getScope(), Signature.from(node), node.getLine(),
+                node.getStartColumn(), node.getEndLine(), node.getEndColumn());
     }
 
     public Operand buildEncoding(EncodingNode node) {
@@ -1973,6 +1974,12 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     public void receiveArgs(final ArgsNode argsNode) {
         Signature signature = scope.getStaticScope().getSignature();
 
+        // If the method is forwarding arguments, preserve callInfo for later use.
+        if (scope instanceof IRMethod && scope.getStaticScope().exists(CommonByteLists.FWD_ALL.toString()) >= 0) {
+            forwardingCallInfo = temp();
+            addInstr(new RuntimeHelperCall(forwardingCallInfo, CAPTURE_CALL_INFO, Operand.EMPTY_ARRAY));
+        }
+
         Variable keywords = addResultInstr(new ReceiveKeywordsInstr(temp(), signature.hasRest(), argsNode.hasKwargs()));
 
         KeywordRestArgNode keyRest = argsNode.getKeyRest();
@@ -2412,7 +2419,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     public Operand buildIter(final IterNode iter) {
-        return buildIter(iter.getVarNode(), iter.getBodyNode(), iter.getScope(), Signature.from(iter), iter.getLine(), iter.getEndLine());
+        return buildIter(iter.getVarNode(), iter.getBodyNode(), iter.getScope(), Signature.from(iter), iter.getLine(),
+                iter.getStartColumn(), iter.getEndLine(), iter.getEndColumn());
     }
 
     public Operand buildLiteral(LiteralNode literalNode) {

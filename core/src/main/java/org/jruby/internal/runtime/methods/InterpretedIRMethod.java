@@ -31,16 +31,12 @@ import java.io.ByteArrayOutputStream;
 import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
 import org.jruby.internal.runtime.AbstractIRMethod;
-import org.jruby.internal.runtime.SplitSuperState;
-import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
-import org.jruby.ir.interpreter.ExitableInterpreterContext;
 import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.ir.interpreter.InterpreterContext;
 import org.jruby.ir.persistence.IRDumper;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -68,20 +64,6 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
         method.compilable = this;
     }
 
-    protected void post(InterpreterContext ic, ThreadContext context) {
-        Interpreter.postFrameScope(ic, context);
-    }
-
-    // TODO: new method or make this pre?
-    protected void preSplit(InterpreterContext ic, ThreadContext context, IRubyObject self, String name, Block block,
-            RubyModule implClass, DynamicScope scope) {
-        // update call stacks (push: frame, class, scope, etc.)
-        context.preMethodFrameOnly(implClass, name, self, block);
-        if (ic.pushNewDynScope()) {
-            context.pushScope(scope);
-        }
-    }
-
     @Override
     protected void printMethodIR() {
         ByteArrayOutputStream baos = IRDumper.printIR(getIRScope(), false, true);
@@ -91,146 +73,78 @@ public class InterpretedIRMethod extends AbstractIRMethod implements Compilable<
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args,
             Block block) {
-        if (IRRuntimeHelpers.isDebug()) doDebug();
-
-        if (callCount >= 0) promoteToFullBuild(context);
-
-        ensureInstrsReady();
+        prepareCall(context);
         return Interpreter.INTERPRET_METHOD(context, method, clazz, self, name, args, block);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name,
             IRubyObject[] args) {
-        if (IRRuntimeHelpers.isDebug()) doDebug();
-
-        if (callCount >= 0) promoteToFullBuild(context);
-
-        ensureInstrsReady();
+        prepareCall(context);
         return Interpreter.INTERPRET_METHOD(context, method, clazz, self, name, args, Block.NULL_BLOCK);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-        if (IRRuntimeHelpers.isDebug()) doDebug();
-
-        if (callCount >= 0) promoteToFullBuild(context);
-
-        ensureInstrsReady();
+        prepareCall(context);
         return Interpreter.INTERPRET_METHOD(context, method, clazz, self, name, block);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-        if (IRRuntimeHelpers.isDebug()) doDebug();
-
-        if (callCount >= 0) promoteToFullBuild(context);
-
-        ensureInstrsReady();
+        prepareCall(context);
         return Interpreter.INTERPRET_METHOD(context, method, clazz, self, name, Block.NULL_BLOCK);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0,
             Block block) {
-        if (IRRuntimeHelpers.isDebug()) doDebug();
-
-        if (callCount >= 0) promoteToFullBuild(context);
-
-        ensureInstrsReady();
+        prepareCall(context);
         return Interpreter.INTERPRET_METHOD(context, method, clazz, self, name, arg0, block);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
-        if (IRRuntimeHelpers.isDebug()) doDebug();
-
-        if (callCount >= 0) promoteToFullBuild(context);
-
-        ensureInstrsReady();
+        prepareCall(context);
         return Interpreter.INTERPRET_METHOD(context, method, clazz, self, name, arg0, Block.NULL_BLOCK);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0,
             IRubyObject arg1, Block block) {
-        if (IRRuntimeHelpers.isDebug()) doDebug();
-
-        if (callCount >= 0) promoteToFullBuild(context);
-
-        ensureInstrsReady();
+        prepareCall(context);
         return Interpreter.INTERPRET_METHOD(context, method, clazz, self, name, arg0, arg1, block);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0,
             IRubyObject arg1) {
-        if (IRRuntimeHelpers.isDebug()) doDebug();
-
-        if (callCount >= 0) promoteToFullBuild(context);
-
-        ensureInstrsReady();
+        prepareCall(context);
         return Interpreter.INTERPRET_METHOD(context, method, clazz, self, name, arg0, arg1, Block.NULL_BLOCK);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0,
             IRubyObject arg1, IRubyObject arg2, Block block) {
-        if (IRRuntimeHelpers.isDebug()) doDebug();
-
-        if (callCount >= 0) promoteToFullBuild(context);
-
-        ensureInstrsReady();
+        prepareCall(context);
         return Interpreter.INTERPRET_METHOD(context, method, clazz, self, name, arg0, arg1, arg2, block);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0,
             IRubyObject arg1, IRubyObject arg2) {
-        if (IRRuntimeHelpers.isDebug()) doDebug();
-
-        if (callCount >= 0) promoteToFullBuild(context);
-
-        ensureInstrsReady();
+        prepareCall(context);
         return Interpreter.INTERPRET_METHOD(context, method, clazz, self, name, arg0, arg1, arg2, Block.NULL_BLOCK);
     }
 
-    @Override
-    public SplitSuperState<MethodSplitState> startSplitSuperCall(ThreadContext context, IRubyObject self,
-            RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        // TODO: check if IR method, or is it guaranteed?
-        ExitableInterpreterContext ic = ((IRMethod) getIRScope()).builtInterpreterContextForJavaConstructor();
-        if (ic == null) return null; // no super call/can't split this
-
-        MethodSplitState state = new MethodSplitState(context, ic, clazz, self, name);
-
-        ExitableReturn result = INTERPRET_METHOD(state, args, block);
-
-        return new SplitSuperState<>(result, state);
-    }
-
-    private ExitableReturn INTERPRET_METHOD(MethodSplitState state, IRubyObject[] args, Block block) {
-        try {
-            ThreadContext.pushBacktrace(state.context, state.name, state.eic.getFileName(), state.eic.getLine());
-
-            // TODO: explicit call protocol?
-            try {
-                this.preSplit(state.eic, state.context, state.self, state.name, block, state.implClass, state.scope);
-                return state.eic.getEngine().interpret(state.context, null, state.self, state.eic, state.state,
-                        state.implClass, state.name, args, block);
-            } finally {
-                this.post(state.eic, state.context);
-            }
-        } finally {
-            ThreadContext.popBacktrace(state.context);
-        }
-    }
-
-    @Override
-    public void finishSplitCall(SplitSuperState state) {
-        if (IRRuntimeHelpers.isDebug()) doDebug(); // TODO?
-
-        INTERPRET_METHOD((MethodSplitState) state.state, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+    /**
+     * Work done before every call: debug output, JIT promotion, and the hand-off of this entry's Coverage counter.
+     */
+    private void prepareCall(ThreadContext context) {
+        prepareMethodCoverage(context);
+        if (IRRuntimeHelpers.isDebug()) doDebug();
+        if (callCount >= 0) promoteToFullBuild(context);
+        ensureInstrsReady();
     }
 
     protected void doDebug() {

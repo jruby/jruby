@@ -39,14 +39,6 @@ class JSONGeneratorTest < Test::Unit::TestCase
     JSON
   end
 
-  def silence
-    v = $VERBOSE
-    $VERBOSE = nil
-    yield
-  ensure
-    $VERBOSE = v
-  end
-
   def test_generate
     json = generate(@hash)
     assert_equal(parse(@json2), parse(json))
@@ -90,6 +82,66 @@ class JSONGeneratorTest < Test::Unit::TestCase
     assert_equal '"hello"', dump(:hello, strict: true)
     assert_equal '"hello"', :hello.to_json(strict: true)
     assert_equal '"World"', "World".to_json(strict: true)
+    assert_equal '["hello"]', dump([:hello], strict: true)
+    assert_equal '{"hello":"world"}', dump({ hello: :world }, strict: true)
+  end
+
+  def test_not_frozen
+    [
+      [[], '[]'],
+      [{}, '{}'],
+      ["string", '"string"'],
+      [:sym, '"sym"'],
+      [1, '1'],
+      [1.0, '1.0'],
+      [true, 'true'],
+      [false, 'false'],
+      [nil, 'null'],
+    ].each do |(obj, exp)|
+      dumped = dump(obj, strict: true)
+      assert_equal exp, dumped
+      refute_predicate dumped, :frozen?
+    end
+  end
+
+  def test_state_depth_to_json
+    depth = Object.new
+    def depth.to_json(state)
+      JSON::State.from_state(state).depth.to_s
+    end
+
+    assert_equal "0", JSON.generate(depth)
+    assert_equal "[1]", JSON.generate([depth])
+    assert_equal %({"depth":1}), JSON.generate(depth: depth)
+    assert_equal "[[2]]", JSON.generate([[depth]])
+    assert_equal %([{"depth":2}]), JSON.generate([{depth: depth}])
+
+    state = JSON::State.new
+    assert_equal "0", state.generate(depth)
+    assert_equal "[1]", state.generate([depth])
+    assert_equal %({"depth":1}), state.generate(depth: depth)
+    assert_equal "[[2]]", state.generate([[depth]])
+    assert_equal %([{"depth":2}]), state.generate([{depth: depth}])
+  end
+
+  def test_state_depth_to_json_recursive
+    recur = Object.new
+    def recur.to_json(state = nil, *)
+      state = JSON::State.from_state(state)
+      if state.depth < 3
+        state.generate([state.depth, self])
+      else
+        state.generate([state.depth])
+      end
+    end
+
+    assert_raise(NestingError) { JSON.generate(recur, max_nesting: 3) }
+    assert_equal "[0,[1,[2,[3]]]]", JSON.generate(recur, max_nesting: 4)
+
+    state = JSON::State.new(max_nesting: 3)
+    assert_raise(NestingError) { state.generate(recur) }
+    state.max_nesting = 4
+    assert_equal "[0,[1,[2,[3]]]]", JSON.generate(recur, max_nesting: 4)
   end
 
   def test_generate_pretty
@@ -136,6 +188,59 @@ class JSONGeneratorTest < Test::Unit::TestCase
       <po_nl>
       }
     JSON
+  end
+
+  def test_generate_sort_keys
+    json = generate({2=>"a", 1=>"b", 3=>"c"}, sort_keys: true)
+    assert_equal('{"1":"b","2":"a","3":"c"}', json)
+
+    json = generate({2=>"a", 1=>"b", 3=>"c"}, sort_keys: false)
+    assert_equal('{"2":"a","1":"b","3":"c"}', json)
+
+    json = pretty_generate({2=>"a", 1=>"b", 3=>"c"}, sort_keys: true)
+    assert_equal(<<~'JSON'.chomp, json)
+      {
+        "1": "b",
+        "2": "a",
+        "3": "c"
+      }
+    JSON
+
+    json = pretty_generate({2=>"a", 1=>"b", 3=>"c"}, sort_keys: false)
+    assert_equal(<<~'JSON'.chomp, json)
+      {
+        "2": "a",
+        "1": "b",
+        "3": "c"
+      }
+    JSON
+
+    json = pretty_generate({2=>"a", 1=>"b", 3=>"c"})
+    assert_equal(<<~'JSON'.chomp, json)
+      {
+        "2": "a",
+        "1": "b",
+        "3": "c"
+      }
+    JSON
+  end
+
+  def test_generate_sort_keys_with_proc
+    reverse = ->(hash) { hash.sort.reverse.to_h }
+    json = generate({2=>"a", 1=>"b", 3=>"c"}, sort_keys: reverse)
+    assert_equal('{"3":"c","2":"a","1":"b"}', json)
+
+    by_value = ->(hash) { hash.sort_by { |_k, v| v }.to_h }
+    json = generate({2=>"c", 1=>"a", 3=>"b"}, sort_keys: by_value)
+    assert_equal('{"1":"a","3":"b","2":"c"}', json)
+
+    state = State.new(sort_keys: reverse)
+    assert_same reverse, state.to_h[:sort_keys]
+    assert_equal('{"3":"c","2":"a","1":"b"}', state.generate({2=>"a", 1=>"b", 3=>"c"}))
+
+    # A truthy sort_keys is normalized to the default sorting proc.
+    state = State.new(sort_keys: true)
+    assert_instance_of Proc, state.sort_keys
   end
 
   def test_generate_custom
@@ -237,6 +342,7 @@ class JSONGeneratorTest < Test::Unit::TestCase
       :object_nl             => "",
       :space                 => "",
       :space_before          => "",
+      :sort_keys             => false,
     }.sort_by { |n,| n.to_s }, state.to_h.sort_by { |n,| n.to_s })
 
     state = JSON::State.new(allow_duplicate_key: true)
@@ -255,6 +361,7 @@ class JSONGeneratorTest < Test::Unit::TestCase
       :object_nl             => "",
       :space                 => "",
       :space_before          => "",
+      :sort_keys             => false,
     }.sort_by { |n,| n.to_s }, state.to_h.sort_by { |n,| n.to_s })
   end
 
@@ -279,6 +386,56 @@ class JSONGeneratorTest < Test::Unit::TestCase
       assert_raise(GeneratorError) { pretty_generate([JSON::MinusInfinity]) }
       assert_equal "[\n  -Infinity\n]", pretty_generate([JSON::MinusInfinity], :allow_nan => true)
     end
+  end
+
+  # An object that changes state.depth when it receives to_json(state)
+  def bad_to_json
+    obj = Object.new
+    def obj.to_json(state)
+      state.depth += 1
+      "{#{state.object_nl}"\
+        "#{state.indent * state.depth}\"foo\":#{state.space}1#{state.object_nl}"\
+        "#{state.indent * (state.depth - 1)}}"
+    end
+    obj
+  end
+
+  def test_depth_restored_bad_to_json
+    state = JSON::State.new
+    state.generate(bad_to_json)
+    assert_equal 0, state.depth
+  end
+
+  def test_depth_restored_bad_to_json_in_Array
+    assert_equal <<~JSON.chomp, JSON.pretty_generate([bad_to_json] * 2)
+      [
+        {
+          "foo": 1
+        },
+        {
+          "foo": 1
+        }
+      ]
+    JSON
+    state = JSON::State.new
+    state.generate([bad_to_json])
+    assert_equal 0, state.depth
+  end
+
+  def test_depth_restored_bad_to_json_in_Hash
+    assert_equal <<~JSON.chomp, JSON.pretty_generate(a: bad_to_json, b: bad_to_json)
+      {
+        "a": {
+          "foo": 1
+        },
+        "b": {
+          "foo": 1
+        }
+      }
+    JSON
+    state = JSON::State.new
+    state.generate(a: bad_to_json)
+    assert_equal 0, state.depth
   end
 
   def test_depth
@@ -393,25 +550,31 @@ class JSONGeneratorTest < Test::Unit::TestCase
     assert_equal '2', state.indent
   end
 
-  def test_broken_bignum # [ruby-core:38867]
-    pid = fork do
-      x = 1 << 64
-      x.class.class_eval do
-        def to_s
-        end
+  def test_broken_bignum # [Bug #5173]
+    bignum = 1 << 64
+    bignum_to_s = bignum.to_s
+
+    original_to_s = bignum.class.instance_method(:to_s)
+    bignum.class.class_eval do
+      def to_s
+        nil
       end
-      begin
-        JSON::Ext::Generator::State.new.generate(x)
-        exit 1
-      rescue TypeError
-        exit 0
+      alias_method :to_s, :to_s
+    end
+    case RUBY_ENGINE
+    when "jruby"
+      assert_equal bignum_to_s, JSON.generate(bignum)
+    when "truffleruby"
+      assert_raise(NoMethodError) do
+        JSON.generate(bignum)
+      end
+    when "ruby"
+      assert_raise(TypeError) do
+        JSON.generate(bignum)
       end
     end
-    _, status = Process.waitpid2(pid)
-    assert status.success?
-  rescue NotImplementedError
-    # forking to avoid modifying core class of a parent process and
-    # introducing race conditions of tests are run in parallel
+  ensure
+    bignum.class.define_method(:to_s, original_to_s) if original_to_s
   end
 
   def test_hash_likeness_set_symbol
@@ -493,6 +656,8 @@ class JSONGeneratorTest < Test::Unit::TestCase
     assert_equal too_deep, ok
     ok = generate too_deep_ary, :max_nesting => 0
     assert_equal too_deep, ok
+
+    assert_raise(TypeError) { generate too_deep_ary, max_nesting: "garbage" }
   end
 
   def test_backslash
@@ -559,6 +724,22 @@ class JSONGeneratorTest < Test::Unit::TestCase
     data = "\nabc"
     json = '"\\nabc"'
     assert_equal json, generate(data)
+    #
+    data = "\n"
+    json = '"\\n"'
+    assert_equal json, generate(data)
+    #
+    (0..16).each do |i|
+      data = ('a' * i) + "\n"
+      json = '"' + ('a' * i) + '\\n"'
+      assert_equal json, generate(data)
+    end
+    #
+    (0..16).each do |i|
+      data =  "\n" + ('a' * i)
+      json = '"' + '\\n' + ('a' * i) + '"'
+      assert_equal json, generate(data)
+    end
     #
     data = ["'"]
     json = '["\\\'"]'
@@ -823,29 +1004,6 @@ class JSONGeneratorTest < Test::Unit::TestCase
         assert_equal JSON.dump(utf8_string), JSON.dump(wrong_encoding_string)
       end
     end
-
-    def test_string_ext_included_calls_super
-      included = false
-
-      Module.send(:alias_method, :included_orig, :included)
-      Module.send(:remove_method, :included)
-      Module.send(:define_method, :included) do |base|
-        included_orig(base)
-        included = true
-      end
-
-      Class.new(String) do
-        include JSON::Ext::Generator::GeneratorMethods::String
-      end
-
-      assert included
-    ensure
-      if Module.private_method_defined?(:included_orig)
-        Module.send(:remove_method, :included) if Module.method_defined?(:included)
-        Module.send(:alias_method, :included, :included_orig)
-        Module.send(:remove_method, :included_orig)
-      end
-    end
   end
 
   def test_nonutf8_encoding
@@ -867,6 +1025,15 @@ class JSONGeneratorTest < Test::Unit::TestCase
   def test_json_generate_as_json_convert_to_proc
     object = Object.new
     assert_equal object.object_id.to_json, JSON.generate(object, strict: true, as_json: -> (o, is_key) { o.object_id })
+  end
+
+  def test_as_json_nan_does_not_call_to_json
+    def (obj = Object.new).to_json(*)
+      "null"
+    end
+    assert_raise(JSON::GeneratorError) do
+      JSON.generate(Float::NAN, strict: true, as_json: proc { obj })
+    end
   end
 
   def assert_float_roundtrip(expected, actual)
@@ -937,4 +1104,49 @@ class JSONGeneratorTest < Test::Unit::TestCase
     end
     assert_equal %(detected duplicate key "foo" in #{hash.inspect}), error.message
   end
+
+  def test_frozen
+    state = JSON::State.new.freeze
+    assert_raise(FrozenError) do
+      state.configure(max_nesting: 1)
+    end
+    setters = state.methods.grep(/\w=$/)
+    assert_not_empty setters
+    setters.each do |setter|
+      assert_raise(FrozenError) do
+        state.send(setter, 1)
+      end
+    end
+  end
+
+  # The case when the State is frozen is tested in JSONCoderTest#test_nesting_recovery
+  def test_nesting_recovery
+    state = JSON::State.new
+    ary = []
+    ary << ary
+    assert_raise(JSON::NestingError) { state.generate(ary) }
+    assert_equal 0, state.depth
+    assert_equal '{"a":1}', state.generate({ a: 1 })
+  end
+
+  def test_negative_depth_raises
+    assert_raise(ArgumentError) do
+      JSON.generate({"a" => 1}, depth: -1)
+    end
+    assert_raise(ArgumentError) do
+      JSON.state.new(depth: -1)
+    end
+  end
+
+  def test_large_depth_raises
+    assert_raise(RangeError, ArgumentError) do
+      JSON.generate([[1]],
+        indent:      " " * 5,
+        array_nl:    "\n",
+        depth:       3_689_348_814_741_910_324,
+        max_nesting: 0
+      )
+    end
+  end
+
 end

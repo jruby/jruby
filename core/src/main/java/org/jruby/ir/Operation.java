@@ -72,6 +72,7 @@ public enum Operation {
     AS_STRING(OpFlags.f_is_call | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
     CLASS_SUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     INSTANCE_SUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
+    JAVA_CTOR_SUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     UNRESOLVED_SUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     ZSUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
 
@@ -147,6 +148,10 @@ public enum Operation {
     LINE_NUM(OpFlags.f_is_book_keeping_op | OpFlags.f_is_debug_op),
     TRACE(OpFlags.f_is_book_keeping_op | OpFlags.f_is_debug_op | OpFlags.f_has_side_effect),
     COVERAGE(OpFlags.f_is_book_keeping_op | OpFlags.f_is_debug_op | OpFlags.f_has_side_effect),
+    // Method coverage: take the counter passed by the calling DynamicMethod, then count the call once the
+    // arguments have been received.
+    RECV_METHOD_COVERAGE(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
+    COVER_METHOD(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
 
     /** JRuby-impl instructions **/
     BINDING_LOAD(OpFlags.f_is_load),

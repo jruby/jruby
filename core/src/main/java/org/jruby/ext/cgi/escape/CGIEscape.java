@@ -510,14 +510,13 @@ public class CGIEscape implements Library {
         ThreadContext context = runtime.getCurrentContext();
 
         RubyClass rb_cCGI = Define.defineClass(context, "CGI", runtime.getObject(), runtime.getObject().getAllocator());
+        RubyModule rb_mEscapeExt = Define.defineModuleUnder(context, rb_cCGI, "EscapeExt");
+        RubyModule rb_mEscape = Define.defineModuleUnder(context, rb_cCGI, "Escape");
 
-        RubyModule rb_mEscapeExt =
-                Define.defineModuleUnder(context, rb_cCGI, "EscapeExt")
-                        .defineMethods(context, CGIEscape.class)
-                        .extendObject(context, rb_cCGI);
+        rb_mEscapeExt.defineMethods(context, CGIEscape.class);
 
-        Define.defineModuleUnder(context, rb_cCGI, "Escape")
-                .prependModule(context, rb_mEscapeExt);
+        rb_mEscape.prependModule(context, rb_mEscapeExt);
+        rb_mEscapeExt.extendObject(context, rb_cCGI);
     }
 
     // PORTED FROM OTHER FILES IN MRI

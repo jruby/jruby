@@ -5,3 +5,4 @@ fails:IO#seek accepts the symbol :CUR for SEEK_CUR
 fails:IO#seek accepts the symbol :SET for SEEK_SET
 fails:IO#seek accepts the symbol :END for SEEK_END
 fails:IO#seek clears the character buffer
+fails:IO#seek clears the character buffer even when ungotten characters exceed consumed characters

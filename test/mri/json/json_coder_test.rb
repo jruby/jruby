@@ -19,6 +19,11 @@ class JSONCoderTest < Test::Unit::TestCase
     assert_raise(JSON::GeneratorError) { coder.dump([Object.new]) }
   end
 
+  def test_json_coder_with_proc_returning_symbol
+    coder = JSON::Coder.new { _1 }
+    assert_equal %({"sym":"sym"}), coder.dump({ sym: :sym })
+  end
+
   def test_json_coder_hash_key
     obj = Object.new
     coder = JSON::Coder.new do |obj, is_key|
@@ -130,6 +135,11 @@ class JSONCoderTest < Test::Unit::TestCase
 
     assert_equal '{"/w==\\n":1}', coder.dump({ "\xFF" => 1 })
     assert_equal 2, calls
+  end
+
+  def test_depth
+    coder = JSON::Coder.new(object_nl: "\n", array_nl: "\n", space: " ", indent: "  ", depth: 1)
+    assert_equal %({\n    "foo": 42\n  }), coder.dump(foo: 42)
   end
 
   def test_nesting_recovery

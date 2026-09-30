@@ -3,7 +3,7 @@ name: JRuby CI
 on: [push, pull_request]
 
 env:
-  JAVA_OPTS: '-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xms60M -Xmx1G -XX:InitialCodeCacheSize=40M -XX:ReservedCodeCacheSize=120M'
+  JAVA_OPTS: '-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xms60M -Xmx2g -XX:InitialCodeCacheSize=40M -XX:ReservedCodeCacheSize=120M'
 
 permissions:
   contents: read
@@ -38,6 +38,26 @@ jobs:
         run: bin/jruby --dev -S bundle install
       - name: rake ${{ matrix.target }}
         run: bin/jruby -S rake ${{ matrix.target }}
+
+  error-prone:
+    runs-on: ubuntu-latest
+
+    name: error-prone (Java 21)
+
+    env:
+      ERROR_PRONE: true
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v6
+      - name: set up java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'zulu'
+          java-version: 21
+          cache: 'maven'
+      - name: bootstrap
+        run: ./mvnw -ntp -Pbootstrap clean package
 
   # This job is a fast-fail all-interp run of test:mri:code to give early indication if the jitted runs will pass.
   rake-test-mri-fast:

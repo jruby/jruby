@@ -344,6 +344,8 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case RESTORE_ERROR_INFO: return RestoreErrorInfoInstr.decode(this);
             case RETURN: return ReturnInstr.decode(this);
             case RETURN_OR_RETHROW_SAVED_EXC: return ReturnOrRethrowSavedExcInstr.decode(this);
+            case RECV_METHOD_COVERAGE: return ReceiveMethodCoverageInstr.decode(this);
+            case COVER_METHOD: return CoverMethodInstr.decode(this);
             case RUNTIME_HELPER: return RuntimeHelperCall.decode(this);
             case SEARCH_CONST: return SearchConstInstr.decode(this);
             case SEARCH_MODULE_FOR_CONST: return SearchModuleForConstInstr.decode(this);

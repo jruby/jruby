@@ -26,19 +26,19 @@
 
 package org.jruby.internal.runtime.methods;
 
-import org.jruby.RubyArray;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class ExitableReturn {
-    public final RubyArray<?> arguments;
+    public final IRubyObject[] arguments;
     public final Block block;
 
-    public ExitableReturn(RubyArray<?> arguments, Block block) {
+    public ExitableReturn(IRubyObject[] arguments, Block block) {
         this.arguments = arguments;
         this.block = block;
     }
 
-    public RubyArray<?> getArguments() {
+    public IRubyObject[] getArguments() {
         return arguments;
     }
 

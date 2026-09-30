@@ -53,6 +53,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static org.jruby.api.Warn.warning;
 import static org.jruby.ir.IRFlags.*;
@@ -67,6 +68,7 @@ import static org.jruby.runtime.CallType.FUNCTIONAL;
 import static org.jruby.runtime.CallType.NORMAL;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD_REST;
+import static org.jruby.runtime.ThreadContext.CALL_FORWARDING;
 import static org.jruby.util.RubyStringBuilder.str;
 
 public abstract class IRBuilder<U, V, W, X, Y, Z> {
@@ -86,6 +88,9 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     public boolean underscoreVariableSeen = false;
     int lastProcessedLineNum = -1;
     private Variable currentModuleVariable = null;
+
+    // Used for forwarding callInfo in argument-forwarding methods
+    protected Variable forwardingCallInfo;
 
     // FIXME: AST does not use this but Prism does.  AST could put encoding up to RootNode since it is same
     protected Encoding encoding;
@@ -1558,8 +1563,14 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
     protected Operand buildIter(U var, U body, StaticScope staticScope, Signature signature, int line, int endLine) {
+        return buildIter(var, body, staticScope, signature, line, -1, endLine, -1);
+    }
+
+    protected Operand buildIter(U var, U body, StaticScope staticScope, Signature signature, int line, int startColumn,
+                                int endLine, int endColumn) {
         ByteList prefix = createPrefixForIter(var);
         IRClosure closure = new IRClosure(getManager(), scope, line, staticScope, signature, prefix, coverageMode);
+        closure.setSourceSpan(startColumn, endLine, endColumn);
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
         getManager().getBuilderFactory().newIRBuilder(getManager(), closure, this, encoding).buildIterInner(methodName, var, body, endLine);
@@ -1601,6 +1612,9 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
         boolean forNode = scope instanceof IRFor;
 
+        // Any block can become a method through define_method, so blocks get the method coverage probes too.
+        Variable methodCoverage = forNode ? null : receiveMethodCoverage();
+
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             addInstr(new TraceInstr(RubyEvent.B_CALL, getCurrentModuleVariable(), getName(), getFileName(), scope.getLine() + 1));
         }
@@ -1610,6 +1624,8 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         } else {
             receiveBlockArgs(var);
         }
+
+        coverMethod(methodCoverage);
 
         // conceptually abstract prologue scope instr creation so we can put this at the end of it instead of replicate it.
         afterPrologueIndex = instructions.size();
@@ -1637,8 +1653,14 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
     public Operand buildLambda(U args, U body, StaticScope staticScope, Signature signature, int line) {
+        return buildLambda(args, body, staticScope, signature, line, -1, -1, -1);
+    }
+
+    public Operand buildLambda(U args, U body, StaticScope staticScope, Signature signature, int line, int startColumn,
+                               int endLine, int endColumn) {
         IRClosure closure = new IRClosure(getManager(), scope, line, staticScope, signature,
                 createPrefixForLambda(args), coverageMode);
+        closure.setSourceSpan(startColumn, endLine, endColumn);
 
         // Create a new nested builder to ensure this gets its own IR builder state like the ensure block stack
         getManager().getBuilderFactory().newIRBuilder(getManager(), closure, this, encoding).buildLambdaInner(args, body);
@@ -1653,7 +1675,11 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         long time = 0;
         if (parserTiming) time = System.nanoTime();
 
+        Variable methodCoverage = receiveMethodCoverage();
+
         receiveBlockArgs(blockArgs);
+
+        coverMethod(methodCoverage);
 
         Operand closureRetVal = build(body);
 
@@ -2803,20 +2829,30 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         int[] flags = new int[] { 0 };
         Operand[] args = setupCallArgs(argsNode, flags);
 
+        // propagate callInfo when forwarding arguments
+        if (forwardingCallInfo != null) flags[0] = CALL_FORWARDING;
+
         determineIfWeNeedLineNumber(line, isNewline, false, false); // backtrace needs line of call in case of exception.
         if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
             Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
             if_else(test, tru(),
                     () -> receiveBreakException(block,
-                            determineSuperInstr(result, removeArg(args), block, flags[0], inClassBody, isInstanceMethod)),
+                            determineSuperInstr(result, removeArg(args), block, forwardingCallInfo, flags[0], inClassBody, isInstanceMethod)),
                     () -> receiveBreakException(block,
-                            determineSuperInstr(result, args, block, flags[0], inClassBody, isInstanceMethod)));
+                            determineSuperInstr(result, args, block, forwardingCallInfo, flags[0], inClassBody, isInstanceMethod)));
         } else {
             receiveBreakException(block,
-                    determineSuperInstr(result, args, block, flags[0], inClassBody, isInstanceMethod));
+                    determineSuperInstr(result, args, block, forwardingCallInfo, flags[0], inClassBody, isInstanceMethod));
         }
 
         return result;
+    }
+
+    private CallInstr forwardCallInfo(Operand forwardingCallInfo, Supplier<CallInstr> operandToWrap) {
+        if (forwardingCallInfo != null) {
+            addInstr(new RuntimeHelperCall(temp(), RESTORE_CALL_INFO, new Operand[] { forwardingCallInfo }));
+        }
+        return operandToWrap.get();
     }
 
     protected Operand buildUndef(Operand name) {
@@ -2914,13 +2950,13 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { keywordRest }));
             if_else(test, tru(),
                     () -> receiveBreakException(block,
-                            determineSuperInstr(zsuperResult, args, block, flags[0], inClassBody, isInstanceMethod)),
+                            determineSuperInstr(zsuperResult, args, block, null, flags[0], inClassBody, isInstanceMethod)),
                     () -> receiveBreakException(block,
-                            determineSuperInstr(zsuperResult, addArg(args, keywordRest), block, flags[0], inClassBody, isInstanceMethod)));
+                            determineSuperInstr(zsuperResult, addArg(args, keywordRest), block, null, flags[0], inClassBody, isInstanceMethod)));
         } else {
             Operand[] args = getZSuperCallOperands(scope, callArgs, keywordArgs, flags);
             receiveBreakException(block,
-                    determineSuperInstr(zsuperResult, args, block, flags[0], inClassBody, isInstanceMethod));
+                    determineSuperInstr(zsuperResult, args, block, null, flags[0], inClassBody, isInstanceMethod));
         }
 
         return zsuperResult;
@@ -2992,6 +3028,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     protected IRMethod defineNewMethod(LazyMethodDefinition<U, V, W, X, Y, Z> defn, ByteList name, int line, StaticScope scope, boolean isInstanceMethod) {
         IRMethod method = new IRMethod(getManager(), this.scope, defn, name, isInstanceMethod, line, scope, coverageMode);
+        method.setSourceSpan(defn.getStartColumn(), defn.getEndLine(), defn.getEndColumn());
 
         // poorly placed next/break expects a syntax error so we eagerly build methods which contain them.
         if (!canBeLazyMethod(defn.getMethod())) method.lazilyAcquireInterpreterContext();
@@ -3005,6 +3042,8 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         if (parserTiming) time = System.nanoTime();
         this.coverageMode = coverageMode;
 
+        Variable methodCoverage = receiveMethodCoverage();
+
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             // Explicit line number here because we need a line number for trace before we process any nodes
             addInstr(getManager().newLineNumber(scope.getLine() + 1));
@@ -3012,6 +3051,8 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         }
 
         receiveMethodArgs(defNode.getMethod());
+
+        coverMethod(methodCoverage);
 
         Operand rv = build(defNode.getMethodBody());
 
@@ -3038,6 +3079,25 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
 
         if (parserTiming) manager.getRuntime().getParserManager().getParserStats().addIRBuildTime(System.nanoTime() - time);
+    }
+
+    /**
+     * Method coverage, step one: take the {@link org.jruby.ext.coverage.MethodCoverage} counter passed by the
+     * calling DynamicMethod, if any. This runs before anything else in the body, so a nested call made while
+     * receiving arguments cannot take the counter first. Returns null when methods are not measured.
+     */
+    private Variable receiveMethodCoverage() {
+        if ((coverageMode & CoverageData.METHODS) == 0) return null;
+
+        return addResultInstr(new ReceiveMethodCoverageInstr(temp()));
+    }
+
+    /**
+     * Method coverage, step two: count the call after the arguments have been received. This is where MRI fires
+     * CALL, so a call that fails on its arguments is not counted.
+     */
+    private void coverMethod(Variable methodCoverage) {
+        if (methodCoverage != null) addInstr(new CoverMethodInstr(methodCoverage));
     }
 
     private void prependUsedImplicitState(IRScope parent) {
@@ -3154,19 +3214,23 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         // check for refinement calls before building any closure
         if (callType == FUNCTIONAL) determineIfMaybeRefined(name, args);
         Operand block = setupCallClosure(argsNode, iter);
+
+        // propagate callInfo when forwarding arguments
+        if (forwardingCallInfo != null) flags[0] = CALL_FORWARDING;
+
         determineIfWeNeedLineNumber(line, isNewline, false, false); // backtrace needs line of call in case of exception.
         if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
             Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
             if_else(test, tru(),
                     () -> receiveBreakException(block,
-                            CallInstr.create(scope, callType, result, name, receiver, removeArg(args), block, flags[0])),
+                            forwardCallInfo(forwardingCallInfo, () -> CallInstr.create(scope, callType, result, name, receiver, removeArg(args), block, flags[0]))),
                     () -> receiveBreakException(block,
-                            CallInstr.create(scope, callType, result, name, receiver, args, block, flags[0])));
+                            forwardCallInfo(forwardingCallInfo, () -> CallInstr.create(scope, callType, result, name, receiver, args, block, flags[0]))));
         } else {
             if (callType == FUNCTIONAL) checkForOptimizableDefineMethod(name, iter, block);
 
             receiveBreakException(block,
-                    CallInstr.create(scope, callType, result, name, receiver, args, block, flags[0]));
+                    forwardCallInfo(forwardingCallInfo, () -> CallInstr.create(scope, callType, result, name, receiver, args, block, flags[0])));
         }
 
         return result;
@@ -3205,18 +3269,19 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         if (refinement) scope.setIsMaybeUsingRefinements();
     }
 
-    protected CallInstr determineSuperInstr(Variable result, Operand[] args, Operand block, int flags,
-                                          boolean inClassBody, boolean isInstanceMethod) {
-        if (result == null) result = temp();
-        return inClassBody ?
-                isInstanceMethod ?
-                        new InstanceSuperInstr(scope, result, getCurrentModuleVariable(), getName(), args, block, flags, scope.maybeUsingRefinements()) :
-                        new ClassSuperInstr(scope, result, getCurrentModuleVariable(), getName(), args, block, flags, scope.maybeUsingRefinements()) :
-                // We dont always know the method name we are going to be invoking if the super occurs in a closure.
-                // This is because the super can be part of a block that will be used by 'define_method' to define
-                // a new method.  In that case, the method called by super will be determined by the 'name' argument
-                // to 'define_method'.
-                new UnresolvedSuperInstr(scope, result, buildSelf(), args, block, flags, scope.maybeUsingRefinements());
+    protected CallInstr determineSuperInstr(Variable result, Operand[] args, Operand block, Operand forwardingCallInfo,
+                                            int flags, boolean inClassBody, boolean isInstanceMethod) {
+        final Variable result2 = result == null ? temp() : result;
+        return forwardCallInfo(forwardingCallInfo, () ->
+                inClassBody ?
+                        isInstanceMethod ?
+                                new InstanceSuperInstr(scope, result2, getCurrentModuleVariable(), getName(), args, block, flags, scope.maybeUsingRefinements()) :
+                                new ClassSuperInstr(scope, result2, getCurrentModuleVariable(), getName(), args, block, flags, scope.maybeUsingRefinements()) :
+                        // We dont always know the method name we are going to be invoking if the super occurs in a closure.
+                        // This is because the super can be part of a block that will be used by 'define_method' to define
+                        // a new method.  In that case, the method called by super will be determined by the 'name' argument
+                        // to 'define_method'.
+                        new UnresolvedSuperInstr(scope, result2, buildSelf(), args, block, flags, scope.maybeUsingRefinements()));
     }
 
     protected Operand findContainerModule() {

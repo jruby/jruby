@@ -50,7 +50,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -618,36 +617,10 @@ public class Java implements Library {
                 return context.nil;
             }
         });
-        ///TODO: investigate this, should jcreate! still exist?
 
+        // __jcreate! is the fallback constructor dispatch used by NewMethodReified when no reified Java ctor
+        // is available (e.g. interface-only subclasses); also retained for backwards compatibility.
         subclass.addMethod(context, "__jcreate!", new JCreateMethod(subclassSingleton));
-    }
-
-    /**
-     * Used for concrete reified classes. Constructed in generated code (RubyClass)
-     */
-    public static class JCtorCache implements CallableSelector.CallableCache<ParameterTypes> {
-
-        private final NonBlockingHashMapLong<ParameterTypes> cache = new NonBlockingHashMapLong<>(8);
-        public final JavaConstructor[] constructors;
-        private final List<JavaConstructor> constructorList;
-
-        public JCtorCache(JavaConstructor[] constructors) {
-            this.constructors = constructors;
-            constructorList = Arrays.asList(constructors);
-        }
-
-        public int indexOf(JavaConstructor ctor) {
-            return constructorList.indexOf(ctor);
-        }
-
-        public final ParameterTypes getSignature(int signatureCode) {
-            return cache.get(signatureCode);
-        }
-
-        public final void putSignature(int signatureCode, ParameterTypes callable) {
-            cache.put(signatureCode, callable);
-        }
     }
 
     public static class JCreateMethod extends JavaMethodN implements CallableSelector.CallableCache<JavaProxyConstructor> {
@@ -665,7 +638,7 @@ public class Java implements Library {
          * @param runtime
          * @return Index of ctor in cache to call, or throws a new exception
          */
-        public static int forTypes(Ruby runtime, IRubyObject[] args, JCtorCache cache) {
+        public static int forTypes(Ruby runtime, IRubyObject[] args, ConstructorCache cache) {
             JavaConstructor ctor = matchConstructorIndex(runtime.getCurrentContext(), cache.constructors, cache,
                     args.length, args);
             int index = cache.indexOf(ctor);

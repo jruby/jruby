@@ -10,7 +10,9 @@ on:
 
 
 env:
-  JAVA_OPTS: '-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xms60M -Xmx1G -XX:InitialCodeCacheSize=40M -XX:ReservedCodeCacheSize=120M'
+  JAVA_OPTS: '-XX:+TieredCompilation -XX:TieredStopAtLevel=1 -Xms60M -Xmx2g -XX:InitialCodeCacheSize=40M -XX:ReservedCodeCacheSize=120M'
+  # Suggested by GitHub Copilot to reduce transient failures due to Maven Central issues
+  MAVEN_OPTS: '-Dmaven.wagon.http.retryHandler.count=5 -Dmaven.wagon.http.retryHandler.requestSentEnabled=true'
 
 permissions:
   contents: read
@@ -39,7 +41,7 @@ jobs:
       - name: build release artifacts
         run: |
           ./mvnw -ntp clean package -Pall
-      - uses: cedx/SetupAnt@v6
+      - uses: cedx/SetupAnt@v7
       - name: install dependencies
         run: bin/jruby -S bundle install
       - name: cache release artifacts
@@ -96,7 +98,7 @@ jobs:
       - name: build release artifacts
         run: |
           ./mvnw -ntp clean package -Pall
-      - uses: cedx/SetupAnt@v6
+      - uses: cedx/SetupAnt@v7
       - name: install dependencies
         run: bin/jruby -S bundle install
       - name: build installer

@@ -1,2 +1,3 @@
 fails:IO#sysread on a file discards the existing buffer content upon error
 fails:IO#sysread raises ArgumentError when length is less than 0
+fails:IO#sysread on a file discards the existing buffer content upon EOFError

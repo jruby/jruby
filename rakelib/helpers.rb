@@ -82,23 +82,22 @@ def permute_specs(base_name, options, *prereqs, &block)
 end
 
 def permute_task(task_desc, task_type, base_name, options, *prereqs, &block)
-  default_task = nil
   all_tasks = nil
 
   # iterate over all flag sets, noting default mapping
   tasks = {}
-  options.each do |name, flags|
-    if name == :default
-      default_task = flags
-      next
-    end
-
-    if name == :all
+  options.uniq.each do |name, flags|
+    case name
+    when :default
+      task_name = base_name
+    when :all
       all_tasks = flags
       next
+    else
+      task_name = "#{base_name}:#{name}"
     end
 
-    test_task = task_type.new("#{base_name}:#{name}", &block).tap do |t|
+    test_task = task_type.new(task_name, &block).tap do |t|
       t.ruby_opts ||= []
       flags.each do |flag|
         t.ruby_opts.unshift flag
@@ -109,12 +108,6 @@ def permute_task(task_desc, task_type, base_name, options, *prereqs, &block)
       t.add_description "#{flags.inspect}"
       t.prerequisites.concat prereqs
     end
-  end
-
-  # set up default, if specified
-  if default_task
-    desc "Run #{task_desc}s for #{default_task}"
-    task base_name => tasks[default_task]
   end
 
   # set up "all", if specified, or make it run everything

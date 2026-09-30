@@ -68,6 +68,7 @@ public class OpenFile implements Finalizable {
         writeconvAsciicompat = null;
         writeconvPreEcopts = nil;
         encs.ecopts = nil;
+        timeout = nil;
         posix = new PosixShim(runtime);
         fiberScheduler = Options.FIBER_SCHEDULER.load();
     }
@@ -125,7 +126,9 @@ public class OpenFile implements Finalizable {
         public void finalize(Ruby runtime, OpenFile fptr, boolean noraise);
     }
 
-    private ChannelFD fd;
+    // volatile so a close in another thread is visible to the accessors below, which read fd
+    // outside the lock, and so the ChannelFD they hand out is safely published.
+    private volatile ChannelFD fd;
     private int mode;
     private long pid = -1;
     private Process process;
@@ -546,7 +549,7 @@ public class OpenFile implements Finalizable {
                 case EAGAIN:
                 case EWOULDBLOCK:
                     if (fiberScheduler && !scheduler.isNil()) {
-                        return FiberScheduler.ioWaitReadable(context, scheduler, RubyIO.newIO(context.runtime, channel())).isTrue();
+                        return schedulerWaitReadable(context, scheduler);
                     }
 
                     ready(runtime, context.getThread(), SelectionKey.OP_READ, timeout);
@@ -564,6 +567,17 @@ public class OpenFile implements Finalizable {
         return waitReadable(context, -1);
     }
 
+    // Release the IO lock while io_wait parks this fiber, as selectForRead does, or a sibling
+    // fiber closing or reading this IO would block on the lock and never wake us.
+    private boolean schedulerWaitReadable(ThreadContext context, IRubyObject scheduler) {
+        unlock();
+        try {
+            return FiberScheduler.ioWaitReadable(context, scheduler, io).isTrue();
+        } finally {
+            lock();
+        }
+    }
+
     /**
      * Wait until the channel is available for the given operations or the timeout expires.
      *
@@ -575,27 +589,32 @@ public class OpenFile implements Finalizable {
      * @return
      */
     public boolean ready(Ruby runtime, RubyThread thread, int ops, long timeout) {
+        return readyOps(thread, ops, timeout) != 0;
+    }
+
+    // MRI: rb_thread_io_wait
+    public int readyOps(RubyThread thread, int ops, long timeout) {
         boolean locked = lock();
         try {
+            ChannelFD fd = checkedFD();
+
             if (fd.chSelect != null) {
                 int realOps = ops & fd.chSelect.validOps();
 
-                if ((realOps & SelectionKey.OP_WRITE) != (ops & SelectionKey.OP_WRITE)) {
-                    // MRI or poll or select appears to return ready for write select on a read-only channel
-                    return true;
-                }
+                // MRI or poll or select appears to return ready for write select on a read-only channel
+                int alwaysReady = ops & ~realOps & SelectionKey.OP_WRITE;
 
-                return thread.select(fd.chSelect, this, realOps, timeout);
+                // Nothing the channel can actually select for was asked
+                if (realOps == 0) return alwaysReady;
 
-            } else if (fd.chSeek != null) {
-                return fd.chSeek.position() != -1
-                        && fd.chSeek.size() != -1
-                        && fd.chSeek.position() < fd.chSeek.size();
+                // Something is ready already, so ask about the rest without blocking
+                if (alwaysReady != 0) return alwaysReady | thread.selectReadyOps(fd.chSelect, this, realOps, 0);
+
+                return thread.selectReadyOps(fd.chSelect, this, realOps, timeout);
             }
 
-            return false;
-        } catch (IOException ioe) {
-            throw runtime.newIOErrorFromException(ioe);
+            // Channels that cannot be selected, regular files among them, are always ready
+            return ops;
         } finally {
             if (locked) unlock();
         }
@@ -748,6 +767,16 @@ public class OpenFile implements Finalizable {
         if (fd == null) {
             throw runtime.newIOError(RubyIO.CLOSED_STREAM_MSG);
         }
+    }
+
+    /**
+     * Read the fd field once and then check it, so a concurrent close cannot null it between the
+     * check and the dereference and turn a closed-stream IOError into a NullPointerException.
+     */
+    private ChannelFD checkedFD() {
+        ChannelFD fd = this.fd;
+        if (fd == null) throw runtime.newIOError(RubyIO.CLOSED_STREAM_MSG);
+        return fd;
     }
 
     public boolean isBinmode() {
@@ -1349,7 +1378,7 @@ public class OpenFile implements Finalizable {
 
                     if (r < 0) {
                         Errno errno = posix.getErrno();
-                        if (errno == Errno.EAGAIN || errno == Errno.EWOULDBLOCK
+                        if ((errno == Errno.EAGAIN || errno == Errno.EWOULDBLOCK)
                                 && waitReadable(context, fd)) {
                             continue retry;
                         }
@@ -1514,10 +1543,16 @@ public class OpenFile implements Finalizable {
         if (fptr.fiberScheduler) {
             IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
             if (!scheduler.isNil()) {
-                IRubyObject result = FiberScheduler.ioReadMemory(context, scheduler, fptr.io, buffer, buf, count);
+                IRubyObject result = FiberScheduler.ioReadMemory(context, scheduler, fptr.io, buffer, count, 0);
 
                 if (result != null) {
                     return FiberScheduler.resultApply(context, result);
+                }
+
+                // MRI's sockets and pipes are nonblocking, so its plain read yields in io_wait on
+                // EAGAIN. Ours block and would park the fiber's thread, so emulate that here.
+                if (fd.chSelect != null && fptr.isBlocking()) {
+                    return schedulerRead(context, fptr, buffer, buf, count);
                 }
             }
         }
@@ -1539,6 +1574,26 @@ public class OpenFile implements Finalizable {
 
         selectForRead(context, fptr, fd);
 
+        return executeRead(context, fptr, buffer, buf, count);
+    }
+
+    // Can go away once our sockets and pipes default to nonblocking.
+    private static int schedulerRead(ThreadContext context, OpenFile fptr,
+                                     ByteBuffer buffer, int buf, int count) {
+        try {
+            fptr.setNonblock(context.runtime);
+
+            while (true) {
+                int read = executeRead(context, fptr, buffer, buf, count);
+
+                if (read >= 0 || !fptr.waitReadable(context)) return read;
+            }
+        } finally {
+            if (fptr.isOpen()) fptr.setBlock(context.runtime);
+        }
+    }
+
+    private static int executeRead(ThreadContext context, OpenFile fptr, ByteBuffer buffer, int buf, int count) {
         try {
             return context.getThread().executeReadWrite(context, fptr, buffer, buf, count, READ_TASK);
         } catch (InterruptedException ie) {
@@ -1637,6 +1692,12 @@ public class OpenFile implements Finalizable {
                     && posix.getErrno() != Errno.EWOULDBLOCK && posix.getErrno() != Errno.EINTR) {
                 // Encountered a permanent error. Don't read again.
                 return false;
+            }
+
+            IRubyObject scheduler = fiberScheduler ? context.getFiberCurrentThread().getSchedulerCurrent() : null;
+
+            if (scheduler != null && !scheduler.isNil()) {
+                return schedulerWaitReadable(context, scheduler);
             }
 
             if (fd.chSelect != null) {
@@ -2522,7 +2583,7 @@ public class OpenFile implements Finalizable {
         if (fptr.fiberScheduler) {
             IRubyObject scheduler = context.getFiberCurrentThread().getSchedulerCurrent();
             if (!scheduler.isNil()) {
-                IRubyObject result = FiberScheduler.ioWriteMemory(context, scheduler, fptr.io, bufBytes, buf, count);
+                IRubyObject result = FiberScheduler.ioWriteMemory(context, scheduler, fptr.io, bufBytes, count, 0);
 
                 if (result != null) {
                     return FiberScheduler.resultApply(context, result);
@@ -2549,38 +2610,31 @@ public class OpenFile implements Finalizable {
     public Channel channel() {
         // MRI equivalent: rb_io_check_closed(fptr) + fptr->fd access in io.c
         // when an IO was closed from another thread MRI raises IOError("closed stream") via io_fd_check_closed (io.c)
-        checkClosed();
-        return fd.ch;
+        return checkedFD().ch;
     }
 
     public ReadableByteChannel readChannel() {
-        checkClosed();
-        return fd.chRead;
+        return checkedFD().chRead;
     }
 
     public WritableByteChannel writeChannel() {
-        checkClosed();
-        return fd.chWrite;
+        return checkedFD().chWrite;
     }
 
     public SeekableByteChannel seekChannel() {
-        checkClosed();
-        return fd.chSeek;
+        return checkedFD().chSeek;
     }
 
     public SelectableChannel selectChannel() {
-        checkClosed();
-        return fd.chSelect;
+        return checkedFD().chSelect;
     }
 
     public FileChannel fileChannel() {
-        checkClosed();
-        return fd.chFile;
+        return checkedFD().chFile;
     }
 
     public SocketChannel socketChannel() {
-        checkClosed();
-        return fd.chSock;
+        return checkedFD().chSock;
     }
 
     IRubyObject finishWriteconv(ThreadContext context, boolean noalloc) {
@@ -2674,9 +2728,7 @@ public class OpenFile implements Finalizable {
             // and make those channels act like non-blocking
             nonblock = !blocking;
 
-            ChannelFD fd = this.fd;
-
-            checkClosed();
+            ChannelFD fd = checkedFD();
 
             if (fd.chSelect != null) {
                 try {
@@ -2743,7 +2795,7 @@ public class OpenFile implements Finalizable {
     }
 
     public int getFileno() {
-        return fd.bestFileno(true);
+        return checkedFD().bestFileno(true);
     }
 
     // rb_thread_flock

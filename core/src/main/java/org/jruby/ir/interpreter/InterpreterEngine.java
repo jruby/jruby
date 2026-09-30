@@ -10,6 +10,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.ArgReceiver;
 import org.jruby.ir.instructions.BreakInstr;
 import org.jruby.ir.instructions.CheckArityInstr;
+import org.jruby.ir.instructions.CoverMethodInstr;
 import org.jruby.ir.instructions.CheckForLJEInstr;
 import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.instructions.FrameNameCallInstr;
@@ -25,6 +26,7 @@ import org.jruby.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.ir.instructions.RestoreBindingVisibilityInstr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ReturnBase;
+import org.jruby.ir.instructions.ReceiveMethodCoverageInstr;
 import org.jruby.ir.instructions.RuntimeHelperCall;
 import org.jruby.ir.instructions.SaveBindingVisibilityInstr;
 import org.jruby.ir.instructions.ToggleBacktraceInstr;
@@ -424,12 +426,18 @@ public class InterpreterEngine {
                 LineNumberInstr line = (LineNumberInstr) instr;
                 context.setLine(line.lineNumber);
                 if (line.coverage) {
-                    IRRuntimeHelpers.updateCoverage(context, currScope.getFile(), line.lineNumber);
-                    if (line.oneshot) line.coverage = false;
+                    boolean covered = IRRuntimeHelpers.coverLine(context, currScope.getFile(), line.lineNumber);
+                    if (covered && line.oneshot) line.coverage = false;
                 }
                 break;
             case TOGGLE_BACKTRACE:
                 context.setExceptionRequiresBacktrace(((ToggleBacktraceInstr) instr).requiresBacktrace());
+                break;
+            case RECV_METHOD_COVERAGE:
+                setResult(temp, currDynScope, ((ReceiveMethodCoverageInstr) instr).getResult(), context.takePendingMethodCoverage());
+                break;
+            case COVER_METHOD:
+                ((CoverMethodInstr) instr).cover(context, currScope, currDynScope, self, temp);
                 break;
             case TRACE:
                 instr.interpret(context, currScope, currDynScope, self, temp);

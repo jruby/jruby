@@ -242,6 +242,10 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
         warnWithCategory(message, Category.DEPRECATED);
     }
 
+    public void warnDeprecated(String filename, int line, String message) {
+        warnWithCategory(filename, line, message, Category.DEPRECATED);
+    }
+
     public void warnExperimental(String message) {
         warnWithCategory(message, Category.EXPERIMENTAL);
     }

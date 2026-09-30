@@ -32,7 +32,6 @@ import org.jruby.RubyModule;
 import org.jruby.compiler.Compilable;
 import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.internal.runtime.SplitSuperState;
-import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.interpreter.ExitableInterpreterContext;
 import org.jruby.ir.interpreter.InterpreterContext;
@@ -87,16 +86,6 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
         }
     }
 
-    // TODO: new method or make this pre?
-    protected void preSplit(InterpreterContext ic, ThreadContext context, IRubyObject self, String name, Block block,
-            RubyModule implClass, DynamicScope scope) {
-        // update call stacks (push: frame, class, scope, etc.)
-        context.preMethodFrameOnly(implClass, name, self, block);
-        if (ic.pushNewDynScope()) {
-            context.pushScope(scope);
-        }
-    }
-
     @Override
     protected void printMethodIR() {
         ByteArrayOutputStream baos = IRDumper.printIR(getIRScope(), false);
@@ -106,11 +95,7 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args,
             Block block) {
-        if (IRRuntimeHelpers.isDebug()) doDebug();
-
-        // try jit before checking actualMethod, so we use jitted version immediately if
-        // it's ready
-        if (callCount >= 0) tryJit(context, this, false);
+        prepareCall(context);
 
         DynamicMethod jittedMethod = actualMethod;
         if (jittedMethod != null) {
@@ -142,11 +127,7 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-        if (IRRuntimeHelpers.isDebug()) doDebug();
-
-        // try jit before checking actualMethod, so we use jitted version immediately if
-        // it's ready
-        if (callCount >= 0) tryJit(context, this, false);
+        prepareCall(context);
 
         DynamicMethod jittedMethod = actualMethod;
         if (jittedMethod != null) {
@@ -179,11 +160,7 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0,
             Block block) {
-        if (IRRuntimeHelpers.isDebug()) doDebug();
-
-        // try jit before checking actualMethod, so we use jitted version immediately if
-        // it's ready
-        if (callCount >= 0) tryJit(context, this, false);
+        prepareCall(context);
 
         DynamicMethod jittedMethod = actualMethod;
         if (jittedMethod != null) {
@@ -216,11 +193,7 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0,
             IRubyObject arg1, Block block) {
-        if (IRRuntimeHelpers.isDebug()) doDebug();
-
-        // try jit before checking actualMethod, so we use jitted version immediately if
-        // it's ready
-        if (callCount >= 0) tryJit(context, this, false);
+        prepareCall(context);
 
         DynamicMethod jittedMethod = actualMethod;
         if (jittedMethod != null) {
@@ -253,11 +226,7 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0,
             IRubyObject arg1, IRubyObject arg2, Block block) {
-        if (IRRuntimeHelpers.isDebug()) doDebug();
-
-        // try jit before checking actualMethod, so we use jitted version immediately if
-        // it's ready
-        if (callCount >= 0) tryJit(context, this, false);
+        prepareCall(context);
 
         DynamicMethod jittedMethod = actualMethod;
         if (jittedMethod != null) {
@@ -289,46 +258,35 @@ public class MixedModeIRMethod extends AbstractIRMethod implements Compilable<Dy
     }
 
     @Override
-    public SplitSuperState<MethodSplitState> startSplitSuperCall(ThreadContext context, IRubyObject self,
-            RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        // TODO: check if IR method, or is it guaranteed?
-        // 2 -> IRMethod
-        ExitableInterpreterContext ic = ((IRMethod) getIRScope()).builtInterpreterContextForJavaConstructor();
-        if (ic == null) return null; // no super call/can't split this
+    public SplitSuperState<?> startSplitSuperCall(ThreadContext context, IRubyObject self,
+            RubyModule clazz, String name, IRubyObject[] args, Block block,
+            ExitableInterpreterContext ic) {
+        if (callCount >= 0) tryJit(context, this, false);
 
-        MethodSplitState state = new MethodSplitState(context, ic, clazz, self, name);
-
-        // TODO: JIT?
-
-        ExitableReturn result = INTERPRET_METHOD(state, args, block);
-
-        return new SplitSuperState<>(result, state);
-    }
-
-    private ExitableReturn INTERPRET_METHOD(MethodSplitState state, IRubyObject[] args, Block block) {
-        try {
-            ThreadContext.pushBacktrace(state.context, state.name, state.eic.getFileName(), state.eic.getLine());
-
-            // TODO: explicit call protocol?
-            try {
-                this.preSplit(state.eic, state.context, state.self, state.name, block, state.implClass, state.scope);
-                return state.eic.getEngine().interpret(state.context, null, state.self, state.eic, state.state,
-                        state.implClass, state.name, args, block);
-            } finally {
-                this.post(state.eic, state.context);
-            }
-        } finally {
-            ThreadContext.popBacktrace(state.context);
-        }
+        return super.startSplitSuperCall(context, self, clazz, name, args, block, ic);
     }
 
     @Override
-    public void finishSplitCall(SplitSuperState state) {
-        if (IRRuntimeHelpers.isDebug()) doDebug(); // TODO?
+    public SplitSuperState<?> splitSuperCall(ThreadContext context, IRubyObject self,
+            RubyModule clazz, String name, IRubyObject[] args, Block block,
+            ExitableInterpreterContext ic) {
+        if (actualMethod instanceof AbstractIRMethod irMethod) {
+            return irMethod.splitSuperCall(context, self, clazz, name, args, block, ic);
+        }
 
-        // TODO: JIT?
+        return super.splitSuperCall(context, self, clazz, name, args, block, ic);
+    }
 
-        INTERPRET_METHOD((MethodSplitState) state.state, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+    /**
+     * Work done before every call: debug output, the JIT attempt, and the hand-off of this entry's Coverage counter.
+     */
+    private void prepareCall(ThreadContext context) {
+        prepareMethodCoverage(context);
+        if (IRRuntimeHelpers.isDebug()) doDebug();
+
+        // try jit before checking actualMethod, so we use jitted version immediately if
+        // it's ready
+        if (callCount >= 0) tryJit(context, this, false);
     }
 
     private void doDebug() {

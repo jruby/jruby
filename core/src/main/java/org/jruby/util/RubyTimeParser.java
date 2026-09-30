@@ -158,8 +158,11 @@ public class RubyTimeParser {
         }
     }
 
+    // The message covers the consumed region plus the byte that failed the check. CRuby formats
+    // that region with "%.*s", whose precision stops at the string's NUL terminator, so at end of
+    // input there is no trailing byte to include. Clamp to end for the same result.
     private IRubyObject substr(ThreadContext context, int from) {
-        return context.runtime.newString(new ByteList(bytes, from, ptr - from + 1, true));
+        return context.runtime.newString(new ByteList(bytes, from, Math.min(ptr + 1, end) - from, true));
     }
 
     private int twoDigits(ThreadContext context, String label) {

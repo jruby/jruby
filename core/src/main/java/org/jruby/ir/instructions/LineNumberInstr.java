@@ -29,7 +29,7 @@ public class LineNumberInstr extends NoOperandInstr implements FixedArityInstr {
         super(Operation.LINE_NUM);
 
         this.lineNumber = lineNumber;
-        this.coverage = coverageMode != CoverageData.NONE;
+        this.coverage = (coverageMode & CoverageData.LINES) != 0;
         this.oneshot = (coverageMode & CoverageData.ONESHOT_LINES) != 0;
     }
 
