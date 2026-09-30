@@ -371,7 +371,15 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         }
 
         final FiberData data = this.data;
-        if (data.prev != null) throw runtime.newFiberError("double resume");
+
+        // MRI: fiber_raise, which forwards to the fiber we are resuming
+        ThreadFiber resuming = data.resumingFiber;
+        if (resuming != null) return resuming.raise(context, exception);
+
+        // MRI: a fiber suspended by transfer (not in Fiber.yield) is raised into by transferring to it
+        boolean transfer = !data.yielding;
+
+        if (!transfer && data.prev != null) throw runtime.newFiberError("double resume");
 
         if (data.parent != context.getFiberCurrentThread()) fiberCalledAcrossThreads(runtime);
 
@@ -379,17 +387,26 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         rubyException.prepareBacktrace(context);
         FiberRequest val = new FiberRequest(rubyException.toThrowable(), RequestType.RAISE);
 
-        // like resume, this hands control over, so track both ends
         ThreadFiber currentFiber = context.getFiber();
-        data.prev = currentFiber;
-        currentFiber.data.resumingFiber = this;
+        if (transfer) {
+            currentFiberData.transferred = true;
+            data.transferredTo = true;
+        } else {
+            // like resume, this hands control over, so track both ends
+            data.prev = currentFiber;
+            currentFiberData.resumingFiber = this;
+        }
 
         FiberRequest result = null;
         try {
             result = exchangeWithFiber(context, currentFiberData, data, val);
         } finally {
-            data.prev = null;
-            currentFiber.data.resumingFiber = null;
+            if (transfer) {
+                currentFiberData.transferred = false;
+            } else {
+                data.prev = null;
+                currentFiberData.resumingFiber = null;
+            }
         }
 
         if (result.type == RequestType.RAISE) {
