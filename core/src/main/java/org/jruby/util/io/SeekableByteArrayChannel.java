@@ -27,16 +27,11 @@
 
 package org.jruby.util.io;
 
-
 import java.io.IOException;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.spi.AbstractInterruptibleChannel;
-import java.util.Arrays;
-import java.util.ConcurrentModificationException;
 
 /**
  * Seekable byte channel impl over a byte array stream.
@@ -45,16 +40,37 @@ import java.util.ConcurrentModificationException;
 public final class SeekableByteArrayChannel extends AbstractInterruptibleChannel
     implements ReadableByteChannel, SeekableByteChannel {
 
-    private volatile byte[] bytes;
+    private final byte[] bytes;
+    private final int base;
+    private final int size;
     private volatile int pos = 0;
 
     public SeekableByteArrayChannel(byte[] bytes) {
         this.bytes = bytes;
+        this.base = 0;
+        this.size = bytes.length;
+    }
+
+    public SeekableByteArrayChannel(byte[] bytes, int base) {
+        assert base > 0 && base < bytes.length;
+
+        this.bytes = bytes;
+        this.base = base;
+        this.size = bytes.length;
+    }
+
+    public SeekableByteArrayChannel(byte[] bytes, int base, int size) {
+        assert base > 0 && base < bytes.length;
+        assert size > 0 && base + size < bytes.length;
+
+        this.bytes = bytes;
+        this.base = base;
+        this.size = size;
     }
 
     @Override
     public synchronized int read(ByteBuffer target) throws IOException {
-        final int available = bytes.length - pos;
+        final int available = size - pos;
         if ( available <= 0 ) return -1;
 
         int maxToRead = target.remaining();
@@ -64,7 +80,7 @@ public final class SeekableByteArrayChannel extends AbstractInterruptibleChannel
         byte[] readBytes = new byte[maxToRead];
         try {
             begin();
-            System.arraycopy(bytes, pos, readBytes, 0, maxToRead);
+            System.arraycopy(bytes, base + pos, readBytes, 0, maxToRead);
             readCount = maxToRead;
             pos += readCount;
         }
@@ -88,16 +104,6 @@ public final class SeekableByteArrayChannel extends AbstractInterruptibleChannel
         return pos;
     }
 
-    private static final VarHandle BYTES_HANDLE;
-    static {
-        try {
-            BYTES_HANDLE = MethodHandles.lookup().findVarHandle(SeekableByteArrayChannel.class, "bytes", byte[].class);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-
     public synchronized SeekableByteChannel position(long newPosition) throws IOException {
         if ( newPosition < 0 ) {
             throw new IllegalArgumentException("negative new position: " + newPosition);
@@ -110,19 +116,11 @@ public final class SeekableByteArrayChannel extends AbstractInterruptibleChannel
     }
 
     public long size() {
-        return bytes.length;
+        return size;
     }
 
     public SeekableByteChannel truncate(long size) throws IOException {
-        if ( size < 0 ) {
-            throw new IllegalArgumentException("negative truncate size given: " + size);
-        }
-        final int s = Math.min((int) size(), size > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) size);
-        byte[] bytes = this.bytes;
-        if (!(Boolean) BYTES_HANDLE.compareAndExchange(this, bytes, Arrays.copyOf(bytes, s))) {
-            throw new ConcurrentModificationException("concurrent truncation");
-        }
-        return this;
+        throw new UnsupportedOperationException("write not supported");
     }
 
     public int write(ByteBuffer src) throws IOException {
