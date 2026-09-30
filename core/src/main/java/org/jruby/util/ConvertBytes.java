@@ -17,6 +17,7 @@ public class ConvertBytes {
     private byte[] data;
     private int base;
     private final boolean badcheck;
+    private boolean nilIfNoDigits;
 
     public ConvertBytes(Ruby runtime, ByteList str, int base, boolean badcheck) {
         this.runtime = runtime;
@@ -366,6 +367,14 @@ public class ConvertBytes {
         return (RubyInteger) new ConvertBytes(runtime, str, off, end, base, badcheck).byteListToInum(true);
     }
 
+    // MRI: rb_int_parse_cstr with endp, which ignores trailing garbage but returns nil
+    // if nothing could be parsed
+    public static IRubyObject byteListToInumOrNil(Ruby runtime, ByteList str, int off, int end, int base) {
+        ConvertBytes convert = new ConvertBytes(runtime, str, off, end, base, false);
+        convert.nilIfNoDigits = true;
+        return convert.byteListToInum(true);
+    }
+
     private final static byte[] conv_digit = new byte[128];
     private final static boolean[] digit = new boolean[128];
     private final static boolean[] space = new boolean[128];
@@ -686,6 +695,8 @@ public class ConvertBytes {
             return RubyFixnum.zero(runtime);
         }
 
+        final int start = beg;
+
         ignoreLeadingWhitespace();
 
         boolean sign = getSign();
@@ -715,6 +726,11 @@ public class ConvertBytes {
             if (badcheck) {
                 if (!exception) return runtime.getNil();
                 invalidString("Integer");
+            }
+            // MRI only returns 0 if whitespace, sign, prefix or zeros were consumed
+            // without reaching the end
+            if (nilIfNoDigits && (beg == start || beg == end)) {
+                return runtime.getNil();
             }
             return RubyFixnum.zero(runtime);
         }
