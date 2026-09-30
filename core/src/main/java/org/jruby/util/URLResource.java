@@ -1,11 +1,13 @@
 package org.jruby.util;
 
 import java.io.*;
+import java.net.JarURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.net.URLConnection;
 import java.nio.channels.Channel;
 import java.nio.channels.Channels;
 import java.nio.file.attribute.FileTime;
@@ -16,7 +18,7 @@ import jnr.posix.FileStat;
 
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
-import org.jruby.util.io.SeekableByteChannelImpl;
+import org.jruby.util.io.SeekableByteArrayChannel;
 
 public class URLResource implements FileResource, DummyResourceStat.FileResourceExt {
 
@@ -175,11 +177,17 @@ public class URLResource implements FileResource, DummyResourceStat.FileResource
         }
 
         // read jar resources fully to allow seeking (jruby/jruby#9727)
-        if (url.getProtocol().contains("jar")) {
-            // jar resource, read fully and return a seekable stream
-            try (InputStream in = cl.getResourceAsStream(pathname)) {
-                byte[] buf = in.readAllBytes();
-                return new SeekableByteChannelImpl(new ByteArrayInputStream(buf));
+        if ("jar".equals(url.getProtocol())) {
+            // jar resource, check remote protocol
+            URLConnection connect = url.openConnection();
+            if (connect instanceof JarURLConnection jarURLConnection) {
+                if ("file".equals(jarURLConnection.getJarFileURL().getProtocol())) {
+                    // local jar file, read fully and return a seekable channel
+                    try (InputStream in = connect.getInputStream()) {
+                        byte[] buf = in.readAllBytes();
+                        return new SeekableByteArrayChannel(buf);
+                    }
+                }
             }
         }
 
