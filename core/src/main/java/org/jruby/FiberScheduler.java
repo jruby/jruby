@@ -5,7 +5,6 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
-import org.jruby.util.io.OpenFile;
 
 import java.nio.ByteBuffer;
 
@@ -55,12 +54,12 @@ public class FiberScheduler {
 
     // MRI: rb_fiber_scheduler_io_wait_readable
     public static IRubyObject ioWaitReadable(ThreadContext context, IRubyObject scheduler, IRubyObject io) {
-        return ioWait(context, scheduler, io, asFixnum(context, OpenFile.READABLE), context.nil);
+        return ioWait(context, scheduler, io, asFixnum(context, RubyIO.IOEvent.IO_READABLE.value), context.nil);
     }
 
     // MRI: rb_fiber_scheduler_io_wait_writable
     public static IRubyObject ioWaitWritable(ThreadContext context, IRubyObject scheduler, IRubyObject io) {
-        return ioWait(context, scheduler, io, asFixnum(context, OpenFile.WRITABLE), context.nil);
+        return ioWait(context, scheduler, io, asFixnum(context, RubyIO.IOEvent.IO_WRITABLE.value), context.nil);
     }
 
     // MRI: rb_fiber_scheduler_io_select
