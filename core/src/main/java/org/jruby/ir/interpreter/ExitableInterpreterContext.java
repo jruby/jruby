@@ -166,6 +166,9 @@ public class ExitableInterpreterContext extends InterpreterContext {
         return instr instanceof ReturnInstr && ((ReturnInstr) instr).getReturnValue().equals(superCall.getResult());
     }
 
+    // The scans below list the instructions before the super that are safe to skip along with the body. The two
+    // Coverage ops are safe: skipping them loses only the call count, which coverElidedCall records instead.
+
     private static boolean directSuperNoArgs(List<Instr> instructions, CallBase superCall, int exitIPC) {
         if (instructions == null || !exitsAtReturn(instructions, superCall, exitIPC) || superCall.getArgsCount() != 0) return false;
 
@@ -175,10 +178,12 @@ public class ExitableInterpreterContext extends InterpreterContext {
             switch (operation) {
                 case CHECK_ARITY:
                 case COPY:
+                case COVER_METHOD:
                 case LINE_NUM:
                 case LOAD_IMPLICIT_CLOSURE:
                 case LOAD_FRAME_CLOSURE:
                 case RECV_KW:
+                case RECV_METHOD_COVERAGE:
                 case RECV_SELF:
                     break;
                 default:
@@ -200,10 +205,12 @@ public class ExitableInterpreterContext extends InterpreterContext {
                 case BUILD_SPLAT:
                 case CHECK_ARITY:
                 case COPY:
+                case COVER_METHOD:
                 case LINE_NUM:
                 case LOAD_IMPLICIT_CLOSURE:
                 case LOAD_FRAME_CLOSURE:
                 case RECV_KW:
+                case RECV_METHOD_COVERAGE:
                 case RECV_REST_ARG:
                 case RECV_SELF:
                     break;
@@ -238,10 +245,12 @@ public class ExitableInterpreterContext extends InterpreterContext {
             switch (operation) {
                 case CHECK_ARITY:
                 case COPY:
+                case COVER_METHOD:
                 case LINE_NUM:
                 case LOAD_IMPLICIT_CLOSURE:
                 case LOAD_FRAME_CLOSURE:
                 case RECV_KW:
+                case RECV_METHOD_COVERAGE:
                 case RECV_SELF:
                     break;
                 case RECV_PRE_REQD_ARG:
@@ -278,10 +287,12 @@ public class ExitableInterpreterContext extends InterpreterContext {
             switch (operation) {
                 case CHECK_ARITY:
                 case COPY:
+                case COVER_METHOD:
                 case LINE_NUM:
                 case LOAD_IMPLICIT_CLOSURE:
                 case LOAD_FRAME_CLOSURE:
                 case RECV_KW:
+                case RECV_METHOD_COVERAGE:
                 case RECV_SELF:
                     break;
                 default:
@@ -316,10 +327,12 @@ public class ExitableInterpreterContext extends InterpreterContext {
             switch (operation) {
                 case CHECK_ARITY:
                 case COPY:
+                case COVER_METHOD:
                 case LINE_NUM:
                 case LOAD_IMPLICIT_CLOSURE:
                 case LOAD_FRAME_CLOSURE:
                 case RECV_KW:
+                case RECV_METHOD_COVERAGE:
                 case RECV_SELF:
                     break;
                 case RECV_PRE_REQD_ARG:

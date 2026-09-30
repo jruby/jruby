@@ -26,9 +26,12 @@
 
 package org.jruby.ext.coverage;
 
+import java.util.List;
 import java.util.Map;
 
+import org.jruby.RubyArray;
 import org.jruby.RubyHash;
+import org.jruby.RubyInteger;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyMethod;
@@ -84,7 +87,6 @@ public class CoverageModule {
                 mode |= CoverageData.BRANCHES;
             }
             if (ArgsUtil.extractKeywordArg(context, "methods", keywords).isTrue()) {
-                warn(context, "method coverage is not supported");
                 mode |= CoverageData.METHODS;
             }
             if (ArgsUtil.extractKeywordArg(context, "oneshot_lines", keywords).isTrue()) {
@@ -153,16 +155,16 @@ public class CoverageModule {
             clear = ArgsUtil.extractKeywordArg(context, "clear", keywords).isTrue();
         }
 
-        IRubyObject result = peek_result(context, self);
         if (stop && !clear) {
             warn(context, "stop implies clear");
             clear = true;
         }
 
-        if (clear) data.clearCoverage();
+        IRubyObject result = buildResult(context, data, clear);
+
         if (stop) {
             if (data.getCurrentState() == RUNNING) data.suspendCoverage();
-            data.resetCoverage();
+            data.resetCoverage(context);
             data.setCurrentState(IDLE);
         }
 
@@ -175,7 +177,19 @@ public class CoverageModule {
 
         if (!coverageData.isCoverageEnabled()) throw runtimeError(context, "coverage measurement is not enabled");
 
-        return convertCoverageToRuby(context, coverageData.getCoverage(), coverageData.getCurrentMode());
+        return buildResult(context, coverageData, false);
+    }
+
+    /**
+     * The Ruby result for the data collected so far, clearing the counts as it reads them if asked.
+     *
+     * <p>Only the copy is taken under the CoverageData lock. The conversion must run outside it: the :methods
+     * keys are Arrays, and hashing one dispatches Ruby's Array#hash and Module#hash, which can define a method
+     * and so needs the method table lock. RubyModule.addMethodInternal takes those two locks the other way
+     * round.</p>
+     */
+    private static IRubyObject buildResult(ThreadContext context, CoverageData data, boolean clear) {
+        return convertCoverageToRuby(context, data.snapshot(clear), data.getCurrentMode());
     }
 
     @JRubyMethod(name = "running?", module = true)
@@ -201,45 +215,83 @@ public class CoverageModule {
     public static IRubyObject supported_p(ThreadContext context, IRubyObject self, IRubyObject arg) {
         RubySymbol mode = castAsSymbol(context, arg);
 
-        return mode == asSymbol(context, "lines") || mode == asSymbol(context, "oneshot_lines") || mode == asSymbol(context, "eval") ?
+        return mode == asSymbol(context, "lines") || mode == asSymbol(context, "oneshot_lines") ||
+                mode == asSymbol(context, "eval") || mode == asSymbol(context, "methods") ?
                 context.tru : context.fals;
     }
 
-    private static IRubyObject convertCoverageToRuby(ThreadContext context, Map<String, IntList> coverage, int mode) {
+    private static IRubyObject convertCoverageToRuby(ThreadContext context, Map<String, FileCoverage> coverage, int mode) {
         if (coverage == null) return newSmallHash(context);
 
         RubyHash covHash = newHash(context);         // populate a Ruby Hash with coverage data
 
-        for (Map.Entry<String, IntList> entry : coverage.entrySet()) {
-            final IntList val = entry.getValue();
-            boolean oneshot = (mode & CoverageData.ONESHOT_LINES) != 0;
-
-            int size = val.size();
-            var ary = allocArray(context, size);
-            for (int i = 0; i < size; i++) {
-                int integer = val.get(i);
-                if (oneshot) {
-                    ary.push(context, asFixnum(context, integer + 1));
-                } else {
-                    ary.store(i, integer == -1 ? context.nil : asFixnum(context, integer));
-                }
-            }
-
-            RubyString key = newString(context, entry.getKey());
+        for (Map.Entry<String, FileCoverage> entry : coverage.entrySet()) {
+            FileCoverage file = entry.getValue();
             IRubyObject value;
 
-            if (mode != 0) {
-                RubyHash oneshotHash = newSmallHash(context);
-                RubySymbol linesKey = asSymbol(context, oneshot ? "oneshot_lines" : "lines");
-                oneshotHash.fastASetSmall(linesKey, ary);
-                value = oneshotHash;
+            if (mode == 0) {
+                // Coverage.start with no arguments: the value is the lines array itself
+                value = linesToRuby(context, file.getLines(), false);
             } else {
-                value = ary;
+                // Coverage.start(modes): the value is a hash with one entry per requested mode
+                RubyHash fileHash = newSmallHash(context);
+
+                if ((mode & CoverageData.LINES) != 0) {
+                    boolean oneshot = (mode & CoverageData.ONESHOT_LINES) != 0;
+                    fileHash.fastASetSmall(asSymbol(context, oneshot ? "oneshot_lines" : "lines"), linesToRuby(context, file.getLines(), oneshot));
+                }
+                if ((mode & CoverageData.BRANCHES) != 0) {
+                    fileHash.fastASetSmall(asSymbol(context, "branches"), newSmallHash(context));
+                }
+                if ((mode & CoverageData.METHODS) != 0) {
+                    fileHash.fastASetSmall(asSymbol(context, "methods"), methodsToRuby(context, file.getMethods()));
+                }
+
+                value = fileHash;
             }
 
-            covHash.fastASetCheckString(context.runtime, key, value);
+            covHash.fastASetCheckString(context.runtime, newString(context, entry.getKey()), value);
         }
 
         return covHash;
+    }
+
+    private static RubyArray linesToRuby(ThreadContext context, IntList lines, boolean oneshot) {
+        if (lines == null) return newEmptyArray(context);
+
+        int size = lines.size();
+        var ary = allocArray(context, size);
+        for (int i = 0; i < size; i++) {
+            int count = lines.get(i);
+            if (oneshot) {
+                ary.push(context, asFixnum(context, count + 1));
+            } else {
+                ary.store(i, count == -1 ? context.nil : asFixnum(context, count));
+            }
+        }
+
+        return ary;
+    }
+
+    /**
+     * Build {[owner, name, start_line, start_column, end_line, end_column] => count}. Entries that share a key
+     * (a method defined twice at the same place) have their counts added, as in MRI.
+     */
+    private static RubyHash methodsToRuby(ThreadContext context, List<MethodCoverage> methods) {
+        RubyHash hash = newHash(context);
+
+        for (MethodCoverage method : methods) {
+            RubyArray key = newArray(context, method.getOwner(), asSymbol(context, method.getName()),
+                    asFixnum(context, method.getStartLine()), asFixnum(context, method.getStartColumn()),
+                    asFixnum(context, method.getEndLine()), asFixnum(context, method.getEndColumn()));
+            long count = method.getCount();
+
+            IRubyObject previous = hash.fastARef(key);
+            if (previous != null) count += ((RubyInteger) previous).getLongValue();
+
+            hash.fastASet(key, asFixnum(context, count));
+        }
+
+        return hash;
     }
 }

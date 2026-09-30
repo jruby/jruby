@@ -436,6 +436,21 @@ public abstract class RubyParserBase {
         return argsNode.isEmpty();
     }
 
+    // Packed (line, column) start of the parameter list of the lambda being parsed. The f_larglist production
+    // stores it and the lambda production takes it right after, before any nested lambda is parsed. It gives the
+    // lambda's source span the same start as in MRI: the parameter list, or just after '->' when there is none.
+    private long lambdaArgsStart;
+
+    public void setLambdaArgsStart(long position) {
+        lambdaArgsStart = position;
+    }
+
+    public long takeLambdaArgsStart() {
+        long position = lambdaArgsStart;
+        lambdaArgsStart = 0;
+        return position;
+    }
+
     // We know it has to be tLABEL or tIDENTIFIER so none of the other assignable logic is needed
     public AssignableNode assignableLabelOrIdentifier(ByteList byteName, Node value) {
         RubySymbol name = symbolID(byteName);
@@ -513,11 +528,7 @@ public abstract class RubyParserBase {
             topOfAST = newTopOfAST;
         }
 
-        int coverageMode = coverageData == null ?
-                CoverageData.NONE :
-                coverageData.getMode();
-
-        return new RootNode(line, result.getScope(), topOfAST, lexer.getFile(), coverageMode);
+        return new RootNode(line, result.getScope(), topOfAST, lexer.getFile(), coverageMode(coverageData));
     }
     
     /* MRI: block_append */
@@ -2401,12 +2412,38 @@ public abstract class RubyParserBase {
     }
 
     /**
+     * The modes this parse emits coverage instructions for. Usually every enabled mode, but an eval whose lines
+     * are not covered still counts its method calls: MRI counts a method defined by an eval like any other,
+     * only its lines are left out.
+     *
+     * @param coverageData the data this parse registered its file with, or null when it registered none
+     */
+    private int coverageMode(CoverageData coverageData) {
+        if (coverageData != null) return coverageData.getMode();
+
+        return runtime.isCoverageEnabled() && runtime.getCoverageData().isMethodsEnabled() ?
+                CoverageData.METHODS :
+                CoverageData.NONE;
+    }
+
+    /**
+     * True when this parse needs the per-line array of starting counts. Only lines mode needs it: methods mode
+     * has no use for it, and oneshot_lines starts from an empty list (see CoverageData#prepareCoverage).
+     */
+    private boolean isLineCountingEnabled() {
+        if (!isCoverageEnabled()) return false;
+
+        CoverageData data = runtime.getCoverageData();
+        return data.isLinesEnabled() && !data.isOneshot();
+    }
+
+    /**
      * Zero out coverable lines as they're encountered
      */
     public void coverLine(int i) {
         // We had an overflow so we cannot mark whatever line this is as covered.
         if (i < 0) return;
-        if (isCoverageEnabled()) {
+        if (isLineCountingEnabled()) {
             growCoverageLines(i);
             coverage[i] = 0;
         }
@@ -2436,7 +2473,8 @@ public abstract class RubyParserBase {
     public CoverageData finishCoverage(String file, int lines) {
         if (!isCoverageEnabled()) return null;
 
-        growCoverageLines(lines);
+        // the file is registered in every mode; the line array is filled only in lines mode
+        if (isLineCountingEnabled()) growCoverageLines(lines);
         CoverageData data = runtime.getCoverageData();
         data.prepareCoverage(file, coverage);
         return data;
