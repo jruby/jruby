@@ -754,6 +754,15 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
         return asFixnum(context, value.bitLength());
     }
 
+    @Override
+    public IRubyObject bit_count(ThreadContext context) {
+        if (value.signum() < 0) {
+            throw argumentError(context, "bit_count is undefined for negative integers");
+        }
+
+        return asFixnum(context, value.bitCount());
+    }
+
     /** rb_big_xor
      *
      */
