@@ -448,7 +448,8 @@ public abstract class RubyParserBase {
         // This differs from MRI annd it is a special branch because I do not want to infect staticscope with 'it'
         // logic since it likely will be done differently in Prism (This will play out more once 10.1 updates
         // to latest Prism).  If it is the same then we can reconsider whether this should be in staticscope or not.
-        if (id.equals("it") && currentScope.exists(id) == -1) { // case: foo { it.bar { <<it = something>> } it }
+        // 'it' can not be "normal (isDefinedNotImplicit)" either
+        if (id.equals("it") && currentScope.exists(id) == -1 && currentScope.isDefinedNotImplicit(id) < 0) { // case: foo { it.bar { <<it = something>> } it }
             // we are assigning and there is no 'it' here so make it as a normal local
             int slot = currentScope.addVariableName(id);
             return new DAsgnNode(lexer.getRubySourceline(), name, slot, value);
