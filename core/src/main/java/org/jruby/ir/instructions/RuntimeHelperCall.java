@@ -60,21 +60,36 @@ public class RuntimeHelperCall extends NOperandResultBaseInstr {
 
     public boolean hasSideEffects() {
         return switch (helperMethod) {
+            case ARRAY_LENGTH -> false;
             case CAPTURE_CALL_INFO -> false;
+            case IS_DEFINED_BACKREF -> false;
+            case IS_DEFINED_NTH_REF -> false;
+            case IS_DEFINED_GLOBAL -> false;
+            case IS_DEFINED_CLASS_VAR -> false;
             default -> super.hasSideEffects();
         };
     }
 
     public boolean canRaiseException() {
         return switch (helperMethod) {
+            case ARRAY_LENGTH -> false;
             case CAPTURE_CALL_INFO -> false;
+            case IS_DEFINED_BACKREF -> false;
+            case IS_DEFINED_NTH_REF -> false;
+            case IS_DEFINED_GLOBAL -> false;
+            case IS_DEFINED_CLASS_VAR -> false;
             default -> super.canRaiseException();
         };
     }
 
     public boolean transfersControl() {
         return switch (helperMethod) {
+            case ARRAY_LENGTH -> false;
             case CAPTURE_CALL_INFO -> false;
+            case IS_DEFINED_BACKREF -> false;
+            case IS_DEFINED_NTH_REF -> false;
+            case IS_DEFINED_GLOBAL -> false;
+            case IS_DEFINED_CLASS_VAR -> false;
             default -> super.transfersControl();
         };
     }
