@@ -42,6 +42,7 @@ import jnr.posix.Timeval;
 import jnr.posix.POSIX;
 import jnr.unixsocket.UnixSocketAddress;
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
@@ -56,9 +57,11 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Access;
 import org.jruby.api.Convert;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -1061,5 +1064,32 @@ public class RubyBasicSocket extends RubyIO {
 
         RubyString result;
         InetSocketAddress sender;
+    }
+
+    // MRI: rsock_s_socketpair, which yields the pair and then closes the second socket and the first
+    protected static IRubyObject yieldPair(ThreadContext context, RubyBasicSocket sock0, RubyBasicSocket sock1, Block block) {
+        RubyArray<?> pair = newArray(context, sock0, sock1);
+        if (!block.isGiven()) return pair;
+
+        try {
+            return block.yield(context, pair);
+        } finally {
+            try {
+                closeRescued(context, sock1);
+            } finally {
+                closeRescued(context, sock0);
+            }
+        }
+    }
+
+    // MRI: ext/socket's io_close, which rescues any StandardError, unlike RubyIO.ioClose
+    private static void closeRescued(ThreadContext context, IRubyObject io) {
+        IRubyObject errorInfo = context.getErrorInfo();
+        try {
+            io.callMethod(context, "close");
+        } catch (RaiseException re) {
+            if (!context.runtime.getStandardError().isInstance(re.getException())) throw re;
+            context.setErrorInfo(errorInfo);
+        }
     }
 }// RubyBasicSocket
