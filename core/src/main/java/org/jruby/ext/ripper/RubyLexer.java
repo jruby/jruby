@@ -1164,11 +1164,13 @@ public class RubyLexer extends LexingCommon {
                 if (c == '=') {
                     c = nextc();
                     if (c == '=') {
+                        set_yylval_id(EQ_EQ_EQ);
                         yaccValue = symbol(EQ_EQ_EQ);
                         return tEQQ;
                     }
 
                     pushback(c);
+                    set_yylval_id(EQ_EQ);
                     yaccValue = symbol(EQ_EQ);
                     return tEQ;
                 }
@@ -1395,6 +1397,7 @@ public class RubyLexer extends LexingCommon {
         
         switch (c) {
         case '=':
+            set_yylval_id(BANG_EQ);
             yaccValue = BANG_EQ;
 
             return tNEQ;
@@ -1647,6 +1650,7 @@ public class RubyLexer extends LexingCommon {
 
         switch (c) {
         case '=':
+            set_yylval_id(GT_EQ);
             yaccValue = GT_EQ;
 
             return tGEQ;
@@ -1789,9 +1793,11 @@ public class RubyLexer extends LexingCommon {
                 setState(EXPR_ARG);
                 if (peek('=')) {
                     nextc();
+                    set_yylval_id(LBRACKET_RBRACKET_EQ);
                     yaccValue = LBRACKET_RBRACKET_EQ;
                     return tASET;
                 }
+                set_yylval_id(LBRACKET_RBRACKET);
                 yaccValue = LBRACKET_RBRACKET;
                 return tAREF;
             }
@@ -1884,10 +1890,12 @@ public class RubyLexer extends LexingCommon {
         switch (c) {
         case '=':
             if ((c = nextc()) == '>') {
+                set_yylval_id(LT_EQ_RT);
                 yaccValue = LT_EQ_RT;
                 return tCMP;
             }
             pushback(c);
+            set_yylval_id(LT_EQ);
             yaccValue = LT_EQ;
             return tLEQ;
         case '<':
