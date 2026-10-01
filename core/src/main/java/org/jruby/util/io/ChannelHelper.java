@@ -23,6 +23,7 @@ import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.nio.channels.spi.AbstractInterruptibleChannel;
 
@@ -60,8 +61,16 @@ public abstract class ChannelHelper {
         return Channels.newChannel(inputStream);
     }
 
+    public static ReadableByteChannel readableChannel(final ByteArrayInputStream inputStream) {
+        return new SeekableByteChannelImpl(inputStream);
+    }
+
     public static WritableByteChannel writableChannel(final OutputStream outputStream) {
         return new SyncOutputStreamChannel(outputStream);
+    }
+
+    public static SeekableByteChannel seekableChannel(byte[] bytes, int base, int size) {
+        return new SeekableByteArrayChannel(bytes, base, size);
     }
     
     private static class SyncOutputStreamChannel extends AbstractInterruptibleChannel implements WritableByteChannel {
