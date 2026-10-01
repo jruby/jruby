@@ -521,6 +521,48 @@ class TestCoverage < Test::Unit::TestCase
     end
   end
 
+  # Which conditionals MRI folds away (reporting no branch) and which it keeps. The expected result is CRuby's.
+  def test_branch_coverage_folds_conditionals_as_mri_does
+    source = <<~'RUBY'
+      def folds(a)
+        :a if __ENCODING__
+        :b if (1; 2)
+        :c if (a; [1]; {k: a}; (a..1); 2)
+        :d if a || 1
+        :e if (nil)
+        :f if ("x")
+        :g if (true && 1)
+        :h if nil && 1
+        :i if ([a]; 2)
+        if false
+          def dead(x) = x ? 1 : 2
+          [1].each { |x| x ? 1 : 2 }
+        end
+        a => Integer
+        a in String
+      end
+    RUBY
+    with_source(source) do |path|
+      Coverage.start(branches: true)
+      verbose, $VERBOSE = $VERBOSE, nil # literals in conditions
+      begin
+        load path
+      ensure
+        $VERBOSE = verbose
+      end
+      folds(1)
+      assert_equal({
+        [:if, 0, 6, 2, 6, 13] => { [:then, 1, 6, 2, 6, 4] => 0, [:else, 2, 6, 2, 6, 13] => 1 },
+        [:if, 3, 7, 2, 7, 13] => { [:then, 4, 7, 2, 7, 4] => 1, [:else, 5, 7, 2, 7, 13] => 0 },
+        [:if, 6, 8, 2, 8, 19] => { [:then, 7, 8, 2, 8, 4] => 1, [:else, 8, 8, 2, 8, 19] => 0 },
+        [:if, 9, 9, 2, 9, 16] => { [:then, 10, 9, 2, 9, 4] => 0, [:else, 11, 9, 2, 9, 16] => 1 },
+        [:if, 12, 10, 2, 10, 16] => { [:then, 13, 10, 2, 10, 4] => 1, [:else, 14, 10, 2, 10, 16] => 0 },
+      }, Coverage.result[path][:branches])
+    end
+  ensure
+    Object.send(:remove_method, :folds) if Object.private_method_defined?(:folds)
+  end
+
   private
 
   def with_source(source)

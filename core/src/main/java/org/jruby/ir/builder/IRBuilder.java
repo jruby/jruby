@@ -159,6 +159,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         this.instructions = new ArrayList<>(50);
         this.activeRescuers.push(Label.UNRESCUED_REGION_LABEL);
         this.coverageMode = parent == null ? CoverageData.NONE : parent.coverageMode;
+        if (parent != null && parent.deadCodeDepth > 0) deadCodeDepth = 1; // a block or class body in a dead arm
 
         if (parent != null) executesOnce = parent.executesOnce;
 
@@ -3104,7 +3105,9 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     protected abstract void receiveMethodArgs(V defNode);
 
     protected IRMethod defineNewMethod(LazyMethodDefinition<U, V, W, X, Y, Z> defn, ByteList name, int line, StaticScope scope, boolean isInstanceMethod) {
-        IRMethod method = new IRMethod(getManager(), this.scope, defn, name, isInstanceMethod, line, scope, coverageMode);
+        // a method defined in an arm that can never run measures no branches, as MRI compiles nothing there
+        int methodCoverageMode = deadCodeDepth > 0 ? coverageMode & ~CoverageData.BRANCHES : coverageMode;
+        IRMethod method = new IRMethod(getManager(), this.scope, defn, name, isInstanceMethod, line, scope, methodCoverageMode);
         method.setSourceSpan(defn.getStartColumn(), defn.getEndLine(), defn.getEndColumn());
 
         // poorly placed next/break expects a syntax error so we eagerly build methods which contain them.
@@ -3167,7 +3170,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
     // Depth of arms that can never run (an if on a literal predicate): MRI compiles nothing there, so nothing
-    // in them is measured either.
+    // in them is measured either, including the blocks, lambdas, classes and methods they hold.
     private int deadCodeDepth;
 
     /**

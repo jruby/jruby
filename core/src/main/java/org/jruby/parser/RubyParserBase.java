@@ -468,27 +468,145 @@ public abstract class RubyParserBase {
         return node;
     }
 
+    // The labels MRI's compiler (pm_compile_branch_condition) can jump to from a predicate
+    private static final int TO_THEN = 1, TO_ELSE = 2;
+
     /**
-     * 0 unless MRI's compiler would fold the predicate (a nil, true, false, number, string or symbol literal,
-     * or && / || of those), 1 when it folds to true, -1 when to false.
+     * 0 unless MRI's compiler folds the predicate away, compiling only one arm and reporting no branch: 1 when
+     * only the then arm is compiled, -1 when only the else arm is.
      */
     private static int constantPredicate(Node node) {
-        if (node == null) return 0;
+        int targets = jumpTargets(node);
+        return targets == TO_THEN ? 1 : targets == TO_ELSE ? -1 : 0;
+    }
+
+    /**
+     * Which of the then and else labels MRI's compiler jumps to for a predicate: a literal jumps straight to one
+     * of them, anything else tests its value and may go to either.
+     */
+    private static int jumpTargets(Node node) {
+        if (node == null) return TO_THEN | TO_ELSE;
+
+        // MRI keeps a node for parentheses, and folds them only when what they hold compiles to a single constant
+        if (node.getParenSpan() != null) {
+            int constant = compiledConstant(node);
+            return constant > 0 ? TO_THEN : constant < 0 ? TO_ELSE : TO_THEN | TO_ELSE;
+        }
+
         switch (node.getNodeType()) {
-            case NILNODE: case FALSENODE: return -1;
-            case TRUENODE: case FIXNUMNODE: case BIGNUMNODE: case FLOATNODE: case SYMBOLNODE: return 1;
-            case STRNODE: return node instanceof FileNode ? 0 : 1;
+            case NILNODE: case FALSENODE: return TO_ELSE;
+            case TRUENODE: case FIXNUMNODE: case BIGNUMNODE: case FLOATNODE: case RATIONALNODE: case COMPLEXNODE:
+            case SYMBOLNODE: case ENCODINGNODE: case LAMBDANODE:
+                return TO_THEN;
+            case STRNODE: return node instanceof FileNode ? TO_THEN | TO_ELSE : TO_THEN;
+            // The left side goes on to the right side or out of the conditional; the right side is compiled
+            // either way, even after a left side that never goes on.
             case ANDNODE: {
-                int left = constantPredicate(((AndNode) node).getFirstNode());
-                int right = constantPredicate(((AndNode) node).getSecondNode());
-                return left == 0 || right == 0 ? 0 : left < 0 ? -1 : right;
+                AndNode and = (AndNode) node;
+                return (jumpTargets(and.getFirstNode()) & TO_ELSE) | jumpTargets(and.getSecondNode());
             }
             case ORNODE: {
-                int left = constantPredicate(((OrNode) node).getFirstNode());
-                int right = constantPredicate(((OrNode) node).getSecondNode());
-                return left == 0 || right == 0 ? 0 : left > 0 ? 1 : right;
+                OrNode or = (OrNode) node;
+                return (jumpTargets(or.getFirstNode()) & TO_THEN) | jumpTargets(or.getSecondNode());
+            }
+            default: return TO_THEN | TO_ELSE;
+        }
+    }
+
+    /**
+     * 1 or -1 when MRI compiles the expression, with its value used, to a single truthy or falsy constant (a
+     * putobject); 0 otherwise. Statements before the last one count only if they compile to nothing at all.
+     */
+    private static int compiledConstant(Node node) {
+        if (node == null) return 0;
+
+        switch (node.getNodeType()) {
+            case FALSENODE: return -1;
+            case TRUENODE: case FIXNUMNODE: case BIGNUMNODE: case FLOATNODE: case RATIONALNODE: case COMPLEXNODE:
+            case SYMBOLNODE: case ENCODINGNODE:
+                return 1;
+            case DEFINEDNODE: return staticallyDefined(((DefinedNode) node).getExpressionNode()) ? 1 : 0;
+            case BLOCKNODE: {
+                Node[] statements = ((BlockNode) node).children();
+                if (statements.length == 0) return 0;
+                for (int i = 0; i < statements.length - 1; i++) {
+                    if (!eliminatedWhenUnused(statements[i])) return 0;
+                }
+                return compiledConstant(statements[statements.length - 1]);
             }
             default: return 0;
+        }
+    }
+
+    /**
+     * Whether MRI answers defined?(node) when compiling.
+     */
+    private static boolean staticallyDefined(Node node) {
+        if (node == null) return false;
+
+        switch (node.getNodeType()) {
+            case LOCALVARNODE: case DVARNODE: case SELFNODE: case NILNODE: case TRUENODE: case FALSENODE:
+            case FIXNUMNODE: case BIGNUMNODE: case FLOATNODE: case RATIONALNODE: case COMPLEXNODE: case SYMBOLNODE:
+            case STRNODE: case LAMBDANODE: case LOCALASGNNODE: case DASGNNODE:
+                return true;
+            default: return false;
+        }
+    }
+
+    /**
+     * Whether MRI's compiler emits nothing for this statement when its value is not used: a literal, a read that
+     * can run no code (self, a variable other than a global, defined?), a hash or range made only of those, or an
+     * array of literals (see {@link #staticArrayElement}).
+     */
+    private static boolean eliminatedWhenUnused(Node node) {
+        if (node == null) return false;
+
+        switch (node.getNodeType()) {
+            case NILNODE: case TRUENODE: case FALSENODE: case FIXNUMNODE: case BIGNUMNODE: case FLOATNODE:
+            case RATIONALNODE: case COMPLEXNODE: case SYMBOLNODE: case STRNODE: case REGEXPNODE: case ENCODINGNODE:
+            case SELFNODE: case LOCALVARNODE: case DVARNODE: case INSTVARNODE: case CLASSVARNODE: case DEFINEDNODE:
+            case ZARRAYNODE:
+                return true;
+            case ARRAYNODE:
+                for (Node element : ((ArrayNode) node).children()) {
+                    if (!staticArrayElement(element)) return false;
+                }
+                return true;
+            case HASHNODE:
+                for (KeyValuePair<Node, Node> pair : ((HashNode) node).getPairs()) {
+                    if (pair.getKey() != null && !eliminatedWhenUnused(pair.getKey())) return false; // no key: **value
+                    if (!eliminatedWhenUnused(pair.getValue())) return false;
+                }
+                return true;
+            case DOTNODE: {
+                DotNode range = (DotNode) node;
+                return eliminatedBound(range.getBeginNode()) && eliminatedBound(range.getEndNode());
+            }
+            case BLOCKNODE:
+                for (Node statement : ((BlockNode) node).children()) {
+                    if (!eliminatedWhenUnused(statement)) return false;
+                }
+                return true;
+            default: return false;
+        }
+    }
+
+    private static boolean eliminatedBound(Node node) {
+        return node == null || node instanceof NilImplicitNode || eliminatedWhenUnused(node);
+    }
+
+    /**
+     * An element that keeps an array literal static (prism's static literal flag): a literal other than a
+     * string, written without parentheses.
+     */
+    private static boolean staticArrayElement(Node node) {
+        if (node == null || node.getParenSpan() != null) return false;
+
+        switch (node.getNodeType()) {
+            case NILNODE: case TRUENODE: case FALSENODE: case FIXNUMNODE: case BIGNUMNODE: case FLOATNODE:
+            case RATIONALNODE: case COMPLEXNODE: case SYMBOLNODE: case REGEXPNODE: case ENCODINGNODE:
+                return true;
+            default: return false;
         }
     }
 
@@ -542,6 +660,12 @@ public abstract class RubyParserBase {
             when.setSourceSpan(start, thenEnd != null ? thenEnd : argsEnd);
             when.setElseStart(elseStart);
         }
+        return node;
+    }
+
+    /** expr => pattern / expr in pattern */
+    public Node one_line_pattern(PatternCaseNode node) {
+        node.setOneLine();
         return node;
     }
 

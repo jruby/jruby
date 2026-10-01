@@ -1065,7 +1065,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         Node[] cases = node.getCases();
         BranchTarget[] inTargets = null;
         BranchTarget elseTarget = null;
-        BranchCoverage branch = declareBranch("case", node);
+        BranchCoverage branch = node.isOneLine() ? null : declareBranch("case", node);
 
         if (branch != null) {
             inTargets = new BranchTarget[cases.length];

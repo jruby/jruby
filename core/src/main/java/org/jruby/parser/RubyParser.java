@@ -2453,7 +2453,7 @@ states[67] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
                     LexContext ctxt = p.getLexContext();
                     ctxt.in_kwarg = ((LexContext)yyVals[-3+yyTop].value).in_kwarg;
                     /*%%%*/
-                    yyVal = p.newPatternCaseNode(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-6+yyTop].value), p.newIn(yyVals[yyTop - count + 1].start(), ((Node)yyVals[0+yyTop].value), null, null));
+                    yyVal = p.one_line_pattern(p.newPatternCaseNode(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-6+yyTop].value), p.newIn(yyVals[yyTop - count + 1].start(), ((Node)yyVals[0+yyTop].value), null, null)));
                     /*% %*/
                     /*% ripper: case!($1, in!($7, Qnil, Qnil)) %*/
   return yyVal;
@@ -2468,7 +2468,7 @@ states[69] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
                     LexContext ctxt = p.getLexContext();
                     ctxt.in_kwarg = ((LexContext)yyVals[-3+yyTop].value).in_kwarg;
                     /*%%%*/
-                    yyVal = p.newPatternCaseNode(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-6+yyTop].value), p.newIn(yyVals[yyTop - count + 1].start(), ((Node)yyVals[0+yyTop].value), new TrueNode(yyVals[yyTop - count + 1].start()), new FalseNode(yyVals[yyTop - count + 1].start())));
+                    yyVal = p.one_line_pattern(p.newPatternCaseNode(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-6+yyTop].value), p.newIn(yyVals[yyTop - count + 1].start(), ((Node)yyVals[0+yyTop].value), new TrueNode(yyVals[yyTop - count + 1].start()), new FalseNode(yyVals[yyTop - count + 1].start()))));
                     /*% %*/
                     /*% ripper: case!($1, in!($7, Qnil, Qnil)) %*/
   return yyVal;

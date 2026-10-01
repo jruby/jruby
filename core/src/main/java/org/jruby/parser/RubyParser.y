@@ -843,7 +843,7 @@ expr            : command_call
                     LexContext ctxt = p.getLexContext();
                     ctxt.in_kwarg = $4.in_kwarg;
                     /*%%%*/
-                    $$ = p.newPatternCaseNode(@1.start(), $1, p.newIn(@1.start(), $7, null, null));
+                    $$ = p.one_line_pattern(p.newPatternCaseNode(@1.start(), $1, p.newIn(@1.start(), $7, null, null)));
                     /*% %*/
                     /*% ripper: case!($1, in!($7, Qnil, Qnil)) %*/
                 }
@@ -855,7 +855,7 @@ expr            : command_call
                     LexContext ctxt = p.getLexContext();
                     ctxt.in_kwarg = $4.in_kwarg;
                     /*%%%*/
-                    $$ = p.newPatternCaseNode(@1.start(), $1, p.newIn(@1.start(), $7, new TrueNode(@1.start()), new FalseNode(@1.start())));
+                    $$ = p.one_line_pattern(p.newPatternCaseNode(@1.start(), $1, p.newIn(@1.start(), $7, new TrueNode(@1.start()), new FalseNode(@1.start()))));
                     /*% %*/
                     /*% ripper: case!($1, in!($7, Qnil, Qnil)) %*/
                 }
