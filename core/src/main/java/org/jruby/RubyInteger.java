@@ -1099,6 +1099,9 @@ public abstract class RubyInteger extends RubyNumeric {
     @JRubyMethod(name = "bit_length")
     public abstract IRubyObject bit_length(ThreadContext context);
 
+    @JRubyMethod(name = "bit_count")
+    public abstract IRubyObject bit_count(ThreadContext context);
+
     @Deprecated(since = "10.0.0.0")
     boolean isOne() {
         return isOne(getCurrentContext());

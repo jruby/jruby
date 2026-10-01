@@ -1639,6 +1639,16 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         return asFixnum(context, 64 - Long.numberOfLeadingZeros(tmpValue));
     }
 
+    @Override
+    public IRubyObject bit_count(ThreadContext context) {
+        long value = getValue();
+        if (value < 0) {
+            throw argumentError(context, "bit_count is undefined for negative integers");
+        }
+
+        return asFixnum(context, Long.bitCount(value));
+    }
+
     @Deprecated(since = "10.0.3.0")
     @Override
     public IRubyObject id() {
