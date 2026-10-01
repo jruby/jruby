@@ -17,7 +17,8 @@ import static org.jruby.util.CodegenUtils.sig;
 * Created by headius on 10/23/14.
 */
 public class FixnumObjectSite extends LazyObjectSite {
-    private final long value;
+    // Long to avoid constructing new wrappers for cache call below
+    private final Long value;
 
     public FixnumObjectSite(MethodType type, long value) {
         super(type);
@@ -36,6 +37,6 @@ public class FixnumObjectSite extends LazyObjectSite {
     }
 
     public IRubyObject construct(ThreadContext context) {
-        return asFixnum(context, value);
+        return context.runtime.cacheFixnum(value);
     }
 }
