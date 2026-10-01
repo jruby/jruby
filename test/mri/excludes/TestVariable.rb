@@ -1,4 +1,3 @@
-exclude :test_cloned_allows_setting_cvar, "needs investigation"
 exclude :test_exivar_resize_with_compaction_stress, "depends on CRuby GC APIs"
 exclude :test_global_variables, "requires dynamic listing of backref numbers for available groups"
 exclude :test_setting_class_variable_on_module_through_inheritance, "work in progress"
