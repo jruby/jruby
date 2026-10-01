@@ -995,8 +995,18 @@ public class RipperParserBase {
                 return Global;
         }
 
-        byte last = (byte) identifier.get(identifier.length() - 1);
+        int length = identifier.length();
+        byte last = (byte) identifier.get(length - 1);
         if (last == '=') {
+            if (length > 1) {
+                char secondLast = identifier.charAt(length - 2);
+                // Comparison operators (==, ===, !=, <=, >=) end in '=' but
+                // are not setter (attrset) names. Genuine setters (foo=, []=)
+                // never have '=', '!', '<' or '>' as their second to last char.
+                if (secondLast == '=' || secondLast == '!' || secondLast == '<' || secondLast == '>') {
+                    return Local;
+                }
+            }
             return AttrSet;
         }
 

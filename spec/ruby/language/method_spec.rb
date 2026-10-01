@@ -1372,10 +1372,22 @@ describe "An endless method definition" do
     end
   end
 
+  ripper_errors = -> source {
+    require 'ripper'
+    errors = []
+    parser = Class.new(Ripper) do
+      define_method(:on_parse_error) { |msg| errors << msg }
+    end
+    parser.new(source).parse
+    errors
+  }
+
   context "with an operator name ending in `=`" do
     it "defines the operator methods" do
       eval <<-ruby
         class OpEndlessOperator
+          def ==(other) = "equal"
+          def ===(other) = "case-equal"
           def !=(other) = "not-equal"
           def <=(other) = "less-or-equal"
           def >=(other) = "greater-or-equal"
@@ -1383,9 +1395,17 @@ describe "An endless method definition" do
       ruby
 
       obj = OpEndlessOperator.new
+      obj.send(:==, 1).should == "equal"
+      obj.send(:===, 1).should == "case-equal"
       obj.send(:!=, 1).should == "not-equal"
       obj.send(:<=, 1).should == "less-or-equal"
       obj.send(:>=, 1).should == "greater-or-equal"
+    end
+
+    it "is not reported as a parse error by Ripper" do
+      %w[== === != <= >=].each do |op|
+        ripper_errors.("class Example; def #{op}(other) = true; end").should == []
+      end
     end
   end
 
@@ -1393,10 +1413,17 @@ describe "An endless method definition" do
     it "raises a SyntaxError" do
       -> {
         eval("class SetterEndless; def foo=(x) = x; end")
-      }.should raise_error(SyntaxError)
+      }.should raise_error(SyntaxError, /setter method cannot be defined in an endless method definition/)
       -> {
         eval("class SetterEndless; def []=(k, v) = v; end")
-      }.should raise_error(SyntaxError)
+      }.should raise_error(SyntaxError, /setter method cannot be defined in an endless method definition/)
+    end
+
+    it "is reported as a parse error by Ripper" do
+      ["def foo=(v) = v", "def []=(k, v) = v"].each do |src|
+        ripper_errors.("class Example; #{src}; end").should ==
+          ["setter method cannot be defined in an endless method definition"]
+      end
     end
   end
 end
