@@ -1262,14 +1262,19 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
      *                 conditional, so nested conditionals are numbered in the same order
      */
     protected Operand buildConditional(Variable result, U predicate, U statements, U consequent, Supplier<BranchTarget[]> branches) {
-        return buildConditional(result, predicate, statements, consequent, branches, -1);
+        return buildConditional(result, predicate, statements, consequent, branches, DeadArm.NONE);
     }
 
     /**
-     * @param deadArm for branch coverage: 0 when the statements arm can never run, 1 when the consequent arm
-     *                cannot (a literal predicate), else -1; nothing inside a dead arm is measured
+     * Which arm of a conditional can never run, because its predicate is a literal. For branch coverage, which
+     * measures nothing inside a dead arm.
      */
-    protected Operand buildConditional(Variable result, U predicate, U statements, U consequent, Supplier<BranchTarget[]> branches, int deadArm) {
+    protected enum DeadArm { NONE, STATEMENTS, CONSEQUENT }
+
+    /**
+     * @param deadArm for branch coverage: the arm that can never run; nothing inside it is measured
+     */
+    protected Operand buildConditional(Variable result, U predicate, U statements, U consequent, Supplier<BranchTarget[]> branches, DeadArm deadArm) {
         Label    falseLabel = getNewLabel();
         Label    doneLabel  = getNewLabel();
         Operand thenResult;
@@ -1277,7 +1282,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         BranchTarget[] targets = branches == null ? null : branches.get();
         addInstr(createBranch(predicateValue, fals(), falseLabel));
         if (targets != null) coverBranch(targets[0]);
-        if (deadArm == 0) deadCodeDepth++;
+        if (deadArm == DeadArm.STATEMENTS) deadCodeDepth++;
 
         boolean thenNull = false;
         boolean elseNull = false;
@@ -1303,12 +1308,12 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             addInstr(new JumpInstr(doneLabel));
         }
 
-        if (deadArm == 0) deadCodeDepth--;
+        if (deadArm == DeadArm.STATEMENTS) deadCodeDepth--;
 
         // Build the else part of the if-statement
         addInstr(new LabelInstr(falseLabel));
         if (targets != null) coverBranch(targets[1]);
-        if (deadArm == 1) deadCodeDepth++;
+        if (deadArm == DeadArm.CONSEQUENT) deadCodeDepth++;
         if (consequent != null) {
             Operand elseResult = build(consequent);
             // elseResult can be U_NIL if then-body ended with a return!
@@ -1321,7 +1326,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             elseNull = true;
             copy(result, nil());
         }
-        if (deadArm == 1) deadCodeDepth--;
+        if (deadArm == DeadArm.CONSEQUENT) deadCodeDepth--;
 
         if (thenNull && elseNull) {
             addInstr(new LabelInstr(doneLabel));

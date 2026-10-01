@@ -2475,7 +2475,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         // run is not compiled, so nothing in it is measured
         if (ifNode.hasConstantPredicate()) {
             return buildConditional(result, ifNode.getCondition(), ifNode.getThenBody(), ifNode.getElseBody(), null,
-                    ifNode.isConstantlyTrue() ? 1 : 0);
+                    ifNode.isConstantlyTrue() ? DeadArm.CONSEQUENT : DeadArm.STATEMENTS);
         }
 
         Supplier<BranchTarget[]> branches = ifNode.isBranch() ? () -> declareIfBranches(ifNode) : null;
