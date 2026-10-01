@@ -79,7 +79,7 @@ def mspec(mspec_options = {}, java_options = {}, &code)
     sysproperty :key => "emma.verbosity.level", :value=> "silent"
 
     env :key => "JAVA_OPTS", :value => "-Demma.verbosity.level=silent"
-    env :key => "JRUBY_OPTS", :value => ms[:jruby_opts] || ""
+    env :key => "JRUBY_OPTS", :value => "#{ENV['JRUBY_OPTS']} #{ms[:jruby_opts]}"
     # launch in the same mode we're testing, since config is loaded by top process
 
     # add . to load path so mspec config is found
