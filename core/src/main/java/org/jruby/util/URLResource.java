@@ -16,6 +16,7 @@ import java.util.*;
 import jnr.constants.platform.Errno;
 import jnr.posix.FileStat;
 
+import jnr.posix.POSIX;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.util.io.SeekableByteArrayChannel;
@@ -35,20 +36,23 @@ public class URLResource implements FileResource, DummyResourceStat.FileResource
 
     private final ClassLoader cl;
 
-    URLResource(String uri, URL url, String[] files) {
-        this(uri, url, null, null, files);
+    private final POSIX posix;
+
+    URLResource(POSIX posix, String uri, URL url, String[] files) {
+        this(posix, uri, url, null, null, files);
     }
 
-    URLResource(String uri, ClassLoader cl, String pathname, String[] files) {
-        this(uri, null, cl, pathname, files);
+    URLResource(POSIX posix, String uri, ClassLoader cl, String pathname, String[] files) {
+        this(posix, uri, null, cl, pathname, files);
     }
 
-    private URLResource(String uri, URL url, ClassLoader cl, String pathname, String[] files) {
+    private URLResource(POSIX posix, String uri, URL url, ClassLoader cl, String pathname, String[] files) {
         this.uri = uri;
         this.list = files;
         this.url = url;
         this.cl = cl;
         this.pathname = pathname;
+        this.posix = posix;
     }
 
     @Override
@@ -176,19 +180,23 @@ public class URLResource implements FileResource, DummyResourceStat.FileResource
             throw new ResourceException.NotFound(absolutePath());
         }
 
-        // read jar resources fully to allow seeking (jruby/jruby#9727)
-        if ("jar".equals(url.getProtocol())) {
-            // jar resource, check remote protocol
-            URLConnection connect = url.openConnection();
-            if (connect instanceof JarURLConnection jarURLConnection) {
-                if ("file".equals(jarURLConnection.getJarFileURL().getProtocol())) {
-                    // local jar file, read fully and return a seekable channel
-                    try (InputStream in = connect.getInputStream()) {
-                        byte[] buf = in.readAllBytes();
-                        return new SeekableByteArrayChannel(buf);
+        switch (url.getProtocol()) {
+            case "file":
+                if (posix != null) {
+                    return new RegularFileResource(posix, url.getFile()).openChannel(flags, perm);
+                }
+            case "jar":
+                // jar resource, check remote protocol
+                URLConnection connect = url.openConnection();
+                if (connect instanceof JarURLConnection jarURLConnection) {
+                    if ("file".equals(jarURLConnection.getJarFileURL().getProtocol())) {
+                        // local jar file, read fully and return a seekable channel
+                        try (InputStream in = connect.getInputStream()) {
+                            byte[] buf = in.readAllBytes();
+                            return new SeekableByteArrayChannel(buf);
+                        }
                     }
                 }
-            }
         }
 
         // all other URLs open as readable channel with no seeking
@@ -215,6 +223,7 @@ public class URLResource implements FileResource, DummyResourceStat.FileResource
 
     public static FileResource createClassloaderURI(Ruby runtime, String pathname, boolean asFile) {
         ClassLoader cl = runtime != null ? runtime.getJRubyClassLoader() : RubyInstanceConfig.defaultClassLoader();
+        POSIX posix = runtime != null ? runtime.getPosix() : null;
         try {
             pathname = new URI(pathname.replaceFirst("^/*", "/"))
                     .normalize().getPath().replaceAll("^/([.][.]/)*", "");
@@ -253,7 +262,7 @@ public class URLResource implements FileResource, DummyResourceStat.FileResource
                 catch (IOException e) { /* we tried */ }
             }
         }
-        return new URLResource(URI_CLASSLOADER + '/' + pathname, cl, url == null ? null : pathname, files);
+        return new URLResource(posix, URI_CLASSLOADER + '/' + pathname, cl, url == null ? null : pathname, files);
     }
 
     private static boolean addDirectoriesFromClassloader(ClassLoader cl, Set<String> list, String pathname, boolean isDirectory) throws IOException {
@@ -300,11 +309,12 @@ public class URLResource implements FileResource, DummyResourceStat.FileResource
         if (pathname.startsWith(CLASSLOADER)) {
             return createClassloaderURI(runtime, pathname.substring(CLASSLOADER.length()), asFile);
         }
-        return createRegularURI(pathname, asFile);
+        return createRegularURI(runtime, pathname, asFile);
     }
 
-    private static FileResource createRegularURI(String pathname, boolean asFile) {
+    private static FileResource createRegularURI(Ruby ruby, String pathname, boolean asFile) {
         URL url;
+        POSIX posix = ruby != null ? ruby.getPosix() : null;
         try {
             // TODO NormalizedFile does too much - should leave uri: files as they are
             // and make file:/a protocol to be file:///a so the second replace does not apply
@@ -316,11 +326,11 @@ public class URLResource implements FileResource, DummyResourceStat.FileResource
             if (url.getProtocol().startsWith("http")) return null;
         }
         catch (MalformedURLException e) { // file does not exists
-            return new URLResource(URI + pathname, null, null);
+            return new URLResource(posix, URI + pathname, null, null);
         }
         String[] files = asFile ? null : listFiles(pathname);
         if (files != null) {
-            return new URLResource(URI + pathname, null, files);
+            return new URLResource(posix, URI + pathname, null, files);
         }
         try {
             InputStream is = url.openStream();
@@ -332,10 +342,10 @@ public class URLResource implements FileResource, DummyResourceStat.FileResource
                 // there is no input-stream from this url
                 url = null;
             }
-            return new URLResource(URI + pathname, url, null);
+            return new URLResource(posix, URI + pathname, url, null);
         }
         catch (IOException e) { // can not open stream - treat it as not existing file
-            return new URLResource(URI + pathname, null, null);
+            return new URLResource(posix, URI + pathname, null, null);
         }
     }
 
