@@ -208,13 +208,39 @@ class TestAlias < Test::Unit::TestCase
     begin;
       bug = ARGV[0]
 
-      m = Module.new do
-        alias orig_to_s to_s
+      m = EnvUtil.suppress_warning do
+        Module.new do
+          alias orig_to_s to_s
+        end
       end
 
       o = Object.new.extend(m)
       assert_equal(o.to_s, o.orig_to_s, bug)
     end;
+  end
+
+  def test_alias_fallback_to_object_is_deprecated
+    bug22276 = '[ruby-core:126537] [Bug #22276]'
+    message = /the fallback to Object for alias of 'to_s' in module '.*' is deprecated and will be removed in Ruby 4\.3/
+
+    m = nil
+    assert_deprecated_warning(message) do
+      m = Module.new { alias orig_to_s to_s }
+    end
+    o = Object.new.extend(m)
+    assert_equal(o.to_s, o.orig_to_s, bug22276)
+
+    assert_deprecated_warning(message) do
+      Module.new { alias_method :orig_to_s, :to_s }
+    end
+
+    assert_warning('', bug22276) do
+      EnvUtil.deprecation_warning do
+        Module.new { def foo; end; alias bar foo }
+        Module.new { include Comparable; alias in_range? between? }
+        Class.new { alias to_str to_s }
+      end
+    end
   end
 
   class C0; def foo; end; end

@@ -2546,7 +2546,7 @@ public class RubyModule extends RubyObject {
     }
 
     private CacheEntry searchForAliasMethod(ThreadContext context, String id) {
-        return deepMethodSearch(context, id);
+        return deepMethodSearch(context, id, true);
     }
 
     private void checkAliasFrameAccesses(ThreadContext context, String id, String newName, DynamicMethod method) {
@@ -2825,6 +2825,10 @@ public class RubyModule extends RubyObject {
     }
 
     private CacheEntry deepMethodSearch(ThreadContext context, String id) {
+        return deepMethodSearch(context, id, false);
+    }
+
+    private CacheEntry deepMethodSearch(ThreadContext context, String id, boolean forAlias) {
         CacheEntry orig = searchWithCache(id);
         if (orig.method.isRefined()) {
             orig = resolveRefinedMethod(null, orig, id);
@@ -2835,6 +2839,12 @@ public class RubyModule extends RubyObject {
                 // FIXME: Do we potentially leak symbols here if they do not exist?
                 RubySymbol name = asSymbol(context, id);
                 throw nameError(context, undefinedMethodMessage(context.runtime, name, rubyName(context), isModule()), name);
+            }
+
+            // Bug #22276: modules aliasing methods found only via the Object fallback
+            if (forAlias) {
+                warnDeprecated(context, "the fallback to Object for alias of '" + id + "' in module '" +
+                        rubyName(context) + "' is deprecated and will be removed in Ruby 4.3");
             }
         }
 
