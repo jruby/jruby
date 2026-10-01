@@ -183,7 +183,12 @@ public class URLResource implements FileResource, DummyResourceStat.FileResource
         switch (url.getProtocol()) {
             case "file":
                 if (posix != null) {
-                    return new RegularFileResource(posix, url.getFile()).openChannel(flags, perm);
+                    try {
+                        return new RegularFileResource(posix, new File(url.toURI()).getPath()).openChannel(flags, perm);
+                    } catch (URISyntaxException e) {
+                        // classloader would have to be pretty broken to get here, so ignore and let it fail below
+                        break;
+                    }
                 }
             case "jar":
                 // jar resource, check remote protocol
