@@ -69,12 +69,12 @@ public abstract class RubyArraySpecialized extends RubyArray {
     protected final void unpack(ThreadContext context) {
         if (!packed()) return;
 
+        unpackLoop(context);
+    }
+
+    private void unpackLoop(ThreadContext context) {
         for (;;) {
-            IRubyObject[] values = this.values;
-
-            if (values != null) return;
-
-            values = (IRubyObject[]) VALUES_HANDLE.getVolatile(this);
+            IRubyObject[] values = (IRubyObject[]) VALUES_HANDLE.getVolatile(this);
 
             if (values != null) return;
 
