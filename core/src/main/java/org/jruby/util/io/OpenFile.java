@@ -1486,7 +1486,7 @@ public class OpenFile implements Finalizable {
                     }
                 } else if (fd.chSeek != null) {
                     // Note this is no longer an atomic operation, but seekable channels do not provide a pread
-                    if (from > fd.chSeek.size()) {
+                    if (from >= fd.chSeek.size()) {
                         throw runtime.newEOFError();
                     }
                     long oldPos = fd.chSeek.position();
