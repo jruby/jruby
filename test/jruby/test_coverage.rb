@@ -672,6 +672,33 @@ class TestCoverage < Test::Unit::TestCase
     RUBY
   end
 
+  def test_line_stub_has_an_entry_for_every_line
+    source = <<~'RUBY'
+      def show
+        @product = base_scope
+                   .includes(colors_products: :color)
+                   .find(params[:id])
+      end
+    RUBY
+    with_source(source) { |path| assert_equal [0, 0, nil, nil, nil], Coverage.line_stub(path) }
+    with_source(source.chomp) { |path| assert_equal [0, 0, nil, nil, nil], Coverage.line_stub(path) }
+    with_source("x = 1\n\n\n\n") { |path| assert_equal [0, nil, nil, nil], Coverage.line_stub(path) }
+    with_source("") { |path| assert_equal [], Coverage.line_stub(path) }
+  end
+
+  def test_line_stub_of_an_empty_file_after_an_empty_else
+    source = <<~'RUBY'
+      x.each do
+        if x
+          1
+        else
+        end
+      end
+    RUBY
+    with_source(source) { |path| Coverage.line_stub(path) }
+    with_source("") { |path| assert_equal [], Coverage.line_stub(path) }
+  end
+
   private
 
   def with_source(source)
