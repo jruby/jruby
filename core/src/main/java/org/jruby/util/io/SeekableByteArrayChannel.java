@@ -52,7 +52,7 @@ public final class SeekableByteArrayChannel extends AbstractInterruptibleChannel
     }
 
     public SeekableByteArrayChannel(byte[] bytes, int base) {
-        assert base > 0 && base < bytes.length;
+        assert base >= 0 && base <= bytes.length;
 
         this.bytes = bytes;
         this.base = base;
@@ -60,8 +60,8 @@ public final class SeekableByteArrayChannel extends AbstractInterruptibleChannel
     }
 
     public SeekableByteArrayChannel(byte[] bytes, int base, int size) {
-        assert base > 0 && base < bytes.length;
-        assert size > 0 && base + size < bytes.length;
+        assert base >= 0 && base <= bytes.length;
+        assert size >= 0 && base + size <= bytes.length;
 
         this.bytes = bytes;
         this.base = base;
