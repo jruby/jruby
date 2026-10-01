@@ -43,14 +43,36 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * existing construct rather than declaring a second one.</p>
  */
 public final class BranchCoverage {
+    /**
+     * The kind of construct, named as Coverage reports it.
+     */
+    public enum Type {
+        IF("if"), UNLESS("unless"), CASE("case"), WHILE("while"), UNTIL("until"), SAFE_NAVIGATION("&.");
+
+        private final String id;
+
+        Type(String id) {
+            this.id = id;
+        }
+
+        /**
+         * The name of the symbol this type is reported as.
+         */
+        public String getId() {
+            return id;
+        }
+    }
+
+    private record TargetKey(BranchTarget.Label label, int startLine, int startColumn, int endLine, int endColumn) {}
+
     private final FileCoverage file;
-    private final String type;
+    private final Type type;
     private final int startLine;
     private final int startColumn;
     private final int endLine;
     private final int endColumn;
     private final List<BranchTarget> targets = new CopyOnWriteArrayList<>();
-    private final Map<String, BranchTarget> targetsByKey = new HashMap<>();
+    private final Map<TargetKey, BranchTarget> targetsByKey = new HashMap<>();
 
     /**
      * An inert copy of another construct, holding copies of its targets. Only ever read from.
@@ -64,7 +86,7 @@ public final class BranchCoverage {
         this.endColumn = source.endColumn;
     }
 
-    BranchCoverage(FileCoverage file, String type, int startLine, int startColumn, int endLine, int endColumn) {
+    BranchCoverage(FileCoverage file, Type type, int startLine, int startColumn, int endLine, int endColumn) {
         this.file = file;
         this.type = type;
         this.startLine = startLine;
@@ -76,14 +98,14 @@ public final class BranchCoverage {
     /**
      * Declare (or find) the target of this construct with the given label and source span.
      *
-     * @param label then, else, body, when or in
+     * @param label which of the construct's targets this is
      * @param startLine one-based line where the target's source starts
      * @param startColumn zero-based byte column where it starts
      * @param endLine one-based line where it ends
      * @param endColumn zero-based byte column just past its end
      */
-    public synchronized BranchTarget declareTarget(String label, int startLine, int startColumn, int endLine, int endColumn) {
-        String key = label + ':' + startLine + ':' + startColumn + ':' + endLine + ':' + endColumn;
+    public synchronized BranchTarget declareTarget(BranchTarget.Label label, int startLine, int startColumn, int endLine, int endColumn) {
+        TargetKey key = new TargetKey(label, startLine, startColumn, endLine, endColumn);
         BranchTarget target = targetsByKey.get(key);
 
         if (target == null) {
@@ -117,7 +139,7 @@ public final class BranchCoverage {
         return copy;
     }
 
-    public String getType() {
+    public Type getType() {
         return type;
     }
 
@@ -139,6 +161,6 @@ public final class BranchCoverage {
 
     @Override
     public String toString() {
-        return "BranchCoverage[" + type + " " + startLine + ":" + startColumn + "-" + endLine + ":" + endColumn + " " + targets + "]";
+        return "BranchCoverage[" + type.getId() + " " + startLine + ":" + startColumn + "-" + endLine + ":" + endColumn + " " + targets + "]";
     }
 }

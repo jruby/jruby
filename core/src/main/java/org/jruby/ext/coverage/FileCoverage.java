@@ -55,10 +55,12 @@ import org.jruby.util.collections.IntList;
  * {@link CoverageData} lock while Ruby code runs.</p>
  */
 public final class FileCoverage {
+    private record BranchKey(BranchCoverage.Type type, int startLine, int startColumn, int endLine, int endColumn) {}
+
     private IntList lines;
     private final List<MethodCoverage> methods = new ArrayList<>();
     private final List<BranchCoverage> branches = new CopyOnWriteArrayList<>();
-    private final Map<String, BranchCoverage> branchesByKey = new HashMap<>();
+    private final Map<BranchKey, BranchCoverage> branchesByKey = new HashMap<>();
     private final List<BranchTarget> branchTargets = new CopyOnWriteArrayList<>();
 
     public IntList getLines() {
@@ -76,14 +78,14 @@ public final class FileCoverage {
     /**
      * Declare (or find) the branching construct of the given type at the given source span.
      *
-     * @param type if, unless, case, while, until or &amp;.
+     * @param type the kind of construct
      * @param startLine one-based line where the construct starts
      * @param startColumn zero-based byte column where it starts
      * @param endLine one-based line where it ends
      * @param endColumn zero-based byte column just past its end
      */
-    public synchronized BranchCoverage declareBranch(String type, int startLine, int startColumn, int endLine, int endColumn) {
-        String key = type + ':' + startLine + ':' + startColumn + ':' + endLine + ':' + endColumn;
+    public synchronized BranchCoverage declareBranch(BranchCoverage.Type type, int startLine, int startColumn, int endLine, int endColumn) {
+        BranchKey key = new BranchKey(type, startLine, startColumn, endLine, endColumn);
         BranchCoverage branch = branchesByKey.get(key);
 
         if (branch == null) {

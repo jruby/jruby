@@ -41,6 +41,26 @@ import org.jruby.runtime.ThreadContext;
  * and counting is a single lock-free atomic add, so parallel threads neither serialize nor lose increments.</p>
  */
 public final class BranchTarget {
+    /**
+     * Which of its construct's targets this is, named as Coverage reports it.
+     */
+    public enum Label {
+        THEN("then"), ELSE("else"), BODY("body"), WHEN("when"), IN("in");
+
+        private final String id;
+
+        Label(String id) {
+            this.id = id;
+        }
+
+        /**
+         * The name of the symbol this label is reported as.
+         */
+        public String getId() {
+            return id;
+        }
+    }
+
     private static final VarHandle COUNT;
 
     static {
@@ -51,7 +71,7 @@ public final class BranchTarget {
         }
     }
 
-    private final String label;
+    private final Label label;
     private final int startLine;
     private final int startColumn;
     private final int endLine;
@@ -72,7 +92,7 @@ public final class BranchTarget {
         this.count = count;
     }
 
-    BranchTarget(String label, int startLine, int startColumn, int endLine, int endColumn, int index) {
+    BranchTarget(Label label, int startLine, int startColumn, int endLine, int endColumn, int index) {
         this.label = label;
         this.startLine = startLine;
         this.startColumn = startColumn;
@@ -104,10 +124,7 @@ public final class BranchTarget {
         return new BranchTarget(this, clear ? (long) COUNT.getAndSet(this, 0L) : count);
     }
 
-    /**
-     * then, else, body, when or in.
-     */
-    public String getLabel() {
+    public Label getLabel() {
         return label;
     }
 
@@ -136,6 +153,6 @@ public final class BranchTarget {
 
     @Override
     public String toString() {
-        return label + " " + startLine + ":" + startColumn + "-" + endLine + ":" + endColumn + " = " + count;
+        return label.getId() + " " + startLine + ":" + startColumn + "-" + endLine + ":" + endColumn + " = " + count;
     }
 }

@@ -978,10 +978,10 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
      * the whole call, as MRI does).
      */
     private BranchTarget[] declareSafeNavigationBranches(Node node) {
-        BranchCoverage branch = declareBranch("&.", node);
+        BranchCoverage branch = declareBranch(BranchCoverage.Type.SAFE_NAVIGATION, node);
         if (branch == null) return null;
 
-        return new BranchTarget[] { declareTarget(branch, "then", null), declareTarget(branch, "else", null) };
+        return new BranchTarget[] { declareTarget(branch, BranchTarget.Label.THEN, null), declareTarget(branch, BranchTarget.Label.ELSE, null) };
     }
 
     protected boolean isNilRest(Node rest) {
@@ -1065,17 +1065,17 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         Node[] cases = node.getCases();
         BranchTarget[] inTargets = null;
         BranchTarget elseTarget = null;
-        BranchCoverage branch = node.isOneLine() ? null : declareBranch("case", node);
+        BranchCoverage branch = node.isOneLine() ? null : declareBranch(BranchCoverage.Type.CASE, node);
 
         if (branch != null) {
             inTargets = new BranchTarget[cases.length];
             for (int i = 0; i < cases.length; i++) {
                 InNode in = (InNode) cases[i];
                 int[] span = armSpanOf(in.getBody());
-                inTargets[i] = declareTarget(branch, "in", span == null ? spanOf(in) : span); // an empty in is reported at its clause
+                inTargets[i] = declareTarget(branch, BranchTarget.Label.IN, span == null ? spanOf(in) : span); // an empty in is reported at its clause
             }
             InNode last = cases.length == 0 ? null : (InNode) cases[cases.length - 1];
-            elseTarget = declareTarget(branch, "else", caseElseSpan(branch, node.getElseNode(), last != null && last.hasElseStart(),
+            elseTarget = declareTarget(branch, BranchTarget.Label.ELSE, caseElseSpan(branch, node.getElseNode(), last != null && last.hasElseStart(),
                     last == null ? -1 : last.getElseStartLine(), last == null ? -1 : last.getElseStartColumn()));
         }
 
@@ -1121,17 +1121,17 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         Node[] arms = caseNode.getCases().children();
         BranchTarget[] armTargets = null;
         BranchTarget elseTarget = null;
-        BranchCoverage branch = declareBranch("case", caseNode);
+        BranchCoverage branch = declareBranch(BranchCoverage.Type.CASE, caseNode);
 
         if (branch != null) {
             armTargets = new BranchTarget[arms.length];
             for (int i = 0; i < arms.length; i++) {
                 WhenNode when = (WhenNode) arms[i];
                 int[] span = armSpanOf(when.getBodyNode());
-                armTargets[i] = declareTarget(branch, "when", span == null ? spanOf(when) : span); // an empty when is reported at its clause
+                armTargets[i] = declareTarget(branch, BranchTarget.Label.WHEN, span == null ? spanOf(when) : span); // an empty when is reported at its clause
             }
             WhenNode last = arms.length == 0 ? null : (WhenNode) arms[arms.length - 1];
-            elseTarget = declareTarget(branch, "else", caseElseSpan(branch, caseNode.getElseNode(), last != null && last.hasElseStart(),
+            elseTarget = declareTarget(branch, BranchTarget.Label.ELSE, caseElseSpan(branch, caseNode.getElseNode(), last != null && last.hasElseStart(),
                     last == null ? -1 : last.getElseStartLine(), last == null ? -1 : last.getElseStartColumn()));
         }
 
@@ -2510,7 +2510,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return new int[] { branch.getStartLine(), branch.getStartColumn(), branch.getEndLine(), branch.getEndColumn() };
     }
 
-    private BranchCoverage declareBranch(String type, Node node) {
+    private BranchCoverage declareBranch(BranchCoverage.Type type, Node node) {
         FileCoverage file = branchCoverageFile();
         if (file == null) return null;
 
@@ -2524,7 +2524,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
      * Declare a target of the construct; a null span means the target is reported at the whole construct (a
      * missing else, an empty loop body, ...).
      */
-    private static BranchTarget declareTarget(BranchCoverage branch, String label, int[] span) {
+    private static BranchTarget declareTarget(BranchCoverage branch, BranchTarget.Label label, int[] span) {
         if (branch == null) return null;
         if (span == null) span = spanOf(branch);
 
@@ -2535,7 +2535,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
      * Targets of the statements arm and of the consequent arm of an if/unless (in that order).
      */
     private BranchTarget[] declareIfBranches(IfNode node) {
-        BranchCoverage branch = declareBranch(node.isUnless() ? "unless" : "if", node);
+        BranchCoverage branch = declareBranch(node.isUnless() ? BranchCoverage.Type.UNLESS : BranchCoverage.Type.IF, node);
         if (branch == null) return null;
 
         Node statements = node.getThenBody();
@@ -2549,8 +2549,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         if (node.isUnless()) {
             // 'unless c; A; else; B; end' is IfNode(c, then: B, else: A): MRI lists the else clause first, then
             // the body, and reports either at the whole unless when it is missing or empty.
-            targets[0] = declareTarget(branch, "else", armSpanOf(statements));
-            targets[1] = declareTarget(branch, "then", armSpanOf(consequent));
+            targets[0] = declareTarget(branch, BranchTarget.Label.ELSE, armSpanOf(statements));
+            targets[1] = declareTarget(branch, BranchTarget.Label.THEN, armSpanOf(consequent));
         } else {
             int[] thenSpan = armSpanOf(statements);
             if (thenSpan == null && node.hasPredicateEnd()) { // an empty then arm sits, empty, just past the condition
@@ -2558,7 +2558,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
                 int column = node.getPredicateEndColumn();
                 thenSpan = new int[] { line, column, line, column };
             }
-            targets[0] = declareTarget(branch, "then", thenSpan);
+            targets[0] = declareTarget(branch, BranchTarget.Label.THEN, thenSpan);
 
             int[] elseSpan;
             if (consequent instanceof NilImplicitNode && node.hasElseStart()) { // 'else' with nothing after it: from the keyword to 'end'
@@ -2566,19 +2566,19 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             } else {
                 elseSpan = armSpanOf(consequent); // an elsif clause, the else statements, or null (no else: the whole if)
             }
-            targets[1] = declareTarget(branch, "else", elseSpan);
+            targets[1] = declareTarget(branch, BranchTarget.Label.ELSE, elseSpan);
         }
 
         return targets;
     }
 
-    private BranchTarget declareLoopBranch(String type, Node loop, Node body, boolean hasBodySpan, int bodyStartLine, int bodyStartColumn, int bodyEndLine, int bodyEndColumn) {
+    private BranchTarget declareLoopBranch(BranchCoverage.Type type, Node loop, Node body, boolean hasBodySpan, int bodyStartLine, int bodyStartColumn, int bodyEndLine, int bodyEndColumn) {
         BranchCoverage branch = declareBranch(type, loop);
         if (branch == null) return null;
 
         int[] bodySpan = hasBodySpan ? new int[] { bodyStartLine + 1, bodyStartColumn, bodyEndLine + 1, bodyEndColumn } : armSpanOf(body);
 
-        return declareTarget(branch, "body", bodySpan); // an empty body is reported at the whole loop
+        return declareTarget(branch, BranchTarget.Label.BODY, bodySpan); // an empty body is reported at the whole loop
     }
 
     /**
@@ -2935,7 +2935,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     public Operand buildUntil(UntilNode node) {
-        BranchTarget body = declareLoopBranch("until", node, node.getBodyNode(), node.hasBodySpan(),
+        BranchTarget body = declareLoopBranch(BranchCoverage.Type.UNTIL, node, node.getBodyNode(), node.hasBodySpan(),
                 node.getBodyStartLine(), node.getBodyStartColumn(), node.getBodyEndLine(), node.getBodyEndColumn());
 
         return buildConditionalLoop(node.getConditionNode(), node.getBodyNode(), false, node.evaluateAtStart(), body);
@@ -2966,7 +2966,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     public Operand buildWhile(WhileNode node) {
-        BranchTarget body = declareLoopBranch("while", node, node.getBodyNode(), node.hasBodySpan(),
+        BranchTarget body = declareLoopBranch(BranchCoverage.Type.WHILE, node, node.getBodyNode(), node.hasBodySpan(),
                 node.getBodyStartLine(), node.getBodyStartColumn(), node.getBodyEndLine(), node.getBodyEndColumn());
 
         return buildConditionalLoop(node.getConditionNode(), node.getBodyNode(), true, node.evaluateAtStart(), body);

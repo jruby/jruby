@@ -283,13 +283,13 @@ public class CoverageModule {
         long id = 0;
 
         for (BranchCoverage branch : branches) {
-            RubyArray key = newArray(context, asSymbol(context, branch.getType()), asFixnum(context, id++),
+            RubyArray key = newArray(context, asSymbol(context, branch.getType().getId()), asFixnum(context, id++),
                     asFixnum(context, branch.getStartLine()), asFixnum(context, branch.getStartColumn()),
                     asFixnum(context, branch.getEndLine()), asFixnum(context, branch.getEndColumn()));
             RubyHash targets = newHash(context);
 
             for (BranchTarget target : branch.getTargets()) {
-                RubyArray targetKey = newArray(context, asSymbol(context, target.getLabel()), asFixnum(context, id++),
+                RubyArray targetKey = newArray(context, asSymbol(context, target.getLabel().getId()), asFixnum(context, id++),
                         asFixnum(context, target.getStartLine()), asFixnum(context, target.getStartColumn()),
                         asFixnum(context, target.getEndLine()), asFixnum(context, target.getEndColumn()));
                 targets.fastASet(targetKey, asFixnum(context, target.getCount()));
