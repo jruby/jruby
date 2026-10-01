@@ -67,4 +67,15 @@ describe "Opening files from a jar file" do
       expect(kernel_file.pos).to eq(50)
     end
   end
+
+  it "behaves like pread on real files" do
+    File.open("uri:classloader:jruby/kernel.rb") do |kernel_file|
+      read1 = kernel_file.pread(5, 0)
+      expect(kernel_file.pos).to eq(0)
+      kernel_file.seek(10)
+      expect(kernel_file.pread(5, 0)).to eq(read1)
+      expect(kernel_file.pos).to eq(10)
+      expect { kernel_file.pread(5, kernel_file.size) }.to raise_error(EOFError)
+    end
+  end
 end
