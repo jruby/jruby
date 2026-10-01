@@ -2988,7 +2988,7 @@ public class OpenFile implements Finalizable {
 
         SchedulerWaiter[] waiters;
         synchronized (schedulerWaiters) {
-            waiters = schedulerWaiters.toArray(new SchedulerWaiter[0]);
+            waiters = schedulerWaiters.toArray(SchedulerWaiter[]::new);
         }
 
         for (SchedulerWaiter waiter : waiters) {
