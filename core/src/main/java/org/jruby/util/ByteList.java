@@ -959,7 +959,7 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     @Override
     public boolean equals(Object other) {
         if (other == this) return true;
-        if (other instanceof ByteList) return equal((ByteList)other);
+        if (other instanceof ByteList bl) return equal(bl);
         return false;
     }
 
@@ -976,6 +976,8 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         if (hash != 0 && otherHash != 0 && hash != otherHash) return false;
         int realSize = this.realSize;
         if (realSize != other.realSize) return false;
+        Encoding encoding = this.encoding;
+        if (!encoding.equals(other.encoding)) return false;
 
         int first;
         int last = realSize;
