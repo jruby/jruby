@@ -331,6 +331,18 @@ describe "IO#write with Fiber scheduler" do
       writer.resume(IO::WRITABLE) while writer.alive?
     end
   end
+
+  it "lets another fiber write to the IO while one waits for it to become writable" do
+    writers = 2.times.map { Fiber.schedule { @w.write("y") } }
+
+    # the second writer waits on the IO or on the first writer, but through the scheduler
+    waits = Fiber.scheduler.events.select { |e| e[:event] == :io_wait || e[:event] == :block }
+    waits.map { |e| e[:fiber] }.should == writers
+
+    nil until @r.read_nonblock(65536, exception: false) == :wait_readable
+    writers.each { |f| f.resume(IO::WRITABLE) while f.alive? }
+    @r.read_nonblock(2).should == "yy"
+  end
 end
 
 platform_is :windows do
