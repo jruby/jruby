@@ -386,6 +386,13 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
         return new RubyArrayTwoObject(this);
     }
 
+    @Override
+    public IRubyObject[] toJavaArrayMaybeUnsafe() {
+        if (!packed()) return super.toJavaArrayMaybeUnsafe();
+
+        return new IRubyObject[] { car, cdr };
+    }
+
     private static final JavaSites.Array2Sites sites(ThreadContext context) {
         return context.sites.Array2;
     }
