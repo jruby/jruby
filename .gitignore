@@ -31,7 +31,6 @@ failures
 .redcar
 /.rbx/
 /build.properties
-build_graph.png
 core/src/main/java/org/jruby/runtime/Constants.java
 dependency-reduced-pom.xml
 dev_null

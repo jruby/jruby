@@ -81,14 +81,7 @@ project 'JRuby Integration Tests' do
                                     type: 'jar',
                                     overWrite: 'false',
                                     outputDirectory: 'target',
-                                    destFileName: 'junit.jar' },
-                                  { groupId: 'com.googlecode.jarjar',
-                                    artifactId: 'jarjar',
-                                    version: '1.1',
-                                    type: 'jar',
-                                    overWrite: 'false',
-                                    outputDirectory: 'target',
-                                    destFileName: 'jarjar.jar' }])
+                                    destFileName: 'junit.jar' }])
   end
 
   plugin(:deploy,

@@ -9,7 +9,6 @@ Complete documentation for building JRuby lives within [BUILDING.md](BUILDING.md
 ### Prerequisites
 
 1. A Java JDK version 21 or higher.
-2. Apache Ant available somewhere on the system (for test suites that require it).
 
 ## Building
 
