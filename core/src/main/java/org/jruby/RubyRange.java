@@ -1273,6 +1273,69 @@ public class RubyRange extends RubyObject {
     }
 
     @JRubyMethod
+    public IRubyObject clamp(ThreadContext context, IRubyObject range) {
+        RangeLike bounds = rangeValues(context, range);
+        if (bounds == null) throw typeError(context, range, "Range");
+
+        return clamp(context, bounds.begin, bounds.end, bounds.excl);
+    }
+
+    @JRubyMethod
+    public IRubyObject clamp(ThreadContext context, IRubyObject min, IRubyObject max) {
+        return clamp(context, min, max, false);
+    }
+
+    // MRI: range_clamp
+    private IRubyObject clamp(ThreadContext context, IRubyObject min, IRubyObject max, boolean excl) {
+        IRubyObject selfBeg = begin;
+        IRubyObject selfEnd = end;
+        boolean selfExcl = isExclusive;
+        int clampBeg = 0, clampEnd = 0;
+
+        if (!min.isNil() && !max.isNil() && rangeCmp(context, min, max) > 0) {
+            throw argumentError(context, "min argument must be less than or equal to max argument");
+        }
+
+        if (!min.isNil()) {
+            if (selfBeg.isNil() || rangeCmp(context, selfBeg, min) < 0) {
+                clampBeg = -1;
+                selfBeg = min;
+            }
+            if (!selfEnd.isNil() && rangeCmp(context, selfEnd, min) < 0) {
+                clampEnd = -1;
+                selfEnd = min;
+            }
+        }
+        if (!max.isNil()) {
+            if (clampBeg == 0 && !selfBeg.isNil() && rangeCmp(context, selfBeg, max) > 0) {
+                clampBeg = 1;
+                selfBeg = max;
+            }
+            if (clampEnd == 0) {
+                int cmp = selfEnd.isNil() ? 1 : rangeCmp(context, selfEnd, max);
+                if (cmp > 0) {
+                    clampEnd = 1;
+                    selfEnd = max;
+                    selfExcl = excl;
+                } else if (cmp == 0) {
+                    selfExcl |= excl;
+                }
+            }
+        }
+
+        // self is entirely outside the clamping bounds
+        if (clampBeg != 0 && clampBeg == clampEnd) selfExcl = true;
+
+        return newRange(context, selfBeg, selfEnd, selfExcl);
+    }
+
+    // MRI: r_cmp, raises ArgumentError if a and b are not comparable
+    private static int rangeCmp(ThreadContext context, IRubyObject a, IRubyObject b) {
+        JavaSites.RangeSites sites = sites(context);
+        return RubyComparable.cmpAndCmpint(context, sites.op_cmp, sites.op_gt, sites.op_lt, a, b);
+    }
+
+    @JRubyMethod
     public IRubyObject minmax(ThreadContext context, Block block) {
         if (block.isGiven()) return Helpers.invokeSuper(context, this, context.runtime.getRange(), "minmax", NULL_ARRAY, block);
 
