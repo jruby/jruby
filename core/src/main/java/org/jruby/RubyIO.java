@@ -5217,11 +5217,17 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         ByteList strByteList = string.getByteList();
         ByteBuffer wrap = ByteBuffer.wrap(strByteList.unsafeBytes(), strByteList.begin(), length);
-        int read = OpenFile.preadInternal(context, fptr, fd, wrap, from, length);
 
-        string.setReadLength(read);
+        boolean locked = fptr.lock();
+        try {
+            int read = OpenFile.preadInternal(context, fptr, fd, wrap, from, length);
 
-        return string;
+            string.setReadLength(read);
+
+            return string;
+        } finally {
+            if (locked) fptr.unlock();
+        }
     }
 
     @JRubyMethod(name = "pwrite")
@@ -5238,9 +5244,14 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         int length = strByteList.realSize();
         ByteBuffer wrap = ByteBuffer.wrap(strByteList.unsafeBytes(), strByteList.begin(), length);
 
-        int written = OpenFile.pwriteInternal(context, fptr, fd, wrap, off, length);
+        boolean locked = fptr.lock();
+        try {
+            int written = OpenFile.pwriteInternal(context, fptr, fd, wrap, off, length);
 
-        return asFixnum(context, written);
+            return asFixnum(context, written);
+        } finally {
+            if (locked) fptr.unlock();
+        }
     }
 
     @JRubyMethod(name = {"path", "to_path"})
