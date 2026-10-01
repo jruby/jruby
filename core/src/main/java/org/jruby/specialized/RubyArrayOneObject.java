@@ -274,4 +274,11 @@ public class RubyArrayOneObject extends RubyArraySpecialized {
 
         return new RubyArrayOneObject(this);
     }
+
+    @Override
+    public IRubyObject[] toJavaArrayMaybeUnsafe() {
+        if (!packed()) return super.toJavaArrayMaybeUnsafe();
+
+        return new IRubyObject[] { value };
+    }
 }
