@@ -5225,6 +5225,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             string.setReadLength(read);
 
             return string;
+        } catch (EOFError e) {
+            string.setReadLength(0);
+
+            throw e;
         } finally {
             if (locked) fptr.unlock();
         }
