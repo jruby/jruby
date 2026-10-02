@@ -1,6 +1,7 @@
 package org.jruby.ast;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.parser.ProductionState;
 
 import java.util.List;
 
@@ -47,5 +48,28 @@ public class InNode extends Node {
     @Override
     public NodeType getNodeType() {
         return NodeType.INNODE;
+    }
+
+    // ---- branch coverage: where the 'else' keyword following this clause starts (when nextCase is an else body) ----
+
+    private int elseStartLine = -1;
+    private int elseStartColumn = -1;
+
+    public void setElseStart(long elseStart) {
+        if (elseStart < 0) return;
+        elseStartLine = ProductionState.line(elseStart);
+        elseStartColumn = ProductionState.column(elseStart);
+    }
+
+    public boolean hasElseStart() {
+        return elseStartColumn >= 0;
+    }
+
+    public int getElseStartLine() {
+        return elseStartLine;
+    }
+
+    public int getElseStartColumn() {
+        return elseStartColumn;
     }
 }

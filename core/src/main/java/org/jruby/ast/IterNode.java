@@ -46,9 +46,6 @@ public class IterNode extends Node implements DefNode {
     
     // What static scoping relationship exists when it comes into being.
     private final StaticScope scope;
-    private int endLine;
-    private int startColumn = -1;
-    private int endColumn = -1;
 
     /**
      *  Used by ForNode only.
@@ -60,7 +57,7 @@ public class IterNode extends Node implements DefNode {
         this.varNode = args;
         this.scope = scope;
         this.bodyNode = body;
-        this.endLine = endLine;
+        setSourceSpan(-1, endLine, -1);
     }
 
     /**
@@ -72,7 +69,7 @@ public class IterNode extends Node implements DefNode {
         this.varNode = args;
         this.bodyNode = body == null ? NilImplicitNode.NIL : body;
         this.scope = scope;
-        this.endLine = endLine;
+        setSourceSpan(-1, endLine, -1);
     }
 
     public NodeType getNodeType() {
@@ -116,30 +113,4 @@ public class IterNode extends Node implements DefNode {
         return Node.createList(varNode, bodyNode);
     }
 
-    public int getEndLine() {
-        return endLine;
-    }
-
-    public int getStartColumn() {
-        return startColumn;
-    }
-
-    public int getEndColumn() {
-        return endColumn;
-    }
-
-    /**
-     * Record the source span of this block: from its opening brace or do keyword through its closing brace or
-     * end keyword. For a lambda: from the start of the parameter list, or just after "->" when there is none,
-     * through the end of the body.
-     *
-     * @param startColumn zero-based byte column of the first character
-     * @param endLine zero-based line of the last character
-     * @param endColumn zero-based byte column just after the last character
-     */
-    public void setSourceSpan(int startColumn, int endLine, int endColumn) {
-        this.startColumn = startColumn;
-        this.endLine = endLine;
-        this.endColumn = endColumn;
-    }
 }

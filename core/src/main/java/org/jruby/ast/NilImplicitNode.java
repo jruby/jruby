@@ -7,6 +7,11 @@ package org.jruby.ast;
  */
 public class NilImplicitNode extends NilNode implements InvisibleNode {
     public static final NilImplicitNode NIL = new NilImplicitNode();
+
+    @Override
+    public void setAutoSourceSpan(long start, long end) {
+        // shared singleton: it has no position of its own
+    }
     
     public NilImplicitNode() {
         super(-1);

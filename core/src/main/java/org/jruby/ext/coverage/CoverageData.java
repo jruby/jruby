@@ -114,6 +114,13 @@ public class CoverageData {
     }
 
     /**
+     * True when branches are counted (branches mode).
+     */
+    public boolean isBranchesEnabled() {
+        return (mode & BRANCHES) != 0;
+    }
+
+    /**
      * Data collected so far, by file name. Null when Coverage is not set up.
      */
     public Map<String, FileCoverage> getCoverage() {
@@ -242,11 +249,16 @@ public class CoverageData {
      * Register a file that was just parsed. Every file parsed while Coverage is set up gets a {@link FileCoverage},
      * which makes it appear in Coverage.result. Line counts are only prepared in lines mode.
      *
+     * <p>A file loaded again starts its line and branch counts over, as in MRI, where the new code gets new
+     * counters. An eval naming a file that was already parsed counts into that file's entry instead. Method entries
+     * are kept either way: MRI sums the calls of all the methods defined at the same place.</p>
+     *
      * @param filename the parsed file
      * @param startingLines per-line counts from the parser (-1 for lines without code). Ignored unless lines are counted.
+     * @param eval whether the code was parsed for an eval rather than loaded from the file
      * @return the file's entry. Null when Coverage is not set up or the file has no name.
      */
-    public synchronized FileCoverage prepareCoverage(String filename, int[] startingLines) {
+    public synchronized FileCoverage prepareCoverage(String filename, int[] startingLines, boolean eval) {
         Map<String, FileCoverage> coverage = this.coverage;
 
         if (filename == null) {
@@ -262,15 +274,17 @@ public class CoverageData {
         if (file == null) {
             file = new FileCoverage();
             coverage.put(filename, file);
+        } else if (!eval) {
+            file.restart();
         }
 
         if (isLinesEnabled()) {
-            if (isOneshot()) {
-                file.setLines(new IntList());
-            } else {
-                IntList existing = file.getLines();
+            IntList existing = file.getLines();
 
-                // Two files with the same path and name just overlay the coverage...weird but true.
+            if (isOneshot()) {
+                if (existing == null) file.setLines(new IntList());
+            } else {
+                // an eval adds its lines to those of the file it names
                 file.setLines(existing == null ? new IntList(startingLines) : mergeLines(existing, startingLines));
             }
         }
@@ -314,21 +328,23 @@ public class CoverageData {
      * <p>Entries that only forward to another entry (aliases, visibility changes of inherited methods) get no
      * counter. Their calls count toward the entry they forward to, as in MRI.</p>
      *
-     * @param id the name the entry is added under, which MRI keys it by. Not always the name the underlying
-     *           method carries: define_method(:new, old_method) copies old_method, and the copy keeps its name.
+     * <p>The entry is keyed by the name of the method it runs, as MRI keys it by the method's original_id. That
+     * is not always the name it is added under: define_method(:new, old_method) adds a copy of old_method, which
+     * keeps its name.</p>
+     *
      * @param method the entry being added, after any wrapping or duplication done by the module
      */
-    public void registerMethod(String id, DynamicMethod method) {
+    public void registerMethod(DynamicMethod method) {
         // Every method entry in the process comes through here whenever coverage is set up, so decide without
         // taking the lock that coverLine holds: in lines-only mode there is nothing to do.
         if (!isMethodsEnabled() || this.coverage == null) return;
 
         if (method instanceof AliasMethod || method instanceof PartialDelegatingMethod || method instanceof MethodMethod) return;
 
-        registerMethodLocked(id, method);
+        registerMethodLocked(method);
     }
 
-    private synchronized void registerMethodLocked(String id, DynamicMethod method) {
+    private synchronized void registerMethodLocked(DynamicMethod method) {
         Map<String, FileCoverage> coverage = this.coverage;
         if (coverage == null) return;
 
@@ -355,7 +371,7 @@ public class CoverageData {
         int endLine = scope.getEndLine();
         if (endLine >= 0) endLine++;
 
-        MethodCoverage methodCoverage = new MethodCoverage(real, scope, owner.getOrigin(), id,
+        MethodCoverage methodCoverage = new MethodCoverage(real, scope, owner.getOrigin(), real.getName(),
                 startLine, scope.getStartColumn(), endLine, scope.getEndColumn());
 
         file.getMethods().add(methodCoverage);

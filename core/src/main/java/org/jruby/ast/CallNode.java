@@ -129,6 +129,13 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
     public boolean isLazy() {
         return isLazy;
     }
+
+    @Override
+    public void setAutoSourceSpan(long start, long end) {
+        // the call keeps the span of the production that created it; a block attached by an enclosing
+        // production is not part of the call's own source (as MRI reports it)
+        if (!hasSourceSpan()) super.setAutoSourceSpan(start, end);
+    }
     
     public List<Node> childNodes() {
         return Node.createList(receiverNode, argsNode, iterNode);

@@ -58,6 +58,7 @@ public abstract class IRVisitor {
     public void CheckForLJEInstr(CheckForLJEInstr checkforljeinstr) { error(checkforljeinstr); }
     public void ClassSuperInstr(ClassSuperInstr classsuperinstr) { error(classsuperinstr); }
     public void CopyInstr(CopyInstr copyinstr) { error(copyinstr); }
+    public void CoverBranchInstr(CoverBranchInstr coverbranchinstr) { error(coverbranchinstr); }
     public void CoverMethodInstr(CoverMethodInstr covermethodinstr) { error(covermethodinstr); }
     public void DefineClassInstr(DefineClassInstr defineclassinstr) { error(defineclassinstr); }
     public void DefineClassMethodInstr(DefineClassMethodInstr defineclassmethodinstr) { error(defineclassmethodinstr); }
