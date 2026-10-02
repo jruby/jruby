@@ -741,6 +741,53 @@ public abstract class RubyParserBase {
         return node;
     }
 
+    /**
+     * CRuby's nd_set_first_loc: the node starts at line. Our nodes only have a line, so that is what moves. An
+     * undef_list is a BlockNode of UndefNodes here (one NODE_UNDEF in CRuby), so its first statement starts there
+     * too.
+     */
+    public Node nd_set_first_loc(Node node, int line) {
+        if (node instanceof BlockNode block) block.get(0).setLine(line);
+        node.setLine(line);
+
+        return node;
+    }
+
+    /**
+     * CRuby's nd_set_loc, for the line: the node starts at line.
+     */
+    public Node nd_set_loc(Node node, int line) {
+        node.setLine(line);
+
+        return node;
+    }
+
+    /**
+     * CRuby's make_list, for the line: a list literal starts at line, not at its first element.
+     */
+    public Node make_list(Node list, int line) {
+        if (list == null) return new ZArrayNode(line);
+
+        list.setLine(line);
+
+        return list;
+    }
+
+    /**
+     * CRuby's nd_unset_fl_newline, for the statements of a string interpolation: a lone statement there is not a
+     * line event of its own; the string it is part of is. Several statements each remain one, and so does a lone
+     * conditional, as MRI counts its branches.
+     *
+     * CRuby's compiler finds coverable lines from the newline flag, but JRuby marks them as it parses, and
+     * newline_node marked this statement's line already (the last line it marked), so that is undone too.
+     */
+    public void nd_unset_fl_newline(Node node) {
+        if (node instanceof IfNode) return;
+
+        if (node.isNewline()) uncoverLastLine();
+        node.unsetNewline();
+    }
+
     // This is the last node made in the AST unintuitively so so post-processing can occur here.
     public Node addRootNode(Node topOfAST) {
         int line;
@@ -2473,10 +2520,6 @@ public abstract class RubyParserBase {
         }
 
         return node;
-    }
-
-    public void nd_set_first_loc(Node node, int line) {
-        // FIXME: IMPL
     }
 
     public RubyParserResult parse() throws IOException {

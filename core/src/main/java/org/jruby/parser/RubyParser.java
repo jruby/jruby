@@ -2207,10 +2207,7 @@ states[29] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
 };
 states[30] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    /* The statement starts at undef, not at the first name it undefines*/
-                    if (((Node)yyVals[0+yyTop].value) instanceof BlockNode block) block.get(0).setLine(yyVals[yyTop - count + 1].start());
-                    ((Node)yyVals[0+yyTop].value).setLine(yyVals[yyTop - count + 1].start());
-                    yyVal = ((Node)yyVals[0+yyTop].value);
+                    yyVal = p.nd_set_first_loc(((Node)yyVals[0+yyTop].value), yyVals[yyTop - count + 1].start());
                     /*% %*/
                     /*% ripper: undef!($2) %*/
   return yyVal;
@@ -4162,22 +4159,15 @@ states[358] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[359] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    Integer position = yyVals[yyTop - count + 1].start();
-                    if (((Node)yyVals[-1+yyTop].value) == null) {
-                        yyVal = new ZArrayNode(position); /* zero length array */
-                    } else {
-                        yyVal = ((Node)yyVals[-1+yyTop].value);
-                        ((Node)yyVal).setLine(position); /* where it starts, not where its first element is */
-                    }
+                    yyVal = p.make_list(((Node)yyVals[-1+yyTop].value), yyVals[yyTop - count + 1].start());
                     /*% %*/
                     /*% ripper: array!(escape_Qundef($2)) %*/
   return yyVal;
 };
 states[360] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = ((HashNode)yyVals[-1+yyTop].value);
+                    yyVal = p.nd_set_loc(((HashNode)yyVals[-1+yyTop].value), yyVals[yyTop - count + 1].start());
                     ((HashNode)yyVal).setIsLiteral();
-                    ((HashNode)yyVal).setLine(yyVals[yyTop - count + 1].start());
                     /*% %*/
                     /*% ripper: hash!(escape_Qundef($2)) %*/
   return yyVal;
@@ -5763,7 +5753,7 @@ states[632] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[633] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     p.heredoc_dedent(((Node)yyVals[-1+yyTop].value));
-                    if (((Node)yyVals[-1+yyTop].value) != null) ((Node)yyVals[-1+yyTop].value).setLine(yyVals[yyTop - count + 1].start()); /* where it starts, not where its contents end */
+                    if (((Node)yyVals[-1+yyTop].value) != null) p.nd_set_loc(((Node)yyVals[-1+yyTop].value), yyVals[yyTop - count + 1].start());
                     yyVal = ((Node)yyVals[-1+yyTop].value);
                     /*% %*/
                     /*% ripper: string_literal!(heredoc_dedent(p, $2)) %*/
@@ -5799,8 +5789,7 @@ states[636] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[638] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = ((ListNode)yyVals[-1+yyTop].value);
-                    ((Node)yyVal).setLine(yyVals[yyTop - count + 1].start());
+                    yyVal = p.make_list(((ListNode)yyVals[-1+yyTop].value), yyVals[yyTop - count + 1].start());
                     /*% %*/
                     /*% ripper: array!($3) %*/
   return yyVal;
@@ -5833,8 +5822,7 @@ states[642] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[643] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = ((ListNode)yyVals[-1+yyTop].value);
-                    ((Node)yyVal).setLine(yyVals[yyTop - count + 1].start());
+                    yyVal = p.make_list(((ListNode)yyVals[-1+yyTop].value), yyVals[yyTop - count + 1].start());
                     /*% %*/
                     /*% ripper: array!($3) %*/
   return yyVal;
@@ -5855,16 +5843,14 @@ states[645] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[646] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = ((ListNode)yyVals[-1+yyTop].value);
-                    ((Node)yyVal).setLine(yyVals[yyTop - count + 1].start());
+                    yyVal = p.make_list(((ListNode)yyVals[-1+yyTop].value), yyVals[yyTop - count + 1].start());
                     /*% %*/
                     /*% ripper: array!($3) %*/
   return yyVal;
 };
 states[647] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = ((ListNode)yyVals[-1+yyTop].value);
-                    ((Node)yyVal).setLine(yyVals[yyTop - count + 1].start());
+                    yyVal = p.make_list(((ListNode)yyVals[-1+yyTop].value), yyVals[yyTop - count + 1].start());
                     /*% %*/
                     /*% ripper: array!($3) %*/
   return yyVal;
@@ -5996,17 +5982,7 @@ states[665] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                    p.setHeredocLineIndent(-1);
 
                    /*%%%*/
-                   if (((Node)yyVals[-1+yyTop].value) != null) {
-                       /* A lone statement in an interpolation is not a line event of its own (MRI); the*/
-                       /* string it is part of is. Several statements in one interpolation each remain one, and so*/
-                       /* does a lone conditional, as MRI counts its branches.*/
-                       /* MRI's compiler marks coverable lines from the newline flag, but newline_node marked*/
-                       /* this one already, so undo that too (it was the last line newline_node marked).*/
-                       if (!(((Node)yyVals[-1+yyTop].value) instanceof IfNode)) {
-                           if (((Node)yyVals[-1+yyTop].value).isNewline()) p.uncoverLastLine();
-                           ((Node)yyVals[-1+yyTop].value).unsetNewline();
-                       }
-                   }
+                   if (((Node)yyVals[-1+yyTop].value) != null) p.nd_unset_fl_newline(((Node)yyVals[-1+yyTop].value));
                    yyVal = p.newEvStrNode(yyVals[yyTop - count + 6].start(), ((Node)yyVals[-1+yyTop].value));
                    /*% %*/
                    /*% ripper: string_embexpr!($6) %*/
@@ -6929,7 +6905,7 @@ states[826] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4925 "parse.y"
+					// line 4901 "parse.y"
 
 }
-					// line 15267 "-"
+					// line 15243 "-"

@@ -620,10 +620,7 @@ stmt            : keyword_alias fitem {
                 }
                 | keyword_undef undef_list {
                     /*%%%*/
-                    // The statement starts at undef, not at the first name it undefines
-                    if ($2 instanceof BlockNode block) block.get(0).setLine(@1.start());
-                    $2.setLine(@1.start());
-                    $$ = $2;
+                    $$ = p.nd_set_first_loc($2, @1.start());
                     /*% %*/
                     /*% ripper: undef!($2) %*/
                 }
@@ -2361,21 +2358,14 @@ primary         : literal
                 }
                 | tLBRACK aref_args ']' {
                     /*%%%*/
-                    Integer position = @1.start();
-                    if ($2 == null) {
-                        $$ = new ZArrayNode(position); /* zero length array */
-                    } else {
-                        $$ = $2;
-                        $<Node>$.setLine(position); /* where it starts, not where its first element is */
-                    }
+                    $$ = p.make_list($2, @1.start());
                     /*% %*/
                     /*% ripper: array!(escape_Qundef($2)) %*/
                 }
                 | tLBRACE assoc_list '}' {
                     /*%%%*/
-                    $$ = $2;
+                    $$ = p.nd_set_loc($2, @1.start());
                     $<HashNode>$.setIsLiteral();
-                    $<HashNode>$.setLine(@1.start());
                     /*% %*/
                     /*% ripper: hash!(escape_Qundef($2)) %*/
                 }
@@ -3864,7 +3854,7 @@ string          : tCHAR {
 string1         : tSTRING_BEG string_contents tSTRING_END {
                     /*%%%*/
                     p.heredoc_dedent($2);
-                    if ($2 != null) $2.setLine(@1.start()); /* where it starts, not where its contents end */
+                    if ($2 != null) p.nd_set_loc($2, @1.start());
                     $$ = $2;
                     /*% %*/
                     /*% ripper: string_literal!(heredoc_dedent(p, $2)) %*/
@@ -3903,8 +3893,7 @@ words_sep       : ' ' {
 // [!null] - ListNode
 words           : tWORDS_BEG words_sep word_list tSTRING_END {
                     /*%%%*/
-                    $$ = $3;
-                    $<Node>$.setLine(@1.start());
+                    $$ = p.make_list($3, @1.start());
                     /*% %*/
                     /*% ripper: array!($3) %*/
                 };
@@ -3938,8 +3927,7 @@ word            : string_content {
 
 symbols         : tSYMBOLS_BEG words_sep symbol_list tSTRING_END {
                     /*%%%*/
-                    $$ = $3;
-                    $<Node>$.setLine(@1.start());
+                    $$ = p.make_list($3, @1.start());
                     /*% %*/
                     /*% ripper: array!($3) %*/
                 };
@@ -3960,8 +3948,7 @@ symbol_list     : /* none */ {
 // [!null] - ListNode
 qwords          : tQWORDS_BEG words_sep qword_list tSTRING_END {
                     /*%%%*/
-                    $$ = $3;
-                    $<Node>$.setLine(@1.start());
+                    $$ = p.make_list($3, @1.start());
                     /*% %*/
                     /*% ripper: array!($3) %*/
                 };
@@ -3969,8 +3956,7 @@ qwords          : tQWORDS_BEG words_sep qword_list tSTRING_END {
 // [!null] - ListNode
 qsymbols        : tQSYMBOLS_BEG words_sep qsym_list tSTRING_END {
                     /*%%%*/
-                    $$ = $3;
-                    $<Node>$.setLine(@1.start());
+                    $$ = p.make_list($3, @1.start());
                     /*% %*/
                     /*% ripper: array!($3) %*/
                 };
@@ -4091,17 +4077,7 @@ string_content  : tSTRING_CONTENT {
                    p.setHeredocLineIndent(-1);
 
                    /*%%%*/
-                   if ($6 != null) {
-                       // A lone statement in an interpolation is not a line event of its own (MRI); the
-                       // string it is part of is. Several statements in one interpolation each remain one, and so
-                       // does a lone conditional, as MRI counts its branches.
-                       // MRI's compiler marks coverable lines from the newline flag, but newline_node marked
-                       // this one already, so undo that too (it was the last line newline_node marked).
-                       if (!($6 instanceof IfNode)) {
-                           if ($6.isNewline()) p.uncoverLastLine();
-                           $6.unsetNewline();
-                       }
-                   }
+                   if ($6 != null) p.nd_unset_fl_newline($6);
                    $$ = p.newEvStrNode(@6.start(), $6);
                    /*% %*/
                    /*% ripper: string_embexpr!($6) %*/
