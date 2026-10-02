@@ -178,7 +178,7 @@ public class AnnotationBinder extends AbstractProcessor {
             Map<Set<FrameField>, List<String>> writeGroups = new HashMap<>();
 
             List<ExecutableElement> methods = ElementFilter.methodsIn(cd.getEnclosedElements());
-            methods.sort((m1, m2) -> m1.toString().compareTo(m2.toString())); // e.g.
+            methods.sort(Comparator.comparing(Object::toString)); // e.g.
             // "methodName(org.jruby.runtime.ThreadContext,org.jruby.runtime.builtin.IRubyObject)"
 
             int methodCount = 0;
