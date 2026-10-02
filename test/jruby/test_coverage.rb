@@ -231,16 +231,17 @@ class TestCoverage < Test::Unit::TestCase
     end
   end
 
-  # define_method(name, method_object) binds a copy that keeps its own name. MRI keys the entry by the name it
-  # was defined under, not the name it was copied from.
-  def test_method_coverage_keys_define_method_from_method_object_by_its_new_name
+  # define_method(name, method_object) binds a copy that keeps its own name. MRI keys the entry by that name (the
+  # method's original_id), not the name the copy was defined under.
+  def test_method_coverage_keys_define_method_from_method_object_by_its_original_name
     source = "class Covered\n  def original; end\nend\nclass Sub < Covered\n  define_method(:renamed, instance_method(:original))\nend\n"
     with_source(source) do |path|
       Coverage.start(methods: true)
       load path
       Sub.new.renamed
       methods = Coverage.result[path][:methods]
-      assert_equal 1, methods[key(Sub, :renamed, 2, 'def', 'end')]
+      assert_equal 1, methods[key(Sub, :original, 2, 'def', 'end')]
+      assert_nil methods[key(Sub, :renamed, 2, 'def', 'end')]
       assert_equal 0, methods[key(Covered, :original, 2, 'def', 'end')]
     end
   end

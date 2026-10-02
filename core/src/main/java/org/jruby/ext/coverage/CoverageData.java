@@ -321,21 +321,23 @@ public class CoverageData {
      * <p>Entries that only forward to another entry (aliases, visibility changes of inherited methods) get no
      * counter. Their calls count toward the entry they forward to, as in MRI.</p>
      *
-     * @param id the name the entry is added under, which MRI keys it by. Not always the name the underlying
-     *           method carries: define_method(:new, old_method) copies old_method, and the copy keeps its name.
+     * <p>The entry is keyed by the name of the method it runs, as MRI keys it by the method's original_id. That
+     * is not always the name it is added under: define_method(:new, old_method) adds a copy of old_method, which
+     * keeps its name.</p>
+     *
      * @param method the entry being added, after any wrapping or duplication done by the module
      */
-    public void registerMethod(String id, DynamicMethod method) {
+    public void registerMethod(DynamicMethod method) {
         // Every method entry in the process comes through here whenever coverage is set up, so decide without
         // taking the lock that coverLine holds: in lines-only mode there is nothing to do.
         if (!isMethodsEnabled() || this.coverage == null) return;
 
         if (method instanceof AliasMethod || method instanceof PartialDelegatingMethod || method instanceof MethodMethod) return;
 
-        registerMethodLocked(id, method);
+        registerMethodLocked(method);
     }
 
-    private synchronized void registerMethodLocked(String id, DynamicMethod method) {
+    private synchronized void registerMethodLocked(DynamicMethod method) {
         Map<String, FileCoverage> coverage = this.coverage;
         if (coverage == null) return;
 
@@ -362,7 +364,7 @@ public class CoverageData {
         int endLine = scope.getEndLine();
         if (endLine >= 0) endLine++;
 
-        MethodCoverage methodCoverage = new MethodCoverage(real, scope, owner.getOrigin(), id,
+        MethodCoverage methodCoverage = new MethodCoverage(real, scope, owner.getOrigin(), real.getName(),
                 startLine, scope.getStartColumn(), endLine, scope.getEndColumn());
 
         file.getMethods().add(methodCoverage);
