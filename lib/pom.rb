@@ -66,7 +66,6 @@ default_gems = [
   # Not ready to ship in the box yet (native dependencies)
   # ['prism', '1.9.0'],
   ['psych', '5.5.0'],
-  ['rake-ant', '1.0.6'],
   ['resolv', '0.8.0'],
   ['ruby2_keywords', '0.0.5'],
   ['securerandom', '0.4.1'],
