@@ -731,6 +731,14 @@ public class LoadService {
         return librarySearcher.findLibraryForLoad(file);
     }
 
+    /**
+     * Whether this thread holds the require lock for the given key.
+     */
+    public boolean isRequiring(String key) {
+        RequireLocks.RequireLock lock = requireLocks.pool.get(key);
+        return lock != null && lock.isHeldByCurrentThread();
+    }
+
     public boolean featureAlreadyLoaded(String feature) {
         return librarySearcher.featureAlreadyLoaded(feature, null);
     }

@@ -6578,10 +6578,13 @@ public class RubyModule extends RubyObject {
                 // This method needs to be synchronized for removing Autoload
                 // from autoloadMap when it's loaded.
                 LoadService loadService = loadService(context);
-                if (loadService.featureAlreadyLoaded(path.asJavaString())) {
-                    // Nothing to load here: the feature is loaded, or a direct require of it is in
-                    // progress. Keeping the claim would make that require's definition of the
-                    // constant look like this autoload's own and leave UNDEF in the constant table.
+                String[] loading = new String[1];
+                // If another thread is still requiring the file, autoloadRequire waits for it.
+                if (loadService.featureAlreadyLoaded(path.asJavaString(), loading) &&
+                        (loading[0] == null || loadService.isRequiring(loading[0]))) {
+                    // Nothing to load: the file is loaded, or this thread is requiring it. Clear ctx, or that
+                    // require's definition of the constant would be kept as this autoload's value and never
+                    // reach the constant table.
                     this.ctx = null;
                 } else if (loadService.autoloadRequire(path)) {
                     // Do not finish autoloading by cyclic autoload
