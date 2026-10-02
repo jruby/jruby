@@ -1,5 +1,6 @@
 package org.jruby.prism.parser;
 
+import jnr.ffi.Pointer;
 import org.jruby.Ruby;
 import org.jruby.management.ParserStats;
 
@@ -15,8 +16,7 @@ public class ParserPrismNative extends ParserPrismBase {
         long time = 0;
         if (parserTiming) time = System.nanoTime();
 
-        ParserBindingPrism.Buffer buffer = new ParserBindingPrism.Buffer(jnr.ffi.Runtime.getRuntime(prismLibrary));
-        prismLibrary.pm_buffer_init(buffer);
+        Pointer buffer = prismLibrary.pm_buffer_new();
         prismLibrary.pm_serialize_parse(buffer, source, sourceLength, metadata);
         if (parserTiming) {
             ParserStats stats = runtime.getParserManager().getParserStats();
@@ -24,14 +24,18 @@ public class ParserPrismNative extends ParserPrismBase {
             stats.addPrismTimeCParseSerialize(System.nanoTime() - time);
         }
 
-        int length = buffer.length.intValue();
-        byte[] src = new byte[length];
-        buffer.value.get().get(0, src, 0, length);
+        Pointer serialized = prismLibrary.pm_buffer_value(buffer);
+        int length = prismLibrary.pm_buffer_length(buffer);
 
-        return src;
+        byte[] result = new byte[length];
+        serialized.get(0, result, 0, length);
+
+        prismLibrary.pm_buffer_free(buffer);
+
+        return result;
     }
 
     public void close() {
-        // not relevant to the JNI extension
+
     }
 }
