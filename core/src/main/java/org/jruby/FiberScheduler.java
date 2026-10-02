@@ -5,6 +5,7 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
+import org.jruby.util.io.OpenFile;
 
 import java.nio.ByteBuffer;
 
@@ -47,9 +48,22 @@ public class FiberScheduler {
         return Helpers.invoke(context, scheduler, "unblock", blocker, fiber);
     }
 
-    // MRI: rb_fiber_scheduler_io_wait
+    // MRI: rb_fiber_scheduler_io_wait, which registers the wait so closing the IO can interrupt it
     public static IRubyObject ioWait(ThreadContext context, IRubyObject scheduler, IRubyObject io, IRubyObject events, IRubyObject timeout) {
-        return Helpers.invoke(context, scheduler, "io_wait", io, events, timeout);
+        OpenFile fptr = io instanceof RubyIO rubyIO ? rubyIO.getOpenFile() : null;
+        if (fptr == null) return Helpers.invoke(context, scheduler, "io_wait", io, events, timeout);
+
+        OpenFile.SchedulerWaiter waiter = fptr.addSchedulerWaiter(scheduler, context.getFiberCurrentThread(), context.getFiber());
+        try {
+            return Helpers.invoke(context, scheduler, "io_wait", io, events, timeout);
+        } finally {
+            fptr.removeSchedulerWaiter(waiter);
+        }
+    }
+
+    // MRI: rb_fiber_scheduler_fiber_interrupt, which returns undef (null here) if the scheduler has no fiber_interrupt
+    public static IRubyObject fiberInterrupt(ThreadContext context, IRubyObject scheduler, IRubyObject fiber, IRubyObject exception) {
+        return Helpers.invokeChecked(context, scheduler, "fiber_interrupt", fiber, exception);
     }
 
     // MRI: rb_fiber_scheduler_io_wait_readable
