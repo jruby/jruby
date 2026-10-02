@@ -2717,7 +2717,7 @@ public abstract class RubyParserBase {
         // the file is registered in every mode; the line array is filled only in lines mode
         if (isLineCountingEnabled()) growCoverageLines(lines);
         CoverageData data = runtime.getCoverageData();
-        data.prepareCoverage(file, coverage);
+        data.prepareCoverage(file, coverage, isEval());
         return data;
     }
 

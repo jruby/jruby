@@ -98,6 +98,17 @@ public final class FileCoverage {
     }
 
     /**
+     * Start the line and branch counts over, for a file that is loaded again. The branch targets stay registered,
+     * since code from the earlier load still finds its targets by index, but their constructs are no longer
+     * reported: the new code declares its own.
+     */
+    synchronized void restart() {
+        lines = null;
+        branches.clear();
+        branchesByKey.clear();
+    }
+
+    /**
      * The branching constructs in declaration order.
      */
     public List<BranchCoverage> getBranches() {

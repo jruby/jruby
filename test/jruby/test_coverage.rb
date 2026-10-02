@@ -487,10 +487,10 @@ class TestCoverage < Test::Unit::TestCase
       Coverage.start(branches: true)
       load path
       Reloaded.new.sign(1)
-      load path                                    # the same branches, declared again: counts continue
+      load path                                    # loading the file again starts its counts over, as in MRI
       Reloaded.new.sign(-1)
       branches = Coverage.result[path][:branches]
-      assert_equal({ [:if, 0, 2, 29, 2, 48] => { [:then, 1, 2, 37, 2, 41] => 1, [:else, 2, 2, 44, 2, 48] => 1 } }, branches)
+      assert_equal({ [:if, 0, 2, 29, 2, 48] => { [:then, 1, 2, 37, 2, 41] => 1, [:else, 2, 2, 44, 2, 48] => 0 } }, branches)
     end
   ensure
     Object.send(:remove_const, :Reloaded) if Object.const_defined?(:Reloaded, false)

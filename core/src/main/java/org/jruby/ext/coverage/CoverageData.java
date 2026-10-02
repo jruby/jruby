@@ -249,11 +249,16 @@ public class CoverageData {
      * Register a file that was just parsed. Every file parsed while Coverage is set up gets a {@link FileCoverage},
      * which makes it appear in Coverage.result. Line counts are only prepared in lines mode.
      *
+     * <p>A file loaded again starts its line and branch counts over, as in MRI, where the new code gets new
+     * counters. An eval naming a file that was already parsed counts into that file's entry instead. Method entries
+     * are kept either way: MRI sums the calls of all the methods defined at the same place.</p>
+     *
      * @param filename the parsed file
      * @param startingLines per-line counts from the parser (-1 for lines without code). Ignored unless lines are counted.
+     * @param eval whether the code was parsed for an eval rather than loaded from the file
      * @return the file's entry. Null when Coverage is not set up or the file has no name.
      */
-    public synchronized FileCoverage prepareCoverage(String filename, int[] startingLines) {
+    public synchronized FileCoverage prepareCoverage(String filename, int[] startingLines, boolean eval) {
         Map<String, FileCoverage> coverage = this.coverage;
 
         if (filename == null) {
@@ -269,15 +274,17 @@ public class CoverageData {
         if (file == null) {
             file = new FileCoverage();
             coverage.put(filename, file);
+        } else if (!eval) {
+            file.restart();
         }
 
         if (isLinesEnabled()) {
-            if (isOneshot()) {
-                file.setLines(new IntList());
-            } else {
-                IntList existing = file.getLines();
+            IntList existing = file.getLines();
 
-                // Two files with the same path and name just overlay the coverage...weird but true.
+            if (isOneshot()) {
+                if (existing == null) file.setLines(new IntList());
+            } else {
+                // an eval adds its lines to those of the file it names
                 file.setLines(existing == null ? new IntList(startingLines) : mergeLines(existing, startingLines));
             }
         }
