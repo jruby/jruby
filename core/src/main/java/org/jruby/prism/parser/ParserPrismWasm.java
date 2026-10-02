@@ -3,7 +3,7 @@ package org.jruby.prism.parser;
 import org.jruby.Ruby;
 import org.ruby_lang.prism.wasm.Prism;
 
-public class ParserPrismWasm extends ParserPrismBase {
+public class ParserPrismWasm extends ParserPrismBase implements AutoCloseable {
     private final Prism prism = new Prism();
 
     public ParserPrismWasm(Ruby runtime) {
@@ -12,5 +12,10 @@ public class ParserPrismWasm extends ParserPrismBase {
 
     protected synchronized byte[] parse(byte[] source, int sourceLength, byte[] metadata) {
         return prism.parse(source, 0, sourceLength, metadata);
+    }
+
+    public void close() {
+        // terminate WASM runtime
+        prism.close();
     }
 }

@@ -191,4 +191,8 @@ public class ParserManager {
     public ParseResult addGetsLoop(Ruby runtime, ParseResult oldRoot, boolean printing, boolean processLineEndings, boolean split) {
         return parser.addGetsLoop(runtime, oldRoot, printing, processLineEndings, split);
     }
+
+    public void tearDown() {
+        parser.close();
+    }
 }
