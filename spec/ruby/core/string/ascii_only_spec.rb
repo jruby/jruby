@@ -59,6 +59,18 @@ describe "String#ascii_only?" do
     "\x78\x00".dup.force_encoding("UTF-16LE").ascii_only?.should be_false
   end
 
+  it "returns true when interpolating non-String objects into an ASCII only String" do
+    "abc#{1}def".ascii_only?.should be_true
+    "abc#{:sym}def".ascii_only?.should be_true
+    "abc#{1.5}def".ascii_only?.should be_true
+  end
+
+  it "returns false when interpolating a non-String object into a non-ASCII String" do
+    interp = "café#{1}!"
+    interp.ascii_only?.should be_false
+    interp.valid_encoding?.should be_true
+  end
+
   it "returns false when interpolating non ascii strings" do
     base = "EU currency is".dup.force_encoding(Encoding::US_ASCII)
     euro = "\u20AC"
