@@ -299,7 +299,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         if (node == null) return null;
 
         boolean savedExecuteOnce = executesOnce;
-        buildDepth++;
+        if (lineNumberInfo != null) lineNumberInfo.enter();
         try {
             if (executesOnce) executesOnce = node.executesOnce();
 
@@ -311,7 +311,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
 
             return operand;
         } finally {
-            buildDepth--;
+            if (lineNumberInfo != null) lineNumberInfo.exit();
             executesOnce = savedExecuteOnce;
         }
     }
