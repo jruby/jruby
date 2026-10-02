@@ -20,6 +20,7 @@ class AddrinfoTest < Test::Unit::TestCase
       @addrs = []  
     end
   end
+  private :getaddrs
 
   def test_link_afamily_pfamily
     # at least one address (loopback link interface) is AF/PF_UNSPEC
