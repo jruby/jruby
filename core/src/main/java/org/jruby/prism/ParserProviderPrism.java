@@ -1,6 +1,7 @@
 package org.jruby.prism;
 
 import jnr.ffi.LibraryLoader;
+import jnr.ffi.Pointer;
 import org.jruby.Ruby;
 import org.jruby.ir.builder.IRBuilderFactory;
 import org.jruby.parser.Parser;
@@ -25,7 +26,8 @@ public class ParserProviderPrism implements ParserProvider {
             prismLibrary = LibraryLoader.create(ParserBindingPrism.class).load(path);
             // We do something extra here as a side-effect which is how we get an UnsatisfiedLinkError
             // If the library didn't in fact find the .so or has other loading problems.
-            ParserBindingPrism.Buffer buffer = new ParserBindingPrism.Buffer(jnr.ffi.Runtime.getRuntime(prismLibrary));
+            Pointer buffer = prismLibrary.pm_buffer_new();
+            prismLibrary.pm_buffer_free(buffer);
         } else {
             prismLibrary = null;
         }
