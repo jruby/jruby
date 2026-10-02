@@ -30,4 +30,8 @@ public class ParserPrismNative extends ParserPrismBase {
 
         return src;
     }
+
+    public void close() {
+        // not relevant to the JNI extension
+    }
 }
