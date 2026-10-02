@@ -465,6 +465,14 @@ public abstract class LexingCommon {
         return ruby_sourceline + src.getLineOffset();
     }
 
+    /**
+     * The last line read so far. Unlike lineno(), this is past a heredoc that ends the source: lineno() is still on
+     * the line the heredoc started on, until the lexer reads the next line.
+     */
+    public int lastLineno() {
+        return Math.max(ruby_sourceline, heredoc_end) + src.getLineOffset();
+    }
+
     protected void magicCommentEncoding(ByteList encoding) {
         if (!comment_at_top()) return;
 

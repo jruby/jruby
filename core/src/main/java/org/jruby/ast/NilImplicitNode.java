@@ -20,4 +20,13 @@ public class NilImplicitNode extends NilNode implements InvisibleNode {
     public boolean isNil() {
         return true;
     }
+
+    // NIL is shared by every parse, so marking it for one AST would mark it in all later ones.
+    @Override
+    public void setNewline() {
+    }
+
+    @Override
+    public void setLine(int line) {
+    }
 }

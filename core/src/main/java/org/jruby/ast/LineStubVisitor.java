@@ -3,6 +3,7 @@ package org.jruby.ast;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyFixnum;
+import org.jruby.ast.util.LineEvents;
 import org.jruby.ast.visitor.AbstractNodeVisitor;
 
 public class LineStubVisitor extends AbstractNodeVisitor {
@@ -15,7 +16,7 @@ public class LineStubVisitor extends AbstractNodeVisitor {
     }
     @Override
     protected Object defaultVisit(Node node) {
-        if (node.isNewline()) lines.set(node.getLine() + 1, RubyFixnum.newFixnum(runtime, 0));
+        if (node.isNewline()) lines.set(LineEvents.lineOf(node) + 1, RubyFixnum.newFixnum(runtime, 0));
 
         for (Node child: node.childNodes()) {
             if (child != null) defaultVisit(child);

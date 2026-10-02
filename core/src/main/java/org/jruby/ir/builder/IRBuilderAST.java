@@ -14,6 +14,7 @@ import org.jruby.ext.coverage.BranchTarget;
 import org.jruby.ext.coverage.FileCoverage;
 import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
+import org.jruby.ast.util.LineEvents;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.ir.IRClosure;
@@ -174,7 +175,13 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     private Operand buildOperand(Variable result, Node node) throws NotCompilableException {
-        if (node.isNewline()) determineIfWeNeedLineNumber(node.getLine(), true, node instanceof NilImplicitNode, node instanceof DefNode);
+        if (node.isNewline()) {
+            if (coverageMode != 0 && !(node instanceof NilImplicitNode)) {
+                determineIfWeNeedCoverageLine(node.getLine(), LineEvents.firstInstruction(node));
+            } else {
+                determineIfWeNeedLineNumber(node.getLine(), true, node instanceof NilImplicitNode, node instanceof DefNode);
+            }
+        }
 
         switch (node.getNodeType()) {
             case ALIASNODE: return buildAlias((AliasNode) node);
@@ -292,6 +299,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         if (node == null) return null;
 
         boolean savedExecuteOnce = executesOnce;
+        if (lineNumberInfo != null) lineNumberInfo.enter();
         try {
             if (executesOnce) executesOnce = node.executesOnce();
 
@@ -303,6 +311,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
 
             return operand;
         } finally {
+            if (lineNumberInfo != null) lineNumberInfo.exit();
             executesOnce = savedExecuteOnce;
         }
     }

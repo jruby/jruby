@@ -564,6 +564,141 @@ class TestCoverage < Test::Unit::TestCase
     Object.send(:remove_method, :folds) if Object.private_method_defined?(:folds)
   end
 
+  def test_lone_statement_in_interpolation_keeps_earlier_statement_on_its_line
+    assert_equal [1, 1, 1], line_coverage(<<~'RUBY')
+      def foo(*) = nil
+      foo([1].map {
+        y = 1; nil }, "#{3}")
+    RUBY
+  end
+
+  def test_several_statements_in_interpolation_each_cover_their_line
+    assert_equal [1, 1, 1, nil], line_coverage(<<~'RUBY')
+      x = "#{
+        a = 1
+        a
+      }"
+    RUBY
+  end
+
+  def test_call_on_a_later_line_keeps_the_statement_count
+    assert_equal [1, 1, nil, 1, nil], line_coverage(<<~'RUBY')
+      o = Struct.new(:b).new
+      o.b =
+        [].size
+      o.b.to_s.concat(
+        [].size.to_s)
+    RUBY
+  end
+
+  def test_statement_counts_on_the_line_of_its_first_instruction
+    assert_equal [nil, 1, nil, 1, nil, nil, nil, 1, 1], line_coverage(<<~'RUBY')
+      x =
+        [].size
+      y = <<~EOS
+        #{[].size}
+        #{[].size}
+      EOS
+      z = {
+        a: [].size }
+      x = y
+    RUBY
+  end
+
+  def test_literal_array_and_hash_count_on_their_first_line
+    assert_equal [1, nil, nil, 1, nil, nil], line_coverage(<<~'RUBY')
+      x = [
+        1,
+        2]
+      y = {
+        a: :b,
+        c: 1.0}
+    RUBY
+  end
+
+  def test_statement_in_begin_counts_once
+    assert_equal [1, 1, nil, 1, nil, 1, nil, nil, 1], line_coverage(<<~'RUBY')
+      def g
+        x = 1
+        begin
+          [].size
+        ensure
+          x = 2
+        end
+      end
+      g
+    RUBY
+  end
+
+  def test_conditional_in_interpolation_counts
+    assert_equal [1, nil, 1, nil, 1], line_coverage(<<~'RUBY')
+      x = <<~EOS
+        abc
+        #{[].empty? ? "a" : "b"}
+      EOS
+      x = x
+    RUBY
+  end
+
+  def test_heredoc_ending_the_file
+    assert_equal [nil, 1, nil], line_coverage(<<~'RUBY')
+      x = <<~EOS
+        #{1.to_s}
+      EOS
+    RUBY
+  end
+
+  def test_undef_counts_on_its_keyword_line
+    assert_equal [2, 1, 1, nil, nil, nil], line_coverage(<<~'RUBY')
+      class UndefCoverage; def a; end; def b; end; end
+      class UndefCoverage
+        x = 1; undef
+          a,
+          b
+      end
+    RUBY
+  end
+
+  def test_ternary_arms_are_line_events
+    assert_equal [1, 1, 1, 1, 0, 1, 1, nil], line_coverage(<<~'RUBY')
+      y = [1]
+      x = y.size ?
+        1 : 2
+      if y.empty? ?
+           y.first :
+           y.last
+        z = 1
+      end
+    RUBY
+  end
+
+  def test_line_stub_has_an_entry_for_every_line
+    source = <<~'RUBY'
+      def show
+        @product = base_scope
+                   .includes(colors_products: :color)
+                   .find(params[:id])
+      end
+    RUBY
+    with_source(source) { |path| assert_equal [0, 0, nil, nil, nil], Coverage.line_stub(path) }
+    with_source(source.chomp) { |path| assert_equal [0, 0, nil, nil, nil], Coverage.line_stub(path) }
+    with_source("x = 1\n\n\n\n") { |path| assert_equal [0, nil, nil, nil], Coverage.line_stub(path) }
+    with_source("") { |path| assert_equal [], Coverage.line_stub(path) }
+  end
+
+  def test_line_stub_of_an_empty_file_after_an_empty_else
+    source = <<~'RUBY'
+      x.each do
+        if x
+          1
+        else
+        end
+      end
+    RUBY
+    with_source(source) { |path| Coverage.line_stub(path) }
+    with_source("") { |path| assert_equal [], Coverage.line_stub(path) }
+  end
+
   private
 
   def with_source(source)
@@ -591,5 +726,13 @@ class TestCoverage < Test::Unit::TestCase
 
   def source_line(line)
     @source.lines[line - 1]
+  end
+
+  def line_coverage(code)
+    with_source(code) do |path|
+      Coverage.start(lines: true)
+      load path
+      Coverage.result.fetch(path)[:lines]
+    end
   end
 end
