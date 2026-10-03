@@ -788,17 +788,26 @@ public abstract class RubyParserBase {
 
     /**
      * CRuby's nd_unset_fl_newline, for the statements of a string interpolation: a lone statement there is not a
-     * line event of its own; the string it is part of is. Several statements each remain one, and so does a lone
-     * conditional, as MRI counts its branches.
+     * line event of its own; the string it is part of is. Several statements each remain one. A lone conditional
+     * is no line event either, but the statements of its branches still are.
      *
      * CRuby's compiler finds coverable lines from the newline flag, but JRuby marks them as it parses, and
      * newline_node marked this statement's line already, so that is undone too.
      */
     public void nd_unset_fl_newline(Node node) {
-        if (node instanceof IfNode) return;
-
         uncover(node);
         node.unsetNewline();
+
+        // In MRI the statement of a modifier conditional is a line event too, which the conditional's own (on the
+        // same line, where both start) hides. With the conditional no line event, the statement's shows.
+        if (node instanceof IfNode ifNode && ifNode.getSourceBody() != null) {
+            for (Node body : new Node[] { ifNode.getThenBody(), ifNode.getElseBody() }) {
+                if (body == null || body instanceof NilImplicitNode) continue;
+
+                body.setNewline();
+                cover(body);
+            }
+        }
     }
 
     // This is the last node made in the AST unintuitively so so post-processing can occur here.
@@ -1766,9 +1775,10 @@ public abstract class RubyParserBase {
         // Detect IfNode and propagate newline to the bodies.
         // This is a bit of a form-fitted fix, but the full reduce_nodes logic from CRuby
         // defied an initial porting attempt. See jruby/jruby#9293.
-        if (node.isNewline() && node instanceof IfNode ifNode) {
-            if (ifNode.getThenBody() instanceof Node thenNode) thenNode.setNewline();
-            if (ifNode.getElseBody() instanceof Node elseNode) elseNode.setNewline();
+        // MRI gives the bodies no line events of their own, so they only keep backtraces on their lines.
+        if (node instanceof IfNode ifNode) {
+            if (ifNode.getThenBody() instanceof Node thenNode) thenNode.setBacktraceNewline();
+            if (ifNode.getElseBody() instanceof Node elseNode) elseNode.setBacktraceNewline();
         }
     }
 
