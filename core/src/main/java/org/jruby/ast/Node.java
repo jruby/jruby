@@ -69,6 +69,8 @@ public abstract class Node {
     // so that the two values of a end up being different.
     protected boolean containsVariableAssignment;
     protected boolean newline;
+    // newline only to keep backtraces on this node's line, which is no line event (see setBacktraceNewline)
+    private boolean backtraceNewline;
 
     public Node(int line, boolean containsAssignment) {
         this.line = line;
@@ -77,11 +79,31 @@ public abstract class Node {
 
     public void setNewline() {
         this.newline = true;
+        this.backtraceNewline = false;
+    }
+
+    /**
+     * Make a node that is no line event of its own a newline anyway, so that backtraces report its line, as for
+     * the body of a modifier conditional written on lines before its condition. Coverage gives it no line event.
+     */
+    public void setBacktraceNewline() {
+        if (newline) return;
+
+        this.newline = true;
+        this.backtraceNewline = true;
+    }
+
+    /**
+     * Whether this newline node is a line event (one Coverage counts), rather than a newline for backtraces only.
+     */
+    public boolean isLineEvent() {
+        return newline && !backtraceNewline;
     }
 
     // Used by heredoc dedent processing.  It gets unset so we do not liter line events because of it.
     public void unsetNewline() {
         this.newline = false;
+        this.backtraceNewline = false;
     }
 
     public boolean isNewline() {

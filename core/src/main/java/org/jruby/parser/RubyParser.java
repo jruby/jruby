@@ -2216,7 +2216,7 @@ states[31] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
                     /*%%%*/
                     yyVal = p.new_if(yyVals[yyTop - count + 1].start(), ((Node)yyVals[0+yyTop].value), p.remove_begin(((Node)yyVals[-2+yyTop].value)), null);
                     p.fixpos(((Node)yyVal), ((Node)yyVals[0+yyTop].value));
-                    p.branch_modifier(((Node)yyVal), ((Node)yyVals[0+yyTop].value), ((Node)yyVals[-2+yyTop].value), false, yyVals[yyTop - count + 3].end);
+                    p.branch_modifier(((Node)yyVal), ((Node)yyVals[-2+yyTop].value), false, yyVals[yyTop - count + 3].end);
                     /*% %*/
                     /*% ripper: if_mod!($3, $1) %*/
   return yyVal;
@@ -2225,7 +2225,7 @@ states[32] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
                     /*%%%*/
                     yyVal = p.new_if(yyVals[yyTop - count + 1].start(), ((Node)yyVals[0+yyTop].value), null, p.remove_begin(((Node)yyVals[-2+yyTop].value)));
                     p.fixpos(((Node)yyVal), ((Node)yyVals[0+yyTop].value));
-                    p.branch_modifier(((Node)yyVal), ((Node)yyVals[0+yyTop].value), ((Node)yyVals[-2+yyTop].value), true, yyVals[yyTop - count + 3].end);
+                    p.branch_modifier(((Node)yyVal), ((Node)yyVals[-2+yyTop].value), true, yyVals[yyTop - count + 3].end);
                     /*% %*/
                     /*% ripper: unless_mod!($3, $1) %*/
   return yyVal;
@@ -2270,6 +2270,7 @@ states[36] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
                     p.setLexContext(((LexContext)yyVals[-4+yyTop].value));
                     /*%%%*/
                    yyVal = new PostExeNode(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-1+yyTop].value), p.src_line());
+                   p.span(((Node)yyVal), yyVals[yyTop - count + 1].start, yyVals[yyTop - count + 5].end);
                     /*% %*/
                     /*% ripper: END!($4) %*/
   return yyVal;
@@ -2548,6 +2549,7 @@ states[82] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
 states[84] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = p.new_call(((Node)yyVals[-3+yyTop].value), ((ByteList)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), null, yyVals[yyTop - count + 3].start());
+                    p.safe_navigation_end(((Node)yyVal), yyVals[yyTop - count + 3].end, yyVals[yyTop - count + 4].end, false);
                     /*% %*/
                     /*% ripper: method_add_arg!(call!($1, $2, $3), $4) %*/
   return yyVal;
@@ -2586,6 +2588,7 @@ states[88] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
 states[89] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = p.new_call(((Node)yyVals[-3+yyTop].value), ((ByteList)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), null, yyVals[yyTop - count + 3].start());
+                    p.safe_navigation_end(((Node)yyVal), yyVals[yyTop - count + 3].end, yyVals[yyTop - count + 4].end, false);
                     /*% %*/
                     /*% ripper: command_call!($1, $2, $3, $4) %*/
   return yyVal;
@@ -2594,6 +2597,7 @@ states[90] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
                     /*%%%*/
                     yyVal = p.new_call(((Node)yyVals[-4+yyTop].value), ((ByteList)yyVals[-3+yyTop].value), ((ByteList)yyVals[-2+yyTop].value), ((Node)yyVals[-1+yyTop].value), ((IterNode)yyVals[0+yyTop].value), yyVals[yyTop - count + 3].start());
                     p.span(((Node)yyVal), yyVals[yyTop - count + 1].start, yyVals[yyTop - count + 4].end);
+                    p.safe_navigation_end(((Node)yyVal), yyVals[yyTop - count + 3].end, yyVals[yyTop - count + 4].end, false);
                     /*% %*/
                     /*% ripper: method_add_block!(command_call!($1, $2, $3, $4), $5) %*/
   return yyVal;
@@ -3732,7 +3736,7 @@ states[286] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     p.value_expr(((Node)yyVals[-5+yyTop].value));
                     /* Each arm of a ternary is a statement of its own for line events, as in MRI.*/
                     yyVal = p.new_if(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-5+yyTop].value), p.newline_node(((Node)yyVals[-3+yyTop].value), yyVals[yyTop - count + 3].start()), p.newline_node(((Node)yyVals[0+yyTop].value), yyVals[yyTop - count + 6].start()));
-                    p.branch_ternary(((Node)yyVal), ((Node)yyVals[-5+yyTop].value), yyVals[yyTop - count + 1].end);
+                    p.branch_ternary(((Node)yyVal), yyVals[yyTop - count + 1].end);
                     /*% %*/
                     /*% ripper: ifop!($1, $3, $6) %*/
   return yyVal;
@@ -4240,7 +4244,7 @@ states[371] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[372] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = p.new_if(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-4+yyTop].value), ((Node)yyVals[-2+yyTop].value), ((Node)yyVals[-1+yyTop].value));
-                    p.branch_if(((Node)yyVal), ((Node)yyVals[-4+yyTop].value), yyVals[yyTop - count + 2].end, ((Node)yyVals[-1+yyTop].value) == null ? -1 : yyVals[yyTop - count + 5].start, yyVals[yyTop - count + 6].end);
+                    p.branch_if(((Node)yyVal), yyVals[yyTop - count + 2].end, ((Node)yyVals[-1+yyTop].value) == null ? -1 : yyVals[yyTop - count + 5].start, yyVals[yyTop - count + 6].end);
                     /*% %*/
                     /*% ripper: if!($2, $4, escape_Qundef($5)) %*/
   return yyVal;
@@ -4248,7 +4252,7 @@ states[372] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[373] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = p.new_if(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-4+yyTop].value), ((Node)yyVals[-1+yyTop].value), ((Node)yyVals[-2+yyTop].value));
-                    p.branch_unless(((Node)yyVal), ((Node)yyVals[-4+yyTop].value), yyVals[yyTop - count + 2].end);
+                    p.branch_unless(((Node)yyVal), yyVals[yyTop - count + 2].end);
                     /*% %*/
                     /*% ripper: unless!($2, $4, escape_Qundef($5)) %*/
   return yyVal;
@@ -4564,7 +4568,7 @@ states[420] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[424] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = p.new_if(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-3+yyTop].value), ((Node)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value));
-                    p.branch_elsif(((Node)yyVal), ((Node)yyVals[-3+yyTop].value), yyVals[yyTop - count + 2].end, ((Node)yyVals[0+yyTop].value) == null ? -1 : yyVals[yyTop - count + 5].start);
+                    p.branch_elsif(((Node)yyVal), yyVals[yyTop - count + 2].end, ((Node)yyVals[0+yyTop].value) == null ? -1 : yyVals[yyTop - count + 5].start);
                     /*% %*/
                     /*% ripper: elsif!($2, $4, escape_Qundef($5)) %*/
   return yyVal;
@@ -4861,6 +4865,7 @@ states[481] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     ArgsNode args = p.args_with_numbered(((ArgsNode)yyVals[-2+yyTop].value), max_numparam, it_id);
                     yyVal = new LambdaNode(yyVals[yyTop - count + 1].start(), args, ((Node)yyVals[0+yyTop].value), p.getCurrentScope(), p.src_line());
                     ((LambdaNode)yyVal).setSourceSpan(ProductionState.column(((Long)yyVals[-1+yyTop].value)), ProductionState.line(yyVals[yyTop - count + 9].end), ProductionState.column(yyVals[yyTop - count + 9].end));
+                    ((LambdaNode)yyVal).setOperatorColumn(ProductionState.column(yyVals[yyTop - count + 1].start));
                     /*% %*/
                     /*% ripper: lambda!($5, $7) %*/
                     p.setLeftParenBegin(((Integer)yyVals[-7+yyTop].value));
@@ -4937,6 +4942,7 @@ states[488] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[489] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = p.new_call(((Node)yyVals[-3+yyTop].value), ((ByteList)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), null, yyVals[yyTop - count + 3].start());
+                    p.safe_navigation_end(((Node)yyVal), yyVals[yyTop - count + 3].end, yyVals[yyTop - count + 4].end, true);
                     /*% %*/
                     /*% ripper: opt_event(:method_add_arg!, call!($1, $2, $3), $4) %*/
   return yyVal;
@@ -4945,6 +4951,7 @@ states[490] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     /*%%%*/
                     yyVal = p.new_call(((Node)yyVals[-4+yyTop].value), ((ByteList)yyVals[-3+yyTop].value), ((ByteList)yyVals[-2+yyTop].value), ((Node)yyVals[-1+yyTop].value), ((IterNode)yyVals[0+yyTop].value), yyVals[yyTop - count + 3].start());
                     p.span(((Node)yyVal), yyVals[yyTop - count + 1].start, yyVals[yyTop - count + 4].end);
+                    p.safe_navigation_end(((Node)yyVal), yyVals[yyTop - count + 3].end, yyVals[yyTop - count + 4].end, true);
                     /*% %*/
                     /*% ripper: opt_event(:method_add_block!, command_call!($1, $2, $3, $4), $5) %*/
   return yyVal;
@@ -4953,6 +4960,7 @@ states[491] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     /*%%%*/
                     yyVal = p.new_call(((Node)yyVals[-4+yyTop].value), ((ByteList)yyVals[-3+yyTop].value), ((ByteList)yyVals[-2+yyTop].value), ((Node)yyVals[-1+yyTop].value), ((IterNode)yyVals[0+yyTop].value), yyVals[yyTop - count + 3].start());
                     p.span(((Node)yyVal), yyVals[yyTop - count + 1].start, yyVals[yyTop - count + 4].end);
+                    p.safe_navigation_end(((Node)yyVal), yyVals[yyTop - count + 3].end, yyVals[yyTop - count + 4].end, false);
                     /*% %*/
                     /*% ripper: method_add_block!(command_call!($1, $2, $3, $4), $5) %*/
   return yyVal;
@@ -4968,6 +4976,7 @@ states[492] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[493] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = p.new_call(((Node)yyVals[-3+yyTop].value), ((ByteList)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), null, yyVals[yyTop - count + 3].start());
+                    p.safe_navigation_end(((Node)yyVal), yyVals[yyTop - count + 3].end, yyVals[yyTop - count + 4].end, true);
                     /*% %*/
                     /*% ripper: opt_event(:method_add_arg!, call!($1, $2, $3), $4) %*/
   return yyVal;
@@ -4989,6 +4998,7 @@ states[495] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[496] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = p.new_call(((Node)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), LexingCommon.CALL, ((Node)yyVals[0+yyTop].value), null, yyVals[yyTop - count + 3].start());
+                    p.safe_navigation_end(((Node)yyVal), yyVals[yyTop - count + 3].end, yyVals[yyTop - count + 3].end, true); /* o&.(): the parentheses are the message*/
                     /*% %*/
                     /*% ripper: method_add_arg!(call!($1, $2, ID2VAL(idCall)), $3) %*/
   return yyVal;
@@ -6905,7 +6915,7 @@ states[826] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4901 "parse.y"
+					// line 4911 "parse.y"
 
 }
-					// line 15243 "-"
+					// line 15253 "-"

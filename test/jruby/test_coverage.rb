@@ -672,6 +672,177 @@ class TestCoverage < Test::Unit::TestCase
     RUBY
   end
 
+  # The expected results below are MRI's (4.0, prism), and a line stub reads as the counts do with every count 0.
+
+  def test_conditional_used_as_a_value_counts_its_predicate_line
+    assert_line_coverage [1, 1, 1, 1, nil, 1, 1, 0, nil, 1, 1, 1, nil, 1, 1], <<~'RUBY'
+      def value_conditionals(x)
+        @a ||=
+          if x
+            1
+          end
+        b = [1,
+          unless x
+            2
+          end]
+        c = value_of(
+          x ?
+            3 : 4)
+      end
+      def value_of(v) = v
+      value_conditionals(true)
+    RUBY
+  end
+
+  def test_elsif_conditions_are_line_events
+    assert_line_coverage [1, 2, 1, 1, 1, 0, 0, nil, nil, 1, 1], <<~'RUBY'
+      def elsifs(x)
+        if x == 1
+          :one
+        elsif x == 2
+          :two
+        elsif x == 3
+          :three
+        end
+      end
+      elsifs(1)
+      elsifs(2)
+    RUBY
+  end
+
+  def test_statements_compiled_to_nothing_are_no_line_events
+    assert_line_coverage [1, nil, nil, nil, nil, nil, nil, nil, 1, 1, nil, 1], <<~'RUBY'
+      def void_statements(x)
+        y = y
+        x
+        1
+        "str"
+        @iv
+        [1, :a]
+        x = x
+        $stdout
+        x
+      end
+      void_statements(1)
+    RUBY
+  end
+
+  def test_conditional_on_a_literal_compiles_only_its_live_arm
+    assert_line_coverage [1, nil, nil, nil, nil, 1, nil, nil, nil, nil, nil, nil, 1, nil, nil, 1, nil, nil, 1, nil, 1], <<~'RUBY'
+      def literal_predicates(x)
+        if false
+          :dead
+        end
+        if true
+          a = 1
+        else
+          b = 2
+        end
+        c = if nil
+          3
+        else
+          4
+        end
+        d = 5 unless true
+        if x and false
+          6
+        end
+        x
+      end
+      literal_predicates(1)
+    RUBY
+  end
+
+  def test_statement_of_a_modifier_conditional_is_no_line_event_unless_interpolated
+    assert_line_coverage [1, 1, nil, 1, nil, nil, 1, 1, 1, nil, nil, 1], <<~'RUBY'
+      def modified(*) = 1
+      def modifiers(y)
+        modified 1,
+          2 if y
+        modified(
+          1) unless
+            y
+        "#{y} item#{'s' unless y == 1}"
+        "#{modified 1 if
+          y}"
+      end
+      modifiers(1)
+    RUBY
+  end
+
+  # MRI compiles the arms, then the else: an else on the line of an arm is no line event of its own
+  def test_case_arm_on_the_line_of_its_else_counts
+    cases = <<~'RUBY'
+      def one_line_cases(x)
+        a = [1,
+          case x; when 1 then 2; else 3; end]
+        b = [1,
+          case x; in 1 then 2; else 3; end]
+      end
+    RUBY
+    assert_equal [1, 1, 1, 1, 1, nil, 1], line_coverage(cases + "one_line_cases(1)\n")
+    assert_equal [1, 1, 0, 1, 0, nil, 1], line_coverage(cases + "one_line_cases(3)\n")
+  end
+
+  def test_branch_arm_of_a_call_spans_its_block
+    assert_equal({
+      [:if, 0, 2, 2, 2, 27] => { [:then, 1, 2, 6, 2, 23] => 1, [:else, 2, 2, 26, 2, 27] => 0 },
+      [:if, 3, 3, 2, 3, 31] => { [:then, 4, 3, 6, 3, 27] => 1, [:else, 5, 3, 30, 3, 31] => 0 },
+      [:if, 6, 4, 2, 4, 38] => { [:then, 7, 4, 6, 4, 34] => 1, [:else, 8, 4, 37, 4, 38] => 0 },
+    }, branch_coverage(<<~'RUBY'))
+      def block_arms(x)
+        x ? [1].map { |v| v } : 0
+        x ? [1].each do |v| v end : 0
+        x ? [1].each_slice(1).map { _1 } : 0
+      end
+      block_arms(true)
+    RUBY
+  end
+
+  def test_safe_navigation_branch_ends_before_block_arguments_and_blocks
+    assert_equal({
+      [:"&.", 0, 2, 2, 2, 8] => { [:then, 1, 2, 2, 2, 8] => 0, [:else, 2, 2, 2, 2, 8] => 1 },
+      [:"&.", 3, 3, 2, 3, 8] => { [:then, 4, 3, 2, 3, 8] => 0, [:else, 5, 3, 2, 3, 8] => 1 },
+      [:"&.", 6, 4, 2, 4, 8] => { [:then, 7, 4, 2, 4, 8] => 0, [:else, 8, 4, 2, 4, 8] => 1 },
+      [:"&.", 9, 5, 2, 5, 15] => { [:then, 10, 5, 2, 5, 15] => 0, [:else, 11, 5, 2, 5, 15] => 1 },
+      [:"&.", 12, 6, 2, 6, 10] => { [:then, 13, 6, 2, 6, 10] => 0, [:else, 14, 6, 2, 6, 10] => 1 },
+      [:"&.", 15, 7, 2, 7, 8] => { [:then, 16, 7, 2, 7, 8] => 0, [:else, 17, 7, 2, 7, 8] => 1 },
+      [:"&.", 18, 8, 2, 8, 11] => { [:then, 19, 8, 2, 8, 11] => 0, [:else, 20, 8, 2, 8, 11] => 1 },
+    }, branch_coverage(<<~'RUBY'))
+      def safe_navigation(o, b)
+        o&.foo
+        o&.foo()
+        o&.foo(&b)
+        o&.foo(1, &b)
+        o&.foo 1, &b
+        o&.foo { 1 }
+        o&.foo(1) do 1 end
+      end
+      safe_navigation(nil, nil)
+    RUBY
+  end
+
+  def test_branch_arms_of_literals_span_what_mri_reports
+    assert_equal({
+      [:if, 0, 2, 2, 2, 18] => { [:then, 1, 2, 6, 2, 14] => 1, [:else, 2, 2, 17, 2, 18] => 0 },
+      [:if, 3, 3, 2, 3, 13] => { [:then, 4, 3, 6, 3, 8] => 1, [:else, 5, 3, 11, 3, 13] => 0 },
+      [:if, 6, 4, 6, 4, 18] => { [:then, 7, 4, 10, 4, 14] => 1, [:else, 8, 4, 17, 4, 18] => 0 },
+      [:if, 9, 7, 2, 9, 5] => { [:then, 10, 8, 4, 8, 11] => 1, [:else, 11, 7, 2, 9, 5] => 0 },
+    }, branch_coverage(<<~'RUBY'))
+      def literal_arms(x)
+        x ? -> { 1 } : 2
+        x ? ?a : ?b
+        y = x ? <<~A : 2
+          a
+        A
+        if x
+          END { }
+        end
+      end
+      literal_arms(true)
+    RUBY
+  end
+
   def test_line_stub_has_an_entry_for_every_line
     source = <<~'RUBY'
       def show
@@ -733,6 +904,23 @@ class TestCoverage < Test::Unit::TestCase
       Coverage.start(lines: true)
       load path
       Coverage.result.fetch(path)[:lines]
+    end
+  end
+
+  # The line counts, and the line stub as the same lines with every count 0
+  def assert_line_coverage(expected, code)
+    assert_equal expected, line_coverage(code)
+    with_source(code) { |path| assert_equal expected.map { |count| count && 0 }, Coverage.line_stub(path) }
+  end
+
+  def branch_coverage(code)
+    with_source(code) do |path|
+      Coverage.start(branches: true)
+      verbose, $VERBOSE = $VERBOSE, nil # END in a method warns
+      load path
+      Coverage.result.fetch(path)[:branches]
+    ensure
+      $VERBOSE = verbose
     end
   end
 end

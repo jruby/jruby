@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -120,8 +121,10 @@ public abstract class RubyParserBase {
 
     private int[] coverage = EMPTY_COVERAGE;
 
-    // The line the most recent coverLine call marked, or -1 if an earlier statement had already marked it.
-    private int lastNewlyCoveredLine = -1;
+    // How many line events mark each line coverable, and the line each one marked, so that one found not to be a
+    // line event after all can give its line back (see uncover).
+    private int[] lineMarks = EMPTY_COVERAGE;
+    private Map<Node, Integer> coveredNodes;
 
     private static final int[] EMPTY_COVERAGE = new int[0];
 
@@ -462,6 +465,26 @@ public abstract class RubyParserBase {
         return node;
     }
 
+    /**
+     * Where MRI ends the branch of a safe-navigation call (o&amp;.m): after the message when there are no arguments
+     * but a block argument (o&amp;.m, o&amp;.m(), o&amp;.m(&amp;b)), else after the arguments (o&amp;.m(1, &amp;b), or
+     * o&amp;.m 1 without the block argument of o&amp;.m 1, &amp;b). A block is never part of it.
+     *
+     * @param argsEnd the end of the arguments as written: after the closing parenthesis when parenthesized
+     */
+    public void safe_navigation_end(Node node, long messageEnd, long argsEnd, boolean parenthesized) {
+        if (!(node instanceof CallNode call) || !call.isLazy()) return;
+
+        Node args = call.getArgsNode();
+        if (args == null) {
+            call.setSafeNavigationEnd(messageEnd);
+        } else if (!parenthesized && call.getIterNode() instanceof BlockPassNode && args.hasSourceSpan()) {
+            call.setSafeNavigationEnd(ProductionState.pack(args.getEndLine(), args.getEndColumn()));
+        } else {
+            call.setSafeNavigationEnd(argsEnd);
+        }
+    }
+
     public Node lock_span(Node node) {
         if (node != null) node.lockSourceSpan();
         return node;
@@ -614,16 +637,26 @@ public abstract class RubyParserBase {
         }
     }
 
-    private static void markBranch(Node node, Node predicate, boolean unless, boolean elsif, long predicateEnd, long elseStart) {
-        if (node instanceof IfNode ifNode) {
-            ifNode.markBranch(unless, elsif, predicateEnd, elseStart);
-            ifNode.setConstantPredicate(constantPredicate(predicate));
+    /**
+     * Whether MRI compiles a constant predicate to jumps alone: it is made only of literals, joined by and/or.
+     */
+    private static boolean compilesToJumpOnly(Node node) {
+        if (node instanceof AndNode and && and.getParenSpan() == null) {
+            return compilesToJumpOnly(and.getFirstNode()) && compilesToJumpOnly(and.getSecondNode());
+        } else if (node instanceof OrNode or && or.getParenSpan() == null) {
+            return compilesToJumpOnly(or.getFirstNode()) && compilesToJumpOnly(or.getSecondNode());
         }
+
+        return jumpTargets(node) != (TO_THEN | TO_ELSE);
+    }
+
+    private static void markBranch(Node node, boolean unless, boolean elsif, long predicateEnd, long elseStart) {
+        if (node instanceof IfNode ifNode) ifNode.markBranch(unless, elsif, predicateEnd, elseStart);
     }
 
     /** if ... [elsif ...] [else ...] end */
-    public Node branch_if(Node node, Node predicate, long predicateEnd, long elseStart, long end) {
-        markBranch(node, predicate, false, false, predicateEnd, elseStart);
+    public Node branch_if(Node node, long predicateEnd, long elseStart, long end) {
+        markBranch(node, false, false, predicateEnd, elseStart);
         if (node instanceof IfNode ifNode) {
             // MRI reports every elsif clause as reaching the shared 'end'
             for (Node tail = ifNode.getElseBody(); tail instanceof IfNode elsif && elsif.isElsif(); tail = elsif.getElseBody()) {
@@ -634,26 +667,26 @@ public abstract class RubyParserBase {
     }
 
     /** unless ... [else ...] end (then/else are swapped in the IfNode) */
-    public Node branch_unless(Node node, Node predicate, long predicateEnd) {
-        markBranch(node, predicate, true, false, predicateEnd, -1);
+    public Node branch_unless(Node node, long predicateEnd) {
+        markBranch(node, true, false, predicateEnd, -1);
         return node;
     }
 
     /** elsif ... (nested as the else body of the enclosing if) */
-    public Node branch_elsif(Node node, Node predicate, long predicateEnd, long elseStart) {
-        markBranch(node, predicate, false, true, predicateEnd, elseStart);
+    public Node branch_elsif(Node node, long predicateEnd, long elseStart) {
+        markBranch(node, false, true, predicateEnd, elseStart);
         return node;
     }
 
     /** cond ? a : b */
-    public Node branch_ternary(Node node, Node predicate, long predicateEnd) {
-        markBranch(node, predicate, false, false, predicateEnd, -1);
+    public Node branch_ternary(Node node, long predicateEnd) {
+        markBranch(node, false, false, predicateEnd, -1);
         return node;
     }
 
     /** stmt if cond / stmt unless cond */
-    public Node branch_modifier(Node node, Node predicate, Node statement, boolean unless, long predicateEnd) {
-        markBranch(node, predicate, unless, false, predicateEnd, -1);
+    public Node branch_modifier(Node node, Node statement, boolean unless, long predicateEnd) {
+        markBranch(node, unless, false, predicateEnd, -1);
         if (node instanceof IfNode ifNode) ifNode.setSourceBody(statement);
         return node;
     }
@@ -735,7 +768,7 @@ public abstract class RubyParserBase {
     public Node newline_node(Node node, int line) {
         if (node == null) return null;
 
-        coverLine(LineEvents.lineOf(node));
+        cover(node);
         node.setNewline();
 
         return node;
@@ -775,17 +808,26 @@ public abstract class RubyParserBase {
 
     /**
      * CRuby's nd_unset_fl_newline, for the statements of a string interpolation: a lone statement there is not a
-     * line event of its own; the string it is part of is. Several statements each remain one, and so does a lone
-     * conditional, as MRI counts its branches.
+     * line event of its own; the string it is part of is. Several statements each remain one. A lone conditional
+     * is no line event either, but the statements of its branches still are.
      *
      * CRuby's compiler finds coverable lines from the newline flag, but JRuby marks them as it parses, and
-     * newline_node marked this statement's line already (the last line it marked), so that is undone too.
+     * newline_node marked this statement's line already, so that is undone too.
      */
     public void nd_unset_fl_newline(Node node) {
-        if (node instanceof IfNode) return;
-
-        if (node.isNewline()) uncoverLastLine();
+        uncover(node);
         node.unsetNewline();
+
+        // In MRI the statement of a modifier conditional is a line event too, which the conditional's own (on the
+        // same line, where both start) hides. With the conditional no line event, the statement's shows.
+        if (node instanceof IfNode ifNode && ifNode.getSourceBody() != null) {
+            for (Node body : new Node[] { ifNode.getThenBody(), ifNode.getElseBody() }) {
+                if (body == null || body instanceof NilImplicitNode) continue;
+
+                body.setNewline();
+                cover(body);
+            }
+        }
     }
 
     // This is the last node made in the AST unintuitively so so post-processing can occur here.
@@ -1251,16 +1293,48 @@ public abstract class RubyParserBase {
      * @param node to be checked.
      */
     public Node void_stmts(Node node) {
-        if (!getWarnings().isVerbose() || !(node instanceof BlockNode)) return node;
+        if (!(node instanceof BlockNode blockNode)) return node;
 
-        BlockNode blockNode = (BlockNode) node;
         int size = blockNode.size();
+        boolean verbose = getWarnings().isVerbose();
 
         for (int i = 0; i <= size - 2; i++) {
-            void_expr(blockNode.get(i));
+            Node statement = blockNode.get(i);
+
+            if (verbose) void_expr(statement);
+            // MRI compiles nothing for it, so it has no line event
+            if (compilesToNothingWhenUnused(statement)) uncoverAll(statement);
         }
 
         return node;
+    }
+
+    /**
+     * Whether MRI compiles nothing for this statement when its value is not used: a statement
+     * {@link #eliminatedWhenUnused} finds, a local variable assigned to itself (which MRI's peephole optimizer
+     * removes), a conditional on a literal whose arm that can run is one, or a list of them.
+     */
+    private static boolean compilesToNothingWhenUnused(Node node) {
+        return switch (node) {
+            case null -> true;
+            case NilImplicitNode ignored -> true;
+            case BlockNode block -> {
+                for (Node statement : block.children()) {
+                    if (!compilesToNothingWhenUnused(statement)) yield false;
+                }
+                yield true;
+            }
+            case IfNode ifNode -> ifNode.hasFoldedPredicate() &&
+                    compilesToNothingWhenUnused(ifNode.isConstantlyTrue() ? ifNode.getThenBody() : ifNode.getElseBody());
+            case LocalAsgnNode asgn -> isSameVariable(asgn, asgn.getValueNode());
+            case DAsgnNode asgn -> isSameVariable(asgn, asgn.getValueNode());
+            default -> eliminatedWhenUnused(node);
+        };
+    }
+
+    private static boolean isSameVariable(IScopedNode variable, Node value) {
+        return (value instanceof LocalVarNode || value instanceof DVarNode) && value instanceof IScopedNode read &&
+                read.getDepth() == variable.getDepth() && read.getIndex() == variable.getIndex();
     }
 
 	/**
@@ -1399,9 +1473,28 @@ public abstract class RubyParserBase {
     public Node new_if(int line, Node condition, Node thenNode, Node elseNode) {
         if (condition == null) return elseNode;
 
+        Node rawCondition = condition;
+        int constantPredicate = constantPredicate(condition);
         condition = cond0(condition, ConditionType.IN_COND);
 
-        return new IfNode(line, condition, thenNode, elseNode);
+        IfNode ifNode = new IfNode(line, condition, thenNode, elseNode);
+        ifNode.setConstantPredicate(constantPredicate);
+        ifNode.setFoldedPredicate(constantPredicate != 0 && compilesToJumpOnly(rawCondition));
+
+        // MRI folds a conditional on a literal away: the arm that cannot run is not compiled, so it has no line
+        // events.
+        if (constantPredicate != 0) uncoverAll(constantPredicate > 0 ? elseNode : thenNode);
+
+        if (ifNode.hasFoldedPredicate()) {
+            // Nor is a predicate of literals, so there is no line event for it either
+            ifNode.unsetNewline();
+        } else {
+            // As in MRI, a conditional's predicate is a line event wherever the conditional is (an IfNode is a
+            // newline node), so its line is coverable.
+            cover(ifNode);
+        }
+
+        return ifNode;
     }
 
     enum ConditionType {
@@ -1702,9 +1795,10 @@ public abstract class RubyParserBase {
         // Detect IfNode and propagate newline to the bodies.
         // This is a bit of a form-fitted fix, but the full reduce_nodes logic from CRuby
         // defied an initial porting attempt. See jruby/jruby#9293.
-        if (node.isNewline() && node instanceof IfNode ifNode) {
-            if (ifNode.getThenBody() instanceof Node thenNode) thenNode.setNewline();
-            if (ifNode.getElseBody() instanceof Node elseNode) elseNode.setNewline();
+        // MRI gives the bodies no line events of their own, so they only keep backtraces on their lines.
+        if (node instanceof IfNode ifNode) {
+            if (ifNode.getThenBody() instanceof Node thenNode) thenNode.setBacktraceNewline();
+            if (ifNode.getElseBody() instanceof Node elseNode) elseNode.setBacktraceNewline();
         }
     }
 
@@ -2724,43 +2818,59 @@ public abstract class RubyParserBase {
     }
 
     /**
-     * Zero out coverable lines as they're encountered
+     * Mark the line of node's line event coverable (once per node).
      */
-    public void coverLine(int i) {
-        lastNewlyCoveredLine = -1;
+    private void cover(Node node) {
+        if (!isLineCountingEnabled()) return;
+
+        int line = LineEvents.lineOf(node);
         // We had an overflow so we cannot mark whatever line this is as covered.
-        if (i < 0) return;
-        if (isLineCountingEnabled()) {
-            growCoverageLines(i);
-            if (coverage[i] != 0) lastNewlyCoveredLine = i;
-            coverage[i] = 0;
-        }
+        if (line < 0) return;
+
+        if (coveredNodes == null) coveredNodes = new IdentityHashMap<>();
+        if (coveredNodes.putIfAbsent(node, line) != null) return;
+
+        growCoverageLines(line);
+        lineMarks[line]++;
+        coverage[line] = 0;
     }
 
     /**
-     * Undo the most recent coverLine (a statement marked by newline_node that turned out not to be a line
-     * event, such as a lone statement inside a string interpolation): the line reads as nil in the results
-     * unless another statement marks it. A line some earlier statement had already marked stays marked.
+     * Undo cover(node) for a node that turned out not to be a line event (such as a lone statement inside a
+     * string interpolation): its line reads as nil in the results unless another line event marks it too.
      */
-    public void uncoverLastLine() {
-        if (lastNewlyCoveredLine < 0) return;
-        coverage[lastNewlyCoveredLine] = -1;
-        lastNewlyCoveredLine = -1;
+    private void uncover(Node node) {
+        Integer line = coveredNodes == null ? null : coveredNodes.remove(node);
+
+        if (line != null && --lineMarks[line] == 0) coverage[line] = -1;
     }
 
     /**
-     *  Called by coverLine to grow it large enough to add new covered line.
+     * Undo cover for node and everything in it, which MRI compiles to nothing, and make none of it a line event.
+     */
+    private void uncoverAll(Node node) {
+        if (node == null) return;
+
+        uncover(node);
+        node.unsetNewline();
+        for (Node child : node.childNodes()) uncoverAll(child);
+    }
+
+    /**
+     *  Called by cover to grow it large enough to add new covered line.
      *  Also called at end up parse to pick up any extra non-code lines which
      *  should be marked -1 for not valid code lines.
      */
     public void growCoverageLines(int i) {
         if (coverage == null) {
             coverage = new int[i + 1];
+            lineMarks = new int[i + 1];
         } else if (coverage.length <= i) {
             int[] newCoverage = new int[i + 1];
             Arrays.fill(newCoverage, -1);
             System.arraycopy(coverage, 0, newCoverage, 0, coverage.length);
             coverage = newCoverage;
+            lineMarks = Arrays.copyOf(lineMarks, i + 1);
         }
     }
 
