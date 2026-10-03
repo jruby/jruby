@@ -941,6 +941,7 @@ block_command   : block_call
                 | block_call call_op2 operation2 command_args {
                     /*%%%*/
                     $$ = p.new_call($1, $2, $3, $4, null, @3.start());
+                    p.safe_navigation_end($<Node>$, @3.end, @4.end, false);
                     /*% %*/
                     /*% ripper: method_add_arg!(call!($1, $2, $3), $4) %*/
                 };
@@ -979,6 +980,7 @@ command        : fcall command_args %prec tLOWEST {
                 | primary_value call_op operation2 command_args %prec tLOWEST {
                     /*%%%*/
                     $$ = p.new_call($1, $2, $3, $4, null, @3.start());
+                    p.safe_navigation_end($<Node>$, @3.end, @4.end, false);
                     /*% %*/
                     /*% ripper: command_call!($1, $2, $3, $4) %*/
                 }
@@ -986,6 +988,7 @@ command        : fcall command_args %prec tLOWEST {
                     /*%%%*/
                     $$ = p.new_call($1, $2, $3, $4, $5, @3.start());
                     p.span($<Node>$, @1.start, @4.end);
+                    p.safe_navigation_end($<Node>$, @3.end, @4.end, false);
                     /*% %*/
                     /*% ripper: method_add_block!(command_call!($1, $2, $3, $4), $5) %*/
                 }
@@ -3071,6 +3074,7 @@ block_call      : command do_block {
                 | block_call call_op2 operation2 opt_paren_args {
                     /*%%%*/
                     $$ = p.new_call($1, $2, $3, $4, null, @3.start());
+                    p.safe_navigation_end($<Node>$, @3.end, @4.end, true);
                     /*% %*/
                     /*% ripper: opt_event(:method_add_arg!, call!($1, $2, $3), $4) %*/
                 }
@@ -3078,6 +3082,7 @@ block_call      : command do_block {
                     /*%%%*/
                     $$ = p.new_call($1, $2, $3, $4, $5, @3.start());
                     p.span($<Node>$, @1.start, @4.end);
+                    p.safe_navigation_end($<Node>$, @3.end, @4.end, true);
                     /*% %*/
                     /*% ripper: opt_event(:method_add_block!, command_call!($1, $2, $3, $4), $5) %*/
                 }
@@ -3085,6 +3090,7 @@ block_call      : command do_block {
                     /*%%%*/
                     $$ = p.new_call($1, $2, $3, $4, $5, @3.start());
                     p.span($<Node>$, @1.start, @4.end);
+                    p.safe_navigation_end($<Node>$, @3.end, @4.end, false);
                     /*% %*/
                     /*% ripper: method_add_block!(command_call!($1, $2, $3, $4), $5) %*/
                 };
@@ -3100,6 +3106,7 @@ method_call     : fcall paren_args {
                 | primary_value call_op operation2 opt_paren_args {
                     /*%%%*/
                     $$ = p.new_call($1, $2, $3, $4, null, @3.start());
+                    p.safe_navigation_end($<Node>$, @3.end, @4.end, true);
                     /*% %*/
                     /*% ripper: opt_event(:method_add_arg!, call!($1, $2, $3), $4) %*/
                 }
@@ -3118,6 +3125,7 @@ method_call     : fcall paren_args {
                 | primary_value call_op paren_args {
                     /*%%%*/
                     $$ = p.new_call($1, $2, LexingCommon.CALL, $3, null, @3.start());
+                    p.safe_navigation_end($<Node>$, @3.end, @3.end, true); // o&.(): the parentheses are the message
                     /*% %*/
                     /*% ripper: method_add_arg!(call!($1, $2, ID2VAL(idCall)), $3) %*/
                 }

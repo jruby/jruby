@@ -784,6 +784,44 @@ class TestCoverage < Test::Unit::TestCase
     assert_equal [1, 1, 0, 1, 0, nil, 1], line_coverage(cases + "one_line_cases(3)\n")
   end
 
+  def test_branch_arm_of_a_call_spans_its_block
+    assert_equal({
+      [:if, 0, 2, 2, 2, 27] => { [:then, 1, 2, 6, 2, 23] => 1, [:else, 2, 2, 26, 2, 27] => 0 },
+      [:if, 3, 3, 2, 3, 31] => { [:then, 4, 3, 6, 3, 27] => 1, [:else, 5, 3, 30, 3, 31] => 0 },
+      [:if, 6, 4, 2, 4, 38] => { [:then, 7, 4, 6, 4, 34] => 1, [:else, 8, 4, 37, 4, 38] => 0 },
+    }, branch_coverage(<<~'RUBY'))
+      def block_arms(x)
+        x ? [1].map { |v| v } : 0
+        x ? [1].each do |v| v end : 0
+        x ? [1].each_slice(1).map { _1 } : 0
+      end
+      block_arms(true)
+    RUBY
+  end
+
+  def test_safe_navigation_branch_ends_before_block_arguments_and_blocks
+    assert_equal({
+      [:"&.", 0, 2, 2, 2, 8] => { [:then, 1, 2, 2, 2, 8] => 0, [:else, 2, 2, 2, 2, 8] => 1 },
+      [:"&.", 3, 3, 2, 3, 8] => { [:then, 4, 3, 2, 3, 8] => 0, [:else, 5, 3, 2, 3, 8] => 1 },
+      [:"&.", 6, 4, 2, 4, 8] => { [:then, 7, 4, 2, 4, 8] => 0, [:else, 8, 4, 2, 4, 8] => 1 },
+      [:"&.", 9, 5, 2, 5, 15] => { [:then, 10, 5, 2, 5, 15] => 0, [:else, 11, 5, 2, 5, 15] => 1 },
+      [:"&.", 12, 6, 2, 6, 10] => { [:then, 13, 6, 2, 6, 10] => 0, [:else, 14, 6, 2, 6, 10] => 1 },
+      [:"&.", 15, 7, 2, 7, 8] => { [:then, 16, 7, 2, 7, 8] => 0, [:else, 17, 7, 2, 7, 8] => 1 },
+      [:"&.", 18, 8, 2, 8, 11] => { [:then, 19, 8, 2, 8, 11] => 0, [:else, 20, 8, 2, 8, 11] => 1 },
+    }, branch_coverage(<<~'RUBY'))
+      def safe_navigation(o, b)
+        o&.foo
+        o&.foo()
+        o&.foo(&b)
+        o&.foo(1, &b)
+        o&.foo 1, &b
+        o&.foo { 1 }
+        o&.foo(1) do 1 end
+      end
+      safe_navigation(nil, nil)
+    RUBY
+  end
+
   def test_line_stub_has_an_entry_for_every_line
     source = <<~'RUBY'
       def show
@@ -852,5 +890,16 @@ class TestCoverage < Test::Unit::TestCase
   def assert_line_coverage(expected, code)
     assert_equal expected, line_coverage(code)
     with_source(code) { |path| assert_equal expected.map { |count| count && 0 }, Coverage.line_stub(path) }
+  end
+
+  def branch_coverage(code)
+    with_source(code) do |path|
+      Coverage.start(branches: true)
+      verbose, $VERBOSE = $VERBOSE, nil # END in a method warns
+      load path
+      Coverage.result.fetch(path)[:branches]
+    ensure
+      $VERBOSE = verbose
+    end
   end
 end
