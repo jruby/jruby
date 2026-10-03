@@ -232,7 +232,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private volatile boolean disposed = false;
 
     // a fiber joining this thread through a fiber scheduler. MRI: join_list
-    private record SchedulerJoiner(IRubyObject scheduler, IRubyObject fiber) {}
+    private record SchedulerJoiner(IRubyObject scheduler, RubyThread thread, IRubyObject fiber) {}
 
     private List<SchedulerJoiner> schedulerJoiners;
 
@@ -491,7 +491,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             // MRI: rb_threadptr_join_list_wakeup
             if (joiners != null) {
                 for (SchedulerJoiner joiner : joiners) {
-                    FiberScheduler.unblock(getContext(), joiner.scheduler(), this, joiner.fiber());
+                    FiberScheduler.unblock(getContext(), joiner.scheduler(), joiner.thread(), joiner.fiber());
                 }
             }
         } finally {
@@ -1348,7 +1348,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     // MRI: thread_join_sleep, which blocks the fiber through the scheduler until the thread is dead,
     // passing what is left of the timeout each time. Returns false if the timeout expired first.
     private boolean schedulerJoin(ThreadContext context, IRubyObject scheduler, long timeoutMillis) {
-        SchedulerJoiner joiner = new SchedulerJoiner(scheduler, context.getFiber());
+        SchedulerJoiner joiner = new SchedulerJoiner(scheduler, context.getFiberCurrentThread(), context.getFiber());
         long end = timeoutMillis == Long.MAX_VALUE ? Long.MAX_VALUE : System.currentTimeMillis() + timeoutMillis;
 
         while (true) {
