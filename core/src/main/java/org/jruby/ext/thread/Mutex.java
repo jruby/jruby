@@ -28,10 +28,14 @@
 
 package org.jruby.ext.thread;
 
+import java.util.ArrayDeque;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
+import org.jruby.FiberScheduler;
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
+import org.jruby.RubyFloat;
 import org.jruby.RubyObject;
 import org.jruby.RubyThread;
 import org.jruby.RubyTime;
@@ -59,6 +63,21 @@ public class Mutex extends RubyObject implements DataType {
     volatile RubyThread lockingThread;
     /** The fiber within {@link #lockingThread} that currently holds the lock. */
     volatile IRubyObject lockingFiber;
+
+    /** A fiber waiting through a fiber scheduler, on a Mutex or a ConditionVariable. MRI: sync_waiter */
+    record FiberWaiter(IRubyObject scheduler, IRubyObject fiber) {}
+
+    /** Fibers blocked in {@link #lock} through a fiber scheduler. MRI: mutex waitq */
+    private final ArrayDeque<FiberWaiter> schedulerWaiters = new ArrayDeque<>();
+
+    /**
+     * Threads in {@link #sleep} release the lock inside Condition#await rather than through {@link #unlock},
+     * so they cannot hand it to a fiber waiting through a scheduler. While any are doing so, such fibers
+     * retry on a short timeout instead.
+     */
+    private final AtomicInteger awaitingThreads = new AtomicInteger();
+
+    private static final double AWAITING_RETRY_SECONDS = 0.001;
 
     @JRubyMethod(name = "new", rest = true, meta = true)
     public static Mutex newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
@@ -111,12 +130,17 @@ public class Mutex extends RubyObject implements DataType {
 
         checkRelocking(context);
 
-        if (this.lockingThread == parentThread && this.lockingFiber != context.getFiber()) {
+        IRubyObject scheduler = FiberScheduler.current(context);
+
+        if (scheduler != null) {
+            schedulerLock(context, scheduler);
+        } else if (this.lockingThread == parentThread && this.lockingFiber != context.getFiber()) {
             throw context.runtime.newThreadError("deadlock; lock already owned by another fiber belonging to the same thread");
         }
 
-        // try locking without sleep status to avoid looking like blocking
-        if (!thread.tryLock(lock)) {
+        // schedulerLock has already acquired the lock when there is a scheduler;
+        // otherwise try locking without sleep status to avoid looking like blocking
+        if (!lock.isHeldByCurrentThread() && !thread.tryLock(lock)) {
             for (;;) {
                 try {
                     context.getThread().lockInterruptibly(lock);
@@ -146,6 +170,42 @@ public class Mutex extends RubyObject implements DataType {
         return this;
     }
 
+    // MRI: do_mutex_lock, which blocks a fiber through the scheduler until the lock is free
+    private void schedulerLock(ThreadContext context, IRubyObject scheduler) {
+        RubyThread thread = context.getThread();
+        FiberWaiter waiter = new FiberWaiter(scheduler, context.getFiber());
+
+        while (!thread.tryLock(lock)) {
+            synchronized (schedulerWaiters) {
+                // the holder may have unlocked since, and found no one to wake
+                if (thread.tryLock(lock)) return;
+
+                schedulerWaiters.add(waiter);
+            }
+
+            IRubyObject timeout = awaitingThreads.get() > 0 ?
+                    RubyFloat.newFloat(context.runtime, AWAITING_RETRY_SECONDS) : context.nil;
+
+            try {
+                FiberScheduler.block(context, scheduler, this, timeout);
+            } finally {
+                synchronized (schedulerWaiters) {
+                    schedulerWaiters.remove(waiter);
+                }
+            }
+        }
+    }
+
+    // MRI: rb_mutex_unlock_th's wakeup of the next fiber waiting through a scheduler
+    private void wakeupSchedulerWaiter(ThreadContext context) {
+        FiberWaiter waiter;
+        synchronized (schedulerWaiters) {
+            waiter = schedulerWaiters.poll();
+        }
+
+        if (waiter != null) FiberScheduler.unblock(context, waiter.scheduler(), this, waiter.fiber());
+    }
+
     @JRubyMethod
     public IRubyObject unlock(ThreadContext context) {
         if (!isLocked()) {
@@ -159,6 +219,7 @@ public class Mutex extends RubyObject implements DataType {
         this.lockingThread = null;
         this.lockingFiber = null;
         context.getThread().unlock(lock);
+        wakeupSchedulerWaiter(context);
         return hasQueued ? context.nil : this;
     }
 
@@ -171,7 +232,25 @@ public class Mutex extends RubyObject implements DataType {
     public IRubyObject sleep(ThreadContext context, IRubyObject timeout) {
         final long beg = System.currentTimeMillis();
 
+        // MRI: rb_mutex_sleep, which sleeps through the scheduler and relocks afterwards
+        IRubyObject scheduler = FiberScheduler.current(context);
+        if (scheduler != null) {
+            unlock(context);
+            try {
+                FiberScheduler.kernelSleep(context, scheduler, timeout);
+            } finally {
+                lock(context);
+            }
+
+            return asFixnum(context, (System.currentTimeMillis() - beg) / 1000);
+        }
+
+        awaitingThreads.incrementAndGet();
         try {
+            // wake the first fiber waiting through a scheduler so it blocks again on the short timeout, taking the
+            // lock once the await below releases it; any others are woken in turn as the lock is released
+            wakeupSchedulerWaiter(context);
+
             RubyThread thread = context.getThread();
 
             if (timeout.isNil()) {
@@ -190,6 +269,8 @@ public class Mutex extends RubyObject implements DataType {
             throw context.runtime.newThreadError("Attempt to unlock a mutex which is not locked");
         } catch (InterruptedException ex) {
             context.pollThreadEvents();
+        } finally {
+            awaitingThreads.decrementAndGet();
         }
 
         return asFixnum(context, (System.currentTimeMillis() - beg) / 1000);
