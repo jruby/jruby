@@ -672,6 +672,44 @@ class TestCoverage < Test::Unit::TestCase
     RUBY
   end
 
+  # The expected results below are MRI's (4.0, prism), and a line stub reads as the counts do with every count 0.
+
+  def test_conditional_used_as_a_value_counts_its_predicate_line
+    assert_line_coverage [1, 1, 1, 1, nil, 1, 1, 0, nil, 1, 1, 1, nil, 1, 1], <<~'RUBY'
+      def value_conditionals(x)
+        @a ||=
+          if x
+            1
+          end
+        b = [1,
+          unless x
+            2
+          end]
+        c = value_of(
+          x ?
+            3 : 4)
+      end
+      def value_of(v) = v
+      value_conditionals(true)
+    RUBY
+  end
+
+  def test_elsif_conditions_are_line_events
+    assert_line_coverage [1, 2, 1, 1, 1, 0, 0, nil, nil, 1, 1], <<~'RUBY'
+      def elsifs(x)
+        if x == 1
+          :one
+        elsif x == 2
+          :two
+        elsif x == 3
+          :three
+        end
+      end
+      elsifs(1)
+      elsifs(2)
+    RUBY
+  end
+
   def test_line_stub_has_an_entry_for_every_line
     source = <<~'RUBY'
       def show
@@ -734,5 +772,11 @@ class TestCoverage < Test::Unit::TestCase
       load path
       Coverage.result.fetch(path)[:lines]
     end
+  end
+
+  # The line counts, and the line stub as the same lines with every count 0
+  def assert_line_coverage(expected, code)
+    assert_equal expected, line_coverage(code)
+    with_source(code) { |path| assert_equal expected.map { |count| count && 0 }, Coverage.line_stub(path) }
   end
 end
