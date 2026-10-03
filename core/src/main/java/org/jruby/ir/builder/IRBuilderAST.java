@@ -989,7 +989,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
      * the whole call, as MRI does).
      */
     private BranchTarget[] declareSafeNavigationBranches(Node node) {
-        BranchCoverage branch = declareBranch(BranchCoverage.Type.SAFE_NAVIGATION, node);
+        BranchCoverage branch = declareBranch(BranchCoverage.Type.SAFE_NAVIGATION, safeNavigationSpanOf(node));
         if (branch == null) return null;
 
         return new BranchTarget[] { declareTarget(branch, BranchTarget.Label.THEN, null), declareTarget(branch, BranchTarget.Label.ELSE, null) };
@@ -2517,15 +2517,33 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return spanOf(node);
     }
 
+    /**
+     * A safe-navigation call's branch ends where MRI ends it (see CallNode#setSafeNavigationEnd), short of its
+     * block; an assignment's is the whole assignment.
+     */
+    private static int[] safeNavigationSpanOf(Node node) {
+        int[] span = spanOf(node);
+
+        if (span != null && node instanceof CallNode call && call.hasSafeNavigationEnd()) {
+            span[2] = call.getSafeNavigationEndLine() + 1;
+            span[3] = call.getSafeNavigationEndColumn();
+        }
+
+        return span;
+    }
+
     private static int[] spanOf(BranchCoverage branch) {
         return new int[] { branch.getStartLine(), branch.getStartColumn(), branch.getEndLine(), branch.getEndColumn() };
     }
 
     private BranchCoverage declareBranch(BranchCoverage.Type type, Node node) {
+        return declareBranch(type, spanOf(node));
+    }
+
+    private BranchCoverage declareBranch(BranchCoverage.Type type, int[] span) {
         FileCoverage file = branchCoverageFile();
         if (file == null) return null;
 
-        int[] span = spanOf(node);
         if (span == null) return null;
 
         return file.declareBranch(type, span[0], span[1], span[2], span[3]);

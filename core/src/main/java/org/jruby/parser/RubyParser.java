@@ -2548,6 +2548,7 @@ states[82] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
 states[84] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = p.new_call(((Node)yyVals[-3+yyTop].value), ((ByteList)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), null, yyVals[yyTop - count + 3].start());
+                    p.safe_navigation_end(((Node)yyVal), yyVals[yyTop - count + 3].end, yyVals[yyTop - count + 4].end, false);
                     /*% %*/
                     /*% ripper: method_add_arg!(call!($1, $2, $3), $4) %*/
   return yyVal;
@@ -2586,6 +2587,7 @@ states[88] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
 states[89] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = p.new_call(((Node)yyVals[-3+yyTop].value), ((ByteList)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), null, yyVals[yyTop - count + 3].start());
+                    p.safe_navigation_end(((Node)yyVal), yyVals[yyTop - count + 3].end, yyVals[yyTop - count + 4].end, false);
                     /*% %*/
                     /*% ripper: command_call!($1, $2, $3, $4) %*/
   return yyVal;
@@ -2594,6 +2596,7 @@ states[90] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
                     /*%%%*/
                     yyVal = p.new_call(((Node)yyVals[-4+yyTop].value), ((ByteList)yyVals[-3+yyTop].value), ((ByteList)yyVals[-2+yyTop].value), ((Node)yyVals[-1+yyTop].value), ((IterNode)yyVals[0+yyTop].value), yyVals[yyTop - count + 3].start());
                     p.span(((Node)yyVal), yyVals[yyTop - count + 1].start, yyVals[yyTop - count + 4].end);
+                    p.safe_navigation_end(((Node)yyVal), yyVals[yyTop - count + 3].end, yyVals[yyTop - count + 4].end, false);
                     /*% %*/
                     /*% ripper: method_add_block!(command_call!($1, $2, $3, $4), $5) %*/
   return yyVal;
@@ -4937,6 +4940,7 @@ states[488] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[489] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = p.new_call(((Node)yyVals[-3+yyTop].value), ((ByteList)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), null, yyVals[yyTop - count + 3].start());
+                    p.safe_navigation_end(((Node)yyVal), yyVals[yyTop - count + 3].end, yyVals[yyTop - count + 4].end, true);
                     /*% %*/
                     /*% ripper: opt_event(:method_add_arg!, call!($1, $2, $3), $4) %*/
   return yyVal;
@@ -4945,6 +4949,7 @@ states[490] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     /*%%%*/
                     yyVal = p.new_call(((Node)yyVals[-4+yyTop].value), ((ByteList)yyVals[-3+yyTop].value), ((ByteList)yyVals[-2+yyTop].value), ((Node)yyVals[-1+yyTop].value), ((IterNode)yyVals[0+yyTop].value), yyVals[yyTop - count + 3].start());
                     p.span(((Node)yyVal), yyVals[yyTop - count + 1].start, yyVals[yyTop - count + 4].end);
+                    p.safe_navigation_end(((Node)yyVal), yyVals[yyTop - count + 3].end, yyVals[yyTop - count + 4].end, true);
                     /*% %*/
                     /*% ripper: opt_event(:method_add_block!, command_call!($1, $2, $3, $4), $5) %*/
   return yyVal;
@@ -4953,6 +4958,7 @@ states[491] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     /*%%%*/
                     yyVal = p.new_call(((Node)yyVals[-4+yyTop].value), ((ByteList)yyVals[-3+yyTop].value), ((ByteList)yyVals[-2+yyTop].value), ((Node)yyVals[-1+yyTop].value), ((IterNode)yyVals[0+yyTop].value), yyVals[yyTop - count + 3].start());
                     p.span(((Node)yyVal), yyVals[yyTop - count + 1].start, yyVals[yyTop - count + 4].end);
+                    p.safe_navigation_end(((Node)yyVal), yyVals[yyTop - count + 3].end, yyVals[yyTop - count + 4].end, false);
                     /*% %*/
                     /*% ripper: method_add_block!(command_call!($1, $2, $3, $4), $5) %*/
   return yyVal;
@@ -4968,6 +4974,7 @@ states[492] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[493] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = p.new_call(((Node)yyVals[-3+yyTop].value), ((ByteList)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value), null, yyVals[yyTop - count + 3].start());
+                    p.safe_navigation_end(((Node)yyVal), yyVals[yyTop - count + 3].end, yyVals[yyTop - count + 4].end, true);
                     /*% %*/
                     /*% ripper: opt_event(:method_add_arg!, call!($1, $2, $3), $4) %*/
   return yyVal;
@@ -4989,6 +4996,7 @@ states[495] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[496] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = p.new_call(((Node)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), LexingCommon.CALL, ((Node)yyVals[0+yyTop].value), null, yyVals[yyTop - count + 3].start());
+                    p.safe_navigation_end(((Node)yyVal), yyVals[yyTop - count + 3].end, yyVals[yyTop - count + 3].end, true); /* o&.(): the parentheses are the message*/
                     /*% %*/
                     /*% ripper: method_add_arg!(call!($1, $2, ID2VAL(idCall)), $3) %*/
   return yyVal;
@@ -6905,7 +6913,7 @@ states[826] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4901 "parse.y"
+					// line 4909 "parse.y"
 
 }
-					// line 15243 "-"
+					// line 15251 "-"

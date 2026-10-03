@@ -465,6 +465,26 @@ public abstract class RubyParserBase {
         return node;
     }
 
+    /**
+     * Where MRI ends the branch of a safe-navigation call (o&amp;.m): after the message when there are no arguments
+     * but a block argument (o&amp;.m, o&amp;.m(), o&amp;.m(&amp;b)), else after the arguments (o&amp;.m(1, &amp;b), or
+     * o&amp;.m 1 without the block argument of o&amp;.m 1, &amp;b). A block is never part of it.
+     *
+     * @param argsEnd the end of the arguments as written: after the closing parenthesis when parenthesized
+     */
+    public void safe_navigation_end(Node node, long messageEnd, long argsEnd, boolean parenthesized) {
+        if (!(node instanceof CallNode call) || !call.isLazy()) return;
+
+        Node args = call.getArgsNode();
+        if (args == null) {
+            call.setSafeNavigationEnd(messageEnd);
+        } else if (!parenthesized && call.getIterNode() instanceof BlockPassNode && args.hasSourceSpan()) {
+            call.setSafeNavigationEnd(ProductionState.pack(args.getEndLine(), args.getEndColumn()));
+        } else {
+            call.setSafeNavigationEnd(argsEnd);
+        }
+    }
+
     public Node lock_span(Node node) {
         if (node != null) node.lockSourceSpan();
         return node;
