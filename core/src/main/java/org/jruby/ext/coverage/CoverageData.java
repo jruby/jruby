@@ -133,7 +133,7 @@ public class CoverageData {
      * @param filename the file the line belongs to
      * @param line zero-based line number
      * @return true if the line was counted. False if there is nowhere to count it: a negative line, an
-     *         untracked file, a file with no line counts, or a line past the end of them.
+     *         untracked file, a file with no line counts, a line past the end of them, or a line without code.
      */
     public synchronized boolean coverLine(String filename, int line) {
         Map<String, FileCoverage> coverage = this.coverage;
@@ -155,7 +155,12 @@ public class CoverageData {
             lines.add(line);
         } else {
             if (lines.size() <= line) return false;
-            lines.set(line, lines.get(line) + 1);
+
+            int count = lines.get(line);
+            // a line without code (-1) has no count, even if it was asked to count one
+            if (count < 0) return false;
+
+            lines.set(line, count + 1);
         }
 
         return true;
