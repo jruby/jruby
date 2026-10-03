@@ -77,7 +77,7 @@ public class ConditionVariable extends RubyObject {
     @JRubyMethod(name = "wait")
     public IRubyObject wait_ruby(ThreadContext context, IRubyObject m, IRubyObject t) {
         IRubyObject scheduler = FiberScheduler.current(context);
-        Object waiter = scheduler == null ? context.getThread() : new Mutex.FiberWaiter(scheduler, context.getFiber());
+        Waiter waiter = scheduler == null ? new ThreadWaiter(context.getThread()) : new Mutex.FiberWaiter(scheduler, context.getFiber());
 
         waiters.add(waiter);
         try {
@@ -91,7 +91,7 @@ public class ConditionVariable extends RubyObject {
 
     @JRubyMethod
     public IRubyObject broadcast(ThreadContext context) {
-        Object waiter;
+        Waiter waiter;
         while ((waiter = waiters.poll()) != null) {
             wakeup(context, waiter);
         }
@@ -101,7 +101,7 @@ public class ConditionVariable extends RubyObject {
 
     @JRubyMethod
     public IRubyObject signal(ThreadContext context) {
-        Object waiter = waiters.poll();
+        Waiter waiter = waiters.poll();
 
         if (waiter != null) wakeup(context, waiter);
 
@@ -109,11 +109,10 @@ public class ConditionVariable extends RubyObject {
     }
 
     // MRI: sync_wakeup
-    private void wakeup(ThreadContext context, Object waiter) {
+    private void wakeup(ThreadContext context, Waiter waiter) {
         switch (waiter) {
-            case RubyThread thread -> thread.interrupt();
+            case ThreadWaiter(RubyThread thread) -> thread.interrupt();
             case Mutex.FiberWaiter(IRubyObject scheduler, IRubyObject fiber) -> FiberScheduler.unblock(context, scheduler, this, fiber);
-            default -> throw new IllegalStateException("unexpected waiter: " + waiter);
         }
     }
 
@@ -126,7 +125,15 @@ public class ConditionVariable extends RubyObject {
         return context.sites.ConditionVariable;
     }
 
-    // RubyThreads, or Mutex.FiberWaiters for fibers waiting through a fiber scheduler
-    private final ConcurrentLinkedQueue<Object> waiters = new ConcurrentLinkedQueue<>();
+    /**
+     * A thread or fiber waiting in {@link #wait_ruby}.
+     * {@link Mutex.FiberWaiter} also queues fibers blocked in Mutex#lock.
+     */
+    sealed interface Waiter permits ThreadWaiter, Mutex.FiberWaiter {}
+
+    /** A thread waiting without a fiber scheduler, woken by interrupting it. */
+    record ThreadWaiter(RubyThread thread) implements Waiter {}
+
+    private final ConcurrentLinkedQueue<Waiter> waiters = new ConcurrentLinkedQueue<>();
     
 }

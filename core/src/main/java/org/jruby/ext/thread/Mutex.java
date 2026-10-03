@@ -65,7 +65,7 @@ public class Mutex extends RubyObject implements DataType {
     volatile IRubyObject lockingFiber;
 
     /** A fiber waiting through a fiber scheduler, on a Mutex or a ConditionVariable. MRI: sync_waiter */
-    record FiberWaiter(IRubyObject scheduler, IRubyObject fiber) {}
+    record FiberWaiter(IRubyObject scheduler, IRubyObject fiber) implements ConditionVariable.Waiter {}
 
     /** Fibers blocked in {@link #lock} through a fiber scheduler. MRI: mutex waitq */
     private final ArrayDeque<FiberWaiter> schedulerWaiters = new ArrayDeque<>();
