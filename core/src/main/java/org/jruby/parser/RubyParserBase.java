@@ -1255,16 +1255,46 @@ public abstract class RubyParserBase {
      * @param node to be checked.
      */
     public Node void_stmts(Node node) {
-        if (!getWarnings().isVerbose() || !(node instanceof BlockNode)) return node;
+        if (!(node instanceof BlockNode blockNode)) return node;
 
-        BlockNode blockNode = (BlockNode) node;
         int size = blockNode.size();
+        boolean verbose = getWarnings().isVerbose();
 
         for (int i = 0; i <= size - 2; i++) {
-            void_expr(blockNode.get(i));
+            Node statement = blockNode.get(i);
+
+            if (verbose) void_expr(statement);
+            // MRI compiles nothing for it, so it has no line event
+            if (compilesToNothingWhenUnused(statement)) uncoverAll(statement);
         }
 
         return node;
+    }
+
+    /**
+     * Whether MRI compiles nothing for this statement when its value is not used: a statement
+     * {@link #eliminatedWhenUnused} finds, a local variable assigned to itself (which MRI's peephole optimizer
+     * removes), or a list of them.
+     */
+    private static boolean compilesToNothingWhenUnused(Node node) {
+        return switch (node) {
+            case null -> true;
+            case NilImplicitNode ignored -> true;
+            case BlockNode block -> {
+                for (Node statement : block.children()) {
+                    if (!compilesToNothingWhenUnused(statement)) yield false;
+                }
+                yield true;
+            }
+            case LocalAsgnNode asgn -> isSameVariable(asgn, asgn.getValueNode());
+            case DAsgnNode asgn -> isSameVariable(asgn, asgn.getValueNode());
+            default -> eliminatedWhenUnused(node);
+        };
+    }
+
+    private static boolean isSameVariable(IScopedNode variable, Node value) {
+        return (value instanceof LocalVarNode || value instanceof DVarNode) && value instanceof IScopedNode read &&
+                read.getDepth() == variable.getDepth() && read.getIndex() == variable.getIndex();
     }
 
 	/**
@@ -2759,6 +2789,17 @@ public abstract class RubyParserBase {
         Integer line = coveredNodes == null ? null : coveredNodes.remove(node);
 
         if (line != null && --lineMarks[line] == 0) coverage[line] = -1;
+    }
+
+    /**
+     * Undo cover for node and everything in it, which MRI compiles to nothing, and make none of it a line event.
+     */
+    private void uncoverAll(Node node) {
+        if (node == null) return;
+
+        uncover(node);
+        node.unsetNewline();
+        for (Node child : node.childNodes()) uncoverAll(child);
     }
 
     /**
