@@ -617,16 +617,26 @@ public abstract class RubyParserBase {
         }
     }
 
-    private static void markBranch(Node node, Node predicate, boolean unless, boolean elsif, long predicateEnd, long elseStart) {
-        if (node instanceof IfNode ifNode) {
-            ifNode.markBranch(unless, elsif, predicateEnd, elseStart);
-            ifNode.setConstantPredicate(constantPredicate(predicate));
+    /**
+     * Whether MRI compiles a constant predicate to jumps alone: it is made only of literals, joined by and/or.
+     */
+    private static boolean compilesToJumpOnly(Node node) {
+        if (node instanceof AndNode and && and.getParenSpan() == null) {
+            return compilesToJumpOnly(and.getFirstNode()) && compilesToJumpOnly(and.getSecondNode());
+        } else if (node instanceof OrNode or && or.getParenSpan() == null) {
+            return compilesToJumpOnly(or.getFirstNode()) && compilesToJumpOnly(or.getSecondNode());
         }
+
+        return jumpTargets(node) != (TO_THEN | TO_ELSE);
+    }
+
+    private static void markBranch(Node node, boolean unless, boolean elsif, long predicateEnd, long elseStart) {
+        if (node instanceof IfNode ifNode) ifNode.markBranch(unless, elsif, predicateEnd, elseStart);
     }
 
     /** if ... [elsif ...] [else ...] end */
-    public Node branch_if(Node node, Node predicate, long predicateEnd, long elseStart, long end) {
-        markBranch(node, predicate, false, false, predicateEnd, elseStart);
+    public Node branch_if(Node node, long predicateEnd, long elseStart, long end) {
+        markBranch(node, false, false, predicateEnd, elseStart);
         if (node instanceof IfNode ifNode) {
             // MRI reports every elsif clause as reaching the shared 'end'
             for (Node tail = ifNode.getElseBody(); tail instanceof IfNode elsif && elsif.isElsif(); tail = elsif.getElseBody()) {
@@ -637,26 +647,26 @@ public abstract class RubyParserBase {
     }
 
     /** unless ... [else ...] end (then/else are swapped in the IfNode) */
-    public Node branch_unless(Node node, Node predicate, long predicateEnd) {
-        markBranch(node, predicate, true, false, predicateEnd, -1);
+    public Node branch_unless(Node node, long predicateEnd) {
+        markBranch(node, true, false, predicateEnd, -1);
         return node;
     }
 
     /** elsif ... (nested as the else body of the enclosing if) */
-    public Node branch_elsif(Node node, Node predicate, long predicateEnd, long elseStart) {
-        markBranch(node, predicate, false, true, predicateEnd, elseStart);
+    public Node branch_elsif(Node node, long predicateEnd, long elseStart) {
+        markBranch(node, false, true, predicateEnd, elseStart);
         return node;
     }
 
     /** cond ? a : b */
-    public Node branch_ternary(Node node, Node predicate, long predicateEnd) {
-        markBranch(node, predicate, false, false, predicateEnd, -1);
+    public Node branch_ternary(Node node, long predicateEnd) {
+        markBranch(node, false, false, predicateEnd, -1);
         return node;
     }
 
     /** stmt if cond / stmt unless cond */
-    public Node branch_modifier(Node node, Node predicate, Node statement, boolean unless, long predicateEnd) {
-        markBranch(node, predicate, unless, false, predicateEnd, -1);
+    public Node branch_modifier(Node node, Node statement, boolean unless, long predicateEnd) {
+        markBranch(node, unless, false, predicateEnd, -1);
         if (node instanceof IfNode ifNode) ifNode.setSourceBody(statement);
         return node;
     }
@@ -1273,7 +1283,7 @@ public abstract class RubyParserBase {
     /**
      * Whether MRI compiles nothing for this statement when its value is not used: a statement
      * {@link #eliminatedWhenUnused} finds, a local variable assigned to itself (which MRI's peephole optimizer
-     * removes), or a list of them.
+     * removes), a conditional on a literal whose arm that can run is one, or a list of them.
      */
     private static boolean compilesToNothingWhenUnused(Node node) {
         return switch (node) {
@@ -1285,6 +1295,8 @@ public abstract class RubyParserBase {
                 }
                 yield true;
             }
+            case IfNode ifNode -> ifNode.hasFoldedPredicate() &&
+                    compilesToNothingWhenUnused(ifNode.isConstantlyTrue() ? ifNode.getThenBody() : ifNode.getElseBody());
             case LocalAsgnNode asgn -> isSameVariable(asgn, asgn.getValueNode());
             case DAsgnNode asgn -> isSameVariable(asgn, asgn.getValueNode());
             default -> eliminatedWhenUnused(node);
@@ -1432,13 +1444,26 @@ public abstract class RubyParserBase {
     public Node new_if(int line, Node condition, Node thenNode, Node elseNode) {
         if (condition == null) return elseNode;
 
+        Node rawCondition = condition;
+        int constantPredicate = constantPredicate(condition);
         condition = cond0(condition, ConditionType.IN_COND);
 
         IfNode ifNode = new IfNode(line, condition, thenNode, elseNode);
+        ifNode.setConstantPredicate(constantPredicate);
+        ifNode.setFoldedPredicate(constantPredicate != 0 && compilesToJumpOnly(rawCondition));
 
-        // As in MRI, a conditional's predicate is a line event wherever the conditional is (an IfNode is a newline
-        // node), so its line is coverable.
-        cover(ifNode);
+        // MRI folds a conditional on a literal away: the arm that cannot run is not compiled, so it has no line
+        // events.
+        if (constantPredicate != 0) uncoverAll(constantPredicate > 0 ? elseNode : thenNode);
+
+        if (ifNode.hasFoldedPredicate()) {
+            // Nor is a predicate of literals, so there is no line event for it either
+            ifNode.unsetNewline();
+        } else {
+            // As in MRI, a conditional's predicate is a line event wherever the conditional is (an IfNode is a
+            // newline node), so its line is coverable.
+            cover(ifNode);
+        }
 
         return ifNode;
     }
