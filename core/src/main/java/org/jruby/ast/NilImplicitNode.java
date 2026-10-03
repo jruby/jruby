@@ -27,6 +27,10 @@ public class NilImplicitNode extends NilNode implements InvisibleNode {
     }
 
     @Override
+    public void setBacktraceNewline() {
+    }
+
+    @Override
     public void setLine(int line) {
     }
 }

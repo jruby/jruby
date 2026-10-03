@@ -753,6 +753,23 @@ class TestCoverage < Test::Unit::TestCase
     RUBY
   end
 
+  def test_statement_of_a_modifier_conditional_is_no_line_event_unless_interpolated
+    assert_line_coverage [1, 1, nil, 1, nil, nil, 1, 1, 1, nil, nil, 1], <<~'RUBY'
+      def modified(*) = 1
+      def modifiers(y)
+        modified 1,
+          2 if y
+        modified(
+          1) unless
+            y
+        "#{y} item#{'s' unless y == 1}"
+        "#{modified 1 if
+          y}"
+      end
+      modifiers(1)
+    RUBY
+  end
+
   def test_line_stub_has_an_entry_for_every_line
     source = <<~'RUBY'
       def show

@@ -178,7 +178,9 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
 
     private Operand buildOperand(Variable result, Node node) throws NotCompilableException {
         if (node.isNewline()) {
-            if (coverageMode != 0 && !(node instanceof NilImplicitNode)) {
+            if (coverageMode != 0 && !node.isLineEvent()) {
+                determineIfWeNeedLineNumberForCall(node.getLine(), true); // only for backtraces
+            } else if (coverageMode != 0 && !(node instanceof NilImplicitNode)) {
                 determineIfWeNeedCoverageLine(node.getLine(), LineEvents.firstInstruction(node));
             } else {
                 determineIfWeNeedLineNumber(node.getLine(), true, node instanceof NilImplicitNode, node instanceof DefNode);
