@@ -36,13 +36,11 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Access;
 import org.jruby.api.Create;
 import org.jruby.api.Error;
-import org.jruby.api.Warn;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalDumper;
 import org.jruby.runtime.marshal.MarshalLoader;
-import org.jruby.util.ArraySupport;
 import org.jruby.util.io.RubyInputStream;
 import org.jruby.util.io.RubyOutputStream;
 
@@ -442,7 +440,7 @@ public class RubySet extends RubyObject implements Set {
         return this.hash.keys(context);
     }
 
-    // Returns self if no arguments are given.
+    // Returns self if no block is given.
     @JRubyMethod
     public RubySet to_set(final ThreadContext context, final Block block) {
         if ( block.isGiven() ) {
@@ -451,31 +449,6 @@ public class RubySet extends RubyObject implements Set {
             return set;
         }
         return this;
-    }
-
-    // Otherwise, converts the set to another with klass.new(self, *args, &block).
-    @JRubyMethod(rest = true)
-    public RubySet to_set(final ThreadContext context, final IRubyObject[] args, final Block block) {
-        if ( args.length == 0 ) return to_set(context, block);
-
-        Warn.warnDeprecated(context, "passing arguments to Set#to_set");
-
-        IRubyObject klass = args[0];
-        final RubyClass Set = Access.getClass(context, "Set");
-
-        if (klass == Set && args.length == 1 && !block.isGiven()) return this;
-
-        final IRubyObject[] rest;
-        if (klass instanceof RubyClass) {
-            rest = ArraySupport.newCopy(args, 1, args.length - 1);
-        } else {
-            klass = Set;
-            rest = args;
-        }
-
-        RubySet set = new RubySet(context.runtime, (RubyClass) klass, false);
-        set.initialize(context, rest, block);
-        return set;
     }
 
     @JRubyMethod
