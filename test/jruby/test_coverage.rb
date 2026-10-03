@@ -822,6 +822,27 @@ class TestCoverage < Test::Unit::TestCase
     RUBY
   end
 
+  def test_branch_arms_of_literals_span_what_mri_reports
+    assert_equal({
+      [:if, 0, 2, 2, 2, 18] => { [:then, 1, 2, 6, 2, 14] => 1, [:else, 2, 2, 17, 2, 18] => 0 },
+      [:if, 3, 3, 2, 3, 13] => { [:then, 4, 3, 6, 3, 8] => 1, [:else, 5, 3, 11, 3, 13] => 0 },
+      [:if, 6, 4, 6, 4, 18] => { [:then, 7, 4, 10, 4, 14] => 1, [:else, 8, 4, 17, 4, 18] => 0 },
+      [:if, 9, 7, 2, 9, 5] => { [:then, 10, 8, 4, 8, 11] => 1, [:else, 11, 7, 2, 9, 5] => 0 },
+    }, branch_coverage(<<~'RUBY'))
+      def literal_arms(x)
+        x ? -> { 1 } : 2
+        x ? ?a : ?b
+        y = x ? <<~A : 2
+          a
+        A
+        if x
+          END { }
+        end
+      end
+      literal_arms(true)
+    RUBY
+  end
+
   def test_line_stub_has_an_entry_for_every_line
     source = <<~'RUBY'
       def show

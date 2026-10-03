@@ -2270,6 +2270,7 @@ states[36] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
                     p.setLexContext(((LexContext)yyVals[-4+yyTop].value));
                     /*%%%*/
                    yyVal = new PostExeNode(yyVals[yyTop - count + 1].start(), ((Node)yyVals[-1+yyTop].value), p.src_line());
+                   p.span(((Node)yyVal), yyVals[yyTop - count + 1].start, yyVals[yyTop - count + 5].end);
                     /*% %*/
                     /*% ripper: END!($4) %*/
   return yyVal;
@@ -4864,6 +4865,7 @@ states[481] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
                     ArgsNode args = p.args_with_numbered(((ArgsNode)yyVals[-2+yyTop].value), max_numparam, it_id);
                     yyVal = new LambdaNode(yyVals[yyTop - count + 1].start(), args, ((Node)yyVals[0+yyTop].value), p.getCurrentScope(), p.src_line());
                     ((LambdaNode)yyVal).setSourceSpan(ProductionState.column(((Long)yyVals[-1+yyTop].value)), ProductionState.line(yyVals[yyTop - count + 9].end), ProductionState.column(yyVals[yyTop - count + 9].end));
+                    ((LambdaNode)yyVal).setOperatorColumn(ProductionState.column(yyVals[yyTop - count + 1].start));
                     /*% %*/
                     /*% ripper: lambda!($5, $7) %*/
                     p.setLeftParenBegin(((Integer)yyVals[-7+yyTop].value));
@@ -6913,7 +6915,7 @@ states[826] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4909 "parse.y"
+					// line 4911 "parse.y"
 
 }
-					// line 15251 "-"
+					// line 15253 "-"
