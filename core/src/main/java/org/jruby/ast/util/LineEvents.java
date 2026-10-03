@@ -57,7 +57,7 @@ public final class LineEvents {
             case Match3Node match -> match.getReceiverNode();
             case AndNode and -> and.getFirstNode();
             case OrNode or -> or.getFirstNode();
-            case IfNode ifNode -> ifNode.getCondition();
+            case IfNode ifNode -> liveCode(ifNode);
             case CaseNode caseNode -> caseNode.getCaseNode() != null ? caseNode.getCaseNode() : firstWhen(caseNode.getCases());
             case Colon2Node path -> path.getLeftNode();
             case DotNode dot -> dot.getBeginNode();
@@ -75,6 +75,16 @@ public final class LineEvents {
             case DNode str -> firstInterpolation(str);
             default -> null;
         };
+    }
+
+    // MRI compiles only the arm that can run of a conditional on a literal (see IfNode#hasConstantPredicate), and
+    // nothing for the predicate when it is made of literals only.
+    private static Node liveCode(IfNode ifNode) {
+        if (!ifNode.hasFoldedPredicate()) return ifNode.getCondition();
+
+        Node arm = ifNode.isConstantlyTrue() ? ifNode.getThenBody() : ifNode.getElseBody();
+
+        return arm instanceof NilImplicitNode ? null : arm;
     }
 
     // Targets with a receiver have it evaluated before the value.

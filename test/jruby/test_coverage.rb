@@ -727,6 +727,32 @@ class TestCoverage < Test::Unit::TestCase
     RUBY
   end
 
+  def test_conditional_on_a_literal_compiles_only_its_live_arm
+    assert_line_coverage [1, nil, nil, nil, nil, 1, nil, nil, nil, nil, nil, nil, 1, nil, nil, 1, nil, nil, 1, nil, 1], <<~'RUBY'
+      def literal_predicates(x)
+        if false
+          :dead
+        end
+        if true
+          a = 1
+        else
+          b = 2
+        end
+        c = if nil
+          3
+        else
+          4
+        end
+        d = 5 unless true
+        if x and false
+          6
+        end
+        x
+      end
+      literal_predicates(1)
+    RUBY
+  end
+
   def test_line_stub_has_an_entry_for_every_line
     source = <<~'RUBY'
       def show

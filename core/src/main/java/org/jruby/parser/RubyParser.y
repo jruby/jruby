@@ -628,7 +628,7 @@ stmt            : keyword_alias fitem {
                     /*%%%*/
                     $$ = p.new_if(@1.start(), $3, p.remove_begin($1), null);
                     p.fixpos($<Node>$, $3);
-                    p.branch_modifier($<Node>$, $3, $1, false, @3.end);
+                    p.branch_modifier($<Node>$, $1, false, @3.end);
                     /*% %*/
                     /*% ripper: if_mod!($3, $1) %*/
                 }
@@ -636,7 +636,7 @@ stmt            : keyword_alias fitem {
                     /*%%%*/
                     $$ = p.new_if(@1.start(), $3, null, p.remove_begin($1));
                     p.fixpos($<Node>$, $3);
-                    p.branch_modifier($<Node>$, $3, $1, true, @3.end);
+                    p.branch_modifier($<Node>$, $1, true, @3.end);
                     /*% %*/
                     /*% ripper: unless_mod!($3, $1) %*/
                 }
@@ -1956,7 +1956,7 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     p.value_expr($1);
                     // Each arm of a ternary is a statement of its own for line events, as in MRI.
                     $$ = p.new_if(@1.start(), $1, p.newline_node($3, @3.start()), p.newline_node($6, @6.start()));
-                    p.branch_ternary($<Node>$, $1, @1.end);
+                    p.branch_ternary($<Node>$, @1.end);
                     /*% %*/
                     /*% ripper: ifop!($1, $3, $6) %*/
                 }
@@ -2428,14 +2428,14 @@ primary         : literal
                 | k_if expr_value then compstmt if_tail k_end {
                     /*%%%*/
                     $$ = p.new_if(@1.start(), $2, $4, $5);
-                    p.branch_if($<Node>$, $2, @2.end, $5 == null ? -1 : @5.start, @6.end);
+                    p.branch_if($<Node>$, @2.end, $5 == null ? -1 : @5.start, @6.end);
                     /*% %*/
                     /*% ripper: if!($2, $4, escape_Qundef($5)) %*/
                 }
                 | k_unless expr_value then compstmt opt_else k_end {
                     /*%%%*/
                     $$ = p.new_if(@1.start(), $2, $5, $4);
-                    p.branch_unless($<Node>$, $2, @2.end);
+                    p.branch_unless($<Node>$, @2.end);
                     /*% %*/
                     /*% ripper: unless!($2, $4, escape_Qundef($5)) %*/
                 }
@@ -2724,7 +2724,7 @@ if_tail         : opt_else
                 | k_elsif expr_value then compstmt if_tail {
                     /*%%%*/
                     $$ = p.new_if(@1.start(), $2, $4, $5);
-                    p.branch_elsif($<Node>$, $2, @2.end, $5 == null ? -1 : @5.start);
+                    p.branch_elsif($<Node>$, @2.end, $5 == null ? -1 : @5.start);
                     /*% %*/
                     /*% ripper: elsif!($2, $4, escape_Qundef($5)) %*/
                 };
