@@ -770,6 +770,20 @@ class TestCoverage < Test::Unit::TestCase
     RUBY
   end
 
+  # MRI compiles the arms, then the else: an else on the line of an arm is no line event of its own
+  def test_case_arm_on_the_line_of_its_else_counts
+    cases = <<~'RUBY'
+      def one_line_cases(x)
+        a = [1,
+          case x; when 1 then 2; else 3; end]
+        b = [1,
+          case x; in 1 then 2; else 3; end]
+      end
+    RUBY
+    assert_equal [1, 1, 1, 1, 1, nil, 1], line_coverage(cases + "one_line_cases(1)\n")
+    assert_equal [1, 1, 0, 1, 0, nil, 1], line_coverage(cases + "one_line_cases(3)\n")
+  end
+
   def test_line_stub_has_an_entry_for_every_line
     source = <<~'RUBY'
       def show
