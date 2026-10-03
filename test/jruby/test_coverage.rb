@@ -710,6 +710,23 @@ class TestCoverage < Test::Unit::TestCase
     RUBY
   end
 
+  def test_statements_compiled_to_nothing_are_no_line_events
+    assert_line_coverage [1, nil, nil, nil, nil, nil, nil, nil, 1, 1, nil, 1], <<~'RUBY'
+      def void_statements(x)
+        y = y
+        x
+        1
+        "str"
+        @iv
+        [1, :a]
+        x = x
+        $stdout
+        x
+      end
+      void_statements(1)
+    RUBY
+  end
+
   def test_line_stub_has_an_entry_for_every_line
     source = <<~'RUBY'
       def show
