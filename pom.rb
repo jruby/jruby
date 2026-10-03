@@ -73,7 +73,6 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
              # used in ./lib/pom.rb and ./maven/jruby-stdlib/pom.rb
              "rake.version": '13.4.2',
              "jruby-launcher.version": '1.1.6',
-             "ant.version": '1.9.8',
              "asm.version": '9.10.1',
              "jar-dependencies.version": '0.4.1',
              "jffi.version": '1.4.3',
