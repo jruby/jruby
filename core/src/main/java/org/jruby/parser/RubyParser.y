@@ -677,6 +677,7 @@ stmt            : keyword_alias fitem {
                     p.setLexContext($1);
                     /*%%%*/
                    $$ = new PostExeNode(@1.start(), $4, p.src_line());
+                   p.span($<Node>$, @1.start, @5.end);
                     /*% %*/
                     /*% ripper: END!($4) %*/
                 }
@@ -2999,6 +3000,7 @@ lambda          : tLAMBDA {
                     ArgsNode args = p.args_with_numbered($7, max_numparam, it_id);
                     $$ = new LambdaNode(@1.start(), args, $9, p.getCurrentScope(), p.src_line());
                     $<LambdaNode>$.setSourceSpan(ProductionState.column($<Long>8), ProductionState.line(@9.end), ProductionState.column(@9.end));
+                    $<LambdaNode>$.setOperatorColumn(ProductionState.column(@1.start));
                     /*% %*/
                     /*% ripper: lambda!($5, $7) %*/
                     p.setLeftParenBegin($<Integer>2);
