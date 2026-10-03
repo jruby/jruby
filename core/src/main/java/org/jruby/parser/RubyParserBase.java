@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -121,8 +122,10 @@ public abstract class RubyParserBase {
 
     private int[] coverage = EMPTY_COVERAGE;
 
-    // The line the most recent coverLine call marked, or -1 if an earlier statement had already marked it.
-    private int lastNewlyCoveredLine = -1;
+    // How many line events mark each line coverable, and the line each one marked, so that one found not to be a
+    // line event after all can give its line back (see uncover).
+    private int[] lineMarks = EMPTY_COVERAGE;
+    private Map<Node, Integer> coveredNodes;
 
     private static final int[] EMPTY_COVERAGE = new int[0];
 
@@ -736,7 +739,7 @@ public abstract class RubyParserBase {
     public Node newline_node(Node node, int line) {
         if (node == null) return null;
 
-        coverLine(LineEvents.lineOf(node));
+        cover(node);
         node.setNewline();
 
         return node;
@@ -780,12 +783,12 @@ public abstract class RubyParserBase {
      * conditional, as MRI counts its branches.
      *
      * CRuby's compiler finds coverable lines from the newline flag, but JRuby marks them as it parses, and
-     * newline_node marked this statement's line already (the last line it marked), so that is undone too.
+     * newline_node marked this statement's line already, so that is undone too.
      */
     public void nd_unset_fl_newline(Node node) {
         if (node instanceof IfNode) return;
 
-        if (node.isNewline()) uncoverLastLine();
+        uncover(node);
         node.unsetNewline();
     }
 
@@ -1402,7 +1405,13 @@ public abstract class RubyParserBase {
 
         condition = cond0(condition, ConditionType.IN_COND);
 
-        return new IfNode(line, condition, thenNode, elseNode);
+        IfNode ifNode = new IfNode(line, condition, thenNode, elseNode);
+
+        // As in MRI, a conditional's predicate is a line event wherever the conditional is (an IfNode is a newline
+        // node), so its line is coverable.
+        cover(ifNode);
+
+        return ifNode;
     }
 
     enum ConditionType {
@@ -2725,43 +2734,48 @@ public abstract class RubyParserBase {
     }
 
     /**
-     * Zero out coverable lines as they're encountered
+     * Mark the line of node's line event coverable (once per node).
      */
-    public void coverLine(int i) {
-        lastNewlyCoveredLine = -1;
+    private void cover(Node node) {
+        if (!isLineCountingEnabled()) return;
+
+        int line = LineEvents.lineOf(node);
         // We had an overflow so we cannot mark whatever line this is as covered.
-        if (i < 0) return;
-        if (isLineCountingEnabled()) {
-            growCoverageLines(i);
-            if (coverage[i] != 0) lastNewlyCoveredLine = i;
-            coverage[i] = 0;
-        }
+        if (line < 0) return;
+
+        if (coveredNodes == null) coveredNodes = new IdentityHashMap<>();
+        if (coveredNodes.putIfAbsent(node, line) != null) return;
+
+        growCoverageLines(line);
+        lineMarks[line]++;
+        coverage[line] = 0;
     }
 
     /**
-     * Undo the most recent coverLine (a statement marked by newline_node that turned out not to be a line
-     * event, such as a lone statement inside a string interpolation): the line reads as nil in the results
-     * unless another statement marks it. A line some earlier statement had already marked stays marked.
+     * Undo cover(node) for a node that turned out not to be a line event (such as a lone statement inside a
+     * string interpolation): its line reads as nil in the results unless another line event marks it too.
      */
-    public void uncoverLastLine() {
-        if (lastNewlyCoveredLine < 0) return;
-        coverage[lastNewlyCoveredLine] = -1;
-        lastNewlyCoveredLine = -1;
+    private void uncover(Node node) {
+        Integer line = coveredNodes == null ? null : coveredNodes.remove(node);
+
+        if (line != null && --lineMarks[line] == 0) coverage[line] = -1;
     }
 
     /**
-     *  Called by coverLine to grow it large enough to add new covered line.
+     *  Called by cover to grow it large enough to add new covered line.
      *  Also called at end up parse to pick up any extra non-code lines which
      *  should be marked -1 for not valid code lines.
      */
     public void growCoverageLines(int i) {
         if (coverage == null) {
             coverage = new int[i + 1];
+            lineMarks = new int[i + 1];
         } else if (coverage.length <= i) {
             int[] newCoverage = new int[i + 1];
             Arrays.fill(newCoverage, -1);
             System.arraycopy(coverage, 0, newCoverage, 0, coverage.length);
             coverage = newCoverage;
+            lineMarks = Arrays.copyOf(lineMarks, i + 1);
         }
     }
 
