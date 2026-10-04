@@ -346,3 +346,52 @@ describe "IO#gets" do
     @io.gets.encoding.should == Encoding::BINARY
   end
 end
+
+platform_is :windows do
+  describe "IO#gets on Windows" do
+    before :each do
+      @fname = tmp("io_gets.txt")
+      touch(@fname, "wb") { |f| f.write "a\r\nb\r\nc" }
+    end
+
+    after :each do
+      @io.close if @io
+      rm_r @fname
+    end
+
+    it "normalizes line endings in text mode" do
+      @io = new_io(@fname, "r")
+      @io.gets.should == "a\n"
+      @io.gets.should == "b\n"
+      @io.gets.should == "c"
+      @io.gets.should be_nil
+    end
+
+    it "normalizes line endings when passed chomp" do
+      @io = new_io(@fname, "r")
+      @io.gets(chomp: true).should == "a"
+      @io.gets(chomp: true).should == "b"
+    end
+
+    it "does not normalize line endings in binary mode" do
+      @io = new_io(@fname, "rb")
+      @io.gets.should == "a\r\n"
+      @io.gets.should == "b\r\n"
+      @io.gets.should == "c"
+    end
+
+    it "does not normalize line endings after #binmode" do
+      @io = new_io(@fname, "r")
+      @io.gets.should == "a\n"
+      @io.binmode
+      @io.gets.should == "b\r\n"
+    end
+
+    it "reads a line after a byte-oriented read in text mode" do
+      @io = new_io(@fname, "r")
+      @io.gets.should == "a\n"
+      @io.read(3).should == "b\r\n"
+      @io.gets.should == "c"
+    end
+  end
+end

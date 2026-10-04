@@ -255,3 +255,33 @@ describe "IO.readlines" do
     lines.all? { |s| s.encoding == Encoding::BINARY }.should be_true
   end
 end
+
+platform_is :windows do
+  describe "IO.readlines on Windows" do
+    before :each do
+      @fname = tmp("io_readlines.txt")
+      touch(@fname, "wb") { |f| f.write "a\r\nb\r\nc\r\n" }
+    end
+
+    after :each do
+      rm_r @fname
+    end
+
+    it "normalizes line endings in text mode" do
+      IO.readlines(@fname).should == ["a\n", "b\n", "c\n"]
+      IO.readlines(@fname, chomp: true).should == ["a", "b", "c"]
+    end
+
+    it "does not normalize line endings in binary mode" do
+      IO.readlines(@fname, mode: "rb").should == ["a\r\n", "b\r\n", "c\r\n"]
+    end
+
+    it "normalizes line endings read through IO#readlines in text mode" do
+      File.open(@fname, "r") { |f| f.readlines.should == ["a\n", "b\n", "c\n"] }
+    end
+
+    it "does not normalize line endings read through IO#readlines in binary mode" do
+      File.open(@fname, "rb") { |f| f.readlines.should == ["a\r\n", "b\r\n", "c\r\n"] }
+    end
+  end
+end

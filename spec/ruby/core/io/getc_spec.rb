@@ -40,3 +40,27 @@ describe "IO#getc" do
     @io.getc.should be_nil
   end
 end
+
+platform_is :windows do
+  describe "IO#getc on Windows" do
+    before :each do
+      @fname = tmp("io_getc.txt")
+      touch(@fname, "wb") { |f| f.write "a\r\nb" }
+    end
+
+    after :each do
+      @io.close if @io
+      rm_r @fname
+    end
+
+    it "normalizes line endings in text mode" do
+      @io = new_io(@fname, "r")
+      [@io.getc, @io.getc, @io.getc, @io.getc].should == ["a", "\n", "b", nil]
+    end
+
+    it "does not normalize line endings in binary mode" do
+      @io = new_io(@fname, "rb")
+      [@io.getc, @io.getc, @io.getc, @io.getc].should == ["a", "\r", "\n", "b"]
+    end
+  end
+end

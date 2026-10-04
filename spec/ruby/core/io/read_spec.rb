@@ -147,6 +147,22 @@ describe "IO.read" do
       File.binwrite(@fname, "\x1Abbb")
       IO.read(@fname).should.empty?
     end
+
+    it "normalizes line endings in text mode" do
+      File.binwrite(@fname, "a\r\nb\r\n")
+      IO.read(@fname).should == "a\nb\n"
+    end
+
+    it "does not normalize line endings when a length is given" do
+      File.binwrite(@fname, "a\r\nb\r\n")
+      IO.read(@fname, 3).should == "a\r\n"
+    end
+
+    it "does not normalize line endings in binary mode" do
+      File.binwrite(@fname, "a\r\nb\r\n")
+      IO.read(@fname, mode: "rb").should == "a\r\nb\r\n"
+      IO.read(@fname, binmode: true).should == "a\r\nb\r\n"
+    end
   end
 end
 
@@ -467,9 +483,31 @@ platform_is :windows do
       @io.read.should == "a\nb\nc"
     end
 
+    it "normalizes line endings when opened with integer flags" do
+      @io = File.new(@fname, File::RDONLY)
+      @io.read.should == "a\nb\nc"
+    end
+
     it "does not normalize line endings in binary mode" do
       @io = new_io(@fname, "rb")
       @io.read.should == "a\r\nb\r\nc"
+    end
+
+    it "does not normalize line endings when opened with File::BINARY" do
+      @io = File.new(@fname, File::RDONLY | File::BINARY)
+      @io.read.should == "a\r\nb\r\nc"
+    end
+
+    it "does not normalize line endings after #binmode" do
+      @io = new_io(@fname, "r")
+      @io.binmode
+      @io.read.should == "a\r\nb\r\nc"
+    end
+
+    it "does not normalize line endings when a length is given" do
+      @io = new_io(@fname, "r")
+      @io.read(3).should == "a\r\n"
+      @io.read.should == "b\nc"
     end
   end
 end
