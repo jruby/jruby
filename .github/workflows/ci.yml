@@ -427,6 +427,32 @@ jobs:
       - name: concurrent-ruby
         run: tool/concurrent-ruby-github-actions.sh
 
+  manpage:
+    runs-on: ubuntu-latest
+    name: man page generate and check
+    steps:
+      - name: checkout
+        uses: actions/checkout@v6
+      - name: remove default java except 21
+        run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
+      - name: set up java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: 21
+          cache: 'maven'
+      - name: bootstrap
+        run: tool/ci-retry.sh ./mvnw -ntp -Pbootstrap clean package
+      - name: bundle install
+        run: tool/ci-retry.sh bin/jruby --dev -S bundle install
+      - name: man page check
+        run: bin/jruby --dev -S rake man:generate man:check
+      - name: upload generated man page
+        uses: actions/upload-artifact@v4
+        with:
+          name: jruby.1
+          path: core/target/generated-man/jruby.1
+
   maven-test-openj9-21:
     runs-on: ubuntu-latest
 

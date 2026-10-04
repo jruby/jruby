@@ -95,6 +95,13 @@
       </excludes>
     </fileSet>
     <fileSet>
+      <directory>${project.parent.parent.basedir}/core/target/generated-man</directory>
+      <outputDirectory>/share/man/man1</outputDirectory>
+      <includes>
+        <include>jruby.1</include>
+      </includes>
+    </fileSet>
+    <fileSet>
       <directory>${project.parent.parent.basedir}</directory>
       <outputDirectory>/</outputDirectory>
       <includes>
