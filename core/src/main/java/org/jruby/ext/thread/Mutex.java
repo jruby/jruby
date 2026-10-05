@@ -55,7 +55,7 @@ import static org.jruby.api.Convert.asFixnum;
  */
 @JRubyClass(name = "Mutex")
 public class Mutex extends RubyObject implements DataType {
-    final ReentrantLock lock = new ReentrantLock();
+    final ReentrantLock lock = new MutexLock();
     /**
      * The non-fiber thread that currently holds the lock; this will be the same for all fibers associated with that
      * thread.
@@ -70,14 +70,22 @@ public class Mutex extends RubyObject implements DataType {
     /** Fibers blocked in {@link #lock} through a fiber scheduler. MRI: mutex waitq */
     private final ArrayDeque<FiberWaiter> schedulerWaiters = new ArrayDeque<>();
 
-    /**
-     * Threads in {@link #sleep} release the lock inside Condition#await rather than through {@link #unlock},
-     * so they cannot hand it to a fiber waiting through a scheduler. While any are doing so, such fibers
-     * retry on a short timeout instead.
-     */
+    /** Threads in {@link #sleep}, whose Condition#await releases the lock without waking scheduler waiters. */
     private final AtomicInteger awaitingThreads = new AtomicInteger();
 
+    /** Temporary: fibers poll while threads sleep; to be removed in a follow-up. */
     private static final double AWAITING_RETRY_SECONDS = 0.001;
+
+    /** Wakes a scheduler waiter on every release, including a dying thread's. MRI: rb_mutex_unlock_th */
+    private final class MutexLock extends ReentrantLock {
+        @Override
+        public void unlock() {
+            lockingThread = null;
+            lockingFiber = null;
+            super.unlock();
+            wakeupSchedulerWaiter(getRuntime().getCurrentContext());
+        }
+    }
 
     @JRubyMethod(name = "new", rest = true, meta = true)
     public static Mutex newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
@@ -216,10 +224,7 @@ public class Mutex extends RubyObject implements DataType {
         }
 
         boolean hasQueued = lock.hasQueuedThreads();
-        this.lockingThread = null;
-        this.lockingFiber = null;
         context.getThread().unlock(lock);
-        wakeupSchedulerWaiter(context);
         return hasQueued ? context.nil : this;
     }
 
