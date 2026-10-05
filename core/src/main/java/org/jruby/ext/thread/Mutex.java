@@ -240,6 +240,11 @@ public class Mutex extends RubyObject implements DataType {
         // MRI: rb_mutex_sleep, which sleeps through the scheduler and relocks afterwards
         IRubyObject scheduler = FiberScheduler.current(context);
         if (scheduler != null) {
+            if (!timeout.isNil()) RubyTime.convertTimeInterval(context, timeout);
+            if (!lock.isHeldByCurrentThread()) {
+                throw context.runtime.newThreadError("Attempt to unlock a mutex which is not locked");
+            }
+
             unlock(context);
             try {
                 FiberScheduler.kernelSleep(context, scheduler, timeout);
