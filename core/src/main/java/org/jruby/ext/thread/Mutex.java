@@ -204,6 +204,14 @@ public class Mutex extends RubyObject implements DataType {
         }
     }
 
+    // MRI: mutex_lock_uninterruptible, which leaves pending interrupts to the next poll rather than letting one
+    // replace an exception already propagating out of sleep
+    private void relock(ThreadContext context, IRubyObject scheduler) {
+        schedulerLock(context, scheduler);
+        this.lockingThread = context.getFiberCurrentThread();
+        this.lockingFiber = context.getFiber();
+    }
+
     // MRI: rb_mutex_unlock_th's wakeup of the next fiber waiting through a scheduler
     private void wakeupSchedulerWaiter(ThreadContext context) {
         FiberWaiter waiter;
@@ -249,7 +257,7 @@ public class Mutex extends RubyObject implements DataType {
             try {
                 FiberScheduler.kernelSleep(context, scheduler, timeout);
             } finally {
-                lock(context);
+                relock(context, scheduler);
             }
 
             return asFixnum(context, (System.currentTimeMillis() - beg) / 1000);
