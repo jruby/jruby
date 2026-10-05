@@ -3,3 +3,6 @@ windows:IO#seek moves the read position relative to the start with SEEK_SET
 windows:IO#seek moves the read position relative to the end with SEEK_END
 fails:IO#seek clears the character buffer
 fails:IO#seek clears the character buffer even when ungotten characters exceed consumed characters
+windows:IO#seek accepts the symbol :CUR for SEEK_CUR
+windows:IO#seek accepts the symbol :END for SEEK_END
+windows:IO#seek accepts the symbol :SET for SEEK_SET
