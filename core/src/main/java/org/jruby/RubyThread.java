@@ -1184,10 +1184,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "thread_variable_set")
     public IRubyObject thread_variable_set(ThreadContext context, IRubyObject key, IRubyObject value) {
-        // FIXME: FrozenError is raised in both, but the message differs (ruby/spec expects the CRuby one):
-        //   CRuby: can't modify frozen thread locals
-        //   JRuby: can't modify frozen Object: #<Thread:0x... file:line dead>
-        checkFrozen();
+        if (isFrozen()) throw frozenError(context, this, "can't modify frozen thread locals");
+
         key = RubySymbol.idSymbolFromObject(context, key);
         final Map<IRubyObject, IRubyObject> locals = getThreadLocals();
         synchronized (locals) {
