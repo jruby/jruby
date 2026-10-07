@@ -176,6 +176,10 @@ describe :io_each, shared: true do
       ScratchPad.recorded.should == IOSpecs.lines_without_newline_characters
     end
 
+    it "returns an Enumerator that passes chomp to the method when no block is given" do
+      @io.send(@method, chomp: true).to_a.should == IOSpecs.lines_without_newline_characters
+    end
+
     it "raises exception when options passed as Hash" do
       -> {
         @io.send(@method, { chomp: true }) { |s| }
@@ -192,12 +196,20 @@ describe :io_each, shared: true do
       @io.send(@method, " ", chomp: true) { |s| ScratchPad << s }
       ScratchPad.recorded.should == IOSpecs.lines_space_separator_without_trailing_spaces
     end
+
+    it "returns an Enumerator that passes the separator and chomp to the method when no block is given" do
+      @io.send(@method, " ", chomp: true).to_a.should == IOSpecs.lines_space_separator_without_trailing_spaces
+    end
   end
 
   describe "when passed chomp and empty line as a separator" do
     it "yields each paragraph without trailing new line characters" do
       @io.send(@method, "", 1024, chomp: true) { |s| ScratchPad << s }
       ScratchPad.recorded.should == IOSpecs.paragraphs_without_trailing_new_line_characters
+    end
+
+    it "returns an Enumerator that passes the separator, limit and chomp to the method when no block is given" do
+      @io.send(@method, "", 1024, chomp: true).to_a.should == IOSpecs.paragraphs_without_trailing_new_line_characters
     end
   end
 

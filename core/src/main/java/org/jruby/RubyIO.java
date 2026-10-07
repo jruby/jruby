@@ -3912,7 +3912,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     @JRubyMethod(keywords = true)
     public IRubyObject each(final ThreadContext context, IRubyObject arg0, final Block block) {
         boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
-        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each");
+        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each", new IRubyObject[] { arg0 }, keywords);
 
         return Getline.getlineCall(context, GETLINE_YIELD, this, getReadEncoding(context), arg0, block, keywords);
     }
@@ -3920,7 +3920,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     @JRubyMethod(keywords = true)
     public IRubyObject each(final ThreadContext context, IRubyObject arg0, IRubyObject arg1, final Block block) {
         boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
-        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each");
+        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each", new IRubyObject[] { arg0, arg1 }, keywords);
 
         return Getline.getlineCall(context, GETLINE_YIELD, this, getReadEncoding(context), arg0, arg1, block, keywords);
     }
@@ -3928,7 +3928,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     @JRubyMethod(keywords = true)
     public IRubyObject each(final ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, final Block block) {
         boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
-        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each");
+        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each", new IRubyObject[] { arg0, arg1, arg2 }, keywords);
 
         return Getline.getlineCall(context, GETLINE_YIELD, this, getReadEncoding(context), arg0, arg1, arg2, block, keywords);
     }
@@ -3960,7 +3960,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     public IRubyObject each_line(final ThreadContext context, IRubyObject arg0, final Block block) {
         boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
 
-        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line", arg0);
+        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line", new IRubyObject[] { arg0 }, keywords);
 
         return Getline.getlineCall(context, GETLINE_YIELD, this, getReadEncoding(context), arg0, block, keywords);
     }
@@ -3969,7 +3969,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     public IRubyObject each_line(final ThreadContext context, IRubyObject arg0, IRubyObject arg1, final Block block) {
         boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
 
-        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line", arg0, arg1);
+        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line", new IRubyObject[] { arg0, arg1 }, keywords);
 
         return Getline.getlineCall(context, GETLINE_YIELD, this, getReadEncoding(context), arg0, arg1, block, keywords);
     }
@@ -3978,7 +3978,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     public IRubyObject each_line(final ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, final Block block) {
         boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
 
-        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line", arg0, arg1, arg2);
+        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line", new IRubyObject[] { arg0, arg1, arg2 }, keywords);
 
         return Getline.getlineCall(context, GETLINE_YIELD, this, getReadEncoding(context), arg0, arg1, arg2, block, keywords);
     }
@@ -4101,7 +4101,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         Arity.checkArgumentCount(context, args.length - (keywords ? 1 : 0), 1, 4);
 
-        if (!block.isGiven()) return enumeratorize(context.runtime, recv, "foreach", args);
+        if (!block.isGiven()) return enumeratorize(context.runtime, recv, "foreach", args, keywords);
 
         return foreachInternal(context, recv, args, keywords, block);
     }
