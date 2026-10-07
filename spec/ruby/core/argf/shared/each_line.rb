@@ -42,7 +42,48 @@ describe :argf_each_line, shared: true do
     end
   end
 
+  describe "with a separator and a limit" do
+    it "yields each limited section of all streams" do
+      argf [@file1_name, @file2_name] do
+        lines = []
+        @argf.send(@method, '.', 4) { |s| lines << s }
+        lines.should == (File.readlines(@file1_name, '.', 4) + File.readlines(@file2_name, '.', 4))
+      end
+    end
+  end
+
+  describe "when passed chomp" do
+    it "yields each line without the trailing separator" do
+      argf [@file1_name, @file2_name] do
+        lines = []
+        @argf.send(@method, chomp: true) { |s| lines << s }
+        lines.should == @lines.map(&:chomp)
+      end
+    end
+
+    it "yields each separated section without the separator when also passed a separator and a limit" do
+      argf [@file1_name, @file2_name] do
+        lines = []
+        @argf.send(@method, '.', 8, chomp: true) { |s| lines << s }
+        lines.should == (File.readlines(@file1_name, '.', 8, chomp: true) + File.readlines(@file2_name, '.', 8, chomp: true))
+      end
+    end
+  end
+
   describe "when no block is given" do
+    it "returns an Enumerator that passes chomp to the method" do
+      argf [@file1_name, @file2_name] do
+        @argf.send(@method, chomp: true).to_a.should == @lines.map(&:chomp)
+      end
+    end
+
+    it "returns an Enumerator that passes the separator, limit and chomp to the method" do
+      argf [@file1_name, @file2_name] do
+        @argf.send(@method, '.', 8, chomp: true).to_a.should ==
+          (File.readlines(@file1_name, '.', 8, chomp: true) + File.readlines(@file2_name, '.', 8, chomp: true))
+      end
+    end
+
     it "returns an Enumerator" do
       argf [@file1_name, @file2_name] do
         @argf.send(@method).should be_an_instance_of(Enumerator)

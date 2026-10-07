@@ -15,6 +15,24 @@ describe :argf_gets, shared: true do
     end
   end
 
+  it "reads one line of a file without the trailing separator when passed chomp" do
+    argf [@file1_name] do
+      @argf.send(@method, chomp: true).should == @file1.first.chomp
+    end
+  end
+
+  it "reads up to the limit when passed a separator and a limit" do
+    argf [@file1_name] do
+      @argf.send(@method, ".", 4).should == "file"
+    end
+  end
+
+  it "reads one separated section without the separator when passed a separator and chomp" do
+    argf [@file1_name] do
+      @argf.send(@method, ".", chomp: true).should == "file1"
+    end
+  end
+
   it "reads all lines of a file" do
     argf [@file1_name] do
       lines = []

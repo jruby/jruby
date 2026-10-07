@@ -430,10 +430,10 @@ public class RubyArgsFile extends RubyObject {
     /** Read a line.
      *
      */
-    @JRubyMethod(name = "gets", optional = 1, keywords = true, checkArity = false, writes = LASTLINE)
+    @JRubyMethod(name = "gets", optional = 2, keywords = true, checkArity = false, writes = LASTLINE)
     public static IRubyObject gets(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         final int callInfo = ThreadContext.resetCallInfo(context);
-        Arity.checkArgumentCount(context, args, 0, 1);
+        checkGetlineArity(context, callInfo, args);
 
         return context.setLastLine(argf_getline(context, callInfo, args));
     }
@@ -441,7 +441,7 @@ public class RubyArgsFile extends RubyObject {
     /** Read a line.
      *
      */
-    @JRubyMethod(name = "readline", optional = 1, keywords = true, checkArity = false, writes = LASTLINE)
+    @JRubyMethod(name = "readline", optional = 2, keywords = true, checkArity = false, writes = LASTLINE)
     public static IRubyObject readline(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         IRubyObject line = gets(context, recv, args);
 
@@ -450,10 +450,10 @@ public class RubyArgsFile extends RubyObject {
         return line;
     }
 
-    @JRubyMethod(optional = 1, keywords = true, checkArity = false)
+    @JRubyMethod(optional = 2, keywords = true, checkArity = false)
     public static IRubyObject readlines(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         final int callInfo = ThreadContext.resetCallInfo(context);
-        Arity.checkArgumentCount(context, args, 0, 1);
+        checkGetlineArity(context, callInfo, args);
 
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
 
@@ -472,21 +472,15 @@ public class RubyArgsFile extends RubyObject {
         return ary;
     }
 
-    @JRubyMethod(optional = 1, checkArity = false)
+    // MRI: to_a is an alias of readlines
+    @JRubyMethod(optional = 2, keywords = true, checkArity = false)
     public static IRubyObject to_a(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        Arity.checkArgumentCount(context, args, 0, 1);
+        return readlines(context, recv, args);
+    }
 
-        ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
-
-        if (!data.next_argv(context)) return newEmptyArray(context);
-        if (!(data.currentFile instanceof RubyIO)) return data.currentFile.callMethod(context, "to_a", args);
-
-        var ary = newArray(context);
-        IRubyObject line;
-        while ((line = argf_getline(context, 0, args)) != context.nil) {
-            ary.append(context, line);
-        }
-        return ary;
+    // MRI: rb_io_getline takes up to two positional arguments (separator, limit) plus keywords
+    private static void checkGetlineArity(ThreadContext context, int callInfo, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args.length - (hasKeywords(callInfo) ? 1 : 0), 0, 2);
     }
 
     @JRubyMethod
@@ -584,12 +578,16 @@ public class RubyArgsFile extends RubyObject {
     /** Invoke a block for each line.
      *
      */
-    @JRubyMethod(name = "each_line", optional = 1, keywords = true, checkArity = false)
+    @JRubyMethod(name = "each_line", optional = 2, keywords = true, checkArity = false)
     public static IRubyObject each_line(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        if (!block.isGiven()) return enumeratorize(context.runtime, recv, "each_line", args);
-
         final int callInfo = ThreadContext.resetCallInfo(context);
-        Arity.checkArgumentCount(context, args, 0, 1);
+        if (!block.isGiven()) return enumeratorize(context.runtime, recv, "each_line", args, hasKeywords(callInfo));
+
+        return eachLineCommon(context, recv, callInfo, args, block);
+    }
+
+    private static IRubyObject eachLineCommon(ThreadContext context, IRubyObject recv, int callInfo, IRubyObject[] args, Block block) {
+        checkGetlineArity(context, callInfo, args);
 
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
 
@@ -616,9 +614,12 @@ public class RubyArgsFile extends RubyObject {
         return each_line(context, recv, args, block);
     }
 
-    @JRubyMethod(name = "each", optional = 1, checkArity = false)
+    @JRubyMethod(name = "each", optional = 2, keywords = true, checkArity = false)
     public static IRubyObject each(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
-        return block.isGiven() ? each_line(context, recv, args, block) : enumeratorize(context.runtime, recv, "each", args);
+        final int callInfo = ThreadContext.resetCallInfo(context);
+        if (!block.isGiven()) return enumeratorize(context.runtime, recv, "each", args, hasKeywords(callInfo));
+
+        return eachLineCommon(context, recv, callInfo, args, block);
     }
 
     @JRubyMethod(name = "file")

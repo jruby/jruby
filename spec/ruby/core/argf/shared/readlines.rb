@@ -13,6 +13,19 @@ describe :argf_readlines, shared: true do
     end
   end
 
+  it "reads all lines of all files without the trailing separator when passed chomp" do
+    argf [@file1, @file2] do
+      @argf.send(@method, chomp: true).should == @lines.map(&:chomp)
+    end
+  end
+
+  it "reads all limited sections of all files when passed a separator and a limit" do
+    argf [@file1, @file2] do
+      @argf.send(@method, ".", 4).should ==
+        (File.readlines(@file1, ".", 4) + File.readlines(@file2, ".", 4))
+    end
+  end
+
   it "returns an empty Array when end of stream reached" do
     argf [@file1, @file2] do
       @argf.read
