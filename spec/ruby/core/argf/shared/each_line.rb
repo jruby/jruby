@@ -1,3 +1,5 @@
+require_relative '../fixtures/classes'
+
 describe :argf_each_line, shared: true do
   before :each do
     @file1_name = fixture __FILE__, "file1.txt"
@@ -67,6 +69,32 @@ describe :argf_each_line, shared: true do
         @argf.send(@method, '.', 8, chomp: true) { |s| lines << s }
         lines.should == (File.readlines(@file1_name, '.', 8, chomp: true) + File.readlines(@file2_name, '.', 8, chomp: true))
       end
+    end
+  end
+
+  describe "when reading $stdin and $stdin is not an IO" do
+    before :each do
+      @stdin = $stdin
+      $stdin = ARGFSpecs::Stdin.new("a\nb\n")
+      @stdin_argf = ARGF.class.new
+    end
+
+    after :each do
+      $stdin = @stdin
+    end
+
+    it "calls each_line on $stdin and yields each line" do
+      lines = []
+      @stdin_argf.send(@method) { |s| lines << s }
+      lines.should == ["a\n", "b\n"]
+      $stdin.calls.should == [[:each_line, [], {}]]
+    end
+
+    it "passes the separator, limit and keywords to $stdin.each_line" do
+      lines = []
+      @stdin_argf.send(@method, "\n", 1, chomp: true) { |s| lines << s }
+      lines.should == ["a", "", "b", ""]
+      $stdin.calls.should == [[:each_line, ["\n", 1], { chomp: true }]]
     end
   end
 

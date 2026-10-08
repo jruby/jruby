@@ -460,7 +460,7 @@ public class RubyArgsFile extends RubyObject {
         if (!data.next_argv(context)) return newEmptyArray(context);
 
         if (!(data.currentFile instanceof RubyIO)) {
-            // TODO do we need to restore callInfo here?
+            context.callInfo = callInfo; // restore callInfo for kwargs
             return data.currentFile.callMethod(context, "readlines", args);
         }
 
@@ -593,10 +593,10 @@ public class RubyArgsFile extends RubyObject {
 
         if (!data.next_argv(context)) return context.nil;
 
+        // MRI: argf_each_line calls each_line on the current file with the same arguments
         if (!(data.currentFile instanceof RubyIO)) {
-            if (!data.next_argv(context)) return recv;
-
-            data.currentFile.callMethod(context, "each", NULL_ARRAY, block);
+            context.callInfo = callInfo; // restore callInfo for kwargs
+            data.currentFile.callMethod(context, "each_line", args, block);
             data.next_p = NextFile;
         }
 
