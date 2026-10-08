@@ -1,0 +1,2 @@
+windows:ARGF.each when passed chomp yields each separated section without the separator when also passed a separator and a limit
+windows:ARGF.each when no block is given returns an Enumerator that passes the separator, limit and chomp to the method
