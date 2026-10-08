@@ -395,12 +395,18 @@ public class RubyArgsFile extends RubyObject {
         while (true) {
             if (!data.next_argv(context)) return context.nil;
 
-            RubyIO currentFile = (RubyIO) data.currentFile;
-
             if (isGenericInput(context, data)) {
                 context.callInfo = callInfo; // restore callInfo for kwargs
                 line = data.currentFile.callMethod(context, "gets", args);
+
+                // An IO updates the line number itself, but other objects do not
+                if (!line.isNil() && !(data.currentFile instanceof RubyIO)) {
+                    context.runtime.setCurrentLine(context.runtime.getCurrentLine() + 1);
+                }
             } else {
+                // $stdin may be any object with gets (e.g. StringIO), so only cast once we know it is not generic input
+                RubyIO currentFile = (RubyIO) data.currentFile;
+
                 if (args.length == 0 && context.runtime.getRecordSeparatorVar().get() == globalVariables(context).getDefaultSeparator()) {
                     line = (currentFile).gets(context);
                 } else {
@@ -443,6 +449,16 @@ public class RubyArgsFile extends RubyObject {
      */
     @JRubyMethod(name = "readline", optional = 1, keywords = true, checkArity = false, writes = LASTLINE)
     public static IRubyObject readline(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        final int callInfo = ThreadContext.resetCallInfo(context);
+        ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);
+
+        // MRI: argf_readline forwards to $stdin.readline when $stdin is not an IO
+        if (data.next_argv(context) && !(data.currentFile instanceof RubyIO)) {
+            context.callInfo = callInfo; // restore callInfo for kwargs
+            return data.currentFile.callMethod(context, "readline", args);
+        }
+
+        context.callInfo = callInfo; // restore callInfo for kwargs
         IRubyObject line = gets(context, recv, args);
 
         if (line.isNil()) throw context.runtime.newEOFError();
