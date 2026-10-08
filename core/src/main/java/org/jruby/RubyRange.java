@@ -1434,13 +1434,13 @@ public class RubyRange extends RubyObject {
         return context.nil;
     }
 
-    @JRubyMethod(name = "to_set", rest = true, frame = true)
-    public IRubyObject to_set(ThreadContext context, IRubyObject[] args, Block block) {
+    @JRubyMethod(name = "to_set", frame = true)
+    public IRubyObject to_set(ThreadContext context, Block block) {
         if (isEndless) {
             throw context.runtime.newRangeError("cannot convert endless range to a set");
         }
 
-        return invokeSuper(context, this, context.getFrameKlazz(), context.getFrameName(), args, block);
+        return invokeSuper(context, this, context.getFrameKlazz(), context.getFrameName(), NULL_ARRAY, block);
     }
 
     private boolean discreteObject(IRubyObject object) {

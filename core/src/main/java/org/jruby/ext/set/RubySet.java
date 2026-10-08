@@ -36,13 +36,11 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Access;
 import org.jruby.api.Create;
 import org.jruby.api.Error;
-import org.jruby.api.Warn;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalDumper;
 import org.jruby.runtime.marshal.MarshalLoader;
-import org.jruby.util.ArraySupport;
 import org.jruby.util.io.RubyInputStream;
 import org.jruby.util.io.RubyOutputStream;
 
@@ -210,6 +208,22 @@ public class RubySet extends RubyObject implements Set {
      */
     RubySet newSetFast(final Ruby runtime) {
         return newSet(runtime, getMetaClass());
+    }
+
+    /**
+     * Construct a new Set with the same class as this one, comparing by identity if this one does.
+     *
+     * @param context the current thread context
+     * @return a new Set
+     */
+    private RubySet newSetPreservingIdentity(final ThreadContext context) {
+        return preserveIdentity(context, newSetFast(context.runtime));
+    }
+
+    // Must be called before any elements are added to set.
+    private RubySet preserveIdentity(final ThreadContext context, final RubySet set) {
+        if (hash.isComparedByIdentity()) set.hash.compare_by_identity(context);
+        return set;
     }
 
     /**
@@ -442,7 +456,7 @@ public class RubySet extends RubyObject implements Set {
         return this.hash.keys(context);
     }
 
-    // Returns self if no arguments are given.
+    // Returns self if no block is given.
     @JRubyMethod
     public RubySet to_set(final ThreadContext context, final Block block) {
         if ( block.isGiven() ) {
@@ -451,31 +465,6 @@ public class RubySet extends RubyObject implements Set {
             return set;
         }
         return this;
-    }
-
-    // Otherwise, converts the set to another with klass.new(self, *args, &block).
-    @JRubyMethod(rest = true)
-    public RubySet to_set(final ThreadContext context, final IRubyObject[] args, final Block block) {
-        if ( args.length == 0 ) return to_set(context, block);
-
-        Warn.warnDeprecated(context, "passing arguments to Set#to_set");
-
-        IRubyObject klass = args[0];
-        final RubyClass Set = Access.getClass(context, "Set");
-
-        if (klass == Set && args.length == 1 && !block.isGiven()) return this;
-
-        final IRubyObject[] rest;
-        if (klass instanceof RubyClass) {
-            rest = ArraySupport.newCopy(args, 1, args.length - 1);
-        } else {
-            klass = Set;
-            rest = args;
-        }
-
-        RubySet set = new RubySet(context.runtime, (RubyClass) klass, false);
-        set.initialize(context, rest, block);
-        return set;
     }
 
     @JRubyMethod
@@ -528,7 +517,7 @@ public class RubySet extends RubyObject implements Set {
     // Returns a new set that is a copy of the set, flattening each containing set recursively.
     @JRubyMethod
     public RubySet flatten(final ThreadContext context) {
-        return newSetFast(context.runtime).flatten_merge(context, this);
+        return newSetPreservingIdentity(context).flatten_merge(context, this);
     }
 
     @JRubyMethod(name = "flatten!")
@@ -866,17 +855,20 @@ public class RubySet extends RubyObject implements Set {
         final RubySet newSet = new RubySet(context.runtime, getMetaClass(), false);
         if (enume instanceof RubySet set) {
             newSet.allocHash(context, set.size());
+            preserveIdentity(context, newSet);
             for ( IRubyObject obj : set.elementsOrdered() ) {
                 if (containsImpl(obj)) newSet.addImpl(context, obj);
             }
         } else if (enume instanceof RubyArray ary) {
             newSet.allocHash(context, ary.size());
+            preserveIdentity(context, newSet);
             for ( int i = 0; i < ary.size(); i++ ) {
                 final IRubyObject obj = ary.eltInternal(i);
                 if (containsImpl(obj)) newSet.addImpl(context, obj);
             }
         } else {
             newSet.allocHash(context);
+            preserveIdentity(context, newSet);
             // do_with_enum(enum) { |o| newSet.add(o) if include?(o) }
             doWithEnum(context, enume, new EachBody(context) {
                 IRubyObject yieldImpl(ThreadContext context, IRubyObject obj) {
@@ -900,8 +892,18 @@ public class RubySet extends RubyObject implements Set {
         if (enume instanceof RubySet set) {
             otherSet = set;
         } else {
-            otherSet = new RubySet(context.runtime, getMetaClass(), false);
-            otherSet.initialize(context, enume, Block.NULL_BLOCK); // Set.new(enum)
+            // Set.new(enum), comparing by identity like self so distinct elements of enum stay distinct
+            final RubySet tmp = otherSet = newSetPreservingIdentity(context);
+            if (enume instanceof RubyArray ary) {
+                for ( int i = 0; i < ary.size(); i++ ) tmp.addImpl(context, ary.eltInternal(i));
+            } else {
+                doWithEnum(context, enume, new EachBody(context) {
+                    IRubyObject yieldImpl(ThreadContext context, IRubyObject obj) {
+                        tmp.addImpl(context, obj);
+                        return context.nil;
+                    }
+                });
+            }
         }
         for (IRubyObject o : otherSet.elementsOrdered()) {
             if (newSet.containsImpl(o)) {
@@ -974,7 +976,7 @@ public class RubySet extends RubyObject implements Set {
             final IRubyObject key = block.yield(context, i);
             RubySet set = (RubySet) h.fastARef(key);
             if (set == null) {
-                set = newSetFast(context.runtime);
+                set = newSetPreservingIdentity(context);
                 h.fastASet(key, set);
             }
             set.invokeAdd(context, i);
@@ -1055,7 +1057,7 @@ public class RubySet extends RubyObject implements Set {
             IRubyObject set = hash.op_aref(context, asFixnum(context, root));
 
             if (set.isNil()) {
-                set = newSet(context.runtime, setClass);
+                set = preserveIdentity(context, newSet(context.runtime, setClass));
                 hash.op_aset(context, asFixnum(context, root), set);
                 finalSet.add(context, set);
             }
