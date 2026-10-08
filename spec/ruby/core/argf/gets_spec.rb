@@ -64,4 +64,9 @@ describe "ARGF.gets when reading $stdin and $stdin is not an IO" do
     @argf_stdin.gets
     @argf_stdin.lineno.should == 2
   end
+
+  it "raises NoMethodError when $stdin has no public gets" do
+    $stdin = Object.new
+    -> { ARGF.class.new.gets }.should raise_error(NoMethodError)
+  end
 end

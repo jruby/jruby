@@ -7,6 +7,7 @@ import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.runtime.callsite.DivCallSite;
 import org.jruby.runtime.callsite.FunctionalCachingCallSite;
 import org.jruby.runtime.callsite.MulCallSite;
+import org.jruby.runtime.callsite.NormalCachingCallSite;
 import org.jruby.runtime.callsite.PlusCallSite;
 import org.jruby.runtime.callsite.RespondToCallSite;
 import org.jruby.runtime.callsite.SuperCallSite;
@@ -484,6 +485,11 @@ public class JavaSites {
 
     public static class ArgfSites {
         public final CallSite each_codepoint = new FunctionalCachingCallSite("each_codepoint");
+        // MRI: forward_current calls only public methods on $stdin (rb_funcallv_public_kw). A functional call
+        // would reach the private Kernel#gets etc. on a plain object, which read from ARGF again and recurse.
+        public final CallSite gets = new NormalCachingCallSite("gets");
+        public final CallSite readline = new NormalCachingCallSite("readline");
+        public final CallSite readlines = new NormalCachingCallSite("readlines");
     }
 
     public static class TracePointSites {
