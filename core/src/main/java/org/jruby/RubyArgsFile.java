@@ -397,7 +397,7 @@ public class RubyArgsFile extends RubyObject {
 
             if (isGenericInput(context, data)) {
                 context.callInfo = callInfo; // restore callInfo for kwargs
-                line = data.currentFile.callMethod(context, "gets", args);
+                line = sites(context).gets.call(context, argsFile(context), data.currentFile, args);
 
                 // An IO updates the line number itself, but other objects do not
                 if (!line.isNil() && !(data.currentFile instanceof RubyIO)) {
@@ -455,7 +455,7 @@ public class RubyArgsFile extends RubyObject {
         // MRI: argf_readline forwards to $stdin.readline when $stdin is not an IO
         if (data.next_argv(context) && !(data.currentFile instanceof RubyIO)) {
             context.callInfo = callInfo; // restore callInfo for kwargs
-            return data.currentFile.callMethod(context, "readline", args);
+            return sites(context).readline.call(context, recv, data.currentFile, args);
         }
 
         context.callInfo = callInfo; // restore callInfo for kwargs
@@ -477,7 +477,7 @@ public class RubyArgsFile extends RubyObject {
 
         if (!(data.currentFile instanceof RubyIO)) {
             // TODO do we need to restore callInfo here?
-            return data.currentFile.callMethod(context, "readlines", args);
+            return sites(context).readlines.call(context, recv, data.currentFile, args);
         }
 
         var ary = newArray(context);

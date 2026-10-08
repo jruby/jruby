@@ -43,4 +43,11 @@ describe "ARGF.readline when reading $stdin and $stdin is not an IO" do
     argf.readline.should == "a\n"
     -> { argf.readline }.should raise_error(EOFError)
   end
+
+  it "raises NoMethodError when $stdin has no public readline" do
+    stdin = Object.new
+    def stdin.gets(*) = "line\n"
+    $stdin = stdin
+    -> { ARGF.class.new.readline }.should raise_error(NoMethodError)
+  end
 end
