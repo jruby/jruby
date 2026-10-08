@@ -1184,11 +1184,16 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "thread_variable_set")
     public IRubyObject thread_variable_set(ThreadContext context, IRubyObject key, IRubyObject value) {
-        checkFrozen();
+        if (isFrozen()) throw frozenError(context, this, "can't modify frozen thread locals");
+
         key = RubySymbol.idSymbolFromObject(context, key);
         final Map<IRubyObject, IRubyObject> locals = getThreadLocals();
         synchronized (locals) {
-            locals.put(key, value);
+            if (value.isNil()) {
+                locals.remove(key);
+            } else {
+                locals.put(key, value);
+            }
         }
         return value;
     }
