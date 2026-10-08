@@ -54,6 +54,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.ByteListHolder;
+import org.jruby.util.ConvertBytes;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.StringSupport;
 
@@ -580,7 +581,7 @@ public class RubyMatchData extends RubyObject {
     }
 
     private int nameToBackrefError(ThreadContext context, String name) {
-        throw indexError(context, "undefined group name reference " + name);
+        throw indexError(context, "undefined group name reference: " + name);
     }
 
     // MRI: match_ary_subseq
@@ -667,6 +668,45 @@ public class RubyMatchData extends RubyObject {
 
     public final IRubyObject at(ThreadContext context, final int nth) {
         return RubyRegexp.nth_match(context, nth, this);
+    }
+
+    /**
+     * MRI: match_integer_at
+     */
+    @JRubyMethod
+    public IRubyObject integer_at(ThreadContext context, IRubyObject idx) {
+        return integerAt(context, idx, null);
+    }
+
+    @JRubyMethod
+    public IRubyObject integer_at(ThreadContext context, IRubyObject idx, IRubyObject base) {
+        return integerAt(context, idx, base);
+    }
+
+    private IRubyObject integerAt(ThreadContext context, IRubyObject idx, IRubyObject baseArg) {
+        check(context);
+
+        int nth;
+        if (idx instanceof RubyFixnum) {
+            nth = toInt(context, idx);
+        } else if ((nth = namevToBackrefNumber(context, idx)) < 0) {
+            nameToBackrefError(context, idx.asString().toString());
+        }
+
+        int base = baseArg == null ? 10 : toInt(context, baseArg);
+        if (base < 0 || base == 1 || base > 36) {
+            throw argumentError(context, "invalid radix " + base);
+        }
+
+        int numRegs = regs == null ? 1 : regs.getNumRegs();
+        if (nth >= numRegs) return context.nil;
+        if (nth < 0 && (nth += numRegs) <= 0) return context.nil;
+
+        int start = regs == null ? begin : regs.getBeg(nth);
+        if (start < 0) return context.nil;
+        int end = regs == null ? this.end : regs.getEnd(nth);
+
+        return ConvertBytes.byteListToInumOrNil(context.runtime, str.getByteList(), start, end, base);
     }
 
     /** match_size
