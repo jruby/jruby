@@ -12,6 +12,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.socket.Addrinfo;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import static org.jruby.util.BitPacker.pack;
 import org.jruby.util.ByteList;
 
 import java.io.ByteArrayOutputStream;
@@ -233,7 +234,7 @@ public class Sockaddr {
             throw argumentError(context, "not an AF_INET/AF_INET6 sockaddr");
         }
 
-        int port = ((val.get(2)&0xff) << 8) + (val.get(3)&0xff);
+        int port = uint16((byte) val.get(2), (byte) val.get(3));
 
         final StringBuilder formatAddr = new StringBuilder();
         RubyString ip;
@@ -321,10 +322,7 @@ public class Sockaddr {
     public static AddressFamily getAddressFamilyFromSockaddr(ThreadContext context, ByteList val) {
         if (val.length() < 2) throw argumentError(context, "too short sockaddr");
 
-        int high = val.get(0) & 0xff;
-        int low = val.get(1) & 0xff;
-
-        return AddressFamily.valueOf((high << 8) + low);
+        return AddressFamily.valueOf(uint16((byte) val.get(0), (byte) val.get(1)));
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -367,7 +365,7 @@ public class Sockaddr {
     }
 
     private static int uint16(byte high, byte low) {
-        return ((high & 0xFF) << 8) + (low & 0xFF);
+        return Short.toUnsignedInt(pack(high, low));
     }
 
     private static RubyString pathFromSockaddr_un(ThreadContext context, byte[] raw) {

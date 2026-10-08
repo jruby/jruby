@@ -48,6 +48,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.DataType;
+import static org.jruby.util.BitPacker.unpackHighChar;
+import static org.jruby.util.BitPacker.unpackLowChar;
 
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
@@ -146,7 +148,7 @@ public class RubyBinding extends RubyObject implements DataType {
 
         if (slot < 0) throw undefinedVariableError(context, symbol);
 
-        return evalScope.getValueOrNil(slot & 0xffff, slot >> 16, context.nil);
+        return evalScope.getValueOrNil(unpackLowChar(slot), unpackHighChar(slot), context.nil);
     }
 
     @JRubyMethod
@@ -164,7 +166,7 @@ public class RubyBinding extends RubyObject implements DataType {
             evalScope.growIfNeeded();
         }
 
-        return evalScope.setValue(slot & 0xffff, value, slot >> 16);
+        return evalScope.setValue(unpackLowChar(slot), value, unpackHighChar(slot));
     }
 
     @JRubyMethod(name = "implicit_parameter_defined?")
@@ -184,7 +186,7 @@ public class RubyBinding extends RubyObject implements DataType {
 
         slot = staticScope.isDefined(id);
 
-        return dynamicScope.getValueOrNil(slot & 0xffff, slot >> 16, context.nil);
+        return dynamicScope.getValueOrNil(unpackLowChar(slot), unpackHighChar(slot), context.nil);
     }
 
     private static boolean isNumberedVariable(String id) {

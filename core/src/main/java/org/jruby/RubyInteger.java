@@ -54,6 +54,9 @@ import org.jruby.runtime.Signature;
 import org.jruby.runtime.SimpleHash;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import static org.jruby.util.BitPacker.pack;
+import static org.jruby.util.BitPacker.unpackHigh;
+import static org.jruby.util.BitPacker.unpackLow;
 import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 import org.jruby.util.TypeConverter;
@@ -483,8 +486,8 @@ public abstract class RubyInteger extends RubyNumeric {
     private long toUnsignedInteger(ThreadContext context) {
         // rb_num_to_uint
         long uintResult = numToUint(context, this);
-        long uint = uintResult >>> 32;
-        int ret = (int) (uintResult & 0xFFFFFFFF);
+        long uint = Integer.toUnsignedLong(unpackHigh(uintResult));
+        int ret = unpackLow(uintResult);
         if (ret != 0) {
             throw rangeError(context, this instanceof RubyFixnum ?
                     asLong(context) + " out of char range" :
@@ -519,7 +522,7 @@ public abstract class RubyInteger extends RubyNumeric {
             long v = fixnum.getValue();
             if (v > 0xFFFFFFFFL) return NUMERR_TOOLARGE;
             if (v < 0) return NUMERR_NEGATIVE;
-            return v << 32;
+            return pack((int) v, 0);
         }
 
         if (val instanceof RubyBignum bignum) {

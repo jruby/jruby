@@ -173,7 +173,7 @@ public abstract class LexingCommon {
     }
 
     protected void updateStartPosition(int column) {
-        this.start = ProductionState.shift_line(ruby_sourceline) | column;
+        this.start = ProductionState.pack(ruby_sourceline, column);
     }
 
     // similar to compile_error where yyloc passes in NULL.

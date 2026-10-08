@@ -74,6 +74,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.util.ArraySupport;
+import static org.jruby.util.BitPacker.pack;
+import static org.jruby.util.BitPacker.unpackHighChar;
+import static org.jruby.util.BitPacker.unpackLowChar;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.CommonByteLists;
@@ -2522,8 +2525,8 @@ public class Helpers {
         char[] encoded = new char[scopeOffsets.length * 2];
         for (int i = 0; i < scopeOffsets.length; i++) {
             int offDepth = scopeOffsets[i];
-            char off = (char)(offDepth & 0xFFFF);
-            char depth = (char)(offDepth >> 16);
+            char off = unpackLowChar(offDepth);
+            char depth = unpackHighChar(offDepth);
             encoded[2 * i] = off;
             encoded[2 * i + 1] = depth;
         }
@@ -2536,7 +2539,7 @@ public class Helpers {
         for (int i = 0; i < scopeOffsets.length; i++) {
             char off = chars[2 * i];
             char depth = chars[2 * i + 1];
-            scopeOffsets[i] = (((int)depth) << 16) | (int)off;
+            scopeOffsets[i] = pack(depth, off);
         }
         return scopeOffsets;
     }

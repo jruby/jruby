@@ -36,6 +36,10 @@
 
 package org.jruby.util;
 
+import static org.jruby.util.BitPacker.packInts;
+import static org.jruby.util.BitPacker.unpackHigh;
+import static org.jruby.util.BitPacker.unpackLow;
+
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -2510,7 +2514,7 @@ public class Pack {
         int c1 = decodeIntBigEndian(encode);
         int c2 = decodeIntBigEndian(encode);
 
-        return ((long) c1 << 32) + (c2 & 0xffffffffL);
+        return packInts(c1, c2);
     }
 
     /**
@@ -2523,7 +2527,7 @@ public class Pack {
         int c1 = decodeIntLittleEndian(encode);
         int c2 = decodeIntLittleEndian(encode);
 
-        return ((long) c2 << 32) + (c1 & 0xffffffffL);
+        return packInts(c2, c1);
     }
 
     /**
@@ -2533,8 +2537,8 @@ public class Pack {
      * @param l is the long to encode
      */
     private static void encodeLongLittleEndian(ByteList result, long l) {
-        encodeIntLittleEndian(result, (int) (l & 0xffffffff));
-        encodeIntLittleEndian(result, (int) (l >>> 32));
+        encodeIntLittleEndian(result, unpackLow(l));
+        encodeIntLittleEndian(result, unpackHigh(l));
     }
 
     /**
@@ -2544,8 +2548,8 @@ public class Pack {
      * @param l is the long to encode
      */
     private static void encodeLongBigEndian(ByteList result, long l) {
-        encodeIntBigEndian(result, (int) (l >>> 32));
-        encodeIntBigEndian(result, (int) (l & 0xffffffff));
+        encodeIntBigEndian(result, unpackHigh(l));
+        encodeIntBigEndian(result, unpackLow(l));
     }
 
     /**

@@ -69,6 +69,7 @@ import org.jruby.lexer.yacc.StrTerm;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.builtin.IRubyObject;
+import static org.jruby.util.BitPacker.unpackHighChar;
 import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
 import org.jruby.util.KeyValuePair;
@@ -715,7 +716,7 @@ public abstract class RubyParserBase {
         if (slot == -1) {
             scopedParserState.addDefinedVariable(name, lexer.getRubySourceline());
         } else {
-            scopedParserState.markUsedVariable(name, slot >> 16);
+            scopedParserState.markUsedVariable(name, unpackHighChar(slot));
         }
     }
 
@@ -2122,7 +2123,7 @@ public abstract class RubyParserBase {
             int slot = current.isDefined(id);
             if (slot != -1) {
                 scopedParserState.addDefinedVariable(name, lexer.getRubySourceline());
-                scopedParserState.markUsedVariable(name, slot >> 16);
+                scopedParserState.markUsedVariable(name, unpackHighChar(slot));
             }
         }
 

@@ -58,6 +58,8 @@ import org.jruby.runtime.ArgumentType;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Signature;
 import org.jruby.runtime.builtin.IRubyObject;
+import static org.jruby.util.BitPacker.unpackHighChar;
+import static org.jruby.util.BitPacker.unpackLowChar;
 import org.jruby.util.ByteList;
 import org.jruby.util.CommonByteLists;
 import org.jruby.util.DefinedMessage;
@@ -2671,8 +2673,8 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
             Match2CaptureNode m2c = (Match2CaptureNode)matchNode;
             for (int slot:  m2c.getScopeOffsets()) {
                 // Static scope scope offsets store both depth and offset
-                int depth = slot >> 16;
-                int offset = slot & 0xffff;
+                int depth = unpackHighChar(slot);
+                int offset = unpackLowChar(slot);
 
                 // For now, we'll continue to implicitly reference "$~"
                 RubySymbol var = getManager().runtime.newSymbol(getVarNameFromScopeTree(scope, depth, offset));
