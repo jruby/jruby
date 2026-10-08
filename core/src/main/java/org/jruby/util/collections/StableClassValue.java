@@ -1,5 +1,7 @@
 package org.jruby.util.collections;
 
+import java.lang.ref.WeakReference;
+import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
@@ -10,7 +12,8 @@ import java.util.function.Function;
  */
 final class StableClassValue<T> extends ClassValue<T> {
     private final ReentrantLock lock = new ReentrantLock();
-    private final WeakHashMap<StableValue<Class<?>, T>, Object> stableValues = new WeakHashMap<>();
+    // the classes are referenced weakly, so that this map does not keep them loaded
+    private final WeakHashMap<StableValue<Class<?>, T>, WeakReference<Class<?>>> stableValues = new WeakHashMap<>();
 
     public StableClassValue(ClassValueCalculator<T> calculator) {
         super(calculator);
@@ -22,10 +25,17 @@ final class StableClassValue<T> extends ClassValue<T> {
         return proxy.get(cls).get(cls);
     }
 
+    /**
+     * Clears every computed value and removes it from the class it was computed for. Only clearing them would leave the
+     * {@link StableValue} instances in the classes, and since those are loaded by JRuby's class loader, a class from
+     * another class loader, such as a JDK class, would keep JRuby's class loader alive.
+     */
     public void clear() {
         synchronized (stableValues) {
-            for (StableValue<Class<?>, T> value : stableValues.keySet()) {
-                value.clear();
+            for (Map.Entry<StableValue<Class<?>, T>, WeakReference<Class<?>>> entry : stableValues.entrySet()) {
+                entry.getKey().clear();
+                Class<?> type = entry.getValue().get();
+                if (type != null) proxy.remove(type);
             }
             stableValues.clear();
         }
@@ -77,13 +87,13 @@ final class StableClassValue<T> extends ClassValue<T> {
 
     private final java.lang.ClassValue<StableValue<Class<?>, T>> proxy = createStableValueProxy(lock, calculator, stableValues);
 
-    private static <U> java.lang.ClassValue<StableValue<Class<?>, U>> createStableValueProxy(ReentrantLock lock, Function<Class<?>, U> calculator, WeakHashMap<StableValue<Class<?>, U>, Object> stableValues){
+    private static <U> java.lang.ClassValue<StableValue<Class<?>, U>> createStableValueProxy(ReentrantLock lock, Function<Class<?>, U> calculator, WeakHashMap<StableValue<Class<?>, U>, WeakReference<Class<?>>> stableValues){
         return new java.lang.ClassValue<>() {
             @Override
             protected StableValue<Class<?>, U> computeValue(Class<?> type) {
                 StableValue<Class<?>, U> stableValue = new StableValue<>(lock, calculator);
                 synchronized (stableValues) {
-                    stableValues.put(stableValue, null);
+                    stableValues.put(stableValue, new WeakReference<>(type));
                 }
                 return stableValue;
             }
