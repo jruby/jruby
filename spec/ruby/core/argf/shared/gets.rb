@@ -1,3 +1,5 @@
+require 'stringio'
+
 describe :argf_gets, shared: true do
   before :each do
     @file1_name = fixture __FILE__, "file1.txt"
@@ -30,6 +32,27 @@ describe :argf_gets, shared: true do
   it "reads one separated section without the separator when passed a separator and chomp" do
     argf [@file1_name] do
       @argf.send(@method, ".", chomp: true).should == "file1"
+    end
+  end
+
+  describe "when reading $stdin and $stdin is not an IO" do
+    before :each do
+      @stdin = $stdin
+      $stdin = StringIO.new("a\nb\n")
+      @stdin_argf = ARGF.class.new
+    end
+
+    after :each do
+      $stdin = @stdin
+    end
+
+    it "reads each line of $stdin" do
+      @stdin_argf.send(@method).should == "a\n"
+      @stdin_argf.send(@method).should == "b\n"
+    end
+
+    it "passes keywords on to $stdin" do
+      @stdin_argf.send(@method, chomp: true).should == "a"
     end
   end
 
