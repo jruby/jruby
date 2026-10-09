@@ -40,6 +40,9 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class RubyNativeThread implements ThreadLike {
     private final Thread thread;
+    // Virtual threads ignore Java priority changes. Keep Ruby's priority hint
+    // so it can still be read back and inherited by Ruby child threads.
+    private volatile int virtualPriority = Thread.NORM_PRIORITY;
     public final RubyThread rubyThread;
     public String rubyName;
     
@@ -66,11 +69,14 @@ public class RubyNativeThread implements ThreadLike {
     }
     
     public int getPriority() {
-        return thread.getPriority();
+        return thread.isVirtual() ? virtualPriority : thread.getPriority();
     }
     
     public void setPriority(int priority) {
         thread.setPriority(priority);
+        if (thread.isVirtual()) {
+            virtualPriority = priority;
+        }
     }
     
     public boolean isCurrent() {
