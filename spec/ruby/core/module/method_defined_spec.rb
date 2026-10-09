@@ -97,7 +97,7 @@ describe "Module#method_defined?" do
   end
 
   ruby_version_is "4.1" do
-    describe "when passed true as a third optional argument" do
+    describe "when passed true as include_all" do
       it "returns true for private methods as well" do
         # Include super
         ModuleSpecs::Child.method_defined?(:public_child, true, true).should == true
@@ -145,7 +145,7 @@ describe "Module#method_defined?" do
       end
     end
 
-    describe "when passed false as a third optional argument" do
+    describe "when passed false as include_all" do
       it "does not return true for private methods" do
         # Include super
         ModuleSpecs::Child.method_defined?(:public_child, true, false).should == true
@@ -179,7 +179,7 @@ describe "Module#method_defined?" do
       end
     end
 
-    describe "when passed nil as a third optional argument" do
+    describe "when passed nil as include_all" do
       it "does not return true for private methods" do
         ModuleSpecs::Child.method_defined?(:private_child, true, nil).should == false
         ModuleSpecs::Child.method_defined?(:private_child, false, nil).should == false
