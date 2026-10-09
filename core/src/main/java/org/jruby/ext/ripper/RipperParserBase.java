@@ -49,6 +49,7 @@ import org.jruby.lexer.yacc.StackState;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import static org.jruby.util.BitPacker.unpackHighChar;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
@@ -511,7 +512,7 @@ public class RipperParserBase {
         int slot = current.isDefined(id);
         if (slot != -1) {
             scopedParserState.addDefinedVariable(name, lexer.getRubySourceline());
-            scopedParserState.markUsedVariable(name, slot >> 16);
+            scopedParserState.markUsedVariable(name, unpackHighChar(slot));
         }
 
         return nameBytes;
