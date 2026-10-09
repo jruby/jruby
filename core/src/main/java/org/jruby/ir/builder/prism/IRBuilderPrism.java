@@ -1,4 +1,4 @@
-package org.jruby.prism.builder;
+package org.jruby.ir.builder.prism;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
@@ -91,7 +91,7 @@ import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
 import org.jruby.parser.StaticScope;
 import org.jruby.parser.StaticScopeFactory;
-import org.jruby.prism.parser.ParseResultPrism;
+import org.jruby.parser.prism.parser.ParseResultPrism;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.ArgumentType;
 import org.jruby.runtime.CallType;

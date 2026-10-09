@@ -1,4 +1,4 @@
-package org.jruby.prism.parser;
+package org.jruby.parser.prism.parser;
 
 import jnr.ffi.Pointer;
 import jnr.ffi.Struct;

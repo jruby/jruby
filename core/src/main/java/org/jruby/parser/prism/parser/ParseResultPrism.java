@@ -1,11 +1,11 @@
-package org.jruby.prism.parser;
+package org.jruby.parser.prism.parser;
 
 import org.jcodings.Encoding;
 import org.jruby.ParseResult;
 import org.jruby.Ruby;
 import org.jruby.RubySymbol;
 import org.jruby.parser.StaticScope;
-import org.jruby.prism.builder.IRBuilderPrism;
+import org.jruby.ir.builder.prism.IRBuilderPrism;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.util.ByteList;
 import org.ruby_lang.prism.Nodes;
