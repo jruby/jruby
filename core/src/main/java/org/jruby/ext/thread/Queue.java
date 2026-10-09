@@ -683,6 +683,10 @@ public class Queue extends RubyObject implements DataType {
         takeLock.lockInterruptibly();
         try {
             while (count.get() == 0) {
+                if (closed) {
+                    notEmpty.signal();
+                    return null;
+                }
                 if (nanos <= 0L)
                     return null;
                 nanos = notEmpty.awaitNanos(nanos);
