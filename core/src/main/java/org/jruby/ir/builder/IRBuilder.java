@@ -50,6 +50,7 @@ import java.util.Deque;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -1169,7 +1170,9 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         Label endLabel = getNewLabel();                   // end of the entire case statement.
         boolean hasExplicitElse = elsey != null; // does this have an explicit 'else' or not.
         Variable result = temp();      // final result value of the case statement.
-        Map<Label, U> bodies = new HashMap<>();        // we save bodies and emit them after processing when values.
+        // We save bodies and emit them after processing when values, in order and the else last as MRI compiles
+        // them: a statement on the line of one compiled before it is no line event of its own.
+        Map<Label, U> bodies = new LinkedHashMap<>();
         Set<IRubyObject> seenLiterals = new HashSet<>();  // track to warn on duplicated values in when clauses.
         Map<IRubyObject, java.lang.Integer> originalLocs = new HashMap<>();
         Map<Label, BranchTarget> targets = new HashMap<>();  // branch coverage target of each body.
@@ -2374,6 +2377,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         label("pattern_case_end", end -> {
             List<Label> labels = new ArrayList<>(4);
             Map<Label, U> bodies = new HashMap<>(4);
+            Label elseLabel = getNewLabel();
 
             // build each "when"
             Variable deconstructed = copy(nil());
@@ -2389,7 +2393,20 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                 addInstr(createBranch(eqqResult, tru(), bodyLabel));
                 bodies.put(bodyLabel, body);
             }
+            jump(elseLabel);
 
+            // Now, emit bodies while preserving in clauses order, and the else after them as MRI compiles them (a
+            // statement on the line of one compiled before it is no line event of its own)
+            for (int i = 0; i < labels.size(); i++) {
+                Label label = labels.get(i);
+                addInstr(new LabelInstr(label));
+                if (inTargets != null) coverBranch(inTargets[i]);
+                Operand bodyValue = build(bodies.get(label));
+                if (bodyValue != null) copy(result, bodyValue);
+                jump(end);
+            }
+
+            addInstr(new LabelInstr(elseLabel));
             coverBranch(elseTarget);
             if (consequent != null) {
                 Operand bodyValue = build(consequent);
@@ -2417,16 +2434,6 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                 call(temp(), kernel, "raise", exception);
             }
             jump(end);
-
-            // Now, emit bodies while preserving when clauses order
-            for (int i = 0; i < labels.size(); i++) {
-                Label label = labels.get(i);
-                addInstr(new LabelInstr(label));
-                if (inTargets != null) coverBranch(inTargets[i]);
-                Operand bodyValue = build(bodies.get(label));
-                if (bodyValue != null) copy(result, bodyValue);
-                jump(end);
-            }
         });
 
         return result;

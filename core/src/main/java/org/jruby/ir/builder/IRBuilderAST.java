@@ -178,7 +178,9 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
 
     private Operand buildOperand(Variable result, Node node) throws NotCompilableException {
         if (node.isNewline()) {
-            if (coverageMode != 0 && !(node instanceof NilImplicitNode)) {
+            if (coverageMode != 0 && !node.isLineEvent()) {
+                determineIfWeNeedLineNumberForCall(node.getLine(), true); // only for backtraces
+            } else if (coverageMode != 0 && !(node instanceof NilImplicitNode)) {
                 determineIfWeNeedCoverageLine(node.getLine(), LineEvents.firstInstruction(node));
             } else {
                 determineIfWeNeedLineNumber(node.getLine(), true, node instanceof NilImplicitNode, node instanceof DefNode);
@@ -989,7 +991,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
      * the whole call, as MRI does).
      */
     private BranchTarget[] declareSafeNavigationBranches(Node node) {
-        BranchCoverage branch = declareBranch(BranchCoverage.Type.SAFE_NAVIGATION, node);
+        BranchCoverage branch = declareBranch(BranchCoverage.Type.SAFE_NAVIGATION, safeNavigationSpanOf(node));
         if (branch == null) return null;
 
         return new BranchTarget[] { declareTarget(branch, BranchTarget.Label.THEN, null), declareTarget(branch, BranchTarget.Label.ELSE, null) };
@@ -2514,7 +2516,27 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         int[] parens = node == null ? null : node.getParenSpan();
         if (parens != null) return new int[] { parens[0] + 1, parens[1], parens[2] + 1, parens[3] };
 
+        // MRI's lambda node starts at its ->
+        if (node instanceof LambdaNode lambda && lambda.getOperatorColumn() >= 0 && lambda.hasSourceSpan()) {
+            return new int[] { lambda.getLine() + 1, lambda.getOperatorColumn(), lambda.getEndLine() + 1, lambda.getEndColumn() };
+        }
+
         return spanOf(node);
+    }
+
+    /**
+     * A safe-navigation call's branch ends where MRI ends it (see CallNode#setSafeNavigationEnd), short of its
+     * block; an assignment's is the whole assignment.
+     */
+    private static int[] safeNavigationSpanOf(Node node) {
+        int[] span = spanOf(node);
+
+        if (span != null && node instanceof CallNode call && call.hasSafeNavigationEnd()) {
+            span[2] = call.getSafeNavigationEndLine() + 1;
+            span[3] = call.getSafeNavigationEndColumn();
+        }
+
+        return span;
     }
 
     private static int[] spanOf(BranchCoverage branch) {
@@ -2522,10 +2544,13 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     }
 
     private BranchCoverage declareBranch(BranchCoverage.Type type, Node node) {
+        return declareBranch(type, spanOf(node));
+    }
+
+    private BranchCoverage declareBranch(BranchCoverage.Type type, int[] span) {
         FileCoverage file = branchCoverageFile();
         if (file == null) return null;
 
-        int[] span = spanOf(node);
         if (span == null) return null;
 
         return file.declareBranch(type, span[0], span[1], span[2], span[3]);

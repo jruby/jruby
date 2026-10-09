@@ -628,7 +628,7 @@ stmt            : keyword_alias fitem {
                     /*%%%*/
                     $$ = p.new_if(@1.start(), $3, p.remove_begin($1), null);
                     p.fixpos($<Node>$, $3);
-                    p.branch_modifier($<Node>$, $3, $1, false, @3.end);
+                    p.branch_modifier($<Node>$, $1, false, @3.end);
                     /*% %*/
                     /*% ripper: if_mod!($3, $1) %*/
                 }
@@ -636,7 +636,7 @@ stmt            : keyword_alias fitem {
                     /*%%%*/
                     $$ = p.new_if(@1.start(), $3, null, p.remove_begin($1));
                     p.fixpos($<Node>$, $3);
-                    p.branch_modifier($<Node>$, $3, $1, true, @3.end);
+                    p.branch_modifier($<Node>$, $1, true, @3.end);
                     /*% %*/
                     /*% ripper: unless_mod!($3, $1) %*/
                 }
@@ -677,6 +677,7 @@ stmt            : keyword_alias fitem {
                     p.setLexContext($1);
                     /*%%%*/
                    $$ = new PostExeNode(@1.start(), $4, p.src_line());
+                   p.span($<Node>$, @1.start, @5.end);
                     /*% %*/
                     /*% ripper: END!($4) %*/
                 }
@@ -941,6 +942,7 @@ block_command   : block_call
                 | block_call call_op2 operation2 command_args {
                     /*%%%*/
                     $$ = p.new_call($1, $2, $3, $4, null, @3.start());
+                    p.safe_navigation_end($<Node>$, @3.end, @4.end, false);
                     /*% %*/
                     /*% ripper: method_add_arg!(call!($1, $2, $3), $4) %*/
                 };
@@ -979,6 +981,7 @@ command        : fcall command_args %prec tLOWEST {
                 | primary_value call_op operation2 command_args %prec tLOWEST {
                     /*%%%*/
                     $$ = p.new_call($1, $2, $3, $4, null, @3.start());
+                    p.safe_navigation_end($<Node>$, @3.end, @4.end, false);
                     /*% %*/
                     /*% ripper: command_call!($1, $2, $3, $4) %*/
                 }
@@ -986,6 +989,7 @@ command        : fcall command_args %prec tLOWEST {
                     /*%%%*/
                     $$ = p.new_call($1, $2, $3, $4, $5, @3.start());
                     p.span($<Node>$, @1.start, @4.end);
+                    p.safe_navigation_end($<Node>$, @3.end, @4.end, false);
                     /*% %*/
                     /*% ripper: method_add_block!(command_call!($1, $2, $3, $4), $5) %*/
                 }
@@ -1956,7 +1960,7 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     p.value_expr($1);
                     // Each arm of a ternary is a statement of its own for line events, as in MRI.
                     $$ = p.new_if(@1.start(), $1, p.newline_node($3, @3.start()), p.newline_node($6, @6.start()));
-                    p.branch_ternary($<Node>$, $1, @1.end);
+                    p.branch_ternary($<Node>$, @1.end);
                     /*% %*/
                     /*% ripper: ifop!($1, $3, $6) %*/
                 }
@@ -2428,14 +2432,14 @@ primary         : literal
                 | k_if expr_value then compstmt if_tail k_end {
                     /*%%%*/
                     $$ = p.new_if(@1.start(), $2, $4, $5);
-                    p.branch_if($<Node>$, $2, @2.end, $5 == null ? -1 : @5.start, @6.end);
+                    p.branch_if($<Node>$, @2.end, $5 == null ? -1 : @5.start, @6.end);
                     /*% %*/
                     /*% ripper: if!($2, $4, escape_Qundef($5)) %*/
                 }
                 | k_unless expr_value then compstmt opt_else k_end {
                     /*%%%*/
                     $$ = p.new_if(@1.start(), $2, $5, $4);
-                    p.branch_unless($<Node>$, $2, @2.end);
+                    p.branch_unless($<Node>$, @2.end);
                     /*% %*/
                     /*% ripper: unless!($2, $4, escape_Qundef($5)) %*/
                 }
@@ -2724,7 +2728,7 @@ if_tail         : opt_else
                 | k_elsif expr_value then compstmt if_tail {
                     /*%%%*/
                     $$ = p.new_if(@1.start(), $2, $4, $5);
-                    p.branch_elsif($<Node>$, $2, @2.end, $5 == null ? -1 : @5.start);
+                    p.branch_elsif($<Node>$, @2.end, $5 == null ? -1 : @5.start);
                     /*% %*/
                     /*% ripper: elsif!($2, $4, escape_Qundef($5)) %*/
                 };
@@ -2996,6 +3000,7 @@ lambda          : tLAMBDA {
                     ArgsNode args = p.args_with_numbered($7, max_numparam, it_id);
                     $$ = new LambdaNode(@1.start(), args, $9, p.getCurrentScope(), p.src_line());
                     $<LambdaNode>$.setSourceSpan(ProductionState.column($<Long>8), ProductionState.line(@9.end), ProductionState.column(@9.end));
+                    $<LambdaNode>$.setOperatorColumn(ProductionState.column(@1.start));
                     /*% %*/
                     /*% ripper: lambda!($5, $7) %*/
                     p.setLeftParenBegin($<Integer>2);
@@ -3071,6 +3076,7 @@ block_call      : command do_block {
                 | block_call call_op2 operation2 opt_paren_args {
                     /*%%%*/
                     $$ = p.new_call($1, $2, $3, $4, null, @3.start());
+                    p.safe_navigation_end($<Node>$, @3.end, @4.end, true);
                     /*% %*/
                     /*% ripper: opt_event(:method_add_arg!, call!($1, $2, $3), $4) %*/
                 }
@@ -3078,6 +3084,7 @@ block_call      : command do_block {
                     /*%%%*/
                     $$ = p.new_call($1, $2, $3, $4, $5, @3.start());
                     p.span($<Node>$, @1.start, @4.end);
+                    p.safe_navigation_end($<Node>$, @3.end, @4.end, true);
                     /*% %*/
                     /*% ripper: opt_event(:method_add_block!, command_call!($1, $2, $3, $4), $5) %*/
                 }
@@ -3085,6 +3092,7 @@ block_call      : command do_block {
                     /*%%%*/
                     $$ = p.new_call($1, $2, $3, $4, $5, @3.start());
                     p.span($<Node>$, @1.start, @4.end);
+                    p.safe_navigation_end($<Node>$, @3.end, @4.end, false);
                     /*% %*/
                     /*% ripper: method_add_block!(command_call!($1, $2, $3, $4), $5) %*/
                 };
@@ -3100,6 +3108,7 @@ method_call     : fcall paren_args {
                 | primary_value call_op operation2 opt_paren_args {
                     /*%%%*/
                     $$ = p.new_call($1, $2, $3, $4, null, @3.start());
+                    p.safe_navigation_end($<Node>$, @3.end, @4.end, true);
                     /*% %*/
                     /*% ripper: opt_event(:method_add_arg!, call!($1, $2, $3), $4) %*/
                 }
@@ -3118,6 +3127,7 @@ method_call     : fcall paren_args {
                 | primary_value call_op paren_args {
                     /*%%%*/
                     $$ = p.new_call($1, $2, LexingCommon.CALL, $3, null, @3.start());
+                    p.safe_navigation_end($<Node>$, @3.end, @3.end, true); // o&.(): the parentheses are the message
                     /*% %*/
                     /*% ripper: method_add_arg!(call!($1, $2, ID2VAL(idCall)), $3) %*/
                 }

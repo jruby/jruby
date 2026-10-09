@@ -107,6 +107,7 @@ public class IfNode extends Node {
     private int elseStartColumn = -1;
     private Node sourceBody;                // for a modifier: the statement as written (before begin/end unwrapping)
     private int constantPredicate;          // 0: not a literal; 1: a literal MRI folds to true; -1: one it folds to false
+    private boolean foldedPredicate;        // MRI compiles nothing for the predicate (only literals decide it)
 
     public void markBranch(boolean unless, boolean elsif, long predicateEnd, long elseStart) {
         this.branch = true;
@@ -178,6 +179,18 @@ public class IfNode extends Node {
 
     public boolean isConstantlyTrue() {
         return constantPredicate > 0;
+    }
+
+    /**
+     * @param foldedPredicate whether MRI compiles no instructions for the predicate: a constant predicate made of
+     *                        literals only (unlike <code>x and false</code>, which still calls x)
+     */
+    public void setFoldedPredicate(boolean foldedPredicate) {
+        this.foldedPredicate = foldedPredicate;
+    }
+
+    public boolean hasFoldedPredicate() {
+        return foldedPredicate;
     }
 
     public Node getSourceBody() {
