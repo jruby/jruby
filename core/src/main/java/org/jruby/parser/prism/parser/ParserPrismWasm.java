@@ -1,4 +1,4 @@
-package org.jruby.prism.parser;
+package org.jruby.parser.prism.parser;
 
 import org.jruby.Ruby;
 import org.ruby_lang.prism.wasm.Prism;

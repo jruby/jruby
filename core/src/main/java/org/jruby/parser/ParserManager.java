@@ -12,7 +12,7 @@ import org.jruby.ir.persistence.IRReaderStream;
 import org.jruby.ir.persistence.util.IRFileExpert;
 import org.jruby.management.ParserStats;
 import org.jruby.platform.Platform;
-import org.jruby.prism.ParserProviderPrism;
+import org.jruby.parser.prism.ParserProviderPrism;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;

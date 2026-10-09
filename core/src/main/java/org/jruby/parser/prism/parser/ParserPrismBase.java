@@ -1,4 +1,4 @@
-package org.jruby.prism.parser;
+package org.jruby.parser.prism.parser;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.ISO8859_1Encoding;

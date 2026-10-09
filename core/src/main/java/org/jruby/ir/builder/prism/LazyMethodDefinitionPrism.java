@@ -1,4 +1,4 @@
-package org.jruby.prism.builder;
+package org.jruby.ir.builder.prism;
 
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
