@@ -3347,7 +3347,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         }
 
         int maxSize = len < len2 ? len : len2;
-        RubyArray res;
+        RubyArrayNative res;
         switch (maxSize) {
             case 0:
                 return newEmptyArray(context.runtime);
@@ -3370,8 +3370,8 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         if (index == 1 && maxSize == 2) return Create.newArray(context, res.eltInternal(0));
 
         assert index == res.size();
-        if (res instanceof RubyArrayNative resNative) {
-            Helpers.fillNil(context, resNative.values, index, resNative.values.length);
+        if (!(res instanceof RubyArraySpecialized)) {
+            Helpers.fillNil(context, res.values, index, res.values.length);
         }
 
         return res;
