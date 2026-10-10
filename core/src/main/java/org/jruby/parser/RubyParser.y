@@ -3095,6 +3095,19 @@ block_call      : command do_block {
                     p.safe_navigation_end($<Node>$, @3.end, @4.end, false);
                     /*% %*/
                     /*% ripper: method_add_block!(command_call!($1, $2, $3, $4), $5) %*/
+                }
+                | block_call call_op paren_args {
+                    /*%%%*/
+                    $$ = p.new_call($1, $2, LexingCommon.CALL, $3, null, @3.start());
+                    p.safe_navigation_end($<Node>$, @3.end, @3.end, true); // o.m foo do end.(): the parentheses are the message
+                    /*% %*/
+                    /*% ripper: method_add_arg!(call!($1, $2, ID2VAL(idCall)), $3) %*/
+                }
+                | block_call tCOLON2 paren_args {
+                    /*%%%*/
+                    $$ = p.new_call($1, LexingCommon.CALL, $3, null);
+                    /*% %*/
+                    /*% ripper: method_add_arg!(call!($1, ID2VAL(idCOLON2), ID2VAL(idCall)), $3) %*/
                 };
 
 // [!null]
