@@ -34,7 +34,6 @@ package org.jruby.ast;
 
 import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.parser.ProductionState;
 
 /** 
  * Represents a while statement. This could be the both versions:
@@ -109,35 +108,36 @@ public class WhileNode extends Node {
     // ---- branch coverage: span of the loop body as written (a modifier loop's statement, including any
     // begin/end around it), when it differs from the body node's own span ----
 
-    private int bodyStartLine = -1;
-    private int bodyStartColumn = -1;
-    private int bodyEndLine = -1;
-    private int bodyEndColumn = -1;
+    // null when the body node's own span will do, or positions are not recorded
+    private SourceSpan bodySpan() {
+        return (SourceSpan) getSourceDetail();
+    }
 
     public void setBodySpan(long start, long end) {
-        bodyStartLine = ProductionState.line(start);
-        bodyStartColumn = ProductionState.column(start);
-        bodyEndLine = ProductionState.line(end);
-        bodyEndColumn = ProductionState.column(end);
+        setSourceDetail(SourceSpan.of(start, end));
     }
 
     public boolean hasBodySpan() {
-        return bodyStartColumn >= 0;
+        return bodySpan() != null;
     }
 
     public int getBodyStartLine() {
-        return bodyStartLine;
+        SourceSpan bodySpan = bodySpan();
+        return bodySpan == null ? -1 : bodySpan.startLine();
     }
 
     public int getBodyStartColumn() {
-        return bodyStartColumn;
+        SourceSpan bodySpan = bodySpan();
+        return bodySpan == null ? -1 : bodySpan.startColumn();
     }
 
     public int getBodyEndLine() {
-        return bodyEndLine;
+        SourceSpan bodySpan = bodySpan();
+        return bodySpan == null ? -1 : bodySpan.endLine();
     }
 
     public int getBodyEndColumn() {
-        return bodyEndColumn;
+        SourceSpan bodySpan = bodySpan();
+        return bodySpan == null ? -1 : bodySpan.endColumn();
     }
 }

@@ -2513,8 +2513,10 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
      * (MRI's parentheses node), anything else at the node itself.
      */
     private static int[] armSpanOf(Node node) {
-        int[] parens = node == null ? null : node.getParenSpan();
-        if (parens != null) return new int[] { parens[0] + 1, parens[1], parens[2] + 1, parens[3] };
+        SourceSpan parens = node == null ? null : node.getParenSpan();
+        if (parens != null) {
+            return new int[] { parens.startLine() + 1, parens.startColumn(), parens.endLine() + 1, parens.endColumn() };
+        }
 
         // MRI's lambda node starts at its ->
         if (node instanceof LambdaNode lambda && lambda.getOperatorColumn() >= 0 && lambda.hasSourceSpan()) {

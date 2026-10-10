@@ -51,17 +51,11 @@ public abstract class Node {
 
     private int line;
 
-    // Source span of this node: the (zero-based) line and byte column of its first character and the line and
-    // column just past its last character. The parser records it (see RubyParser's skeleton) and Coverage uses
-    // it to identify methods and branches the way MRI does. -1 when unknown; startLine is only recorded when it
-    // differs from line (e.g. fixpos moves a modifier's line to its condition).
-    private int startLine = -1;
-    private int startColumn = -1;
-    private int endLine = -1;
-    private int endColumn = -1;
-    private boolean spanLocked;             // set explicitly: productions passing the node along no longer widen it
-    private int[] parenSpan;                // span of the parentheses written around this expression, if any
-    
+    // Source span of this node: where its first character is and where its last one ends. The parser records it
+    // (see RubyParser's skeleton) when Coverage needs it, to identify methods and branches the way MRI does, and
+    // leaves it null otherwise (see RubyParserBase#recordsPositions).
+    private NodeSpan span;
+
     // Does this node contain a node which is an assignment.  We can use this knowledge when emitting IR
     // instructions to do more or less depending on whether we have to cope with scenarios like:
     //    a = 1; [a, a = 2];
@@ -71,6 +65,8 @@ public abstract class Node {
     protected boolean newline;
     // newline only to keep backtraces on this node's line, which is no line event (see setBacktraceNewline)
     private boolean backtraceNewline;
+    // written inside parentheses, which MRI has a node for (see setParenthesized)
+    private boolean parenthesized;
 
     public Node(int line, boolean containsAssignment) {
         this.line = line;
@@ -123,42 +119,42 @@ public abstract class Node {
     }
 
     public boolean hasSourceSpan() {
-        return startColumn >= 0 && endLine >= 0;
+        return span != null && span.startColumn() >= 0 && span.endLine() >= 0;
+    }
+
+    // The span as recorded so far. Each change replaces it: a parse only makes them when Coverage needs positions.
+    private NodeSpan span() {
+        NodeSpan span = this.span;
+        return span != null ? span : NodeSpan.NONE;
     }
 
     /**
      * Record the span from the parser's packed (line, column) positions (see ProductionState).
      */
     public void setSourceSpan(long start, long end) {
-        startLine = ProductionState.line(start);
-        startColumn = ProductionState.column(start);
-        endLine = ProductionState.line(end);
-        endColumn = ProductionState.column(end);
-        spanLocked = true;
+        span = span().withSpan(ProductionState.line(start), ProductionState.column(start),
+                ProductionState.line(end), ProductionState.column(end), true);
     }
 
     /**
      * Record the span of a node starting on its own line (getLine()).
      */
     public void setSourceSpan(int startColumn, int endLine, int endColumn) {
-        this.startLine = -1;
-        this.startColumn = startColumn;
-        this.endLine = endLine;
-        this.endColumn = endColumn;
-        spanLocked = true;
+        span = span().withSpan(-1, startColumn, endLine, endColumn, true);
     }
 
     /**
      * Keep the span as it is now: enclosing productions handing the node along no longer widen it.
      */
     public void lockSourceSpan() {
-        spanLocked = true;
+        NodeSpan span = span();
+        this.span = span.withSpan(span.startLine(), span.startColumn(), span.endLine(), span.endColumn(), true);
     }
 
     public void setSourceSpanEnd(long end) {
-        endLine = ProductionState.line(end);
-        endColumn = ProductionState.column(end);
-        spanLocked = true;
+        NodeSpan span = span();
+        this.span = span.withSpan(span.startLine(), span.startColumn(),
+                ProductionState.line(end), ProductionState.column(end), true);
     }
 
     /**
@@ -167,52 +163,77 @@ public abstract class Node {
      * whole assignment, a statement list grows as statements are appended), until an explicit span locks it.
      */
     public void setAutoSourceSpan(long start, long end) {
-        if (spanLocked) return;
+        NodeSpan span = span();
+        if (span.locked()) return;
 
-        startLine = ProductionState.line(start);
-        startColumn = ProductionState.column(start);
-        endLine = ProductionState.line(end);
-        endColumn = ProductionState.column(end);
-    }
-
-    public void copySourceSpan(Node other) {
-        startLine = other.startLine;
-        startColumn = other.startColumn;
-        endLine = other.endLine;
-        endColumn = other.endColumn;
-        spanLocked = other.spanLocked;
+        this.span = span.withSpan(ProductionState.line(start), ProductionState.column(start),
+                ProductionState.line(end), ProductionState.column(end), false);
     }
 
     /**
-     * Record that this expression was written inside parentheses; MRI has a node for the parentheses and
-     * reports a branch arm consisting of a parenthesized expression at the parentheses.
+     * Take the span of another node, though neither its parentheses nor what its class records besides.
+     */
+    public void copySourceSpan(Node other) {
+        NodeSpan from = other.span;
+        span = from == null ? null :
+                NodeSpan.NONE.withSpan(from.startLine(), from.startColumn(), from.endLine(), from.endColumn(), from.locked());
+    }
+
+    /**
+     * Record what else a class of node keeps of its source besides its span, such as where the else of a
+     * conditional is. It is kept with the span, so that it takes no room in a node parsed without positions.
+     */
+    protected final void setSourceDetail(Record detail) {
+        if (detail != null || span != null) span = span().withDetail(detail);
+    }
+
+    protected final Record getSourceDetail() {
+        return span == null ? null : span.detail();
+    }
+
+    /**
+     * Record that this expression was written inside parentheses. MRI has a node for the parentheses, which
+     * decides what its compiler folds away, whether or not Coverage is in use.
+     */
+    public void setParenthesized() {
+        parenthesized = true;
+    }
+
+    public boolean isParenthesized() {
+        return parenthesized;
+    }
+
+    /**
+     * Record where the parentheses around this expression are: MRI reports a branch arm consisting of a
+     * parenthesized expression at the parentheses.
      */
     public void setParenSpan(long start, long end) {
-        parenSpan = new int[] { ProductionState.line(start), ProductionState.column(start), ProductionState.line(end), ProductionState.column(end) };
+        parenthesized = true;
+        span = span().withParens(SourceSpan.of(start, end));
     }
 
     /**
-     * [start_line, start_column, end_line, end_column] (zero-based) of the parentheses written around this
-     * expression, or null.
+     * The (zero-based) span of the parentheses written around this expression, or null when there are none or
+     * the parser did not record positions.
      */
-    public int[] getParenSpan() {
-        return parenSpan;
+    public SourceSpan getParenSpan() {
+        return span == null ? null : span.parens();
     }
 
     public int getStartLine() {
-        return startLine >= 0 ? startLine : line;
+        return span != null && span.startLine() >= 0 ? span.startLine() : line;
     }
 
     public int getStartColumn() {
-        return startColumn;
+        return span == null ? -1 : span.startColumn();
     }
 
     public int getEndLine() {
-        return endLine;
+        return span == null ? -1 : span.endLine();
     }
 
     public int getEndColumn() {
-        return endColumn;
+        return span == null ? -1 : span.endColumn();
     }
     
     public abstract <T> T accept(NodeVisitor<T> visitor);

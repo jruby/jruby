@@ -38,7 +38,6 @@ import java.util.List;
 import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.parser.ProductionState;
 
 /**
  * A method or operator call.
@@ -49,8 +48,6 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
     protected Node iterNode;
     private RubySymbol name;
     private final boolean isLazy;
-    private int safeNavigationEndLine = -1;     // zero-based, see setSafeNavigationEnd
-    private int safeNavigationEndColumn = -1;
 
     public CallNode(int line, Node receiverNode, RubySymbol name, Node argsNode,
                     Node iterNode, boolean isLazy) {
@@ -155,20 +152,26 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
      * Where the branch of a safe-navigation call ends (see RubyParserBase#safe_navigation_end).
      */
     public void setSafeNavigationEnd(long end) {
-        safeNavigationEndLine = ProductionState.line(end);
-        safeNavigationEndColumn = ProductionState.column(end);
+        setSourceDetail(SourcePosition.of(end));
+    }
+
+    // null unless this is a safe navigation and positions are recorded
+    private SourcePosition safeNavigationEnd() {
+        return (SourcePosition) getSourceDetail();
     }
 
     public boolean hasSafeNavigationEnd() {
-        return safeNavigationEndColumn >= 0;
+        return safeNavigationEnd() != null;
     }
 
     public int getSafeNavigationEndLine() {
-        return safeNavigationEndLine;
+        SourcePosition end = safeNavigationEnd();
+        return end == null ? -1 : end.line();
     }
 
     public int getSafeNavigationEndColumn() {
-        return safeNavigationEndColumn;
+        SourcePosition end = safeNavigationEnd();
+        return end == null ? -1 : end.column();
     }
     
     public List<Node> childNodes() {
