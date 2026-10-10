@@ -95,6 +95,7 @@ public final class StringSupport {
     public static final int CR_MASK      = CR_7BIT | CR_VALID;
 
     private static final VarHandle BYTES_AS_LONGS = MethodHandles.byteArrayViewVarHandle(long[].class, ByteOrder.nativeOrder());
+    private static final boolean BIG_ENDIAN = ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN;
 
     public static final int TRANS_SIZE = 256;
 
@@ -327,6 +328,15 @@ public final class StringSupport {
 
     // MRI: search_nonascii
     public static int searchNonAscii(byte[]bytes, int p, int end) {
+        if (p < end && !Encoding.isAscii(bytes[p])) return p;
+
+        while (p + LONG_SIZE <= end) {
+            long hits = (long) BYTES_AS_LONGS.get(bytes, p) & NONASCII_MASK;
+            if (hits != 0) {
+                return p + ((BIG_ENDIAN ? Long.numberOfLeadingZeros(hits) : Long.numberOfTrailingZeros(hits)) >>> 3);
+            }
+            p += LONG_SIZE;
+        }
         while (p < end) {
             if (!Encoding.isAscii(bytes[p])) return p;
             p++;
