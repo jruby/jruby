@@ -78,6 +78,15 @@ public class RipperParserBase {
         pushLocalScope();
     }
 
+    // Ripper builds no AST, so it has no nodes to record source positions on (see RubyParserBase#recordsPositions)
+    public boolean recordsPositions() {
+        return false;
+    }
+
+    public int column(long position) {
+        return ProductionState.column(position);
+    }
+
     public void reset() {
         getLexContext().reset();
 //        inSingleton = 0;

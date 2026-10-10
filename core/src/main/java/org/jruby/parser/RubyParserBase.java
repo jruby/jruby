@@ -141,6 +141,9 @@ public abstract class RubyParserBase {
         this.existingScope = scope;
         this.type = type;
         this.result = new RubyParserResult();
+        CoverageData coverageData = runtime.isCoverageEnabled() ? runtime.getCoverageData() : null;
+        this.recordPositions = coverageData != null && coverageData.isBranchesEnabled();
+        this.recordDefinitionSpans = recordPositions || coverageData != null && coverageData.isMethodsEnabled();
         setStringStyle(runtime.getInstanceConfig().isFrozenStringLiteral());
     }
 
@@ -461,9 +464,40 @@ public abstract class RubyParserBase {
 
     // ---- source spans and branch information for Coverage (positions are ProductionState-packed) ----
 
+    // Whether this parse records where nodes and their parts are in the source. Only branch coverage has a use
+    // for that, so any other parse leaves the nodes without it: an AST is large, and often long-lived.
+    private final boolean recordPositions;
+
+    // Whether this parse records where method definitions and blocks start and end, which is all that method
+    // coverage needs of the source (branch coverage needs it too: a definition or a block can be a branch arm).
+    private final boolean recordDefinitionSpans;
+
+    public boolean recordsPositions() {
+        return recordPositions;
+    }
+
+    /**
+     * The column of a packed position where a definition starts or ends, or -1 when this parse does not record
+     * the spans of definitions.
+     */
+    public int column(long position) {
+        return recordDefinitionSpans ? ProductionState.column(position) : -1;
+    }
+
     public Node span(Node node, long start, long end) {
-        if (node != null) node.setSourceSpan(start, end);
+        if (recordPositions && node != null) node.setSourceSpan(start, end);
         return node;
+    }
+
+    /** { ... } / do ... end */
+    public IterNode block_span(IterNode node, long start, long end) {
+        node.setBlockSpan(start, end, recordDefinitionSpans);
+        return node;
+    }
+
+    /** -> { ... }: MRI's lambda node starts at the arrow, where a branch arm that is a lambda is reported */
+    public void lambda_operator(LambdaNode node, long position) {
+        if (recordPositions) node.setOperatorColumn(ProductionState.column(position));
     }
 
     /**
@@ -474,7 +508,7 @@ public abstract class RubyParserBase {
      * @param argsEnd the end of the arguments as written: after the closing parenthesis when parenthesized
      */
     public void safe_navigation_end(Node node, long messageEnd, long argsEnd, boolean parenthesized) {
-        if (!(node instanceof CallNode call) || !call.isLazy()) return;
+        if (!recordPositions || !(node instanceof CallNode call) || !call.isLazy()) return;
 
         Node args = call.getArgsNode();
         if (args == null) {
@@ -487,12 +521,19 @@ public abstract class RubyParserBase {
     }
 
     public Node lock_span(Node node) {
-        if (node != null) node.lockSourceSpan();
+        if (recordPositions && node != null) node.lockSourceSpan();
         return node;
     }
 
     public Node paren_span(Node node, long start, long end) {
-        if (node != null) node.setParenSpan(start, end);
+        if (node == null) return null;
+
+        // every parse needs to know of the parentheses (see jumpTargets); only Coverage needs to know where they are
+        if (recordPositions) {
+            node.setParenSpan(start, end);
+        } else {
+            node.setParenthesized();
+        }
         return node;
     }
 
@@ -516,7 +557,7 @@ public abstract class RubyParserBase {
         if (node == null) return TO_THEN | TO_ELSE;
 
         // MRI keeps a node for parentheses, and folds them only when what they hold compiles to a single constant
-        if (node.getParenSpan() != null) {
+        if (node.isParenthesized()) {
             int constant = compiledConstant(node);
             return constant > 0 ? TO_THEN : constant < 0 ? TO_ELSE : TO_THEN | TO_ELSE;
         }
@@ -628,7 +669,7 @@ public abstract class RubyParserBase {
      * string, written without parentheses.
      */
     private static boolean staticArrayElement(Node node) {
-        if (node == null || node.getParenSpan() != null) return false;
+        if (node == null || node.isParenthesized()) return false;
 
         switch (node.getNodeType()) {
             case NILNODE: case TRUENODE: case FALSENODE: case FIXNUMNODE: case BIGNUMNODE: case FLOATNODE:
@@ -642,23 +683,25 @@ public abstract class RubyParserBase {
      * Whether MRI compiles a constant predicate to jumps alone: it is made only of literals, joined by and/or.
      */
     private static boolean compilesToJumpOnly(Node node) {
-        if (node instanceof AndNode and && and.getParenSpan() == null) {
+        if (node instanceof AndNode and && !and.isParenthesized()) {
             return compilesToJumpOnly(and.getFirstNode()) && compilesToJumpOnly(and.getSecondNode());
-        } else if (node instanceof OrNode or && or.getParenSpan() == null) {
+        } else if (node instanceof OrNode or && !or.isParenthesized()) {
             return compilesToJumpOnly(or.getFirstNode()) && compilesToJumpOnly(or.getSecondNode());
         }
 
         return jumpTargets(node) != (TO_THEN | TO_ELSE);
     }
 
-    private static void markBranch(Node node, boolean unless, boolean elsif, long predicateEnd, long elseStart) {
-        if (node instanceof IfNode ifNode) ifNode.markBranch(unless, elsif, predicateEnd, elseStart);
+    private void markBranch(Node node, boolean unless, boolean elsif, long predicateEnd, long elseStart, Node sourceBody) {
+        if (recordPositions && node instanceof IfNode ifNode) {
+            ifNode.markBranch(unless, elsif, predicateEnd, elseStart, sourceBody);
+        }
     }
 
     /** if ... [elsif ...] [else ...] end */
     public Node branch_if(Node node, long predicateEnd, long elseStart, long end) {
-        markBranch(node, false, false, predicateEnd, elseStart);
-        if (node instanceof IfNode ifNode) {
+        markBranch(node, false, false, predicateEnd, elseStart, null);
+        if (recordPositions && node instanceof IfNode ifNode) {
             // MRI reports every elsif clause as reaching the shared 'end'
             for (Node tail = ifNode.getElseBody(); tail instanceof IfNode elsif && elsif.isElsif(); tail = elsif.getElseBody()) {
                 elsif.setSourceSpanEnd(end);
@@ -669,32 +712,32 @@ public abstract class RubyParserBase {
 
     /** unless ... [else ...] end (then/else are swapped in the IfNode) */
     public Node branch_unless(Node node, long predicateEnd) {
-        markBranch(node, true, false, predicateEnd, -1);
+        markBranch(node, true, false, predicateEnd, -1, null);
         return node;
     }
 
     /** elsif ... (nested as the else body of the enclosing if) */
     public Node branch_elsif(Node node, long predicateEnd, long elseStart) {
-        markBranch(node, false, true, predicateEnd, elseStart);
+        markBranch(node, false, true, predicateEnd, elseStart, null);
         return node;
     }
 
     /** cond ? a : b */
     public Node branch_ternary(Node node, long predicateEnd) {
-        markBranch(node, false, false, predicateEnd, -1);
+        markBranch(node, false, false, predicateEnd, -1, null);
         return node;
     }
 
     /** stmt if cond / stmt unless cond */
     public Node branch_modifier(Node node, Node statement, boolean unless, long predicateEnd) {
-        markBranch(node, unless, false, predicateEnd, -1);
-        if (node instanceof IfNode ifNode) ifNode.setSourceBody(statement);
+        markBranch(node, unless, false, predicateEnd, -1, statement);
+        if (node instanceof IfNode ifNode) ifNode.setModifier(); // every parse needs this (see nd_unset_fl_newline)
         return node;
     }
 
     /** when a, b [then] body: the clause spans from 'when' through 'then' (or the last value) */
     public Node branch_when(Node node, long start, Long thenEnd, long argsEnd, long elseStart) {
-        if (node instanceof WhenNode when) {
+        if (recordPositions && node instanceof WhenNode when) {
             when.setSourceSpan(start, thenEnd != null ? thenEnd : argsEnd);
             when.setElseStart(elseStart);
         }
@@ -709,7 +752,7 @@ public abstract class RubyParserBase {
 
     /** in pattern [then] body */
     public Node branch_in(Node node, long start, Long thenEnd, long patternEnd, long elseStart) {
-        if (node instanceof InNode in) {
+        if (recordPositions && node instanceof InNode in) {
             in.setSourceSpan(start, thenEnd != null ? thenEnd : patternEnd);
             in.setElseStart(elseStart);
         }
@@ -718,6 +761,8 @@ public abstract class RubyParserBase {
 
     /** stmt while cond / stmt until cond: the body is the statement as written (begin/end included) */
     public Node loop_body(Node node, long start, long end) {
+        if (!recordPositions) return node;
+
         if (node instanceof WhileNode loop) loop.setBodySpan(start, end);
         if (node instanceof UntilNode loop) loop.setBodySpan(start, end);
         return node;
@@ -821,7 +866,7 @@ public abstract class RubyParserBase {
 
         // In MRI the statement of a modifier conditional is a line event too, which the conditional's own (on the
         // same line, where both start) hides. With the conditional no line event, the statement's shows.
-        if (node instanceof IfNode ifNode && ifNode.getSourceBody() != null) {
+        if (node instanceof IfNode ifNode && ifNode.isModifier()) {
             for (Node body : new Node[] { ifNode.getThenBody(), ifNode.getElseBody() }) {
                 if (body == null || body instanceof NilImplicitNode) continue;
 
