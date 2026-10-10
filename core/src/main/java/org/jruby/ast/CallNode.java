@@ -38,6 +38,7 @@ import java.util.List;
 import org.jruby.RubySymbol;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.parser.ProductionState;
 
 /**
  * A method or operator call.
@@ -48,6 +49,8 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
     protected Node iterNode;
     private RubySymbol name;
     private final boolean isLazy;
+    private int safeNavigationEndLine = -1;     // zero-based, see setSafeNavigationEnd
+    private int safeNavigationEndColumn = -1;
 
     public CallNode(int line, Node receiverNode, RubySymbol name, Node argsNode,
                     Node iterNode, boolean isLazy) {
@@ -128,6 +131,44 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
      */
     public boolean isLazy() {
         return isLazy;
+    }
+
+    @Override
+    public void setAutoSourceSpan(long start, long end) {
+        // the call keeps the span of the production that created it, which a block attached by an enclosing
+        // production then extends (see getEndLine)
+        if (!hasSourceSpan()) super.setAutoSourceSpan(start, end);
+    }
+
+    // As in MRI, a call ends with its block, if it has one written out.
+    @Override
+    public int getEndLine() {
+        return iterNode instanceof IterNode iter && iter.getEndColumn() >= 0 ? iter.getEndLine() : super.getEndLine();
+    }
+
+    @Override
+    public int getEndColumn() {
+        return iterNode instanceof IterNode iter && iter.getEndColumn() >= 0 ? iter.getEndColumn() : super.getEndColumn();
+    }
+
+    /**
+     * Where the branch of a safe-navigation call ends (see RubyParserBase#safe_navigation_end).
+     */
+    public void setSafeNavigationEnd(long end) {
+        safeNavigationEndLine = ProductionState.line(end);
+        safeNavigationEndColumn = ProductionState.column(end);
+    }
+
+    public boolean hasSafeNavigationEnd() {
+        return safeNavigationEndColumn >= 0;
+    }
+
+    public int getSafeNavigationEndLine() {
+        return safeNavigationEndLine;
+    }
+
+    public int getSafeNavigationEndColumn() {
+        return safeNavigationEndColumn;
     }
     
     public List<Node> childNodes() {

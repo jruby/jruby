@@ -8,6 +8,9 @@ import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
+
 /**
  * <p>This is the base class for all specialized RubyArray.</p>
  * <p>Specialized RubyArray use fields rather than an IRubyObject[] to hold their values. When they need
@@ -55,16 +58,40 @@ public abstract class RubyArraySpecialized extends RubyArrayNative {
         super(otherClass.getClassRuntime(), otherClass);
     }
 
+    private static final VarHandle VALUES_HANDLE;
+    static {
+        try {
+            VALUES_HANDLE = MethodHandles.lookup().findVarHandle(RubyArraySpecialized.class, "values", IRubyObject[].class);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     protected final void unpack(ThreadContext context) {
         if (!packed()) return;
 
-        // We give some room to grow based on notion that if we grow once we will likely grow more.
-        IRubyObject[] values = new IRubyObject[realLength + 2];
-        copyInto(context, values, 0);
-        this.values = values;
-        this.begin = 0;
+        unpackLoop(context);
+    }
 
-        finishUnpack(context.nil);
+    private void unpackLoop(ThreadContext context) {
+        for (;;) {
+            IRubyObject[] values = (IRubyObject[]) VALUES_HANDLE.getVolatile(this);
+
+            if (values != null) return;
+
+            // We give some room to grow based on notion that if we grow once we will likely grow more.
+            IRubyObject[] newValues = new IRubyObject[realLength + 2];
+            copyInto(context, newValues, 0);
+
+            // this.begin should still be 0 and does not need to be updated
+            if (!VALUES_HANDLE.compareAndSet(this, null, newValues)) {
+                continue;
+            }
+
+            finishUnpack(context.nil);
+
+            return;
+        }
     }
 
     protected abstract void finishUnpack(IRubyObject nil);

@@ -173,7 +173,7 @@ public abstract class LexingCommon {
     }
 
     protected void updateStartPosition(int column) {
-        this.start = ProductionState.shift_line(ruby_sourceline) | column;
+        this.start = ProductionState.pack(ruby_sourceline, column);
     }
 
     // similar to compile_error where yyloc passes in NULL.
@@ -463,6 +463,14 @@ public abstract class LexingCommon {
 
     public int lineno() {
         return ruby_sourceline + src.getLineOffset();
+    }
+
+    /**
+     * The last line read so far. Unlike lineno(), this is past a heredoc that ends the source: lineno() is still on
+     * the line the heredoc started on, until the lexer reads the next line.
+     */
+    public int lastLineno() {
+        return Math.max(ruby_sourceline, heredoc_end) + src.getLineOffset();
     }
 
     protected void magicCommentEncoding(ByteList encoding) {

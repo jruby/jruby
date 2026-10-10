@@ -30,9 +30,6 @@ project 'JRuby Integration Tests' do
     jar 'org.livetribe:livetribe-jsr223:2.0.7'
     jar 'org.jruby:jruby-core', '${project.version}'
   end
-  scope :provided do
-    jar 'org.apache.ant:ant:${ant.version}'
-  end
   jar('org.jruby:requireTest:1.0',
       scope: 'system',
       systemPath: '${project.basedir}/jruby/requireTest-1.0.jar')
@@ -81,14 +78,7 @@ project 'JRuby Integration Tests' do
                                     type: 'jar',
                                     overWrite: 'false',
                                     outputDirectory: 'target',
-                                    destFileName: 'junit.jar' },
-                                  { groupId: 'com.googlecode.jarjar',
-                                    artifactId: 'jarjar',
-                                    version: '1.1',
-                                    type: 'jar',
-                                    overWrite: 'false',
-                                    outputDirectory: 'target',
-                                    destFileName: 'jarjar.jar' }])
+                                    destFileName: 'junit.jar' }])
   end
 
   plugin(:deploy,

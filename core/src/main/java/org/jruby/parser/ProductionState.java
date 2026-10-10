@@ -1,5 +1,8 @@
 package org.jruby.parser;
 
+import static org.jruby.util.BitPacker.packInts;
+import static org.jruby.util.BitPacker.unpackHigh;
+import static org.jruby.util.BitPacker.unpackLow;
 import org.jruby.util.ByteList;
 
 public class ProductionState {
@@ -24,18 +27,18 @@ public class ProductionState {
     }
 
     public static int line(long packed) {
-        return (int) (packed >> 32);
+        return unpackHigh(packed);
     }
 
-    public static long shift_line(long packed) {
-        return packed << 32;
+    public static long shift_line(long line) {
+        return packInts((int) line, 0);
     }
 
     public static long pack(int line, int column) {
-        return shift_line(line) | column;
+        return packInts(line, column);
     }
 
     public static int column(long packed) {
-        return (int) (packed & 0xffff);
+        return unpackLow(packed);
     }
 }

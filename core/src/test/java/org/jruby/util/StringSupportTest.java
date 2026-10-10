@@ -9,6 +9,20 @@ import java.util.List;
 public class StringSupportTest {
 
     @Test
+    public void testPackPreservesSignedResult() {
+        long packed = StringSupport.pack(-1, StringSupport.CR_VALID);
+
+        assertEquals(-1, StringSupport.unpackResult(packed));
+        assertEquals(StringSupport.CR_VALID, StringSupport.unpackArg(packed));
+    }
+
+    @Test
+    public void testUnpackPlainResult() {
+        assertEquals(42, StringSupport.unpackResult(42L));
+        assertEquals(0, StringSupport.unpackArg(42L));
+    }
+
+    @Test
     public void testSplit() {
         String str;
 

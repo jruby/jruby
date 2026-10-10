@@ -7,6 +7,11 @@ package org.jruby.ast;
  */
 public class NilImplicitNode extends NilNode implements InvisibleNode {
     public static final NilImplicitNode NIL = new NilImplicitNode();
+
+    @Override
+    public void setAutoSourceSpan(long start, long end) {
+        // shared singleton: it has no position of its own
+    }
     
     public NilImplicitNode() {
         super(-1);
@@ -14,5 +19,18 @@ public class NilImplicitNode extends NilNode implements InvisibleNode {
 
     public boolean isNil() {
         return true;
+    }
+
+    // NIL is shared by every parse, so marking it for one AST would mark it in all later ones.
+    @Override
+    public void setNewline() {
+    }
+
+    @Override
+    public void setBacktraceNewline() {
+    }
+
+    @Override
+    public void setLine(int line) {
     }
 }

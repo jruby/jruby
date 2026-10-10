@@ -148,6 +148,12 @@ public enum Operation {
     LINE_NUM(OpFlags.f_is_book_keeping_op | OpFlags.f_is_debug_op),
     TRACE(OpFlags.f_is_book_keeping_op | OpFlags.f_is_debug_op | OpFlags.f_has_side_effect),
     COVERAGE(OpFlags.f_is_book_keeping_op | OpFlags.f_is_debug_op | OpFlags.f_has_side_effect),
+    // Method coverage: take the counter passed by the calling DynamicMethod, then count the call once the
+    // arguments have been received.
+    RECV_METHOD_COVERAGE(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
+    COVER_METHOD(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
+    // Branch coverage: count that execution reached a branch target.
+    COVER_BRANCH(OpFlags.f_is_book_keeping_op | OpFlags.f_has_side_effect),
 
     /** JRuby-impl instructions **/
     BINDING_LOAD(OpFlags.f_is_load),

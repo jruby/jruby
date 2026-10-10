@@ -47,7 +47,12 @@ public class DefsNode extends MethodDefNode implements INameNode {
 
     public DefsNode(int line, Node receiverNode, RubySymbol name, ArgsNode argsNode,
                     StaticScope scope, Node bodyNode, int endLine) {
-        super(line, name, argsNode, scope, bodyNode, endLine);
+        this(line, -1, receiverNode, name, argsNode, scope, bodyNode, endLine, -1);
+    }
+
+    public DefsNode(int line, int startColumn, Node receiverNode, RubySymbol name, ArgsNode argsNode,
+                    StaticScope scope, Node bodyNode, int endLine, int endColumn) {
+        super(line, startColumn, name, argsNode, scope, bodyNode, endLine, endColumn);
 
         assert receiverNode != null : "receiverNode is not null";
 

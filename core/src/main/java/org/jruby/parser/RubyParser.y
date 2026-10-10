@@ -548,6 +548,9 @@ bodystmt      : compstmt lex_ctxt opt_rescue k_else {
 
 compstmt      : stmts opt_terms {
                   $$ = p.void_stmts($1);
+                  /*%%%*/
+                  p.lock_span($<Node>$); // the statements' own span, not the terminators after them
+                  /*% %*/
               };
 
 stmts         : none {
@@ -565,6 +568,7 @@ stmts         : none {
                 | stmts terms stmt_or_begin {
                    /*%%%*/
                     $$ = p.appendToBlock($1, p.newline_node($3, @3.start()));
+                    p.span($<Node>$, $1 == null ? @3.start : @1.start, @3.end);
                    /*% %*/
                    /*% ripper: stmts_add!($1, $3) %*/
                 };
@@ -616,7 +620,7 @@ stmt            : keyword_alias fitem {
                 }
                 | keyword_undef undef_list {
                     /*%%%*/
-                    $$ = $2;
+                    $$ = p.nd_set_first_loc($2, @1.start());
                     /*% %*/
                     /*% ripper: undef!($2) %*/
                 }
@@ -624,6 +628,7 @@ stmt            : keyword_alias fitem {
                     /*%%%*/
                     $$ = p.new_if(@1.start(), $3, p.remove_begin($1), null);
                     p.fixpos($<Node>$, $3);
+                    p.branch_modifier($<Node>$, $1, false, @3.end);
                     /*% %*/
                     /*% ripper: if_mod!($3, $1) %*/
                 }
@@ -631,6 +636,7 @@ stmt            : keyword_alias fitem {
                     /*%%%*/
                     $$ = p.new_if(@1.start(), $3, null, p.remove_begin($1));
                     p.fixpos($<Node>$, $3);
+                    p.branch_modifier($<Node>$, $1, true, @3.end);
                     /*% %*/
                     /*% ripper: unless_mod!($3, $1) %*/
                 }
@@ -641,6 +647,7 @@ stmt            : keyword_alias fitem {
                     } else {
                         $$ = new WhileNode(@1.start(), p.cond($3), $1, true);
                     }
+                    p.loop_body($<Node>$, @1.start, @1.end);
                     /*% %*/
                     /*% ripper: while_mod!($3, $1) %*/
                 }
@@ -651,6 +658,7 @@ stmt            : keyword_alias fitem {
                     } else {
                         $$ = new UntilNode(@1.start(), p.cond($3), $1, true);
                     }
+                    p.loop_body($<Node>$, @1.start, @1.end);
                     /*% %*/
                     /*% ripper: until_mod!($3, $1) %*/
                 }
@@ -669,6 +677,7 @@ stmt            : keyword_alias fitem {
                     p.setLexContext($1);
                     /*%%%*/
                    $$ = new PostExeNode(@1.start(), $4, p.src_line());
+                   p.span($<Node>$, @1.start, @5.end);
                     /*% %*/
                     /*% ripper: END!($4) %*/
                 }
@@ -682,6 +691,7 @@ stmt            : keyword_alias fitem {
                 | lhs '=' lex_ctxt mrhs {
                     /*%%%*/
                     $$ = node_assign($1, $4, $3);
+                    p.span($<Node>$, @1.start, @4.end);
                     /*% %*/
                     /*% ripper: assign!($1, $4) %*/
                 }
@@ -708,6 +718,7 @@ stmt            : keyword_alias fitem {
 command_asgn    : lhs '=' lex_ctxt command_rhs {
                     /*%%%*/
                     $$ = node_assign($1, $4, $3);
+                    p.span($<Node>$, @1.start, @4.end);
                     /*% %*/
                     /*% ripper: assign!($1, $4) %*/
                 }
@@ -767,7 +778,7 @@ command_asgn    : lhs '=' lex_ctxt command_rhs {
                     p.endless_method_name($1, @1);
                     p.restore_defun($1);
                     /*%%%*/
-                    $$ = new DefnNode($1.line, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), @4.end());
+                    $$ = new DefnNode($1.line, $1.column, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), ProductionState.line(@4.end), ProductionState.column(@4.end));
                     // Changed from MRI
                     /*% %*/
                     /*% ripper: def!(get_value($1), $2, bodystmt!($4, Qnil, Qnil, Qnil)) %*/
@@ -777,7 +788,7 @@ command_asgn    : lhs '=' lex_ctxt command_rhs {
                     p.endless_method_name($1, @1);
                     p.restore_defun($1);
                     /*%%%*/
-                    $$ = new DefsNode($1.line, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), @4.end());
+                    $$ = new DefsNode($1.line, $1.column, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), ProductionState.line(@4.end), ProductionState.column(@4.end));
                     /*% %*/                    
                     /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, bodystmt!($4, Qnil, Qnil, Qnil)) %*/
                     p.popCurrentScope();
@@ -833,7 +844,7 @@ expr            : command_call
                     LexContext ctxt = p.getLexContext();
                     ctxt.in_kwarg = $4.in_kwarg;
                     /*%%%*/
-                    $$ = p.newPatternCaseNode(@1.start(), $1, p.newIn(@1.start(), $7, null, null));
+                    $$ = p.one_line_pattern(p.newPatternCaseNode(@1.start(), $1, p.newIn(@1.start(), $7, null, null)));
                     /*% %*/
                     /*% ripper: case!($1, in!($7, Qnil, Qnil)) %*/
                 }
@@ -845,7 +856,7 @@ expr            : command_call
                     LexContext ctxt = p.getLexContext();
                     ctxt.in_kwarg = $4.in_kwarg;
                     /*%%%*/
-                    $$ = p.newPatternCaseNode(@1.start(), $1, p.newIn(@1.start(), $7, new TrueNode(@1.start()), new FalseNode(@1.start())));
+                    $$ = p.one_line_pattern(p.newPatternCaseNode(@1.start(), $1, p.newIn(@1.start(), $7, new TrueNode(@1.start()), new FalseNode(@1.start()))));
                     /*% %*/
                     /*% ripper: case!($1, in!($7, Qnil, Qnil)) %*/
                 }
@@ -878,6 +889,7 @@ def_name        : fname {
 // [!null] - DefHolder
 defn_head       : k_def def_name {
                     $2.line = @1.start();
+                    $2.column = ProductionState.column(@1.start);
                     $$ = $2;
                 };
 
@@ -889,6 +901,7 @@ defs_head       : k_def singleton dot_or_colon {
                 } def_name {
                     p.setState(EXPR_ENDFN|EXPR_LABEL);
                     $5.line = @1.start();
+                    $5.column = ProductionState.column(@1.start);
                     $$ = $5;
                     /*%%%*/
                     $5.setSingleton($2);
@@ -929,6 +942,7 @@ block_command   : block_call
                 | block_call call_op2 operation2 command_args {
                     /*%%%*/
                     $$ = p.new_call($1, $2, $3, $4, null, @3.start());
+                    p.safe_navigation_end($<Node>$, @3.end, @4.end, false);
                     /*% %*/
                     /*% ripper: method_add_arg!(call!($1, $2, $3), $4) %*/
                 };
@@ -937,7 +951,8 @@ block_command   : block_call
 cmd_brace_block : tLBRACE_ARG brace_body '}' {
                     $$ = $2;
                     /*%%%*/
-                    // FIXME: Missing loc stuff here.
+                    $2.setLine(@1.end());
+                    $2.setSourceSpan(ProductionState.column(@1.start), ProductionState.line(@3.end), ProductionState.column(@3.end));
                     /*% %*/
                 };
 
@@ -966,12 +981,15 @@ command        : fcall command_args %prec tLOWEST {
                 | primary_value call_op operation2 command_args %prec tLOWEST {
                     /*%%%*/
                     $$ = p.new_call($1, $2, $3, $4, null, @3.start());
+                    p.safe_navigation_end($<Node>$, @3.end, @4.end, false);
                     /*% %*/
                     /*% ripper: command_call!($1, $2, $3, $4) %*/
                 }
                 | primary_value call_op operation2 command_args cmd_brace_block {
                     /*%%%*/
                     $$ = p.new_call($1, $2, $3, $4, $5, @3.start());
+                    p.span($<Node>$, @1.start, @4.end);
+                    p.safe_navigation_end($<Node>$, @3.end, @4.end, false);
                     /*% %*/
                     /*% ripper: method_add_block!(command_call!($1, $2, $3, $4), $5) %*/
                 }
@@ -989,6 +1007,8 @@ command        : fcall command_args %prec tLOWEST {
                 }
                 | primary_value tCOLON2 tCONSTANT '{' brace_body '}' {
                     /*%%%*/
+                    $5.setLine(@4.end());
+                    $5.setSourceSpan(ProductionState.column(@4.start), ProductionState.line(@6.end), ProductionState.column(@6.end));
                     $$ = p.new_call($1, $3, null, $5);
                     /*% %*/
                     /*% ripper: method_add_block!(command_call!($:1, $:2, $:3, Qnil), $:5) %*/
@@ -1725,6 +1745,7 @@ reswords        : keyword__LINE__ {
 arg             : lhs '=' lex_ctxt arg_rhs {
                     /*%%%*/
                     $$ = node_assign($1, $4, $3);
+                    p.span($<Node>$, @1.start, @4.end);
                     /*% %*/
                     /*% ripper: assign!($1, $4) %*/
                 } 
@@ -1917,7 +1938,7 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     p.endless_method_name($1, @1);
                     p.restore_defun($1);
                     /*%%%*/
-                    $$ = new DefnNode($1.line, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), @4.end());
+                    $$ = new DefnNode($1.line, $1.column, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), ProductionState.line(@4.end), ProductionState.column(@4.end));
                     if (p.isNextBreak) $<DefnNode>$.setContainsNextBreak();
                     // Changed from MRI (combined two stmts)
                     /*% %*/
@@ -1928,7 +1949,7 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                     p.endless_method_name($1, @1);
                     p.restore_defun($1);
                     /*%%%*/
-                    $$ = new DefsNode($1.line, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), @4.end());
+                    $$ = new DefsNode($1.line, $1.column, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), ProductionState.line(@4.end), ProductionState.column(@4.end));
                     if (p.isNextBreak) $<DefsNode>$.setContainsNextBreak();
                     /*% %*/
                     /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, bodystmt!($4, Qnil, Qnil, Qnil)) %*/
@@ -1937,7 +1958,9 @@ arg             : lhs '=' lex_ctxt arg_rhs {
                 | arg '?' arg opt_nl ':' arg {
                     /*%%%*/
                     p.value_expr($1);
-                    $$ = p.new_if(@1.start(), $1, $3, $6);
+                    // Each arm of a ternary is a statement of its own for line events, as in MRI.
+                    $$ = p.new_if(@1.start(), $1, p.newline_node($3, @3.start()), p.newline_node($6, @6.start()));
+                    p.branch_ternary($<Node>$, @1.end);
                     /*% %*/
                     /*% ripper: ifop!($1, $3, $6) %*/
                 }
@@ -2089,7 +2112,7 @@ call_args       : command {
                     p.endless_method_name($1, @1);
                     p.restore_defun($1);
                     /*%%%*/
-                    $$ = new DefnNode($1.line, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), @4.end());
+                    $$ = new DefnNode($1.line, $1.column, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), ProductionState.line(@4.end), ProductionState.column(@4.end));
                     if (p.isNextBreak) $<DefnNode>$.setContainsNextBreak();
                     // Changed from MRI (combined two stmts)
                     /*% %*/
@@ -2100,7 +2123,7 @@ call_args       : command {
                     p.endless_method_name($1, @1);
                     p.restore_defun($1);
                     /*%%%*/
-                    $$ = new DefsNode($1.line, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), @4.end());
+                    $$ = new DefsNode($1.line, $1.column, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), p.reduce_nodes(p.remove_begin($4)), ProductionState.line(@4.end), ProductionState.column(@4.end));
                     if (p.isNextBreak) $<DefsNode>$.setContainsNextBreak();
                     /*% %*/
                     /*% ripper: defs!(AREF($1, 0), AREF($1, 1), AREF($1, 2), $2, bodystmt!($4, Qnil, Qnil, Qnil)) %*/
@@ -2308,6 +2331,7 @@ primary         : literal
                 } ')' {
                     /*%%%*/
                     $$ = $2;
+                    p.paren_span($<Node>$, @1.start, @4.end);
                     /*% %*/
                     /*% ripper: paren!($2) %*/
                 }
@@ -2320,6 +2344,7 @@ primary         : literal
                     } else {
                         $$ = new NilNode($1);
                     }
+                    p.paren_span($<Node>$, @1.start, @3.end);
                     /*% %*/
                     /*% ripper: paren!($2) %*/
                 }
@@ -2337,18 +2362,13 @@ primary         : literal
                 }
                 | tLBRACK aref_args ']' {
                     /*%%%*/
-                    Integer position = @2.start();
-                    if ($2 == null) {
-                        $$ = new ZArrayNode(position); /* zero length array */
-                    } else {
-                        $$ = $2;
-                    }
+                    $$ = p.make_list($2, @1.start());
                     /*% %*/
                     /*% ripper: array!(escape_Qundef($2)) %*/
                 }
                 | tLBRACE assoc_list '}' {
                     /*%%%*/
-                    $$ = $2;
+                    $$ = p.nd_set_loc($2, @1.start());
                     $<HashNode>$.setIsLiteral();
                     /*% %*/
                     /*% ripper: hash!(escape_Qundef($2)) %*/
@@ -2412,12 +2432,14 @@ primary         : literal
                 | k_if expr_value then compstmt if_tail k_end {
                     /*%%%*/
                     $$ = p.new_if(@1.start(), $2, $4, $5);
+                    p.branch_if($<Node>$, @2.end, $5 == null ? -1 : @5.start, @6.end);
                     /*% %*/
                     /*% ripper: if!($2, $4, escape_Qundef($5)) %*/
                 }
                 | k_unless expr_value then compstmt opt_else k_end {
                     /*%%%*/
                     $$ = p.new_if(@1.start(), $2, $5, $4);
+                    p.branch_unless($<Node>$, @2.end);
                     /*% %*/
                     /*% ripper: unless!($2, $4, escape_Qundef($5)) %*/
                 }
@@ -2516,7 +2538,7 @@ primary         : literal
                     p.restore_defun($1);
                     /*%%%*/
                     Node body = p.reduce_nodes(p.remove_begin(p.makeNullNil($4)));
-                    $$ = new DefnNode($1.line, $1.name, $2, p.getCurrentScope(), body, @4.end());
+                    $$ = new DefnNode($1.line, $1.column, $1.name, $2, p.getCurrentScope(), body, ProductionState.line(@5.end), ProductionState.column(@5.end));
                     if (p.isNextBreak) $<DefnNode>$.setContainsNextBreak();
                     /*% %*/
                     /*% ripper: def!(get_value($1), $2, $4) %*/
@@ -2528,7 +2550,7 @@ primary         : literal
                     p.restore_defun($1);
                     /*%%%*/
                     Node body = p.reduce_nodes(p.remove_begin(p.makeNullNil($4)));
-                    $$ = new DefsNode($1.line, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), body, @4.end());
+                    $$ = new DefsNode($1.line, $1.column, (Node) $1.singleton, $1.name, $2, p.getCurrentScope(), body, ProductionState.line(@5.end), ProductionState.column(@5.end));
                     if (p.isNextBreak) $<DefsNode>$.setContainsNextBreak();
                     // Changed from MRI (no more get_value)
                     /*% %*/                    
@@ -2683,9 +2705,21 @@ k_yield         : keyword_yield {
                     }
                 };
 
-then            : term
-                | keyword_then
-                | term keyword_then;
+then            : term {
+                    /*%%%*/
+                    $$ = null;
+                    /*% %*/
+                }
+                | keyword_then {
+                    /*%%%*/
+                    $$ = @1.end;
+                    /*% %*/
+                }
+                | term keyword_then {
+                    /*%%%*/
+                    $$ = @2.end;
+                    /*% %*/
+                };
 
 do              : term
                 | keyword_do_cond;
@@ -2694,6 +2728,7 @@ if_tail         : opt_else
                 | k_elsif expr_value then compstmt if_tail {
                     /*%%%*/
                     $$ = p.new_if(@1.start(), $2, $4, $5);
+                    p.branch_elsif($<Node>$, @2.end, $5 == null ? -1 : @5.start);
                     /*% %*/
                     /*% ripper: elsif!($2, $4, escape_Qundef($5)) %*/
                 };
@@ -2952,6 +2987,9 @@ lambda          : tLAMBDA {
                     p.setLeftParenBegin(p.getParenNest());
                 } max_numparam numparam it_id allow_exits f_larglist {
                     p.getCmdArgumentState().push0();
+                    /*%%%*/
+                    $$ = p.takeLambdaArgsStart();
+                    /*% %*/
                 } lambda_body {
                     @@prod_type@@ it_id = p.it_id();
                     int max_numparam = p.restoreMaxNumParam($<Integer>3);
@@ -2961,6 +2999,8 @@ lambda          : tLAMBDA {
                     /*%%%*/
                     ArgsNode args = p.args_with_numbered($7, max_numparam, it_id);
                     $$ = new LambdaNode(@1.start(), args, $9, p.getCurrentScope(), p.src_line());
+                    $<LambdaNode>$.setSourceSpan(ProductionState.column($<Long>8), ProductionState.line(@9.end), ProductionState.column(@9.end));
+                    $<LambdaNode>$.setOperatorColumn(ProductionState.column(@1.start));
                     /*% %*/
                     /*% ripper: lambda!($5, $7) %*/
                     p.setLeftParenBegin($<Integer>2);
@@ -2973,6 +3013,7 @@ f_larglist      : '(' f_args opt_bv_decl ')' {
                     /*%%%*/
                     $$ = $2;
                     p.ordinalMaxNumParam();
+                    p.setLambdaArgsStart(@1.start);
                     /*% %*/
                     /*% ripper: paren!($2) %*/
                 }
@@ -2981,6 +3022,11 @@ f_larglist      : '(' f_args opt_bv_decl ')' {
                     /*%%%*/
                     if (!p.isArgsInfoEmpty($1)) {
                         p.ordinalMaxNumParam();
+                        p.setLambdaArgsStart(@1.start);
+                    } else {
+                        // No parameter list: the lambda's source starts just after '->', as in MRI. That is the
+                        // end of the previous token, which is where an empty production's location ends.
+                        p.setLambdaArgsStart(@1.end);
                     }
                     /*% %*/
                     $$ = $1;
@@ -2999,6 +3045,8 @@ lambda_body     : tLAMBEG compstmt '}' {
 do_block        : k_do_block do_body k_end {
                     $$ = $2;
                     /*%%%*/
+                    $2.setLine(@1.end());
+                    $2.setSourceSpan(ProductionState.column(@1.start), ProductionState.line(@3.end), ProductionState.column(@3.end));
                     /*% %*/
                 };
 
@@ -3028,18 +3076,23 @@ block_call      : command do_block {
                 | block_call call_op2 operation2 opt_paren_args {
                     /*%%%*/
                     $$ = p.new_call($1, $2, $3, $4, null, @3.start());
+                    p.safe_navigation_end($<Node>$, @3.end, @4.end, true);
                     /*% %*/
                     /*% ripper: opt_event(:method_add_arg!, call!($1, $2, $3), $4) %*/
                 }
                 | block_call call_op2 operation2 opt_paren_args brace_block {
                     /*%%%*/
                     $$ = p.new_call($1, $2, $3, $4, $5, @3.start());
+                    p.span($<Node>$, @1.start, @4.end);
+                    p.safe_navigation_end($<Node>$, @3.end, @4.end, true);
                     /*% %*/
                     /*% ripper: opt_event(:method_add_block!, command_call!($1, $2, $3, $4), $5) %*/
                 }
                 | block_call call_op2 operation2 command_args do_block {
                     /*%%%*/
                     $$ = p.new_call($1, $2, $3, $4, $5, @3.start());
+                    p.span($<Node>$, @1.start, @4.end);
+                    p.safe_navigation_end($<Node>$, @3.end, @4.end, false);
                     /*% %*/
                     /*% ripper: method_add_block!(command_call!($1, $2, $3, $4), $5) %*/
                 };
@@ -3055,6 +3108,7 @@ method_call     : fcall paren_args {
                 | primary_value call_op operation2 opt_paren_args {
                     /*%%%*/
                     $$ = p.new_call($1, $2, $3, $4, null, @3.start());
+                    p.safe_navigation_end($<Node>$, @3.end, @4.end, true);
                     /*% %*/
                     /*% ripper: opt_event(:method_add_arg!, call!($1, $2, $3), $4) %*/
                 }
@@ -3073,6 +3127,7 @@ method_call     : fcall paren_args {
                 | primary_value call_op paren_args {
                     /*%%%*/
                     $$ = p.new_call($1, $2, LexingCommon.CALL, $3, null, @3.start());
+                    p.safe_navigation_end($<Node>$, @3.end, @3.end, true); // o&.(): the parentheses are the message
                     /*% %*/
                     /*% ripper: method_add_arg!(call!($1, $2, ID2VAL(idCall)), $3) %*/
                 }
@@ -3110,12 +3165,14 @@ brace_block     : '{' brace_body '}' {
                     $$ = $2;
                     /*%%%*/
                     $2.setLine(@1.end());
+                    $2.setSourceSpan(ProductionState.column(@1.start), ProductionState.line(@3.end), ProductionState.column(@3.end));
                     /*% %*/
                 }
                 | k_do do_body k_end {
                     $$ = $2;
                     /*%%%*/
                     $2.setLine(@1.end());
+                    $2.setSourceSpan(ProductionState.column(@1.start), ProductionState.line(@3.end), ProductionState.column(@3.end));
                     /*% %*/
                 };
 
@@ -3183,6 +3240,7 @@ case_args	: arg_value {
 case_body       : k_when case_args then compstmt cases {
                     /*%%%*/
                     $$ = p.newWhenNode(@1.start(), $2, $4, $5);
+                    p.branch_when($<Node>$, @1.start, $<Long>3, @2.end, $5 == null || $5 instanceof WhenNode ? -1 : @5.start);
                     /*% %*/
                     /*% ripper: when!($2, $4, escape_Qundef($5)) %*/
                 };
@@ -3214,6 +3272,7 @@ p_case_body     : keyword_in p_in_kwarg p_pvtbl p_pktbl p_top_expr then {
                 } compstmt p_cases {
                     /*%%%*/
                     $$ = p.newIn(@1.start(), $5, $8, $9);
+                    p.branch_in($<Node>$, @1.start, $<Long>6, @5.end, $9 == null || $9 instanceof InNode ? -1 : @9.start);
                     /*% %*/
                     /*% ripper: in!($5, $8, escape_Qundef($9)) %*/
                 };
@@ -3805,6 +3864,7 @@ string          : tCHAR {
 string1         : tSTRING_BEG string_contents tSTRING_END {
                     /*%%%*/
                     p.heredoc_dedent($2);
+                    if ($2 != null) p.nd_set_loc($2, @1.start());
                     $$ = $2;
                     /*% %*/
                     /*% ripper: string_literal!(heredoc_dedent(p, $2)) %*/
@@ -3812,7 +3872,7 @@ string1         : tSTRING_BEG string_contents tSTRING_END {
 
 xstring         : tXSTRING_BEG xstring_contents tSTRING_END {
                     /*%%%*/
-                    int line = @2.start();
+                    int line = @1.start();
 
                     p.heredoc_dedent($2);
 
@@ -3832,7 +3892,7 @@ xstring         : tXSTRING_BEG xstring_contents tSTRING_END {
                 };
 
 regexp          : tREGEXP_BEG regexp_contents tREGEXP_END {
-                    $$ = p.new_regexp(@2.start(), $2, $3);
+                    $$ = p.new_regexp(@1.start(), $2, $3);
                 };
 
 words_sep       : ' ' {
@@ -3843,7 +3903,7 @@ words_sep       : ' ' {
 // [!null] - ListNode
 words           : tWORDS_BEG words_sep word_list tSTRING_END {
                     /*%%%*/
-                    $$ = $3;
+                    $$ = p.make_list($3, @1.start());
                     /*% %*/
                     /*% ripper: array!($3) %*/
                 };
@@ -3858,7 +3918,7 @@ word_list       : /* none */ {
                 }
                 | word_list word words_sep {
                     /*%%%*/
-                     $$ = $1.add($2 instanceof EvStrNode ? new DStrNode(@1.start(), p.getEncoding()).add($2) : $2);
+                     $$ = $1.add($2 instanceof EvStrNode ? new DStrNode(@2.start(), p.getEncoding()).add($2) : $2);
                     /*% %*/
                     /*% ripper: words_add!($1, $2) %*/
                 };
@@ -3877,7 +3937,7 @@ word            : string_content {
 
 symbols         : tSYMBOLS_BEG words_sep symbol_list tSTRING_END {
                     /*%%%*/
-                    $$ = $3;
+                    $$ = p.make_list($3, @1.start());
                     /*% %*/
                     /*% ripper: array!($3) %*/
                 };
@@ -3890,7 +3950,7 @@ symbol_list     : /* none */ {
                 }
                 | symbol_list word words_sep {
                     /*%%%*/
-                    $$ = $1.add($2 instanceof EvStrNode ? new DSymbolNode(@1.start()).add($2) : p.asSymbol(@1.start(), $2));
+                    $$ = $1.add($2 instanceof EvStrNode ? new DSymbolNode(@2.start()).add($2) : p.asSymbol(@2.start(), $2));
                     /*% %*/
                     /*% ripper: symbols_add!($1, $2) %*/
                 };
@@ -3898,7 +3958,7 @@ symbol_list     : /* none */ {
 // [!null] - ListNode
 qwords          : tQWORDS_BEG words_sep qword_list tSTRING_END {
                     /*%%%*/
-                    $$ = $3;
+                    $$ = p.make_list($3, @1.start());
                     /*% %*/
                     /*% ripper: array!($3) %*/
                 };
@@ -3906,7 +3966,7 @@ qwords          : tQWORDS_BEG words_sep qword_list tSTRING_END {
 // [!null] - ListNode
 qsymbols        : tQSYMBOLS_BEG words_sep qsym_list tSTRING_END {
                     /*%%%*/
-                    $$ = $3;
+                    $$ = p.make_list($3, @1.start());
                     /*% %*/
                     /*% ripper: array!($3) %*/
                 };
@@ -3935,7 +3995,7 @@ qsym_list      : /* none */ {
                 }
                 | qsym_list tSTRING_CONTENT words_sep {
                     /*%%%*/
-                    $$ = $1.add(p.asSymbol(@1.start(), $2));
+                    $$ = $1.add(p.asSymbol(@2.start(), $2));
                     /*% %*/
                     /*% ripper: qsymbols_add!($1, $2) %*/
                 };
@@ -4027,7 +4087,7 @@ string_content  : tSTRING_CONTENT {
                    p.setHeredocLineIndent(-1);
 
                    /*%%%*/
-                   if ($6 != null) $6.unsetNewline();
+                   if ($6 != null) p.nd_unset_fl_newline($6);
                    $$ = p.newEvStrNode(@6.start(), $6);
                    /*% %*/
                    /*% ripper: string_embexpr!($6) %*/
@@ -4079,11 +4139,11 @@ dsym            : tSYMBEG string_contents tSTRING_END {
                     if ($2 == null) {
                         $$ = p.asSymbol(p.src_line(), new ByteList(new byte[] {}));
                     } else if ($2 instanceof DStrNode) {
-                        $$ = new DSymbolNode(@2.start(), $<DStrNode>2);
+                        $$ = new DSymbolNode(@1.start(), $<DStrNode>2);
                     } else if ($2 instanceof StrNode) {
-                        $$ = p.asSymbol(@2.start(), $2);
+                        $$ = p.asSymbol(@1.start(), $2);
                     } else {
-                        $$ = new DSymbolNode(@2.start());
+                        $$ = new DSymbolNode(@1.start());
                         $<DSymbolNode>$.add($2);
                     }
                     /*% %*/
@@ -4816,11 +4876,11 @@ assoc           : arg_value tASSOC arg_value {
                 | tSTRING_BEG string_contents tLABEL_END arg_value {
                     /*%%%*/
                     if ($2 instanceof StrNode) {
-                        DStrNode dnode = new DStrNode(@2.start(), p.getEncoding());
+                        DStrNode dnode = new DStrNode(@1.start(), p.getEncoding());
                         dnode.add($2);
-                        $$ = p.createKeyValue(new DSymbolNode(@2.start(), dnode), $4);
+                        $$ = p.createKeyValue(new DSymbolNode(@1.start(), dnode), $4);
                     } else if ($2 instanceof DStrNode) {
-                        $$ = p.createKeyValue(new DSymbolNode(@2.start(), $<DStrNode>2), $4);
+                        $$ = p.createKeyValue(new DSymbolNode(@1.start(), $<DStrNode>2), $4);
                     } else {
                         p.compile_error("Uknown type for assoc in strings: " + $2);
                     }

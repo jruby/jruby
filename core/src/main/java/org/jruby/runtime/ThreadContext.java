@@ -45,6 +45,7 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyProc;
+import org.jruby.ext.coverage.MethodCoverage;
 import org.jruby.exceptions.CatchThrow;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
@@ -142,6 +143,8 @@ public final class ThreadContext {
     // generally live detected info at a callsite that we are passing an empty hash as kwrest.
     // it is also statically determined by literal **{} (which is only found in test suites).
     public final static int CALL_KEYWORD_EMPTY = 1 << 3;
+    // The callInfo for this call has been restored from an enclosing forwarding argument list.
+    public final static int CALL_FORWARDING =    1 << 4;
 
     public int callInfo;
 
@@ -198,6 +201,21 @@ public final class ThreadContext {
     private RubyMatchData matchData;
 
     private Encoding[] encodingHolder;
+
+    // Coverage (methods mode): the counter of the method entry being called on this thread. Set by
+    // DynamicMethod#prepareMethodCoverage just before the body runs. Taken by the body's first instruction,
+    // ReceiveMethodCoverageInstr. The body counts the call after receiving its arguments.
+    private MethodCoverage pendingMethodCoverage;
+
+    public void setPendingMethodCoverage(MethodCoverage coverage) {
+        pendingMethodCoverage = coverage;
+    }
+
+    public MethodCoverage takePendingMethodCoverage() {
+        MethodCoverage coverage = pendingMethodCoverage;
+        if (coverage != null) pendingMethodCoverage = null;
+        return coverage;
+    }
 
     /**
      * Constructor for Context.

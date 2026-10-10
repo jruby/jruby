@@ -34,6 +34,7 @@ package org.jruby.ast;
 
 import java.util.List;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.parser.ProductionState;
 
 /**
  * Represents a when condition
@@ -91,5 +92,34 @@ public class WhenNode extends Node {
 
     public List<Node> childNodes() {
         return Node.createList(expressionNodes, bodyNode, nextCase);
+    }
+
+    // ---- branch coverage: where the 'else' keyword following this clause starts (when nextCase is an else body) ----
+
+    private int elseStartLine = -1;
+    private int elseStartColumn = -1;
+
+    public void setElseStart(long elseStart) {
+        if (elseStart < 0) return;
+        elseStartLine = ProductionState.line(elseStart);
+        elseStartColumn = ProductionState.column(elseStart);
+    }
+
+    public boolean hasElseStart() {
+        return elseStartColumn >= 0;
+    }
+
+    public void copyBranchInfo(WhenNode other) {
+        copySourceSpan(other);
+        elseStartLine = other.elseStartLine;
+        elseStartColumn = other.elseStartColumn;
+    }
+
+    public int getElseStartLine() {
+        return elseStartLine;
+    }
+
+    public int getElseStartColumn() {
+        return elseStartColumn;
     }
 }

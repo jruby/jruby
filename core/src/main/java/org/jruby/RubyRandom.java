@@ -42,6 +42,8 @@ import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.runtime.builtin.IRubyObject;
+import static org.jruby.util.BitPacker.unpackHigh;
+import static org.jruby.util.BitPacker.unpackLow;
 import org.jruby.util.Random;
 
 /**
@@ -86,8 +88,8 @@ public class RubyRandom extends RubyRandomBase {
                 return new Random((int) v);
             } else {
                 int[] ints = new int[2];
-                ints[0] = (int) v;
-                ints[1] = (int) (v >> 32);
+                ints[0] = unpackLow(v);
+                ints[1] = unpackHigh(v);
                 return new Random(ints);
             }
         }

@@ -40,6 +40,7 @@ import java.util.List;
 
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.parser.ProductionState;
 
 /**
  * Base class for all Nodes in the AST
@@ -49,6 +50,17 @@ public abstract class Node {
     static final List<Node> EMPTY_LIST = new ArrayList<>();
 
     private int line;
+
+    // Source span of this node: the (zero-based) line and byte column of its first character and the line and
+    // column just past its last character. The parser records it (see RubyParser's skeleton) and Coverage uses
+    // it to identify methods and branches the way MRI does. -1 when unknown; startLine is only recorded when it
+    // differs from line (e.g. fixpos moves a modifier's line to its condition).
+    private int startLine = -1;
+    private int startColumn = -1;
+    private int endLine = -1;
+    private int endColumn = -1;
+    private boolean spanLocked;             // set explicitly: productions passing the node along no longer widen it
+    private int[] parenSpan;                // span of the parentheses written around this expression, if any
     
     // Does this node contain a node which is an assignment.  We can use this knowledge when emitting IR
     // instructions to do more or less depending on whether we have to cope with scenarios like:
@@ -57,6 +69,8 @@ public abstract class Node {
     // so that the two values of a end up being different.
     protected boolean containsVariableAssignment;
     protected boolean newline;
+    // newline only to keep backtraces on this node's line, which is no line event (see setBacktraceNewline)
+    private boolean backtraceNewline;
 
     public Node(int line, boolean containsAssignment) {
         this.line = line;
@@ -65,11 +79,31 @@ public abstract class Node {
 
     public void setNewline() {
         this.newline = true;
+        this.backtraceNewline = false;
+    }
+
+    /**
+     * Make a node that is no line event of its own a newline anyway, so that backtraces report its line, as for
+     * the body of a modifier conditional written on lines before its condition. Coverage gives it no line event.
+     */
+    public void setBacktraceNewline() {
+        if (newline) return;
+
+        this.newline = true;
+        this.backtraceNewline = true;
+    }
+
+    /**
+     * Whether this newline node is a line event (one Coverage counts), rather than a newline for backtraces only.
+     */
+    public boolean isLineEvent() {
+        return newline && !backtraceNewline;
     }
 
     // Used by heredoc dedent processing.  It gets unset so we do not liter line events because of it.
     public void unsetNewline() {
         this.newline = false;
+        this.backtraceNewline = false;
     }
 
     public boolean isNewline() {
@@ -86,6 +120,99 @@ public abstract class Node {
 
     public void setLine(int line) {
         this.line = line;
+    }
+
+    public boolean hasSourceSpan() {
+        return startColumn >= 0 && endLine >= 0;
+    }
+
+    /**
+     * Record the span from the parser's packed (line, column) positions (see ProductionState).
+     */
+    public void setSourceSpan(long start, long end) {
+        startLine = ProductionState.line(start);
+        startColumn = ProductionState.column(start);
+        endLine = ProductionState.line(end);
+        endColumn = ProductionState.column(end);
+        spanLocked = true;
+    }
+
+    /**
+     * Record the span of a node starting on its own line (getLine()).
+     */
+    public void setSourceSpan(int startColumn, int endLine, int endColumn) {
+        this.startLine = -1;
+        this.startColumn = startColumn;
+        this.endLine = endLine;
+        this.endColumn = endColumn;
+        spanLocked = true;
+    }
+
+    /**
+     * Keep the span as it is now: enclosing productions handing the node along no longer widen it.
+     */
+    public void lockSourceSpan() {
+        spanLocked = true;
+    }
+
+    public void setSourceSpanEnd(long end) {
+        endLine = ProductionState.line(end);
+        endColumn = ProductionState.column(end);
+        spanLocked = true;
+    }
+
+    /**
+     * Record the span of a production that produced this node. Each enclosing production that hands the node
+     * along as its own result widens the span to its own extent (an assignment grows its left-hand side into the
+     * whole assignment, a statement list grows as statements are appended), until an explicit span locks it.
+     */
+    public void setAutoSourceSpan(long start, long end) {
+        if (spanLocked) return;
+
+        startLine = ProductionState.line(start);
+        startColumn = ProductionState.column(start);
+        endLine = ProductionState.line(end);
+        endColumn = ProductionState.column(end);
+    }
+
+    public void copySourceSpan(Node other) {
+        startLine = other.startLine;
+        startColumn = other.startColumn;
+        endLine = other.endLine;
+        endColumn = other.endColumn;
+        spanLocked = other.spanLocked;
+    }
+
+    /**
+     * Record that this expression was written inside parentheses; MRI has a node for the parentheses and
+     * reports a branch arm consisting of a parenthesized expression at the parentheses.
+     */
+    public void setParenSpan(long start, long end) {
+        parenSpan = new int[] { ProductionState.line(start), ProductionState.column(start), ProductionState.line(end), ProductionState.column(end) };
+    }
+
+    /**
+     * [start_line, start_column, end_line, end_column] (zero-based) of the parentheses written around this
+     * expression, or null.
+     */
+    public int[] getParenSpan() {
+        return parenSpan;
+    }
+
+    public int getStartLine() {
+        return startLine >= 0 ? startLine : line;
+    }
+
+    public int getStartColumn() {
+        return startColumn;
+    }
+
+    public int getEndLine() {
+        return endLine;
+    }
+
+    public int getEndColumn() {
+        return endColumn;
     }
     
     public abstract <T> T accept(NodeVisitor<T> visitor);

@@ -26,6 +26,10 @@
 
 package org.jruby.util;
 
+import static org.jruby.util.BitPacker.packInts;
+import static org.jruby.util.BitPacker.unpackHigh;
+import static org.jruby.util.BitPacker.unpackLow;
+
 import static org.jcodings.Encoding.CHAR_INVALID;
 import static org.jruby.RubyEnumerator.enumeratorize;
 
@@ -569,17 +573,17 @@ public final class StringSupport {
         return strLengthWithCodeRange(enc, bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getBegin() + bytes.getRealSize());
     }
 
-    // arg cannot be negative
+    // Keep result in the low bits so a plain positive long can still be unpacked as a result.
     public static long pack(int result, int arg) {
-        return ((long)arg << 31) | result;
+        return packInts(arg, result);
     }
 
     public static int unpackResult(long len) {
-        return (int)len & 0x7fffffff;
+        return unpackLow(len);
     }
 
     public static int unpackArg(long cr) {
-        return (int)(cr >>> 31);
+        return unpackHigh(cr);
     }
 
     public static int codePoint(Encoding enc, byte[] bytes, int p, int end) {

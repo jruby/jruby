@@ -1977,9 +1977,14 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
             yyVal = yyLen[yyn] > 0 ? yystates[yytop - yyLen[yyn] + 1].value : null;
         } else {
             int count = yyLen[yyn];
-            start = yystates[yytop - count + 1].start;
+            // an empty production is located, empty, right after the previous symbol (as bison does)
+            start = count > 0 ? yystates[yytop - count + 1].start : yystates[yytop].end;
             end = yystates[yytop].end;
             yyVal = parserState.execute(this, yyVal, yystates, yytop, count, yytoken);
+            // record the production's source span on the node it produced (see Node#setAutoSourceSpan: each
+            // enclosing production handing the node along widens it until an explicit span locks it; a node
+            // made by an empty production has no source of its own)
+            if (count > 0 && yyVal instanceof org.jruby.ast.Node node) node.setAutoSourceSpan(start, end);
         }
 // ACTIONS_END (line used by optimize_parser)
         yytop -= yyLen[yyn];
@@ -2542,6 +2547,7 @@ states[71] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop,
 };
 states[72] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     ((DefHolder)yyVals[0+yyTop].value).line = yyVals[yyTop - count + 1].start();
+                    ((DefHolder)yyVals[0+yyTop].value).column = ProductionState.column(yyVals[yyTop - count + 1].start);
                     yyVal = ((DefHolder)yyVals[0+yyTop].value);
   return yyVal;
 };
@@ -2554,6 +2560,7 @@ states[73] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop,
 states[74] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.setState(EXPR_ENDFN|EXPR_LABEL);
                     ((DefHolder)yyVals[0+yyTop].value).line = yyVals[yyTop - count + 1].start();
+                    ((DefHolder)yyVals[0+yyTop].value).column = ProductionState.column(yyVals[yyTop - count + 1].start);
                     yyVal = ((DefHolder)yyVals[0+yyTop].value);
                        ((DefHolder)yyVal).value = p.new_array(((IRubyObject)yyVals[-3+yyTop].value), ((IRubyObject)yyVals[-2+yyTop].value), ((DefHolder)yyVal).value);
 
@@ -4600,6 +4607,15 @@ states[417] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
                     }
   return yyVal;
 };
+states[418] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+  return yyVal;
+};
+states[419] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+  return yyVal;
+};
+states[420] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+  return yyVal;
+};
 states[424] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
 {IRubyObject v1, v2, v3, v4;
                     v1 = ((IRubyObject)yyVals[-3+yyTop].value);
@@ -5708,7 +5724,7 @@ states[634] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[635] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    yyVal = p.new_regexp(yyVals[yyTop - count + 2].start(), ((IRubyObject)yyVals[-1+yyTop].value), ((IRubyObject)yyVals[0+yyTop].value));
+                    yyVal = p.new_regexp(yyVals[yyTop - count + 1].start(), ((IRubyObject)yyVals[-1+yyTop].value), ((IRubyObject)yyVals[0+yyTop].value));
   return yyVal;
 };
 states[636] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -6681,7 +6697,7 @@ states[826] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 }
-					// line 4688 "ripper_RubyParser.out"
+					// line 4693 "ripper_RubyParser.out"
 
 }
-					// line 15013 "-"
+					// line 15035 "-"

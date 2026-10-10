@@ -109,7 +109,7 @@ public class IRClosure extends IRScope {
 
     public IRClosure(IRManager manager, IRScope lexicalParent, int lineNumber, StaticScope staticScope,
                      Signature signature, ByteList prefix, boolean isBeginEndBlock, int coverageMode) {
-        this(manager, lexicalParent, lineNumber, staticScope, prefix);
+        this(manager, lexicalParent, lineNumber, staticScope, prefix, coverageMode);
         this.signature = signature;
         lexicalParent.addClosure(this);
 
@@ -209,7 +209,9 @@ public class IRClosure extends IRScope {
 
         // FIXME: PRISM: Explicit check for ast.IterNode prevents source from being set so this cannot be hit from prism.
         LazyMethodDefinitionAST defn = new LazyMethodDefinitionAST(def);
-        return new IRMethod(getManager(), getLexicalParent(), defn, name, true,  getLine(), getStaticScope().duplicate(), getCoverageMode());
+        IRMethod method = new IRMethod(getManager(), getLexicalParent(), defn, name, true,  getLine(), getStaticScope().duplicate(), getCoverageMode());
+        method.setSourceSpan(getStartColumn(), getEndLine(), getEndColumn());
+        return method;
     }
 
     public void setSignature(Signature signature) {

@@ -49,6 +49,7 @@ import org.jruby.lexer.yacc.StackState;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import static org.jruby.util.BitPacker.unpackHighChar;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
@@ -511,7 +512,7 @@ public class RipperParserBase {
         int slot = current.isDefined(id);
         if (slot != -1) {
             scopedParserState.addDefinedVariable(name, lexer.getRubySourceline());
-            scopedParserState.markUsedVariable(name, slot >> 16);
+            scopedParserState.markUsedVariable(name, unpackHighChar(slot));
         }
 
         return nameBytes;
@@ -995,8 +996,18 @@ public class RipperParserBase {
                 return Global;
         }
 
-        byte last = (byte) identifier.get(identifier.length() - 1);
+        int length = identifier.length();
+        byte last = (byte) identifier.get(length - 1);
         if (last == '=') {
+            if (length > 1) {
+                char secondLast = identifier.charAt(length - 2);
+                // Comparison operators (==, ===, !=, <=, >=) end in '=' but
+                // are not setter (attrset) names. Genuine setters (foo=, []=)
+                // never have '=', '!', '<' or '>' as their second to last char.
+                if (secondLast == '=' || secondLast == '!' || secondLast == '<' || secondLast == '>') {
+                    return Local;
+                }
+            }
             return AttrSet;
         }
 

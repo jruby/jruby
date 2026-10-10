@@ -46,7 +46,6 @@ public class IterNode extends Node implements DefNode {
     
     // What static scoping relationship exists when it comes into being.
     private final StaticScope scope;
-    private final int endLine;
 
     /**
      *  Used by ForNode only.
@@ -58,7 +57,7 @@ public class IterNode extends Node implements DefNode {
         this.varNode = args;
         this.scope = scope;
         this.bodyNode = body;
-        this.endLine = endLine;
+        setSourceSpan(-1, endLine, -1);
     }
 
     /**
@@ -70,7 +69,7 @@ public class IterNode extends Node implements DefNode {
         this.varNode = args;
         this.bodyNode = body == null ? NilImplicitNode.NIL : body;
         this.scope = scope;
-        this.endLine = endLine;
+        setSourceSpan(-1, endLine, -1);
     }
 
     public NodeType getNodeType() {
@@ -114,7 +113,4 @@ public class IterNode extends Node implements DefNode {
         return Node.createList(varNode, bodyNode);
     }
 
-    public int getEndLine() {
-        return endLine;
-    }
 }

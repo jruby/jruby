@@ -174,7 +174,8 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         if (currentFiberData == data) throw runtime.newFiberError("attempt to resume the current fiber");
         if (data.prev != null) throw runtime.newFiberError("attempt to resume a resumed fiber (double resume)");
         if (root || data.resumingFiber != null) throw runtime.newFiberError("attempt to resume a resuming fiber");
-        if (data.transferred || data.transferredTo) throw runtime.newFiberError("attempt to resume a transferring fiber");
+        // MRI: a fiber suspended anywhere but Fiber.yield was last left by a transfer
+        if (data.started && !data.yielding) throw runtime.newFiberError("attempt to resume a transferring fiber");
         
         if (data == currentFiberData) {
             switch (values.length) {
@@ -342,7 +343,6 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
         // MRI: transfer establishes no resume relationship, so prev is left alone on both sides
         currentFiberData.transferred = true;
-        data.transferredTo = true;
 
         FiberRequest result;
         try {
@@ -371,7 +371,15 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         }
 
         final FiberData data = this.data;
-        if (data.prev != null) throw runtime.newFiberError("double resume");
+
+        // MRI: fiber_raise, which forwards to the fiber we are resuming
+        ThreadFiber resuming = data.resumingFiber;
+        if (resuming != null) return resuming.raise(context, exception);
+
+        // MRI: a fiber suspended by transfer (not in Fiber.yield) is raised into by transferring to it
+        boolean transfer = !data.yielding;
+
+        if (!transfer && data.prev != null) throw runtime.newFiberError("double resume");
 
         if (data.parent != context.getFiberCurrentThread()) fiberCalledAcrossThreads(runtime);
 
@@ -379,17 +387,25 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         rubyException.prepareBacktrace(context);
         FiberRequest val = new FiberRequest(rubyException.toThrowable(), RequestType.RAISE);
 
-        // like resume, this hands control over, so track both ends
         ThreadFiber currentFiber = context.getFiber();
-        data.prev = currentFiber;
-        currentFiber.data.resumingFiber = this;
+        if (transfer) {
+            currentFiberData.transferred = true;
+        } else {
+            // like resume, this hands control over, so track both ends
+            data.prev = currentFiber;
+            currentFiberData.resumingFiber = this;
+        }
 
         FiberRequest result = null;
         try {
             result = exchangeWithFiber(context, currentFiberData, data, val);
         } finally {
-            data.prev = null;
-            currentFiber.data.resumingFiber = null;
+            if (transfer) {
+                currentFiberData.transferred = false;
+            } else {
+                data.prev = null;
+                currentFiberData.resumingFiber = null;
+            }
         }
 
         if (result.type == RequestType.RAISE) {
@@ -956,8 +972,6 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         final WeakReference<ThreadFiber> fiber;
         // parked inside our own Fiber#transfer, waiting for control to come back
         volatile boolean transferred;
-        // entered by Fiber#transfer and so can never be resumed
-        volatile boolean transferredTo;
         // parked inside Fiber.yield. MRI: fiber->yielding
         volatile boolean yielding;
         // our block has begun running. MRI: status != FIBER_CREATED
