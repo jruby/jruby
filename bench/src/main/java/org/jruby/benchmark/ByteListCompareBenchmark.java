@@ -66,7 +66,7 @@ public class ByteListCompareBenchmark {
 
     @Benchmark
     @OperationsPerInvocation(INVOCATIONS)
-    public void startsWithMismatch(final Blackhole blackhole) {
+    public void startsWith(final Blackhole blackhole) {
         for (int i = 0; i < INVOCATIONS; i++) {
             blackhole.consume(listA.startsWith(listB, 0));
         }
@@ -74,15 +74,15 @@ public class ByteListCompareBenchmark {
 
     @Benchmark
     @OperationsPerInvocation(INVOCATIONS)
-    public void startsWithLoop(final Blackhole blackhole) {
+    public void startsWithBaseline(final Blackhole blackhole) {
         for (int i = 0; i < INVOCATIONS; i++) {
-            blackhole.consume(startsWithLoopBaseline(listA, listB, 0));
+            blackhole.consume(startsWithOriginal(listA, listB, 0));
         }
     }
 
     @Benchmark
     @OperationsPerInvocation(INVOCATIONS)
-    public void memcmpRangesMismatch(final Blackhole blackhole) {
+    public void memcmpRanges(final Blackhole blackhole) {
         for (int i = 0; i < INVOCATIONS; i++) {
             blackhole.consume(ByteList.memcmp(a, 0, size, b, 0, size));
         }
@@ -90,15 +90,15 @@ public class ByteListCompareBenchmark {
 
     @Benchmark
     @OperationsPerInvocation(INVOCATIONS)
-    public void memcmpRangesLoop(final Blackhole blackhole) {
+    public void memcmpRangesBaseline(final Blackhole blackhole) {
         for (int i = 0; i < INVOCATIONS; i++) {
-            blackhole.consume(memcmpRangesLoopBaseline(a, 0, size, b, 0, size));
+            blackhole.consume(memcmpRangesOriginal(a, 0, size, b, 0, size));
         }
     }
 
     @Benchmark
     @OperationsPerInvocation(INVOCATIONS)
-    public void memcmpLenMismatch(final Blackhole blackhole) {
+    public void memcmpLen(final Blackhole blackhole) {
         for (int i = 0; i < INVOCATIONS; i++) {
             blackhole.consume(ByteList.memcmp(a, 0, b, 0, size));
         }
@@ -106,14 +106,13 @@ public class ByteListCompareBenchmark {
 
     @Benchmark
     @OperationsPerInvocation(INVOCATIONS)
-    public void memcmpLenLoop(final Blackhole blackhole) {
+    public void memcmpLenBaseline(final Blackhole blackhole) {
         for (int i = 0; i < INVOCATIONS; i++) {
-            blackhole.consume(memcmpLenLoopBaseline(a, 0, b, 0, size));
+            blackhole.consume(memcmpLenOriginal(a, 0, b, 0, size));
         }
     }
 
-    // Pre-Arrays.mismatch baselines (the original ByteList implementations), kept for comparison only.
-    private static boolean startsWithLoopBaseline(ByteList self, ByteList other, int toffset) {
+    private static boolean startsWithOriginal(ByteList self, ByteList other, int toffset) {
         if (self.realSize() == 0 || self.realSize() < other.realSize() + toffset) return false;
 
         byte[] ta = self.unsafeBytes();
@@ -126,7 +125,7 @@ public class ByteListCompareBenchmark {
         return true;
     }
 
-    private static int memcmpRangesLoopBaseline(byte[] first, int firstStart, int firstLen, byte[] second, int secondStart, int secondLen) {
+    private static int memcmpRangesOriginal(byte[] first, int firstStart, int firstLen, byte[] second, int secondStart, int secondLen) {
         if (first == second) return 0;
         final int len = Math.min(firstLen, secondLen);
         int offset = -1;
@@ -137,7 +136,7 @@ public class ByteListCompareBenchmark {
         return firstLen == secondLen ? 0 : firstLen == len ? -1 : 1;
     }
 
-    private static int memcmpLenLoopBaseline(byte[] first, int firstStart, byte[] second, int secondStart, int len) {
+    private static int memcmpLenOriginal(byte[] first, int firstStart, byte[] second, int secondStart, int len) {
         int a = firstStart;
         int b = secondStart;
         int tmp;

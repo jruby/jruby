@@ -61,7 +61,7 @@ public class SearchNonAsciiBenchmark {
 
     @Benchmark
     @OperationsPerInvocation(INVOCATIONS)
-    public void searchNonAsciiSwar(final Blackhole blackhole) {
+    public void searchNonAscii(final Blackhole blackhole) {
         final byte[] b = bytes;
         final int len = size;
         for (int i = 0; i < INVOCATIONS; i++) {
@@ -71,16 +71,15 @@ public class SearchNonAsciiBenchmark {
 
     @Benchmark
     @OperationsPerInvocation(INVOCATIONS)
-    public void searchNonAsciiScalar(final Blackhole blackhole) {
+    public void searchNonAsciiBaseline(final Blackhole blackhole) {
         final byte[] b = bytes;
         final int len = size;
         for (int i = 0; i < INVOCATIONS; i++) {
-            blackhole.consume(searchNonAsciiScalarBaseline(b, 0, len));
+            blackhole.consume(searchNonAsciiOriginal(b, 0, len));
         }
     }
 
-    // Pre-SWAR baseline (the original StringSupport.searchNonAscii), kept here for comparison only.
-    private static int searchNonAsciiScalarBaseline(byte[] bytes, int p, int end) {
+    private static int searchNonAsciiOriginal(byte[] bytes, int p, int end) {
         while (p < end) {
             if ((bytes[p] & 0x80) != 0) return p;
             p++;
