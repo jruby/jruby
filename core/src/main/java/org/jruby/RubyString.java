@@ -151,6 +151,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     static final ASCIIEncoding ASCII = ASCIIEncoding.INSTANCE;
     static final UTF8Encoding UTF8 = UTF8Encoding.INSTANCE;
 
+    private static boolean isAsciiSpace(int c) {
+        return c >= 0 && c <= 127 && ASCII.isSpace(c);
+    }
+
     // string doesn't share any resources
     private static final byte SHARE_LEVEL_NONE = 0;
     // string has it's own ByteList, but it's pointing to a shared buffer (byte[])
@@ -4929,7 +4933,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
             if (skip) {
                 // MRI uses rb_isspace
-                if (ASCII.isSpace(c)) {
+                if (isAsciiSpace(c)) {
                     b = p - ptr;
                 } else {
                     e = p - ptr;
@@ -4938,7 +4942,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 }
             } else {
                 // MRI uses rb_isspace
-                if (ASCII.isSpace(c)) {
+                if (isAsciiSpace(c)) {
                     result.append(context, makeSharedString(context.runtime, b, e - b));
                     skip = true;
                     b = p - ptr;
@@ -5928,7 +5932,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         while (p < end) {
             int c = codePoint(context, enc, bytes, p, end);
-            if (!ASCII.isSpace(c) && c != 0) break;
+            if (!isAsciiSpace(c) && c != 0) break;
             p += codeLength(enc, c);
         }
 
@@ -5997,7 +6001,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             } catch (IllegalArgumentException e) {
                 throw context.runtime.newEncodingCompatibilityError(e.getMessage());
             }
-            if (point != 0 && !ASCII.isSpace(point)) break;
+            if (point != 0 && !isAsciiSpace(point)) break;
             endp = prev;
         }
 
