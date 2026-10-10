@@ -1,3 +1,4 @@
+exclude :test_alias_prepended_module_warning, "missing deprecation warning for aliasing a method defined in a prepended module"
 exclude :test_ancestry_of_duped_classes, "handle along with optimizations as described in https://github.com/jruby/jruby/issues/8717"
 exclude :test_bug17590, "work in progress"
 exclude :test_complemented_method_entry_memory_leak, "no working assert_no_memory_leak method"
@@ -13,6 +14,7 @@ exclude :test_module_clone_memory_leak, "no working assert_no_memory_leak method
 exclude :test_module_function_inside_method, "work in progress"
 exclude :test_nested_defined, "needs investigation"
 exclude :test_prepend_constant_lookup, "work in progress"
+exclude :test_prepend_super_in_alias, "missing deprecation warning for aliasing a method defined in a prepended module"
 exclude :test_prepend_works_with_duped_classes, "work in progress"
 exclude :test_private_constant_reopen, "needs investigation"
 exclude :test_private_constant_with_no_args, "needs investigation"
