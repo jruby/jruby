@@ -1003,6 +1003,7 @@ public class RubyModule extends RubyObject {
         }
 
         if (arg.isNil()) {
+            set(TEMP_NAME, false);
             baseName(null);
         } else {
             RubyString name = arg.convertToString();
@@ -5612,7 +5613,11 @@ public class RubyModule extends RubyObject {
     private void setParentForModule(ThreadContext context, final String name, final IRubyObject value) {
         // if adding a module under a constant name, set that module's basename to the constant name
         if ( value instanceof RubyModule module) {
-            if (module != this && (module.getBaseName() == null || module.usingTemporaryName())) {
+            boolean outerIsPermanent = getBaseName() != null && !usingTemporaryName();
+            if (module != this && (module.getBaseName() == null || (module.usingTemporaryName() && outerIsPermanent))) {
+                if (outerIsPermanent) {
+                    module.set(TEMP_NAME, false);
+                }
                 module.baseName(name);
                 module.setParent(this);
             }
