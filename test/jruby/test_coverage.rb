@@ -376,6 +376,59 @@ class TestCoverage < Test::Unit::TestCase
     with_source("") { |path| assert_equal [], Coverage.line_stub(path) }
   end
 
+  # An AST is large and much of it lives as long as the code does, so its nodes only carry what Coverage reports
+  # of the source when Coverage has a use for it.
+
+  POSITIONS = <<~'RUBY'
+    def located(x)
+      y = (x) ? [1].map { |v| v } : -> { 2 }
+      y = 1 unless x&.abs(1)
+      x -= 1 while x > 0
+      case x when 1 then 2 else 3 end
+    end
+  RUBY
+
+  def test_nodes_carry_no_positions_without_coverage
+    assert_equal [], classes_with_positions(POSITIONS)
+  end
+
+  def test_nodes_carry_no_positions_for_line_coverage
+    Coverage.setup(lines: true)
+    assert_equal [], classes_with_positions(POSITIONS)
+  end
+
+  def test_only_definitions_and_blocks_carry_positions_for_method_coverage
+    Coverage.setup(methods: true)
+    assert_equal %w[DefnNode IterNode LambdaNode], classes_with_positions(POSITIONS)
+  end
+
+  def test_nodes_carry_positions_for_branch_coverage
+    Coverage.setup(branches: true)
+    classes = classes_with_positions(POSITIONS)
+    assert_equal [], %w[CallNode CaseNode DefnNode IfNode IterNode LambdaNode WhenOneArgNode WhileNode] - classes, classes.inspect
+  end
+
+  # A parse decides whether to record positions when it starts. Should branch coverage start before it ends (here
+  # from the warning the first line gives while it is parsed), the file is measured with what was recorded.
+  def test_branch_coverage_starting_during_a_parse_measures_the_file_without_positions
+    source = "x = 1\nx if 1\ndef late(x)\n  x ? [1].map { |v| v&.abs } : 2 while x.nil?\nend\nlate(1)\n"
+    with_source(source) do |path|
+      warning = Warning.method(:warn)
+      verbose, $VERBOSE = $VERBOSE, true
+      begin
+        Warning.define_singleton_method(:warn) { |*, **| Coverage.start(branches: true) if Coverage.state == :idle }
+        load path
+      ensure
+        $VERBOSE = verbose
+        Warning.define_singleton_method(:warn, warning)
+      end
+      assert_equal :running, Coverage.state
+      assert_equal({}, Coverage.result.fetch(path)[:branches])
+    end
+  ensure
+    Object.send(:remove_method, :late) if Object.private_method_defined?(:late)
+  end
+
   private
 
   def with_source(source)
@@ -403,5 +456,19 @@ class TestCoverage < Test::Unit::TestCase
 
   def source_line(line)
     @source.lines[line - 1]
+  end
+
+  # The simple names of the classes of the nodes that carry source positions in the AST of the given code
+  def classes_with_positions(code)
+    span = org.jruby.ast.Node.java_class.declared_field('span')
+    span.accessible = true
+    classes = []
+    walk = ->(node) do
+      next if node.nil?
+      classes << node.java_class.simple_name if span.get(node)
+      node.child_nodes.each(&walk)
+    end
+    walk.(JRuby.parse(code, 'positions.rb'))
+    classes.uniq.sort
   end
 end

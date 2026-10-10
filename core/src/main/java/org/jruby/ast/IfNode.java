@@ -36,7 +36,6 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
-import org.jruby.parser.ProductionState;
 
 /**
  * an 'if' statement.
@@ -96,71 +95,105 @@ public class IfNode extends Node {
         return Node.createList(condition, thenBody, elseBody);
     }
 
-    // ---- branch coverage (recorded by the parser, read by the IR builder) ----
+    // ---- what MRI's compiler folds away (recorded by every parse: it decides what is compiled) ----
 
-    private boolean branch;                 // a Ruby-level conditional MRI reports (not e.g. a pattern guard)
-    private boolean unless;                 // written as unless: then/else bodies are swapped
-    private boolean elsif;                  // an elsif clause of an enclosing if
-    private int predicateEndLine = -1;      // zero-based position just past the condition (an empty then arm is reported there)
-    private int predicateEndColumn = -1;
-    private int elseStartLine = -1;         // zero-based position of the 'else' keyword, when there is one
-    private int elseStartColumn = -1;
-    private Node sourceBody;                // for a modifier: the statement as written (before begin/end unwrapping)
-    private int constantPredicate;          // 0: not a literal; 1: a literal MRI folds to true; -1: one it folds to false
+    private byte constantPredicate;         // 0: not a literal; 1: a literal MRI folds to true; -1: one it folds to false
     private boolean foldedPredicate;        // MRI compiles nothing for the predicate (only literals decide it)
+    private boolean modifier;               // written as a modifier: stmt if cond
 
-    public void markBranch(boolean unless, boolean elsif, long predicateEnd, long elseStart) {
-        this.branch = true;
-        this.unless = unless;
-        this.elsif = elsif;
-        if (predicateEnd >= 0) {
-            predicateEndLine = ProductionState.line(predicateEnd);
-            predicateEndColumn = ProductionState.column(predicateEnd);
-        }
-        if (elseStart >= 0) {
-            elseStartLine = ProductionState.line(elseStart);
-            elseStartColumn = ProductionState.column(elseStart);
-        }
+    // ---- branch coverage (recorded by the parser when it records positions, read by the IR builder) ----
+
+    /**
+     * A Ruby-level conditional as MRI reports it (which is not every IfNode: a pattern guard is none).
+     *
+     * @param unless written as unless: then/else bodies are swapped
+     * @param elsif an elsif clause of an enclosing if
+     * @param predicateEnd just past the condition (an empty then arm is reported there), or null
+     * @param elseStart the 'else' keyword, when there is one, or null
+     * @param sourceBody for a modifier: the statement as written (before begin/end unwrapping), or null
+     */
+    private record Branch(boolean unless, boolean elsif, SourcePosition predicateEnd, SourcePosition elseStart,
+                          Node sourceBody) {
+    }
+
+    public void markBranch(boolean unless, boolean elsif, long predicateEnd, long elseStart, Node sourceBody) {
+        setSourceDetail(new Branch(unless, elsif, SourcePosition.of(predicateEnd), SourcePosition.of(elseStart), sourceBody));
+    }
+
+    // null when this is no branch, or positions are not recorded
+    private Branch branch() {
+        return (Branch) getSourceDetail();
     }
 
     public boolean isBranch() {
-        return branch;
+        return branch() != null;
     }
 
     public boolean isUnless() {
-        return unless;
+        Branch branch = branch();
+        return branch != null && branch.unless;
     }
 
     public boolean isElsif() {
-        return elsif;
+        Branch branch = branch();
+        return branch != null && branch.elsif;
+    }
+
+    private SourcePosition predicateEnd() {
+        Branch branch = branch();
+        return branch == null ? null : branch.predicateEnd;
     }
 
     public boolean hasPredicateEnd() {
-        return predicateEndColumn >= 0;
+        return predicateEnd() != null;
     }
 
     public int getPredicateEndLine() {
-        return predicateEndLine;
+        SourcePosition predicateEnd = predicateEnd();
+        return predicateEnd == null ? -1 : predicateEnd.line();
     }
 
     public int getPredicateEndColumn() {
-        return predicateEndColumn;
+        SourcePosition predicateEnd = predicateEnd();
+        return predicateEnd == null ? -1 : predicateEnd.column();
+    }
+
+    private SourcePosition elseStart() {
+        Branch branch = branch();
+        return branch == null ? null : branch.elseStart;
     }
 
     public boolean hasElseStart() {
-        return elseStartColumn >= 0;
+        return elseStart() != null;
     }
 
     public int getElseStartLine() {
-        return elseStartLine;
+        SourcePosition elseStart = elseStart();
+        return elseStart == null ? -1 : elseStart.line();
     }
 
     public int getElseStartColumn() {
-        return elseStartColumn;
+        SourcePosition elseStart = elseStart();
+        return elseStart == null ? -1 : elseStart.column();
     }
 
-    public void setSourceBody(Node sourceBody) {
-        this.sourceBody = sourceBody;
+    /**
+     * The statement of a modifier conditional as written, or null when this is none or positions are not recorded.
+     */
+    public Node getSourceBody() {
+        Branch branch = branch();
+        return branch == null ? null : branch.sourceBody;
+    }
+
+    public void setModifier() {
+        modifier = true;
+    }
+
+    /**
+     * Whether this conditional was written as a modifier (stmt if cond).
+     */
+    public boolean isModifier() {
+        return modifier;
     }
 
     /**
@@ -170,7 +203,7 @@ public class IfNode extends Node {
      * @param constantPredicate 0 when the predicate is not a literal, 1 when it is a truthy one, -1 a falsy one
      */
     public void setConstantPredicate(int constantPredicate) {
-        this.constantPredicate = constantPredicate;
+        this.constantPredicate = (byte) constantPredicate;
     }
 
     public boolean hasConstantPredicate() {
@@ -191,9 +224,5 @@ public class IfNode extends Node {
 
     public boolean hasFoldedPredicate() {
         return foldedPredicate;
-    }
-
-    public Node getSourceBody() {
-        return sourceBody;
     }
 }
