@@ -28,6 +28,7 @@
 
 package org.jruby.ext.thread;
 
+import org.jruby.FiberScheduler;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyMarshal;
@@ -75,37 +76,44 @@ public class ConditionVariable extends RubyObject {
 
     @JRubyMethod(name = "wait")
     public IRubyObject wait_ruby(ThreadContext context, IRubyObject m, IRubyObject t) {
-        RubyThread thread = context.getThread();
+        IRubyObject scheduler = FiberScheduler.current(context);
+        Waiter waiter = scheduler == null ? new ThreadWaiter(context.getThread()) : new Mutex.FiberWaiter(scheduler, context.getFiber());
 
-        waiters.add(thread);
+        waiters.add(waiter);
         try {
             sites(context).mutex_sleep.call(context, this, m, t);
         } finally {
-            waiters.remove(thread);
+            waiters.remove(waiter);
         }
 
         return this;
     }
 
     @JRubyMethod
-    public synchronized IRubyObject broadcast(ThreadContext context) {
-        waiters.removeIf(waiter -> {
-            waiter.interrupt();
-            return true;
-        });
+    public IRubyObject broadcast(ThreadContext context) {
+        Waiter waiter;
+        while ((waiter = waiters.poll()) != null) {
+            wakeup(context, waiter);
+        }
 
         return this;
     }
 
     @JRubyMethod
-    public synchronized IRubyObject signal(ThreadContext context) {
-        RubyThread waiter = waiters.poll();
+    public IRubyObject signal(ThreadContext context) {
+        Waiter waiter = waiters.poll();
 
-        if (waiter != null) {
-            waiter.interrupt();
-        }
+        if (waiter != null) wakeup(context, waiter);
 
         return this;
+    }
+
+    // MRI: sync_wakeup
+    private void wakeup(ThreadContext context, Waiter waiter) {
+        switch (waiter) {
+            case ThreadWaiter(RubyThread thread) -> thread.interrupt();
+            case Mutex.FiberWaiter(IRubyObject scheduler, IRubyObject fiber) -> FiberScheduler.unblock(context, scheduler, this, fiber);
+        }
     }
 
     @JRubyMethod
@@ -117,6 +125,15 @@ public class ConditionVariable extends RubyObject {
         return context.sites.ConditionVariable;
     }
 
-    private final ConcurrentLinkedQueue<RubyThread> waiters = new ConcurrentLinkedQueue<>();
+    /**
+     * A thread or fiber waiting in {@link #wait_ruby}.
+     * {@link Mutex.FiberWaiter} also queues fibers blocked in Mutex#lock.
+     */
+    sealed interface Waiter permits ThreadWaiter, Mutex.FiberWaiter {}
+
+    /** A thread waiting without a fiber scheduler, woken by interrupting it. */
+    record ThreadWaiter(RubyThread thread) implements Waiter {}
+
+    private final ConcurrentLinkedQueue<Waiter> waiters = new ConcurrentLinkedQueue<>();
     
 }

@@ -2718,12 +2718,16 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      */
     public void unlockAll() {
         assert Thread.currentThread() == getNativeThread();
-        for (Lock lock : heldLocks) {
+        Lock[] locks = heldLocks.toArray(Lock[]::new);
+        heldLocks.clear();
+        for (Lock lock : locks) {
             try {
                 lock.unlock();
             } catch (IllegalMonitorStateException imse) {
                 // don't allow a bad lock to prevent others from unlocking
                 warn(getRuntime().getCurrentContext(), "BUG: attempted to unlock a non-acquired lock " + lock + " in thread " + toString());
+            } catch (RaiseException re) {
+                warn(getRuntime().getCurrentContext(), "unlocking " + lock + " in dying thread " + toString() + " raised " + re.getMessage());
             }
         }
     }
