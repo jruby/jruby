@@ -4130,6 +4130,12 @@ public class RubyModule extends RubyObject {
         return asBoolean(context, visibility != UNDEFINED && visibility != PRIVATE);
     }
 
+    @JRubyMethod(name = "method_defined?")
+    public RubyBoolean method_defined_p(ThreadContext context, IRubyObject symbol, IRubyObject includeSuper, IRubyObject includeAll) {
+        Visibility visibility = checkMethodVisibility(context, symbol, includeSuper.isTrue());
+        return asBoolean(context, visibility != UNDEFINED && (visibility != PRIVATE || includeAll.isTrue()));
+    }
+
     @JRubyMethod(name = "public_method_defined?")
     public IRubyObject public_method_defined(ThreadContext context, IRubyObject symbol) {
         return asBoolean(context, checkMethodVisibility(context, symbol, true) == PUBLIC);
