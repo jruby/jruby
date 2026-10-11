@@ -9,14 +9,12 @@ import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
-import org.openjdk.jmh.annotations.OperationsPerInvocation;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
-import org.openjdk.jmh.infra.Blackhole;
 
 @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
 @Measurement(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
@@ -25,8 +23,6 @@ import org.openjdk.jmh.infra.Blackhole;
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
 public class SearchNonAsciiBenchmark {
-
-    private static final int INVOCATIONS = 100_000;
 
     // Where the first non-ASCII byte appears, as a fraction of the buffer length.
     // "none" means the buffer is entirely ASCII (worst case: full scan, no match).
@@ -60,23 +56,13 @@ public class SearchNonAsciiBenchmark {
     }
 
     @Benchmark
-    @OperationsPerInvocation(INVOCATIONS)
-    public void searchNonAscii(final Blackhole blackhole) {
-        final byte[] b = bytes;
-        final int len = size;
-        for (int i = 0; i < INVOCATIONS; i++) {
-            blackhole.consume(StringSupport.searchNonAscii(b, 0, len));
-        }
+    public int searchNonAscii() {
+        return StringSupport.searchNonAscii(bytes, 0, size);
     }
 
     @Benchmark
-    @OperationsPerInvocation(INVOCATIONS)
-    public void searchNonAsciiBaseline(final Blackhole blackhole) {
-        final byte[] b = bytes;
-        final int len = size;
-        for (int i = 0; i < INVOCATIONS; i++) {
-            blackhole.consume(searchNonAsciiOriginal(b, 0, len));
-        }
+    public int searchNonAsciiBaseline() {
+        return searchNonAsciiOriginal(bytes, 0, size);
     }
 
     private static int searchNonAsciiOriginal(byte[] bytes, int p, int end) {

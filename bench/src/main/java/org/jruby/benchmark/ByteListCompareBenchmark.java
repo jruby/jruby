@@ -9,14 +9,12 @@ import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
-import org.openjdk.jmh.annotations.OperationsPerInvocation;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
-import org.openjdk.jmh.infra.Blackhole;
 
 @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
 @Measurement(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
@@ -25,8 +23,6 @@ import org.openjdk.jmh.infra.Blackhole;
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
 public class ByteListCompareBenchmark {
-
-    private static final int INVOCATIONS = 100_000;
 
     // Where the two buffers first differ. "none" means they are equal (full comparison).
     @Param({"none", "start", "middle", "end"})
@@ -65,51 +61,33 @@ public class ByteListCompareBenchmark {
     }
 
     @Benchmark
-    @OperationsPerInvocation(INVOCATIONS)
-    public void startsWith(final Blackhole blackhole) {
-        for (int i = 0; i < INVOCATIONS; i++) {
-            blackhole.consume(listA.startsWith(listB, 0));
-        }
+    public boolean startsWith() {
+        return listA.startsWith(listB, 0);
     }
 
     @Benchmark
-    @OperationsPerInvocation(INVOCATIONS)
-    public void startsWithBaseline(final Blackhole blackhole) {
-        for (int i = 0; i < INVOCATIONS; i++) {
-            blackhole.consume(startsWithOriginal(listA, listB, 0));
-        }
+    public boolean startsWithBaseline() {
+        return startsWithOriginal(listA, listB, 0);
     }
 
     @Benchmark
-    @OperationsPerInvocation(INVOCATIONS)
-    public void memcmpRanges(final Blackhole blackhole) {
-        for (int i = 0; i < INVOCATIONS; i++) {
-            blackhole.consume(ByteList.memcmp(a, 0, size, b, 0, size));
-        }
+    public int memcmpRanges() {
+        return ByteList.memcmp(a, 0, size, b, 0, size);
     }
 
     @Benchmark
-    @OperationsPerInvocation(INVOCATIONS)
-    public void memcmpRangesBaseline(final Blackhole blackhole) {
-        for (int i = 0; i < INVOCATIONS; i++) {
-            blackhole.consume(memcmpRangesOriginal(a, 0, size, b, 0, size));
-        }
+    public int memcmpRangesBaseline() {
+        return memcmpRangesOriginal(a, 0, size, b, 0, size);
     }
 
     @Benchmark
-    @OperationsPerInvocation(INVOCATIONS)
-    public void memcmpLen(final Blackhole blackhole) {
-        for (int i = 0; i < INVOCATIONS; i++) {
-            blackhole.consume(ByteList.memcmp(a, 0, b, 0, size));
-        }
+    public int memcmpLen() {
+        return ByteList.memcmp(a, 0, b, 0, size);
     }
 
     @Benchmark
-    @OperationsPerInvocation(INVOCATIONS)
-    public void memcmpLenBaseline(final Blackhole blackhole) {
-        for (int i = 0; i < INVOCATIONS; i++) {
-            blackhole.consume(memcmpLenOriginal(a, 0, b, 0, size));
-        }
+    public int memcmpLenBaseline() {
+        return memcmpLenOriginal(a, 0, b, 0, size);
     }
 
     private static boolean startsWithOriginal(ByteList self, ByteList other, int toffset) {
