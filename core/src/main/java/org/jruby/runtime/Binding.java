@@ -51,6 +51,7 @@ public class Binding {
 
     public String method;
     public String filename;
+    private boolean filenameSynthetic;
     public int line;
 
     private Visibility visibility;
@@ -148,6 +149,7 @@ public class Binding {
     
     private Binding(Binding other) {
         this(other.self, other.frame, other.visibility, other.dynamicScope, other.method, other.filename, other.line, other.dummyScope);
+        this.filenameSynthetic = other.filenameSynthetic;
     }
 
     /**
@@ -221,7 +223,16 @@ public class Binding {
     }
 
     public void setFile(String filename) {
+        setFile(filename, false);
+    }
+
+    public void setFile(String filename, boolean synthetic) {
         this.filename = filename;
+        this.filenameSynthetic = synthetic;
+    }
+
+    public boolean isFileNameSynthetic() {
+        return filenameSynthetic;
     }
 
     public int getLine() {

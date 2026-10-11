@@ -7,16 +7,23 @@ import org.jruby.util.ByteList;
 
 public class IREvalScript extends IRClosure {
     private String fileName;
+    private final boolean fileNameSynthetic;
 
     private static final ByteList EVAL = new ByteList(new byte[] {'E', 'V', 'A', 'L'});
 
     public IREvalScript(IRManager manager, IRScope lexicalParent, String fileName,
             int lineNumber, StaticScope staticScope, EvalType evalType) {
+        this(manager, lexicalParent, fileName, lineNumber, staticScope, evalType, false);
+    }
+
+    public IREvalScript(IRManager manager, IRScope lexicalParent, String fileName,
+            int lineNumber, StaticScope staticScope, EvalType evalType, boolean fileNameSynthetic) {
         // ALL eval scopes are not really closures and are always new scopes.  We should not reference an eval
         // by a TemporaryClosureVariable ever.
         super(manager, lexicalParent, lineNumber, staticScope, 0, EVAL);
 
         this.fileName = fileName;
+        this.fileNameSynthetic = fileNameSynthetic;
 
         if (staticScope != null) {
             // SSS FIXME: This is awkward!
@@ -66,5 +73,9 @@ public class IREvalScript extends IRClosure {
     @Override
     public String getFile() {
         return fileName;
+    }
+
+    public boolean isFileNameSynthetic() {
+        return fileNameSynthetic;
     }
 }
