@@ -1,6 +1,5 @@
 package org.jruby.ir.targets.indy;
 
-import org.jruby.RubyFloat;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.objectweb.asm.Handle;
@@ -17,7 +16,8 @@ import static org.jruby.util.CodegenUtils.sig;
 * Created by headius on 10/23/14.
 */
 public class FloatObjectSite extends LazyObjectSite {
-    private final double value;
+    // Double to avoid constructing new wrappers for cache call below
+    private final Double value;
 
     public FloatObjectSite(MethodType type, double value) {
         super(type);
@@ -37,6 +37,6 @@ public class FloatObjectSite extends LazyObjectSite {
     }
 
     public IRubyObject construct(ThreadContext context) {
-        return RubyFloat.newFloat(context.runtime, value);
+        return context.runtime.cacheFloat(value);
     }
 }

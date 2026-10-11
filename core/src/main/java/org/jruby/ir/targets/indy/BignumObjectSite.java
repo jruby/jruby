@@ -1,6 +1,5 @@
 package org.jruby.ir.targets.indy;
 
-import org.jruby.RubyBignum;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.objectweb.asm.Handle;
@@ -38,6 +37,6 @@ public class BignumObjectSite extends LazyObjectSite {
     }
 
     public IRubyObject construct(ThreadContext context) {
-        return RubyBignum.newBignum(context.runtime, value);
+        return context.runtime.cacheBignum(value);
     }
 }
