@@ -87,6 +87,29 @@ public enum AttributeName {
     SHARING_VARIABLES("org.jruby.embed.sharing.variables"),
 
     /**
+     * A key used in an attribute map to turn on/off sharing of instance variables.
+     * Default is false, which means instance variables are not accessible via the
+     * embedding interface. If set to true, and {@link #SHARING_VARIABLES} is also
+     * true, instance variables of an object become accessible via the BiVariableMap
+     * interface when
+     * <ul>
+     * <li>a method on that object has been called from Java 
+     * <li>that object is returned from a method call
+     * <li>that object is returned by the evaluation of a script
+     * </ul>
+     * <p>
+     * Note that enabling this option will prevent those objects from being garbage
+     * collected. Therefore, if this feature is enabled, the user becomes
+     * responsible for removing unused objects' instance variables from the
+     * BiVariableMap once they are no longer needed. Otherwise, <i>memory
+     * leaks will be expected</i>.
+     * <p>
+     * This attribute can be set using a System property,
+     * org.jruby.embed.sharing.instance.variables.
+     */
+    SHARING_INSTANCE_VARIABLES("org.jruby.embed.sharing.instance.variables"),
+
+    /**
      * A key used in an attribute map to turn on/off clearing variables.
      * This attribute is for JSR223 only.
      *
