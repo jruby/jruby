@@ -145,20 +145,20 @@ class Date
 
   def self._parse_iso2(str, hash) # :nodoc:
     if m = subs(str, /\b(\d{2}|\d{4})?-?w(\d{2})(?:-?(\d))?\b/i)
-      hash[:cwyear] = m[1]&.to_i
+      hash[:cwyear] = m[1].to_i if m[1]
       hash[:cweek] = m[2].to_i
-      hash[:cwday] = m[3]&.to_i
+      hash[:cwday] = m[3].to_i if m[3]
       true
     elsif m = subs(str, /-w-(\d)\b/i)
       hash[:cwday] = m[1].to_i
       true
     elsif m = subs(str, /--(\d{2})?-(\d{2})\b/)
-      hash[:mon] = m[1]&.to_i
+      hash[:mon] = m[1].to_i if m[1]
       hash[:mday] = m[2].to_i
       true
     elsif m = subs(str, /--(\d{2})(\d{2})?\b/)
       hash[:mon] = m[1].to_i
-      hash[:mday] = m[2]&.to_i
+      hash[:mday] = m[2].to_i if m[2]
       true
     elsif /[,.](\d{2}|\d{4})-\d{3}\b/ !~ str && m = subs(str, /\b(\d{2}|\d{4})-(\d{3})\b/)
       hash[:year] = m[1].to_i
