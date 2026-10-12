@@ -411,7 +411,7 @@ public class RubyException extends RubyObject {
             case 1 :
                 if (args[0] == this) return this;
                 RubyException ret = (RubyException) rbClone();
-                ret.initialize(args, Block.NULL_BLOCK); // This looks wrong, but it's the way MRI does it.
+                ret.initialize(getRuntime().getCurrentContext(), args[0]);
                 return ret;
             default :
                 throw argumentError(getRuntime().getCurrentContext(), "Wrong argument count");
