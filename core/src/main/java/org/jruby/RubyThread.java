@@ -73,6 +73,7 @@ import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.exceptions.Unrescuable;
+import org.jruby.ext.thread.ConditionVariable;
 import org.jruby.internal.runtime.RubyNativeThread;
 import org.jruby.internal.runtime.RubyRunnable;
 import org.jruby.internal.runtime.ThreadLike;
@@ -237,7 +238,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private List<SchedulerJoiner> schedulerJoiners;
 
     /** This thread's reusable Mutex or ConditionVariable waiter; a thread waits on one thing at a time */
-    private Object syncWaiter;
+    private ConditionVariable.Waiter syncWaiter;
 
     /** Interrupt flags */
     private volatile int interruptFlag = 0;
@@ -444,11 +445,11 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         this.fiberCurrentThread = fiberCurrentThread;
     }
 
-    public Object getSyncWaiter() {
+    public ConditionVariable.Waiter getSyncWaiter() {
         return syncWaiter;
     }
 
-    public void setSyncWaiter(Object syncWaiter) {
+    public void setSyncWaiter(ConditionVariable.Waiter syncWaiter) {
         this.syncWaiter = syncWaiter;
     }
 

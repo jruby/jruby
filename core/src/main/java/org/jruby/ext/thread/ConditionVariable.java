@@ -129,7 +129,7 @@ public class ConditionVariable extends RubyObject {
      * A thread or fiber waiting in {@link #wait_ruby}.
      * {@link Mutex.FiberWaiter} also queues fibers blocked in Mutex#lock.
      */
-    sealed interface Waiter permits ThreadWaiter, Mutex.FiberWaiter {}
+    public sealed interface Waiter permits ThreadWaiter, Mutex.FiberWaiter {}
 
     /** A thread waiting without a fiber scheduler, woken by interrupting it. */
     record ThreadWaiter(RubyThread thread) implements Waiter {
