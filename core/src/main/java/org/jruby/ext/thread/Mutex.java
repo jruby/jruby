@@ -29,7 +29,8 @@
 package org.jruby.ext.thread;
 
 import java.util.ArrayDeque;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.ReentrantLock;
 import org.jruby.FiberScheduler;
 import org.jruby.Ruby;
@@ -65,13 +66,33 @@ public class Mutex extends RubyObject implements DataType {
     volatile IRubyObject lockingFiber;
 
     /** A fiber waiting through a fiber scheduler, on a Mutex or a ConditionVariable. MRI: sync_waiter */
-    record FiberWaiter(IRubyObject scheduler, IRubyObject fiber) implements ConditionVariable.Waiter {}
+    record FiberWaiter(IRubyObject scheduler, IRubyObject fiber) implements ConditionVariable.Waiter {
+        static FiberWaiter cached(ThreadContext context, IRubyObject scheduler) {
+            RubyThread thread = context.getThread();
+            IRubyObject fiber = context.getFiber();
+            if (thread.getSyncWaiter() instanceof FiberWaiter waiter && waiter.scheduler == scheduler && waiter.fiber == fiber) {
+                return waiter;
+            }
 
-    /** Fibers blocked in {@link #lock} through a fiber scheduler. MRI: mutex waitq */
-    private final ArrayDeque<FiberWaiter> schedulerWaiters = new ArrayDeque<>();
+            FiberWaiter waiter = new FiberWaiter(scheduler, fiber);
+            thread.setSyncWaiter(waiter);
+            return waiter;
+        }
+    }
+
+    private static final class SchedulerWaiters extends ArrayDeque<FiberWaiter> {}
+
+    /** Fibers blocked in {@link #lock} through a fiber scheduler, created by the first one. MRI: mutex waitq */
+    private volatile SchedulerWaiters schedulerWaiters;
+
+    private static final AtomicReferenceFieldUpdater<Mutex, SchedulerWaiters> SCHEDULER_WAITERS_UPDATER =
+            AtomicReferenceFieldUpdater.newUpdater(Mutex.class, SchedulerWaiters.class, "schedulerWaiters");
 
     /** Threads in {@link #sleep}, whose Condition#await releases the lock without waking scheduler waiters. */
-    private final AtomicInteger awaitingThreads = new AtomicInteger();
+    private volatile int awaitingThreads;
+
+    private static final AtomicIntegerFieldUpdater<Mutex> AWAITING_THREADS_UPDATER =
+            AtomicIntegerFieldUpdater.newUpdater(Mutex.class, "awaitingThreads");
 
     /** Temporary: fibers poll while threads sleep; to be removed in a follow-up. */
     private static final double AWAITING_RETRY_SECONDS = 0.001;
@@ -83,7 +104,7 @@ public class Mutex extends RubyObject implements DataType {
             lockingThread = null;
             lockingFiber = null;
             super.unlock();
-            wakeupSchedulerWaiter(getRuntime().getCurrentContext());
+            wakeupSchedulerWaiter();
         }
     }
 
@@ -181,24 +202,25 @@ public class Mutex extends RubyObject implements DataType {
     // MRI: do_mutex_lock, which blocks a fiber through the scheduler until the lock is free
     private void schedulerLock(ThreadContext context, IRubyObject scheduler) {
         RubyThread thread = context.getThread();
-        FiberWaiter waiter = new FiberWaiter(scheduler, context.getFiber());
+        FiberWaiter waiter = FiberWaiter.cached(context, scheduler);
+        SchedulerWaiters waiters = schedulerWaiters();
 
         while (!thread.tryLock(lock)) {
-            synchronized (schedulerWaiters) {
+            synchronized (waiters) {
                 // the holder may have unlocked since, and found no one to wake
                 if (thread.tryLock(lock)) return;
 
-                schedulerWaiters.add(waiter);
+                waiters.add(waiter);
             }
 
-            IRubyObject timeout = awaitingThreads.get() > 0 ?
+            IRubyObject timeout = awaitingThreads > 0 ?
                     RubyFloat.newFloat(context.runtime, AWAITING_RETRY_SECONDS) : context.nil;
 
             try {
                 FiberScheduler.block(context, scheduler, this, timeout);
             } finally {
-                synchronized (schedulerWaiters) {
-                    schedulerWaiters.remove(waiter);
+                synchronized (waiters) {
+                    waiters.remove(waiter);
                 }
             }
         }
@@ -212,14 +234,25 @@ public class Mutex extends RubyObject implements DataType {
         this.lockingFiber = context.getFiber();
     }
 
+    private SchedulerWaiters schedulerWaiters() {
+        SchedulerWaiters waiters = schedulerWaiters;
+        if (waiters != null) return waiters;
+
+        SCHEDULER_WAITERS_UPDATER.compareAndSet(this, null, new SchedulerWaiters());
+        return schedulerWaiters;
+    }
+
     // MRI: rb_mutex_unlock_th's wakeup of the next fiber waiting through a scheduler
-    private void wakeupSchedulerWaiter(ThreadContext context) {
+    private void wakeupSchedulerWaiter() {
+        SchedulerWaiters waiters = schedulerWaiters;
+        if (waiters == null) return;
+
         FiberWaiter waiter;
-        synchronized (schedulerWaiters) {
-            waiter = schedulerWaiters.poll();
+        synchronized (waiters) {
+            waiter = waiters.poll();
         }
 
-        if (waiter != null) FiberScheduler.unblock(context, waiter.scheduler(), this, waiter.fiber());
+        if (waiter != null) FiberScheduler.unblock(getRuntime().getCurrentContext(), waiter.scheduler(), this, waiter.fiber());
     }
 
     @JRubyMethod
@@ -263,11 +296,11 @@ public class Mutex extends RubyObject implements DataType {
             return asFixnum(context, (System.currentTimeMillis() - beg) / 1000);
         }
 
-        awaitingThreads.incrementAndGet();
+        AWAITING_THREADS_UPDATER.incrementAndGet(this);
         try {
             // wake the first fiber waiting through a scheduler so it blocks again on the short timeout, taking the
             // lock once the await below releases it; any others are woken in turn as the lock is released
-            wakeupSchedulerWaiter(context);
+            wakeupSchedulerWaiter();
 
             RubyThread thread = context.getThread();
 
@@ -288,7 +321,7 @@ public class Mutex extends RubyObject implements DataType {
         } catch (InterruptedException ex) {
             context.pollThreadEvents();
         } finally {
-            awaitingThreads.decrementAndGet();
+            AWAITING_THREADS_UPDATER.decrementAndGet(this);
         }
 
         return asFixnum(context, (System.currentTimeMillis() - beg) / 1000);

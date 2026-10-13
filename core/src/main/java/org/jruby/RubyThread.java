@@ -236,6 +236,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     private List<SchedulerJoiner> schedulerJoiners;
 
+    /** This thread's reusable Mutex or ConditionVariable waiter; a thread waits on one thing at a time */
+    private Object syncWaiter;
+
     /** Interrupt flags */
     private volatile int interruptFlag = 0;
 
@@ -439,6 +442,14 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     public void setFiberCurrentThread(RubyThread fiberCurrentThread) {
         this.fiberCurrentThread = fiberCurrentThread;
+    }
+
+    public Object getSyncWaiter() {
+        return syncWaiter;
+    }
+
+    public void setSyncWaiter(Object syncWaiter) {
+        this.syncWaiter = syncWaiter;
     }
 
     public RubyThread getFiberCurrentThread() {

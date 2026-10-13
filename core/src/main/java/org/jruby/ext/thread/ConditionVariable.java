@@ -77,7 +77,7 @@ public class ConditionVariable extends RubyObject {
     @JRubyMethod(name = "wait")
     public IRubyObject wait_ruby(ThreadContext context, IRubyObject m, IRubyObject t) {
         IRubyObject scheduler = FiberScheduler.current(context);
-        Waiter waiter = scheduler == null ? new ThreadWaiter(context.getThread()) : new Mutex.FiberWaiter(scheduler, context.getFiber());
+        Waiter waiter = scheduler == null ? ThreadWaiter.cached(context.getThread()) : Mutex.FiberWaiter.cached(context, scheduler);
 
         waiters.add(waiter);
         try {
@@ -132,7 +132,15 @@ public class ConditionVariable extends RubyObject {
     sealed interface Waiter permits ThreadWaiter, Mutex.FiberWaiter {}
 
     /** A thread waiting without a fiber scheduler, woken by interrupting it. */
-    record ThreadWaiter(RubyThread thread) implements Waiter {}
+    record ThreadWaiter(RubyThread thread) implements Waiter {
+        static ThreadWaiter cached(RubyThread thread) {
+            if (thread.getSyncWaiter() instanceof ThreadWaiter waiter) return waiter;
+
+            ThreadWaiter waiter = new ThreadWaiter(thread);
+            thread.setSyncWaiter(waiter);
+            return waiter;
+        }
+    }
 
     private final ConcurrentLinkedQueue<Waiter> waiters = new ConcurrentLinkedQueue<>();
     
