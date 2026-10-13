@@ -152,7 +152,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     static final UTF8Encoding UTF8 = UTF8Encoding.INSTANCE;
 
     private static boolean isAsciiSpace(int c) {
-        return c >= 0 && c <= 127 && ASCII.isSpace(c);
+        return c >= 0 && ASCII.isSpace(c);
     }
 
     // string doesn't share any resources
