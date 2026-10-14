@@ -39,6 +39,33 @@ import org.jruby.runtime.Visibility;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface JRubyMethod {
+    @interface Req {
+        String name() default "";
+    }
+
+    @interface Opt {
+        String name() default "";
+        OptValue value() default OptValue.NULL;
+    }
+
+    @interface Rest {
+        String name() default "";
+    }
+
+    @interface KeyReq {
+        String name() default "";
+    }
+
+    @interface KeyOpt {
+        String name() default "";
+        OptValue value() default OptValue.NULL;
+    }
+
+    @interface KeyRest {
+        String name() default "";
+    }
+
+    enum OptValue { NIL, UNDEF, NULL }
     /**
      * The name or names of this method in Ruby-land.
      */
@@ -55,6 +82,14 @@ public @interface JRubyMethod {
      * Whether this method has a "rest" argument.
      */
     boolean rest() default false;
+    /**
+     * Whether this method accepts "direct" argument passing.
+     *
+     * Direct argument methods expand the possible arguments as far as possible, with required, optional, keyword, and
+     * keyword optional values passed as annotated positional arguments and rest and keyword rest passed as
+     * IRubyObject[] and RubyHash respectively.
+     */
+    boolean direct() default false;
     /**
      * Any alias or aliases for this method.
      */
