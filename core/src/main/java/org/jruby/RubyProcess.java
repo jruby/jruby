@@ -1170,18 +1170,19 @@ public class RubyProcess {
         return waitall(runtime.getCurrentContext());
     }
 
+    // MRI: proc_waitall
     public static IRubyObject waitall(ThreadContext context) {
-        POSIX posix = context.runtime.getPosix();
         var results = newArray(context);
-        int[] status = new int[1];
-        int result = pthreadKillable(context, ctx -> posix.wait(status));
+        IRubyObject lastStatus = context.nil;
 
-        while (result != -1) {
-            results.append(context, newArray(context, asFixnum(context, result),
-                    RubyProcess.RubyStatus.newProcessStatus(context.runtime, status[0], result)));
-
-            result = pthreadKillable(context, ctx -> posix.wait(status));
+        // waitpid goes through the fiber scheduler if there is one, and gives -1 once no children are left
+        for (long pid; (pid = waitpid(context, -1, 0)) > 0; ) {
+            lastStatus = context.getLastExitStatus();
+            results.append(context, newArray(context, asFixnum(context, pid), lastStatus));
         }
+
+        // the final failed wait cleared $?, but MRI leaves it set to the last child's status
+        context.setLastExitStatus(lastStatus);
 
         return results;
     }
