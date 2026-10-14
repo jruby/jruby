@@ -34,7 +34,7 @@ public class RangeObjectSite extends LazyObjectSite {
             false);
 
     public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type, int exclusive) {
-        return new RangeObjectSite(type, exclusive == 1 ? true : false).bootstrap(lookup);
+        return new RangeObjectSite(type, exclusive == 1).bootstrap(lookup);
     }
 
     public IRubyObject construct(ThreadContext context, IRubyObject begin, IRubyObject end) throws Throwable {
@@ -64,28 +64,26 @@ public class RangeObjectSite extends LazyObjectSite {
     }
 
     public static class FixnumRangeObjectSite extends RangeObjectSite {
-        protected final long beginOrOnly;
-        protected final long end;
-        protected final boolean beginless;
-        protected final boolean endless;
+        protected final FixnumRange range;
 
         public FixnumRangeObjectSite(MethodType type, long beginOrOnly, long end, boolean beginless, boolean endless, boolean exclusive) {
             super(type, exclusive);
 
-            this.beginOrOnly = beginOrOnly;
-            this.end = end;
-            this.beginless = beginless;
-            this.endless = endless;
+            this.range = new FixnumRange(beginOrOnly, end, beginless, endless, exclusive);
         }
 
         public IRubyObject construct(ThreadContext context) throws Throwable {
-            if (beginless) {
-                return RubyRange.newBeginlessRange(context, beginOrOnly, exclusive);
-            } else if (endless) {
-                return RubyRange.newEndlessRange(context, beginOrOnly, exclusive);
-            }
-            return RubyRange.newRange(context, beginOrOnly, end, exclusive);
+            return context.runtime.cacheImmutableLiteral(range, (r) -> {
+                if (r.beginless) {
+                    return RubyRange.newBeginlessRange(context, r.beginOrOnly, r.exclusive);
+                } else if (r.endless) {
+                    return RubyRange.newEndlessRange(context, r.beginOrOnly, r.exclusive);
+                }
+                return RubyRange.newRange(context, r.beginOrOnly, r.end, r.exclusive);
+            });
         }
+
+        record FixnumRange(long beginOrOnly, long end, boolean beginless, boolean endless, boolean exclusive) {}
     }
 
     public static final Handle BOOTSTRAP_STRING_STRING = new Handle(
@@ -100,26 +98,22 @@ public class RangeObjectSite extends LazyObjectSite {
     }
 
     public static class StringRangeObjectSite extends RangeObjectSite {
-        protected final ByteList begin;
-        protected final int beginCR;
-        protected final ByteList end;
-        protected final int endCR;
+        protected final StringRange range;
 
         public StringRangeObjectSite(MethodType type, ByteList begin, int beginCR, ByteList end, int endCR, boolean exclusive) {
             super(type, exclusive);
 
-            this.begin = begin;
-            this.beginCR = beginCR;
-            this.end = end;
-            this.endCR = endCR;
+            this.range = new StringRange(begin, beginCR, end, endCR, exclusive);
         }
 
         public IRubyObject construct(ThreadContext context) throws Throwable {
-            return RubyRange.newRange(
+            return context.runtime.cacheImmutableLiteral(range, (r) -> RubyRange.newRange(
                     context,
-                    IRRuntimeHelpers.newFrozenString(context, begin, beginCR),
-                    IRRuntimeHelpers.newFrozenString(context, end, endCR),
-                    exclusive);
+                    IRRuntimeHelpers.newFrozenString(context, r.begin, r.beginCR),
+                    IRRuntimeHelpers.newFrozenString(context, r.end, r.endCR),
+                    r.exclusive));
         }
+
+        record StringRange(ByteList begin, int beginCR, ByteList end, int endCR, boolean exclusive) {}
     }
 }
