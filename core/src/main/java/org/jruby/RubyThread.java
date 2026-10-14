@@ -73,6 +73,7 @@ import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.exceptions.Unrescuable;
+import org.jruby.ext.thread.ConditionVariable;
 import org.jruby.internal.runtime.RubyNativeThread;
 import org.jruby.internal.runtime.RubyRunnable;
 import org.jruby.internal.runtime.ThreadLike;
@@ -235,6 +236,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private record SchedulerJoiner(IRubyObject scheduler, RubyThread thread, IRubyObject fiber) {}
 
     private List<SchedulerJoiner> schedulerJoiners;
+
+    /** This thread's reusable Mutex or ConditionVariable waiter; a thread waits on one thing at a time */
+    private ConditionVariable.Waiter syncWaiter;
 
     /** Interrupt flags */
     private volatile int interruptFlag = 0;
@@ -439,6 +443,14 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     public void setFiberCurrentThread(RubyThread fiberCurrentThread) {
         this.fiberCurrentThread = fiberCurrentThread;
+    }
+
+    public ConditionVariable.Waiter getSyncWaiter() {
+        return syncWaiter;
+    }
+
+    public void setSyncWaiter(ConditionVariable.Waiter syncWaiter) {
+        this.syncWaiter = syncWaiter;
     }
 
     public RubyThread getFiberCurrentThread() {
@@ -2718,12 +2730,16 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      */
     public void unlockAll() {
         assert Thread.currentThread() == getNativeThread();
-        for (Lock lock : heldLocks) {
+        Lock[] locks = heldLocks.toArray(Lock[]::new);
+        heldLocks.clear();
+        for (Lock lock : locks) {
             try {
                 lock.unlock();
             } catch (IllegalMonitorStateException imse) {
                 // don't allow a bad lock to prevent others from unlocking
                 warn(getRuntime().getCurrentContext(), "BUG: attempted to unlock a non-acquired lock " + lock + " in thread " + toString());
+            } catch (RaiseException re) {
+                warn(getRuntime().getCurrentContext(), "unlocking " + lock + " in dying thread " + toString() + " raised " + re.getMessage());
             }
         }
     }
