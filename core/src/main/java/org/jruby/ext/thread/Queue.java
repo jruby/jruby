@@ -209,12 +209,38 @@ public class Queue extends RubyObject implements DataType {
         return schedulerTakers;
     }
 
+    /** Fibers blocked in SizedQueue#push through a fiber scheduler, created by the first one. MRI: szqueue pushq */
+    private volatile SchedulerWaiters schedulerPutters;
+
+    private static final AtomicReferenceFieldUpdater<Queue, SchedulerWaiters> SCHEDULER_PUTTERS_UPDATER =
+            AtomicReferenceFieldUpdater.newUpdater(Queue.class, SchedulerWaiters.class, "schedulerPutters");
+
+    protected SchedulerWaiters schedulerPutters() {
+        SchedulerWaiters waiters = schedulerPutters;
+        if (waiters != null) return waiters;
+
+        SCHEDULER_PUTTERS_UPDATER.compareAndSet(this, null, new SchedulerWaiters());
+        return schedulerPutters;
+    }
+
     protected void unblockSchedulerTaker() {
         unblockOneSchedulerWaiter(schedulerTakers);
     }
 
+    protected void unblockSchedulerPutter() {
+        unblockOneSchedulerWaiter(schedulerPutters);
+    }
+
+    protected void unblockAllSchedulerPutters() {
+        unblockAllSchedulerWaiters(schedulerPutters);
+    }
+
     protected int schedulerTakersWaiting() {
         return schedulerWaiting(schedulerTakers);
+    }
+
+    protected int schedulerPuttersWaiting() {
+        return schedulerWaiting(schedulerPutters);
     }
 
     /**
@@ -427,6 +453,8 @@ public class Queue extends RubyObject implements DataType {
         } catch (InterruptedException ie) {
             throw createInterruptedError(context, "clear");
         }
+
+        unblockAllSchedulerPutters();
 
         return this;
     }
@@ -674,6 +702,7 @@ public class Queue extends RubyObject implements DataType {
         }
 
         unblockAllSchedulerWaiters(schedulerTakers);
+        unblockAllSchedulerWaiters(schedulerPutters);
 
         return this;
     }
@@ -780,6 +809,8 @@ public class Queue extends RubyObject implements DataType {
         if (notFullSignalNeeded)
             signalNotFull();
 
+        unblockSchedulerPutter();
+
         return x;
     }
 
@@ -803,6 +834,7 @@ public class Queue extends RubyObject implements DataType {
         }
         if (c == capacity)
             signalNotFull();
+        unblockSchedulerPutter();
         return x;
     }
 
@@ -832,6 +864,7 @@ public class Queue extends RubyObject implements DataType {
         }
         if (c == capacity)
             signalNotFull();
+        unblockSchedulerPutter();
         return x;
     }
 
