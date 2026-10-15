@@ -245,8 +245,10 @@ t        if (yydebug != null) yydebug.reduce(yystate, yystates[yytop-yyLen[yyn]]
 .            yyVal = parserState.execute(this, yyVal, yystates, yytop, count, yytoken);
 .            // record the production's source span on the node it produced (see Node#setAutoSourceSpan: each
 .            // enclosing production handing the node along widens it until an explicit span locks it; a node
-.            // made by an empty production has no source of its own)
-.            if (count > 0 && yyVal instanceof org.jruby.ast.Node node) node.setAutoSourceSpan(start, end);
+.            // made by an empty production has no source of its own), when the parse has a use for it
+.            if (count > 0 && recordsPositions() && yyVal instanceof org.jruby.ast.Node node) {
+.                node.setAutoSourceSpan(start, end);
+.            }
 .        }
 .// ACTIONS_BEGIN (line used by optimize_parser)
 

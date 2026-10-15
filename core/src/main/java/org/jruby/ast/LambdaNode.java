@@ -37,8 +37,6 @@ import org.jruby.parser.StaticScope;
  * Stubby lambda node (1.9 only)
  */
 public class LambdaNode extends IterNode {
-    private int operatorColumn = -1;    // column of the -> it is written with
-
     public LambdaNode(int line, ArgsNode args, Node body, StaticScope scope, int endLine) {
         super(line, args, body, scope, endLine);
     }
@@ -67,13 +65,13 @@ public class LambdaNode extends IterNode {
     }
 
     public void setOperatorColumn(int operatorColumn) {
-        this.operatorColumn = operatorColumn;
+        setSourceDetail(new SourcePosition(getLine(), operatorColumn));
     }
 
     /**
      * The column of the -> the lambda is written with (on its line), or -1. MRI's lambda node starts there.
      */
     public int getOperatorColumn() {
-        return operatorColumn;
+        return getSourceDetail() instanceof SourcePosition operator ? operator.column() : -1;
     }
 }
