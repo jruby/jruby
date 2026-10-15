@@ -100,6 +100,7 @@ import org.jruby.util.io.RubyInputStream;
 
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.function.Function;
 
@@ -6254,6 +6255,114 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @JRubyMethod(name = "tr!")
     public IRubyObject tr_bang(ThreadContext context, IRubyObject src, IRubyObject repl) {
         return trTrans(context, src, repl, false);
+    }
+
+    // MRI: rb_str_tr with a single pairs Hash
+    @JRubyMethod(name = "tr")
+    public IRubyObject tr(ThreadContext context, IRubyObject pairs) {
+        RubyString str = dupString(context, this);
+        str.trTransPairs(context, pairs);
+        return str;
+    }
+
+    // MRI: rb_str_tr_bang with a single pairs Hash
+    @JRubyMethod(name = "tr!")
+    public IRubyObject tr_bang(ThreadContext context, IRubyObject pairs) {
+        return trTransPairs(context, pairs);
+    }
+
+    // MRI: tr_trans_pairs
+    private IRubyObject trTransPairs(ThreadContext context, IRubyObject pairsArg) {
+        if (!(pairsArg instanceof RubyHash pairs)) {
+            throw typeError(context, str(context.runtime, "wrong argument type ", types(context.runtime, pairsArg.getMetaClass()), " (expected Hash)"));
+        }
+
+        mustnotBroken(context);
+        modify();
+
+        if (value.getRealSize() == 0 || pairs.isEmpty()) return context.nil;
+
+        final Encoding[] encHolder = { value.getEncoding() };
+        final int[] crHolder = { scanForCodeRange() };
+        final RubyString[] keys = new RubyString[pairs.size()];
+        final RubyString[] repls = new RubyString[pairs.size()];
+        final int[] count = { 0 };
+
+        // keys or values may be removed from the hash by to_str, so count what we actually collect
+        pairs.visitAll(context, (ctx, self, key, val, index) -> {
+            RubyString search = key.convertToString();
+            RubyString repl = val.convertToString();
+
+            if (search.size() != 1 && search.strLength() != 1) throw argumentError(ctx, "keys must be of size 1");
+
+            encHolder[0] = checkMultiStr(encHolder[0], crHolder, search);
+            encHolder[0] = checkMultiStr(encHolder[0], crHolder, repl);
+
+            if (count[0] < keys.length) {
+                keys[count[0]] = search;
+                repls[count[0]++] = repl;
+            }
+        });
+
+        final Encoding e1 = encHolder[0];
+        final HashMap<Integer, RubyString> table = new HashMap<>(count[0] * 2);
+        for (int i = 0; i < count[0]; i++) {
+            ByteList k = keys[i].getByteList();
+            table.put(StringSupport.codePoint(e1, k.unsafeBytes(), k.begin(), k.begin() + k.realSize()), repls[i]);
+        }
+
+        final byte[] sbytes = value.unsafeBytes();
+        int s = value.begin();
+        final int send = s + value.realSize();
+        final ByteList out = new ByteList(value.realSize());
+        boolean modified = false;
+
+        while (s < send) {
+            int clen = StringSupport.preciseLength(e1, sbytes, s, send);
+            if (clen <= 0) throw argumentError(context, "invalid byte sequence in " + e1);
+
+            RubyString repl = table.get(StringSupport.codePoint(e1, sbytes, s, send));
+            if (repl == null) {
+                out.append(sbytes, s, clen);
+            } else {
+                out.append(repl.getByteList());
+                modified = true;
+            }
+            s += clen;
+        }
+
+        if (!modified) return context.nil;
+
+        value.setUnsafeBytes(out.unsafeBytes());
+        value.setBegin(0);
+        value.setRealSize(out.realSize());
+        setEncoding(e1);
+        clearCodeRange();
+        return this;
+    }
+
+    // MRI: rb_enc_check_multi_str
+    private static Encoding checkMultiStr(Encoding enc1, int[] cr, RubyString str2) {
+        if (str2.size() == 0) return enc1;
+
+        Encoding enc2 = str2.getEncoding();
+        int cr1 = cr[0];
+
+        if (enc1 == enc2) {
+            if (cr1 == CR_7BIT) cr[0] = str2.scanForCodeRange();
+            return enc1;
+        }
+
+        if (enc1.isAsciiCompatible() && enc2.isAsciiCompatible()) {
+            if (enc2 instanceof USASCIIEncoding || str2.scanForCodeRange() == CR_7BIT) return enc1;
+
+            if (enc1 instanceof USASCIIEncoding || cr1 == CR_7BIT) {
+                cr[0] = str2.scanForCodeRange();
+                return enc2;
+            }
+        }
+
+        throw str2.getRuntime().newEncodingCompatibilityError("incompatible character encodings: " + enc1 + " and " + enc2);
     }
 
     private IRubyObject trTrans(ThreadContext context, IRubyObject src, IRubyObject repl, boolean sflag) {
