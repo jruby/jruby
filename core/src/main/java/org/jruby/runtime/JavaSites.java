@@ -96,6 +96,7 @@ public class JavaSites {
         public final CallSite to_str = new FunctionalCachingCallSite("to_str");
         public final CallSite getc = new FunctionalCachingCallSite("getc");
         public final CallSite gets = new FunctionalCachingCallSite("gets");
+        public final CallSite readline = new FunctionalCachingCallSite("readline");
         public final CallSite putc = new FunctionalCachingCallSite("putc");
         public final CallSite puts = new FunctionalCachingCallSite("puts");
         public final CallSite initialize_copy = new FunctionalCachingCallSite("initialize_copy");
