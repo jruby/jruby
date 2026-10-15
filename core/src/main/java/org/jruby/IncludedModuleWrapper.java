@@ -77,6 +77,23 @@ public class IncludedModuleWrapper extends IncludedModule {
         return origin;
     }
 
+    /**
+     * The class or module whose include or prepend created this wrapper. This may itself be a wrapper when an
+     * include into a module is propagated to the hierarchies already including that module. Null for wrappers
+     * created for refinements.
+     *
+     * MRI: RCLASS_INCLUDER
+     */
+    public RubyModule getIncluder() {
+        return includer;
+    }
+
+    void setIncluder(RubyModule includer) {
+        this.includer = includer;
+    }
+
+    private RubyModule includer;
+
     @Override
     public boolean isIncluded() {
         return true;

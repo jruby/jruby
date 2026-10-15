@@ -3179,6 +3179,52 @@ public class RubyModule extends RubyObject {
         return newArray(context, getAncestorList());
     }
 
+    /**
+     * Returns the classes and modules that have this module in their ancestors, excluding this module itself,
+     * singleton classes, and refinements. The order is not defined.
+     *
+     * MRI: rb_mod_descendants
+     */
+    @JRubyMethod(name = "descendants")
+    public RubyArray descendants(ThreadContext context) {
+        var descendants = newArray(context);
+        Set<RubyModule> visited = Collections.newSetFromMap(new IdentityHashMap<>());
+        visited.add(this);
+
+        addDescendants(context, this, descendants, visited);
+
+        return descendants;
+    }
+
+    // MRI: module_descendants_add
+    private static void addDescendants(ThreadContext context, RubyModule module, RubyArray descendants, Set<RubyModule> visited) {
+        RubyClass.BiConsumerIgnoresSecond<RubyClass> visitor = entry -> {
+            RubyModule descendant = descendantFor(entry);
+            if (descendant == null || !visited.add(descendant)) return;
+
+            descendants.append(context, descendant);
+            addDescendants(context, descendant, descendants, visited);
+        };
+
+        if (module instanceof RubyClass klass) klass.getSubclassesForRead().forEachClass(visitor);
+        module.getIncludingHierarchiesForRead().forEachClass(visitor);
+    }
+
+    // MRI: module_descendants_recursive, resolves hierarchy entries to the class or module they belong to
+    private static RubyModule descendantFor(RubyClass entry) {
+        RubyModule descendant = entry;
+
+        while (descendant instanceof IncludedModuleWrapper || descendant instanceof PrependedModule) {
+            descendant = descendant instanceof IncludedModuleWrapper wrapper ?
+                    wrapper.getIncluder() : // an include, or one propagated through another wrapper
+                    descendant.getOrigin(); // holder of a prepending class's own methods
+        }
+
+        if (descendant == null || descendant.isIncluded() || descendant.isSingleton() || descendant.isRefinement()) return null;
+
+        return descendant;
+    }
+
     @Deprecated(since = "10.0.0.0")
     public RubyArray ancestors() {
         return ancestors(getCurrentContext());
@@ -4494,7 +4540,8 @@ public class RubyModule extends RubyObject {
         // In the current logic, if we getService here we know that module is not an
         // IncludedModuleWrapper, so there's no need to fish out the delegate. But just
         // in case the logic should change later, let's do it anyway
-        RubyClass wrapper = new IncludedModuleWrapper(context.runtime, insertAbove.getSuperClass(), moduleToInclude, moduleToInclude.getMethodLocation());
+        IncludedModuleWrapper wrapper = new IncludedModuleWrapper(context.runtime, insertAbove.getSuperClass(), moduleToInclude, moduleToInclude.getMethodLocation());
+        wrapper.setIncluder(this);
 
         // if the insertion point is a class, update subclass lists
         if (insertAbove instanceof RubyClass insertAboveClass) {
