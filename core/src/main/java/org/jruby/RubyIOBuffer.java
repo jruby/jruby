@@ -6,6 +6,7 @@ import jnr.ffi.Runtime;
 import jnr.ffi.Type;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
@@ -360,7 +361,7 @@ public class RubyIOBuffer extends RubyObject {
         return base;
     }
 
-    // MRI: io_flags_for_size
+    @CRuby(value = "io_flags_for_size", file = "io_buffer.c")
     private static int flagsForSize(int size) {
         if (size >= PAGE_SIZE) {
             return MAPPED;
@@ -676,7 +677,7 @@ public class RubyIOBuffer extends RubyObject {
         return slice(context, offset, length);
     }
 
-    // MRI: rb_io_buffer_slice
+    @CRuby(value = "rb_io_buffer_slice", file = "io_buffer.c")
     public IRubyObject slice(ThreadContext context, int offset, int length) {
         validateRange(context, offset, length);
 
@@ -692,7 +693,7 @@ public class RubyIOBuffer extends RubyObject {
         return newBuffer(context, slice, length, flags);
     }
 
-    // MRI: io_buffer_validate_range
+    @CRuby(value = "io_buffer_validate_range", file = "io_buffer.c")
     private void validateRange(ThreadContext context, int offset, int length) {
         if (offset + length > size) throw argumentError(context, "Specified offset+length is bigger than the buffer size!");
     }
@@ -718,7 +719,7 @@ public class RubyIOBuffer extends RubyObject {
         return this;
     }
 
-    // MRI: rb_io_buffer_resize
+    @CRuby(value = "rb_io_buffer_resize", file = "io_buffer.c")
     public void resize(ThreadContext context, int size) {
         if (isLocked()) {
             throw context.runtime.newBufferLockedError("Cannot resize locked buffer!");
@@ -744,7 +745,7 @@ public class RubyIOBuffer extends RubyObject {
         this.size = size;
     }
 
-    // MRI: io_buffer_clear
+    @CRuby(value = "io_buffer_clear", file = "io_buffer.c")
     @JRubyMethod(name = "clear")
     public IRubyObject clear(ThreadContext context) {
         return clear(context, 0, 0, size);
@@ -771,7 +772,7 @@ public class RubyIOBuffer extends RubyObject {
         return clear(context, value, offset, length);
     }
 
-    // MRI: rb_io_buffer_clear
+    @CRuby(value = "rb_io_buffer_clear", file = "io_buffer.c")
     private IRubyObject clear(ThreadContext context, int value, int offset, int length) {
         ByteBuffer buffer = getBufferForWriting(context);
         if (size - length < offset) throw argumentError(context, "The given offset + length out of bounds!");
@@ -1525,7 +1526,7 @@ public class RubyIOBuffer extends RubyObject {
         return asFixnum(context, length);
     }
 
-    // MRI: io_buffer_copy_from
+    @CRuby(value = "io_buffer_copy_from", file = "io_buffer.c")
     public IRubyObject copy(ThreadContext context, RubyString source, int offset, int length, int sourceOffset) {
         if (sourceOffset > source.size()) {
             throw argumentError(context, "The given source offset is bigger than the source itself!");
@@ -1536,7 +1537,7 @@ public class RubyIOBuffer extends RubyObject {
         return asFixnum(context, length);
     }
 
-    // MRI: io_buffer_memmove
+    @CRuby(value = "io_buffer_memmove", file = "io_buffer.c")
     private void bufferCopy(ThreadContext context, int offset, ByteBuffer sourceBuffer, int sourceOffset, int sourceSize, int length) {
         ByteBuffer destBuffer = getBufferForWriting(context);
         validateCopyRange(context, offset, sourceOffset, sourceSize, length);
@@ -1885,7 +1886,6 @@ public class RubyIOBuffer extends RubyObject {
      * Read from the given io into the given buffer base at the given offset and size limit. The buffer will be left
      * with its position after the last byte read.
      *
-     * MRI: io_buffer_read_internal
      *
      * @param context
      * @param io
@@ -1894,6 +1894,7 @@ public class RubyIOBuffer extends RubyObject {
      * @param size
      * @return
      */
+    @CRuby(value = "io_buffer_read_internal", file = "io_buffer.c")
     private static IRubyObject readInternal(ThreadContext context, RubyIO io, ByteBuffer base, int offset, int size) {
         OpenFile fptr = io.getOpenFileChecked();
         final boolean locked = fptr.lock();
@@ -1993,7 +1994,6 @@ public class RubyIOBuffer extends RubyObject {
      * Read from the given io into the given buffer base at the given offset, from location, and size limit. The buffer will be left
      * with its position unchanged.
      *
-     * MRI: io_buffer_pread_internal
      *
      * @param context
      * @param io
@@ -2003,6 +2003,7 @@ public class RubyIOBuffer extends RubyObject {
      * @param size
      * @return
      */
+    @CRuby(value = "io_buffer_pread_internal", file = "io_buffer.c")
     private static IRubyObject preadInternal(ThreadContext context, RubyIO io, ByteBuffer base, int from, int offset, int size) {
         OpenFile fptr = io.getOpenFileChecked();
         final boolean locked = fptr.lock();

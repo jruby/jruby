@@ -21,6 +21,7 @@ import org.jruby.RubyRange;
 import org.jruby.RubyRational;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.anno.CRuby;
 import org.jruby.runtime.Builtins;
 import org.jruby.runtime.JavaSites;
 import org.jruby.runtime.ThreadContext;
@@ -331,13 +332,13 @@ public class Convert {
     }
 
     // FIXME: Create annotation @MRI so we can formalize these comments and provide a dictionary for embedders.
-    // MRI: rb_check_to_integer
     /**
      * Check whether the given object is an Integer or can be converted to an Integer using #to_int.
      * @param context the current thread context
      * @param obj the object to be converted
      * @return the integer value or nil if the object or conversion is not an Integer.
      */
+    @CRuby(value = "rb_check_to_integer", file = "object.c")
     public static IRubyObject checkToInteger(ThreadContext context, IRubyObject obj) {
         if (obj instanceof RubyFixnum) return obj;
 
@@ -412,11 +413,11 @@ public class Convert {
     /**
      * Create a Ruby Fixnum from a java long.
      *
-     * MRI: RB_INT2FIX
      * @param context the current thread context
      * @param value the long value
      * @return the Ruby Fixnum
      */
+    @CRuby(value = "RB_INT2FIX", file = "include/ruby/internal/arithmetic/long.h")
     public static RubyFixnum asFixnum(ThreadContext context, long value) {
         return RubyFixnum.newFixnum(context.runtime, value);
     }
@@ -504,13 +505,14 @@ public class Convert {
         return (byte) toInt(context, arg);
     }
 
-    // MRI: rb_num2dbl and NUM2DBL
     /**
      * Safely convert a Ruby Numeric into a java double value.  Raising if the value will not fit.
      * @param context the current thread context
      * @param val the Object to convert
      * @return the value
      */
+    @CRuby(value = "rb_num2dbl", file = "object.c")
+    @CRuby(value = "NUM2DBL", file = "include/ruby/internal/arithmetic/double.h")
     public static double toDouble(ThreadContext context, IRubyObject val) {
         if (isSpecialConst(context, val)) {
             switch (val) {
@@ -538,7 +540,6 @@ public class Convert {
         return ((RubyFloat) TypeConverter.convertToType(val, floatClass(context), "to_f")).getValue();
     }
 
-    // MRI: rb_num_to_dbl and Get_Double
     /**
      * Convert value to a double with appropriate optimizations and type checks.
      *
@@ -546,6 +547,8 @@ public class Convert {
      * @param val the Object to convert
      * @return the value
      */
+    @CRuby(value = "rb_num_to_dbl", file = "object.c")
+    @CRuby(value = "Get_Double", file = "math.c")
     public static double numToDouble(ThreadContext context, IRubyObject val) {
         if (isSpecialConst(context, val)) {
             switch (val) {
@@ -771,11 +774,11 @@ public class Convert {
     /**
      * Convert the given object to a Symbol, possibly calling to_str in the process.
      *
-     * MRI: rb_to_symbol
      * @param context the current thread context
      * @param arg the object to convert to a symbol
      * @return the new RubySymbol
      */
+    @CRuby(value = "rb_to_symbol", file = "string.c")
     public static RubySymbol toSymbol(ThreadContext context, IRubyObject arg) {
         return RubySymbol.toSymbol(context, arg);
     }

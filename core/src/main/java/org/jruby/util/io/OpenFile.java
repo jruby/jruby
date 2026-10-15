@@ -38,6 +38,7 @@ import org.jruby.RubyNumeric;
 import org.jruby.FiberScheduler;
 import org.jruby.RubyString;
 import org.jruby.RubyThread;
+import org.jruby.anno.CRuby;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.platform.Platform;
@@ -237,7 +238,7 @@ public class OpenFile implements Finalizable {
         return modeString;
     }
 
-    // MRI: rb_io_fmode_oflags
+    @CRuby(value = "rb_io_fmode_oflags", file = "io.c")
     public static int getModeFlagsAsIntFrom(int fmode) {
         int oflags = 0;
 
@@ -266,7 +267,7 @@ public class OpenFile implements Finalizable {
         return ioOflagsModestr(runtime.getCurrentContext(), oflags);
     }
 
-    // MRI: rb_io_oflags_modestr
+    @CRuby(value = "rb_io_oflags_modestr", file = "io.c")
     public static String ioOflagsModestr(ThreadContext context, int oflags) {
         if ((oflags & OpenFlags.O_EXLOCK.intValue()) != 0) {
             throw argumentError(context, "exclusive access mode is not supported");
@@ -297,12 +298,12 @@ public class OpenFile implements Finalizable {
         return ioModestrOflags(runtime.getCurrentContext(), modestr);
     }
 
-    // MRI: rb_io_modestr_oflags
+    @CRuby(value = "rb_io_modestr_oflags", file = "io.c")
     public static int ioModestrOflags(ThreadContext context, String modestr) {
         return ioFmodeOflags(ioModestrFmode(context, modestr));
     }
 
-    // MRI: rb_io_fmode_oflags
+    @CRuby(value = "rb_io_fmode_oflags", file = "io.c")
     public static int ioFmodeOflags(int fmode) {
         int oflags = 0;
 
@@ -441,7 +442,7 @@ public class OpenFile implements Finalizable {
         return null;
     }
 
-    // rb_io_check_char_readable
+    @CRuby(value = "rb_io_check_char_readable", file = "io.c")
     public void checkCharReadable(ThreadContext context) {
         checkClosed();
 
@@ -463,7 +464,7 @@ public class OpenFile implements Finalizable {
         }
     }
 
-    // rb_io_check_byte_readable
+    @CRuby(value = "rb_io_check_byte_readable", file = "io.c")
     public void checkByteReadable(ThreadContext context) {
         checkCharReadable(context);
         if (READ_CHAR_PENDING()) {
@@ -471,12 +472,12 @@ public class OpenFile implements Finalizable {
         }
     }
 
-    // rb_io_check_readable
+    @CRuby(value = "rb_io_check_readable", file = "io.c")
     public void checkReadable(ThreadContext context) {
         checkByteReadable(context);
     }
 
-    // io_fflush
+    @CRuby(value = "io_fflush", file = "io.c")
     public int io_fflush(ThreadContext context) {
         boolean locked = lock();
         try {
@@ -497,7 +498,7 @@ public class OpenFile implements Finalizable {
         return 0;
     }
 
-    // rb_io_wait_writable
+    @CRuby(value = "rb_io_wait_writable", file = "io.c")
     public boolean waitWritable(ThreadContext context, long timeout) {
         IRubyObject scheduler = fiberScheduler ? context.getFiberCurrentThread().getSchedulerCurrent() : null;
 
@@ -528,7 +529,7 @@ public class OpenFile implements Finalizable {
         }
     }
 
-    // rb_io_wait_writable
+    @CRuby(value = "rb_io_wait_writable", file = "io.c")
     public boolean waitWritable(ThreadContext context) {
         return waitWritable(context, 0);
     }
@@ -543,7 +544,7 @@ public class OpenFile implements Finalizable {
         }
     }
 
-    // rb_io_wait_readable
+    @CRuby(value = "rb_io_wait_readable", file = "io.c")
     public boolean waitReadable(ThreadContext context, long timeout) {
         IRubyObject scheduler = fiberScheduler ? context.getFiberCurrentThread().getSchedulerCurrent() : null;
 
@@ -574,7 +575,7 @@ public class OpenFile implements Finalizable {
         }
     }
 
-    // rb_io_wait_readable
+    @CRuby(value = "rb_io_wait_readable", file = "io.c")
     public boolean waitReadable(ThreadContext context) {
         return waitReadable(context, -1);
     }
@@ -604,7 +605,7 @@ public class OpenFile implements Finalizable {
         return readyOps(thread, ops, timeout) != 0;
     }
 
-    // MRI: rb_thread_io_wait
+    @CRuby(value = "rb_thread_io_wait", file = "thread.c")
     public int readyOps(RubyThread thread, int ops, long timeout) {
         boolean locked = lock();
         try {
@@ -643,7 +644,7 @@ public class OpenFile implements Finalizable {
         return ready(context.runtime, context.getThread(), SelectionKey.OP_READ, 0);
     }
 
-    // io_flush_buffer
+    @CRuby(value = "io_flush_buffer", file = "io.c")
     public int flushBuffer() {
         if (write_lock != null) {
             write_lock.writeLock().lock();
@@ -673,7 +674,7 @@ public class OpenFile implements Finalizable {
 //        return result == 0 ? 1 : result;
     }
 
-    // io_flush_buffer_sync
+    @CRuby(value = "io_flush_buffer_sync", file = "io.c")
     private int flushBufferSync() {
         int l = writableLength(wbuf.len);
         int r = posix.write(fd, wbuf.ptr, wbuf.off, l, nonblock);
@@ -736,7 +737,7 @@ public class OpenFile implements Finalizable {
         return (mode & WSPLIT) != 0;
     }
 
-    // io_seek
+    @CRuby(value = "io_seek", file = "io.c")
     public long seek(ThreadContext context, long offset, int whence) {
         boolean locked = lock();
         try {
@@ -747,7 +748,7 @@ public class OpenFile implements Finalizable {
         }
     }
 
-    // flush_before_seek
+    @CRuby(value = "flush_before_seek", file = "io.c")
     private void flushBeforeSeek(ThreadContext context) {
         boolean locked = lock();
         try {
@@ -995,7 +996,7 @@ public class OpenFile implements Finalizable {
         }
     }
 
-    // MRI: NEED_READCONV
+    @CRuby(value = "NEED_READCONV", file = "io.c")
     public boolean needsReadConversion() {
         return Platform.IS_WINDOWS ?
                 (encs.enc2 != null || (encs.ecflags & ~EConvFlags.CRLF_NEWLINE_DECORATOR) != 0) || isTextMode()
@@ -1003,7 +1004,7 @@ public class OpenFile implements Finalizable {
                 (encs.enc2 != null || NEED_NEWLINE_DECORATOR_ON_READ());
     }
 
-    // MRI: NEED_WRITECONV
+    @CRuby(value = "NEED_WRITECONV", file = "io.c")
     public boolean needsWriteConversion(ThreadContext context) {
         Encoding ascii8bit = encodingService(context).getAscii8bitEncoding();
 
@@ -1013,7 +1014,7 @@ public class OpenFile implements Finalizable {
                 ((encs.enc != null && encs.enc != ascii8bit) || NEED_NEWLINE_DECORATOR_ON_WRITE() || (encs.ecflags & (EConvFlags.DECORATOR_MASK|EConvFlags.STATEFUL_DECORATOR_MASK)) != 0);
     }
 
-    // MRI: make_readconv
+    @CRuby(value = "make_readconv", file = "io.c")
     public void makeReadConversion(ThreadContext context, int size) {
         if (readconv == null) {
             int ecflags;
@@ -1043,7 +1044,7 @@ public class OpenFile implements Finalizable {
         makeReadConversion(context, IO_CBUF_CAPA_MIN);
     }
 
-    // MRI: make_writeconv
+    @CRuby(value = "make_writeconv", file = "io.c")
     public void makeWriteConversion(ThreadContext context) {
         if (writeconvInitialized) return;
 
@@ -1127,7 +1128,7 @@ public class OpenFile implements Finalizable {
 
     private static final byte[] EMPTY_BYTE_ARRAY = ByteList.NULL_ARRAY;
 
-    // MRI: appendline
+    @CRuby(value = "appendline", file = "io.c")
     public int appendline(ThreadContext context, int delim, final ByteList[] strp, final int[] lp, Encoding enc) {
         ByteList str = strp[0];
         int limit = lp[0];
@@ -1214,7 +1215,7 @@ public class OpenFile implements Finalizable {
         return EOF;
     }
 
-    // MRI: search_delim
+    @CRuby(value = "search_delim", file = "io.c")
     private static int searchDelimiter(byte[] pBytes, int p, int delim, int len, Encoding enc) {
         if (enc.minLength() == 1) {
             p = memchr(pBytes, p, delim, len);
@@ -1353,7 +1354,7 @@ public class OpenFile implements Finalizable {
         return MORE_CHAR_FINISHED;
     }
 
-    // read_buffered_data
+    @CRuby("read_buffered_data")
     public int readBufferedData(byte[] ptrBytes, int ptr, int len) {
         boolean locked = lock();
         try {
@@ -1370,7 +1371,7 @@ public class OpenFile implements Finalizable {
         }
     }
 
-    // io_fillbuf
+    @CRuby(value = "io_fillbuf", file = "io.c")
     public int fillbuf(ThreadContext context) {
         int r;
 
@@ -1696,9 +1697,8 @@ public class OpenFile implements Finalizable {
      * Note also the EBADF on closed channels; I believe this is what *would*
      * happen in MRI if we always called the selection logic and were given a
      * closed channel.
-     *
-     * MRI: rb_io_wait_readable
      */
+    @CRuby(value = "rb_io_wait_readable", file = "io.c")
     boolean waitReadable(ThreadContext context, ChannelFD fd) {
         checkClosed();
 
@@ -1770,12 +1770,12 @@ public class OpenFile implements Finalizable {
         }*/
     }
 
-    // io_read_encoding
+    @CRuby(value = "io_read_encoding", file = "io.c")
     public Encoding readEncoding(Ruby runtime) {
         return encs.enc != null ? encs.enc : EncodingUtils.defaultExternalEncoding(runtime);
     }
 
-    // io_input_encoding
+    @CRuby(value = "io_input_encoding", file = "io.c")
     public Encoding inputEncoding(Ruby runtime) {
         return encs.enc2 != null ? encs.enc2 : readEncoding(runtime);
     }
@@ -1836,7 +1836,7 @@ public class OpenFile implements Finalizable {
         return false;
     }
 
-    // io_shift_cbuf
+    @CRuby(value = "io_shift_cbuf", file = "io.c")
     public RubyString shiftCbuf(ThreadContext context, final int len, final IRubyObject strp) {
         RubyString str = null;
         if (strp != null) {
@@ -1873,7 +1873,7 @@ public class OpenFile implements Finalizable {
         }
     }
 
-    // rb_io_getline_fast
+    @CRuby(value = "rb_io_getline_fast", file = "io.c")
     public IRubyObject getlineFast(ThreadContext context, Encoding enc, RubyIO io, boolean chomp) {
         RubyString str = null;
         ByteList strByteList;
@@ -2028,7 +2028,7 @@ public class OpenFile implements Finalizable {
         return string;
     }
 
-    // io_bufread
+    @CRuby(value = "io_bufread", file = "io.c")
     private int ioBufread(ThreadContext context, byte[] ptrBytes, int ptr, int len) {
         int offset = 0;
         int n = len;
@@ -2116,7 +2116,7 @@ public class OpenFile implements Finalizable {
         }
     }
 
-    // io_getc
+    @CRuby(value = "io_getc", file = "io.c")
     public IRubyObject getc(ThreadContext context, Encoding enc) {
         Ruby runtime = context.runtime;
         int r, n, cr = 0;
@@ -2230,7 +2230,7 @@ public class OpenFile implements Finalizable {
         return str;
     }
 
-    // io_tell
+    @CRuby(value = "io_tell", file = "io.c")
     public synchronized long tell(ThreadContext context) {
         flushBeforeSeek(context);
         return posix.lseek(fd, 0, PosixShim.SEEK_CUR);
@@ -2350,7 +2350,7 @@ public class OpenFile implements Finalizable {
         }
     }
 
-    // MRI: io_fwrite
+    @CRuby(value = "io_fwrite", file = "io.c")
     public long fwrite(ThreadContext context, RubyString str, boolean nosync) {
         // The System.console null check is our poor-man's isatty for Windows. See jruby/jruby#3292
         if (Platform.IS_WINDOWS && isStdio() && System.console() != null) {
@@ -2395,7 +2395,7 @@ public class OpenFile implements Finalizable {
         return length;
     }
 
-    // do_writeconv
+    @CRuby(value = "do_writeconv", file = "io.c")
     public RubyString doWriteconv(ThreadContext context, RubyString str) {
         boolean locked = lock();
         try {
@@ -2503,7 +2503,7 @@ public class OpenFile implements Finalizable {
         return newBytes;
     }
 
-    // io_binwrite
+    @CRuby(value = "io_binwrite", file = "io.c")
     public int binwriteInt(ThreadContext context, byte[] ptrBytes, int ptr, int len, boolean nosync) {
         int n, r, offset = 0;
 
@@ -2588,7 +2588,7 @@ public class OpenFile implements Finalizable {
         return len;
     }
 
-    // io_binwrite_string
+    @CRuby(value = "io_binwrite_string", file = "io.c")
     static int binwriteString(OpenFile fptr, byte[] bytes, int start, int length) {
         int l = fptr.writableLength(length);
         return fptr.writeInternal2(fptr.fd, bytes, start, l);
@@ -2733,7 +2733,7 @@ public class OpenFile implements Finalizable {
         return context.nil;
     }
 
-    // rb_io_set_nonblock
+    @CRuby(value = "rb_io_set_nonblock", file = "io.c")
     public void setNonblock(Ruby runtime) {
         setBlocking(runtime, false);
     }
@@ -2819,7 +2819,7 @@ public class OpenFile implements Finalizable {
         return checkedFD().bestFileno(true);
     }
 
-    // rb_thread_flock
+    @CRuby(value = "rb_thread_flock", file = "file.c")
     public int threadFlock(ThreadContext context, final int lockMode) {
 //        #ifdef __CYGWIN__
 //        int old_errno = errno;

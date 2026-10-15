@@ -16,6 +16,7 @@ import jnr.posix.FileStat;
 import jnr.posix.POSIX;
 
 import org.jruby.Ruby;
+import org.jruby.anno.CRuby;
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Helpers;
@@ -207,7 +208,7 @@ public class PosixShim {
         return false;
     }
 
-    // rb_thread_flock
+    @CRuby(value = "rb_thread_flock", file = "file.c")
     public int flock(ChannelFD fd, int lockMode) {
         // TODO: null channel always succeeds for all locking operations
 //        if (descriptor.isNull()) return RubyFixnum.zero(runtime);

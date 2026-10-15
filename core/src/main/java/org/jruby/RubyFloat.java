@@ -44,6 +44,7 @@ import java.util.Locale;
 
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.JRubyAPI;
@@ -252,9 +253,7 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
      *  ================
      */
 
-    /** flo_to_s
-     *
-     */
+    @CRuby(value = "flo_to_s", file = "numeric.c")
     @JRubyMethod(name = {"to_s", "inspect"})
     @Override
     public IRubyObject to_s(ThreadContext context) {
@@ -267,7 +266,7 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
     public static final ByteList NEGATIVE_INFINITY_TO_S_BYTELIST = new ByteList(ByteList.plain("-Infinity"), USASCIIEncoding.INSTANCE, false);
     public static final ByteList NAN_TO_S_BYTELIST = new ByteList(ByteList.plain("NaN"), USASCIIEncoding.INSTANCE, false);
 
-    // MRI: flo_coerce
+    @CRuby(value = "flo_coerce", file = "numeric.c")
     @JRubyMethod(name = "coerce")
     public IRubyObject coerce(ThreadContext context, IRubyObject other) {
         return newArray(context, RubyKernel.new_float(context, other), this);
@@ -349,17 +348,13 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
         return asFloat(context, value / other);
     }
 
-    /** flo_quo
-    *
-    */
+    @CRuby(value = "flo_quo", file = "numeric.c")
     @JRubyMethod(name = {"quo", "fdiv"})
     public IRubyObject quo(ThreadContext context, IRubyObject other) {
         return numFuncall(context, this, sites(context).op_quo, other);
     }
 
-    /** flo_mod
-     *
-     */
+    @CRuby(value = "flo_mod", file = "numeric.c")
     @JRubyMethod(name = {"%", "modulo"})
     public IRubyObject op_mod(ThreadContext context, IRubyObject other) {
         switch (getMetaClass(other).getClassIndex()) {
@@ -381,9 +376,7 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
         return asFloat(context, mod);
     }
 
-    /** flo_divmod
-     *
-     */
+    @CRuby(value = "flo_divmod", file = "numeric.c")
     @Override
     @JRubyMethod(name = "divmod")
     public IRubyObject divmod(ThreadContext context, IRubyObject other) {
@@ -429,9 +422,7 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
         return asFloat(context, Math.pow(value, other));
     }
 
-    /** flo_eq
-     *
-     */
+    @CRuby(value = "flo_eq", file = "numeric.c")
     @JRubyMethod(name = {"==", "==="})
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
@@ -464,9 +455,7 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
         };
     }
 
-    /** flo_cmp
-     *
-     */
+    @CRuby(value = "flo_cmp", file = "numeric.c")
     @JRubyMethod(name = "<=>")
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
@@ -515,9 +504,7 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
         return asBoolean(context, !Double.isNaN(other) && value > other);
     }
 
-    /** flo_ge
-     *
-     */
+    @CRuby(value = "flo_ge", file = "numeric.c")
     @JRubyMethod(name = ">=")
     public IRubyObject op_ge(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
@@ -533,9 +520,7 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
         return asBoolean(context, !Double.isNaN(other) && value >= other);
     }
 
-    /** flo_lt
-     *
-     */
+    @CRuby(value = "flo_lt", file = "numeric.c")
     @JRubyMethod(name = "<")
     public IRubyObject op_lt(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
@@ -551,9 +536,7 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
         return asBoolean(context, !Double.isNaN(other) && value < other);
     }
 
-    /** flo_le
-     *
-     */
+    @CRuby(value = "flo_le", file = "numeric.c")
     @JRubyMethod(name = "<=")
     public IRubyObject op_le(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
@@ -569,7 +552,7 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
         return asBoolean(context, !Double.isNaN(other) && value <= other);
 	}
 
-    // MRI: flo_eql
+    @CRuby(value = "flo_eql", file = "numeric.c")
     @JRubyMethod(name = "eql?")
     @Override
     public IRubyObject eql_p(ThreadContext context, IRubyObject other) {
@@ -596,7 +579,7 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
         return Double.doubleToLongBits(val1) == Double.doubleToLongBits(val2);
     }
 
-    // MRI: flo_hash
+    @CRuby(value = "flo_hash", file = "numeric.c")
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
         return asFixnum(context, longHashCode());
@@ -666,18 +649,14 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
         return isZero(context) ? context.nil : this;
     }
 
-    /**
-     * MRI: flo_truncate
-     */
+    @CRuby(value = "flo_truncate", file = "numeric.c")
     @JRubyMethod(name = {"truncate", "to_i", "to_int"})
     @Override
     public IRubyObject truncate(ThreadContext context) {
         return toInteger(context);
     }
 
-    /**
-     * MRI: flo_truncate
-     */
+    @CRuby(value = "flo_truncate", file = "numeric.c")
     @JRubyMethod(name = {"truncate", "to_i", "to_int"})
     public IRubyObject truncate(ThreadContext context, IRubyObject n) {
         if (value > 0.0) return floor(context, n);
@@ -720,9 +699,7 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
         return f_mul(context, rf, f_expt(context, asFixnum(context, 2), rn));
     }
 
-    /** float_rationalize
-     *
-     */
+    @CRuby(value = "float_rationalize", file = "rational.c")
     @JRubyMethod(name = "rationalize", optional = 1, checkArity = false)
     public IRubyObject rationalize(ThreadContext context, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 1);
@@ -770,18 +747,14 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
         return RubyRational.newRationalRaw(runtime, ans[0], ans[1]);
     }
 
-    /**
-     * MRI: flo_floor
-     */
+    @CRuby(value = "flo_floor", file = "numeric.c")
     @Override
     @JRubyMethod(name = "floor")
     public IRubyObject floor(ThreadContext context) {
         return asInteger(context, Math.floor(value));
     }
 
-    /**
-     * MRI: flo_floor
-     */
+    @CRuby(value = "flo_floor", file = "numeric.c")
     @JRubyMethod(name = "floor")
     public IRubyObject floor(ThreadContext context, IRubyObject digits) {
         int ndigits = toInt(context, digits);
@@ -808,7 +781,7 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
         }
     }
 
-     // MRI: float_round_overflow
+     @CRuby(value = "float_round_overflow", file = "numeric.c")
      private static boolean floatRoundOverflow(int ndigits, long[] binexp) {
 
         /* Let `exp` be such that `number` is written as:"0.#{digits}e#{exp}",
@@ -832,23 +805,19 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
         return ndigits >= FLOAT_DIG - (binexp[0] > 0 ? binexp[0] / 4 : binexp[0] / 3 - 1);
     }
 
-    // MRI: float_round_underflow
+    @CRuby(value = "float_round_underflow", file = "numeric.c")
     private static boolean floatRoundUnderflow(int ndigits, long[] binexp) {
         return ndigits < - (binexp[0] > 0 ? binexp[0] / 3 + 1 : binexp[0] / 4);
     }
 
-    /**
-     * MRI: flo_ceil
-     */
+    @CRuby(value = "flo_ceil", file = "numeric.c")
     @JRubyMethod(name = "ceil")
     @Override
     public IRubyObject ceil(ThreadContext context) {
         return asInteger(context, Math.ceil(value));
     }
 
-    /**
-     * MRI: flo_ceil
-     */
+    @CRuby(value = "flo_ceil", file = "numeric.c")
     @JRubyMethod(name = "ceil")
     public IRubyObject ceil(ThreadContext context, IRubyObject digits) {
         int ndigits = toInt(context, digits);
@@ -872,18 +841,14 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
         }
     }
 
-    /**
-     * MRI: flo_round
-     */
+    @CRuby(value = "flo_round", file = "numeric.c")
     @Override
     @JRubyMethod(name = "round")
     public IRubyObject round(ThreadContext context) {
         return roundShared(context, 0, RoundingMode.HALF_UP);
     }
 
-    /**
-     * MRI: flo_round
-     */
+    @CRuby(value = "flo_round", file = "numeric.c")
     @JRubyMethod(name = "round")
     public IRubyObject round(ThreadContext context, IRubyObject arg0) {
         IRubyObject opts = ArgsUtil.getOptionsArg(context, arg0);  // options (only "half" supported right now)
@@ -892,9 +857,7 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
         return roundShared(context, digits, getRoundingMode(context, opts));
     }
 
-    /**
-     * MRI: flo_round
-     */
+    @CRuby(value = "flo_round", file = "numeric.c")
     @JRubyMethod(name = "round")
     public IRubyObject round(ThreadContext context, IRubyObject _digits, IRubyObject _opts) {
         IRubyObject opts = ArgsUtil.getOptionsArg(context, _opts);  // options (only "half" supported right now)
@@ -1034,17 +997,13 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
         return us + x;
     }
 
-    /** rb_flo_round_by_rational
-     *
-     */
+    @CRuby(value = "rb_flo_round_by_rational", file = "rational.c")
     private IRubyObject floatRoundByRational(ThreadContext context, IRubyObject ndigits, RoundingMode mode) {
         IRubyObject v = ((RubyRational)to_r(context)).roundCommon(context, ndigits, mode);
         return ((RubyRational)v).to_f(context);
     }
 
-    /** flo_is_nan_p
-     *
-     */
+    @CRuby(value = "flo_is_nan_p", file = "numeric.c")
     @JRubyMethod(name = "nan?")
     public IRubyObject nan_p(ThreadContext context) {
         return asBoolean(context, isNaN());

@@ -30,6 +30,7 @@
 
 package org.jruby;
 
+import org.jruby.anno.CRuby;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
@@ -95,10 +96,10 @@ public final class MetaClass extends RubyClass {
     }
 
     /**
-     * rb_make_metaclass
      * @param superClass
      * @return singleton-class for this (singleton) class
      */
+    @CRuby(value = "rb_make_metaclass", file = "class.c")
     @Override
     public RubyClass makeMetaClass(ThreadContext context, RubyClass superClass) {
         MetaClass klass = new MetaClass(context.runtime, getSuperSingletonMetaClass(context), this);

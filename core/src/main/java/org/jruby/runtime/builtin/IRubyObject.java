@@ -44,6 +44,7 @@ import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
 import org.jruby.RubyInteger;
 import org.jruby.RubyString;
+import org.jruby.anno.CRuby;
 import org.jruby.api.JRubyAPI;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.JavaSites;
@@ -177,9 +178,10 @@ public interface IRubyObject {
      */
     String asJavaString();
     
-    /** rb_obj_as_string
+    /**
      * @return string representation
      */
+    @CRuby(value = "rb_obj_as_string", file = "string.c")
     RubyString asString();
 
     /**

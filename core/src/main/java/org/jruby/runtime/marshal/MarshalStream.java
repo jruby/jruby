@@ -56,6 +56,7 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
+import org.jruby.anno.CRuby;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.ThreadContext;
@@ -486,9 +487,7 @@ public class MarshalStream extends FilterOutputStream {
         return false;
     }
 
-    /** w_extended
-     * 
-     */
+    @CRuby(value = "w_extended", file = "marshal.c")
     private RubyClass dumpExtended(RubyClass type) throws IOException {
         var context = type.getRuntime().getCurrentContext();
         if (type.isSingleton()) {

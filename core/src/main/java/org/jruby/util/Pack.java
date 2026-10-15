@@ -49,6 +49,7 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.*;
+import org.jruby.anno.CRuby;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -1660,9 +1661,7 @@ public class Pack {
         }
     }
 
-    /** rb_uv_to_utf8
-     *
-     */
+    @CRuby(value = "rb_uv_to_utf8", file = "pack.c")
     public static int utf8Decode(Ruby runtime, byte[]to, int p, int code) {
         if (code <= 0x7f) {
             to[p] = (byte)code;
@@ -1704,8 +1703,7 @@ public class Pack {
         return 6;
     }
 
-    /** utf8_to_uv
-     */
+    @CRuby(value = "utf8_to_uv", file = "pack.c")
     private static int utf8Decode(ByteBuffer buffer) {
         int c = buffer.get() & 0xFF;
         int uv = c;

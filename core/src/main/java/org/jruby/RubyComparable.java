@@ -34,6 +34,7 @@
 
 package org.jruby;
 
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.runtime.CallSite;
@@ -59,9 +60,7 @@ public class RubyComparable {
      *  ================
      */
 
-    /** rb_cmpint
-     *
-     */
+    @CRuby("rb_cmpint")
     public static int cmpint(ThreadContext context, CallSite op_gt, CallSite op_lt, IRubyObject val, IRubyObject a, IRubyObject b) {
         if (val == context.nil) cmperr(context, a, b);
         if (val instanceof RubyFixnum fixnum) return Integer.compare(toInt(context, fixnum), 0);
@@ -95,9 +94,7 @@ public class RubyComparable {
         return cmperr(((RubyBasicObject) recv).getCurrentContext(), recv, other);
     }
 
-    /** rb_cmperr
-     *
-     */
+    @CRuby(value = "rb_cmperr", file = "compar.c")
     public static IRubyObject cmperr(ThreadContext context, IRubyObject recv, IRubyObject other) {
         IRubyObject target = other.isImmediate() || !(other.isNil() || other.isTrue() || other == context.fals) ?
                 other.inspect(context) : other.getType();
@@ -105,9 +102,7 @@ public class RubyComparable {
         throw argumentError(context, "comparison of " + recv.getType() + " with " + target + " failed");
     }
 
-    /** rb_invcmp
-     *
-     */
+    @CRuby(value = "rb_invcmp", file = "compar.c")
     public static IRubyObject invcmp(final ThreadContext context, final IRubyObject recv, final IRubyObject other) {
         return invcmp(context, RubyComparable::invcmpRecursive, recv, other);
     }
@@ -117,9 +112,7 @@ public class RubyComparable {
         return sites(context).op_cmp.call(context, other, other, recv);
     }
 
-    /** rb_invcmp
-     *
-     */
+    @CRuby(value = "rb_invcmp", file = "compar.c")
     public static IRubyObject invcmp(final ThreadContext context, ThreadContext.RecursiveFunctionEx<IRubyObject> func, IRubyObject recv, IRubyObject other) {
         var result = context.safeRecurse(func, recv, other, "<=>", true);
         return result.isNil() ? context.nil : asFixnum(context, -cmpint(context, result, recv, other));
@@ -151,10 +144,8 @@ public class RubyComparable {
         return asBoolean(context, cmpint(context, result, recv, other) == 0);
     }
 
-    /** cmp_gt
-     *
-     */
     // <=> may return nil in many circumstances, e.g. 3 <=> NaN
+    @CRuby(value = "cmp_gt", file = "compar.c")
     @JRubyMethod(name = ">")
     public static RubyBoolean op_gt(ThreadContext context, IRubyObject recv, IRubyObject other) {
         var result = sites(context).op_cmp.call(context, recv, recv, other);
@@ -164,9 +155,7 @@ public class RubyComparable {
         return asBoolean(context, cmpint(context, result, recv, other) > 0);
     }
 
-    /** cmp_ge
-     *
-     */
+    @CRuby(value = "cmp_ge", file = "compar.c")
     @JRubyMethod(name = ">=")
     public static RubyBoolean op_ge(ThreadContext context, IRubyObject recv, IRubyObject other) {
         var result = sites(context).op_cmp.call(context, recv, recv, other);
@@ -176,9 +165,7 @@ public class RubyComparable {
         return asBoolean(context, cmpint(context, result, recv, other) >= 0);
     }
 
-    /** cmp_lt
-     *
-     */
+    @CRuby(value = "cmp_lt", file = "compar.c")
     @JRubyMethod(name = "<")
     public static RubyBoolean op_lt(ThreadContext context, IRubyObject recv, IRubyObject other) {
         return op_lt(context, sites(context).op_cmp, recv, other);
@@ -192,9 +179,7 @@ public class RubyComparable {
         return asBoolean(context, cmpint(context, result, recv, other) < 0);
     }
 
-    /** cmp_le
-     *
-     */
+    @CRuby(value = "cmp_le", file = "compar.c")
     @JRubyMethod(name = "<=")
     public static RubyBoolean op_le(ThreadContext context, IRubyObject recv, IRubyObject other) {
         var result = sites(context).op_cmp.call(context, recv, recv, other);
@@ -204,9 +189,7 @@ public class RubyComparable {
         return asBoolean(context, cmpint(context, result, recv, other) <= 0);
     }
 
-    /** cmp_between
-     *
-     */
+    @CRuby(value = "cmp_between", file = "compar.c")
     @JRubyMethod(name = "between?")
     public static RubyBoolean between_p(ThreadContext context, IRubyObject recv, IRubyObject first, IRubyObject second) {
         return asBoolean(context, op_lt(context, recv, first).isFalse() && op_gt(context, recv, second).isFalse());

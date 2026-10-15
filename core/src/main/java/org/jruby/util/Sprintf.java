@@ -39,6 +39,7 @@ import org.jcodings.Encoding;
 import org.jcodings.exception.EncodingException;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.*;
+import org.jruby.anno.CRuby;
 import org.jruby.api.Warn;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.runtime.ThreadContext;
@@ -198,7 +199,7 @@ public class Sprintf {
         }
 
 
-        // MRI: GETARG
+        @CRuby(value = "GETARG", file = "sprintf.c")
         private IRubyObject getArg() {
             final IRubyObject nextObject = this.nextObject;
             if (nextObject != null) {
@@ -212,34 +213,35 @@ public class Sprintf {
             return getNextArg();
         }
 
-        // MRI: GETNEXTARG
+        @CRuby(value = "GETNEXTARG", file = "sprintf.c")
         private IRubyObject getNextArg() {
             checkNextArg();
             positionIndex = nextIndex++;
             return getNthArg(positionIndex);
         }
 
-        // MRI: GETPOSARG
+        @CRuby(value = "GETPOSARG", file = "sprintf.c")
         private IRubyObject getPositionArg(int index) {
             checkPositionArg(index);
             positionIndex = -1;
             return getNthArg(index);
         }
 
-        // MRI: check_next_arg
+        @CRuby(value = "check_next_arg", file = "sprintf.c")
         private void checkNextArg() {
             if (positionIndex == -1) raiseArgumentError("unnumbered(" + nextIndex + ") mixed with numbered");
             if (positionIndex == -2) raiseArgumentError("unnumbered(" + nextIndex + ") mixed with named");
         }
 
-        // MRI: check_pos_arg
+        @CRuby(value = "check_pos_arg", file = "sprintf.c")
         private void checkPositionArg(int nthArg) {
             if (positionIndex > 0) raiseArgumentError("numbered(" + nthArg + ") after unnumbered(" + positionIndex + ")");
             if (positionIndex == -2) raiseArgumentError("numbered(" + nthArg + ") after named");
             if (nthArg < 1) raiseArgumentError("invalid index - " + nthArg + "$");
         }
 
-        // MRI: check_name_arg, CHECKNAMEARG
+        @CRuby(value = "check_name_arg", file = "sprintf.c")
+        @CRuby(value = "CHECKNAMEARG", file = "sprintf.c")
         private void checkNameArg(ByteList name, char startDelim, char endDelim) {
             if (positionIndex > 0) raiseArgumentError("named" + startDelim + RubyString.newString(runtime, name) + endDelim + " after unnumbered(" + positionIndex + ")");
             if (positionIndex == -1) raiseArgumentError("named" + startDelim + RubyString.newString(runtime, name) + endDelim + " after numbered");
