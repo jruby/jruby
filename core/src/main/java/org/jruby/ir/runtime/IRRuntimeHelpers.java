@@ -444,7 +444,7 @@ public class IRRuntimeHelpers {
     private static boolean isRubyExceptionHandled(ThreadContext context, IRubyObject excType, IRubyObject excObj) {
         // SSS FIXME: Should this check be "runtime.getModule().isInstance(excType)"??
         if (!(excType instanceof RubyModule)) {
-            throw context.runtime.newTypeError("class or module required for rescue clause. Found: " + excType);
+            throw typeError(context, "class or module required for rescue clause. Found: " + excType);
         }
 
         if (((RubyModule) excType).callMethod(context, "===", excObj).isTrue()) {
