@@ -113,7 +113,8 @@ public class SizedQueue extends Queue {
             try {
                 putLock.lockInterruptibly();
                 try {
-                    return asFixnum(context, takeLock.getWaitQueueLength(notEmpty) + putLock.getWaitQueueLength(notFull));
+                    return asFixnum(context, takeLock.getWaitQueueLength(notEmpty) + putLock.getWaitQueueLength(notFull)
+                            + schedulerTakersWaiting());
                 } finally {
                     putLock.unlock();
                 }
@@ -218,6 +219,7 @@ public class SizedQueue extends Queue {
             putLock.unlock();
         }
         if (c == 0) signalNotEmpty();
+        unblockSchedulerTaker();
         return true;
     }
 
@@ -262,6 +264,7 @@ public class SizedQueue extends Queue {
             putLock.unlock();
         }
         if (c == 0) signalNotEmpty();
+        unblockSchedulerTaker();
         return true;
     }
 
