@@ -537,10 +537,16 @@ public class RubyDate extends RubyObject {
 
         long hour = normIntValue(context, h, 24);
         long min = normIntValue(context, m, 60);
-        long sec = normIntValue(context, s, 60);
+        final long[] rest = new long[] { 0, 1 };
+        long sec = RubyDateTime.getSecond(context, s, rest);
 
         if (valid_time_p(hour, min, sec)) {
-            return timeToDayFraction(context, (int) hour, (int) min, (int) sec);
+            RubyNumeric fr = timeToDayFraction(context, (int) hour, (int) min, (int) sec);
+            if (rest[0] != 0) {
+                RubyRational subsec = (RubyRational) RubyRational.newRationalCanonicalize(context, rest[0], rest[1]);
+                fr = (RubyNumeric) fr.op_plus(context, subsec.op_div(context, asFixnum(context, DAY_IN_SECONDS)));
+            }
+            return fr;
         }
         return context.nil;
     }
