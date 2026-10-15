@@ -144,6 +144,8 @@ public class RubyBigDecimal extends RubyNumeric implements SimpleHash {
                 defineConstants(context, RubyBigDecimal.class).
                 defineConstant(context, "VERSION", newSharedString(context, VERSION));
 
+        bigDecimal.singletonClass(context).undefMethods(context, "new");
+
         kernelModule(context).defineMethods(context, BigDecimalKernelMethods.class);
 
         bigDecimal.setInternalModuleVariable("vpPrecLimit", asFixnum(context, 0));
