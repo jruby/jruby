@@ -53,6 +53,7 @@ import org.jcodings.specific.UTF32BEEncoding;
 import org.jcodings.specific.UTF32LEEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.unicode.UnicodeEncoding;
+import org.jcodings.util.IntHash;
 import org.joni.Matcher;
 import org.joni.Option;
 import org.joni.Regex;
@@ -100,7 +101,6 @@ import org.jruby.util.io.RubyInputStream;
 
 import java.nio.charset.Charset;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.function.Function;
 
@@ -6288,11 +6288,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         if (value.getRealSize() == 0 || pairs.isEmpty()) return context.nil;
 
-        final Encoding[] encHolder = { value.getEncoding() };
-        final int[] crHolder = { scanForCodeRange() };
-        final RubyString[] keys = new RubyString[pairs.size()];
-        final RubyString[] repls = new RubyString[pairs.size()];
-        final int[] count = { 0 };
+        // the negotiated encoding and code range, folded over every key and value
+        final TrPairsState state = new TrPairsState(value.getEncoding(), scanForCodeRange(), pairs.size());
 
         // to_str may remove entries from the hash, so count what we actually collect
         pairs.visitAll(context, (ctx, self, key, val, index) -> {
@@ -6303,40 +6300,65 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 throw argumentError(ctx, "keys must be of size 1");
             }
 
-            encHolder[0] = checkMultiStr(ctx, encHolder[0], crHolder, search);
-            encHolder[0] = checkMultiStr(ctx, encHolder[0], crHolder, repl);
+            state.enc = checkMultiStr(ctx, state.enc, state, search);
+            state.enc = checkMultiStr(ctx, state.enc, state, repl);
 
-            keys[count[0]] = search;
-            repls[count[0]++] = repl;
+            state.keys[state.count] = search;
+            state.repls[state.count++] = repl;
         });
 
-        final Encoding e1 = encHolder[0];
-        final HashMap<Integer, RubyString> table = new HashMap<>(count[0] * 2);
-        for (int i = 0; i < count[0]; i++) {
-            ByteList k = keys[i].getByteList();
-            table.put(e1.mbcToCode(k.unsafeBytes(), k.begin(), k.begin() + k.realSize()), repls[i]);
+        final Encoding e1 = state.enc;
+
+        // like trTransHelper: a direct table for codepoints below StringSupport.TRANS_SIZE, an IntHash above
+        final RubyString[] low = new RubyString[StringSupport.TRANS_SIZE];
+        IntHash<RubyString> high = null;
+        for (int i = 0; i < state.count; i++) {
+            ByteList k = state.keys[i].getByteList();
+            int c = e1.mbcToCode(k.unsafeBytes(), k.begin(), k.begin() + k.realSize());
+            if (c < 0) continue; // an invalid key can never match a character of a valid string
+            if (c < StringSupport.TRANS_SIZE) {
+                low[c] = state.repls[i];
+            } else {
+                if (high == null) high = new IntHash<>();
+                high.put(c, state.repls[i]);
+            }
         }
 
         final byte[] sbytes = value.unsafeBytes();
-        int s = value.begin();
-        final int send = s + value.realSize();
-        final ByteList out = new ByteList(value.realSize());
-        boolean modified = false;
+        final int begin = value.begin();
+        final int send = begin + value.realSize();
+        final boolean asciiCompatible = e1.isAsciiCompatible();
+        ByteList out = null;
+        int checkpoint = begin;
+        int s = begin;
 
         while (s < send) {
-            int clen = StringSupport.length(e1, sbytes, s, send);
+            int clen;
+            RubyString repl;
 
-            RubyString repl = table.get(e1.mbcToCode(sbytes, s, send));
-            if (repl == null) {
-                out.append(sbytes, s, clen);
+            int b = sbytes[s] & 0xff;
+            if (b < 0x80 && asciiCompatible) {
+                clen = 1;
+                repl = low[b];
             } else {
+                clen = StringSupport.length(e1, sbytes, s, send);
+                int c = e1.mbcToCode(sbytes, s, send);
+                repl = c < 0 ? null : c < StringSupport.TRANS_SIZE ? low[c] : high == null ? null : high.get(c);
+            }
+
+            if (repl != null) {
+                // copy the untouched run since the last replacement, then the replacement itself
+                if (out == null) out = new ByteList(value.realSize() + 16);
+                out.append(sbytes, checkpoint, s - checkpoint);
                 out.append(repl.getByteList());
-                modified = true;
+                checkpoint = s + clen;
             }
             s += clen;
         }
 
-        if (!modified) return context.nil;
+        if (out == null) return context.nil;
+
+        out.append(sbytes, checkpoint, send - checkpoint);
 
         value.setUnsafeBytes(out.unsafeBytes());
         value.setBegin(0);
@@ -6346,15 +6368,30 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return this;
     }
 
+    private static final class TrPairsState {
+        Encoding enc;
+        int cr;
+        final RubyString[] keys;
+        final RubyString[] repls;
+        int count;
+
+        TrPairsState(Encoding enc, int cr, int capacity) {
+            this.enc = enc;
+            this.cr = cr;
+            this.keys = new RubyString[capacity];
+            this.repls = new RubyString[capacity];
+        }
+    }
+
     // MRI: rb_enc_check_multi_str
-    private static Encoding checkMultiStr(ThreadContext context, Encoding enc1, int[] cr, RubyString str2) {
+    private static Encoding checkMultiStr(ThreadContext context, Encoding enc1, TrPairsState state, RubyString str2) {
         if (str2.size() == 0) return enc1;
 
         Encoding enc2 = str2.getEncoding();
-        int cr1 = cr[0];
+        int cr1 = state.cr;
 
         if (enc1 == enc2) {
-            if (cr1 == CR_7BIT) cr[0] = str2.scanForCodeRange();
+            if (cr1 == CR_7BIT) state.cr = str2.scanForCodeRange();
             return enc1;
         }
 
@@ -6362,7 +6399,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             if (enc2 == USASCIIEncoding.INSTANCE || str2.scanForCodeRange() == CR_7BIT) return enc1;
 
             if (enc1 == USASCIIEncoding.INSTANCE || cr1 == CR_7BIT) {
-                cr[0] = str2.scanForCodeRange();
+                state.cr = str2.scanForCodeRange();
                 return enc2;
             }
         }
