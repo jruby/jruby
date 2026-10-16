@@ -3,6 +3,7 @@ require 'test/jruby/test_helper'
 require 'socket'
 require 'thread'
 require 'ipaddr'
+require 'tmpdir'
 
 class SocketTest < Test::Unit::TestCase
   include TestHelper
@@ -337,6 +338,28 @@ class SocketTest < Test::Unit::TestCase
     c.close if c
   end
 
+  # IO.select in another thread leaves the channel nonblocking, where ServerSocket#accept used to raise EAGAIN
+  def test_server_socket_accept_waits_while_another_thread_selects_on_it
+    server = ServerSocket.new(:INET, :STREAM)
+    server.bind(Socket.sockaddr_in(0, "127.0.0.1"), 5)
+    selector = Thread.new { IO.select([server]) }
+    Thread.pass until selector.status == "sleep"
+    acceptor = Thread.new { server.accept }
+    Thread.pass until acceptor.status == "sleep" || !acceptor.alive?
+
+    client = TCPSocket.new("127.0.0.1", server.local_address.ip_port)
+
+    assert acceptor.join(10), "accept did not return"
+    socket, addrinfo = acceptor.value
+    assert_instance_of Socket, socket
+    assert_equal client.local_address.ip_port, addrinfo.ip_port
+    assert selector.join(10), "IO.select did not return"
+  ensure
+    socket&.close
+    client&.close
+    server&.close
+  end
+
 end
 
 
@@ -657,6 +680,91 @@ class UNIXSocketTests < Test::Unit::TestCase
         assert_equal :wait_readable, s1.recv_nonblock(5, exception: false)
       end
 
+      # accept_nonblock in another thread can take the connection this thread's select reported while the channel
+      # is nonblocking, which made UNIXServer#accept return a socket without a connection
+      def test_unix_server_accept_waits_again_when_another_thread_takes_the_connection
+        Dir.mktmpdir do |dir|
+          path = File.join(dir, "accept.sock")
+          server = UNIXServer.new(path)
+          accepted = Queue.new
+          stolen = Queue.new
+          stop = false
+
+          acceptor = Thread.new do
+            accepted << server.accept until stop
+          end
+          # woken by the same connections as the acceptor, like an event loop
+          thief = Thread.new do
+            until stop
+              IO.select([server], nil, nil, 0.1)
+              socket = server.accept_nonblock(exception: false)
+              stolen << socket unless socket == :wait_readable
+            end
+          end
+          Thread.pass until acceptor.status == "sleep"
+
+          # spaced out, so both threads are waiting when each connection arrives; keep connecting until the thief
+          # took a few, which is when the race happens
+          clients = []
+          until stolen.size >= 3 || clients.size >= 300
+            clients << UNIXSocket.new(path)
+            sleep 0.002
+          end
+          deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 10
+          Thread.pass until accepted.size + stolen.size >= clients.size || Process.clock_gettime(Process::CLOCK_MONOTONIC) > deadline
+
+          sockets = Array.new(accepted.size) { accepted.pop }
+          unconnected = sockets.count do |socket|
+            socket.remote_address
+            false
+          rescue
+            true
+          end
+          assert_equal 0, unconnected
+          assert_equal clients.size, sockets.size + stolen.size
+          omit "the thief took no connection, so the race was not exercised" if stolen.empty?
+        ensure
+          # the acceptor needs one more connection to see stop; closing the server under it would race the close
+          stop = true
+          stop_deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 10
+          while [acceptor, thief].any? { |thread| thread&.alive? } && Process.clock_gettime(Process::CLOCK_MONOTONIC) < stop_deadline
+            (clients ||= []) << UNIXSocket.new(path)
+            sleep 0.01
+          end
+          [*clients, *sockets].each { |io| io.close rescue nil }
+          accepted.size.times { accepted.pop.close rescue nil } if accepted
+          stolen.size.times { stolen.pop.close rescue nil } if stolen
+          server&.close
+        end
+      end
+
+      # sysaccept hands the descriptor to the caller, so collecting the UNIXSocket it was accepted into must not close it
+      def test_unix_server_sysaccept_descriptor_outlives_the_accepted_socket_object
+        Dir.mktmpdir do |dir|
+          path = File.join(dir, "sysaccept.sock")
+          server = UNIXServer.new(path)
+          clients = 10.times.map { UNIXSocket.new(path) }
+          # created in other threads, so no frame of this one keeps those objects reachable
+          fds = Thread.new { clients.map { server.sysaccept } }.value
+          dropped_fds = Thread.new { UNIXSocket.pair.map(&:fileno) }.value
+          fileno_util = JRuby.runtime.fileno_util
+          registered = -> fd { fileno_util.get_wrapper_from_fileno(fd) }
+
+          # collect until the finalizers closed the dropped pair, which shows the collection reached unreferenced sockets
+          deadline = Time.now + 5
+          (java.lang.System.gc; sleep 0.01) while dropped_fds.any?(&registered) && Time.now < deadline
+          assert dropped_fds.none?(&registered), "unreferenced sockets were not finalized, so this test proves nothing"
+
+          sockets = fds.map { |fd| Socket.for_fd(fd) }
+          clients.each_with_index { |client, i| client.write(i.to_s) }
+          assert_equal clients.size.times.map(&:to_s), sockets.map { |socket| socket.read(1) }
+        ensure
+          sockets&.each(&:close)
+          clients&.each(&:close)
+          server&.close
+        end
+      end
+
     end
   private
 
@@ -763,4 +871,246 @@ class ServerTest < Test::Unit::TestCase
     server.close rescue nil
     client.close rescue nil
   end if RUBY_VERSION >= '1.9'
+end
+
+# accept and sysaccept wait through Fiber::Scheduler#io_wait instead of blocking the fiber's thread
+class AcceptFiberSchedulerTest < Test::Unit::TestCase
+  include TestHelper
+
+  TIMEOUT = 10
+
+  # Records each io_wait and fiber_interrupt and parks the fiber until the test resumes it with what the hook
+  # returns, like FiberSpecs::LoggingScheduler. io_wait also records whether the nonblocking accept attempt put the
+  # channel back in blocking mode.
+  class WaitScheduler
+    attr_reader :io_waits, :interrupts
+
+    def initialize
+      @io_waits = []
+      @interrupts = []
+    end
+
+    def io_wait(io, events, timeout)
+      @io_waits << [io, events, timeout, io.to_channel.blocking?]
+      Fiber.yield
+    end
+
+    def fiber_interrupt(fiber, exception)
+      @interrupts << [fiber, exception]
+      Fiber.yield
+    end
+
+    # required by Fiber.set_scheduler, unused by these tests
+    def block(blocker, timeout = nil)
+      Fiber.yield
+    end
+
+    def unblock(blocker, fiber)
+    end
+
+    def kernel_sleep(duration = nil)
+      Fiber.yield
+    end
+  end
+
+  def test_server_socket_accept_takes_a_pending_connection_without_io_wait
+    server = new_server_socket
+    client = TCPSocket.new("127.0.0.1", server.local_address.ip_port)
+    IO.select([server])
+    accepted = nil
+
+    scheduler = run_scheduled do
+      accepted = Fiber.new(blocking: false) { server.accept }.resume
+    end
+
+    assert_instance_of Socket, accepted&.first
+    assert_empty scheduler.io_waits
+  ensure
+    accepted&.first&.close
+    client&.close
+    server&.close
+  end
+
+  def test_server_socket_accept_waits_again_when_io_wait_returns_without_a_connection
+    server = new_server_socket
+    accepted = client = nil
+
+    scheduler = run_scheduled do
+      acceptor = Fiber.new(blocking: false) { server.accept }
+      acceptor.resume
+      acceptor.resume(IO::READABLE)
+      client = TCPSocket.new("127.0.0.1", server.local_address.ip_port)
+      IO.select([server])
+      accepted = acceptor.resume(IO::READABLE)
+    end
+
+    assert_instance_of Socket, accepted&.first
+    assert_equal 2, scheduler.io_waits.size
+  ensure
+    accepted&.first&.close
+    client&.close
+    server&.close
+  end
+
+  def test_server_socket_accept_raises_timeout_error_when_io_wait_returns_false
+    server = new_server_socket
+
+    run_scheduled do
+      acceptor = Fiber.new(blocking: false) { server.accept }
+      acceptor.resume
+      error = assert_raises(IO::TimeoutError) { acceptor.resume(false) }
+      assert_equal "Timed out waiting for IO to become readable!", error.message
+    end
+  ensure
+    server&.close
+  end
+
+  def test_server_socket_accept_raises_ioerror_when_another_fiber_closes_the_server
+    server = new_server_socket
+
+    run_scheduled do |scheduler|
+      acceptor = Fiber.new(blocking: false) { server.accept }
+      acceptor.resume
+      closer = Fiber.new(blocking: false) { server.close }
+      closer.resume
+
+      # deliver the interrupt as a scheduler would, then let close finish
+      fiber, interrupt = scheduler.interrupts.last
+      assert_same acceptor, fiber
+      error = assert_raises(IOError) { acceptor.raise(interrupt) }
+      assert_equal "stream closed in another thread", error.message
+      closer.resume
+    end
+
+    assert server.closed?
+  ensure
+    server&.close
+  end
+
+  def test_server_socket_accept_does_not_call_the_scheduler_from_a_blocking_fiber
+    server = new_server_socket
+    accepted = connector = nil
+
+    scheduler = run_scheduled do
+      # a blocking ServerSocket#accept does not mark the thread as sleeping, so the client waits a little instead
+      connector = Thread.new do
+        sleep 0.1
+        TCPSocket.new("127.0.0.1", server.local_address.ip_port)
+      end
+      accepted = server.accept
+    end
+
+    assert_instance_of Socket, accepted&.first
+    assert_empty scheduler.io_waits
+  ensure
+    accepted&.first&.close
+    connector&.value&.close
+    server&.close
+  end
+
+  def test_server_socket_accept_lets_other_fibers_run_while_it_waits
+    server = new_server_socket
+    client_port = nil
+    connect = -> { TCPSocket.new("127.0.0.1", server.local_address.ip_port).tap { |client| client_port = client.local_address.ip_port } }
+    accepted = assert_accept_lets_other_fibers_run(server, connect) { server.accept }
+
+    socket, addrinfo = accepted
+    assert_instance_of Socket, socket
+    assert_instance_of Addrinfo, addrinfo
+    assert_equal client_port, addrinfo.ip_port
+  ensure
+    accepted&.first&.close
+    server&.close
+  end
+
+  def test_tcp_server_accept_lets_other_fibers_run_while_it_waits
+    server = TCPServer.new("127.0.0.1", 0)
+    accepted = assert_accept_lets_other_fibers_run(server, -> { TCPSocket.new("127.0.0.1", server.local_address.ip_port) }) { server.accept }
+
+    assert_instance_of TCPSocket, accepted
+  ensure
+    accepted&.close
+    server&.close
+  end
+
+  def test_tcp_server_sysaccept_lets_other_fibers_run_while_it_waits
+    server = TCPServer.new("127.0.0.1", 0)
+    fd = assert_accept_lets_other_fibers_run(server, -> { TCPSocket.new("127.0.0.1", server.local_address.ip_port) }) { server.sysaccept }
+
+    assert_kind_of Integer, fd
+  ensure
+    IO.for_fd(fd).close if fd.is_a?(Integer)
+    server&.close
+  end
+
+  unless WINDOWS
+    def test_unix_server_accept_lets_other_fibers_run_while_it_waits
+      Dir.mktmpdir do |dir|
+        path = File.join(dir, "accept.sock")
+        server = UNIXServer.new(path)
+        accepted = assert_accept_lets_other_fibers_run(server, -> { UNIXSocket.new(path) }) { server.accept }
+
+        assert_instance_of UNIXSocket, accepted
+      ensure
+        accepted&.close
+        server&.close
+      end
+    end
+
+    def test_unix_server_sysaccept_lets_other_fibers_run_while_it_waits
+      Dir.mktmpdir do |dir|
+        path = File.join(dir, "sysaccept.sock")
+        server = UNIXServer.new(path)
+        fd = assert_accept_lets_other_fibers_run(server, -> { UNIXSocket.new(path) }) { server.sysaccept }
+
+        assert_kind_of Integer, fd
+      ensure
+        Socket.for_fd(fd).close if fd.is_a?(Integer)
+        server&.close
+      end
+    end
+  end
+
+  private
+
+  def new_server_socket
+    server = ServerSocket.new(:INET, :STREAM)
+    server.bind(Socket.sockaddr_in(0, "127.0.0.1"), 5)
+    server
+  end
+
+  # Runs the block in a new thread with a WaitScheduler, failing instead of hanging if accept blocks that thread or
+  # waits on a lock a parked fiber holds. A stuck thread is not killed, since Thread#kill waits on a thread blocked on
+  # a Java monitor; closing the server in the test's ensure releases it.
+  def run_scheduled
+    scheduler = WaitScheduler.new
+    thread = Thread.new do
+      Thread.current.report_on_exception = false
+      Fiber.set_scheduler(scheduler)
+      yield scheduler
+    end
+
+    assert thread.join(TIMEOUT), "the scheduler's thread did not finish within #{TIMEOUT}s"
+    scheduler
+  end
+
+  # While one fiber waits to accept, a sibling fiber must be able to take the server's blocking lock (through
+  # accept_nonblock), and the nonblocking accept attempt must have put the channel back in blocking mode.
+  def assert_accept_lets_other_fibers_run(server, connect, &accept)
+    accepted = client = nil
+
+    scheduler = run_scheduled do
+      acceptor = Fiber.new(blocking: false, &accept)
+      acceptor.resume
+      assert_equal :wait_readable, Fiber.new(blocking: false) { server.accept_nonblock(exception: false) }.resume
+      client = connect.call
+      IO.select([server])
+      accepted = acceptor.resume(IO::READABLE)
+    end
+
+    assert_equal [[server, IO::READABLE, nil, true]], scheduler.io_waits
+    accepted
+  ensure
+    client&.close
+  end
 end
