@@ -41,6 +41,7 @@ import jnr.ffi.byref.IntByReference;
 import jnr.posix.Timeval;
 import jnr.posix.POSIX;
 import jnr.unixsocket.UnixSocketAddress;
+import org.jruby.FiberScheduler;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
@@ -965,6 +966,23 @@ public class RubyBasicSocket extends RubyIO {
 
         // see rsock_init_sock in MRI; sockets are initialized to binary
         setAscii8bitBinmode();
+    }
+
+    /**
+     * Wait through the fiber scheduler for a connection, after a nonblocking accept found none pending.
+     * Call it without holding any lock on this server, since io_wait runs sibling fibers that may accept on
+     * or close it. Returns when the caller should try accepting again.
+     */
+    // MRI: rsock_s_accept on EAGAIN, which waits with rb_io_maybe_wait_readable and RUBY_IO_TIMEOUT_DEFAULT
+    protected void schedulerWaitAcceptable(ThreadContext context, IRubyObject scheduler) {
+        IRubyObject result = FiberScheduler.ioWaitReadable(context, scheduler, this);
+
+        if (result == context.fals) {
+            throw RubyIOTimeoutError.newIOTimeoutError(context.runtime, "Timed out waiting for IO to become readable!").toThrowable();
+        }
+
+        // no events ready, so MRI gives up with the EAGAIN it got from accept(2)
+        if (result.isNil() || toInt(context, result) == 0) throw context.runtime.newErrnoFromErrno(Errno.EAGAIN, "accept(2)");
     }
 
     private Channel getOpenChannel() {

@@ -32,6 +32,7 @@ package org.jruby.ext.socket;
 import jnr.unixsocket.UnixServerSocketChannel;
 import jnr.unixsocket.UnixSocketAddress;
 import jnr.unixsocket.UnixSocketChannel;
+import org.jruby.FiberScheduler;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.anno.JRubyClass;
@@ -73,6 +74,9 @@ public class RubyUNIXServer extends RubyUNIXSocket {
 
     @JRubyMethod
     public IRubyObject accept(ThreadContext context) {
+        IRubyObject scheduler = FiberScheduler.current(context);
+        if (scheduler != null) return schedulerAccept(context, scheduler);
+
         try {
 
             while (true) { // select loop to allow interrupting
@@ -84,6 +88,8 @@ public class RubyUNIXServer extends RubyUNIXSocket {
 
                 } else {
                     UnixSocketChannel socketChannel = asUnixServer().accept();
+                    // null when another thread or fiber has the channel nonblocking and took the connection
+                    if (socketChannel == null) continue;
 
                     RubyUNIXSocket sock = (RubyUNIXSocket)(Helpers.invoke(context, Access.getClass(context, "UNIXSocket"), "allocate"));
 
@@ -95,6 +101,17 @@ public class RubyUNIXServer extends RubyUNIXSocket {
 
         } catch (IOException ioe) {
             throw context.runtime.newIOErrorFromException(ioe);
+        }
+    }
+
+    // MRI: rsock_s_accept, which retries a nonblocking accept(2) whenever io_wait reports the server readable
+    private IRubyObject schedulerAccept(ThreadContext context, IRubyObject scheduler) {
+        while (true) {
+            // a UNIXSocket, or :wait_readable with the channel's blocking lock already released
+            IRubyObject sock = accept_nonblock(context, context.runtime, false);
+            if (sock instanceof RubyUNIXSocket) return sock;
+
+            schedulerWaitAcceptable(context, scheduler);
         }
     }
 
@@ -155,6 +172,8 @@ public class RubyUNIXServer extends RubyUNIXSocket {
     @JRubyMethod
     public IRubyObject sysaccept(ThreadContext context) {
         RubyUNIXSocket socket = (RubyUNIXSocket) accept(context);
+        // the caller owns the descriptor now, so finalizing this unreferenced socket must not close it
+        socket.getOpenFile().setAutoclose(false);
         return asFixnum(context, ((UnixSocketChannel) socket.getChannel()).getFD());
     }
 
