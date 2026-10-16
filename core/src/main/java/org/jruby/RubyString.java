@@ -53,6 +53,7 @@ import org.jcodings.specific.UTF32BEEncoding;
 import org.jcodings.specific.UTF32LEEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.unicode.UnicodeEncoding;
+import org.jcodings.util.IntHash;
 import org.joni.Matcher;
 import org.joni.Option;
 import org.joni.Regex;
@@ -128,6 +129,7 @@ import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.encodingCompatibilityError;
 import static org.jruby.api.Error.indexError;
 import static org.jruby.api.Error.rangeError;
 import static org.jruby.api.Error.runtimeError;
@@ -6254,6 +6256,202 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @JRubyMethod(name = "tr!")
     public IRubyObject tr_bang(ThreadContext context, IRubyObject src, IRubyObject repl) {
         return trTrans(context, src, repl, false);
+    }
+
+    // MRI: rb_str_tr with a single pairs Hash
+    @JRubyMethod(name = "tr")
+    public IRubyObject tr(ThreadContext context, IRubyObject pairs) {
+        RubyString str = dupString(context, this);
+        str.trTransPairs(context, pairs);
+        return str;
+    }
+
+    // MRI: rb_str_tr_bang with a single pairs Hash
+    @JRubyMethod(name = "tr!")
+    public IRubyObject tr_bang(ThreadContext context, IRubyObject pairs) {
+        return trTransPairs(context, pairs);
+    }
+
+    /**
+     * MRI: tr_trans_pairs
+     *
+     * Implements the single Hash form of tr/tr!: every character that is a key of pairs is replaced by the
+     * associated value string, in a single left-to-right pass (replacements are never rescanned).
+     * Returns this if anything was replaced and nil otherwise.
+     */
+    private IRubyObject trTransPairs(ThreadContext context, IRubyObject pairsArg) {
+        // pairs is bound by the instanceof pattern and stays in scope below since the failing branch always throws
+        if (!(pairsArg instanceof RubyHash pairs)) {
+            // MRI: special constants are named by value in Check_Type messages
+            String name = pairsArg.isNil() ? "nil" :
+                    pairsArg == context.tru ? "true" :
+                    pairsArg == context.fals ? "false" :
+                    pairsArg.getMetaClass().getRealClass().getName(context);
+            throw typeError(context, "wrong argument type " + name + " (expected Hash)");
+        }
+
+        // same order of checks as MRI: broken string, then frozen, then the nothing-to-do shortcut
+        mustnotBroken(context);
+        modify();
+
+        if (value.getRealSize() == 0 || pairs.isEmpty()) return context.nil;
+
+        // phase 1: collect each key/value as a String and negotiate one encoding all of them (and self) can share.
+        // state.enc/state.cr start as self's and are folded over every key and value by checkMultiStr.
+        final TrPairsState state = new TrPairsState(value.getEncoding(), scanForCodeRange(), pairs.size());
+
+        // to_str may remove entries from the hash, so count what we actually collect. Use the visitAll overload that
+        // takes a state: like Hash#each it skips removed entries, while the lambda overload raises ConcurrencyError.
+        pairs.visitAll(context, new RubyHash.VisitorWithState<TrPairsState>() {
+            @Override
+            public void visit(ThreadContext ctx, RubyHash self, IRubyObject key, IRubyObject val, int index, TrPairsState state) {
+                RubyString search = key.convertToString();
+                RubyString repl = val.convertToString();
+
+                // a key must be exactly one character: bytesize 1, or a single multibyte character
+                if (search.size() != 1 && search.strLength() != 1) {
+                    throw argumentError(ctx, "keys must be of size 1");
+                }
+
+                state.enc = checkMultiStr(ctx, state.enc, state, search);
+                state.enc = checkMultiStr(ctx, state.enc, state, repl);
+
+                state.keys[state.count] = search;
+                state.repls[state.count++] = repl;
+            }
+        }, state);
+
+        // MRI: e1, the encoding every key, value and self agree on; the result is tagged with it
+        final Encoding e1 = state.enc;
+
+        // phase 2: index replacements by the codepoint of their key, like trTransHelper does: a direct table for
+        // codepoints below StringSupport.TRANS_SIZE and an IntHash above.
+        //
+        // Note low is allocated on every call. For a short receiver and just a few pairs that is likely the largest
+        // allocation here, so a small-pair fast path (e.g. up to ~4 pairs: compare each character against the key
+        // list directly and skip the tables) might be worthwhile if profiling shows it matters.
+        final RubyString[] low = new RubyString[StringSupport.TRANS_SIZE];
+        IntHash<RubyString> high = null;
+        for (int i = 0; i < state.count; i++) {
+            ByteList k = state.keys[i].getByteList();
+            int c = e1.mbcToCode(k.unsafeBytes(), k.begin(), k.begin() + k.realSize());
+            if (c < 0) continue; // an invalid key can never match a character of a valid string
+            if (c < StringSupport.TRANS_SIZE) {
+                low[c] = state.repls[i];
+            } else {
+                if (high == null) high = new IntHash<>();
+                high.put(c, state.repls[i]);
+            }
+        }
+
+        // phase 3: scan self's bytes and translate.
+        // sbytes[begin, send) is the input; send only bounds reading it. The result goes to a separate, growable
+        // buffer (out) because replacements may be longer or shorter than the characters they replace.
+        final byte[] sbytes = value.unsafeBytes();
+        final int begin = value.begin();
+        final int send = begin + value.realSize();
+        // false for e.g. UTF-16/32, where an ASCII character is not a single byte
+        final boolean asciiCompatible = e1.isAsciiCompatible();
+        // out stays null until the first replacement so that an unchanged string returns nil without any copying
+        ByteList out = null;
+        // everything in sbytes[checkpoint, s) is unchanged input that has not been copied to out yet
+        int checkpoint = begin;
+        // s is the offset of the current character
+        int s = begin;
+
+        while (s < send) {
+            int clen;
+            RubyString repl;
+
+            // bytes are signed in Java; & 0xff gives the unsigned 0-255 value so the ASCII test and table index are right
+            int b = sbytes[s] & 0xff;
+            if (b < 0x80 && asciiCompatible) {
+                // ASCII fast path: a single byte whose value is its own codepoint, no decoding needed
+                clen = 1;
+                repl = low[b];
+            } else {
+                // otherwise decode: clen is the character's byte length, c its codepoint
+                clen = StringSupport.length(e1, sbytes, s, send);
+                int c = e1.mbcToCode(sbytes, s, send);
+                repl = c < 0 ? null : c < StringSupport.TRANS_SIZE ? low[c] : high == null ? null : high.get(c);
+            }
+
+            if (repl != null) {
+                // copy the untouched run since the last replacement, then the replacement itself
+                if (out == null) out = new ByteList(value.realSize() + 16);
+                out.append(sbytes, checkpoint, s - checkpoint);
+                out.append(repl.getByteList());
+                checkpoint = s + clen;
+            }
+            s += clen;
+        }
+
+        if (out == null) return context.nil;
+
+        // copy the unchanged tail, then swap the new bytes in
+        out.append(sbytes, checkpoint, send - checkpoint);
+
+        value.setUnsafeBytes(out.unsafeBytes());
+        value.setBegin(0);
+        value.setRealSize(out.realSize());
+        setEncoding(e1);
+        clearCodeRange();
+        return this;
+    }
+
+    // Accumulator for trTransPairs: the pairs collected from the Hash plus the encoding negotiated so far.
+    private static final class TrPairsState {
+        // the encoding all strings seen so far can share; starts as the receiver's
+        Encoding enc;
+        // code range (7BIT/VALID) of the text seen so far; checkMultiStr uses it to tell whether the text is still
+        // pure ASCII and so may adopt another string's encoding. MRI passes this as an out-parameter (&cr).
+        int cr;
+        // parallel arrays of the collected key and replacement strings
+        final RubyString[] keys;
+        final RubyString[] repls;
+        // number of pairs stored in keys/repls; to_str can remove entries from the Hash while it is being visited,
+        // so this can end up smaller than the arrays' length
+        int count;
+
+        TrPairsState(Encoding enc, int cr, int capacity) {
+            this.enc = enc;
+            this.cr = cr;
+            this.keys = new RubyString[capacity];
+            this.repls = new RubyString[capacity];
+        }
+    }
+
+    /**
+     * MRI: rb_enc_check_multi_str
+     *
+     * Folds str2 (a key or value) into the encoding negotiated so far, returning the encoding to use from then on or
+     * raising Encoding::CompatibilityError if str2 cannot share one with the text seen so far (state.cr is updated
+     * when the encoding changes).
+     */
+    private static Encoding checkMultiStr(ThreadContext context, Encoding enc1, TrPairsState state, RubyString str2) {
+        // an empty string has no characters to conflict
+        if (str2.size() == 0) return enc1;
+
+        Encoding enc2 = str2.getEncoding();
+        int cr1 = state.cr;
+
+        if (enc1 == enc2) {
+            if (cr1 == CR_7BIT) state.cr = str2.scanForCodeRange();
+            return enc1;
+        }
+
+        if (enc1.isAsciiCompatible() && enc2.isAsciiCompatible()) {
+            // str2 is pure ASCII so it is valid in enc1 as it is
+            if (enc2 == USASCIIEncoding.INSTANCE || str2.scanForCodeRange() == CR_7BIT) return enc1;
+
+            // the text so far is pure ASCII so it can be reinterpreted in str2's encoding (e.g. US-ASCII + "é" is UTF-8)
+            if (enc1 == USASCIIEncoding.INSTANCE || cr1 == CR_7BIT) {
+                state.cr = str2.scanForCodeRange();
+                return enc2;
+            }
+        }
+
+        throw encodingCompatibilityError(context, "incompatible character encodings: " + enc1 + " and " + enc2);
     }
 
     private IRubyObject trTrans(ThreadContext context, IRubyObject src, IRubyObject repl, boolean sflag) {
