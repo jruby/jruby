@@ -6300,22 +6300,26 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         // state.enc/state.cr start as self's and are folded over every key and value by checkMultiStr.
         final TrPairsState state = new TrPairsState(value.getEncoding(), scanForCodeRange(), pairs.size());
 
-        // to_str may remove entries from the hash, so count what we actually collect
-        pairs.visitAll(context, (ctx, self, key, val, index) -> {
-            RubyString search = key.convertToString();
-            RubyString repl = val.convertToString();
+        // to_str may remove entries from the hash, so count what we actually collect. Use the visitAll overload that
+        // takes a state: like Hash#each it skips removed entries, while the lambda overload raises ConcurrencyError.
+        pairs.visitAll(context, new RubyHash.VisitorWithState<TrPairsState>() {
+            @Override
+            public void visit(ThreadContext ctx, RubyHash self, IRubyObject key, IRubyObject val, int index, TrPairsState state) {
+                RubyString search = key.convertToString();
+                RubyString repl = val.convertToString();
 
-            // a key must be exactly one character: bytesize 1, or a single multibyte character
-            if (search.size() != 1 && search.strLength() != 1) {
-                throw argumentError(ctx, "keys must be of size 1");
+                // a key must be exactly one character: bytesize 1, or a single multibyte character
+                if (search.size() != 1 && search.strLength() != 1) {
+                    throw argumentError(ctx, "keys must be of size 1");
+                }
+
+                state.enc = checkMultiStr(ctx, state.enc, state, search);
+                state.enc = checkMultiStr(ctx, state.enc, state, repl);
+
+                state.keys[state.count] = search;
+                state.repls[state.count++] = repl;
             }
-
-            state.enc = checkMultiStr(ctx, state.enc, state, search);
-            state.enc = checkMultiStr(ctx, state.enc, state, repl);
-
-            state.keys[state.count] = search;
-            state.repls[state.count++] = repl;
-        });
+        }, state);
 
         // MRI: e1, the encoding every key, value and self agree on; the result is tagged with it
         final Encoding e1 = state.enc;

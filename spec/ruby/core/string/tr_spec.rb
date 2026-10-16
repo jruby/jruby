@@ -183,6 +183,15 @@ describe "String#tr" do
         "abc".tr("\xFF".dup.force_encoding(Encoding::UTF_8) => "x").should == "abc"
       end
 
+      it "skips entries deleted from the Hash by a key's #to_str" do
+        pairs = {}
+        key = Object.new
+        key.define_singleton_method(:to_str) { pairs.delete("b"); "a" }
+        pairs[key] = "x"
+        pairs["b"] = "y"
+        "ab".tr(pairs).should == "xb"
+      end
+
       it "raises TypeError if the only argument is not a Hash" do
         -> { "hello".tr(1) }.should.raise(TypeError, "wrong argument type Integer (expected Hash)")
         -> { "hello".tr(nil) }.should.raise(TypeError, "wrong argument type nil (expected Hash)")
