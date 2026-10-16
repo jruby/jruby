@@ -393,4 +393,25 @@ class TestClass < Test::Unit::TestCase
     #assert_include methods, :bar
   end
 
+  module Issue9680Namespace
+    class Superclass
+      WrappedClass = Object
+
+      def self.[](wrapped_class)
+        subclass = Class.new(self)
+        subclass.const_set(:WrappedClass, wrapped_class)
+        subclass.set_temporary_name("#{name}[#{wrapped_class.name}]")
+        subclass
+      end
+    end
+
+    Subclass = Superclass[Object]
+  end
+
+  def test_set_temporary_name_preserves_nesting_on_constant_assignment
+    assert_equal "TestClass::Issue9680Namespace::Subclass", Issue9680Namespace::Subclass.to_s
+    assert_equal "TestClass::Issue9680Namespace::Subclass", Issue9680Namespace::Subclass.name
+  end
+
 end
+
