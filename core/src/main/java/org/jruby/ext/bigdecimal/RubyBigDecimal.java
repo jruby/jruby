@@ -497,7 +497,8 @@ public class RubyBigDecimal extends RubyNumeric implements SimpleHash {
             case BIGDECIMAL -> (RubyBigDecimal) value;
             case FIXNUM -> newInstance(context, Access.getClass(context, "BigDecimal"), (RubyFixnum) value, MathContext.UNLIMITED);
             case BIGNUM -> newInstance(context, Access.getClass(context, "BigDecimal"), (RubyBignum) value, MathContext.UNLIMITED);
-            case FLOAT -> newInstance(context, Access.getClass(context, "BigDecimal"), (RubyFloat) value, new MathContext(RubyFloat.DIG));
+            // MRI truncates float strings to double_fig digits during coercion
+            case FLOAT -> newInstance(context, Access.getClass(context, "BigDecimal"), (RubyFloat) value, new MathContext(VP_DOUBLE_FIG, RoundingMode.DOWN));
             case RATIONAL -> newInstance(context, Access.getClass(context, "BigDecimal"), (RubyRational) value, new MathContext(RubyFloat.DIG));
             default -> cannotBeCoerced(context, value, must);
         };
