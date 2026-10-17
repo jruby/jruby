@@ -54,6 +54,7 @@ import org.jruby.RubyBignum;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.anno.CRuby;
 import org.jruby.ast.*;
 import org.jruby.ast.util.LineEvents;
 import org.jruby.ast.types.INameNode;
@@ -902,7 +903,7 @@ public abstract class RubyParserBase {
         return new RootNode(line, result.getScope(), topOfAST, lexer.getFile(), coverageMode(coverageData));
     }
     
-    /* MRI: block_append */
+    @CRuby(value = "block_append", file = "parse.y")
     public Node appendToBlock(Node head, Node tail) {
         if (tail == null) return head;
         if (head == null) return tail;
@@ -1383,9 +1384,7 @@ public abstract class RubyParserBase {
                 read.getDepth() == variable.getDepth() && read.getIndex() == variable.getIndex();
     }
 
-	/**
-     * assign_in_cond
-	 **/
+    @CRuby(value = "assign_in_cond", file = "parse.y")
     private boolean checkAssignmentInCondition(Node node) {
         if (node instanceof MultipleAsgnNode || node instanceof LocalAsgnNode || node instanceof DAsgnNode || node instanceof GlobalAsgnNode || node instanceof InstAsgnNode || node instanceof ClassVarAsgnNode || node instanceof ConstDeclNode) {
             Node valueNode = ((AssignableNode) node).getValueNode();
@@ -1547,7 +1546,7 @@ public abstract class RubyParserBase {
         IN_OP, IN_COND, IN_FF;
     }
 
-    /* MRI: range_op */
+    @CRuby(value = "range_op", file = "parse.y")
     private Node range_op(Node node) {
         if (node == null) return null;
 

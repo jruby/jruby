@@ -34,6 +34,7 @@
 
 package org.jruby;
 
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
@@ -205,7 +206,7 @@ public class RubyBinding extends RubyObject implements DataType {
         return nameError(context, str(context.runtime, "'", symbol, "' is not an implicit parameter"), symbol);
     }
 
-    // MRI: check_local_id
+    @CRuby(value = "check_local_id", file = "proc.c")
     private String checkLocalId(ThreadContext context, IRubyObject obj) {
         String id = RubySymbol.idStringFromObject(context, obj);
 

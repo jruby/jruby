@@ -20,6 +20,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyDir;
 import org.jruby.RubyFile;
 import org.jruby.RubyString;
+import org.jruby.anno.CRuby;
 import org.jruby.ir.IRScope;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Helpers;
@@ -78,7 +79,7 @@ public class LibrarySearcher {
         return expandedLoadPath.pathEntries;
     }
 
-    // MRI: search_required
+    @CRuby(value = "search_required", file = "load.c")
     public synchronized char findLibraryForRequire(String file, FoundLibrary[] path) {
         // check loaded features
         FoundLibrary tmp;

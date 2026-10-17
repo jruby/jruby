@@ -65,6 +65,7 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.AnnotationBinder;
 import org.jruby.anno.AnnotationHelper;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyConstant;
@@ -501,9 +502,7 @@ public class RubyModule extends RubyObject {
         return get(NEEDSIMPL);
     }
 
-    /** rb_module_new
-     *
-     */
+    @CRuby(value = "rb_module_new", file = "class.c")
     @Deprecated(since = "10.0.0.0")
     public static RubyModule newModule(Ruby runtime) {
         return new RubyModule(runtime);
@@ -1096,9 +1095,8 @@ public class RubyModule extends RubyObject {
      * We will find whether we have already refined once and get that set of includedmodules or we will start to create
      * one.  The new refinement will be added as a new included module on the front.  It will also add all superclasses
      * of the refinement into this call chain.
-     *
-     * MRI: add_activated_refinement
      */
+    @CRuby(value = "add_activated_refinement", file = "eval.c")
     private void addActivatedRefinement(ThreadContext context, RubyModule moduleToRefine, RubyModule refinement) {
 //        RubyClass superClass = getAlreadyActivatedRefinementWrapper(classWeAreRefining, refinement);
 //        if (superClass == null) return; // already been refined and added to refinementwrapper
@@ -1176,9 +1174,8 @@ public class RubyModule extends RubyObject {
      * that definition from the refinement instead.  At one point I was confused how this would not
      * conflict if the same module was used in two places but the cref must be a lexically containing
      * module so it cannot live in two files.
-     *
-     * MRI: rb_using_refinement
      */
+    @CRuby(value = "rb_using_refinement", file = "eval.c")
     private static void usingRefinement(ThreadContext context, RubyModule cref, RubyModule klass, RubyModule module) {
         RubyModule iclass, c, superclass = klass;
 
@@ -1296,10 +1293,10 @@ public class RubyModule extends RubyObject {
     /**
      * Prepend a new module to this module or class.
      *
-     * MRI: rb_prepend_module
      *
      * @param module The module to include
      */
+    @CRuby(value = "rb_prepend_module", file = "class.c")
     public void prependModule(ThreadContext context, RubyModule module) {
         testFrozen("module");
 
@@ -1657,7 +1654,7 @@ public class RubyModule extends RubyObject {
      * @param allocator how to allocate an instance of this class
      * @return the new class
      */
-    // MRI: rb_define_class_under
+    @CRuby("rb_define_class_under")
     @JRubyAPI
     public <T extends RubyClass> T defineClassUnder(ThreadContext context, String name, RubyClass superClass,
                                                     ObjectAllocator allocator) {
@@ -1708,7 +1705,7 @@ public class RubyModule extends RubyObject {
      * @param name
      * @return itself for a composable API
      */
-    // MRI: rb_define_module_under
+    @CRuby("rb_define_module_under")
     @JRubyAPI
     public RubyModule defineModuleUnder(ThreadContext context, String name) {
         return context.runtime.defineModuleUnder(context, name, this);
@@ -1818,9 +1815,7 @@ public class RubyModule extends RubyObject {
         getMethodLocation().addMethod(getCurrentContext(), name, UndefinedMethod.getInstance());
     }
 
-    /** rb_undef
-     *
-     */
+    @CRuby(value = "rb_undef", file = "vm_method.c")
     public void undef(ThreadContext context, String name) {
         testFrozen("module");
         if (name.equals("__send__") || name.equals("object_id") || name.equals("initialize")) {
@@ -1915,7 +1910,7 @@ public class RubyModule extends RubyObject {
         addMethodInternal(context, id, method);
     }
 
-    // MRI: rb_add_refined_method_entry
+    @CRuby(value = "rb_add_refined_method_entry", file = "vm_method.c")
     private void addRefinedMethodEntry(ThreadContext context, String id, DynamicMethod method) {
         RubyModule refinedClass = refinementStore.refinedClass;
         RubyModule methodLocation = refinedClass.getMethodLocation();
@@ -2024,7 +2019,7 @@ public class RubyModule extends RubyObject {
         return entry != null ? entry : searchWithCacheMiss(getRuntime(), id);
     }
 
-    // MRI: method_entry_resolve_refinement
+    @CRuby(value = "method_entry_resolve_refinement", file = "vm_method.c")
     private CacheEntry searchWithCacheAndRefinements(String id, StaticScope refinedScope) {
         CacheEntry entry = cacheHit(id);
         if (entry == null) {
@@ -2266,7 +2261,7 @@ public class RubyModule extends RubyObject {
         return entry;
     }
 
-    // MRI: search_method
+    @CRuby(value = "search_method", file = "vm_method.c")
     public DynamicMethod searchMethodInner(String id) {
         // This flattens some of the recursion that would be otherwise be necessary.
         // Used to recurse up the class hierarchy which got messy with prepend.
@@ -2294,7 +2289,7 @@ public class RubyModule extends RubyObject {
         return null;
     }
 
-    // MRI: resolve_refined_method
+    @CRuby(value = "resolve_refined_method", file = "vm_method.c")
     public CacheEntry resolveRefinedMethod(RubyModule overlay, CacheEntry entry, String id) {
         if (entry != null && entry.method.isRefined()) {
             // Check for refinements in the given scope
@@ -2315,7 +2310,7 @@ public class RubyModule extends RubyObject {
         return entry;
     }
 
-    // MRI: find_refinement
+    @CRuby(value = "find_refinement", file = "vm_insnhelper.c")
     private static RubyModule findRefinement(RubyModule overlay, RubyModule target) {
         RefinementStore refinementStore;
         if (overlay == null || (refinementStore = overlay.refinementStore) == null) return null;
@@ -2778,9 +2773,7 @@ public class RubyModule extends RubyObject {
         setMethodVisibility(getCurrentContext(), methods, visibility);
     }
 
-    /** set_method_visibility
-     *
-     */
+    @CRuby(value = "set_method_visibility", file = "vm_method.c")
     public void setMethodVisibility(ThreadContext context, IRubyObject[] methods, Visibility visibility) {
         if (methods.length == 1 && methods[0] instanceof RubyArray) {
             setMethodVisibility(context, ((RubyArray<?>) methods[0]).toJavaArray(context), visibility);
@@ -2797,9 +2790,7 @@ public class RubyModule extends RubyObject {
         exportMethod(getCurrentContext(), name, visibility);
     }
 
-    /** rb_export_method
-     *
-     */
+    @CRuby(value = "rb_export_method", file = "vm_method.c")
     private void exportMethod(ThreadContext context, String name, Visibility visibility) {
         CacheEntry entry = getMethodLocation().deepMethodSearch(context, name);
         DynamicMethod method = entry.method;
@@ -2837,10 +2828,7 @@ public class RubyModule extends RubyObject {
         return str(runtime, "undefined method '", name, "' for " + (isModule ? "module" : "class") + " '", modName, "'");
     }
 
-    /**
-     * MRI: rb_method_boundp
-     *
-     */
+    @CRuby(value = "rb_method_boundp", file = "vm_method.c")
     public boolean isMethodBound(String name, boolean checkVisibility) {
         DynamicMethod method = searchMethod(name);
 
@@ -3122,9 +3110,7 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    /** rb_mod_included_modules
-     *
-     */
+    @CRuby(value = "rb_mod_included_modules", file = "class.c")
     @JRubyMethod(name = "included_modules")
     public RubyArray included_modules(ThreadContext context) {
         var ary = newArray(context);
@@ -3140,9 +3126,7 @@ public class RubyModule extends RubyObject {
         return methodLocation != null;
     }
 
-    /** rb_mod_ancestors
-     *
-     */
+    @CRuby(value = "rb_mod_ancestors", file = "class.c")
     @JRubyMethod(name = "ancestors")
     public RubyArray ancestors(ThreadContext context) {
         return newArray(context, getAncestorList());
@@ -3229,9 +3213,7 @@ public class RubyModule extends RubyObject {
         return (RubyString) to_s(getCurrentContext());
     }
 
-    /** rb_mod_to_s
-     *
-     */
+    @CRuby(value = "rb_mod_to_s", file = "object.c")
     @JRubyMethod(name = "to_s", alias = "inspect")
     public IRubyObject to_s(ThreadContext context) {
         if (isSingleton()) {
@@ -3264,9 +3246,7 @@ public class RubyModule extends RubyObject {
         return dupString(context, rubyName(context));
     }
 
-    /** rb_mod_eqq
-     *
-     */
+    @CRuby(value = "rb_mod_eqq", file = "object.c")
     @JRubyMethod(name = "===")
     @Override
     public RubyBoolean op_eqq(ThreadContext context, IRubyObject obj) {
@@ -3297,9 +3277,7 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    /** rb_mod_freeze
-     *
-     */
+    @CRuby(value = "rb_mod_freeze", file = "object.c")
     @JRubyMethod(name = "freeze")
     @Override
     public final IRubyObject freeze(ThreadContext context) {
@@ -3312,9 +3290,7 @@ public class RubyModule extends RubyObject {
         return op_le(getCurrentContext(), arg);
     }
 
-    /**
-    * MRI: rb_class_inherited_p
-    */
+    @CRuby(value = "rb_class_inherited_p", file = "object.c")
     @JRubyMethod(name = "<=")
     public IRubyObject op_le(ThreadContext context, IRubyObject arg) {
         RubyModule argMod = castAsModule(context, arg, "compared with non class/module");
@@ -3326,7 +3302,7 @@ public class RubyModule extends RubyObject {
         return context.nil;
     }
 
-    // MRI: class_search_ancestor
+    @CRuby(value = "class_search_ancestor", file = "object.c")
     protected RubyModule searchAncestor(RubyModule c) {
         RubyModule cl = this;
         while (cl != null) {
@@ -3343,9 +3319,7 @@ public class RubyModule extends RubyObject {
         return op_lt(getCurrentContext(), obj);
     }
 
-    /** rb_mod_lt
-    *
-    */
+    @CRuby(value = "rb_mod_lt", file = "object.c")
     @JRubyMethod(name = "<")
     public IRubyObject op_lt(ThreadContext context, IRubyObject obj) {
         return obj == this ? context.fals : op_le(context, obj);
@@ -3356,9 +3330,7 @@ public class RubyModule extends RubyObject {
         return op_ge(getCurrentContext(), obj);
     }
 
-    /** rb_mod_ge
-    *
-    */
+    @CRuby(value = "rb_mod_ge", file = "object.c")
     @JRubyMethod(name = ">=")
     public IRubyObject op_ge(ThreadContext context, IRubyObject obj) {
         return castAsModule(context, obj, "compared with non class/module").op_le(context, this);
@@ -3369,17 +3341,13 @@ public class RubyModule extends RubyObject {
         return op_gt(getCurrentContext(), obj);
     }
 
-    /** rb_mod_gt
-    *
-    */
+    @CRuby(value = "rb_mod_gt", file = "object.c")
     @JRubyMethod(name = ">")
     public IRubyObject op_gt(ThreadContext context, IRubyObject obj) {
         return this == obj ? context.fals : op_ge(context, obj);
     }
 
-    /** rb_mod_cmp
-    *
-    */
+    @CRuby(value = "rb_mod_cmp", file = "object.c")
     @JRubyMethod(name = "<=>")
     public IRubyObject op_cmp(ThreadContext context, IRubyObject obj) {
         if (this == obj) return asFixnum(context, 0);
@@ -3414,9 +3382,7 @@ public class RubyModule extends RubyObject {
         return getOrigin() == other.getOrigin();
     }
 
-    /** rb_mod_initialize
-     *
-     */
+    @CRuby(value = "rb_mod_initialize", file = "object.c")
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, Block block) {
         if (block.isGiven()) {
@@ -3478,9 +3444,7 @@ public class RubyModule extends RubyObject {
         return context.nil;
     }
 
-    /** rb_mod_attr
-     *
-     */
+    @CRuby(value = "rb_mod_attr", file = "object.c")
     @JRubyMethod(name = "attr", rest = true, reads = VISIBILITY)
     public IRubyObject attr(ThreadContext context, IRubyObject[] args) {
         if (args.length == 2 && (args[1] == context.tru || args[1] == context.fals)) {
@@ -3497,9 +3461,7 @@ public class RubyModule extends RubyObject {
         return attr_reader(context, args);
     }
 
-    /** rb_mod_attr_reader
-     *
-     */
+    @CRuby(value = "rb_mod_attr_reader", file = "object.c")
     @JRubyMethod(name = "attr_reader", rest = true, reads = VISIBILITY)
     public IRubyObject attr_reader(ThreadContext context, IRubyObject[] args) {
         // Check the visibility of the previous frame, which will be the frame in which the class is being eval'ed
@@ -3516,9 +3478,7 @@ public class RubyModule extends RubyObject {
         return newArray(context, result);
     }
 
-    /** rb_mod_attr_writer
-     *
-     */
+    @CRuby(value = "rb_mod_attr_writer", file = "object.c")
     @JRubyMethod(name = "attr_writer", rest = true, reads = VISIBILITY)
     public IRubyObject attr_writer(ThreadContext context, IRubyObject[] args) {
         // Check the visibility of the previous frame, which will be the frame in which the class is being eval'ed
@@ -3537,10 +3497,11 @@ public class RubyModule extends RubyObject {
     }
 
 
-    /** rb_mod_attr_accessor
+    /**
      *  Note: this method should not be called from Java in most cases, since
      *  it depends on Ruby frame state for visibility. Use add[Read/Write]Attribute instead.
      */
+    @CRuby(value = "rb_mod_attr_accessor", file = "object.c")
     @JRubyMethod(name = "attr_accessor", rest = true, reads = VISIBILITY)
     public IRubyObject attr_accessor(ThreadContext context, IRubyObject[] args) {
         // Check the visibility of the previous frame, which will be the frame in which the class is being eval'ed
@@ -3701,9 +3662,7 @@ public class RubyModule extends RubyObject {
         return protected_instance_methods(getCurrentContext(), args);
     }
 
-    /** rb_class_protected_instance_methods
-     *
-     */
+    @CRuby(value = "rb_class_protected_instance_methods", file = "class.c")
     @JRubyMethod(name = "protected_instance_methods", optional = 1, checkArity = false)
     public RubyArray protected_instance_methods(ThreadContext context, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 1);
@@ -3716,9 +3675,7 @@ public class RubyModule extends RubyObject {
         return private_instance_methods(getCurrentContext(), args);
     }
 
-    /** rb_class_private_instance_methods
-     *
-     */
+    @CRuby(value = "rb_class_private_instance_methods", file = "class.c")
     @JRubyMethod(name = "private_instance_methods", optional = 1, checkArity = false)
     public RubyArray private_instance_methods(ThreadContext context, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 1);
@@ -3743,9 +3700,7 @@ public class RubyModule extends RubyObject {
         return prepend_features(getCurrentContext(), include);
     }
 
-    /** rb_mod_prepend_features
-     *
-     */
+    @CRuby(value = "rb_mod_prepend_features", file = "eval.c")
     @JRubyMethod(name = "prepend_features", visibility = PRIVATE)
     public RubyModule prepend_features(ThreadContext context, IRubyObject include) {
         verifyNormalModule(context, include).prependModule(context, this);
@@ -3758,9 +3713,7 @@ public class RubyModule extends RubyObject {
         return append_features(getCurrentContext(), include);
     }
 
-    /** rb_mod_append_features
-     *
-     */
+    @CRuby(value = "rb_mod_append_features", file = "eval.c")
     @JRubyMethod(name = "append_features", visibility = PRIVATE)
     public RubyModule append_features(ThreadContext context, IRubyObject include) {
         verifyNormalModule(context, include).include(context, this);
@@ -3785,9 +3738,7 @@ public class RubyModule extends RubyObject {
         return extend_object(getCurrentContext(), obj);
     }
 
-    /** rb_mod_extend_object
-     *
-     */
+    @CRuby(value = "rb_mod_extend_object", file = "eval.c")
     @JRubyMethod(name = "extend_object", visibility = PRIVATE)
     public IRubyObject extend_object(ThreadContext context, IRubyObject obj) {
         if (!isModule()) throw typeError(context, this, "Module");
@@ -3808,9 +3759,7 @@ public class RubyModule extends RubyObject {
         return include(getCurrentContext(), modules);
     }
 
-    /** rb_mod_include
-     *
-     */
+    @CRuby(value = "rb_mod_include", file = "eval.c")
     @JRubyMethod(name = "include", required = 1, rest = true, checkArity = false)
     public RubyModule include(ThreadContext context, IRubyObject[] modules) {
         int argc = Arity.checkArgumentCount(context, modules, 1, -1);
@@ -3914,9 +3863,7 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    /** rb_mod_public
-     *
-     */
+    @CRuby(value = "rb_mod_public", file = "vm_method.c")
     @JRubyMethod(name = "public", rest = true, visibility = PRIVATE, writes = VISIBILITY)
     public IRubyObject _public(ThreadContext context, IRubyObject[] args) {
         checkFrozen();
@@ -3935,9 +3882,7 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
-    /** rb_mod_protected
-     *
-     */
+    @CRuby(value = "rb_mod_protected", file = "vm_method.c")
     @JRubyMethod(name = "protected", rest = true, visibility = PRIVATE, writes = VISIBILITY)
     public IRubyObject _protected(ThreadContext context, IRubyObject[] args) {
         checkFrozen();
@@ -3956,9 +3901,7 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
-    /** rb_mod_private
-     *
-     */
+    @CRuby(value = "rb_mod_private", file = "vm_method.c")
     @JRubyMethod(name = "private", rest = true, visibility = PRIVATE, writes = VISIBILITY)
     public IRubyObject _private(ThreadContext context, IRubyObject[] args) {
         checkFrozen();
@@ -3977,9 +3920,7 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
-    /** rb_mod_modfunc
-     *
-     */
+    @CRuby(value = "rb_mod_modfunc", file = "vm_method.c")
     @JRubyMethod(name = "module_function", rest = true, visibility = PRIVATE, writes = VISIBILITY)
     public IRubyObject _module_function(ThreadContext context, IRubyObject[] args) {
         if (!isModule()) throw typeError(context, "module_function must be called for modules");
@@ -4515,9 +4456,7 @@ public class RubyModule extends RubyObject {
         return class_variable_get(getCurrentContext(), name);
     }
 
-    /** rb_mod_cvar_get
-     *
-     */
+    @CRuby(value = "rb_mod_cvar_get", file = "object.c")
     @JRubyMethod(name = "class_variable_get")
     public IRubyObject class_variable_get(ThreadContext context, IRubyObject name) {
         return getClassVar(context, name, validateClassVariable(context, name));
@@ -4528,9 +4467,7 @@ public class RubyModule extends RubyObject {
         return class_variable_set(getCurrentContext(), name, value);
     }
 
-    /** rb_mod_cvar_set
-     *
-     */
+    @CRuby(value = "rb_mod_cvar_set", file = "object.c")
     @JRubyMethod(name = "class_variable_set")
     public IRubyObject class_variable_set(ThreadContext context, IRubyObject name, IRubyObject value) {
         return setClassVar(context, validateClassVariable(context, name), value);
@@ -4541,9 +4478,7 @@ public class RubyModule extends RubyObject {
         return class_variable_set(name, value);
     }
 
-    /** rb_mod_remove_cvar
-     *
-     */
+    @CRuby(value = "rb_mod_remove_cvar", file = "variable.c")
     @JRubyMethod(name = "remove_class_variable")
     public IRubyObject remove_class_variable(ThreadContext context, IRubyObject name) {
         return removeClassVariable(context, validateClassVariable(context, name));
@@ -4587,9 +4522,7 @@ public class RubyModule extends RubyObject {
     ////////////////// CONSTANT RUBY METHODS ////////////////
     //
 
-    /**
-     * rb_mod_const_defined
-     */
+    @CRuby(value = "rb_mod_const_defined", file = "object.c")
     @JRubyMethod(name = "const_defined?")
     public RubyBoolean const_defined_p(ThreadContext context, IRubyObject name) {
         return asBoolean(context, constDefined(context, name, true));
@@ -4669,13 +4602,13 @@ public class RubyModule extends RubyObject {
         return mod.getConstantSkipAutoload(context, id, inherit, inherit && includeObject, false) != null;
     }
 
-    // MRI: rb_mod_const_get
+    @CRuby(value = "rb_mod_const_get", file = "object.c")
     @JRubyMethod(name = "const_get")
     public IRubyObject const_get(ThreadContext context, IRubyObject arg0) {
         return constGetCommon(context, arg0, true);
     }
 
-    // MRI: rb_mod_const_get
+    @CRuby(value = "rb_mod_const_get", file = "object.c")
     @JRubyMethod(name = "const_get")
     public IRubyObject const_get(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         return constGetCommon(context, arg0, arg1.isTrue());
@@ -4808,9 +4741,7 @@ public class RubyModule extends RubyObject {
         return const_set(getCurrentContext(), name, value);
     }
 
-    /** rb_mod_const_set
-     *
-     */
+    @CRuby(value = "rb_mod_const_set", file = "object.c")
     @JRubyMethod(name = "const_set")
     public IRubyObject const_set(ThreadContext context, IRubyObject name, IRubyObject value) {
         return setConstant(context, validateConstant(context, name), value, context.getFile(), context.getLine() + 1);
@@ -4889,9 +4820,7 @@ public class RubyModule extends RubyObject {
         return array;
     }
 
-    /** rb_mod_constants
-     *
-     */
+    @CRuby(value = "rb_mod_constants", file = "variable.c")
     public Collection<String> constantsCommon(Ruby runtime, boolean replaceModule, boolean allConstants) {
         return constantsCommon(runtime, replaceModule, allConstants, true);
     }
@@ -5633,7 +5562,7 @@ public class RubyModule extends RubyObject {
      * @param oldName the existing method name
      * @return itself for composable API
      */
-    // MRI: rb_alias
+    @CRuby(value = "rb_alias", file = "vm_method.c")
     public synchronized <T extends RubyModule> T defineAlias(ThreadContext context, String name, String oldName) {
         testFrozen("module");
 
@@ -5692,9 +5621,7 @@ public class RubyModule extends RubyObject {
         return (T) this;
     }
 
-    /** rb_define_const
-     *
-     */
+    @CRuby("rb_define_const")
     @Extension
     @Deprecated(since = "10.0.0.0")
     public void defineConstant(String name, IRubyObject value) {
@@ -5716,7 +5643,7 @@ public class RubyModule extends RubyObject {
         return constDefined(getCurrentContext(), name);
     }
 
-    // rb_const_defined
+    @CRuby(value = "rb_const_defined", file = "variable.c")
     public boolean constDefined(ThreadContext context, String name) {
         return constDefinedInner(context, name, false, true, false);
     }
@@ -5726,7 +5653,7 @@ public class RubyModule extends RubyObject {
         return constDefinedAt(getCurrentContext(), name);
     }
 
-    // rb_const_defined_at
+    @CRuby(value = "rb_const_defined_at", file = "variable.c")
     public boolean constDefinedAt(ThreadContext context, String name) {
         return constDefinedInner(context, name, true, false, false);
     }
@@ -5736,7 +5663,7 @@ public class RubyModule extends RubyObject {
         return constDefinedFrom(getCurrentContext(), name);
     }
 
-    // rb_const_defined_from
+    @CRuby(value = "rb_const_defined_from", file = "variable.c")
     public boolean constDefinedFrom(ThreadContext context, String name) {
         return constDefinedInner(context, name, true, true, false);
     }
@@ -5746,15 +5673,13 @@ public class RubyModule extends RubyObject {
         return publicConstDefinedFrom(getCurrentContext(), name);
     }
 
-    // rb_public_const_defined_from
+    @CRuby(value = "rb_public_const_defined_from", file = "variable.c")
     public boolean publicConstDefinedFrom(ThreadContext context, String name) {
         return constDefinedInner(context, name, true, true, true);
     }
 
     // Fix for JRUBY-1339 - search hierarchy for constant
-    /**
-     * rb_const_defined_0
-     */
+    @CRuby(value = "rb_const_defined_0", file = "variable.c")
     private boolean constDefinedInner(ThreadContext context, String name, boolean exclude, boolean recurse, boolean visibility) {
         RubyClass object = objectClass(context);
         boolean moduleRetry = false;
@@ -5798,7 +5723,7 @@ public class RubyModule extends RubyObject {
         return autoloadingValue(runtime.getCurrentContext(), name);
     }
 
-    // MRI: rb_autoloading_value
+    @CRuby(value = "rb_autoloading_value", file = "variable.c")
     public boolean autoloadingValue(ThreadContext context, String name) {
         final Autoload autoload = getAutoloadMap().get(name);
 
@@ -5806,7 +5731,7 @@ public class RubyModule extends RubyObject {
         return autoload != null && autoload.isSelf(context) && autoload.getValue() != null;
     }
 
-    // MRI: check_autoload_required
+    @CRuby(value = "check_autoload_required", file = "variable.c")
     private RubyString checkAutoloadRequired(ThreadContext context, String name, String[] autoloadPath) {
         final Autoload autoload = getAutoloadMap().get(name);
         if (autoload == null) return null;  // autoload has been evacuated
@@ -6764,7 +6689,7 @@ public class RubyModule extends RubyObject {
             return self;
         }
 
-        // MRI: refinement_import_methods_i
+        @CRuby(value = "refinement_import_methods_i", file = "eval.c")
         private static void refinementImportMethodsIter(ThreadContext context, RubyModule selfModule, RubyModule module,
                                                         Map.Entry<String, DynamicMethod> entry) {
             DynamicMethod method = entry.getValue();

@@ -40,6 +40,7 @@ import jnr.posix.Passwd;
 import jnr.posix.RLimit;
 import jnr.posix.Times;
 import jnr.posix.Timeval;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
@@ -390,7 +391,7 @@ public class RubyProcess {
             return inspect(runtime.getCurrentContext());
         }
 
-        // MRI: pst_message
+        @CRuby(value = "pst_message", file = "process.c")
         public static String pst_message(String prefix, long pid, long status) {
             StringBuilder sb = new StringBuilder(prefix);
             sb.append("pid ").append(pid);
@@ -759,7 +760,7 @@ public class RubyProcess {
         throw argumentError(context, "invalid resource value: " + rval);
     }
 
-    // MRI: rlimit_resource_type
+    @CRuby(value = "rlimit_resource_type", file = "process.c")
     private static int rlimitResourceType(ThreadContext context, IRubyObject rtype) {
         String name;
         IRubyObject v;
@@ -794,7 +795,7 @@ public class RubyProcess {
         throw argumentError(context, "invalid resource name: " + rtype);
     }
 
-    // MRI: rlimit_resource_name2int
+    @CRuby(value = "rlimit_resource_name2int", file = "process.c")
     private static int rlimitResourceName2int(String name, int casetype) {
         RLIMIT resource;
 
@@ -937,7 +938,7 @@ public class RubyProcess {
         return resource.intValue();
     }
 
-    // MRI: rlimit_type_by_hname
+    @CRuby(value = "rlimit_type_by_hname", file = "process.c")
     private static int rlimitTypeByHname(String name) {
         return rlimitResourceName2int(name, 0);
     }
@@ -1006,7 +1007,7 @@ public class RubyProcess {
         return waitpid(runtime.getCurrentContext(), pid, flags);
     }
 
-    // MRI: rb_waitpid
+    @CRuby(value = "rb_waitpid", file = "process.c")
     public static long waitpid(ThreadContext context, long pid, int flags) {
         var posix = context.runtime.getPosix();
 

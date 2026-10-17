@@ -26,13 +26,15 @@
 
 package org.jruby.util;
 
+import org.jruby.anno.CRuby;
+
 import static org.jruby.util.StringSupport.CR_7BIT;
 import static org.jruby.util.StringSupport.CR_UNKNOWN;
 import static org.jruby.util.StringSupport.CR_VALID;
 
 public final class CodeRangeSupport {
 
-    // ENC_CODERANGE_ASCIIONLY
+    @CRuby(value = "ENC_CODERANGE_ASCIIONLY", file = "include/ruby/internal/encoding/coderange.h")
     public static boolean isCodeRangeAsciiOnly(CodeRangeable string) {
         return string.getCodeRange() == CR_7BIT;
     }

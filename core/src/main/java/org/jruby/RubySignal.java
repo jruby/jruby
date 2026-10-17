@@ -30,6 +30,7 @@ package org.jruby;
 
 import jnr.constants.platform.Signal;
 
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.platform.Platform;
@@ -213,12 +214,12 @@ public class RubySignal {
         return newString(context, signame);
     }
 
-    // MRI: signo2signm
+    @CRuby(value = "signo2signm", file = "signal.c")
     public static String signo2signm(long no) {
         return SIGNUM_MAP.get((int) no);
     }
 
-    // MRI: signm2signo
+    @CRuby(value = "signm2signo", file = "signal.c")
     public static long signm2signo(String nm) {
         Integer signo = SIGNAME_MAP.get(nm);
 
