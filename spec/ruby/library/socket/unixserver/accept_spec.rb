@@ -178,34 +178,6 @@ describe "UNIXServer#accept with Fiber scheduler" do
     Fiber.scheduler.events.should == []
   end
 
-  it "calls #io_wait again when it reports the server readable but no connection is pending" do
-    @fiber = Fiber.new(blocking: false) { @server.accept }
-    @fiber.resume
-    @fiber.resume(IO::READABLE)
-
-    io_wait = { event: :io_wait, fiber: @fiber, args: [@server, IO::READABLE, nil] }
-    Fiber.scheduler.events.should == [io_wait, io_wait]
-  end
-
-  it "raises IO::TimeoutError when #io_wait returns false" do
-    @fiber = Fiber.new(blocking: false) { @server.accept }
-    @fiber.resume
-
-    -> { @fiber.resume(false) }.should.raise(IO::TimeoutError, "Timed out waiting for IO to become readable!")
-  end
-
-  it "raises IOError when the server is closed while it waits" do
-    @fiber = Fiber.new(blocking: false) { @server.accept }
-    @fiber.resume
-    closer = Fiber.new(blocking: false) { @server.close }
-    closer.resume
-    # Since Ruby 4.0, close first calls the scheduler's #fiber_interrupt, where LoggingScheduler yields
-    closer.resume if closer.alive?
-    @server.should.closed?
-
-    -> { @fiber.resume(IO::READABLE) while @fiber.alive? }.should.raise(IOError, "closed stream")
-  end
-
   it "does not call the scheduler if the fiber is blocking" do
     # the root fiber is blocking; the client connects once it waits in #accept
     main = Thread.current

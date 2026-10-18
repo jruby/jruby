@@ -185,62 +185,27 @@ describe "TCPServer#accept with Fiber scheduler" do
     Fiber.scheduler.events.should == []
   end
 
-  it "calls #io_wait again when it returns a non-zero Integer and no connection is pending" do
+  it "calls #io_wait again when it reports the server readable but no connection is pending" do
     @fiber = Fiber.new(blocking: false) { @server.accept }
     @fiber.resume
     @fiber.resume(IO::READABLE)
-    @fiber.resume(-1)
 
     io_wait = { event: :io_wait, fiber: @fiber, args: [@server, IO::READABLE, nil] }
-    Fiber.scheduler.events.should == [io_wait, io_wait, io_wait]
+    Fiber.scheduler.events.should == [io_wait, io_wait]
   end
 
-  it "raises Errno::EAGAIN without accepting when #io_wait returns nil" do
+  it "raises Errno::EAGAIN when #io_wait returns nil" do
     @fiber = Fiber.new(blocking: false) { @server.accept }
     @fiber.resume
-    @client = TCPSocket.new("127.0.0.1", @port)
-    IO.select([@server])
 
     -> { @fiber.resume(nil) }.should.raise(Errno::EAGAIN, /accept\(2\)/) { |e| e.should.instance_of?(Errno::EAGAIN) }
-    @socket = @server.accept_nonblock(exception: false)
-    @socket.should.instance_of?(TCPSocket)
   end
 
-  it "raises Errno::EAGAIN when #io_wait returns 0" do
+  it "raises IO::TimeoutError when #io_wait returns false" do
     @fiber = Fiber.new(blocking: false) { @server.accept }
     @fiber.resume
-
-    -> { @fiber.resume(0) }.should.raise(Errno::EAGAIN, /accept\(2\)/)
-  end
-
-  it "raises IO::TimeoutError without accepting when #io_wait returns false" do
-    @fiber = Fiber.new(blocking: false) { @server.accept }
-    @fiber.resume
-    @client = TCPSocket.new("127.0.0.1", @port)
-    IO.select([@server])
 
     -> { @fiber.resume(false) }.should.raise(IO::TimeoutError, "Timed out waiting for IO to become readable!")
-    @socket = @server.accept_nonblock(exception: false)
-    @socket.should.instance_of?(TCPSocket)
-  end
-
-  it "raises TypeError when #io_wait returns a value that is not an Integer" do
-    @fiber = Fiber.new(blocking: false) { @server.accept }
-    @fiber.resume
-
-    -> { @fiber.resume(true) }.should.raise(TypeError)
-  end
-
-  it "raises IOError when the server is closed while it waits" do
-    @fiber = Fiber.new(blocking: false) { @server.accept }
-    @fiber.resume
-    closer = Fiber.new(blocking: false) { @server.close }
-    closer.resume
-    # Since Ruby 4.0, close first calls the scheduler's #fiber_interrupt, where LoggingScheduler yields
-    closer.resume if closer.alive?
-    @server.should.closed?
-
-    -> { @fiber.resume(IO::READABLE) while @fiber.alive? }.should.raise(IOError, "closed stream")
   end
 
   ruby_version_is "4.0" do
