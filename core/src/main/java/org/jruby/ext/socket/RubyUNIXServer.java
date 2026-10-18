@@ -172,8 +172,6 @@ public class RubyUNIXServer extends RubyUNIXSocket {
     @JRubyMethod
     public IRubyObject sysaccept(ThreadContext context) {
         RubyUNIXSocket socket = (RubyUNIXSocket) accept(context);
-        // the caller owns the descriptor now, so finalizing this unreferenced socket must not close it
-        socket.getOpenFile().setAutoclose(false);
         return asFixnum(context, ((UnixSocketChannel) socket.getChannel()).getFD());
     }
 
