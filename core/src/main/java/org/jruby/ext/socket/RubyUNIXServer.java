@@ -93,7 +93,11 @@ public class RubyUNIXServer extends RubyUNIXSocket {
                     context.pollThreadEvents();
 
                 } else {
-                    return asUnixServer().accept();
+                    UnixSocketChannel socketChannel = asUnixServer().accept();
+                    // null when another thread made the channel nonblocking and took the connection first
+                    if (socketChannel == null) continue;
+
+                    return socketChannel;
                 }
             }
 
