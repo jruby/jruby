@@ -1586,7 +1586,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             for (int idx = 0; idx<backrefs.length; idx++) {
                 ary.storeInternal(context, idx, asFixnum(context, backrefs[idx]));
             }
-            RubyString name = RubyString.newStringShared(context.runtime, e.name, e.nameP, e.nameEnd - e.nameP);
+            RubyString name = RubyString.newStringShared(context.runtime, e.name, e.nameP, e.nameEnd - e.nameP, ASCIIEncoding.INSTANCE);
             hash.fastASet(name.freeze(context), ary);
         }
         return hash;
