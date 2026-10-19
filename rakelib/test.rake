@@ -60,6 +60,13 @@ namespace :test do
   desc "Run tests that are too slow for the main suite"
   task :slow_suites => [:compile, *slow_tests]
 
+  desc "Run the performance guards in bench/guard, which fail on a performance regression"
+  task :perf_guard do
+    # Compile synchronously so warmup reliably leaves the snippets compiled.
+    ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} -Xjit.background=false"
+    ruby "bench/guard/runner.rb #{ENV['PERF_GUARD_OPTS']}"
+  end
+
   task :rake_targets => long_tests
   task :extended => long_tests
 

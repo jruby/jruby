@@ -1,0 +1,38 @@
+# A call with a braceless hash argument whose keys aren't all plain symbols,
+# such as h.merge("a" => 1), kept the whole method from being JIT-compiled,
+# so it ran in the interpreter at about half the speed of the same call with
+# braces. Each benchmark pairs a braceless form with an equivalent form that
+# always compiled.
+#
+# https://github.com/jruby/jruby/issues/9814
+prelude: |
+  H = {}.freeze
+  K = :k
+  Y = 1
+  def kw(*a, **kw) = kw
+max_ratio: 1.5
+benchmarks:
+  string key:
+    baseline:  'H.merge({"a" => 1})'
+    candidate: 'H.merge("a" => 1)'
+  integer key:
+    baseline:  'H.merge({1 => 1})'
+    candidate: 'H.merge(1 => 1)'
+  constant key:
+    baseline:  'H.merge({K => 1})'
+    candidate: 'H.merge(K => 1)'
+  mixed keys:
+    baseline:  'H.merge({a: 1, "b" => 2})'
+    candidate: 'H.merge(a: 1, "b" => 2)'
+  quoted symbol key:
+    baseline:  'H.merge(:"a-b" => 1)'
+    candidate: 'H.merge("a-b": 1)'
+  interpolated symbol key:
+    baseline:  'H.merge({"a#{Y}": 1})'
+    candidate: 'H.merge("a#{Y}": 1)'
+  method with rest args:
+    baseline:  'kw(**{"a" => 1})'
+    candidate: 'kw("a" => 1)'
+  inside a block:
+    baseline:  '[1].each { H.merge({"a" => 1}) }'
+    candidate: '[1].each { H.merge("a" => 1) }'
