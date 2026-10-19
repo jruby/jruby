@@ -273,6 +273,13 @@ modes.each do |mode|
       end
     end
 
+    # See https://github.com/jruby/jruby/issues/9825
+    it "compiles __ENCODING__ on one side of a branch" do
+      run('v = true; [v ? __ENCODING__ : nil, v && __ENCODING__]') do |x|
+        expect(x).to eq [Encoding::UTF_8, Encoding::UTF_8]
+      end
+    end
+
     it "compiles backrefs" do
       base = "'0123456789A' =~ /(1)(2)(3)(4)(5)(6)(7)(8)(9)/; "
       run(base + "$~") {|result| expect(result).to be_a_kind_of MatchData }
