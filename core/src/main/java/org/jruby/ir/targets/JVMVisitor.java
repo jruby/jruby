@@ -1289,9 +1289,11 @@ public class JVMVisitor extends IRVisitor {
         // * no splats or kwrest
         // * no supers
         // * no refinements
+        // * keywords are a literal hash with only symbol keys
         if (jvmMethod().invocationCompiler.supportsDirectArguments() &&
                 !CallBase.containsArgSplat(args) &&
                 ThreadContext.hasKeywords(call.getFlags()) &&
+                hasLiteralSymbolKeywords(args) &&
                 call.getCallType() != CallType.SUPER &&
                 !call.isPotentiallyRefined() &&
                 (call.getFlags() & ThreadContext.CALL_KEYWORD_REST) == 0) {
@@ -1342,6 +1344,16 @@ public class JVMVisitor extends IRVisitor {
         }
 
         handleCallResult(m, call.getResult());
+    }
+
+    private static boolean hasLiteralSymbolKeywords(Operand[] args) {
+        if (args.length == 0 || !(args[args.length - 1] instanceof Hash keywords)) return false;
+
+        for (KeyValuePair<Operand, Operand> pair : keywords.pairs) {
+            if (!(pair.getKey() instanceof Symbol)) return false;
+        }
+
+        return true;
     }
 
     private void compileCallWithKeywords(IRBytecodeAdapter m, CallBase call) {
