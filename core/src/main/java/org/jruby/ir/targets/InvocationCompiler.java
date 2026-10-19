@@ -138,8 +138,11 @@ public interface InvocationCompiler {
      * Perform a === call appropriate for a case/when statement.
      *
      * Stack required: context, case value, when value
+     *
+     * @param call the eqq instruction
+     * @param scopeFieldName the name of the static scope field, used by refined call sites
      */
-    void invokeEQQ(EQQInstr call);
+    void invokeEQQ(EQQInstr call, String scopeFieldName);
 
     /**
      * Coerces the receiver to a String using to_s, unless it is already a String

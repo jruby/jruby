@@ -1713,7 +1713,7 @@ public class JVMVisitor extends IRVisitor {
             jvmMethod().loadContext();
             visit(eqqinstr.getReceiver());
             visit(eqqinstr.getArg1());
-            jvmMethod().getInvocationCompiler().invokeEQQ(eqqinstr);
+            jvmMethod().getInvocationCompiler().invokeEQQ(eqqinstr, jvm.methodData().scopeField);
             if (!omitStoreLoad) jvmStoreLocal(eqqinstr.getResult());
         }
     }

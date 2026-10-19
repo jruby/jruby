@@ -720,6 +720,21 @@ modes.each do |mode|
       end
     end
 
+    # See https://github.com/jruby/jruby/issues/9827
+    it "compiles a splatted when clause in the presence of refinements" do
+      run(<<~'RUBY') do |x|
+        module RefineEqqForSplat; refine(String) { def ===(other) = other == :hit }; end
+        class SplatWhenWithUsing
+          using RefineEqqForSplat
+          WORDS = ["x"]
+          def self.go(v) = case v; when *WORDS then :matched; else :unmatched; end
+        end
+        [SplatWhenWithUsing.go(:hit), SplatWhenWithUsing.go("x")]
+      RUBY
+        expect(x).to eq [:matched, :unmatched]
+      end
+    end
+
     it "matches any true value for a caseless case/when with > 3 args" do
       result = run('
         case

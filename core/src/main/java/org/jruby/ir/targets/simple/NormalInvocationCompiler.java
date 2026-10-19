@@ -475,8 +475,8 @@ public class NormalInvocationCompiler implements InvocationCompiler {
     }
 
     @Override
-    public void invokeEQQ(EQQInstr call) {
-        compiler.getValueCompiler().pushCallSite(compiler.getClassData().clsName, compiler.getUniqueSiteName(call.getId()), null, call);
+    public void invokeEQQ(EQQInstr call, String scopeFieldName) {
+        compiler.getValueCompiler().pushCallSite(compiler.getClassData().clsName, compiler.getUniqueSiteName(call.getId()), scopeFieldName, call);
         compiler.adapter.ldc(call.isSplattedValue());
         compiler.invokeIRHelper("isEQQ", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, CallSite.class, boolean.class));
     }
