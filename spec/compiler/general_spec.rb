@@ -1034,6 +1034,25 @@ modes.each do |mode|
       run("def foo; case 0; when 1; return 2 if self.nil?; end; return 3; end; foo") {|result| expect(result).to eq 3 }
     end
 
+    # See https://github.com/jruby/jruby/issues/9834
+    it "compiles array patterns" do
+      run('[([1] in [1]), ([1, 2] in [_, 2]), ([1, 2, 3] in [1, *r]) && r, (case [3]; in [x] then x; end)]') do |x|
+        expect(x).to eq [true, true, [2, 3], 3]
+      end
+    end
+
+    it "compiles array patterns with elements after a rest" do
+      run('case [1, 2, 3, 4]; in [a, *r, c, d] then [a, r, c, d]; end') do |x|
+        expect(x).to eq [1, [2], 3, 4]
+      end
+    end
+
+    it "compiles find patterns" do
+      run('[(case [1, 2, 3, 4]; in [*pre, 2, 3, *post] then [pre, post]; end), ([1, 2] in [*, 3, *])]') do |x|
+        expect(x).to eq [[[1], [4]], false]
+      end
+    end
+
     it "assigns named groups in regular expressions to local variables" do
       # named groups with capture
       run("
