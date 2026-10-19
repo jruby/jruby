@@ -1698,7 +1698,8 @@ public class JVMVisitor extends IRVisitor {
 
     // 'when' statements emit a 1;1 use:def temporary which we can omit and just leave eqq result on the stack.
     private boolean canOmitStoreLoad(EQQInstr eqq, Instr nextInstr) {
-        assert nextInstr != null: "Somehow EQQ is the last instr in the scope...";
+        // nextInstr is null when the eqq ends its basic block, as each in clause's eqq does inside a block
+        if (nextInstr == null) return false;
 
         return !eqq.isPattern() && nextInstr instanceof BTrueInstr && eqq.getResult().equals(((BTrueInstr) nextInstr).getArg1());
     }
