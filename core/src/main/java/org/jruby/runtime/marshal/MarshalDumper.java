@@ -53,6 +53,7 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
+import org.jruby.anno.CRuby;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Constants;
@@ -566,9 +567,7 @@ public class MarshalDumper {
         return false;
     }
 
-    /** w_extended
-     * 
-     */
+    @CRuby(value = "w_extended", file = "marshal.c")
     private RubyClass dumpExtended(ThreadContext context, RubyOutputStream out, RubyClass type) {
         if (type.isSingleton()) {
             // any ivars, since we don't have __attached__ ivar now

@@ -41,6 +41,7 @@
 package org.jruby;
 
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.TypePopulator;
 import org.jruby.api.Access;
 import org.jruby.api.Create;
@@ -1547,7 +1548,7 @@ public final class Ruby implements Constantizable {
         this.kcode = kcode;
     }
 
-    /** rb_define_global_const
+    /**
      * Define a constant on the global namespace (i.e. Object) with the given
      * name and value.
      *
@@ -1556,6 +1557,7 @@ public final class Ruby implements Constantizable {
      * @deprecated Use {@link RubyModule#defineConstant(ThreadContext, String, IRubyObject)} with a reference
      * to Object.
      */
+    @CRuby(value = "rb_define_global_const", file = "variable.c")
     @Deprecated(since = "10.0.0.0")
     public void defineGlobalConstant(String name, IRubyObject value) {
         objectClass.defineConstant(name, value);

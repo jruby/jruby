@@ -46,6 +46,7 @@ import java.io.ObjectOutputStream;
 import java.util.Set;
 import java.util.function.BiConsumer;
 
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Builtins;
@@ -330,12 +331,12 @@ public class RubyObject extends RubyBasicObject {
 
     // Methods of the Object class (rb_obj_*):
 
-    /** rb_equal
-     *
+    /**
      * The Ruby "===" method is used by default in case/when
      * statements. The Object implementation first checks Java identity
      * equality and then calls the "==" method too.
      */
+    @CRuby(value = "rb_equal", file = "object.c")
     @Override
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
         return asBoolean(context, equalInternal(context, this, other));
@@ -409,8 +410,7 @@ public class RubyObject extends RubyBasicObject {
                 nonFixnumHashCode(context, hashValue);
     }
 
-    /** rb_inspect
-     *
+    /**
      * The internal helper that ensures a RubyString instance is returned
      * so dangerous casting can be omitted
      * Preferred over callMethod(context, "inspect")
@@ -418,11 +418,12 @@ public class RubyObject extends RubyBasicObject {
      * @param object the object to inspect
      * @return the string
      */
+    @CRuby(value = "rb_inspect", file = "object.c")
     public static RubyString inspect(ThreadContext context, IRubyObject object) {
         return (RubyString)rbInspect(context, object);
     }
 
-    // MRI: rb_obj_dig
+    @CRuby(value = "rb_obj_dig", file = "object.c")
     public static IRubyObject dig(ThreadContext context, IRubyObject obj, IRubyObject[] args, int idx) {
         if ( obj.isNil() ) return context.nil;
 

@@ -65,6 +65,7 @@ import java.util.function.BiFunction;
 import com.headius.backport9.stack.StackWalker;
 import org.jcodings.Encoding;
 import org.joni.Matcher;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Create;
@@ -856,7 +857,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
 
-    // RUBY_VM_CHECK_INTS_BLOCKING
+    @CRuby(value = "RUBY_VM_CHECK_INTS_BLOCKING", file = "thread.c")
     public void blockingThreadPoll(ThreadContext context) {
         if (pendingInterruptQueue.isEmpty() && !anyInterrupted()) {
             return;
@@ -867,14 +868,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         executeInterrupts(context, true);
     }
 
-    // RUBY_VM_INTERRUPTED_ANY
+    @CRuby(value = "RUBY_VM_INTERRUPTED_ANY", file = "vm_core.h")
     private boolean anyInterrupted() {
         return Thread.interrupted() || (interruptFlag & ~interruptMask) != 0;
     }
 
-    /**
-     * MRI: rb_threadptr_to_kill
-     */
+    @CRuby(value = "rb_threadptr_to_kill", file = "thread.c")
     private void throwThreadKill() {
         killed = true;
         throw new ThreadKill();
@@ -2803,12 +2802,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * Run the provided {@link BiFunction} without allowing for any cross-thread interrupts (equivalent to calling
      * {@link #handle_interrupt(ThreadContext, IRubyObject, IRubyObject, Block)} with Object =&gt; :never.
      *
-     * MRI: rb_uninterruptible
      *
      * @param context the current context
      * @param f the bifunction to execute
      * @return return value of f.apply.
      */
+    @CRuby(value = "rb_uninterruptible", file = "thread.c")
     public static <StateType> IRubyObject uninterruptible(ThreadContext context, StateType state, BiFunction<ThreadContext, StateType, IRubyObject> f) {
         return context.getThread().handleInterrupt(
                 context,
@@ -2824,9 +2823,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     /**
      * Set the scheduler for the current thread.
-     *
-     * MRI: rb_fiber_scheduler_set
      */
+    @CRuby(value = "rb_fiber_scheduler_set", file = "scheduler.c")
     public IRubyObject setFiberScheduler(ThreadContext context, IRubyObject scheduler) {
 //        VM_ASSERT(ruby_thread_has_gvl_p());
 
@@ -2844,7 +2842,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return scheduler;
     }
 
-    // MRI: rb_fiber_scheduler_current_for_threadptr, rb_fiber_scheduler_current
+    @CRuby(value = "rb_fiber_scheduler_current_for_threadptr", file = "scheduler.c")
+    @CRuby(value = "rb_fiber_scheduler_current", file = "scheduler.c")
     public IRubyObject getSchedulerCurrent() {
         if (!isBlocking()) {
             return scheduler;

@@ -27,6 +27,7 @@ import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyUnboundMethod;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Access;
 import org.jruby.api.Convert;
@@ -583,14 +584,14 @@ public class JavaProxy extends RubyObject {
         confirmCachedProxy(NONPERSISTENT_IVAR_MESSAGE);
     }
 
-    /** rb_singleton_class
-     *
+    /**
      * Note: this method is specialized for RubyFixnum, RubySymbol,
      * RubyNil and RubyBoolean
      *
      * Will either return the existing singleton class for this
      * object, or create a new one and return that.
      */
+    @CRuby(value = "rb_singleton_class", file = "class.c")
     @Override
     public RubyClass singletonClass(ThreadContext context) {
         confirmCachedProxy(NONPERSISTENT_SINGLETON_MESSAGE);

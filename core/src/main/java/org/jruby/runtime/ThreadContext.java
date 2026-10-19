@@ -45,6 +45,7 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyProc;
+import org.jruby.anno.CRuby;
 import org.jruby.ext.coverage.MethodCoverage;
 import org.jruby.exceptions.CatchThrow;
 import org.jruby.RubyInstanceConfig;
@@ -629,33 +630,25 @@ public final class ThreadContext {
         return frameStack[frameIndex].getBackRef(nil);
     }
 
-    /**
-     * MRI: rb_reg_last_match
-     */
+    @CRuby(value = "rb_reg_last_match", file = "re.c")
     @JIT
     public IRubyObject last_match() {
         return RubyRegexp.nth_match(this, 0, frameStack[frameIndex].getBackRef(nil));
     }
 
-    /**
-     * MRI: rb_reg_match_pre
-     */
+    @CRuby(value = "rb_reg_match_pre", file = "re.c")
     @JIT
     public IRubyObject match_pre() {
         return RubyRegexp.match_pre(this, frameStack[frameIndex].getBackRef(nil));
     }
 
-    /**
-     * MRI: rb_reg_match_post
-     */
+    @CRuby(value = "rb_reg_match_post", file = "re.c")
     @JIT
     public IRubyObject match_post() {
         return RubyRegexp.match_post(this, frameStack[frameIndex].getBackRef(nil));
     }
 
-    /**
-     * MRI: rb_reg_match_last
-     */
+    @CRuby(value = "rb_reg_match_last", file = "re.c")
     @JIT
     public IRubyObject match_last() {
         return RubyRegexp.match_last(this, frameStack[frameIndex].getBackRef(nil));
@@ -1408,7 +1401,7 @@ public final class ThreadContext {
         IRubyObject call(ThreadContext context, T state, IRubyObject obj, boolean recur);
     }
 
-    // MRI: rb_exec_recursive
+    @CRuby(value = "rb_exec_recursive", file = "thread.c")
     public <T> IRubyObject execRecursive(RecursiveFunctionEx<T> func, T state, IRubyObject obj, String name) {
         return safeRecurse(func, state, obj, name, false);
     }

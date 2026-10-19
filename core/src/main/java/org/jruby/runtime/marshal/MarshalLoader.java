@@ -53,6 +53,7 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
+import org.jruby.anno.CRuby;
 import org.jruby.api.Create;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.Helpers;
@@ -118,7 +119,7 @@ public class MarshalLoader {
         }
     }
 
-    // r_object
+    @CRuby(value = "r_object", file = "marshal.c")
     public IRubyObject unmarshalObject(ThreadContext context, RubyInputStream in) {
         return object0(context, in, new MarshalState(false), false, null);
     }
@@ -667,7 +668,7 @@ public class MarshalLoader {
         return (int) result;
     }
 
-    // MRI: sym2encidx
+    @CRuby(value = "sym2encidx", file = "marshal.c")
     private Encoding symbolToEncoding(ThreadContext context, RubySymbol symbol, IRubyObject value) {
         if (symbol.getEncoding() != USASCIIEncoding.INSTANCE) return null;
 

@@ -11,6 +11,7 @@ import org.jruby.RubyKernel;
 import org.jruby.RubyObject;
 import org.jruby.RubySymbol;
 import org.jruby.RubyThread;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.FiberKill;
@@ -155,7 +156,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         return context.nil;
     }
 
-    // MRI: inherit_fiber_storage
+    @CRuby(value = "inherit_fiber_storage", file = "cont.c")
     public void inheritFiberStorage(ThreadContext context) {
         RubyHash storage = context.getFiber().storage;
         this.storage = storage == null ? null : (RubyHash) storage.dup(context);
@@ -486,7 +487,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         }
     }
 
-    // MRI: fiber_status_name
+    @CRuby(value = "fiber_status_name", file = "cont.c")
     private String status(ThreadContext context) {
         FiberData fiberData = this.data;
 
@@ -924,19 +925,19 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
             return scheduler.callMethod(context, "fiber", args, block);
         }
 
-        // MRI: rb_fiber_s_scheduler
+        @CRuby(value = "rb_fiber_s_scheduler", file = "cont.c")
         @JRubyMethod(name = "scheduler", meta = true)
         public static IRubyObject get_scheduler(ThreadContext context, IRubyObject self) {
             return context.getFiberCurrentThread().getScheduler();
         }
 
-        // MRI: rb_fiber_current_scheduler
+        @CRuby(value = "rb_fiber_current_scheduler", file = "cont.c")
         @JRubyMethod(name = "current_scheduler", meta = true)
         public static IRubyObject current_scheduler(ThreadContext context, IRubyObject self) {
             return context.getFiberCurrentThread().getSchedulerCurrent();
         }
 
-        // MRI: rb_fiber_set_scheduler
+        @CRuby(value = "rb_fiber_set_scheduler", file = "cont.c")
         @JRubyMethod(name = "set_scheduler", meta = true)
         public static IRubyObject set_scheduler(ThreadContext context, IRubyObject self, IRubyObject scheduler) {
             return context.getFiberCurrentThread().setFiberScheduler(context, scheduler);

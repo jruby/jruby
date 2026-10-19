@@ -28,6 +28,7 @@ import org.jruby.RubyRational;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.anno.CRuby;
 import org.jruby.api.Convert;
 import org.jruby.api.Create;
 import org.jruby.exceptions.JumpException;
@@ -1621,7 +1622,7 @@ public class IRRuntimeHelpers {
         }
     }
 
-    // MRI: vm_search_normal_superclass
+    @CRuby(value = "vm_search_normal_superclass", file = "vm_insnhelper.c")
     private static RubyClass searchNormalSuperclass(RubyModule klazz) {
         // Unwrap refinements, since super should always dispatch back to the refined class
         if (klazz.isIncluded()

@@ -41,6 +41,7 @@ package org.jruby;
 
 import com.headius.backport9.buffer.Buffers;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Create;
@@ -638,9 +639,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
         return ifNone == UNDEF ? context.nil : ifNone;
     }
 
-    /** rb_hash_set_default
-     *
-     */
+    @CRuby(value = "rb_hash_set_default", file = "hash.c")
     @JRubyMethod(name = "default=")
     public IRubyObject default_value_set(ThreadContext context, final IRubyObject defaultValue) {
         modify();
@@ -651,9 +650,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
         return ifNone;
     }
 
-    /** rb_hash_default_proc
-     *
-     */
+    @CRuby(value = "rb_hash_default_proc", file = "hash.c")
     @JRubyMethod
     public IRubyObject default_proc(ThreadContext context) {
         return hasHashFlag(PROCDEFAULT_HASH) ? ifNone : context.nil;
@@ -671,9 +668,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
         }
     }
 
-    /** rb_hash_set_default_proc
-     *
-     */
+    @CRuby(value = "rb_hash_set_default_proc", file = "hash.c")
     @JRubyMethod(name = "default_proc=")
     public IRubyObject set_default_proc(ThreadContext context, IRubyObject proc) {
         modify();
@@ -694,16 +689,12 @@ public class RubyHashLinkedBuckets extends RubyHash {
         return proc;
     }
 
-    /** rb_hash_modify
-     *
-     */
+    @CRuby(value = "rb_hash_modify", file = "hash.c")
     public void modify() {
     	testFrozen("Hash");
     }
 
-    /** inspect_hash
-     *
-     */
+    @CRuby(value = "inspect_hash", file = "hash.c")
     protected RubyString inspectHash(final ThreadContext context) {
         final RubyString str = RubyString.newStringLight(context.runtime, DEFAULT_INSPECT_STR_SIZE, USASCIIEncoding.INSTANCE);
 
@@ -793,9 +784,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
         }
     }
 
-    /** rb_hash_inspect
-     *
-     */
+    @CRuby(value = "rb_hash_inspect", file = "hash.c")
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect(ThreadContext context) {
         final Ruby runtime = context.runtime;
@@ -811,9 +800,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
         }
     }
 
-    /** rb_hash_size
-     *
-     */
+    @CRuby(value = "rb_hash_size", file = "hash.c")
     @JRubyMethod(name = {"size", "length"})
     public RubyFixnum rb_size(ThreadContext context) {
         return asFixnum(context, size);
@@ -828,17 +815,13 @@ public class RubyHashLinkedBuckets extends RubyHash {
         return recv.rb_size(context);
     }
 
-    /** rb_hash_empty_p
-     *
-     */
+    @CRuby(value = "rb_hash_empty_p", file = "hash.c")
     @JRubyMethod(name = "empty?")
     public RubyBoolean empty_p(ThreadContext context) {
         return size == 0 ? context.tru : context.fals;
     }
 
-    /** rb_hash_to_a
-     *
-     */
+    @CRuby(value = "rb_hash_to_a", file = "hash.c")
     @JRubyMethod(name = "to_a")
     @Override
     public RubyArray to_a(ThreadContext context) {
@@ -869,9 +852,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
         return inspect(context);
     }
 
-    /** rb_hash_rehash
-     *
-     */
+    @CRuby(value = "rb_hash_rehash", file = "hash.c")
     @JRubyMethod(name = "rehash")
     public RubyHash rehash(ThreadContext context) {
         if (iteratorCount > 0) throw runtimeError(context, "rehash during iteration");
@@ -938,9 +919,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
         return this;
     }
 
-    /** rb_hash_to_hash
-     *
-     */
+    @CRuby(value = "rb_hash_to_hash", file = "hash.c")
     @JRubyMethod(name = "to_hash")
     public RubyHash to_hash(ThreadContext context) {
         return this;
@@ -1041,7 +1020,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
      * @param value the value
      * @return the value set
      */
-    // MRI: rb_hash_aset
+    @CRuby(value = "rb_hash_aset", file = "hash.c")
     @JRubyMethod(name = {"[]=", "store"})
     public IRubyObject op_aset(ThreadContext context, IRubyObject key, IRubyObject value) {
         modify();
@@ -1077,7 +1056,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
         }
     }
 
-    // MRI: rb_hash_key_str
+    @CRuby(value = "rb_hash_key_str", file = "hash.c")
     private static RubyString hashKeyString(ThreadContext context, RubyString key) {
         return key.isBare(context) ? context.runtime.freezeAndDedupString(key) : (RubyString) key.dupFrozen();
     }
@@ -1148,9 +1127,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
         }
     };
 
-    /** rb_hash_equal
-     *
-     */
+    @CRuby(value = "rb_hash_equal", file = "hash.c")
     @Override
     @JRubyMethod(name = "==")
     public IRubyObject op_equal(final ThreadContext context, IRubyObject other) {
@@ -1187,26 +1164,20 @@ public class RubyHashLinkedBuckets extends RubyHash {
         return context.tru;
     }
 
-    /** rb_hash_eql
-     *
-     */
+    @CRuby(value = "rb_hash_eql", file = "hash.c")
     @JRubyMethod(name = "eql?")
     public IRubyObject op_eql(final ThreadContext context, IRubyObject other) {
         return hashEqual(context, this, other, true);
     }
 
-    /** rb_hash_aref
-     *
-     */
+    @CRuby(value = "rb_hash_aref", file = "hash.c")
     @JRubyMethod(name = "[]")
     public IRubyObject op_aref(ThreadContext context, IRubyObject key) {
         IRubyObject value;
         return ((value = internalGet(key)) == null) ? sites(context).self_default.call(context, this, this, key) : value;
     }
 
-    /** hash_le_i
-     *
-     */
+    @CRuby(value = "hash_le_i", file = "hash.c")
     private boolean hash_le(RubyHash other) {
         return other.directEntrySet().containsAll(directEntrySet());
     }
@@ -1239,7 +1210,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
         return otherHash.op_le(context, this);
     }
 
-    // MRI: rb_hash_hash
+    @CRuby(value = "rb_hash_hash", file = "hash.c")
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
         final int size = size();
@@ -1273,9 +1244,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
         }
     };
 
-    /** rb_hash_fetch
-     *
-     */
+    @CRuby(value = "rb_hash_fetch", file = "hash.c")
     public IRubyObject fetch(ThreadContext context, IRubyObject[] args, Block block) {
         Arity.checkArgumentCount(context, args.length, 1, 2);
 
@@ -1328,9 +1297,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
         return value;
     }
 
-    /** rb_hash_has_key
-     *
-     */
+    @CRuby(value = "rb_hash_has_key", file = "hash.c")
     @JRubyMethod(name = {"has_key?", "key?", "include?", "member?"})
     public RubyBoolean has_key_p(ThreadContext context, IRubyObject key) {
         return hasKey(key) ? context.tru : context.fals;
@@ -1388,9 +1355,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
         }
     };
 
-    /** rb_hash_has_value
-     *
-     */
+    @CRuby(value = "rb_hash_has_value", file = "hash.c")
     @JRubyMethod(name = {"has_value?", "value?"})
     public RubyBoolean has_value_p(ThreadContext context, IRubyObject expected) {
         return asBoolean(context, hasValue(context, expected));
@@ -1443,9 +1408,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
         return block.isGiven() ? each_pairCommon(context, block) : enumeratorizeWithSize(context, this, "each", RubyHashLinkedBuckets::size);
     }
 
-    /** rb_hash_each_pair
-     *
-     */
+    @CRuby(value = "rb_hash_each_pair", file = "hash.c")
     public RubyHashLinkedBuckets each_pairCommon(final ThreadContext context, final Block block) {
         iteratorVisitAll(context, YieldKeyValueArrayVisitor, block);
 
@@ -1465,9 +1428,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
         }
     };
 
-    /** rb_hash_each_value
-     *
-     */
+    @CRuby(value = "rb_hash_each_value", file = "hash.c")
     public RubyHashLinkedBuckets each_valueCommon(final ThreadContext context, final Block block) {
         iteratorVisitAll(context, YieldValueVisitor, block);
 
@@ -1486,9 +1447,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
         return block.isGiven() ? each_valueCommon(context, block) : enumeratorizeWithSize(context, this, "each_value", RubyHashLinkedBuckets::size);
     }
 
-    /** rb_hash_each_key
-     *
-     */
+    @CRuby(value = "rb_hash_each_key", file = "hash.c")
     public RubyHashLinkedBuckets each_keyCommon(final ThreadContext context, final Block block) {
         iteratorVisitAll(context, YieldKeyVisitor, block);
 
@@ -1666,10 +1625,8 @@ public class RubyHashLinkedBuckets extends RubyHash {
         }
     };
 
-    /** rb_hash_keys
-     *
-     */
 
+    @CRuby(value = "rb_hash_keys", file = "hash.c")
     @JRubyMethod(name = "keys")
     public RubyArray keys(final ThreadContext context) {
         try {
@@ -1694,10 +1651,8 @@ public class RubyHashLinkedBuckets extends RubyHash {
         }
     };
 
-    /** rb_hash_values
-     *
-     */
 
+    @CRuby(value = "rb_hash_values", file = "hash.c")
     @JRubyMethod(name = "values")
     public RubyArray values(final ThreadContext context) {
         try {
@@ -1715,10 +1670,8 @@ public class RubyHashLinkedBuckets extends RubyHash {
         return values(context);
     }
 
-    /** rb_hash_equal
-     *
-     */
 
+    @CRuby(value = "rb_hash_equal", file = "hash.c")
     private static class Mismatch extends RuntimeException {
         public Throwable fillInStackTrace() {
             return this;
@@ -1726,9 +1679,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
     }
     private static final Mismatch MISMATCH = new Mismatch();
 
-    /** rb_hash_shift
-     *
-     */
+    @CRuby(value = "rb_hash_shift", file = "hash.c")
     @JRubyMethod(name = "shift")
     public IRubyObject shift(ThreadContext context) {
         modify();
@@ -1755,9 +1706,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
         return internalDelete(key) != NULL_ENTRY;
     }
 
-    /** rb_hash_delete
-     *
-     */
+    @CRuby(value = "rb_hash_delete", file = "hash.c")
     @JRubyMethod
     public IRubyObject delete(ThreadContext context, IRubyObject key, Block block) {
         modify();
@@ -1780,9 +1729,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
         return delete(context, key, Block.NULL_BLOCK);
     }
 
-    /** rb_hash_select
-     *
-     */
+    @CRuby(value = "rb_hash_select", file = "hash.c")
     @JRubyMethod(name = "select", alias = "filter")
     public IRubyObject select(final ThreadContext context, final Block block) {
         if (!block.isGiven()) return enumeratorizeWithSize(context, this, "select", RubyHashLinkedBuckets::size);
@@ -1797,9 +1744,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
     }
 
 
-    /** rb_hash_slice
-     *
-     */
+    @CRuby(value = "rb_hash_slice", file = "hash.c")
     @JRubyMethod(name = "slice", rest = true)
     public RubyHash slice(final ThreadContext context, final IRubyObject[] args) {
         RubyHash result = Create.newHash(context);
@@ -1814,9 +1759,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
         return result;
     }
 
-    /** rb_hash_delete_if
-     *
-     */
+    @CRuby(value = "rb_hash_delete_if", file = "hash.c")
     public RubyHashLinkedBuckets delete_ifInternal(ThreadContext context, Block block) {
         modify();
 
@@ -1839,9 +1782,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
         return block.isGiven() ? delete_ifInternal(context, block) : enumeratorizeWithSize(context, this, "delete_if", RubyHashLinkedBuckets::size);
     }
 
-    /** rb_hash_reject
-     *
-     */
+    @CRuby(value = "rb_hash_reject", file = "hash.c")
     public RubyHashLinkedBuckets rejectInternal(ThreadContext context, Block block) {
         final RubyHashLinkedBuckets result = hashCopyWithIdentity(context);
 
@@ -1857,9 +1798,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
         return block.isGiven() ? rejectInternal(context, block) : enumeratorizeWithSize(context, this, "reject", RubyHashLinkedBuckets::size);
     }
 
-    /** rb_hash_reject_bang
-     *
-     */
+    @CRuby(value = "rb_hash_reject_bang", file = "hash.c")
     public IRubyObject reject_bangInternal(ThreadContext context, Block block) {
         int n = size();
         delete_if(context, block);
@@ -1872,9 +1811,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
         return block.isGiven() ? reject_bangInternal(context, block) : enumeratorizeWithSize(context, this, "reject!", RubyHashLinkedBuckets::size);
     }
 
-    /** rb_hash_clear
-     *
-     */
+    @CRuby(value = "rb_hash_clear", file = "hash.c")
     @JRubyMethod(name = "clear")
     public RubyHash rb_clear(ThreadContext context) {
         modify();
@@ -1887,9 +1824,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
         return this;
     }
 
-    /** rb_hash_invert
-     *
-     */
+    @CRuby(value = "rb_hash_invert", file = "hash.c")
     @JRubyMethod(name = "invert")
     public RubyHash invert(final ThreadContext context) {
         final RubyHash result = Create.newHash(context);
@@ -1906,9 +1841,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
         }
     };
 
-    /** rb_hash_update
-     *
-     */
+    @CRuby(value = "rb_hash_update", file = "hash.c")
     @JRubyMethod(name = {"merge!", "update"}, rest = true)
     public RubyHashLinkedBuckets merge_bang(ThreadContext context, IRubyObject[] others, Block block) {
         modify();
@@ -1938,9 +1871,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
         }
     }
 
-    /** rb_hash_merge
-     *
-     */
+    @CRuby(value = "rb_hash_merge", file = "hash.c")
     @JRubyMethod(rest = true)
     public RubyHash merge(ThreadContext context, IRubyObject[] others, Block block) {
         RubyHash dup = (RubyHash) dup(context);
@@ -1952,9 +1883,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
         return replace(context, other);
     }
 
-    /** rb_hash_replace
-     *
-     */
+    @CRuby(value = "rb_hash_replace", file = "hash.c")
     @JRubyMethod(name = "replace")
     public RubyHash replace(final ThreadContext context, IRubyObject other) {
         modify();
@@ -2002,9 +1931,7 @@ public class RubyHashLinkedBuckets extends RubyHash {
         }
     };
 
-    /** rb_hash_values_at
-     *
-     */
+    @CRuby(value = "rb_hash_values_at", file = "hash.c")
     @JRubyMethod(name = "values_at", rest = true)
     public RubyArray values_at(ThreadContext context, IRubyObject[] args) {
         RubyArray result = RubyArrayNative.newBlankArrayInternal(context.runtime, args.length);

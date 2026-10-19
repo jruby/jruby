@@ -28,6 +28,7 @@
 
 package org.jruby;
 
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.ast.util.ArgsUtil;
@@ -563,9 +564,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         return context.sites.Fiber;
     }
 
-    /** MRI: enumerator_s_produce
-     *
-     */
+    @CRuby(value = "enumerator_s_produce", file = "enumerator.c")
     @JRubyMethod(meta = true, optional = 2, checkArity = false, keywords = true)
     public static IRubyObject produce(ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
         IRubyObject size = UNDEF;

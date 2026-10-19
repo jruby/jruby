@@ -39,6 +39,7 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Convert;
@@ -173,9 +174,7 @@ public abstract class RubyInteger extends RubyNumeric {
      *  =============
      */
 
-    /** rb_int_s_isqrt
-     *
-     */
+    @CRuby(value = "rb_int_s_isqrt", file = "numeric.c")
     @JRubyMethod(meta = true)
     public static IRubyObject sqrt(ThreadContext context, IRubyObject self, IRubyObject num) {
         return Convert.toInteger(context, num).sqrt(context);
@@ -234,9 +233,7 @@ public abstract class RubyInteger extends RubyNumeric {
         return context.tru;
     }
 
-    /** int_upto
-     *
-     */
+    @CRuby(value = "int_upto", file = "numeric.c")
     @JRubyMethod
     public IRubyObject upto(ThreadContext context, IRubyObject to, Block block) {
         if (block.isGiven()) {
@@ -289,9 +286,7 @@ public abstract class RubyInteger extends RubyNumeric {
         return intervalStepSize(context, from, args[0], RubyFixnum.one(context.runtime), false);
     }
 
-    /** int_downto
-     *
-     */
+    @CRuby(value = "int_downto", file = "numeric.c")
     @JRubyMethod
     public IRubyObject downto(ThreadContext context, IRubyObject to, Block block) {
         if (block.isGiven()) {
@@ -372,9 +367,7 @@ public abstract class RubyInteger extends RubyNumeric {
         return recv;
     }
 
-    /** int_succ
-     *
-     */
+    @CRuby(value = "int_succ", file = "numeric.c")
     @JRubyMethod(name = {"succ", "next"})
     public IRubyObject succ(ThreadContext context) {
         if (this instanceof RubyFixnum) {
@@ -467,9 +460,7 @@ public abstract class RubyInteger extends RubyNumeric {
         return RubyString.newStringShared(runtime, meta, bytes);
     }
 
-    /** int_chr
-     *
-     */
+    @CRuby(value = "int_chr", file = "numeric.c")
     @JRubyMethod(name = "chr")
     public RubyString chr(ThreadContext context) {
         long uint = toUnsignedInteger(context);
@@ -644,9 +635,7 @@ public abstract class RubyInteger extends RubyNumeric {
         return roundShared(context, ndigits, RoundingMode.HALF_UP);
     }
 
-    /*
-     * MRI: rb_int_round
-     */
+    @CRuby(value = "rb_int_round", file = "numeric.c")
     public RubyNumeric roundShared(ThreadContext context, int ndigits, RoundingMode roundingMode) {
         if (int_round_zero_p(context, ndigits)) return asFixnum(context, 0);
 
@@ -729,17 +718,13 @@ public abstract class RubyInteger extends RubyNumeric {
         return num.isNegativeNumber(context);
     }
 
-    /** integer_to_r
-     *
-     */
+    @CRuby(value = "integer_to_r", file = "rational.c")
     @JRubyMethod(name = "to_r")
     public IRubyObject to_r(ThreadContext context) {
         return RubyRational.newRationalCanonicalize(context, this);
     }
 
-    /** integer_rationalize
-     *
-     */
+    @CRuby(value = "integer_rationalize", file = "rational.c")
     @JRubyMethod(name = "rationalize", optional = 1, checkArity = false)
     public IRubyObject rationalize(ThreadContext context, IRubyObject[] args) {
         Arity.checkArgumentCount(context, args, 0, 1);
@@ -785,9 +770,7 @@ public abstract class RubyInteger extends RubyNumeric {
         return numFuncall(context, this, sites(context).op_minus, RubyFixnum.one(context.runtime));
     }
 
-    /** rb_gcd
-     *
-     */
+    @CRuby(value = "rb_gcd", file = "rational.c")
     @JRubyMethod(name = "gcd")
     public IRubyObject gcd(ThreadContext context, IRubyObject other) {
         return f_gcd(context, this, RubyInteger.intValue(context, other));
@@ -810,17 +793,13 @@ public abstract class RubyInteger extends RubyNumeric {
 
     public abstract IRubyObject fdivDouble(ThreadContext context, IRubyObject y);
 
-    /** rb_lcm
-     *
-     */
+    @CRuby(value = "rb_lcm", file = "rational.c")
     @JRubyMethod(name = "lcm")
     public IRubyObject lcm(ThreadContext context, IRubyObject other) {
         return f_lcm(context, this, RubyInteger.intValue(context, other));
     }
 
-    /** rb_gcdlcm
-     *
-     */
+    @CRuby(value = "rb_gcdlcm", file = "rational.c")
     @JRubyMethod(name = "gcdlcm")
     public IRubyObject gcdlcm(ThreadContext context, IRubyObject other) {
         final RubyInteger otherInt = RubyInteger.intValue(context, other);
@@ -937,7 +916,7 @@ public abstract class RubyInteger extends RubyNumeric {
 
     private static final long HALF_LONG_MSB = 0x80000000L;
 
-    // MRI: rb_int_powm
+    @CRuby(value = "rb_int_powm", file = "bignum.c")
     @JRubyMethod(name = "pow")
     public IRubyObject pow(ThreadContext context, IRubyObject b, IRubyObject m) {
         boolean negaFlg = false;

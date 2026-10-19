@@ -35,6 +35,7 @@ package org.jruby;
 
 import jnr.posix.FileStat;
 import jnr.posix.util.Platform;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.GlobalVariable;
@@ -372,7 +373,7 @@ public class RubyArgsFile extends RubyObject {
         return getCurrentDataFile(context, "no stream to set encoding").external_encoding(context);
     }
 
-    // MRI: argf_getline
+    @CRuby(value = "argf_getline", file = "io.c")
     private static IRubyObject argf_getline(ThreadContext context, final int callInfo, IRubyObject[] args) {
         IRubyObject line;
         ArgsFileData data = ArgsFileData.getArgsFileData(context.runtime);

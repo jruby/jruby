@@ -5,6 +5,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyIO;
 import org.jruby.RubyThread;
+import org.jruby.anno.CRuby;
 import org.jruby.api.Create;
 import org.jruby.ext.socket.RubyBasicSocket;
 import org.jruby.runtime.ThreadContext;
@@ -355,7 +356,7 @@ public class SelectExecutor {
         }
     }
 
-    // MRI: rb_thread_fd_select
+    @CRuby(value = "rb_thread_fd_select", file = "thread.c")
     private int threadFdSelect(ThreadContext context) {
         if (readKeyList == null && writeKeyList == null && errorKeyList == null) {
             if (timeout == null) { // sleep forever
