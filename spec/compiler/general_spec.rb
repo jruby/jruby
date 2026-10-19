@@ -1166,6 +1166,29 @@ modes.each do |mode|
       end
     end
 
+    # See https://github.com/jruby/jruby/issues/9820
+    it "compiles calls with keyword arguments and a block-pass argument" do
+      run(<<~'RUBY') do |x|
+        def kw_block_pass(*a, **kw, &b) = [a, kw, b&.call(2)]
+        pr = proc { |v| v * 10 }
+        [
+          kw_block_pass(a: 1, &:to_s),
+          kw_block_pass(1, a: 2, &pr),
+          kw_block_pass(a: 1, &nil),
+          kw_block_pass(a: 1, &method(:Integer)),
+          [1].map { kw_block_pass(a: 3, &pr) }
+        ]
+      RUBY
+        expect(x).to eq [
+          [[], {a: 1}, "2"],
+          [[1], {a: 2}, 20],
+          [[], {a: 1}, nil],
+          [[], {a: 1}, 2],
+          [[[], {a: 3}, 20]]
+        ]
+      end
+    end
+
     it "passes keyrest arguments through zsuper correctly" do
       run '
         class C

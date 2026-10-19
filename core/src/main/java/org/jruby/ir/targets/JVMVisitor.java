@@ -1394,17 +1394,19 @@ public class JVMVisitor extends IRVisitor {
             visit(pair.getValue());
         }
 
-        if (blockPassType.given()) {
-            visit(call.getClosureArg());
-            switch (BlockPassType.fromIR(call)) {
-                case LITERAL:
-                    callArguments.add(new CallArgument(callArguments.size(), CallArgument.Type.BLOCK, Identifier.BLOCK));
-                    break;
-                case GIVEN:
-                    callArguments.add(new CallArgument(callArguments.size(), CallArgument.Type.BLOCK_PASS, Identifier.BLOCK));
-                    break;
-                case NONE:
-            }
+        switch (blockPassType) {
+            case LITERAL:
+                visit(call.getClosureArg());
+                callArguments.add(new CallArgument(callArguments.size(), CallArgument.Type.BLOCK, Identifier.BLOCK));
+                break;
+            case GIVEN:
+                // a block-pass argument can be any object, such as a Symbol or a Proc, so convert it as normal calls do
+                m.loadContext();
+                visit(call.getClosureArg());
+                m.invokeIRHelper("getBlockFromObject", sig(Block.class, ThreadContext.class, Object.class));
+                callArguments.add(new CallArgument(callArguments.size(), CallArgument.Type.BLOCK_PASS, Identifier.BLOCK));
+                break;
+            case NONE:
         }
 
         m.getInvocationCompiler().invoke(file, jvm.methodData().scopeField, call, callArguments.toArray(CallArgument[]::new));
