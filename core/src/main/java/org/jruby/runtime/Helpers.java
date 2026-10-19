@@ -42,6 +42,7 @@ import com.headius.invokebinder.Binder;
 import jnr.constants.platform.Errno;
 import jnr.posix.POSIX;
 import org.jruby.*;
+import org.jruby.anno.CRuby;
 import org.jruby.api.Create;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgumentNode;
@@ -1039,49 +1040,47 @@ public class Helpers {
         return asClass.finvoke(context, self, name, arg0, arg1, arg2, block);
     }
 
-    /**
-    * MRI: rb_funcallv_public
-    */
+    @CRuby(value = "rb_funcallv_public", file = "vm_eval.c")
     public static IRubyObject invokePublic(ThreadContext context, IRubyObject self, String name, IRubyObject arg) {
         return getMetaClass(self).invokePublic(context, self, name, arg);
     }
 
     /**
      * Invoke the method requested if the given object respond_to? it, returning null if it is not defined.
-     * MRI: rb_check_funcall
      */
+    @CRuby(value = "rb_check_funcall", file = "vm_eval.c")
     public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, String name) {
         return getMetaClass(self).finvokeChecked(context, self, name);
     }
 
     /**
      * Invoke the method requested if the given object respond_to? it, returning null if it is not defined.
-     * MRI: rb_check_funcall
      */
+    @CRuby(value = "rb_check_funcall", file = "vm_eval.c")
     public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites) {
         return getMetaClass(self).finvokeChecked(context, self, sites);
     }
 
     /**
      * Invoke the method requested if the given object respond_to? it, returning null if it is not defined.
-     * MRI: rb_check_funcall
      */
+    @CRuby(value = "rb_check_funcall", file = "vm_eval.c")
     public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, String name, IRubyObject... args) {
         return getMetaClass(self).finvokeChecked(context, self, name, args);
     }
 
     /**
      * Invoke the method requested if the given object respond_to? it, returning null if it is not defined.
-     * MRI: rb_check_funcall
      */
+    @CRuby(value = "rb_check_funcall", file = "vm_eval.c")
     public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites, IRubyObject arg0) {
         return getMetaClass(self).finvokeChecked(context, self, sites, arg0);
     }
 
     /**
      * Invoke the method requested if the given object respond_to? it, returning null if it is not defined.
-     * MRI: rb_check_funcall
      */
+    @CRuby(value = "rb_check_funcall", file = "vm_eval.c")
     public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites, IRubyObject... args) {
         return getMetaClass(self).finvokeChecked(context, self, sites, args);
     }
@@ -3024,7 +3023,7 @@ public class Helpers {
         return asgnNode.childNodes().get(0) instanceof RequiredKeywordArgumentValueNode;
     }
 
-    // MRI: rb_hash_start
+    @CRuby(value = "rb_hash_start", file = "random.c")
     public static long hashStart(Ruby runtime, long value) {
         long hash = value +
                 (runtime.isSiphashEnabled() ?
@@ -3039,7 +3038,7 @@ public class Helpers {
         return value;
     }
 
-    // MRI: rb_hash
+    @CRuby(value = "rb_hash", file = "hash.c")
     public static RubyFixnum safeHash(final ThreadContext context, IRubyObject obj) {
         var hval = context.safeRecurse(sites(context).recursive_hash, context.runtime, obj, "hash", true);
 

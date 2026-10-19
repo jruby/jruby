@@ -11,6 +11,7 @@ import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash.HashEntryIterator;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
+import org.jruby.anno.CRuby;
 import org.jruby.javasupport.Java;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.ThreadContext;
@@ -314,7 +315,7 @@ public final class EncodingService {
         return getEncodingFromObjectCommon(arg, true);
     }
 
-    // rb_to_encoding_index
+    @CRuby(value = "rb_to_encoding_index", file = "encoding.c")
     public Encoding getEncodingFromObjectNoError(IRubyObject arg) {
         return getEncodingFromObjectCommon(arg, false);
     }
@@ -497,7 +498,7 @@ public final class EncodingService {
         return filesystemEncoding;
     }
 
-    // MRI: env_encoding
+    @CRuby(value = "env_encoding", file = "hash.c")
     public Encoding getEnvEncoding() {
         return Platform.IS_WINDOWS ? UTF8Encoding.INSTANCE : getLocaleEncoding();
     }

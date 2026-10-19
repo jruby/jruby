@@ -42,6 +42,7 @@ import jnr.enxio.channels.NativeDeviceChannel;
 import jnr.posix.POSIX;
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Create;
 import org.jruby.api.Define;
@@ -858,12 +859,12 @@ public class RubyGlobal {
             return result;
         }
 
-        // MRI: env_str_new
+        @CRuby(value = "env_str_new", file = "hash.c")
         protected static IRubyObject newString(ThreadContext context, RubyString value) {
             return newString(context, value, encodingService(context).getEnvEncoding());
         }
 
-        // MRI: env_str_new2
+        @CRuby(value = "env_str_new2", file = "hash.c")
         protected static IRubyObject newString(ThreadContext context, IRubyObject obj) {
             return obj.isNil() ? context.nil : newString(context, (RubyString) obj);
         }

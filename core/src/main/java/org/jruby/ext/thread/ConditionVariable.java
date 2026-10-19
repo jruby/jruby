@@ -34,6 +34,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyMarshal;
 import org.jruby.RubyObject;
 import org.jruby.RubyThread;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
@@ -108,7 +109,7 @@ public class ConditionVariable extends RubyObject {
         return this;
     }
 
-    // MRI: sync_wakeup
+    @CRuby(value = "sync_wakeup", file = "thread_sync.c")
     private void wakeup(ThreadContext context, Waiter waiter) {
         switch (waiter) {
             case ThreadWaiter(RubyThread thread) -> thread.interrupt();

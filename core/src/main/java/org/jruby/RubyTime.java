@@ -45,6 +45,7 @@ import org.joda.time.*;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.tz.FixedDateTimeZone;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
@@ -249,7 +250,7 @@ public class RubyTime extends RubyObject {
         return parseTZString(context, zone);
     }
 
-    // MRI: utc_offset_arg
+    @CRuby(value = "utc_offset_arg", file = "time.c")
     public static DateTimeZone getTimeZoneFromUtcOffset(ThreadContext context, IRubyObject arg) {
         String strOffset = arg.toString();
         DateTimeZone cachedZone = context.runtime.getTimezoneCache().get(strOffset);

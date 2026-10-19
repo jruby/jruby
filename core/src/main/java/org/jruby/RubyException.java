@@ -37,6 +37,7 @@
 
 package org.jruby;
 
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Create;
@@ -354,7 +355,7 @@ public class RubyException extends RubyObject {
         }
     }
 
-    // MRI: rb_check_backtrace
+    @CRuby(value = "rb_check_backtrace", file = "error.c")
     private static IRubyObject checkBacktrace(ThreadContext context, IRubyObject obj) {
         if (obj.isNil() || isArrayOfStrings(obj)) {
             return obj;
@@ -365,7 +366,7 @@ public class RubyException extends RubyObject {
         }
     }
 
-    // MRI: rb_location_ary_to_backtrace
+    @CRuby(value = "rb_location_ary_to_backtrace", file = "vm_backtrace.c")
     private BacktraceData locationArrayToBacktrace(IRubyObject ary) {
         if (!(ary instanceof RubyArray array) || array.size() == 0 || asBacktraceLocation(array.eltOk(0)) == null) {
             return null;
@@ -387,7 +388,7 @@ public class RubyException extends RubyObject {
         return new BacktraceData(backtrace);
     }
 
-    // MRI: rb_frame_info_p
+    @CRuby(value = "rb_frame_info_p", file = "vm_backtrace.c")
     private static RubyThread.Location asBacktraceLocation(IRubyObject object) {
         if (object instanceof RubyThread.Location) {
             return (RubyThread.Location) object;

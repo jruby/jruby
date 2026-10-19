@@ -497,7 +497,8 @@ public class RubyBigDecimal extends RubyNumeric implements SimpleHash {
             case BIGDECIMAL -> (RubyBigDecimal) value;
             case FIXNUM -> newInstance(context, Access.getClass(context, "BigDecimal"), (RubyFixnum) value, MathContext.UNLIMITED);
             case BIGNUM -> newInstance(context, Access.getClass(context, "BigDecimal"), (RubyBignum) value, MathContext.UNLIMITED);
-            case FLOAT -> newInstance(context, Access.getClass(context, "BigDecimal"), (RubyFloat) value, new MathContext(RubyFloat.DIG));
+            // MRI truncates float strings to double_fig digits during coercion
+            case FLOAT -> newInstance(context, Access.getClass(context, "BigDecimal"), (RubyFloat) value, new MathContext(VP_DOUBLE_FIG, RoundingMode.DOWN));
             case RATIONAL -> newInstance(context, Access.getClass(context, "BigDecimal"), (RubyRational) value, new MathContext(RubyFloat.DIG));
             default -> cannotBeCoerced(context, value, must);
         };
@@ -1867,9 +1868,11 @@ public class RubyBigDecimal extends RubyNumeric implements SimpleHash {
     private int [] getPrecisionScale() {
         int precision = 0;
         int scale = 0;
-        String plainString = value.toPlainString();
+        // MRI skips trailing zeros and counts exponent zeros and leading fractional zeros
+        final BigDecimal normalized = absStripTrailingZeros();
+        String plainString = normalized.toPlainString();
 
-        if (value.equals(BigDecimal.ZERO)) {
+        if (normalized.equals(BigDecimal.ZERO)) {
             // special case
         } else {
             if (!plainString.contains(".")) {
@@ -1877,13 +1880,13 @@ public class RubyBigDecimal extends RubyNumeric implements SimpleHash {
                 precision = plainString.replace("-", "").length();
             } else {
                 // integer and fraction
-                String [] params = plainString.split("\\.");
+                String[] params = plainString.split("\\.");
                 if (new BigDecimal(params[1]).equals(BigDecimal.ZERO)) {
                     // special case
                     precision = params[0].replace("-", "").length();
                 } else {
-                    precision = Math.max(value.precision(), value.scale());
-                    scale = value.scale();
+                    precision = Math.max(normalized.precision(), normalized.scale());
+                    scale = normalized.scale();
                 }
             }
         }
@@ -1903,11 +1906,11 @@ public class RubyBigDecimal extends RubyNumeric implements SimpleHash {
         // e.g. "0.000123456789" is represented as "0 .000123456 789 * 1000000000 ^ 0" in MRI BigDecimal internal.
         // so, in this case Prec becomes 2.
         if (getExponent(context) > -9) {
-            return (value.toString().length() - 2 + 8) / BASE_FIG;
+            return (absStripTrailingZeros().toString().length() - 2 + 8) / BASE_FIG;
         }
         // e.g. "0.0000000000123456789" is represented as "0 .012345678 9 * 1000000000 ^ -1" in MRI BigDecimal internal.
         // so, in this case Prec becomes 2.
-        return (value.unscaledValue().toString().length() + 8) / BASE_FIG;
+        return (absStripTrailingZeros().unscaledValue().toString().length() + 8) / BASE_FIG;
     }
 
     @JRubyMethod(name = "round", optional = 2, checkArity = false)

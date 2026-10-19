@@ -42,7 +42,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.io.FilenoUtil;
 import org.jruby.util.io.SelectorFactory;
 
 import java.io.IOException;
@@ -273,7 +272,7 @@ public class RubyTCPServer extends RubyTCPSocket {
     public IRubyObject sysaccept(ThreadContext context) {
         try {
             IRubyObject scheduler = FiberScheduler.current(context);
-            if (scheduler != null) return asFixnum(context, FilenoUtil.filenoFrom(schedulerAccept(context, scheduler)));
+            if (scheduler != null) return asFixnum(context, newChannelFD(context.runtime, schedulerAccept(context, scheduler)).bestFileno());
 
             RubyThread thread = context.getThread();
 
@@ -290,7 +289,7 @@ public class RubyTCPServer extends RubyTCPSocket {
 
                     connected.finishConnect();
 
-                    return asFixnum(context, FilenoUtil.filenoFrom(connected));
+                    return asFixnum(context, newChannelFD(context.runtime, connected).bestFileno());
                 }
             }
 

@@ -40,6 +40,7 @@ import jnr.posix.Passwd;
 import jnr.posix.RLimit;
 import jnr.posix.Times;
 import jnr.posix.Timeval;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
@@ -91,6 +92,7 @@ import static org.jruby.api.Create.newStruct;
 import static org.jruby.api.Define.defineModule;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.notImplementedError;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.api.Warn.warn;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.Helpers.nullToNil;
@@ -105,11 +107,15 @@ import static org.jruby.util.WindowsFFI.kernel32;
 @JRubyModule(name="Process")
 public class RubyProcess {
 
+    // FIXME: these should come from jnr-constants
+    private static final int WNOHANG = 1;
+    private static final int WUNTRACED = 2;
+
     public static RubyModule createProcessModule(ThreadContext context, RubyClass Object, RubyClass Struct) {
         RubyModule Process = defineModule(context, "Process").
                 defineMethods(context, RubyProcess.class).
-                defineConstant(context, "WNOHANG", asFixnum(context, 1)).   // FIXME: should come from jnr-constants
-                defineConstant(context, "WUNTRACED", asFixnum(context, 2)). // FIXME: should come from jnr-constants
+                defineConstant(context, "WNOHANG", asFixnum(context, WNOHANG)).
+                defineConstant(context, "WUNTRACED", asFixnum(context, WUNTRACED)).
                 defineConstant(context, "CLOCK_REALTIME", asSymbol(context, CLOCK_REALTIME)).
                 defineConstant(context, "CLOCK_MONOTONIC", asSymbol(context, CLOCK_MONOTONIC)).
                 tap(c -> c.defineConstantsFrom(context, jnr.constants.platform.PRIO.class));
@@ -237,6 +243,7 @@ public class RubyProcess {
     public static class RubyStatus extends RubyObject {
         private long status;
         private long pid; // pid or -1 to indicate status was allocate()d and is uninitalized.
+        private int error; // errno of a failed wait, like MRI's rb_process_status.error
 
         private static final long EXIT_SUCCESS = 0L;
         public RubyStatus(Ruby runtime, RubyClass metaClass, long status, long pid) {
@@ -255,6 +262,9 @@ public class RubyProcess {
 
             long pid = argc > 0 ? toInt(context, args[0]) : -1;
             int flags = argc > 1 ? toInt(context, args[1]) : 0;
+
+            IRubyObject status = schedulerProcessWait(context, pid, flags);
+            if (status != null) return status;
 
             return waitpidStatus(context, pid, flags);
             //checkErrno(runtime, pid, ECHILD);
@@ -390,7 +400,7 @@ public class RubyProcess {
             return inspect(runtime.getCurrentContext());
         }
 
-        // MRI: pst_message
+        @CRuby(value = "pst_message", file = "process.c")
         public static String pst_message(String prefix, long pid, long status) {
             StringBuilder sb = new StringBuilder(prefix);
             sb.append("pid ").append(pid);
@@ -759,7 +769,7 @@ public class RubyProcess {
         throw argumentError(context, "invalid resource value: " + rval);
     }
 
-    // MRI: rlimit_resource_type
+    @CRuby(value = "rlimit_resource_type", file = "process.c")
     private static int rlimitResourceType(ThreadContext context, IRubyObject rtype) {
         String name;
         IRubyObject v;
@@ -794,7 +804,7 @@ public class RubyProcess {
         throw argumentError(context, "invalid resource name: " + rtype);
     }
 
-    // MRI: rlimit_resource_name2int
+    @CRuby(value = "rlimit_resource_name2int", file = "process.c")
     private static int rlimitResourceName2int(String name, int casetype) {
         RLIMIT resource;
 
@@ -937,7 +947,7 @@ public class RubyProcess {
         return resource.intValue();
     }
 
-    // MRI: rlimit_type_by_hname
+    @CRuby(value = "rlimit_type_by_hname", file = "process.c")
     private static int rlimitTypeByHname(String name) {
         return rlimitResourceName2int(name, 0);
     }
@@ -998,7 +1008,27 @@ public class RubyProcess {
 
         int res = pthreadKillable(context, ctx -> posix.waitpid(pid, status, flags));
 
-        return RubyProcess.RubyStatus.newProcessStatus(runtime, status[0], res);
+        RubyStatus result = RubyProcess.RubyStatus.newProcessStatus(runtime, status[0], res);
+        if (res == -1) result.error = posix.errno();
+        return result;
+    }
+
+    /**
+     * Check for a current scheduler and call it if available; return null otherwise to indicate a normal process wait.
+     *
+     * @param context the current context
+     * @param pid the process pid
+     * @param flags the flags for wait, which must include WNOHANG
+     * @return the result of the scheduler's process_wait, or null if no scheduler or flags not WNOHANG
+     */
+    @CRuby(value = "rb_process_status_wait", file = "process.c")
+    private static IRubyObject schedulerProcessWait(ThreadContext context, long pid, int flags) {
+        if ((flags & WNOHANG) != 0) return null;
+
+        IRubyObject scheduler = FiberScheduler.current(context);
+        if (scheduler == null) return null;
+
+        return FiberScheduler.processWait(context, scheduler, pid, flags);
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -1006,11 +1036,29 @@ public class RubyProcess {
         return waitpid(runtime.getCurrentContext(), pid, flags);
     }
 
-    // MRI: rb_waitpid
+    @CRuby(value = "rb_waitpid", file = "process.c")
     public static long waitpid(ThreadContext context, long pid, int flags) {
         var posix = context.runtime.getPosix();
 
         posix.errno(0);
+
+        IRubyObject scheduled = schedulerProcessWait(context, pid, flags);
+        if (scheduled != null) {
+            if (scheduled.isNil()) return 0;
+            if (!(scheduled instanceof RubyStatus status)) {
+                throw typeError(context, scheduled, "Process::Status");
+            }
+
+            long res = status.pid;
+
+            // The failed waitpid ran inside the scheduler, possibly on another thread.
+            // Copy its errno here so our caller can raise the right error.
+            if (res == -1) posix.errno(status.error);
+
+            context.setLastExitStatus(res > 0 ? status : context.nil);
+
+            return res;
+        }
 
         int[] status = new int[1];
         int res = pthreadKillable(context, ctx -> posix.waitpid(pid, status, flags));
@@ -1105,7 +1153,7 @@ public class RubyProcess {
     }
 
     public static IRubyObject wait(ThreadContext context, IRubyObject[] args) {
-        if (args.length > 0) return waitpid(context, args);
+        if (args.length > 0 || FiberScheduler.current(context) != null) return waitpid(context, args);
 
         int[] status = new int[1];
         POSIX posix = context.runtime.getPosix();
@@ -1131,18 +1179,19 @@ public class RubyProcess {
         return waitall(runtime.getCurrentContext());
     }
 
+    // MRI: proc_waitall
     public static IRubyObject waitall(ThreadContext context) {
-        POSIX posix = context.runtime.getPosix();
         var results = newArray(context);
-        int[] status = new int[1];
-        int result = pthreadKillable(context, ctx -> posix.wait(status));
+        IRubyObject lastStatus = context.nil;
 
-        while (result != -1) {
-            results.append(context, newArray(context, asFixnum(context, result),
-                    RubyProcess.RubyStatus.newProcessStatus(context.runtime, status[0], result)));
-
-            result = pthreadKillable(context, ctx -> posix.wait(status));
+        // waitpid goes through the fiber scheduler if there is one, and gives -1 once no children are left
+        for (long pid; (pid = waitpid(context, -1, 0)) > 0; ) {
+            lastStatus = context.getLastExitStatus();
+            results.append(context, newArray(context, asFixnum(context, pid), lastStatus));
         }
+
+        // the final failed wait cleared $?, but MRI leaves it set to the last child's status
+        context.setLastExitStatus(lastStatus);
 
         return results;
     }

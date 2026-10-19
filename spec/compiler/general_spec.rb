@@ -1134,6 +1134,38 @@ modes.each do |mode|
       expect {run('def foo(a:); end; foo'){}}.to raise_error(ArgumentError)
     end
 
+    # See https://github.com/jruby/jruby/issues/9814
+    it "compiles calls with braceless hash arguments whose keys are not plain symbols" do
+      run <<~'RUBY' do |x|
+        def foo(*a, **kw) = [a, kw]
+        k = :k
+        y = 1
+        [
+          {}.merge("a" => 1),
+          {}.merge(1 => 1),
+          {}.merge(k => 1),
+          {}.merge(a: 1, "b" => 2),
+          {}.merge("a-b": 1),
+          {}.merge("a#{y}": 1),
+          foo("a" => 1),
+          foo(1, a: 2, "b" => 3),
+          [1].map { {}.merge("a" => 1) }
+        ]
+      RUBY
+        expect(x).to eq [
+          {"a" => 1},
+          {1 => 1},
+          {k: 1},
+          {a: 1, "b" => 2},
+          {"a-b": 1},
+          {a1: 1},
+          [[], {"a" => 1}],
+          [[1], {a: 2, "b" => 3}],
+          [{"a" => 1}]
+        ]
+      end
+    end
+
     it "passes keyrest arguments through zsuper correctly" do
       run '
         class C

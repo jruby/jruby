@@ -32,6 +32,7 @@ package org.jruby.ext.set;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.*;
 import org.jruby.RubyEnumerator.SizeFn;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Access;
 import org.jruby.api.Create;
@@ -1016,7 +1017,7 @@ public class RubySet extends RubyObject implements Set {
         return set;
     }
 
-    // MRI: set_divide_arity2
+    @CRuby(value = "set_divide_arity2", file = "set.c")
     IRubyObject setDivideArity2(ThreadContext context, Block block) {
         RubyClass setClass = getMetaClass();
 
@@ -1066,14 +1067,14 @@ public class RubySet extends RubyObject implements Set {
         return finalSet;
     }
 
-    // MRI: set_divide_union_find_merge
+    @CRuby(value = "set_divide_union_find_merge", file = "set.c")
     static void setDivideUnionFindMerge(ThreadContext context, int[] uf_parents, int i, int j, int[] tmp_array) {
         int root_i = setDivideUnionFindRoot(context, uf_parents, i, tmp_array);
         int root_j = setDivideUnionFindRoot(context, uf_parents, j, tmp_array);
         if (root_i != root_j) uf_parents[root_j] = root_i;
     }
 
-    // MRI: set_divide_union_find_root
+    @CRuby(value = "set_divide_union_find_root", file = "set.c")
     static int setDivideUnionFindRoot(ThreadContext context, int[] uf_parents, int index, int[] tmp_array) {
         int root = uf_parents[index];
         int update_size = 0;

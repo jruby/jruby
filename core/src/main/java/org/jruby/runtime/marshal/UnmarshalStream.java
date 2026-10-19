@@ -61,6 +61,7 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
+import org.jruby.anno.CRuby;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.ThreadContext;
@@ -123,7 +124,7 @@ public class UnmarshalStream extends InputStream {
         }
     }
 
-    // r_object
+    @CRuby(value = "r_object", file = "marshal.c")
     public IRubyObject unmarshalObject() throws IOException {
         return object0(runtime.getCurrentContext(), new MarshalState(false), false, null);
     }
@@ -676,7 +677,7 @@ public class UnmarshalStream extends InputStream {
         return (int) result;
     }
 
-    // MRI: sym2encidx
+    @CRuby(value = "sym2encidx", file = "marshal.c")
     public Encoding symbolToEncoding(RubySymbol symbol, IRubyObject value) {
         if (symbol.getEncoding() != USASCIIEncoding.INSTANCE) return null;
 
@@ -764,7 +765,7 @@ public class UnmarshalStream extends InputStream {
         ivar(state, object, null);
     }
 
-    // r_object
+    @CRuby(value = "r_object", file = "marshal.c")
     @Deprecated(since = "9.4.0.0")
     public IRubyObject unmarshalObject(boolean _callProc) throws IOException { // <-- 100% false by all callers
         IRubyObject savedProc = this.proc;

@@ -352,8 +352,9 @@ class SocketTest < Test::Unit::TestCase
     socket, addrinfo = acceptor.value
     assert_instance_of Socket, socket
     assert_equal client.local_address.ip_port, addrinfo.ip_port
-    assert selector.join(10), "IO.select did not return"
   ensure
+    # IO.select returns only if it saw the connection before the acceptor took it
+    selector&.kill
     socket&.close
     client&.close
     server&.close

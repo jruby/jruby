@@ -28,6 +28,7 @@ import org.jruby.RubyRational;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.anno.CRuby;
 import org.jruby.api.Convert;
 import org.jruby.api.Create;
 import org.jruby.exceptions.JumpException;
@@ -444,7 +445,7 @@ public class IRRuntimeHelpers {
     private static boolean isRubyExceptionHandled(ThreadContext context, IRubyObject excType, IRubyObject excObj) {
         // SSS FIXME: Should this check be "runtime.getModule().isInstance(excType)"??
         if (!(excType instanceof RubyModule)) {
-            throw context.runtime.newTypeError("class or module required for rescue clause. Found: " + excType);
+            throw typeError(context, "class or module required for rescue clause. Found: " + excType);
         }
 
         if (((RubyModule) excType).callMethod(context, "===", excObj).isTrue()) {
@@ -1621,7 +1622,7 @@ public class IRRuntimeHelpers {
         }
     }
 
-    // MRI: vm_search_normal_superclass
+    @CRuby(value = "vm_search_normal_superclass", file = "vm_insnhelper.c")
     private static RubyClass searchNormalSuperclass(RubyModule klazz) {
         // Unwrap refinements, since super should always dispatch back to the refined class
         if (klazz.isIncluded()

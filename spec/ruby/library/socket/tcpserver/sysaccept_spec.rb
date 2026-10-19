@@ -83,8 +83,8 @@ describe "TCPServer#sysaccept with Fiber scheduler" do
     rescue IO::TimeoutError
     end
     Fiber.set_scheduler(nil)
-    @socket.close if @socket
-    @client.close if @client
+    @socket&.close
+    @client&.close
     @server.close unless @server.closed?
   end
 

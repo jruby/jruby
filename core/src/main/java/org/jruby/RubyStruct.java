@@ -37,6 +37,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Create;
@@ -417,10 +418,10 @@ public class RubyStruct extends RubyObject {
 
     /** Create new Structure.
      *
-     * MRI: struct_alloc
      *
      * @deprecated Use {@link org.jruby.api.Create#newStruct(ThreadContext, RubyClass, IRubyObject[], Block)} instead.
      */
+    @CRuby(value = "struct_alloc", file = "struct.c")
     @Deprecated(since = "10.0.0.0")
     public static RubyStruct newStruct(IRubyObject recv, IRubyObject[] args, Block block) {
         return Create.newStruct(((RubyBasicObject) recv).getCurrentContext(), (RubyClass) recv, args, block);
@@ -721,9 +722,7 @@ public class RubyStruct extends RubyObject {
     private static final byte[] STRUCT_BEG = { '#','<','s','t','r','u','c','t',' ' };
     private static final byte[] STRUCT_END = { ':','.','.','.','>' };
 
-    /** inspect_struct
-    *
-    */
+    @CRuby(value = "inspect_struct", file = "struct.c")
     private RubyString inspectStruct(final ThreadContext context, final boolean recur) {
         RubyString buffer = newString(context, new ByteList(32));
         buffer.cat(STRUCT_BEG);

@@ -45,11 +45,11 @@ import java.lang.annotation.Target;
  * </pre>
  *
  * Use it in place of a {@code // MRI: rb_foo} comment or a Javadoc that only names the C function, so tools can
- * audit the mapping and documentation can link to the C source. It is retained at runtime so that tools working from a
- * live JRuby (IRB, RI, language servers) can find it by reflecting on the Java method behind a Ruby method.
+ * audit the mapping and documentation can link to the C source. It has source retention to keep it out of
+ * lib/jruby.jar; switch to runtime retention if a tool needs to read it from a live JRuby.
  */
 @Documented
-@Retention(RetentionPolicy.RUNTIME)
+@Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.TYPE, ElementType.FIELD})
 @Repeatable(CRuby.List.class)
 public @interface CRuby {
@@ -73,7 +73,7 @@ public @interface CRuby {
      * Container for repeated {@link CRuby} annotations; not used directly.
      */
     @Documented
-    @Retention(RetentionPolicy.RUNTIME)
+    @Retention(RetentionPolicy.SOURCE)
     @Target({ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.TYPE, ElementType.FIELD})
     @interface List {
         CRuby[] value();

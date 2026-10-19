@@ -28,6 +28,7 @@ package org.jruby;
 
 import java.math.BigInteger;
 
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
@@ -267,14 +268,14 @@ public class RubyRandom extends RubyRandomBase {
         return this;
     }
 
-    // MRI: random_s_rand
+    @CRuby(value = "random_s_rand", file = "random.c")
     @JRubyMethod(name = "rand", meta = true)
     public static IRubyObject randDefault(ThreadContext context, IRubyObject recv) {
         RandomType random = getDefaultRand(context);
         return randFloat(context, random);
     }
 
-    // MRI: random_s_rand
+    @CRuby(value = "random_s_rand", file = "random.c")
     @JRubyMethod(name = "rand", meta = true)
     public static IRubyObject randDefault(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         RandomType random = getDefaultRand(context);
@@ -434,7 +435,7 @@ public class RubyRandom extends RubyRandomBase {
             return v;
         }
 
-        // MRI: try_get_rnd
+        @CRuby(value = "try_get_rnd", file = "random.c")
         static RandomType tryGetRnd(ThreadContext context, IRubyObject obj) {
             if (obj == context.runtime.getRandomClass()) {
                 return getDefaultRand(context);

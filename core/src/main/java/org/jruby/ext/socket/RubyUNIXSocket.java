@@ -47,6 +47,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyIO;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Access;
@@ -348,7 +349,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         }
     }
 
-    // MRI: unixsock_path_value
+    @CRuby(value = "unixsock_path_value", file = "ext/socket/unixsocket.c")
     private static RubyString unixsockPathValue(ThreadContext context, IRubyObject path) {
         return checkEmbeddedNulls(context, RubyFile.get_path(context, path));
     }
