@@ -98,6 +98,21 @@ describe "Module#set_temporary_name" do
     m::M.name.should =~ /\A#<Module:0x\h+>::M\z/m
   end
 
+  it "includes nested namespaces when assigning to a constant" do
+    module ModuleSpecs::SetTemporaryNameSpec
+      cls = Module.new
+
+      cls.set_temporary_name("fake_name")
+      cls.name.should == "fake_name"
+
+      NestedModule = cls
+
+      cls.name.should == "ModuleSpecs::SetTemporaryNameSpec::NestedModule"
+
+      remove_const :NestedModule
+    end
+  end
+
   it "can reassign a temporary name repeatedly" do
     m = Module.new
 
