@@ -1013,7 +1013,15 @@ public class RubyProcess {
         return result;
     }
 
-    // MRI: the scheduler check in rb_process_status_wait. Returns null if we should wait ourselves.
+    /**
+     * Check for a current scheduler and call it if available; return null otherwise to indicate a normal process wait.
+     *
+     * @param context the current context
+     * @param pid the process pid
+     * @param flags the flags for wait, which must include WNOHANG
+     * @return the result of the scheduler's process_wait, or null if no scheduler or flags not WNOHANG
+     */
+    @CRuby(value = "rb_process_status_wait", file = "process.c")
     private static IRubyObject schedulerProcessWait(ThreadContext context, long pid, int flags) {
         if ((flags & WNOHANG) != 0) return null;
 
