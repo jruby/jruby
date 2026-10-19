@@ -114,6 +114,17 @@ describe "Socket.getaddrinfo" do
         [Socket::EAI_FAMILY, Socket::EAI_FAIL].should.include?(e.error_code)
       }
     end
+
+    it "does not resolve a host name with AI_NUMERICHOST" do
+      -> {
+        Socket.getaddrinfo("localhost", nil, Socket::AF_UNSPEC, Socket::SOCK_STREAM, 0, Socket::AI_NUMERICHOST)
+      }.should.raise(SocketError)
+    end
+
+    it "accepts an address literal with AI_NUMERICHOST" do
+      res = Socket.getaddrinfo("127.0.0.1", nil, Socket::AF_UNSPEC, Socket::SOCK_STREAM, 0, Socket::AI_NUMERICHOST)
+      res.map { |a| a[3] }.should == ["127.0.0.1"]
+    end
   end
 end
 
