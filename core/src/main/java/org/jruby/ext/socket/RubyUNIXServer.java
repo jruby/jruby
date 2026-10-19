@@ -73,6 +73,16 @@ public class RubyUNIXServer extends RubyUNIXSocket {
 
     @JRubyMethod
     public IRubyObject accept(ThreadContext context) {
+        UnixSocketChannel socketChannel = acceptChannel(context);
+
+        RubyUNIXSocket sock = (RubyUNIXSocket)(Helpers.invoke(context, Access.getClass(context, "UNIXSocket"), "allocate"));
+
+        sock.init_sock(context.runtime, socketChannel, "");
+
+        return sock;
+    }
+
+    private UnixSocketChannel acceptChannel(ThreadContext context) {
         try {
 
             while (true) { // select loop to allow interrupting
@@ -84,12 +94,10 @@ public class RubyUNIXServer extends RubyUNIXSocket {
 
                 } else {
                     UnixSocketChannel socketChannel = asUnixServer().accept();
+                    // null when another thread made the channel nonblocking and took the connection first
+                    if (socketChannel == null) continue;
 
-                    RubyUNIXSocket sock = (RubyUNIXSocket)(Helpers.invoke(context, Access.getClass(context, "UNIXSocket"), "allocate"));
-
-                    sock.init_sock(context.runtime, socketChannel, "");
-
-                    return sock;
+                    return socketChannel;
                 }
             }
 
@@ -154,8 +162,7 @@ public class RubyUNIXServer extends RubyUNIXSocket {
 
     @JRubyMethod
     public IRubyObject sysaccept(ThreadContext context) {
-        RubyUNIXSocket socket = (RubyUNIXSocket) accept(context);
-        return asFixnum(context, ((UnixSocketChannel) socket.getChannel()).getFD());
+        return asFixnum(context, newChannelFD(context.runtime, acceptChannel(context)).bestFileno());
     }
 
     @JRubyMethod
