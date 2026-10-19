@@ -198,6 +198,16 @@ modes.each do |mode|
       run("1.1i") {|result| expect(result).to eq (Complex(0, 1.1))}
     end
 
+    # See https://github.com/jruby/jruby/issues/9823
+    it "compiles a range with an Integer begin and a non-Integer literal end" do
+      run('[(1..2.0), (1...2.5).include?(2), (1..2r), (1..18446744073709551616).size]') do |x|
+        expect(x).to eq [1..2.0, true, 1..2r, 18446744073709551616]
+      end
+      run('[(1..2.0).exclude_end?, (1...2.0).exclude_end?, (1.0...2.0).exclude_end?]') do |x|
+        expect(x).to eq [false, true, true]
+      end
+    end
+
     it "compiles interpolated strings" do
       run('a = "hello#{42}"; a') {|result| expect(result).to eq('hello42') }
       run('i = 1; a = "hello#{i + 42}"; a') {|result| expect(result).to eq("hello43") }
