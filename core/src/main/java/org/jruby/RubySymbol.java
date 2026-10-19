@@ -40,6 +40,7 @@ package org.jruby;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Create;
@@ -162,10 +163,10 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return ClassIndex.SYMBOL;
     }
 
-    /** rb_to_id
-     *
+    /**
      * @return a String representation of the symbol
      */
+    @CRuby(value = "rb_to_id", file = "string.c")
     @Override
     public final String asJavaString() {
         return symbol;
@@ -440,7 +441,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return newSymbol;
     }
 
-    // MRI: rb_to_symbol
+    @CRuby(value = "rb_to_symbol", file = "string.c")
     public static RubySymbol toSymbol(ThreadContext context, IRubyObject name) {
         name = prepareID(context, name);
         if (name instanceof RubySymbol symbol) {
@@ -480,7 +481,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
         return newString(context, result);
     }
 
-    // MRI: rb_str_symname_p
+    @CRuby(value = "rb_str_symname_p", file = "string.c")
     public boolean isSimpleName(ThreadContext context) {
         int len;
         Ruby runtime = context.runtime;
@@ -1539,7 +1540,7 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
                 sym.idString() : ((RubyString) symOrStr).getByteList().toString();
     }
 
-    // MRI: rb_check_id
+    @CRuby(value = "rb_check_id", file = "symbol.c")
     public static RubySymbol idSymbolFromObject(ThreadContext context, IRubyObject object) {
         IRubyObject symOrStr = prepareID(context, object);
 
@@ -1549,12 +1550,12 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
     /**
      * Return the given object if it is a Symbol or String, or convert it to a String.
      *
-     * MRI: string_for_symbol
      *
      * @param context the current context
      * @param object the object
      * @return the object, if it is a Symbol or String, or a String produced by calling #to_str on the object.
      */
+    @CRuby(value = "string_for_symbol", file = "string.c")
     public static IRubyObject prepareID(ThreadContext context, IRubyObject object) {
         if (object instanceof RubySymbol || object instanceof RubyString) return object;
 

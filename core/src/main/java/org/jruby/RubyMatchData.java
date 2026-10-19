@@ -278,7 +278,7 @@ public class RubyMatchData extends RubyObject {
         charOffsetUpdated = true;
     }
 
-    // rb_match_busy
+    @CRuby(value = "rb_match_busy", file = "re.c")
     public final void use() {
         busy = true;
     }
@@ -467,9 +467,7 @@ public class RubyMatchData extends RubyObject {
         return getRegexp(context).names(context);
     }
 
-    /** match_to_a
-     *
-     */
+    @CRuby(value = "match_to_a", file = "re.c")
     @JRubyMethod
     @Override
     public RubyArray to_a(ThreadContext context) {
@@ -503,9 +501,7 @@ public class RubyMatchData extends RubyObject {
         return values_at(getCurrentContext(), args);
     }
 
-    /** match_captures
-     *
-     */
+    @CRuby(value = "match_captures", file = "re.c")
     @JRubyMethod
     public IRubyObject captures(ThreadContext context) {
         return match_array(context, 1);
@@ -629,9 +625,7 @@ public class RubyMatchData extends RubyObject {
         return matchArySubseq(context, begLen[0], begLen[1], result);
     }
 
-    /** match_aref
-     *
-     */
+    @CRuby(value = "match_aref", file = "re.c")
     @JRubyMethod(name = "[]")
     public IRubyObject op_aref(ThreadContext context, IRubyObject idx) {
         check(context);
@@ -639,9 +633,7 @@ public class RubyMatchData extends RubyObject {
         return result == null ? to_a(context).aref(context, idx) : result;
     }
 
-    /** match_aref
-    *
-    */
+    @CRuby(value = "match_aref", file = "re.c")
     @JRubyMethod(name = "[]")
     public IRubyObject op_aref(ThreadContext context, IRubyObject idx, IRubyObject rest) {
         IRubyObject result;
@@ -670,9 +662,7 @@ public class RubyMatchData extends RubyObject {
         return RubyRegexp.nth_match(context, nth, this);
     }
 
-    /** match_size
-     *
-     */
+    @CRuby(value = "match_size", file = "re.c")
     @JRubyMethod(name = {"size", "length"})
     public IRubyObject size(ThreadContext context) {
         check(context);
@@ -695,9 +685,7 @@ public class RubyMatchData extends RubyObject {
         return asFixnum(context, charOffsets.getBeg(i));
     }
 
-    /** match_end
-     *
-     */
+    @CRuby(value = "match_end", file = "re.c")
     @JRubyMethod
     public IRubyObject end(ThreadContext context, IRubyObject index) {
         check(context);
@@ -722,9 +710,7 @@ public class RubyMatchData extends RubyObject {
         return offset(context, index);
     }
 
-    /** match_offset
-     *
-     */
+    @CRuby(value = "match_offset", file = "re.c")
     @JRubyMethod(name = "offset")
     public IRubyObject offset(ThreadContext context, IRubyObject index) {
         check(context);
@@ -825,9 +811,7 @@ public class RubyMatchData extends RubyObject {
                 context.nil : str.makeSharedString(context.runtime, end, str.getByteList().length() - end);
     }
 
-    /** match_to_s
-     *
-     */
+    @CRuby(value = "match_to_s", file = "re.c")
     @JRubyMethod
     @Override
     public IRubyObject to_s(ThreadContext context) {
@@ -840,9 +824,7 @@ public class RubyMatchData extends RubyObject {
     public IRubyObject string() {
         return string(getCurrentContext());
     }
-    /** match_string
-     *
-     */
+    @CRuby(value = "match_string", file = "re.c")
     @JRubyMethod
     public IRubyObject string(ThreadContext context) {
         check(context);

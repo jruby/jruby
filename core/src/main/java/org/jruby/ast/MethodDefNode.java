@@ -41,6 +41,7 @@ public abstract class MethodDefNode extends Node implements INameNode, DefNode {
     protected final ArgsNode argsNode;
     protected final StaticScope scope;
     protected final Node bodyNode;
+    protected final int endLine;
     // We lazily compile methods in IR but Ruby expects next and break to raise syntax error so we will eagerly
     // build methods which contain those two keywords.
     protected boolean containsNextBreak = false;
@@ -57,7 +58,14 @@ public abstract class MethodDefNode extends Node implements INameNode, DefNode {
         this.argsNode = argsNode;
         this.scope = scope;
         this.bodyNode = bodyNode;
-        setSourceSpan(startColumn, endLine, endColumn);
+        this.endLine = endLine;
+        // the columns are only known when the parser records positions
+        if (startColumn >= 0) setSourceSpan(startColumn, endLine, endColumn);
+    }
+
+    @Override
+    public int getEndLine() {
+        return endLine;
     }
 
     /**

@@ -34,6 +34,7 @@
 package org.jruby;
 
 import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.compiler.Constantizable;
@@ -135,9 +136,7 @@ public class RubyNil extends RubyObject implements Constantizable, SimpleHash {
         return context.runtime.getNilString();
     }
     
-    /** nil_to_a
-     *
-     */
+    @CRuby(value = "nil_to_a", file = "object.c")
     @JRubyMethod
     public static RubyArray to_a(ThreadContext context, IRubyObject recv) {
         return newEmptyArray(context);
@@ -148,9 +147,7 @@ public class RubyNil extends RubyObject implements Constantizable, SimpleHash {
         return newSmallHash(context);
     }
 
-    /** nil_inspect
-     *
-     */
+    @CRuby(value = "nil_inspect", file = "object.c")
     @JRubyMethod
     public IRubyObject inspect(ThreadContext context) {
         return RubyNil.inspect(context.runtime);

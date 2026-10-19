@@ -20,6 +20,7 @@ import org.jruby.RubyIO;
 import org.jruby.RubyProcess;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.anno.CRuby;
 import org.jruby.api.API;
 
 import org.jruby.exceptions.RaiseException;
@@ -92,7 +93,7 @@ public class PopenExecutor {
         return context.nil;
     }
 
-    // MRI: rb_f_spawn
+    @CRuby(value = "rb_f_spawn", file = "process.c")
     public static RubyFixnum spawn(ThreadContext context, IRubyObject[] argv) {
         long pid;
         String[] errmsg = { null };
@@ -112,7 +113,7 @@ public class PopenExecutor {
         return asFixnum(context, pid);
     }
 
-    // MRI: rb_f_system
+    @CRuby(value = "rb_f_system", file = "process.c")
     public IRubyObject systemInternal(ThreadContext context, IRubyObject[] argv, String[] errmsg) {
         Ruby runtime = context.runtime;
 
@@ -156,7 +157,7 @@ public class PopenExecutor {
         return context.fals;
     }
 
-    // MRI: rb_spawn_process
+    @CRuby(value = "rb_spawn_process", file = "process.c")
     long spawnProcess(ThreadContext context, ExecArg eargp, String[] errmsg) {
         RubyString prog = eargp.use_shell ? eargp.command_name : eargp.command_name;
         ExecArg sarg = new ExecArg();
@@ -287,7 +288,7 @@ public class PopenExecutor {
         return status;
     }
 
-    // pipe_open_s
+    @CRuby(value = "pipe_open_s", file = "io.c")
     public static IRubyObject pipeOpen(ThreadContext context, IRubyObject prog, String modestr, int fmode, IOEncodable convconfig) {
         IRubyObject[] argv = {prog};
         ExecArg execArg = null;
@@ -297,7 +298,7 @@ public class PopenExecutor {
         return new PopenExecutor().pipeOpen(context, execArg, modestr, fmode, convconfig);
     }
 
-    // rb_io_s_popen
+    @CRuby(value = "rb_io_s_popen", file = "io.c")
     public static IRubyObject popen(ThreadContext context, IRubyObject[] argv, RubyClass klass, Block block) {
         Ruby runtime = context.runtime;
         String modestr;
@@ -458,7 +459,7 @@ public class PopenExecutor {
         eargp.env_modification = !env.isNil() ? checkExecEnv(context, (RubyHash)env, eargp) : null;
     }
 
-    // MRI: rb_check_exec_env
+    @CRuby(value = "rb_check_exec_env", file = "process.c")
     public static RubyArray checkExecEnv(ThreadContext context, RubyHash hash, ExecArg pathArg) {
         var env = newArray(context);
 
@@ -525,7 +526,7 @@ public class PopenExecutor {
         return nonopts != null ? nonopts : context.nil;
     }
 
-    // MRI: is_popen_fork
+    @CRuby(value = "is_popen_fork", file = "io.c")
     static boolean isPopenFork(ThreadContext context, RubyString prog) {
         if (prog.size() == 1 && prog.getByteList().get(0) == '-') {
             throw context.runtime.newNotImplementedError("fork() function is unimplemented on JRuby");
@@ -677,7 +678,7 @@ public class PopenExecutor {
 
     private Errno errno = null;
 
-    // MRI: pipe_open
+    @CRuby(value = "pipe_open", file = "io.c")
     private RubyIO pipeOpen(ThreadContext context, ExecArg eargp, String modestr, int fmode, IOEncodable convconfig) {
         final Ruby runtime = context.runtime;
         IRubyObject prog = eargp != null ? (eargp.use_shell ? eargp.command_name : eargp.command_name) : null;
@@ -1559,7 +1560,7 @@ public class PopenExecutor {
         return val.isNil() ? false : checkBoolean(context, val, id, true);
     }
 
-    // MRI: check_exec_redirect
+    @CRuby(value = "check_exec_redirect", file = "process.c")
     static void checkExecRedirect(ThreadContext context, IRubyObject key, IRubyObject val, ExecArg eargp) {
         IRubyObject param;
         IRubyObject path, flags, perm;
@@ -1672,7 +1673,7 @@ public class PopenExecutor {
         throw argumentError(context, "wrong exec redirect action");
     }
 
-    // MRI: check_exec_redirect_fd
+    @CRuby(value = "check_exec_redirect_fd", file = "process.c")
     static IRubyObject checkExecRedirectFd(ThreadContext context, IRubyObject v, boolean iskey) {
         IRubyObject tmp;
         int fd;
@@ -1699,7 +1700,7 @@ public class PopenExecutor {
         return asFixnum(context, fd);
     }
 
-    // MRI: check_exec_redirect1
+    @CRuby(value = "check_exec_redirect1", file = "process.c")
     static RubyArray checkExecRedirect1(ThreadContext context, RubyArray ary, IRubyObject key, IRubyObject param) {
         if (ary == null) ary = newArray(context);
 
@@ -1718,14 +1719,14 @@ public class PopenExecutor {
     private static final int ST_CONTINUE = 0;
     private static final int ST_STOP = 1;
 
-    // rb_execarg_new
+    @CRuby(value = "rb_execarg_new", file = "process.c")
     public static ExecArg execargNew(ThreadContext context, IRubyObject[] argv, IRubyObject optForChdir, boolean accept_shell, boolean allow_exc_opt) {
         ExecArg eargp = new ExecArg();
         execargInit(context, argv, optForChdir, accept_shell, eargp, allow_exc_opt);
         return eargp;
     }
 
-    // rb_execarg_init
+    @CRuby(value = "rb_execarg_init", file = "process.c")
     private static RubyString execargInit(ThreadContext context, IRubyObject[] argv, IRubyObject optForChdir, boolean accept_shell, ExecArg eargp, boolean allow_exc_opt) {
         RubyString prog, ret;
         IRubyObject[] env_opt = {context.nil, context.nil};
@@ -1755,7 +1756,7 @@ public class PopenExecutor {
         return ret;
     }
 
-    // rb_exec_getargs
+    @CRuby(value = "rb_exec_getargs", file = "process.c")
     private static RubyString execGetargs(ThreadContext context, IRubyObject[][] argv_p, boolean accept_shell, IRubyObject[] env_opt) {
         IRubyObject hash;
         RubyString prog;
@@ -1791,7 +1792,7 @@ public class PopenExecutor {
         return prog;
     }
 
-    // rb_check_argv
+    @CRuby(value = "rb_check_argv", file = "process.c")
     public static RubyString checkArgv(ThreadContext context, IRubyObject[] argv) {
         Arity.checkArgumentCount(context, argv, 1, -1);
 

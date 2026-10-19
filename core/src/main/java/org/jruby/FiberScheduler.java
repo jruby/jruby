@@ -1,6 +1,7 @@
 package org.jruby;
 
 import jnr.constants.platform.Errno;
+import org.jruby.anno.CRuby;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -23,27 +24,27 @@ public class FiberScheduler {
         return scheduler.isNil() ? null : scheduler;
     }
 
-    // MRI: rb_fiber_scheduler_kernel_sleep
+    @CRuby(value = "rb_fiber_scheduler_kernel_sleep", file = "scheduler.c")
     public static IRubyObject kernelSleep(ThreadContext context, IRubyObject scheduler, IRubyObject timeout) {
         return scheduler.callMethod(context, "kernel_sleep", timeout);
     }
 
-    // MRI: rb_fiber_scheduler_kernel_sleepv
+    @CRuby(value = "rb_fiber_scheduler_kernel_sleepv", file = "scheduler.c")
     public static IRubyObject kernelSleep(ThreadContext context, IRubyObject scheduler, IRubyObject[] args) {
         return scheduler.callMethod(context, "kernel_sleep", args);
     }
 
-    // MRI: rb_fiber_scheduler_process_wait
+    @CRuby(value = "rb_fiber_scheduler_process_wait", file = "scheduler.c")
     public static IRubyObject processWait(ThreadContext context, IRubyObject scheduler, long pid, int flags) {
         return Helpers.invokeChecked(context, scheduler, "process_wait", asFixnum(context, pid), asFixnum(context, flags));
     }
 
-    // MRI: rb_fiber_scheduler_block
+    @CRuby(value = "rb_fiber_scheduler_block", file = "scheduler.c")
     public static IRubyObject block(ThreadContext context, IRubyObject scheduler, IRubyObject blocker, IRubyObject timeout) {
         return Helpers.invoke(context, scheduler, "block", blocker, timeout);
     }
 
-    // MRI: rb_fiber_scheduler_unblock
+    @CRuby(value = "rb_fiber_scheduler_unblock", file = "scheduler.c")
     public static IRubyObject unblock(ThreadContext context, IRubyObject scheduler, IRubyObject blocker, IRubyObject fiber) {
         return Helpers.invoke(context, scheduler, "unblock", blocker, fiber);
     }
@@ -66,27 +67,27 @@ public class FiberScheduler {
         return Helpers.invokeChecked(context, scheduler, "fiber_interrupt", fiber, exception);
     }
 
-    // MRI: rb_fiber_scheduler_io_wait_readable
+    @CRuby(value = "rb_fiber_scheduler_io_wait_readable", file = "scheduler.c")
     public static IRubyObject ioWaitReadable(ThreadContext context, IRubyObject scheduler, IRubyObject io) {
         return ioWait(context, scheduler, io, asFixnum(context, RubyIO.IOEvent.IO_READABLE.value), context.nil);
     }
 
-    // MRI: rb_fiber_scheduler_io_wait_writable
+    @CRuby(value = "rb_fiber_scheduler_io_wait_writable", file = "scheduler.c")
     public static IRubyObject ioWaitWritable(ThreadContext context, IRubyObject scheduler, IRubyObject io) {
         return ioWait(context, scheduler, io, asFixnum(context, RubyIO.IOEvent.IO_WRITABLE.value), context.nil);
     }
 
-    // MRI: rb_fiber_scheduler_io_select
+    @CRuby(value = "rb_fiber_scheduler_io_select", file = "scheduler.c")
     public static IRubyObject ioSelect(ThreadContext context, IRubyObject scheduler, IRubyObject readables, IRubyObject writables, IRubyObject exceptables, IRubyObject timeout) {
         return ioSelectv(context, scheduler, readables, writables, exceptables, timeout);
     }
 
-    // MRI: rb_fiber_scheduler_io_selectv
+    @CRuby(value = "rb_fiber_scheduler_io_selectv", file = "scheduler.c")
     public static IRubyObject ioSelectv(ThreadContext context, IRubyObject scheduler, IRubyObject... args) {
         return Helpers.invokeChecked(context, scheduler, "io_select", args);
     }
 
-    // MRI: rb_fiber_scheduler_io_read
+    @CRuby(value = "rb_fiber_scheduler_io_read", file = "scheduler.c")
     public static IRubyObject ioRead(ThreadContext context, IRubyObject scheduler, IRubyObject io, IRubyObject buffer, int length, int offset) {
         Ruby runtime = context.runtime;
         return Helpers.invokeChecked(context, scheduler, "io_read", io, buffer, asFixnum(context, length), asFixnum(context, offset));
@@ -96,7 +97,7 @@ public class FiberScheduler {
         return Helpers.invokeChecked(context, scheduler, "io_read", io, buffer, length, offset);
     }
 
-    // MRI: rb_fiber_scheduler_io_pread
+    @CRuby(value = "rb_fiber_scheduler_io_pread", file = "scheduler.c")
     public static IRubyObject ioPRead(ThreadContext context, IRubyObject scheduler, IRubyObject io, IRubyObject buffer, int from, int length, int offset) {
         return Helpers.invokeChecked(context, scheduler, "io_pread", io, buffer, asFixnum(context, from), asFixnum(context, length), asFixnum(context, offset));
     }
@@ -105,7 +106,7 @@ public class FiberScheduler {
         return Helpers.invokeChecked(context, scheduler, "io_pread", io, buffer, from, length, offset);
     }
 
-    // MRI: rb_fiber_scheduler_io_write
+    @CRuby(value = "rb_fiber_scheduler_io_write", file = "scheduler.c")
     public static IRubyObject ioWrite(ThreadContext context, IRubyObject scheduler, IRubyObject io, IRubyObject buffer, int length, int offset) {
         return Helpers.invokeChecked(context, scheduler, "io_write", io, buffer, asFixnum(context, length), asFixnum(context, offset));
     }
@@ -114,7 +115,7 @@ public class FiberScheduler {
         return Helpers.invokeChecked(context, scheduler, "io_write", io, buffer, length, offset);
     }
 
-    // MRI: rb_fiber_scheduler_io_pwrite
+    @CRuby(value = "rb_fiber_scheduler_io_pwrite", file = "scheduler.c")
     public static IRubyObject ioPWrite(ThreadContext context, IRubyObject scheduler, IRubyObject io, IRubyObject buffer, int from, int length, int offset) {
         return Helpers.invokeChecked(context, scheduler, "io_pwrite", io, buffer, asFixnum(context, from), asFixnum(context, length), asFixnum(context, offset));
     }
@@ -128,7 +129,7 @@ public class FiberScheduler {
         return base.position() == 0 ? base : base.slice();
     }
 
-    // MRI: rb_fiber_scheduler_io_read_memory
+    @CRuby(value = "rb_fiber_scheduler_io_read_memory", file = "scheduler.c")
     public static IRubyObject ioReadMemory(ThreadContext context, IRubyObject scheduler, IRubyObject io, ByteBuffer base, int size, int length) {
         RubyIOBuffer buffer = RubyIOBuffer.newBuffer(context, memory(base), size, RubyIOBuffer.LOCKED);
 
@@ -140,7 +141,7 @@ public class FiberScheduler {
         return result;
     }
 
-    // MRI: rb_fiber_scheduler_io_pread_memory
+    @CRuby(value = "rb_fiber_scheduler_io_pread_memory", file = "scheduler.c")
     public static IRubyObject ioPReadMemory(ThreadContext context, IRubyObject scheduler, IRubyObject io, ByteBuffer base, int from, int size, int length) {
         RubyIOBuffer buffer = RubyIOBuffer.newBuffer(context, memory(base), size, RubyIOBuffer.LOCKED);
 
@@ -152,7 +153,7 @@ public class FiberScheduler {
         return result;
     }
 
-    // MRI: rb_fiber_scheduler_io_write_memory
+    @CRuby(value = "rb_fiber_scheduler_io_write_memory", file = "scheduler.c")
     public static IRubyObject ioWriteMemory(ThreadContext context, IRubyObject scheduler, IRubyObject io, ByteBuffer base, int size, int length) {
         RubyIOBuffer buffer = RubyIOBuffer.newBuffer(context, memory(base), size, RubyIOBuffer.LOCKED | RubyIOBuffer.READONLY);
 
@@ -176,12 +177,12 @@ public class FiberScheduler {
         return result;
     }
 
-    // MRI: rb_fiber_scheduler_io_close
+    @CRuby(value = "rb_fiber_scheduler_io_close", file = "scheduler.c")
     public static IRubyObject ioClose(ThreadContext context, IRubyObject scheduler, IRubyObject io) {
         return Helpers.invokeChecked(context, scheduler, "io_close", io);
     }
 
-    // MRI: rb_fiber_scheduler_address_resolve
+    @CRuby(value = "rb_fiber_scheduler_address_resolve", file = "scheduler.c")
     public static IRubyObject addressResolve(ThreadContext context, IRubyObject scheduler, IRubyObject hostname) {
         return Helpers.invokeChecked(context, scheduler, "address_resolve", hostname);
     }
@@ -205,7 +206,7 @@ public class FiberScheduler {
         }
     }
 
-    // MRI: rb_fiber_scheduler_close
+    @CRuby(value = "rb_fiber_scheduler_close", file = "scheduler.c")
     public static IRubyObject close(ThreadContext context, IRubyObject scheduler) {
 //        VM_ASSERT(ruby_thread_has_gvl_p());
 
@@ -220,7 +221,7 @@ public class FiberScheduler {
         return context.nil;
     }
 
-    // MRI: rb_fiber_scheduler_io_result_apply
+    @CRuby(value = "rb_fiber_scheduler_io_result_apply", file = "include/ruby/fiber/scheduler.h")
     public static int resultApply(ThreadContext context, IRubyObject result) {
         int resultInt;
         if (result instanceof RubyFixnum fixnum && (resultInt = fixnum.asInt(context)) < 0) {
@@ -236,7 +237,7 @@ public class FiberScheduler {
         return result(runtime.getCurrentContext(), result, error);
     }
 
-    // MRI: rb_fiber_scheduler_io_result
+    @CRuby(value = "rb_fiber_scheduler_io_result", file = "include/ruby/fiber/scheduler.h")
     public static IRubyObject result(ThreadContext context, int result, Errno error) {
         return asFixnum(context, result < 0 ? -error.value() : result);
     }

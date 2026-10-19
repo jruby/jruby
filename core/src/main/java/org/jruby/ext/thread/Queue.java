@@ -28,17 +28,22 @@
 
 package org.jruby.ext.thread;
 
+import java.util.ArrayDeque;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BooleanSupplier;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.jruby.FiberScheduler;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
 import org.jruby.RubyMarshal;
 import org.jruby.RubyNumeric;
@@ -188,6 +193,148 @@ public class Queue extends RubyObject implements DataType {
     /** Wait queue for waiting puts */
     protected final Condition notFull = putLock.newCondition();
 
+    protected static final class SchedulerWaiters extends ArrayDeque<Mutex.FiberWaiter> {}
+
+    /** Fibers blocked in {@link #pop} through a fiber scheduler, created by the first one. MRI: queue waitq */
+    private volatile SchedulerWaiters schedulerTakers;
+
+    private static final AtomicReferenceFieldUpdater<Queue, SchedulerWaiters> SCHEDULER_TAKERS_UPDATER =
+            AtomicReferenceFieldUpdater.newUpdater(Queue.class, SchedulerWaiters.class, "schedulerTakers");
+
+    private SchedulerWaiters schedulerTakers() {
+        SchedulerWaiters waiters = schedulerTakers;
+        if (waiters != null) return waiters;
+
+        SCHEDULER_TAKERS_UPDATER.compareAndSet(this, null, new SchedulerWaiters());
+        return schedulerTakers;
+    }
+
+    /** Fibers blocked in SizedQueue#push through a fiber scheduler, created by the first one. MRI: szqueue pushq */
+    private volatile SchedulerWaiters schedulerPutters;
+
+    private static final AtomicReferenceFieldUpdater<Queue, SchedulerWaiters> SCHEDULER_PUTTERS_UPDATER =
+            AtomicReferenceFieldUpdater.newUpdater(Queue.class, SchedulerWaiters.class, "schedulerPutters");
+
+    protected SchedulerWaiters schedulerPutters() {
+        SchedulerWaiters waiters = schedulerPutters;
+        if (waiters != null) return waiters;
+
+        SCHEDULER_PUTTERS_UPDATER.compareAndSet(this, null, new SchedulerWaiters());
+        return schedulerPutters;
+    }
+
+    protected void unblockSchedulerTaker() {
+        unblockOneSchedulerWaiter(schedulerTakers);
+    }
+
+    protected void unblockSchedulerPutter() {
+        unblockOneSchedulerWaiter(schedulerPutters);
+    }
+
+    protected void unblockAllSchedulerPutters() {
+        unblockAllSchedulerWaiters(schedulerPutters);
+    }
+
+    protected int schedulerTakersWaiting() {
+        return schedulerWaiting(schedulerTakers);
+    }
+
+    protected int schedulerPuttersWaiting() {
+        return schedulerWaiting(schedulerPutters);
+    }
+
+    /**
+     * Block the current fiber through the scheduler until it is unblocked or the deadline
+     * (System.nanoTime, 0 for none) passes. The caller checks the queue again afterwards.
+     *
+     * @return false if the deadline has passed
+     */
+    protected boolean schedulerBlock(ThreadContext context, IRubyObject scheduler, SchedulerWaiters waiters,
+                                     BooleanSupplier ready, long deadline) {
+        IRubyObject timeout = context.nil;
+        if (deadline != 0) {
+            long remaining = deadline - System.nanoTime();
+            if (remaining <= 0) return false;
+            timeout = RubyFloat.newFloat(context.runtime, remaining / 1_000_000_000.0);
+        }
+
+        Mutex.FiberWaiter waiter = Mutex.FiberWaiter.cached(context, scheduler);
+        synchronized (waiters) {
+            // a push or pop may have landed since we last looked, and found no one to wake
+            if (ready.getAsBoolean()) return true;
+
+            waiters.add(waiter);
+        }
+
+        try {
+            FiberScheduler.block(context, scheduler, this, timeout);
+        } finally {
+            synchronized (waiters) {
+                waiters.remove(waiter);
+            }
+        }
+
+        return true;
+    }
+
+    // MRI: wakeup_one. The woken fiber checks the queue again, and blocks again if someone else got there first.
+    protected void unblockOneSchedulerWaiter(SchedulerWaiters waiters) {
+        if (waiters == null) return;
+
+        Mutex.FiberWaiter waiter;
+        synchronized (waiters) {
+            waiter = waiters.poll();
+        }
+
+        if (waiter != null) FiberScheduler.unblock(getRuntime().getCurrentContext(), waiter.scheduler(), this, waiter.fiber());
+    }
+
+    // MRI: wakeup_all, for when the whole queue changes, such as on close
+    protected void unblockAllSchedulerWaiters(SchedulerWaiters waiters) {
+        if (waiters == null) return;
+
+        Mutex.FiberWaiter[] woken;
+        synchronized (waiters) {
+            if (waiters.isEmpty()) return;
+
+            woken = waiters.toArray(Mutex.FiberWaiter[]::new);
+            waiters.clear();
+        }
+
+        ThreadContext context = getRuntime().getCurrentContext();
+        for (Mutex.FiberWaiter waiter : woken) {
+            FiberScheduler.unblock(context, waiter.scheduler(), this, waiter.fiber());
+        }
+    }
+
+    protected static int schedulerWaiting(SchedulerWaiters waiters) {
+        if (waiters == null) return 0;
+
+        synchronized (waiters) {
+            return waiters.size();
+        }
+    }
+
+    // MRI: queue_do_pop through rb_fiber_scheduler_block
+    private IRubyObject schedulerPop(ThreadContext context, IRubyObject scheduler, long timeoutNS) {
+        long deadline = timeoutNS == 0 ? 0 : System.nanoTime() + timeoutNS;
+
+        while (true) {
+            try {
+                IRubyObject result = pollInternal();
+                if (result != null) return result;
+            } catch (InterruptedException ie) {
+                throw createInterruptedError(context, "pop");
+            }
+
+            if (closed) return context.nil;
+
+            if (!schedulerBlock(context, scheduler, schedulerTakers(), () -> count.get() > 0 || closed, deadline)) {
+                return context.nil;
+            }
+        }
+    }
+
     /**
      * Signals a waiting takeInternal. Called only from put/offer (which do not
      * otherwise ordinarily lock takeLock.)
@@ -307,6 +454,8 @@ public class Queue extends RubyObject implements DataType {
             throw createInterruptedError(context, "clear");
         }
 
+        unblockAllSchedulerPutters();
+
         return this;
     }
 
@@ -359,7 +508,7 @@ public class Queue extends RubyObject implements DataType {
         try {
             takeLock.lockInterruptibly();
             try {
-                return asFixnum(context, takeLock.getWaitQueueLength(notEmpty));
+                return asFixnum(context, takeLock.getWaitQueueLength(notEmpty) + schedulerTakersWaiting());
             } finally {
                 takeLock.unlock();
             }
@@ -371,6 +520,10 @@ public class Queue extends RubyObject implements DataType {
     @JRubyMethod(name = {"pop", "deq", "shift"})
     public IRubyObject pop(ThreadContext context) {
         initializedCheck(context);
+
+        IRubyObject scheduler = FiberScheduler.current(context);
+        if (scheduler != null) return schedulerPop(context, scheduler, 0);
+
         try {
             return context.getThread().executeTaskBlocking(context, this, BLOCKING_TAKE_TASK);
         } catch (InterruptedException ie) {
@@ -435,6 +588,9 @@ public class Queue extends RubyObject implements DataType {
                 }
                 return result;
             }
+
+            IRubyObject scheduler = FiberScheduler.current(context);
+            if (scheduler != null) return schedulerPop(context, scheduler, timeoutNS);
 
             if (timeoutNS != 0) {
                 task = new BlockingPollTask(timeoutNS);
@@ -527,6 +683,8 @@ public class Queue extends RubyObject implements DataType {
 
         if (c == 0)
             signalNotEmpty();
+
+        unblockSchedulerTaker();
     }
 
     @JRubyMethod
@@ -542,6 +700,9 @@ public class Queue extends RubyObject implements DataType {
         } catch (InterruptedException ie) {
             throw createInterruptedError(context, "close");
         }
+
+        unblockAllSchedulerWaiters(schedulerTakers);
+        unblockAllSchedulerWaiters(schedulerPutters);
 
         return this;
     }
@@ -648,6 +809,8 @@ public class Queue extends RubyObject implements DataType {
         if (notFullSignalNeeded)
             signalNotFull();
 
+        unblockSchedulerPutter();
+
         return x;
     }
 
@@ -671,6 +834,7 @@ public class Queue extends RubyObject implements DataType {
         }
         if (c == capacity)
             signalNotFull();
+        unblockSchedulerPutter();
         return x;
     }
 
@@ -683,6 +847,10 @@ public class Queue extends RubyObject implements DataType {
         takeLock.lockInterruptibly();
         try {
             while (count.get() == 0) {
+                if (closed) {
+                    notEmpty.signal();
+                    return null;
+                }
                 if (nanos <= 0L)
                     return null;
                 nanos = notEmpty.awaitNanos(nanos);
@@ -696,6 +864,7 @@ public class Queue extends RubyObject implements DataType {
         }
         if (c == capacity)
             signalNotFull();
+        unblockSchedulerPutter();
         return x;
     }
 

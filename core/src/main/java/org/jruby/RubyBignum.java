@@ -37,6 +37,7 @@ package org.jruby;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Convert;
@@ -120,9 +121,8 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
 
     /**
      * Return a Bignum or Fixnum (Integer) for the given value, or raise FloatDomainError if it is out of range.
-     *
-     * MRI: rb_dbl2big
      */
+    @CRuby(value = "rb_dbl2big", file = "bignum.c")
     public static RubyInteger newBignorm(Ruby runtime, double value) {
         try {
             return bignorm(runtime, toBigInteger(value));
@@ -191,17 +191,13 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
      */
 
     /* If the value will fit in a Fixnum, return one of those. */
-    /** rb_big_norm
-     *
-     */
+    @CRuby(value = "rb_big_norm", file = "bignum.c")
     public static RubyInteger bignorm(Ruby runtime, BigInteger bi) {
         return (bi.compareTo(LONG_MIN) < 0 || bi.compareTo(LONG_MAX) > 0) ?
                     newBignum(runtime, bi) : runtime.newFixnum(bi.longValue());
     }
 
-    /** rb_big2long
-     *
-     */
+    @CRuby(value = "rb_big2long", file = "bignum.c")
     public static long big2long(RubyBignum val) {
         BigInteger big = val.value;
 
@@ -211,9 +207,10 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
         return big.longValue();
     }
 
-    /** rb_big2ulong
+    /**
      * This is here because for C extensions ulong can hold different values without throwing a RangeError
      */
+    @CRuby(value = "rb_big2ulong", file = "bignum.c")
     public static long big2ulong(RubyBignum value) {
         Ruby runtime = value.getRuntime();
 
@@ -230,9 +227,7 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
         return big.longValue();
     }
 
-    /** rb_big2dbl
-     *
-     */
+    @CRuby(value = "rb_big2dbl", file = "bignum.c")
     public static double big2dbl(RubyBignum val) {
         BigInteger big = val.value;
         double dbl = convertToDouble(big);
@@ -276,9 +271,7 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
     }
 
 
-    /** rb_int2big
-     *
-     */
+    @CRuby(value = "rb_int2big", file = "bignum.c")
     public static BigInteger fix2big(RubyFixnum arg) {
         return long2big(arg.getValue());
     }
@@ -395,17 +388,13 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
         return newArray(context, RubyKernel.new_float(context, other), RubyKernel.new_float(context, this));
     }
 
-    /** rb_big_uminus
-     *
-     */
+    @CRuby(value = "rb_big_uminus", file = "bignum.c")
     @Override
     public IRubyObject op_uminus(ThreadContext context) {
         return bignorm(context.runtime, value.negate());
     }
 
-    /** rb_big_plus
-     *
-     */
+    @CRuby(value = "rb_big_plus", file = "bignum.c")
     @Override
     public IRubyObject op_plus(ThreadContext context, IRubyObject other) {
         return switch (other) {
@@ -437,9 +426,7 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
         return coerceBin(context, sites(context).op_plus, other);
     }
 
-    /** rb_big_minus
-     *
-     */
+    @CRuby(value = "rb_big_minus", file = "bignum.c")
     @Override
     public IRubyObject op_minus(ThreadContext context, IRubyObject other) {
         return switch (other) {
@@ -471,9 +458,7 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
         return coerceBin(context, sites(context).op_minus, other);
     }
 
-    /** rb_big_mul
-     *
-     */
+    @CRuby(value = "rb_big_mul", file = "bignum.c")
     @JRubyMethod(name = "*")
     public IRubyObject op_mul(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) {
@@ -530,9 +515,7 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
         return bignorm(context.runtime, result);
     }
 
-    /** rb_big_div
-     *
-     */
+    @CRuby(value = "rb_big_div", file = "bignum.c")
     @Override
     public IRubyObject op_div(ThreadContext context, IRubyObject other) {
         return op_divide(context, other, true);
@@ -542,9 +525,7 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
         return divideImpl(context, long2big(other));
     }
 
-    /** rb_big_idiv
-     *
-     */
+    @CRuby(value = "rb_big_idiv", file = "bignum.c")
     @Override
     public IRubyObject idiv(ThreadContext context, IRubyObject other) {
         return op_divide(context, other, false);
@@ -555,9 +536,7 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
         return divideImpl(context, long2big(other));
     }
 
-    /** rb_big_divmod
-     *
-     */
+    @CRuby(value = "rb_big_divmod", file = "bignum.c")
     @Override
     @JRubyMethod(name = "divmod")
     public IRubyObject divmod(ThreadContext context, IRubyObject other) {
@@ -583,9 +562,7 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
         return newArray(context, bignorm(context.runtime, results[0]), bignorm(context.runtime, results[1]));
     }
 
-    /** rb_big_modulo
-     *
-     */
+    @CRuby(value = "rb_big_modulo", file = "bignum.c")
     @JRubyMethod(name = {"%", "modulo"})
     public IRubyObject op_mod(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) {
@@ -627,9 +604,7 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
         return op_mod(context, other);
     }
 
-    /** rb_big_remainder
-     *
-     */
+    @CRuby(value = "rb_big_remainder", file = "bignum.c")
     @Override
     @JRubyMethod(name = "remainder")
     public IRubyObject remainder(ThreadContext context, IRubyObject other) {
@@ -662,9 +637,7 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
         return super.quo(context, otherArg);
     }
 
-    /** rb_big_pow
-     *
-     */
+    @CRuby(value = "rb_big_pow", file = "bignum.c")
     @Override
     @JRubyMethod(name = {"**", "power"})
     public IRubyObject op_pow(ThreadContext context, IRubyObject other) {
@@ -713,9 +686,7 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
         }
     }
 
-    /** rb_big_and
-     *
-     */
+    @CRuby(value = "rb_big_and", file = "bignum.c")
     @Override
     public IRubyObject op_and(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyBignum) {
@@ -731,9 +702,7 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
         return bignorm(context.runtime, value.and(fix2big(other)));
     }
 
-    /** rb_big_or
-     *
-     */
+    @CRuby(value = "rb_big_or", file = "bignum.c")
     @Override
     public IRubyObject op_or(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyBignum) {
@@ -754,9 +723,7 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
         return asFixnum(context, value.bitLength());
     }
 
-    /** rb_big_xor
-     *
-     */
+    @CRuby(value = "rb_big_xor", file = "bignum.c")
     @Override
     public IRubyObject op_xor(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyBignum) {
@@ -776,9 +743,7 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
         return RubyBignum.newBignum(context.runtime, value.not());
     }
 
-    /** rb_big_lshift
-     *
-     */
+    @CRuby(value = "rb_big_lshift", file = "bignum.c")
     @Override
     public IRubyObject op_lshift(ThreadContext context, IRubyObject other) {
         long shift;
@@ -828,9 +793,7 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
         return bignorm(context.runtime, value.shiftLeft((int) shift));
     }
 
-    /** rb_big_rshift
-     *
-     */
+    @CRuby(value = "rb_big_rshift", file = "bignum.c")
     @Override
     public IRubyObject op_rshift(ThreadContext context, IRubyObject other) {
         long shift;
@@ -888,9 +851,7 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
         return value.testBit(0) ? context.fals : context.tru;
     }
 
-    /** rb_big_aref
-     *
-     */
+    @CRuby(value = "rb_big_aref", file = "bignum.c")
     @Override
     protected IRubyObject op_aref_subclass(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyBignum bignum) { // Need to normalize first
@@ -905,7 +866,7 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
         return asFixnum(context, value.testBit((int)position) ? 1: 0);
     }
 
-    // MRI: rb_big_aref2
+    @CRuby(value = "rb_big_aref2", file = "bignum.c")
     @Override
     public IRubyObject op_aref(ThreadContext context, IRubyObject index, IRubyObject length) {
         long shift = index.convertToInteger().asLong(context);
@@ -1074,9 +1035,7 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
         return false;
     }
 
-    /** rb_big_cmp
-     *
-     */
+    @CRuby(value = "rb_big_cmp", file = "bignum.c")
     @Override
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
         final BigInteger otherValue;
@@ -1094,9 +1053,7 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
         return asFixnum(context, value.compareTo(otherValue));
     }
 
-    /** rb_big_eq
-     *
-     */
+    @CRuby(value = "rb_big_eq", file = "bignum.c")
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         final BigInteger otherValue;
@@ -1114,7 +1071,7 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
 
     // eql_p inherited from RubyNumeric: type-strict check (getClass) + equalInternal
 
-    // MRI: rb_big_hash
+    @CRuby(value = "rb_big_hash", file = "bignum.c")
     public RubyFixnum hash(ThreadContext context) {
         return asFixnum(context, longHashCode());
     }
@@ -1137,17 +1094,13 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
         return asFloat(context, asDouble(context));
     }
 
-    /** rb_big_abs
-     *
-     */
+    @CRuby(value = "rb_big_abs", file = "bignum.c")
     @Override
     public IRubyObject abs(ThreadContext context) {
         return RubyBignum.newBignum(context.runtime, value.abs());
     }
 
-    /** rb_big_size
-     *
-     */
+    @CRuby(value = "rb_big_size", file = "bignum.c")
     @Override
     public IRubyObject size(ThreadContext context) {
         return asFixnum(context, (value.bitLength() + 7) / 8);
@@ -1268,7 +1221,7 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
         return bignorm(context.runtime, value);
     }
 
-    // MRI: rb_big_fdiv_double
+    @CRuby(value = "rb_big_fdiv_double", file = "bignum.c")
     @Override
     public IRubyObject fdivDouble(ThreadContext context, IRubyObject y) {
         double dy;
@@ -1297,7 +1250,8 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
                 (RubyFloat) fdivInt(context, y) : asFloat(context, dx / dy);
     }
 
-    // MRI: big_fdiv_int and big_fdiv
+    @CRuby(value = "big_fdiv_int", file = "bignum.c")
+    @CRuby(value = "big_fdiv", file = "bignum.c")
     public IRubyObject fdivInt(ThreadContext context, RubyBignum y) {
         return fdivInt(context, new BigDecimal(y.value));
     }
@@ -1306,7 +1260,7 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
         return asFloat(context, new BigDecimal(value).divide(y).doubleValue());
     }
 
-    // MRI: big_fdiv_float
+    @CRuby(value = "big_fdiv_float", file = "bignum.c")
     public IRubyObject fdivFloat(ThreadContext context, RubyFloat y) {
         return context.runtime.newFloat(new BigDecimal(value).divide(new BigDecimal(y.value)).doubleValue());
     }

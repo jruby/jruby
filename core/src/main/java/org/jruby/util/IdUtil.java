@@ -36,6 +36,7 @@ import org.jcodings.IntHolder;
 import org.jcodings.unicode.UnicodeCodeRange;
 import org.jruby.Ruby;
 import org.jruby.RubySymbol;
+import org.jruby.anno.CRuby;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public final class IdUtil {
@@ -147,7 +148,7 @@ public final class IdUtil {
         return name.length() > 0 && ((c = name.charAt(0)) == '@' || (c <= 'Z' && c >= 'A'));
     }
 
-    // MRI: rb_sym_constant_char_p
+    @CRuby(value = "rb_sym_constant_char_p", file = "symbol.c")
     public static boolean isConstantInitial(ByteList byteList) {
         int c, len;
         int nlen = byteList.realSize();

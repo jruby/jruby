@@ -31,6 +31,7 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
+import org.jruby.anno.CRuby;
 
 import static org.jruby.api.Error.argumentError;
 
@@ -191,7 +192,7 @@ public class RegexpSupport {
         raiseRegexpError(runtime, bytes, enc, options, err);
     }
 
-    // rb_enc_reg_raise
+    @CRuby(value = "rb_enc_reg_raise", file = "re.c")
     public static void raiseRegexpError(Ruby runtime, ByteList bytes, Encoding enc, RegexpOptions options, String err) {
         // TODO: we loose encoding information here, fix it
         throw runtime.newRegexpError(err + ": " + regexpDescription(runtime, bytes, options, enc));
@@ -202,7 +203,7 @@ public class RegexpSupport {
         return regexpDescription(runtime, bytes, options, enc);
     }
 
-    // rb_enc_reg_error_desc
+    @CRuby(value = "rb_enc_reg_error_desc", file = "re.c")
     public static ByteList regexpDescription(Ruby runtime, ByteList bytes, RegexpOptions options, Encoding enc) {
         byte[] s = bytes.getUnsafeBytes();
         int start = bytes.getBegin();
@@ -303,7 +304,7 @@ public class RegexpSupport {
         }
     }
 
-    // option_to_str
+    @CRuby(value = "option_to_str", file = "re.c")
     public static void appendOptions(ByteList to, RegexpOptions options) {
         if (options.isMultiline()) to.append((byte)'m');
         if (options.isIgnorecase()) to.append((byte)'i');
@@ -404,7 +405,7 @@ public class RegexpSupport {
      * @param mode error mode
      * @return new position after performing unescaping
      */
-    // MRI: unescape_escaped_nonascii
+    @CRuby(value = "unescape_escaped_nonascii", file = "re.c")
     private static int unescapeEscapedNonAscii(Ruby runtime, ByteList to, byte[]bytes, int p, int end, Encoding enc, Encoding[]encp, ByteList str, ErrorMode mode) {
         byte[]chBuf = new byte[enc.maxLength()];
         int chLen = 0;

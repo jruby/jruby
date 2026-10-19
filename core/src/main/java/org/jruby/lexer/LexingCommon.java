@@ -10,6 +10,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyRegexp;
+import org.jruby.anno.CRuby;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.lexer.yacc.LexContext;
 import org.jruby.lexer.yacc.StackState;
@@ -1022,10 +1023,10 @@ public abstract class LexingCommon {
         return c == ' ' || ('\t' <= c && c <= '\r');
     }
 
-    /* MRI: magic_comment_marker */
     /* This impl is a little sucky.  We basically double scan the same bytelist twice.  Once here
      * and once in parseMagicComment.
      */
+    @CRuby(value = "magic_comment_marker", file = "parse.y")
     public static int magicCommentMarker(ByteList str, int begin) {
         int i = begin;
         int len = str.length();

@@ -1983,8 +1983,10 @@ import static org.jruby.util.CommonByteLists.FWD_KWREST;
             yyVal = parserState.execute(this, yyVal, yystates, yytop, count, yytoken);
             // record the production's source span on the node it produced (see Node#setAutoSourceSpan: each
             // enclosing production handing the node along widens it until an explicit span locks it; a node
-            // made by an empty production has no source of its own)
-            if (count > 0 && yyVal instanceof org.jruby.ast.Node node) node.setAutoSourceSpan(start, end);
+            // made by an empty production has no source of its own), when the parse has a use for it
+            if (count > 0 && recordsPositions() && yyVal instanceof org.jruby.ast.Node node) {
+                node.setAutoSourceSpan(start, end);
+            }
         }
 // ACTIONS_END (line used by optimize_parser)
         yytop -= yyLen[yyn];
@@ -2547,7 +2549,7 @@ states[71] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop,
 };
 states[72] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     ((DefHolder)yyVals[0+yyTop].value).line = yyVals[yyTop - count + 1].start();
-                    ((DefHolder)yyVals[0+yyTop].value).column = ProductionState.column(yyVals[yyTop - count + 1].start);
+                    ((DefHolder)yyVals[0+yyTop].value).column = p.column(yyVals[yyTop - count + 1].start);
                     yyVal = ((DefHolder)yyVals[0+yyTop].value);
   return yyVal;
 };
@@ -2560,7 +2562,7 @@ states[73] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop,
 states[74] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.setState(EXPR_ENDFN|EXPR_LABEL);
                     ((DefHolder)yyVals[0+yyTop].value).line = yyVals[yyTop - count + 1].start();
-                    ((DefHolder)yyVals[0+yyTop].value).column = ProductionState.column(yyVals[yyTop - count + 1].start);
+                    ((DefHolder)yyVals[0+yyTop].value).column = p.column(yyVals[yyTop - count + 1].start);
                     yyVal = ((DefHolder)yyVals[0+yyTop].value);
                        ((DefHolder)yyVal).value = p.new_array(((IRubyObject)yyVals[-3+yyTop].value), ((IRubyObject)yyVals[-2+yyTop].value), ((DefHolder)yyVal).value);
 
@@ -6700,4 +6702,4 @@ states[826] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
 					// line 4693 "ripper_RubyParser.out"
 
 }
-					// line 15035 "-"
+					// line 15037 "-"

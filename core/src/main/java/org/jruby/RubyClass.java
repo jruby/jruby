@@ -67,6 +67,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.JRubyAPI;
@@ -395,13 +396,14 @@ public class RubyClass extends RubyModule {
         return false;
     }
 
-    /** boot_defclass
+    /**
      * Create an initial Object meta class before Module and Kernel dependencies have
      * squirreled themselves together.
      *
      * @param runtime we need it
      * @return a half-baked meta class for object
      */
+    @CRuby(value = "boot_defclass", file = "class.c")
     public static RubyClass createBootstrapClass(Ruby runtime, String name, RubyClass superClass, ObjectAllocator allocator) {
         RubyClass obj = superClass == null ?
                 new RubyClass(runtime).marshalWith(DEFAULT_OBJECT_MARSHAL) :
@@ -705,9 +707,7 @@ public class RubyClass extends RubyModule {
         return method.call(context, self, entry.sourceModule, name);
     }
 
-    /**
-    * MRI: rb_funcallv_public
-    */
+    @CRuby(value = "rb_funcallv_public", file = "vm_eval.c")
     public IRubyObject invokePublic(ThreadContext context, IRubyObject self, String name, IRubyObject arg) {
         CacheEntry entry = searchWithCache(name);
         DynamicMethod method = entry.method;
@@ -722,9 +722,8 @@ public class RubyClass extends RubyModule {
      * Safely attempt to invoke the given method name on self, using respond_to? and method_missing as appropriate.
      *
      * Return null if the method does not exist.
-     *
-     * MRI: rb_check_funcall
      */
+    @CRuby(value = "rb_check_funcall", file = "vm_eval.c")
     public final IRubyObject finvokeChecked(ThreadContext context, IRubyObject self, String name) {
         return checkFuncallDefault(context, self, name, IRubyObject.NULL_ARRAY);
     }
@@ -733,9 +732,8 @@ public class RubyClass extends RubyModule {
      * Safely attempt to invoke the given method name on self, using respond_to? and method_missing as appropriate.
      *
      * Return null if the method does not exist.
-     *
-     * MRI: rb_check_funcall
      */
+    @CRuby(value = "rb_check_funcall", file = "vm_eval.c")
     public final IRubyObject finvokeChecked(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites) {
         return checkFuncallDefault(context, self, sites);
     }
@@ -744,9 +742,8 @@ public class RubyClass extends RubyModule {
      * Safely attempt to invoke the given method name on self, using respond_to? and method_missing as appropriate.
      *
      * Return null if the method does not exist.
-     *
-     * MRI: rb_check_funcall
      */
+    @CRuby(value = "rb_check_funcall", file = "vm_eval.c")
     public final IRubyObject finvokeChecked(ThreadContext context, IRubyObject self, String name, IRubyObject... args) {
         return checkFuncallDefault(context, self, name, args);
     }
@@ -755,14 +752,13 @@ public class RubyClass extends RubyModule {
      * Safely attempt to invoke the given method name on self, using respond_to? and method_missing as appropriate.
      *
      * Return null if the method does not exist.
-     *
-     * MRI: rb_check_funcall
      */
+    @CRuby(value = "rb_check_funcall", file = "vm_eval.c")
     public final IRubyObject finvokeChecked(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites, IRubyObject... args) {
         return checkFuncallDefault(context, self, sites, args);
     }
 
-    // MRI: rb_check_funcall_default
+    @CRuby(value = "rb_check_funcall_default", file = "vm_eval.c")
     private IRubyObject checkFuncallDefault(ThreadContext context, IRubyObject self, String name, IRubyObject[] args) {
         final RubyClass klass = this;
         if (!checkFuncallRespondTo(context, klass, self, name)) return null; // return def;
@@ -774,7 +770,7 @@ public class RubyClass extends RubyModule {
         return method.call(context, self, klass, name, args);
     }
 
-    // MRI: rb_check_funcall_default
+    @CRuby(value = "rb_check_funcall_default", file = "vm_eval.c")
     private IRubyObject checkFuncallDefault(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites, IRubyObject[] args) {
         final RubyClass klass = this;
         if (!checkFuncallRespondTo(context, klass, self, sites)) return null; // return def;
@@ -787,7 +783,7 @@ public class RubyClass extends RubyModule {
         return method.call(context, self, entry.sourceModule, sites.methodName, args);
     }
 
-    // MRI: rb_check_funcall_default
+    @CRuby(value = "rb_check_funcall_default", file = "vm_eval.c")
     private IRubyObject checkFuncallDefault(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites) {
         final RubyClass klass = this;
         if (!checkFuncallRespondTo(context, klass, self, sites)) return null; // return def;
@@ -800,17 +796,17 @@ public class RubyClass extends RubyModule {
         return method.call(context, self, entry.sourceModule, sites.methodName);
     }
 
-    // MRI: check_funcall_exec
+    @CRuby(value = "check_funcall_exec", file = "vm_eval.c")
     private static IRubyObject checkFuncallExec(ThreadContext context, IRubyObject self, String name, IRubyObject... args) {
         return self.callMethod(context, "method_missing", ArraySupport.newCopy(asSymbol(context, name), args));
     }
 
-    // MRI: check_funcall_exec
+    @CRuby(value = "check_funcall_exec", file = "vm_eval.c")
     private static IRubyObject checkFuncallExec(ThreadContext context, IRubyObject self, String name, CallSite methodMissingSite, IRubyObject... args) {
         return methodMissingSite.call(context, self, self, ArraySupport.newCopy(asSymbol(context, name), args));
     }
 
-    // MRI: check_funcall_failed
+    @CRuby(value = "check_funcall_failed", file = "vm_eval.c")
     private static IRubyObject checkFuncallFailed(ThreadContext context, IRubyObject self, String name, RubyClass expClass, IRubyObject... args) {
         if (self.respondsTo(name)) throw context.runtime.newRaiseException(expClass, name);
 
@@ -905,9 +901,8 @@ public class RubyClass extends RubyModule {
      *
      * This goes through rb_check_funcall, so it may also call a user-defined respond_to? and, if
      * respond_to_missing? has been undefined, method_missing.
-     *
-     * MRI: check_respond_to_missing
      */
+    @CRuby(value = "check_respond_to_missing", file = "vm_insnhelper.c")
     public static boolean checkRespondToMissing(ThreadContext context, IRubyObject recv, String mid) {
         IRubyObject result = getMetaClass(recv).finvokeChecked(context, recv, "respond_to_missing?",
                 asSymbol(context, mid), context.fals);
@@ -915,18 +910,18 @@ public class RubyClass extends RubyModule {
         return result != null && result.isTrue();
     }
 
-    // MRI: check_funcall_callable
+    @CRuby(value = "check_funcall_callable", file = "vm_eval.c")
     static boolean checkFuncallCallable(ThreadContext context, DynamicMethod method, CallType callType, IRubyObject self) {
         return rbMethodCallStatus(context, method, callType, self);
     }
 
-    // MRI: rb_method_call_status
     // FIXME: Partial impl because we don't have these "NOEX" flags
+    @CRuby(value = "rb_method_call_status", file = "vm_eval.c")
     private static boolean rbMethodCallStatus(ThreadContext context, DynamicMethod method, CallType callType, IRubyObject self) {
         return !method.isUndefined() && method.isCallableFrom(self, callType);
     }
 
-    // MRI: check_funcall_missing
+    @CRuby(value = "check_funcall_missing", file = "vm_eval.c")
     private static IRubyObject checkFuncallMissing(ThreadContext context, RubyClass klass, IRubyObject self, String method, IRubyObject... args) {
         final Ruby runtime = context.runtime;
 
@@ -949,7 +944,7 @@ public class RubyClass extends RubyModule {
         }
     }
 
-    // MRI: check_funcall_missing
+    @CRuby(value = "check_funcall_missing", file = "vm_eval.c")
     private static IRubyObject checkFuncallMissing(ThreadContext context, RubyClass klass, IRubyObject self, String method, CachingCallSite respondToMissingSite, CachingCallSite methodMissingSite, IRubyObject... args) {
         final Ruby runtime = context.runtime;
 
@@ -1014,7 +1009,7 @@ public class RubyClass extends RubyModule {
         return method.call(context, self, entry.sourceModule, name, arg0, arg1, arg2);
     }
 
-    // MRI: rb_method_basic_definition_p
+    @CRuby(value = "rb_method_basic_definition_p", file = "vm_method.c")
     public boolean checkMethodBasicDefinition(String name) {
         DynamicMethod method = searchMethod(name);
         return method != null && method.isBuiltin();
@@ -1079,9 +1074,7 @@ public class RubyClass extends RubyModule {
         return method.call(context, self, entry.sourceModule, "inherited", subclass, Block.NULL_BLOCK);
     }
 
-    /** rb_class_new_instance
-    *
-    */
+    @CRuby(value = "rb_class_new_instance", file = "object.c")
     @JRubyMethod(name = "new", keywords = true, omit = true)
     public IRubyObject newInstance(ThreadContext context, Block block) {
         IRubyObject obj = allocate(context);
@@ -1123,9 +1116,7 @@ public class RubyClass extends RubyModule {
         return obj;
     }
 
-    /** rb_class_initialize
-     *
-     */
+    @CRuby(value = "rb_class_initialize", file = "object.c")
     @Override
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, Block block) {
@@ -1546,9 +1537,7 @@ public class RubyClass extends RubyModule {
     private void checkNotInitialized(ThreadContext context) {
         if (superClass != null || this == basicObjectClass(context)) throw typeError(context, "already initialized class");
     }
-    /** rb_check_inheritable
-     *
-     */
+    @CRuby(value = "rb_check_inheritable", file = "class.c")
     @Deprecated(since = "10.0.0.0")
     public static void checkInheritable(IRubyObject superClass) {
         checkInheritable(((RubyBasicObject) superClass).getCurrentContext(), superClass);

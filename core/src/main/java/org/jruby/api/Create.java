@@ -2,6 +2,7 @@ package org.jruby.api;
 
 import org.jcodings.Encoding;
 import org.jruby.*;
+import org.jruby.anno.CRuby;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -203,7 +204,7 @@ public class Create {
      * @param context the current thread context
      * @return a new hash
      */
-    // MRI: rb_hash_new
+    @CRuby(value = "rb_hash_new", file = "hash.c")
     public static RubyHash newHash(ThreadContext context) {
         return RubyHashLinkedBuckets.newLBHash(context.runtime);
     }
@@ -218,7 +219,7 @@ public class Create {
      * @param context the current thread context
      * @return a new hash
      */
-    // MRI: rb_hash_new
+    @CRuby(value = "rb_hash_new", file = "hash.c")
     public static RubyHash newEmptyHash(ThreadContext context) {
         return newSmallHash(context);
     }
@@ -231,7 +232,7 @@ public class Create {
      * @param context the current thread context
      * @return a new hash
      */
-    // MRI: rb_hash_new
+    @CRuby(value = "rb_hash_new", file = "hash.c")
     public static RubyHash newSmallHash(ThreadContext context) {
         return RubyHashLinkedBuckets.newLBHash(context.runtime, 1);
     }
@@ -244,7 +245,7 @@ public class Create {
      * @param value the value
      * @return a new hash
      */
-    // MRI: rb_hash_new
+    @CRuby(value = "rb_hash_new", file = "hash.c")
     public static RubyHash newSmallHash(ThreadContext context, IRubyObject key, IRubyObject value) {
         RubyHash hash = RubyHashLinkedBuckets.newLBHash(context.runtime, 1);
         hash.fastASetSmall(context.runtime, key, value, true);

@@ -1,5 +1,6 @@
 package org.jruby;
 
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.Arity;
@@ -208,7 +209,7 @@ public class RubyRandomBase extends RubyObject {
         return limitedBigRand(context, random, limit);
     }
 
-    // obj_random_bytes
+    @CRuby(value = "obj_random_bytes", file = "random.c")
     private static byte[] objRandomBytes(ThreadContext context, IRubyObject obj, long n) {
         IRubyObject len = asFixnum(context, n);
         IRubyObject v = obj.callMethod(context, "bytes", len);
@@ -441,7 +442,8 @@ public class RubyRandomBase extends RubyObject {
         return context.runtime.newString(new ByteList(getBytes(random, n)));
     }
 
-    // MRI: rb_rand_bytes_int32, rand_mt_get_bytes
+    @CRuby(value = "rb_rand_bytes_int32", file = "random.c")
+    @CRuby(value = "rand_mt_get_bytes", file = "random.c")
     static byte[] getBytes(RubyRandom.RandomType random, int n) {
         byte[] bytes = new byte[n];
         int idx = 0;
@@ -462,14 +464,14 @@ public class RubyRandomBase extends RubyObject {
         return bytes;
     }
 
-    // try_get_rnd
+    @CRuby(value = "try_get_rnd", file = "random.c")
     static RubyRandom.RandomType tryGetRandomType(ThreadContext context, IRubyObject obj) {
         if (obj.equals(context.runtime.getRandomClass())) return getDefaultRand(context);
         if (obj instanceof RubyRandom) return ((RubyRandom) obj).random;
         return null;
     }
 
-    // rb_random_ulong_limited
+    @CRuby(value = "rb_random_ulong_limited", file = "random.c")
     public static long randomLongLimited(ThreadContext context, IRubyObject obj, long limit) {
         RubyRandom.RandomType rnd = tryGetRandomType(context, obj);
 

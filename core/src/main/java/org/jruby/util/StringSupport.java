@@ -51,6 +51,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.anno.CRuby;
 import org.jruby.api.Check;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.Block;
@@ -99,6 +100,7 @@ public final class StringSupport {
     public static final int CR_MASK      = CR_7BIT | CR_VALID;
 
     private static final VarHandle BYTES_AS_LONGS = MethodHandles.byteArrayViewVarHandle(long[].class, ByteOrder.nativeOrder());
+    private static final boolean BIG_ENDIAN = ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN;
 
     public static final int TRANS_SIZE = 256;
 
@@ -273,12 +275,12 @@ public final class StringSupport {
         return "???";  // Not reached unless something seriously boned
     }
 
-    // rb_enc_fast_mbclen
+    @CRuby(value = "rb_enc_fast_mbclen", file = "encoding.c")
     public static int encFastMBCLen(byte[] bytes, int p, int e, Encoding enc) {
         return enc.length(bytes, p, e);
     }
 
-    // rb_enc_mbclen
+    @CRuby(value = "rb_enc_mbclen", file = "encoding.c")
     public static int length(Encoding enc, byte[]bytes, int p, int end) {
         int n = enc.length(bytes, p, end);
         if (MBCLEN_CHARFOUND_P(n) && MBCLEN_CHARFOUND_LEN(n) <= end - p) return MBCLEN_CHARFOUND_LEN(n);
@@ -286,7 +288,7 @@ public final class StringSupport {
         return min <= end - p ? min : end - p;
     }
 
-    // rb_enc_precise_mbclen
+    @CRuby("rb_enc_precise_mbclen")
     public static int preciseLength(Encoding enc, byte[]bytes, int p, int end) {
         if (p >= end) return MBCLEN_NEEDMORE(1);
         int n = enc.length(bytes, p, end);
@@ -329,8 +331,17 @@ public final class StringSupport {
         return n;
     }
 
-    // MRI: search_nonascii
+    @CRuby(value = "search_nonascii", file = "string.c")
     public static int searchNonAscii(byte[]bytes, int p, int end) {
+        if (p < end && !Encoding.isAscii(bytes[p])) return p;
+
+        while (p + LONG_SIZE <= end) {
+            long hits = (long) BYTES_AS_LONGS.get(bytes, p) & NONASCII_MASK;
+            if (hits != 0) {
+                return p + ((BIG_ENDIAN ? Long.numberOfLeadingZeros(hits) : Long.numberOfTrailingZeros(hits)) >>> 3);
+            }
+            p += LONG_SIZE;
+        }
         while (p < end) {
             if (!Encoding.isAscii(bytes[p])) return p;
             p++;
@@ -456,12 +467,12 @@ public final class StringSupport {
         return utf8Length(bytes.getUnsafeBytes(), bytes.getBegin(), bytes.getBegin() + bytes.getRealSize());
     }
 
-    // MRI: rb_enc_strlen
+    @CRuby(value = "rb_enc_strlen", file = "string.c")
     public static int strLength(Encoding enc, byte[]bytes, int p, int end) {
         return strLength(enc, bytes, p, end, CR_UNKNOWN);
     }
 
-    // MRI: enc_strlen
+    @CRuby(value = "enc_strlen", file = "string.c")
     public static int strLength(Encoding enc, byte[]bytes, int p, int e, int cr) {
         int c;
         if (enc.isFixedWidth()) {
@@ -940,7 +951,7 @@ public final class StringSupport {
         return new Object[] {s, false};
     }
 
-    // MRI: str_null_char
+    @CRuby(value = "str_null_char", file = "string.c")
     private static int strNullChar(byte[] sBytes, int s, int len, final int minlen, Encoding enc) {
         int e = s + len;
 
@@ -950,7 +961,7 @@ public final class StringSupport {
         return -1;
     }
 
-    // MRI: zero_filled
+    @CRuby(value = "zero_filled", file = "string.c")
     private static boolean zeroFilled(byte[] sBytes, int s, int n) {
         for (; n > 0; --n) {
             if (sBytes[s++] != 0) return false;
@@ -958,7 +969,7 @@ public final class StringSupport {
         return true;
     }
 
-    // MRI: str_fill_term
+    @CRuby(value = "str_fill_term", file = "string.c")
     private static RubyString strFillTerm(RubyString str, byte[] sBytes, int beg, int len, int termlen) {
         int capa = sBytes.length - beg;
 
@@ -984,10 +995,8 @@ public final class StringSupport {
         final int p = beg + len; Arrays.fill(ptr, p, p + termlen, (byte) '\0');
     }
 
-    /**
-     * rb_str_scan
-     */
 
+    @CRuby(value = "rb_str_scan", file = "string.c")
     public static int positionEndForScan(ByteList value, Matcher matcher, Encoding enc, int begin, int range) {
         int end = matcher.getEnd();
         if (matcher.getBegin() == end) {
@@ -1001,9 +1010,7 @@ public final class StringSupport {
         }
     }
 
-    /**
-     * rb_str_dump
-     */
+    @CRuby(value = "rb_str_dump", file = "string.c")
     public static ByteList dumpCommon(Ruby runtime, ByteList bytelist) {
         return dumpCommon(runtime, bytelist, false);
     }
@@ -1131,9 +1138,7 @@ public final class StringSupport {
         return c == '$' || c == '@' || c == '{';
     }
 
-    /**
-     * rb_str_count
-     */
+    @CRuby(value = "rb_str_count", file = "string.c")
     public static int strCount(ByteList str, boolean[] table, TrTables tables, Encoding enc) {
         final byte[] bytes = str.getUnsafeBytes();
         int p = str.getBegin();
@@ -1170,7 +1175,7 @@ public final class StringSupport {
         }
     }
 
-    // MRI: rb_str_rindex
+    @CRuby(value = "rb_str_rindex", file = "string.c")
     public static int rindex(ByteList source, int sourceChars, int subChars, int pos, CodeRangeable subStringCodeRangeable, Encoding enc) {
         if (subStringCodeRangeable.scanForCodeRange() == CR_BROKEN) return -1;
 
@@ -1311,9 +1316,7 @@ public final class StringSupport {
         boolean gen;
     }
 
-    /**
-     * tr_setup_table
-     */
+    @CRuby(value = "tr_setup_table", file = "string.c")
     public static final class TrTables {
         IntHashMap<Object> del, noDel; // used as ~ Set
     }
@@ -1497,7 +1500,7 @@ public final class StringSupport {
 
     public static enum NeighborChar {NOT_CHAR, FOUND, WRAPPED}
 
-    // MRI: str_succ
+    @CRuby(value = "str_succ", file = "string.c")
     public static ByteList succCommon(ByteList original) {
         byte carry[] = new byte[org.jcodings.Config.ENC_CODE_TO_MBC_MAXLEN];
         int carryP = 0;
@@ -1583,7 +1586,7 @@ public final class StringSupport {
         }
     }
 
-    // MRI: enc_succ_char
+    @CRuby(value = "enc_succ_char", file = "string.c")
     public static NeighborChar succChar(Encoding enc, byte[] bytes, int p, int len) {
         int l;
         if (enc.minLength() > 1) {
@@ -1643,7 +1646,7 @@ public final class StringSupport {
         }
     }
 
-    // MRI: enc_succ_alnum_char
+    @CRuby(value = "enc_succ_alnum_char", file = "string.c")
     private static NeighborChar succAlnumChar(Encoding enc, byte[]bytes, int p, int len, byte[]carry, int carryP) {
         NeighborChar ret;
         byte save[] = new byte[org.jcodings.Config.ENC_CODE_TO_MBC_MAXLEN];
@@ -1955,9 +1958,7 @@ public final class StringSupport {
         return encoding.isAsciiCompatible() && codeRange == CR_7BIT;
     }
 
-    /**
-     * rb_str_delete_bang
-     */
+    @CRuby(value = "rb_str_delete_bang", file = "string.c")
     static CodeRangeable strDeleteBang(CodeRangeable rubyString, boolean[] squeeze, TrTables tables, Encoding enc) {
         rubyString.modify();
         rubyString.keepCodeRange();
@@ -2013,9 +2014,7 @@ public final class StringSupport {
         }
     }
 
-    /**
-     * MRI: chopped_length
-     */
+    @CRuby(value = "chopped_length", file = "string.c")
     public static int choppedLength(CodeRangeable str) {
         ByteList bl = str.getByteList();
         Encoding enc = bl.getEncoding();
@@ -2033,9 +2032,7 @@ public final class StringSupport {
         return p - beg;
     }
 
-    /**
-     * rb_enc_compatible
-     */
+    @CRuby(value = "rb_enc_compatible", file = "encoding.c")
     public static Encoding areCompatible(CodeRangeable str1, CodeRangeable str2) {
         Encoding enc1 = str1.getByteList().getEncoding();
         Encoding enc2 = str2.getByteList().getEncoding();

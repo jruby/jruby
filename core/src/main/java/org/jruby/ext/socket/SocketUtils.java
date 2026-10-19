@@ -82,6 +82,7 @@ import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.ext.socket.Addrinfo.AI_CANONNAME;
+import static org.jruby.ext.socket.Addrinfo.AI_NUMERICHOST;
 
 /**
  * Socket class methods for addresses, structures, and so on.
@@ -291,6 +292,11 @@ public class SocketUtils {
             hostString = emptyHost ? "localhost" : host.convertToString().toString();
         }
 
+        // AI_NUMERICHOST: the host must be an address literal; never resolve a name
+        if ((flag & AI_NUMERICHOST) != 0 && !emptyHost && !isNumericHost(hostString)) {
+            throw sockerr(runtime, "getaddrinfo: name or service not known");
+        }
+
         try {
             InetAddress[] addrs = InetAddress.getAllByName(hostString);
 
@@ -305,6 +311,14 @@ public class SocketUtils {
             throw sockerr(runtime, "getaddrinfo: name or service not known");
 
         }
+    }
+
+    private static final Pattern NUMERIC_IPV4_HOST_PATTERN = Pattern.compile("[0-9]+(\\.[0-9]+){0,3}");
+
+    // An IPv6 literal (InetAddress parses those without a lookup) or a decimal
+    // IPv4 literal; anything else would make InetAddress.getAllByName query DNS.
+    private static boolean isNumericHost(String host) {
+        return host.contains(":") || NUMERIC_IPV4_HOST_PATTERN.matcher(host).matches();
     }
 
     public static IRubyObject getnameinfo(ThreadContext context, IRubyObject[] args) {
