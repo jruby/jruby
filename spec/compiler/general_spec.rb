@@ -220,6 +220,13 @@ modes.each do |mode|
       run("\"hello#{pid_dstr_32_times}\"") {|result| expect(result).to eq('hello' + pid_32_times) }
     end
 
+    # See https://github.com/jruby/jruby/issues/9822
+    it "compiles a range with one string literal endpoint" do
+      run('x = "c"; ["a"..x, x..."e", ("a"..), (.."b")]') do |x|
+        expect(x).to eq ["a".."c", "c"..."e", ("a"..), (.."b")]
+      end
+    end
+
     it "compiles calls" do
       run("'bar'.capitalize") {|result| expect(result).to eq 'Bar' }
       run("rand(10)") {|result| expect(result).to be_a_kind_of Integer }

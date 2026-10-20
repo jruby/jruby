@@ -2592,13 +2592,13 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
         // string ranges should have frozen begin and end
         if (beginNode instanceof StrNode beginString) {
-            begin = new FrozenString(beginString.getValue(), beginString.getCodeRange(), beginString.getFile(), beginString.getLine());
+            begin = new FrozenString(beginString.getValue(), beginString.getCodeRange(), scope.getFile(), beginString.getLine());
         } else {
             begin = build(beginNode);
         }
 
         if (endNode instanceof StrNode endString) {
-            end = new FrozenString(endString.getValue(), endString.getCodeRange(), endString.getFile(), endString.getLine());
+            end = new FrozenString(endString.getValue(), endString.getCodeRange(), scope.getFile(), endString.getLine());
         } else {
             end = build(endNode);
         }
