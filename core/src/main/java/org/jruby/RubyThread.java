@@ -1945,8 +1945,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         @Override
         public void wakeup(RubyThread thread, Object data) {
+            // notify could wake another thread waiting on the same object instead of this one, so wake them all
             synchronized (data) {
-                data.notify();
+                data.notifyAll();
             }
         }
     }
