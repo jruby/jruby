@@ -10,6 +10,11 @@
 # would stay interpreted forever, as in
 # https://github.com/jruby/jruby/issues/9814.
 #
+# It also persists each file's IR, as jrubyc does, and reads it back,
+# decoding every method and block. Any exception is a file that jrubyc can
+# compile but JRuby can't load, as in
+# https://github.com/jruby/jruby/issues/9834.
+#
 #   bin/jruby -J-XX:-OmitStackTraceInFastThrow tool/jit_compile_check.rb [options] [FILE_OR_DIR ...]
 #
 # Failures are grouped by exception class and message, so pass
@@ -24,6 +29,10 @@ require 'yaml'
 module JITCompileCheck
   java_import org.jruby.ir.IRClosure
   java_import org.jruby.ir.IRMethod
+  java_import org.jruby.ir.persistence.IRReader
+  java_import org.jruby.ir.persistence.IRReaderStream
+  java_import org.jruby.ir.persistence.IRWriter
+  java_import org.jruby.ir.persistence.IRWriterStream
   java_import org.jruby.ir.targets.JVMVisitor
   java_import org.jruby.ir.targets.JVMVisitorMethodContext
   java_import org.jruby.util.OneShotClassLoader
@@ -67,6 +76,17 @@ module JITCompileCheck
     true
   end
 
+  # Persists the IR of a file and reads it back as JRuby loads a file that
+  # jrubyc compiled. The reader decodes each scope's instructions only when
+  # they are first used, so this decodes them all.
+  def round_trip(script, path)
+    bytes = java.io.ByteArrayOutputStream.new
+    IRWriter.persist(IRWriterStream.new(bytes), script)
+    manager = runtime.getIRManager
+    restored = IRReader.load(manager, IRReaderStream.new(manager, bytes.toByteArray, path))
+    each_scope(restored) { |scope| scope.getInterpreterContext.getInstructions }
+  end
+
   def check_file(path, stats, failures)
     source = File.binread(path)
     begin
@@ -81,6 +101,12 @@ module JITCompileCheck
 
     stats.files += 1
     scopes = []
+    begin
+      round_trip(script, path)
+    rescue java.lang.Throwable, StandardError => e
+      failures << Failure.new(file: path, line: 1, scope: 'IR persistence', error: e)
+    end
+
     begin
       each_scope(script) { |scope| scopes << scope }
     rescue java.lang.Throwable, StandardError => e
