@@ -1053,6 +1053,10 @@ modes.each do |mode|
       end
     end
 
+    it "compiles local variables with non-ASCII names" do
+      run('ä = 1; [ä, binding.local_variable_get(:ä)]') {|x| expect(x).to eq [1, 1] }
+    end
+
     it "assigns named groups in regular expressions to local variables" do
       # named groups with capture
       run("
