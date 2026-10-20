@@ -2604,13 +2604,27 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             end = build(endNode);
         }
 
-        if (begin instanceof ImmutableLiteral && end instanceof ImmutableLiteral) {
+        if (begin instanceof ImmutableLiteral b && end instanceof ImmutableLiteral e && isValidRange(b, e)) {
             // endpoints are free of side effects, cache the range after creation
-            return new Range((ImmutableLiteral) begin, (ImmutableLiteral) end, isExclusive);
+            return new Range(b, e, isExclusive);
         }
 
         // must be built every time
         return addResultInstr(new BuildRangeInstr(temp(), begin, end, isExclusive));
+    }
+
+    // Whether a range of these literals can be built without raising. A Range operand is built wherever its value is
+    // used, which can be outside a rescue or after the scope has popped its frame, so one that raises (like 1.."3",
+    // whose endpoints aren't comparable) has to be built by an instruction instead.
+    private static boolean isValidRange(ImmutableLiteral begin, ImmutableLiteral end) {
+        if (begin instanceof Nil || end instanceof Nil) return true;
+        if (isRealNumber(begin) && isRealNumber(end)) return true;
+        if (begin instanceof FrozenString && end instanceof FrozenString) return true;
+        return begin instanceof Symbol && end instanceof Symbol;
+    }
+
+    private static boolean isRealNumber(ImmutableLiteral literal) {
+        return literal instanceof Fixnum || literal instanceof Bignum || literal instanceof org.jruby.ir.operands.Float || literal instanceof Rational;
     }
 
     protected Operand buildRational(U numerator, U denominator) {
