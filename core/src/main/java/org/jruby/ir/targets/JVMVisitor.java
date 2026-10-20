@@ -3180,8 +3180,27 @@ public class JVMVisitor extends IRVisitor {
         visit(closure.getSelf());
         jvmLoadLocal(DYNAMIC_SCOPE);
 
-        jvmMethod().getBlockCompiler().prepareBlock(closure, scopeFieldMap.get(closure.getStaticScope().getEnclosingScope()), closuresMap.get(closure), closure.getFile(), closure.getLine(),
+        jvmMethod().getBlockCompiler().prepareBlock(closure, parentScopeField(closure), closuresMap.get(closure), closure.getFile(), closure.getLine(),
                 ArgumentDescriptor.encode(closure.getArgumentDescriptors()), closure.getSignature());
+    }
+
+    // The field holding a closure's parent static scope. The parent usually has a field already, because it's being
+    // compiled in this class, but not always: a for loop doesn't get its own variable scope, so a block inside a for
+    // body has the enclosing method's scope as its parent, and that method isn't in the class when the JIT compiles
+    // the for body on its own. In that case add a field for the parent scope, which defineFromBytecode fills in.
+    private String parentScopeField(IRClosure closure) {
+        StaticScope parentScope = closure.getStaticScope().getEnclosingScope();
+        String scopeField = scopeFieldMap.get(parentScope);
+
+        if (scopeField == null) {
+            scopeField = "parent" + staticScopeMap.size() + "_StaticScope";
+            staticScopeMap.put(scopeField, parentScope);
+            scopeFieldMap.put(parentScope, scopeField);
+            staticScopeDescriptorMap.put(scopeField, Helpers.describeScope(parentScope));
+            jvm.cls().visitField(Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_VOLATILE, scopeField, ci(StaticScope.class), null, null).visitEnd();
+        }
+
+        return scopeField;
     }
 
     private SkinnyMethodAdapter jvmAdapter() {
