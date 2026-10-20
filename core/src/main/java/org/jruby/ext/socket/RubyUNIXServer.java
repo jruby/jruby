@@ -32,6 +32,7 @@ package org.jruby.ext.socket;
 import jnr.unixsocket.UnixServerSocketChannel;
 import jnr.unixsocket.UnixSocketAddress;
 import jnr.unixsocket.UnixSocketChannel;
+import org.jruby.FiberScheduler;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.anno.JRubyClass;
@@ -83,6 +84,9 @@ public class RubyUNIXServer extends RubyUNIXSocket {
     }
 
     private UnixSocketChannel acceptChannel(ThreadContext context) {
+        IRubyObject scheduler = FiberScheduler.current(context);
+        if (scheduler != null) return schedulerAcceptChannel(context, scheduler);
+
         try {
 
             while (true) { // select loop to allow interrupting
@@ -103,6 +107,35 @@ public class RubyUNIXServer extends RubyUNIXSocket {
 
         } catch (IOException ioe) {
             throw context.runtime.newIOErrorFromException(ioe);
+        }
+    }
+
+    // MRI: rsock_s_accept, which retries a nonblocking accept(2) whenever io_wait reports the server readable
+    private UnixSocketChannel schedulerAcceptChannel(ThreadContext context, IRubyObject scheduler) {
+        while (true) {
+            SelectableChannel selectable = (SelectableChannel) getChannel();
+            UnixSocketChannel socketChannel;
+
+            synchronized (selectable.blockingLock()) {
+                boolean oldBlocking = selectable.isBlocking();
+
+                try {
+                    selectable.configureBlocking(false);
+                    socketChannel = ((UnixServerSocketChannel) selectable).accept();
+                } catch (IOException ioe) {
+                    if (!"accept failed: Resource temporarily unavailable".equals(ioe.getMessage())) {
+                        throw context.runtime.newIOErrorFromException(ioe);
+                    }
+                    socketChannel = null;
+                } finally {
+                    try {selectable.configureBlocking(oldBlocking);} catch (IOException ioe) {}
+                }
+            }
+
+            if (socketChannel != null) return socketChannel;
+
+            // outside the blocking lock, which a sibling fiber may need to accept on this server
+            schedulerWaitAcceptable(context, scheduler);
         }
     }
 
