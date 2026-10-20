@@ -810,15 +810,14 @@ public class RubyKernel {
         return context.nil;
     }
 
+    // MRI: rb_f_readline
     @JRubyMethod(optional = 1, keywords = true, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject readline(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        IRubyObject line = gets(context, recv, args);
+        var ArgsFile = argsFile(context);
 
-        if (line.isNil()) {
-            throw context.runtime.newEOFError();
-        }
-
-        return line;
+        return recv == ArgsFile ?
+                RubyArgsFile.readline(context, ArgsFile, args) :
+                sites(context).readline.call(context, ArgsFile, ArgsFile, args);
     }
 
     @JRubyMethod(optional = 1, keywords = true, checkArity = false, module = true, visibility = PRIVATE)

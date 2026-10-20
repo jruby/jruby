@@ -99,7 +99,7 @@ DO NOT MODIFY - GENERATED CODE
     </site>
   </distributionManagement>
   <properties>
-    <asm.version>9.10.1</asm.version>
+    <asm.version>9.11.1</asm.version>
     <base.java.version>21</base.java.version>
     <base.javac.version>21</base.javac.version>
     <github.global.server>github</github.global.server>
