@@ -1330,6 +1330,43 @@ modes.each do |mode|
     end
 
     # jruby/jruby#4148
+    # See https://github.com/jruby/jruby/issues/9824
+    it "compiles operator calls on self with a literal Integer or Float argument" do
+      run(<<~'RUBY') do |x|
+        class Integer
+          def __self_op_spec = [self + 1, self == 0, self > 0.5, self * 2.0]
+        end
+        class SelfOperatorBox
+          def initialize(v) = @v = v
+          def ops = [self + 1, self == 3, self * 2.0]
+          def +(other) = @v + other
+          def ==(other) = @v == other
+          def *(other) = @v * other
+        end
+        result = [3.__self_op_spec, 0.__self_op_spec, SelfOperatorBox.new(3).ops]
+        Integer.send(:remove_method, :__self_op_spec)
+        result
+      RUBY
+        expect(x).to eq [[4, false, true, 6.0], [1, true, false, 0.0], [4, true, 6.0]]
+      end
+    end
+
+    it "calls a private operator on self with a literal argument" do
+      skip "https://github.com/jruby/jruby/issues/9836" if mode == AOTSpecUtils
+
+      run(<<~'RUBY') do |x|
+        class PrivateSelfOperatorBox
+          def initialize(v) = @v = v
+          def ops = [self + 1, self * 2.0]
+          private def +(other) = @v + other
+          private def *(other) = @v * other
+        end
+        PrivateSelfOperatorBox.new(3).ops
+      RUBY
+        expect(x).to eq [4, 6.0]
+      end
+    end
+
     it "binds variable-arity calls to attributes properly" do
       run('a_class = Class.new do; attr_accessor :foo; end; a = a_class.new; a.foo = 1; ary = []; a.foo(*ary)') do |x|
         expect(x).to eq(1)
