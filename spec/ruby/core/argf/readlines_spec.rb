@@ -22,3 +22,18 @@ describe "ARGF.readlines" do
     end
   end
 end
+
+describe "ARGF.readlines when reading $stdin and $stdin is not an IO" do
+  before :each do
+    @stdin = $stdin
+  end
+
+  after :each do
+    $stdin = @stdin
+  end
+
+  it "raises NoMethodError when $stdin has no public readlines" do
+    $stdin = Object.new
+    -> { ARGF.class.new.readlines }.should raise_error(NoMethodError)
+  end
+end
