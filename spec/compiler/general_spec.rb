@@ -1274,6 +1274,13 @@ modes.each do |mode|
       end
     end
 
+    # See https://github.com/jruby/jruby/issues/9829
+    it "compiles a case/in with several in clauses inside a block" do
+      run('[0, 1, 2].map { |v| case v; in 0 then :zero; in 1 then :one; else :other; end }') do |x|
+        expect(x).to eq [:zero, :one, :other]
+      end
+    end
+
     it "enforces visibility" do
       run('obj = Class.new do
              def a; true; end
