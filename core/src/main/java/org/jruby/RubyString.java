@@ -7191,7 +7191,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                         (e = eByteList.get(0)) < 128 &&
                         (v = vByteList.get(0)) < 128) {
                     if (b <= v && v < e) return context.tru;
-                    if (!exclusive && v == e) return context.tru;
+                    if (!exclusive && b <= v && v == e) return context.tru;
                     return context.fals;
                 }
             }
