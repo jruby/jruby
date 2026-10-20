@@ -862,6 +862,25 @@ modes.each do |mode|
       run("begin; raise; rescue; 1.times { begin; raise; rescue; next; end }; $!; end") {|result| expect(result).to_not be_nil }
     end
 
+    # See https://github.com/jruby/jruby/issues/9828
+    it "checks the operator's visibility in element operator assignment on self" do
+      run(<<~'RUBY') do |x|
+        class PrivatePlusElement; private def +(other) = :private_plus; end
+        class PrivatePlusBox
+          def [](i) = PrivatePlusElement.new
+          def []=(i, v); end
+          def bump
+            self[0] += 1
+          rescue NoMethodError => e
+            e.message
+          end
+        end
+        PrivatePlusBox.new.bump
+      RUBY
+        expect(x).to match(/private method '\+' called/)
+      end
+    end
+
     it "executes ensure wrapping a while body that breaks after the loop has terminated" do
       # break in a while in an ensure
       run("begin; x = while true; break 5; end; ensure; end") {|result| expect(result).to eq 5 }

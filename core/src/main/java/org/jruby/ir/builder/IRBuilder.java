@@ -2119,7 +2119,8 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         addInstr(CallInstr.create(scope, callType, elt, symbol(ArrayDerefInstr.AREF), array, argList, blockArg, flags[0])); // elt = a[args]
 
         Operand valueArg = build(value);                                       // Load 'value'
-        _call(elt, callType, elt, operator, valueArg); // elt = elt.OPERATION(value)
+        // The operator's receiver is the element, not the array, so it's never a functional call.
+        _call(elt, CallType.NORMAL, elt, operator, valueArg); // elt = elt.OPERATION(value)
         // SSS: do not load the call result into 'elt' to eliminate the RAW dependency on the call
         // We already know what the result is going be .. we are just storing it back into the array
         argList = addArg(argList, elt);
