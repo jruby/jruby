@@ -245,8 +245,8 @@ public class IndyInvocationCompiler implements InvocationCompiler {
     }
 
     @Override
-    public void invokeEQQ(EQQInstr call) {
-        normalCompiler.invokeEQQ(call);
+    public void invokeEQQ(EQQInstr call, String scopeFieldName) {
+        normalCompiler.invokeEQQ(call, scopeFieldName);
     }
 
     @Override
