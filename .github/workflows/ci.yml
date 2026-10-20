@@ -478,7 +478,21 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '21'
-          cache: 'maven'
+      # Restore the cache but never save it. setup-java saves from the first job to finish,
+      # and this job does not run a full build, so its cache would be missing plugins.
+      - &restore-maven-cache
+        name: restore maven cache
+        uses: actions/cache/restore@v6
+        with:
+          path: /home/runner/.m2/repository
+          key: setup-java-Linux-x64-maven-${{ hashFiles('**/pom.xml', '**/.mvn/wrapper/maven-wrapper.properties', '**/.mvn/extensions.xml') }}
+          restore-keys: setup-java-Linux-x64-maven-
+      - &restore-maven-wrapper-cache
+        name: restore maven wrapper cache
+        uses: actions/cache/restore@v6
+        with:
+          path: /home/runner/.m2/wrapper/dists
+          key: setup-java-Linux-x64-maven-wrapper-${{ hashFiles('**/.mvn/wrapper/maven-wrapper.properties') }}
       - name: dependency convergence
         run: tool/maven-ci-script.sh
         env:
@@ -498,7 +512,9 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: 21
-          cache: 'maven'
+      # the same restore-only steps as dependency-check
+      - *restore-maven-cache
+      - *restore-maven-wrapper-cache
       - name: maven-ci-script.sh
         run: tool/maven-ci-script.sh
         env:
