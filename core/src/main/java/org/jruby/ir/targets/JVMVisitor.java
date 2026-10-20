@@ -3041,12 +3041,11 @@ public class JVMVisitor extends IRVisitor {
         ImmutableLiteral begin = range.getBegin();
         ImmutableLiteral end = range.getEnd();
 
-        if (begin instanceof Fixnum b) {
-            if (end instanceof Fixnum e) {
-                valueCompiler.pushRange(b.getValue(), e.getValue(), range.isExclusive());
-            } else if (end instanceof Nil) {
-                valueCompiler.pushEndlessRange(b.getValue(), range.isExclusive());
-            }
+        if (begin instanceof Fixnum b && end instanceof Fixnum e) {
+            valueCompiler.pushRange(b.getValue(), e.getValue(), range.isExclusive());
+            return;
+        } else if (begin instanceof Fixnum b && end instanceof Nil) {
+            valueCompiler.pushEndlessRange(b.getValue(), range.isExclusive());
             return;
         } else if (begin instanceof Nil && end instanceof Fixnum e) {
             valueCompiler.pushBeginlessRange(e.getValue(), range.isExclusive());
