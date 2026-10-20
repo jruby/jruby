@@ -261,7 +261,8 @@ public class NormalInvocationCompiler implements InvocationCompiler {
             adapter.ifnonnull(doCall);
             adapter.pop();
             adapter.ldc(id);
-            adapter.invokestatic(p(MethodIndex.class), "getFastFixnumOpsCallSite", sig(CallSite.class, String.class));
+            adapter.getstatic(p(CallType.class), call.getCallType().name(), ci(CallType.class));
+            adapter.invokestatic(p(MethodIndex.class), "getFastFixnumOpsCallSite", sig(CallSite.class, String.class, CallType.class));
             adapter.dup();
             adapter.putstatic(compiler.getClassData().clsName, methodName, ci(CallSite.class));
 
@@ -330,7 +331,8 @@ public class NormalInvocationCompiler implements InvocationCompiler {
             adapter.ifnonnull(doCall);
             adapter.pop();
             adapter.ldc(id);
-            adapter.invokestatic(p(MethodIndex.class), "getFastFloatOpsCallSite", sig(CallSite.class, String.class));
+            adapter.getstatic(p(CallType.class), call.getCallType().name(), ci(CallType.class));
+            adapter.invokestatic(p(MethodIndex.class), "getFastFloatOpsCallSite", sig(CallSite.class, String.class, CallType.class));
             adapter.dup();
             adapter.putstatic(compiler.getClassData().clsName, methodName, ci(CallSite.class));
 
