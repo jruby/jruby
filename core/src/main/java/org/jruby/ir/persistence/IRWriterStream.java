@@ -230,8 +230,7 @@ public class IRWriterStream implements IRWriterEncoder, IRPersistenceValues {
 
         encode(values.length);
         for (String value : values) {
-            encode(value.length());
-            buf.put(value.getBytes());
+            encode(value);
         }
     }
 
