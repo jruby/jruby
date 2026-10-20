@@ -28,6 +28,7 @@
 
 package org.jruby.ext.socket;
 
+import org.jruby.FiberScheduler;
 import org.jruby.Ruby;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
@@ -145,6 +146,9 @@ public class RubyTCPServer extends RubyTCPSocket {
         RubyTCPSocket socket = new RubyTCPSocket(context.runtime, Access.getClass(context, "TCPSocket"));
 
         try {
+            IRubyObject scheduler = FiberScheduler.current(context);
+            if (scheduler != null) return initAcceptedSocket(context, socket, schedulerAccept(context, scheduler));
+
             RubyThread thread = context.getThread();
 
             while (true) {
@@ -160,21 +164,53 @@ public class RubyTCPServer extends RubyTCPSocket {
 
                     connected.finishConnect();
 
-                    // Force the client socket to be blocking
-                    synchronized (connected.blockingLock()) {
-                        connected.configureBlocking(false);
-                        connected.configureBlocking(true);
-                    }
-
                     // otherwise one key has been selected (ours) so we get the channel and hand it off
-                    socket.initSocket(newChannelFD(context.runtime, connected));
-
-                    return socket;
+                    return initAcceptedSocket(context, socket, connected);
                 }
             }
 
         } catch(IOException e) {
             throw context.runtime.newIOErrorFromException(e);
+        }
+    }
+
+    private static RubyTCPSocket initAcceptedSocket(ThreadContext context, RubyTCPSocket socket, SocketChannel connected) throws IOException {
+        // Force the client socket to be blocking
+        synchronized (connected.blockingLock()) {
+            connected.configureBlocking(false);
+            connected.configureBlocking(true);
+        }
+
+        socket.initSocket(newChannelFD(context.runtime, connected));
+
+        return socket;
+    }
+
+    // MRI: rsock_s_accept, which retries a nonblocking accept(2) whenever io_wait reports the server readable
+    private SocketChannel schedulerAccept(ThreadContext context, IRubyObject scheduler) throws IOException {
+        while (true) {
+            ServerSocketChannel ssc = getServerSocketChannel();
+            SocketChannel connected;
+
+            synchronized (ssc.blockingLock()) {
+                boolean oldBlocking = ssc.isBlocking();
+
+                try {
+                    ssc.configureBlocking(false);
+                    connected = ssc.accept();
+                } finally {
+                    try {ssc.configureBlocking(oldBlocking);} catch (IOException ioe) {}
+                }
+            }
+
+            if (connected != null) {
+                connected.finishConnect();
+
+                return connected;
+            }
+
+            // outside the blocking lock, which a sibling fiber may need to accept on this server
+            schedulerWaitAcceptable(context, scheduler);
         }
     }
 
@@ -235,6 +271,9 @@ public class RubyTCPServer extends RubyTCPSocket {
     @JRubyMethod(name = "sysaccept")
     public IRubyObject sysaccept(ThreadContext context) {
         try {
+            IRubyObject scheduler = FiberScheduler.current(context);
+            if (scheduler != null) return asFixnum(context, newChannelFD(context.runtime, schedulerAccept(context, scheduler)).bestFileno());
+
             RubyThread thread = context.getThread();
 
             while (true) {
