@@ -3,6 +3,7 @@ package org.jruby.runtime.callsite;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.runtime.Builtins;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.RubyBasicObject.getMetaClass;
@@ -10,7 +11,11 @@ import static org.jruby.RubyBasicObject.getMetaClass;
 public class PlusCallSite extends BimorphicCallSite {
 
     public PlusCallSite() {
-        super("+");
+        this(CallType.NORMAL);
+    }
+
+    public PlusCallSite(CallType callType) {
+        super("+", callType);
     }
 
     @Override

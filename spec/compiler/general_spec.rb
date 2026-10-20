@@ -1351,9 +1351,8 @@ modes.each do |mode|
       end
     end
 
+    # See https://github.com/jruby/jruby/issues/9836
     it "calls a private operator on self with a literal argument" do
-      skip "https://github.com/jruby/jruby/issues/9836" if mode == AOTSpecUtils
-
       run(<<~'RUBY') do |x|
         class PrivateSelfOperatorBox
           def initialize(v) = @v = v

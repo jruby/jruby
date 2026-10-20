@@ -1,13 +1,18 @@
 package org.jruby.runtime.callsite;
 
 import org.jruby.RubyFixnum;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.RubyBasicObject.getMetaClass;
 
 public class ShiftLeftCallSite extends MonomorphicCallSite {
     public ShiftLeftCallSite() {
-        super("<<");
+        this(CallType.NORMAL);
+    }
+
+    public ShiftLeftCallSite(CallType callType) {
+        super("<<", callType);
     }
 
     @Override
