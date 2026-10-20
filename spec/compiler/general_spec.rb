@@ -1746,6 +1746,25 @@ modes.each do |mode|
       JRuby.runtime.instance_config.debugging_frozen_string_literal = false
     end
 
+    it "compiles debug string ranges that know where their endpoints were created" do
+      JRuby.runtime.instance_config.debugging_frozen_string_literal = true
+      run(<<~RANGE) do |val|
+        range = ("a"..
+                 "z")
+        [range.begin, range.end].map do |s|
+          s << "!"
+        rescue => e
+          e.message
+        end
+      RANGE
+        expect(val).to all(match(/created at .+:\d+\z/m))
+        begin_line, end_line = val.map { it[/\d+\z/].to_i }
+        expect(end_line - begin_line).to eq(1)
+      end
+    ensure
+      JRuby.runtime.instance_config.debugging_frozen_string_literal = false
+    end
+
     it "compiles very long dynamic strings" do
       run('"a#{$$}a#{$$}a#{$$}a#{$$}"') do
         expect(it).to eq("a#{$$}" * 4)
