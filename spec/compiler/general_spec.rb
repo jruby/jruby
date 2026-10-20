@@ -227,6 +227,18 @@ modes.each do |mode|
       end
     end
 
+    it "raises from building a range of incomparable literals where the range appears" do
+      run('begin; (1.."3"); rescue ArgumentError; :rescued; end') do |x|
+        expect(x).to eq :rescued
+      end
+      run('def __range_error = yield rescue $!.class; [__range_error { (1.."3") }, __range_error { (:a..1) }, __range_error { (true..false) }]') do |x|
+        expect(x).to eq [ArgumentError, ArgumentError, ArgumentError]
+      end
+      run('[(:a..:c), (1r..2), (nil.."a"), ("a"..nil)]') do |x|
+        expect(x).to eq [:a..:c, 1r..2, nil.."a", "a"..nil]
+      end
+    end
+
     it "compiles calls" do
       run("'bar'.capitalize") {|result| expect(result).to eq 'Bar' }
       run("rand(10)") {|result| expect(result).to be_a_kind_of Integer }
