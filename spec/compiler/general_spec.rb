@@ -1057,6 +1057,21 @@ modes.each do |mode|
       run('ä = 1; [ä, binding.local_variable_get(:ä)]') {|x| expect(x).to eq [1, 1] }
     end
 
+    # See https://github.com/jruby/jruby/issues/9854
+    it "raises the length mismatch error of a single array pattern" do
+      run('[(begin; [1] => [_, _]; rescue NoMatchingPatternError => e; [e.class, e.message]; end), ' \
+          '(begin; [1] => [_, _, *]; rescue NoMatchingPatternError => e; [e.class, e.message]; end)]') do |x|
+        expect(x).to eq [[NoMatchingPatternError, "[1]: [1] length mismatch (given 1, expected 2)"],
+                         [NoMatchingPatternError, "[1]: [1] length mismatch (given 1, expected 2+)"]]
+      end
+    end
+
+    it "raises the missing key error of a single hash pattern" do
+      run('begin; {a: 1} => {b:}; rescue NoMatchingPatternKeyError => e; [e.class, e.message, e.key]; end') do |x|
+        expect(x).to eq [NoMatchingPatternKeyError, "{a: 1}: key not found: :b", :b]
+      end
+    end
+
     it "assigns named groups in regular expressions to local variables" do
       # named groups with capture
       run("
