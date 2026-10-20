@@ -29,7 +29,9 @@
 package org.jruby.ext.socket;
 
 import jnr.constants.platform.Sock;
+import org.jruby.FiberScheduler;
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.anno.JRubyClass;
@@ -49,6 +51,7 @@ import java.net.UnknownHostException;
 import java.nio.channels.Channel;
 import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.SelectableChannel;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
@@ -112,7 +115,30 @@ public class RubyServerSocket extends RubySocket {
 
     @JRubyMethod()
     public IRubyObject accept(ThreadContext context) {
-        return doAccept(this, context, true);
+        IRubyObject scheduler = FiberScheduler.current(context);
+        if (scheduler != null) return schedulerAccept(context, scheduler);
+
+        while (true) {
+            // :wait_readable when another thread or fiber has the channel nonblocking, so wait instead of raising EAGAIN
+            IRubyObject result = doAccept(this, context, false);
+            if (result instanceof RubyArray) return result;
+
+            if (!context.getThread().select(this, SelectionKey.OP_ACCEPT)) {
+                // we were woken up without being selected...poll for thread events and go back to sleep
+                context.pollThreadEvents();
+            }
+        }
+    }
+
+    // MRI: rsock_s_accept, which retries a nonblocking accept(2) whenever io_wait reports the server readable
+    private IRubyObject schedulerAccept(ThreadContext context, IRubyObject scheduler) {
+        while (true) {
+            // [Socket, Addrinfo], or :wait_readable with the channel's blocking lock already released
+            IRubyObject result = doAcceptNonblock(this, context, false);
+            if (result instanceof RubyArray) return result;
+
+            schedulerWaitAcceptable(context, scheduler);
+        }
     }
 
     @JRubyMethod()

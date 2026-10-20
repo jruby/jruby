@@ -143,31 +143,51 @@ public class RubyBinding extends RubyObject implements DataType {
     @JRubyMethod
     public IRubyObject local_variable_get(ThreadContext context, IRubyObject symbol) {
         String id = checkLocalId(context, symbol);
-        DynamicScope evalScope = binding.getEvalScope(context.runtime);
-        StaticScope staticScope = evalScope.getStaticScope();
-        int slot = staticScope.isDefinedOrImplicit(id);
+        DynamicScope scope = findLocalScope(binding.getEvalScope(context.runtime), id);
+        int slot = scope == null ? -1 : scope.getStaticScope().existsOrImplicit(id);
 
         if (slot < 0) throw undefinedVariableError(context, symbol);
 
-        return evalScope.getValueOrNil(unpackLowChar(slot), unpackHighChar(slot), context.nil);
+        return scope.getValueOrNil(slot, 0, context.nil);
     }
 
     @JRubyMethod
     public IRubyObject local_variable_set(ThreadContext context, IRubyObject symbol, IRubyObject value) {
         String id = checkLocalId(context, symbol);
         DynamicScope evalScope = binding.getEvalScope(context.runtime);
-        StaticScope staticScope = evalScope.getStaticScope();
-        int slot = staticScope.isDefinedOrImplicit(id);
+        DynamicScope scope = findLocalScope(evalScope, id);
+
+        if (scope == null) { // Yay! New variable associated with this binding
+            int slot = evalScope.getStaticScope().addVariable(id.intern());
+            evalScope.growIfNeeded();
+
+            return evalScope.setValue(unpackLowChar(slot), value, unpackHighChar(slot));
+        }
+
+        int slot = scope.getStaticScope().existsOrImplicit(id);
 
         // for the implicit "it" variable
         if (slot == StaticScope.IMPLICIT) throw undefinedVariableError(context, symbol);
 
-        if (slot == -1) { // Yay! New variable associated with this binding
-            slot = evalScope.getStaticScope().addVariable(id.intern());
-            evalScope.growIfNeeded();
+        return scope.setValue(slot, value, 0);
+    }
+
+    /**
+     * Find the dynamic scope that holds a local variable, or null if none does.
+     *
+     * This walks the dynamic scopes rather than taking a depth from the static ones, because the two
+     * chains don't always line up: in the interpreter, a for loop body gets a dynamic scope of its own,
+     * but a block inside it has the enclosing method's static scope as its parent.
+     */
+    private static DynamicScope findLocalScope(DynamicScope scope, String id) {
+        for (DynamicScope current = scope; current != null; current = current.getParentScope()) {
+            StaticScope staticScope = current.getStaticScope();
+
+            if (staticScope.existsOrImplicit(id) != -1) return current;
+            if (staticScope.getType() == StaticScope.Type.LOCAL) break;
         }
 
-        return evalScope.setValue(unpackLowChar(slot), value, unpackHighChar(slot));
+        return null;
     }
 
     @JRubyMethod(name = "implicit_parameter_defined?")

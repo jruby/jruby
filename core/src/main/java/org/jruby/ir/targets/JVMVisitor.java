@@ -3052,8 +3052,8 @@ public class JVMVisitor extends IRVisitor {
         } else if (begin instanceof Nil && end instanceof Fixnum e) {
             valueCompiler.pushBeginlessRange(e.getValue(), range.isExclusive());
             return;
-        } else if (begin instanceof StringLiteral b && end instanceof StringLiteral e) {
-            valueCompiler.pushRange(b.getByteList(), b.getCodeRange(), e.getByteList(), e.getCodeRange(), range.isExclusive());
+        } else if (begin instanceof FrozenString b && end instanceof FrozenString e) {
+            valueCompiler.pushRange(b.getByteList(), b.getCodeRange(), e.getByteList(), e.getCodeRange(), b.getFile(), b.getLine(), e.getLine(), range.isExclusive());
             return;
         }
 

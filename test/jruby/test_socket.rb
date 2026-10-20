@@ -337,6 +337,29 @@ class SocketTest < Test::Unit::TestCase
     c.close if c
   end
 
+  # IO.select in another thread leaves the channel nonblocking, where ServerSocket#accept used to raise EAGAIN
+  def test_server_socket_accept_waits_while_another_thread_selects_on_it
+    server = ServerSocket.new(:INET, :STREAM)
+    server.bind(Socket.sockaddr_in(0, "127.0.0.1"), 5)
+    selector = Thread.new { IO.select([server]) }
+    Thread.pass until selector.status == "sleep"
+    acceptor = Thread.new { server.accept }
+    Thread.pass until acceptor.status == "sleep" || !acceptor.alive?
+
+    client = TCPSocket.new("127.0.0.1", server.local_address.ip_port)
+
+    assert acceptor.join(10), "accept did not return"
+    socket, addrinfo = acceptor.value
+    assert_instance_of Socket, socket
+    assert_equal client.local_address.ip_port, addrinfo.ip_port
+  ensure
+    # IO.select returns only if it saw the connection before the acceptor took it
+    selector&.kill
+    socket&.close
+    client&.close
+    server&.close
+  end
+
 end
 
 
@@ -763,4 +786,63 @@ class ServerTest < Test::Unit::TestCase
     server.close rescue nil
     client.close rescue nil
   end if RUBY_VERSION >= '1.9'
+end
+
+# ServerSocket is JRuby-only, so spec/ruby does not cover its accept waiting through Fiber::Scheduler#io_wait
+class AcceptFiberSchedulerTest < Test::Unit::TestCase
+  # Records each io_wait and parks the fiber until the test resumes it with what io_wait returns
+  class WaitScheduler
+    attr_reader :io_waits
+
+    def initialize
+      @io_waits = []
+    end
+
+    def io_wait(io, events, timeout)
+      @io_waits << [io, events, timeout]
+      Fiber.yield
+    end
+
+    # required by Fiber.set_scheduler, unused by this test
+    def block(blocker, timeout = nil)
+      Fiber.yield
+    end
+
+    def unblock(blocker, fiber)
+    end
+
+    def kernel_sleep(duration = nil)
+      Fiber.yield
+    end
+  end
+
+  # The fibers run in a thread joined with a timeout, so the test fails instead of hanging when accept blocks that
+  # thread, or holds the server's blocking lock while it waits and the sibling fiber's accept_nonblock waits on it
+  def test_server_socket_accept_waits_through_the_scheduler
+    server = ServerSocket.new(:INET, :STREAM)
+    server.bind(Socket.sockaddr_in(0, "127.0.0.1"), 5)
+    scheduler = WaitScheduler.new
+    accepted = client = nil
+
+    thread = Thread.new do
+      Thread.current.report_on_exception = false
+      Fiber.set_scheduler(scheduler)
+      acceptor = Fiber.new(blocking: false) { server.accept }
+      acceptor.resume
+      assert_equal :wait_readable, Fiber.new(blocking: false) { server.accept_nonblock(exception: false) }.resume
+      client = TCPSocket.new("127.0.0.1", server.local_address.ip_port)
+      IO.select([server])
+      accepted = acceptor.resume(IO::READABLE)
+    end
+
+    assert thread.join(10), "the scheduler's thread did not finish within 10s"
+    socket, addrinfo = accepted
+    assert_equal [[server, IO::READABLE, nil]], scheduler.io_waits
+    assert_instance_of Socket, socket
+    assert_equal client.local_address.ip_port, addrinfo.ip_port
+  ensure
+    socket&.close
+    client&.close
+    server&.close
+  end
 end

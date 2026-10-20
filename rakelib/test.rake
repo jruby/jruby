@@ -60,6 +60,11 @@ namespace :test do
   desc "Run tests that are too slow for the main suite"
   task :slow_suites => [:compile, *slow_tests]
 
+  desc "Check that the JIT can compile every method and block in the stdlib, ruby/spec and MRI tests"
+  task :jit_compile do
+    ruby "-J-XX:-OmitStackTraceInFastThrow tool/jit_compile_check.rb core/src/main/ruby lib/ruby/stdlib spec/ruby test/mri"
+  end
+
   task :rake_targets => long_tests
   task :extended => long_tests
 

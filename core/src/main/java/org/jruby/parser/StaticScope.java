@@ -603,15 +603,11 @@ public class StaticScope implements Serializable, Cloneable {
         addVariableNamesToCollection(current, collectionPopulator, dedup, collection, implicit);
 
         if (parents) {
-            current = current.enclosingScope;
-
+            // blocks and evals see the variables of each scope around them, up to and including the first that isn't one
             while (current.isBlockOrEval) {
-                addVariableNamesToCollection(current, collectionPopulator, dedup, collection, implicit);
                 current = current.enclosingScope;
+                addVariableNamesToCollection(current, collectionPopulator, dedup, collection, implicit);
             }
-
-            // once more for method scope
-            addVariableNamesToCollection(current, collectionPopulator, dedup, collection, implicit);
         }
 
         return collection;

@@ -451,4 +451,23 @@ class TestThread < Test::Unit::TestCase
     end
   end
 
+  # Extensions like concurrent-ruby wait on a Java monitor through RubyThread#waitForObject.
+  # Killing one of several waiters on the same monitor has to wake that one, not another.
+  def test_kill_wakes_the_killed_monitor_waiter
+    require 'jruby'
+
+    20.times do
+      lock = java.lang.Object.new
+      threads = 2.times.map do
+        Thread.new { JRuby.reference(Thread.current).waitForObject(lock, 0.0) }
+      end
+      Thread.pass until threads.all? { |t| t.status == 'sleep' }
+
+      threads.reverse_each do |t|
+        t.kill
+        assert t.join(5), "killed thread still waiting: #{t.inspect}"
+      end
+    end
+  end
+
 end

@@ -56,6 +56,7 @@ import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.runtimeError;
+import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Helpers.arrayOf;
 
 /**
@@ -128,6 +129,8 @@ public class PopenExecutor {
         if (pid > 0) {
             long ret;
             ret = RubyProcess.waitpid(context, pid, 0);
+            // a blocking waitpid only returns 0 when the scheduler's process_wait returned nil
+            if (ret == 0) throw typeError(context, "wrong argument type nil (expected Process::Status)");
             if (ret == -1)
                 throw runtime.newErrnoFromInt(runtime.getPosix().errno(), "Another thread waited the process started by system().");
         }
