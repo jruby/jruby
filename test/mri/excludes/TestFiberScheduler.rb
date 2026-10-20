@@ -1,7 +1,3 @@
 exclude :test_autoload, "autoload holds a Java monitor across Fiber switches, so a sibling fiber hangs instead of deferring to the scheduler"
 exclude :test_current_scheduler, "fails intermittently on Linux CI on GHA"
-exclude :test_io_read_error, "uses Dir.tmpdir without requiring tmpdir, which our runner does not preload as MRI's _tmpdir.rb does"
-exclude :test_io_write_error, "uses Dir.tmpdir without requiring tmpdir, which our runner does not preload as MRI's _tmpdir.rb does"
-exclude :test_io_write_flush_error, "uses Dir.tmpdir without requiring tmpdir, which our runner does not preload as MRI's _tmpdir.rb does"
-exclude :test_io_write_on_flush, "uses Dir.tmpdir without requiring tmpdir, which our runner does not preload as MRI's _tmpdir.rb does"
 exclude :test_iseq_compile_under_gc_stress_bug_21180, "uses RubyVM"
