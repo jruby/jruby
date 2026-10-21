@@ -42,8 +42,6 @@ public abstract class MethodDefNode extends Node implements INameNode, DefNode {
     protected final StaticScope scope;
     protected final Node bodyNode;
     protected final int endLine;
-    protected final int startColumn;
-    protected final int endColumn;
     // We lazily compile methods in IR but Ruby expects next and break to raise syntax error so we will eagerly
     // build methods which contain those two keywords.
     protected boolean containsNextBreak = false;
@@ -61,8 +59,13 @@ public abstract class MethodDefNode extends Node implements INameNode, DefNode {
         this.scope = scope;
         this.bodyNode = bodyNode;
         this.endLine = endLine;
-        this.startColumn = startColumn;
-        this.endColumn = endColumn;
+        // the columns are only known when the parser records positions
+        if (startColumn >= 0) setSourceSpan(startColumn, endLine, endColumn);
+    }
+
+    @Override
+    public int getEndLine() {
+        return endLine;
     }
 
     /**
@@ -99,21 +102,6 @@ public abstract class MethodDefNode extends Node implements INameNode, DefNode {
         return name;
     }
 
-    /**
-     * Which line is the 'end' encountered on.  Useful for RETURN event generation.
-     * @return the zero-based line number
-     */
-    public int getEndLine() {
-        return endLine;
-    }
-
-    public int getStartColumn() {
-        return startColumn;
-    }
-
-    public int getEndColumn() {
-        return endColumn;
-    }
 
     public void setContainsNextBreak() {
         containsNextBreak = true;

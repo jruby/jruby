@@ -36,6 +36,10 @@
 
 package org.jruby.util;
 
+import static org.jruby.util.BitPacker.packInts;
+import static org.jruby.util.BitPacker.unpackHigh;
+import static org.jruby.util.BitPacker.unpackLow;
+
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -45,6 +49,7 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.*;
+import org.jruby.anno.CRuby;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -1656,9 +1661,7 @@ public class Pack {
         }
     }
 
-    /** rb_uv_to_utf8
-     *
-     */
+    @CRuby(value = "rb_uv_to_utf8", file = "pack.c")
     public static int utf8Decode(Ruby runtime, byte[]to, int p, int code) {
         if (code <= 0x7f) {
             to[p] = (byte)code;
@@ -1700,8 +1703,7 @@ public class Pack {
         return 6;
     }
 
-    /** utf8_to_uv
-     */
+    @CRuby(value = "utf8_to_uv", file = "pack.c")
     private static int utf8Decode(ByteBuffer buffer) {
         int c = buffer.get() & 0xFF;
         int uv = c;
@@ -2510,7 +2512,7 @@ public class Pack {
         int c1 = decodeIntBigEndian(encode);
         int c2 = decodeIntBigEndian(encode);
 
-        return ((long) c1 << 32) + (c2 & 0xffffffffL);
+        return packInts(c1, c2);
     }
 
     /**
@@ -2523,7 +2525,7 @@ public class Pack {
         int c1 = decodeIntLittleEndian(encode);
         int c2 = decodeIntLittleEndian(encode);
 
-        return ((long) c2 << 32) + (c1 & 0xffffffffL);
+        return packInts(c2, c1);
     }
 
     /**
@@ -2533,8 +2535,8 @@ public class Pack {
      * @param l is the long to encode
      */
     private static void encodeLongLittleEndian(ByteList result, long l) {
-        encodeIntLittleEndian(result, (int) (l & 0xffffffff));
-        encodeIntLittleEndian(result, (int) (l >>> 32));
+        encodeIntLittleEndian(result, unpackLow(l));
+        encodeIntLittleEndian(result, unpackHigh(l));
     }
 
     /**
@@ -2544,8 +2546,8 @@ public class Pack {
      * @param l is the long to encode
      */
     private static void encodeLongBigEndian(ByteList result, long l) {
-        encodeIntBigEndian(result, (int) (l >>> 32));
-        encodeIntBigEndian(result, (int) (l & 0xffffffff));
+        encodeIntBigEndian(result, unpackHigh(l));
+        encodeIntBigEndian(result, unpackLow(l));
     }
 
     /**

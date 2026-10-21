@@ -42,6 +42,7 @@ import com.headius.invokebinder.Binder;
 import jnr.constants.platform.Errno;
 import jnr.posix.POSIX;
 import org.jruby.*;
+import org.jruby.anno.CRuby;
 import org.jruby.api.Create;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgumentNode;
@@ -74,6 +75,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.util.ArraySupport;
+import static org.jruby.util.BitPacker.pack;
+import static org.jruby.util.BitPacker.unpackHighChar;
+import static org.jruby.util.BitPacker.unpackLowChar;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.CommonByteLists;
@@ -1036,49 +1040,47 @@ public class Helpers {
         return asClass.finvoke(context, self, name, arg0, arg1, arg2, block);
     }
 
-    /**
-    * MRI: rb_funcallv_public
-    */
+    @CRuby(value = "rb_funcallv_public", file = "vm_eval.c")
     public static IRubyObject invokePublic(ThreadContext context, IRubyObject self, String name, IRubyObject arg) {
         return getMetaClass(self).invokePublic(context, self, name, arg);
     }
 
     /**
      * Invoke the method requested if the given object respond_to? it, returning null if it is not defined.
-     * MRI: rb_check_funcall
      */
+    @CRuby(value = "rb_check_funcall", file = "vm_eval.c")
     public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, String name) {
         return getMetaClass(self).finvokeChecked(context, self, name);
     }
 
     /**
      * Invoke the method requested if the given object respond_to? it, returning null if it is not defined.
-     * MRI: rb_check_funcall
      */
+    @CRuby(value = "rb_check_funcall", file = "vm_eval.c")
     public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites) {
         return getMetaClass(self).finvokeChecked(context, self, sites);
     }
 
     /**
      * Invoke the method requested if the given object respond_to? it, returning null if it is not defined.
-     * MRI: rb_check_funcall
      */
+    @CRuby(value = "rb_check_funcall", file = "vm_eval.c")
     public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, String name, IRubyObject... args) {
         return getMetaClass(self).finvokeChecked(context, self, name, args);
     }
 
     /**
      * Invoke the method requested if the given object respond_to? it, returning null if it is not defined.
-     * MRI: rb_check_funcall
      */
+    @CRuby(value = "rb_check_funcall", file = "vm_eval.c")
     public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites, IRubyObject arg0) {
         return getMetaClass(self).finvokeChecked(context, self, sites, arg0);
     }
 
     /**
      * Invoke the method requested if the given object respond_to? it, returning null if it is not defined.
-     * MRI: rb_check_funcall
      */
+    @CRuby(value = "rb_check_funcall", file = "vm_eval.c")
     public static IRubyObject invokeChecked(ThreadContext context, IRubyObject self, JavaSites.CheckedSites sites, IRubyObject... args) {
         return getMetaClass(self).finvokeChecked(context, self, sites, args);
     }
@@ -2522,8 +2524,8 @@ public class Helpers {
         char[] encoded = new char[scopeOffsets.length * 2];
         for (int i = 0; i < scopeOffsets.length; i++) {
             int offDepth = scopeOffsets[i];
-            char off = (char)(offDepth & 0xFFFF);
-            char depth = (char)(offDepth >> 16);
+            char off = unpackLowChar(offDepth);
+            char depth = unpackHighChar(offDepth);
             encoded[2 * i] = off;
             encoded[2 * i + 1] = depth;
         }
@@ -2536,7 +2538,7 @@ public class Helpers {
         for (int i = 0; i < scopeOffsets.length; i++) {
             char off = chars[2 * i];
             char depth = chars[2 * i + 1];
-            scopeOffsets[i] = (((int)depth) << 16) | (int)off;
+            scopeOffsets[i] = pack(depth, off);
         }
         return scopeOffsets;
     }
@@ -3021,7 +3023,7 @@ public class Helpers {
         return asgnNode.childNodes().get(0) instanceof RequiredKeywordArgumentValueNode;
     }
 
-    // MRI: rb_hash_start
+    @CRuby(value = "rb_hash_start", file = "random.c")
     public static long hashStart(Ruby runtime, long value) {
         long hash = value +
                 (runtime.isSiphashEnabled() ?
@@ -3036,7 +3038,7 @@ public class Helpers {
         return value;
     }
 
-    // MRI: rb_hash
+    @CRuby(value = "rb_hash", file = "hash.c")
     public static RubyFixnum safeHash(final ThreadContext context, IRubyObject obj) {
         var hval = context.safeRecurse(sites(context).recursive_hash, context.runtime, obj, "hash", true);
 

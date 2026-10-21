@@ -28,6 +28,7 @@
 
 package org.jruby;
 
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.ast.util.ArgsUtil;
@@ -195,6 +196,14 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
 
     public static IRubyObject enumeratorize(Ruby runtime, IRubyObject object, String method, IRubyObject... args) {
         return new RubyEnumerator(runtime, runtime.getEnumerator(), object, runtime.fastNewSymbol(method), args);
+    }
+
+    /**
+     * Like {@link #enumeratorize(Ruby, IRubyObject, String, IRubyObject...)}, but if keywords is true the last
+     * element of args is passed back to the method as keywords.
+     */
+    public static IRubyObject enumeratorize(Ruby runtime, IRubyObject object, String method, IRubyObject[] args, boolean keywords) {
+        return new RubyEnumerator(runtime, runtime.getEnumerator(), object, runtime.fastNewSymbol(method), args, null, null, keywords);
     }
 
     public static IRubyObject enumeratorize(Ruby runtime, RubyClass type, IRubyObject object, String method) {
@@ -563,9 +572,7 @@ public class RubyEnumerator extends RubyObject implements java.util.Iterator<Obj
         return context.sites.Fiber;
     }
 
-    /** MRI: enumerator_s_produce
-     *
-     */
+    @CRuby(value = "enumerator_s_produce", file = "enumerator.c")
     @JRubyMethod(meta = true, optional = 2, checkArity = false, keywords = true)
     public static IRubyObject produce(ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
         IRubyObject size = UNDEF;

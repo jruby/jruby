@@ -261,7 +261,8 @@ public class NormalInvocationCompiler implements InvocationCompiler {
             adapter.ifnonnull(doCall);
             adapter.pop();
             adapter.ldc(id);
-            adapter.invokestatic(p(MethodIndex.class), "getFastFixnumOpsCallSite", sig(CallSite.class, String.class));
+            adapter.getstatic(p(CallType.class), call.getCallType().name(), ci(CallType.class));
+            adapter.invokestatic(p(MethodIndex.class), "getFastFixnumOpsCallSite", sig(CallSite.class, String.class, CallType.class));
             adapter.dup();
             adapter.putstatic(compiler.getClassData().clsName, methodName, ci(CallSite.class));
 
@@ -330,7 +331,8 @@ public class NormalInvocationCompiler implements InvocationCompiler {
             adapter.ifnonnull(doCall);
             adapter.pop();
             adapter.ldc(id);
-            adapter.invokestatic(p(MethodIndex.class), "getFastFloatOpsCallSite", sig(CallSite.class, String.class));
+            adapter.getstatic(p(CallType.class), call.getCallType().name(), ci(CallType.class));
+            adapter.invokestatic(p(MethodIndex.class), "getFastFloatOpsCallSite", sig(CallSite.class, String.class, CallType.class));
             adapter.dup();
             adapter.putstatic(compiler.getClassData().clsName, methodName, ci(CallSite.class));
 
@@ -475,8 +477,8 @@ public class NormalInvocationCompiler implements InvocationCompiler {
     }
 
     @Override
-    public void invokeEQQ(EQQInstr call) {
-        compiler.getValueCompiler().pushCallSite(compiler.getClassData().clsName, compiler.getUniqueSiteName(call.getId()), null, call);
+    public void invokeEQQ(EQQInstr call, String scopeFieldName) {
+        compiler.getValueCompiler().pushCallSite(compiler.getClassData().clsName, compiler.getUniqueSiteName(call.getId()), scopeFieldName, call);
         compiler.adapter.ldc(call.isSplattedValue());
         compiler.invokeIRHelper("isEQQ", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, CallSite.class, boolean.class));
     }

@@ -96,4 +96,40 @@ public class UntilNode extends Node {
     public boolean evaluateAtStart() {
         return evaluateAtStart;
     }
+
+    // ---- branch coverage: span of the loop body as written (a modifier loop's statement, including any
+    // begin/end around it), when it differs from the body node's own span ----
+
+    // null when the body node's own span will do, or positions are not recorded
+    private SourceSpan bodySpan() {
+        return (SourceSpan) getSourceDetail();
+    }
+
+    public void setBodySpan(long start, long end) {
+        setSourceDetail(SourceSpan.of(start, end));
+    }
+
+    public boolean hasBodySpan() {
+        return bodySpan() != null;
+    }
+
+    public int getBodyStartLine() {
+        SourceSpan bodySpan = bodySpan();
+        return bodySpan == null ? -1 : bodySpan.startLine();
+    }
+
+    public int getBodyStartColumn() {
+        SourceSpan bodySpan = bodySpan();
+        return bodySpan == null ? -1 : bodySpan.startColumn();
+    }
+
+    public int getBodyEndLine() {
+        SourceSpan bodySpan = bodySpan();
+        return bodySpan == null ? -1 : bodySpan.endLine();
+    }
+
+    public int getBodyEndColumn() {
+        SourceSpan bodySpan = bodySpan();
+        return bodySpan == null ? -1 : bodySpan.endColumn();
+    }
 }

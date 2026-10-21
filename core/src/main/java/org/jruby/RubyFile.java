@@ -42,6 +42,7 @@ import jnr.posix.util.Platform;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.API;
@@ -311,7 +312,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return asFixnum(context, 0);
     }
 
-    // rb_file_initialize
+    @CRuby(value = "rb_file_initialize", file = "io.c")
     @JRubyMethod(name = "initialize", required = 1, optional = 3, checkArity = false, visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
         // capture callInfo for delegating to IO#initialize
@@ -1391,7 +1392,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return fileOpenGeneric(context, args[0], oflags_p[0], fmode_p[0], convconfig, perm);
     }
 
-    // rb_file_open_generic
+    @CRuby(value = "rb_file_open_generic", file = "io.c")
     public IRubyObject fileOpenGeneric(ThreadContext context, IRubyObject filename, int oflags, int fmode, IOEncodable convConfig, int perm) {
         Ruby runtime = context.runtime;
 

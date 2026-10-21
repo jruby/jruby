@@ -49,6 +49,7 @@ import org.jruby.lexer.yacc.StackState;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import static org.jruby.util.BitPacker.unpackHighChar;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
 
@@ -75,6 +76,15 @@ public class RipperParserBase {
     public void initTopLocalVariables() {
         scopedParserState = new ScopedParserState(null);
         pushLocalScope();
+    }
+
+    // Ripper builds no AST, so it has no nodes to record source positions on (see RubyParserBase#recordsPositions)
+    public boolean recordsPositions() {
+        return false;
+    }
+
+    public int column(long position) {
+        return ProductionState.column(position);
     }
 
     public void reset() {
@@ -511,7 +521,7 @@ public class RipperParserBase {
         int slot = current.isDefined(id);
         if (slot != -1) {
             scopedParserState.addDefinedVariable(name, lexer.getRubySourceline());
-            scopedParserState.markUsedVariable(name, slot >> 16);
+            scopedParserState.markUsedVariable(name, unpackHighChar(slot));
         }
 
         return nameBytes;
@@ -995,8 +1005,18 @@ public class RipperParserBase {
                 return Global;
         }
 
-        byte last = (byte) identifier.get(identifier.length() - 1);
+        int length = identifier.length();
+        byte last = (byte) identifier.get(length - 1);
         if (last == '=') {
+            if (length > 1) {
+                char secondLast = identifier.charAt(length - 2);
+                // Comparison operators (==, ===, !=, <=, >=) end in '=' but
+                // are not setter (attrset) names. Genuine setters (foo=, []=)
+                // never have '=', '!', '<' or '>' as their second to last char.
+                if (secondLast == '=' || secondLast == '!' || secondLast == '<' || secondLast == '>') {
+                    return Local;
+                }
+            }
             return AttrSet;
         }
 

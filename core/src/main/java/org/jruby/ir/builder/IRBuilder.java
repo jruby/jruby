@@ -8,7 +8,9 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubySymbol;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.StrNode;
+import org.jruby.ext.coverage.BranchTarget;
 import org.jruby.ext.coverage.CoverageData;
+import org.jruby.ext.coverage.FileCoverage;
 import org.jruby.ir.IRClassBody;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IREvalScript;
@@ -48,6 +50,7 @@ import java.util.Deque;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -106,6 +109,9 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
     LineInfo needsLineNumInfo = null;
 
+    // Line coverage state, only while Coverage measures this scope (see setCoverageMode)
+    LineNumberInfo<U> lineNumberInfo = null;
+
     // SSS FIXME: Currently only used for retries -- we should be able to eliminate this
     // Stack of nested rescue blocks -- this just tracks the start label of the blocks
     final Deque<RescueBlockInfo> activeRescueBlockStack = new ArrayDeque<>(4);
@@ -156,7 +162,8 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         this.parent = parent;
         this.instructions = new ArrayList<>(50);
         this.activeRescuers.push(Label.UNRESCUED_REGION_LABEL);
-        this.coverageMode = parent == null ? CoverageData.NONE : parent.coverageMode;
+        setCoverageMode(parent == null ? CoverageData.NONE : parent.coverageMode);
+        if (parent != null && parent.deadCodeDepth > 0) deadCodeDepth = 1; // a block or class body in a dead arm
 
         if (parent != null) executesOnce = parent.executesOnce;
 
@@ -205,7 +212,10 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         if (isRescue) ebi.savedGlobalException = savedGlobalException;
 
         // Record body of ensure and push to ensure body stack if there is an actual ensure body.
+        // It comes after the protected body, so its line events must not be the last ones the protected body sees.
+        LineNumberInfo.LastEvent<U> lastLineEvent = lineNumberInfo == null ? null : lineNumberInfo.getLastEvent();
         Operand ensureRetVal = processEnsureBody(ensureNode, ebi);
+        if (lastLineEvent != null) lineNumberInfo.setLastEvent(lastLineEvent);
 
         // ------------ Build the protected region ------------
         activeEnsureBlockStack.push(ebi);
@@ -286,7 +296,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     public InterpreterContext buildEvalRoot(ParseResult rootNode) {
         executesOnce = false;
-        coverageMode = rootNode.getCoverageMode();
+        setCoverageMode(rootNode.getCoverageMode());
         addInstr(getManager().newLineNumber(scope.getLine()));
 
         afterPrologueIndex = instructions.size() - 1;                      // added BEGINs start after scope prologue stuff
@@ -303,7 +313,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     protected InterpreterContext buildRootInner(ParseResult parseResult) {
         long time = 0;
         if (parserTiming) time = System.nanoTime();
-        coverageMode = parseResult.getCoverageMode();
+        setCoverageMode(parseResult.getCoverageMode());
 
         // Build IR for the tree and return the result of the expression tree
         addInstr(new ReturnInstr(build(parseResult)));
@@ -375,21 +385,32 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         return loopStack.peek();
     }
 
-    public void addInstr(Instr instr) {
-        if (needsLineNumInfo != null) {
-            LineInfo type = needsLineNumInfo;
-            needsLineNumInfo = null;
+    protected void setCoverageMode(int coverageMode) {
+        this.coverageMode = coverageMode;
+        lineNumberInfo = coverageMode != CoverageData.NONE ? new LineNumberInfo<>() : null;
+    }
 
-            if (type == LineInfo.Coverage) {
-                addInstr(new LineNumberInstr(lastProcessedLineNum, coverageMode));
-            } else {
-                addInstr(manager.newLineNumber(lastProcessedLineNum));
-            }
+    private void addLineNumInfo() {
+        LineInfo type = needsLineNumInfo;
+        needsLineNumInfo = null;
 
-            if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                addInstr(new TraceInstr(RubyEvent.LINE, getCurrentModuleVariable(), methodNameFor(), getFileName(), lastProcessedLineNum + 1));
-            }
+        if (type == LineInfo.Coverage && lineNumberInfo != null) {
+            int coverageLine = lineNumberInfo.getPendingLine();
+            addInstr(new LineNumberInstr(coverageLine, coverageMode));
+            if (coverageLine != lastProcessedLineNum) addInstr(manager.newLineNumber(lastProcessedLineNum));
+        } else if (type == LineInfo.Coverage) {
+            addInstr(new LineNumberInstr(lastProcessedLineNum, coverageMode));
+        } else {
+            addInstr(manager.newLineNumber(lastProcessedLineNum));
         }
+
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            addInstr(new TraceInstr(RubyEvent.LINE, getCurrentModuleVariable(), methodNameFor(), getFileName(), lastProcessedLineNum + 1));
+        }
+    }
+
+    public void addInstr(Instr instr) {
+        if (needsLineNumInfo != null) addLineNumInfo();
 
         // If we are building an ensure body, stash the instruction
         // in the ensure body's list. If not, add it to the scope directly.
@@ -1134,6 +1155,14 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
     protected Operand buildCase(U predicate, U[] arms, U elsey) {
+        return buildCase(predicate, arms, elsey, null, null);
+    }
+
+    /**
+     * @param armTargets for branch coverage: one target per arm, in arm order (or null)
+     * @param elseTarget for branch coverage: the target of the (explicit or implicit) else (or null)
+     */
+    protected Operand buildCase(U predicate, U[] arms, U elsey, BranchTarget[] armTargets, BranchTarget elseTarget) {
         // FIXME: Missing optimized homogeneous here (still in AST but will be missed by Prism).
 
         Operand testValue = buildCaseTestValue(predicate); // what each when arm gets tested against.
@@ -1141,24 +1170,33 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         Label endLabel = getNewLabel();                   // end of the entire case statement.
         boolean hasExplicitElse = elsey != null; // does this have an explicit 'else' or not.
         Variable result = temp();      // final result value of the case statement.
-        Map<Label, U> bodies = new HashMap<>();        // we save bodies and emit them after processing when values.
+        // We save bodies and emit them after processing when values, in order and the else last as MRI compiles
+        // them: a statement on the line of one compiled before it is no line event of its own.
+        Map<Label, U> bodies = new LinkedHashMap<>();
         Set<IRubyObject> seenLiterals = new HashSet<>();  // track to warn on duplicated values in when clauses.
         Map<IRubyObject, java.lang.Integer> originalLocs = new HashMap<>();
+        Map<Label, BranchTarget> targets = new HashMap<>();  // branch coverage target of each body.
 
-        for (U arm: arms) { // Emit each when value test against the case value.
+        for (int i = 0; i < arms.length; i++) { // Emit each when value test against the case value.
+            U arm = arms[i];
             Label bodyLabel = getNewLabel();
             buildWhenArgs((W) arm, testValue, bodyLabel, seenLiterals, originalLocs);
             bodies.put(bodyLabel, whenBody((W) arm));
+            if (armTargets != null) targets.put(bodyLabel, armTargets[i]);
         }
 
         addInstr(new JumpInstr(elseLabel));               // if no explicit matches jump to else
 
-        if (hasExplicitElse) bodies.put(elseLabel, elsey);
+        if (hasExplicitElse) {
+            bodies.put(elseLabel, elsey);
+            targets.put(elseLabel, elseTarget);
+        }
 
         int numberOfBodies = bodies.size();
         int i = 1;
         for (Map.Entry<Label, U> entry: bodies.entrySet()) {
             addInstr(new LabelInstr(entry.getKey()));
+            coverBranch(targets.get(entry.getKey()));
             Operand bodyValue = build(entry.getValue());
 
             if (bodyValue != null) {                      // can be null if the body ends with a return!
@@ -1177,6 +1215,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
         if (!hasExplicitElse) {                           // build implicit else
             addInstr(new LabelInstr(elseLabel));
+            coverBranch(elseTarget);
             addInstr(new CopyInstr(result, nil()));
         }
 
@@ -1234,10 +1273,36 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     // FIXME: AST needs variable passed in to work which I think means some context really needs to pass in the result at least in AST build?
     protected Operand buildConditional(Variable result, U predicate, U statements, U consequent) {
+        return buildConditional(result, predicate, statements, consequent, null);
+    }
+
+    /**
+     * @param branches for branch coverage: yields the targets of the statements arm and of the consequent arm
+     *                 (either may be null); called once the predicate is built, which is when MRI declares the
+     *                 conditional, so nested conditionals are numbered in the same order
+     */
+    protected Operand buildConditional(Variable result, U predicate, U statements, U consequent, Supplier<BranchTarget[]> branches) {
+        return buildConditional(result, predicate, statements, consequent, branches, DeadArm.NONE);
+    }
+
+    /**
+     * Which arm of a conditional can never run, because its predicate is a literal. For branch coverage, which
+     * measures nothing inside a dead arm.
+     */
+    protected enum DeadArm { NONE, STATEMENTS, CONSEQUENT }
+
+    /**
+     * @param deadArm for branch coverage: the arm that can never run; nothing inside it is measured
+     */
+    protected Operand buildConditional(Variable result, U predicate, U statements, U consequent, Supplier<BranchTarget[]> branches, DeadArm deadArm) {
         Label    falseLabel = getNewLabel();
         Label    doneLabel  = getNewLabel();
         Operand thenResult;
-        addInstr(createBranch(build(predicate), fals(), falseLabel));
+        Operand predicateValue = build(predicate);
+        BranchTarget[] targets = branches == null ? null : branches.get();
+        addInstr(createBranch(predicateValue, fals(), falseLabel));
+        if (targets != null) coverBranch(targets[0]);
+        if (deadArm == DeadArm.STATEMENTS) deadCodeDepth++;
 
         boolean thenNull = false;
         boolean elseNull = false;
@@ -1263,8 +1328,12 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             addInstr(new JumpInstr(doneLabel));
         }
 
+        if (deadArm == DeadArm.STATEMENTS) deadCodeDepth--;
+
         // Build the else part of the if-statement
         addInstr(new LabelInstr(falseLabel));
+        if (targets != null) coverBranch(targets[1]);
+        if (deadArm == DeadArm.CONSEQUENT) deadCodeDepth++;
         if (consequent != null) {
             Operand elseResult = build(consequent);
             // elseResult can be U_NIL if then-body ended with a return!
@@ -1277,6 +1346,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             elseNull = true;
             copy(result, nil());
         }
+        if (deadArm == DeadArm.CONSEQUENT) deadCodeDepth--;
 
         if (thenNull && elseNull) {
             addInstr(new LabelInstr(doneLabel));
@@ -1728,7 +1798,15 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
     protected Operand buildConditionalLoop(U conditionNode, U bodyNode, boolean isWhile, boolean isLoopHeadCondition) {
-        if (isLoopHeadCondition && (isWhile && alwaysFalse(conditionNode) || !isWhile && alwaysTrue(conditionNode))) {
+        return buildConditionalLoop(conditionNode, bodyNode, isWhile, isLoopHeadCondition, null);
+    }
+
+    /**
+     * @param body for branch coverage: the target counting iterations of the loop body (or null)
+     */
+    protected Operand buildConditionalLoop(U conditionNode, U bodyNode, boolean isWhile, boolean isLoopHeadCondition, BranchTarget body) {
+        // MRI compiles (and measures) the body of a loop that can never be entered, so keep it when measuring
+        if (isLoopHeadCondition && !isBranchCoverageEnabled() && (isWhile && alwaysFalse(conditionNode) || !isWhile && alwaysTrue(conditionNode))) {
             build(conditionNode);  // we won't enter the loop -- just build the condition node
             return nil();
         } else {
@@ -1751,6 +1829,8 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
             // Thread poll at start of iteration -- ensures that redos and nexts run one thread-poll per iteration
             addInstr(new ThreadPollInstr(true));
+
+            coverBranch(body);
 
             // Build body
             if (bodyNode != null) build(bodyNode);
@@ -2039,7 +2119,8 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         addInstr(CallInstr.create(scope, callType, elt, symbol(ArrayDerefInstr.AREF), array, argList, blockArg, flags[0])); // elt = a[args]
 
         Operand valueArg = build(value);                                       // Load 'value'
-        _call(elt, callType, elt, operator, valueArg); // elt = elt.OPERATION(value)
+        // The operator's receiver is the element, not the array, so it's never a functional call.
+        _call(elt, CallType.NORMAL, elt, operator, valueArg); // elt = elt.OPERATION(value)
         // SSS: do not load the call result into 'elt' to eliminate the RAW dependency on the call
         // We already know what the result is going be .. we are just storing it back into the array
         argList = addArg(argList, elt);
@@ -2282,6 +2363,14 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     }
 
     protected Operand buildPatternCase(U test, U[] cases, U consequent) {
+        return buildPatternCase(test, cases, consequent, null, null);
+    }
+
+    /**
+     * @param inTargets for branch coverage: one target per in clause, in clause order (or null)
+     * @param elseTarget for branch coverage: the target of the else clause, or of no pattern matching (or null)
+     */
+    protected Operand buildPatternCase(U test, U[] cases, U consequent, BranchTarget[] inTargets, BranchTarget elseTarget) {
         Variable result = temp();
         Operand value = build(test);
         Variable errorString = copy(nil());
@@ -2289,6 +2378,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         label("pattern_case_end", end -> {
             List<Label> labels = new ArrayList<>(4);
             Map<Label, U> bodies = new HashMap<>(4);
+            Label elseLabel = getNewLabel();
 
             // build each "when"
             Variable deconstructed = copy(nil());
@@ -2304,7 +2394,21 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                 addInstr(createBranch(eqqResult, tru(), bodyLabel));
                 bodies.put(bodyLabel, body);
             }
+            jump(elseLabel);
 
+            // Now, emit bodies while preserving in clauses order, and the else after them as MRI compiles them (a
+            // statement on the line of one compiled before it is no line event of its own)
+            for (int i = 0; i < labels.size(); i++) {
+                Label label = labels.get(i);
+                addInstr(new LabelInstr(label));
+                if (inTargets != null) coverBranch(inTargets[i]);
+                Operand bodyValue = build(bodies.get(label));
+                if (bodyValue != null) copy(result, bodyValue);
+                jump(end);
+            }
+
+            addInstr(new LabelInstr(elseLabel));
+            coverBranch(elseTarget);
             if (consequent != null) {
                 Operand bodyValue = build(consequent);
                 if (bodyValue != null) copy(result, bodyValue);
@@ -2331,14 +2435,6 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                 call(temp(), kernel, "raise", exception);
             }
             jump(end);
-
-            // Now, emit bodies while preserving when clauses order
-            for (Label label : labels) {
-                addInstr(new LabelInstr(label));
-                Operand bodyValue = build(bodies.get(label));
-                if (bodyValue != null) copy(result, bodyValue);
-                jump(end);
-            }
         });
 
         return result;
@@ -2497,24 +2593,38 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
         // string ranges should have frozen begin and end
         if (beginNode instanceof StrNode beginString) {
-            begin = new FrozenString(beginString.getValue(), beginString.getCodeRange(), beginString.getFile(), beginString.getLine());
+            begin = new FrozenString(beginString.getValue(), beginString.getCodeRange(), scope.getFile(), beginString.getLine());
         } else {
             begin = build(beginNode);
         }
 
         if (endNode instanceof StrNode endString) {
-            end = new FrozenString(endString.getValue(), endString.getCodeRange(), endString.getFile(), endString.getLine());
+            end = new FrozenString(endString.getValue(), endString.getCodeRange(), scope.getFile(), endString.getLine());
         } else {
             end = build(endNode);
         }
 
-        if (begin instanceof ImmutableLiteral && end instanceof ImmutableLiteral) {
+        if (begin instanceof ImmutableLiteral b && end instanceof ImmutableLiteral e && isValidRange(b, e)) {
             // endpoints are free of side effects, cache the range after creation
-            return new Range((ImmutableLiteral) begin, (ImmutableLiteral) end, isExclusive);
+            return new Range(b, e, isExclusive);
         }
 
         // must be built every time
         return addResultInstr(new BuildRangeInstr(temp(), begin, end, isExclusive));
+    }
+
+    // Whether a range of these literals can be built without raising. A Range operand is built wherever its value is
+    // used, which can be outside a rescue or after the scope has popped its frame, so one that raises (like 1.."3",
+    // whose endpoints aren't comparable) has to be built by an instruction instead.
+    private static boolean isValidRange(ImmutableLiteral begin, ImmutableLiteral end) {
+        if (begin instanceof Nil || end instanceof Nil) return true;
+        if (isRealNumber(begin) && isRealNumber(end)) return true;
+        if (begin instanceof FrozenString && end instanceof FrozenString) return true;
+        return begin instanceof Symbol && end instanceof Symbol;
+    }
+
+    private static boolean isRealNumber(ImmutableLiteral literal) {
+        return literal instanceof Fixnum || literal instanceof Bignum || literal instanceof org.jruby.ir.operands.Float || literal instanceof Rational;
     }
 
     protected Operand buildRational(U numerator, U denominator) {
@@ -2601,7 +2711,17 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     protected Operand buildAttrAssign(Variable result, U receiver, U argsNode, U blockNode, RubySymbol name,
                             boolean isLazy, boolean containsAssignment) {
+        return buildAttrAssign(result, receiver, argsNode, blockNode, name, isLazy, containsAssignment, null);
+    }
+
+    /**
+     * @param branches for branch coverage of a safe-navigation assignment: yields the targets of the call path
+     *                 and of the nil path; called once the receiver is built (MRI's declaration order)
+     */
+    protected Operand buildAttrAssign(Variable result, U receiver, U argsNode, U blockNode, RubySymbol name,
+                            boolean isLazy, boolean containsAssignment, Supplier<BranchTarget[]> branches) {
         Operand obj = buildWithOrder(receiver, containsAssignment);
+        BranchTarget[] targets = branches == null ? null : branches.get();
 
         Label lazyLabel = null;
         Label endLabel = null;
@@ -2610,6 +2730,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             lazyLabel = getNewLabel();
             endLabel = getNewLabel();
             addInstr(new BNilInstr(lazyLabel, obj));
+            if (targets != null) coverBranch(targets[0]);
         }
 
         int[] flags = new int[1];
@@ -2622,6 +2743,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         if (isLazy) {
             addInstr(new JumpInstr(endLabel));
             addInstr(new LabelInstr(lazyLabel));
+            if (targets != null) coverBranch(targets[1]);
             addInstr(new CopyInstr(result, nil()));
             addInstr(new LabelInstr(endLabel));
         }
@@ -2832,7 +2954,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         // propagate callInfo when forwarding arguments
         if (forwardingCallInfo != null) flags[0] = CALL_FORWARDING;
 
-        determineIfWeNeedLineNumber(line, isNewline, false, false); // backtrace needs line of call in case of exception.
+        determineIfWeNeedLineNumberForCall(line, isNewline); // backtrace needs line of call in case of exception.
         if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
             Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
             if_else(test, tru(),
@@ -3027,11 +3149,15 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     protected abstract void receiveMethodArgs(V defNode);
 
     protected IRMethod defineNewMethod(LazyMethodDefinition<U, V, W, X, Y, Z> defn, ByteList name, int line, StaticScope scope, boolean isInstanceMethod) {
-        IRMethod method = new IRMethod(getManager(), this.scope, defn, name, isInstanceMethod, line, scope, coverageMode);
+        // a method defined in an arm that can never run measures no branches, as MRI compiles nothing there
+        int methodCoverageMode = deadCodeDepth > 0 ? coverageMode & ~CoverageData.BRANCHES : coverageMode;
+        IRMethod method = new IRMethod(getManager(), this.scope, defn, name, isInstanceMethod, line, scope, methodCoverageMode);
         method.setSourceSpan(defn.getStartColumn(), defn.getEndLine(), defn.getEndColumn());
 
         // poorly placed next/break expects a syntax error so we eagerly build methods which contain them.
-        if (!canBeLazyMethod(defn.getMethod())) method.lazilyAcquireInterpreterContext();
+        // Branch coverage declares a file's branches while building its IR, so it needs every method built now
+        // for the result to list them all, in source order like MRI.
+        if (!canBeLazyMethod(defn.getMethod()) || isBranchCoverageEnabled()) method.lazilyAcquireInterpreterContext();
 
         return method;
     }
@@ -3040,7 +3166,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
     public void defineMethodInner(LazyMethodDefinition<U, V, W, X, Y, Z> defNode, IRScope parent, int coverageMode) {
         long time = 0;
         if (parserTiming) time = System.nanoTime();
-        this.coverageMode = coverageMode;
+        setCoverageMode(coverageMode);
 
         Variable methodCoverage = receiveMethodCoverage();
 
@@ -3079,6 +3205,35 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         scope.allocateInterpreterContext(instructions, temporaryVariableIndex + 1, flags);
 
         if (parserTiming) manager.getRuntime().getParserManager().getParserStats().addIRBuildTime(System.nanoTime() - time);
+    }
+
+    // ---- branch coverage ----
+
+    protected boolean isBranchCoverageEnabled() {
+        return (coverageMode & CoverageData.BRANCHES) != 0;
+    }
+
+    // Depth of arms that can never run (an if on a literal predicate): MRI compiles nothing there, so nothing
+    // in them is measured either, including the blocks, lambdas, classes and methods they hold.
+    private int deadCodeDepth;
+
+    /**
+     * The record the branches of this scope's file are declared into, or null when branches are not being
+     * measured (or the file is no longer tracked, e.g. a block converted into a method after coverage was reset).
+     */
+    protected FileCoverage branchCoverageFile() {
+        if (!isBranchCoverageEnabled() || deadCodeDepth > 0) return null;
+
+        Map<String, FileCoverage> coverage = getManager().getRuntime().getCoverageData().getCoverage();
+
+        return coverage == null ? null : coverage.get(getFileName());
+    }
+
+    /**
+     * Emit the probe counting that execution reached the given branch target (nothing for null).
+     */
+    protected void coverBranch(BranchTarget target) {
+        if (target != null) addInstr(new CoverBranchInstr(target, getFileName(), target.getIndex()));
     }
 
     /**
@@ -3218,7 +3373,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         // propagate callInfo when forwarding arguments
         if (forwardingCallInfo != null) flags[0] = CALL_FORWARDING;
 
-        determineIfWeNeedLineNumber(line, isNewline, false, false); // backtrace needs line of call in case of exception.
+        determineIfWeNeedLineNumberForCall(line, isNewline); // backtrace needs line of call in case of exception.
         if ((flags[0] & CALL_KEYWORD_REST) != 0) {  // {**k}, {**{}, **k}, etc...
             Variable test = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { args[args.length - 1] }));
             if_else(test, tru(),
@@ -3236,6 +3391,20 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         return result;
     }
 
+    /**
+     * A call that is a statement of its own already had its line (and coverage) event emitted when the
+     * statement started; if building its receiver or arguments moved the current line elsewhere, restore the
+     * call's line for backtraces without counting the statement a second time.
+     */
+    protected void determineIfWeNeedLineNumberForCall(int line, boolean isNewline) {
+        if (line != lastProcessedLineNum) {
+            // A pending coverage event also restores this line for backtraces when it is emitted
+            if (isNewline && needsLineNumInfo == null) needsLineNumInfo = LineInfo.Backtrace;
+
+            lastProcessedLineNum = line;
+        }
+    }
+
     protected void determineIfWeNeedLineNumber(int line, boolean isNewline, boolean implicitNil, boolean def) {
         if (line != lastProcessedLineNum && !implicitNil) {
             LineInfo needsCoverage = isNewline ? LineInfo.Coverage : null;
@@ -3247,6 +3416,28 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             // This line is already process either by linenum or by instr which emits its own.
             lastProcessedLineNum = line;
         }
+    }
+
+    /**
+     * With coverage on: as in MRI, a statement is a line event unless the last one started on the same line (calls
+     * built in between do not matter), and coverage counts it on the line of its first instruction, which comes from
+     * firstInstruction (see LineEvents).
+     */
+    protected void determineIfWeNeedCoverageLine(int line, U firstInstruction) {
+        // A statement inside the last line event's statement, starting with the same instruction, shares its event
+        if (lineNumberInfo.isNewEvent(line, firstInstruction)) {
+            // A statement inside one whose event is still pending would replace that event, which coverage would
+            // then never count: emit it first.
+            if (needsLineNumInfo == LineInfo.Coverage && lineNumberInfo.isPendingEnclosing()) addLineNumInfo();
+
+            needsLineNumInfo = LineInfo.Coverage;
+            lineNumberInfo.startEvent(line, firstInstruction, getLine(firstInstruction));
+        } else {
+            lineNumberInfo.continueEvent(line);
+            if (line != lastProcessedLineNum && needsLineNumInfo == null) needsLineNumInfo = LineInfo.Backtrace;
+        }
+
+        lastProcessedLineNum = line;
     }
 
     // FIXME: This needs to be called on super/zsuper too

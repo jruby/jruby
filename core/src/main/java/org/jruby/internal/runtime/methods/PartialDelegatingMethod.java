@@ -31,6 +31,7 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
+import org.jruby.anno.CRuby;
 import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -138,13 +139,14 @@ public class PartialDelegatingMethod extends DynamicMethod {
         return entry.method.getDefinedClass();
     }
 
-    // MRI: vm_call0_body and aliased_callable_method_entry
     /* FIXME: This is not quite right. It appears that MRI does this logic at call time, but I believe
               the calculated class is cached somewhere along with the "callable" method entry. The code
               below means all aliases in modules will do the implementer search, unless we can detect
               that the related method does not need "super". We can improve this at cache time in either
               CacheEntry logic or CallSite logic.
      */
+    @CRuby(value = "vm_call0_body", file = "vm_eval.c")
+    @CRuby(value = "aliased_callable_method_entry", file = "vm_insnhelper.c")
     private RubyModule calculateSourceModule(IRubyObject self, RubyModule incomingSourceModule) {
         if (findImplementer) {
             return Helpers.findImplementerIfNecessary(self.getMetaClass(), entry.method.getImplementationClass());

@@ -32,6 +32,7 @@ import java.math.RoundingMode;
 
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.JRubyAPI;
@@ -128,30 +129,22 @@ public class RubyRational extends RubyNumeric {
         this.den = zero;
     }
 
-    /** rb_rational_raw
-     * 
-     */
+    @CRuby(value = "rb_rational_raw", file = "rational.c")
     public static RubyRational newRationalRaw(Ruby runtime, IRubyObject x, IRubyObject y) {
         return newRational(runtime, runtime.getRational(), x, y);
     }
 
-    /** rb_rational_raw1
-     * 
-     */
+    @CRuby(value = "rb_rational_raw1", file = "include/ruby/internal/intern/rational.h")
     static RubyRational newRationalRaw(Ruby runtime, IRubyObject x) {
         return newRational(runtime, runtime.getRational(), x, RubyFixnum.one(runtime));
     }
 
-    /** rb_rational_new1
-     * 
-     */
+    @CRuby(value = "rb_rational_new1", file = "include/ruby/internal/intern/rational.h")
     static RubyNumeric newRationalCanonicalize(ThreadContext context, RubyInteger x) {
         return (RubyNumeric) newRationalCanonicalize(context, x, RubyFixnum.one(context.runtime));
     }
 
-    /** rb_rational_new
-     * 
-     */
+    @CRuby(value = "rb_rational_new", file = "rational.c")
     public static IRubyObject newRationalCanonicalize(ThreadContext context, RubyInteger x, RubyInteger y) {
         return canonicalizeInternal(context, context.runtime.getRational(), x, y);
     }
@@ -171,9 +164,7 @@ public class RubyRational extends RubyNumeric {
         return canonicalizeInternalNoReduce(context, context.runtime.getRational(), x, y);
     }
 
-    /** f_rational_new_no_reduce2
-     * 
-     */
+    @CRuby(value = "f_rational_new_no_reduce2", file = "rational.c")
     private static RubyNumeric newRationalNoReduce(ThreadContext context, RubyClass clazz, RubyInteger x, RubyInteger y) {
         return canonicalizeInternalNoReduce(context, clazz, x, y);
     }
@@ -186,9 +177,7 @@ public class RubyRational extends RubyNumeric {
         return newRational(context.runtime, clazz, x, y);
     }
 
-    /** f_rational_new_bang1
-     * 
-     */
+    @CRuby(value = "f_rational_new_bang1", file = "rational.c")
     private static RubyRational newRationalBang(ThreadContext context, RubyClass clazz, IRubyObject x) {
         return newRationalBang(context, clazz, x, asFixnum(context, 1));
     }
@@ -213,9 +202,7 @@ public class RubyRational extends RubyNumeric {
         canonicalization = canonical;
     }
 
-    /** nurat_int_check
-     * 
-     */
+    @CRuby(value = "nurat_int_check", file = "rational.c")
     private static RubyInteger intCheck(ThreadContext context, IRubyObject num) {
         if (num instanceof RubyInteger) return (RubyInteger) num;
         if (!(num instanceof RubyNumeric) || !integer_p_site(context).call(context, num, num).isTrue()) { // num.integer?
@@ -228,9 +215,7 @@ public class RubyRational extends RubyNumeric {
         return context.sites.Numeric.integer;
     }
 
-    /** nurat_int_value
-     * 
-     */
+    @CRuby(value = "nurat_int_value", file = "rational.c")
     static IRubyObject intValue(ThreadContext context, IRubyObject num, boolean raise) {
         RubyInteger i = RubyInteger.toInteger(context, num);
 
@@ -242,9 +227,7 @@ public class RubyRational extends RubyNumeric {
         return i;
     }
     
-    /** nurat_s_canonicalize_internal
-     * 
-     */
+    @CRuby(value = "nurat_s_canonicalize_internal", file = "rational.c")
     private static RubyNumeric canonicalizeInternal(ThreadContext context, RubyClass clazz, RubyInteger num, RubyInteger den) {
         if (canonicalizeShouldNegate(context, den)) {
             num = num.negate(context);
@@ -274,9 +257,7 @@ public class RubyRational extends RubyNumeric {
         return newRational(context.runtime, clazz, _num, _den);
     }
 
-    /** nurat_s_canonicalize_internal_no_reduce
-     * 
-     */
+    @CRuby(value = "nurat_s_canonicalize_internal_no_reduce", file = "rational.c")
     private static RubyNumeric canonicalizeInternalNoReduce(ThreadContext context, RubyClass clazz,
                                                             RubyInteger num, RubyInteger den) {
         // MRI: nurat_canonicalize, negation part
@@ -334,9 +315,7 @@ public class RubyRational extends RubyNumeric {
         return canonicalizeInternal(context, context.runtime.getRational(), num, RubyFixnum.one(context.runtime));
     }
 
-    /** rb_Rational1
-     * 
-     */
+    @CRuby(value = "rb_Rational1", file = "include/ruby/internal/intern/rational.h")
     public static IRubyObject newRationalConvert(ThreadContext context, IRubyObject x) {
         return newRationalConvert(context, x, RubyFixnum.one(context.runtime));
     }
@@ -368,9 +347,7 @@ public class RubyRational extends RubyNumeric {
         return x;
     }
     
-    /** nurat_s_convert
-     * 
-     */
+    @CRuby(value = "nurat_s_convert", file = "rational.c")
     @JRubyMethod(name = "convert", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject convert(ThreadContext context, IRubyObject recv, IRubyObject a1) {
         if (a1 == context.nil) throw typeError(context, "can't convert nil into Rational");
@@ -378,9 +355,7 @@ public class RubyRational extends RubyNumeric {
         return convertCommon(context, (RubyClass) recv, a1, context.nil, true);
     }
 
-    /** nurat_s_convert
-     *
-     */
+    @CRuby(value = "nurat_s_convert", file = "rational.c")
     @JRubyMethod(name = "convert", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject convert(ThreadContext context, IRubyObject recv, IRubyObject a1, IRubyObject a2) {
         IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(context.runtime, a2, false);
@@ -402,9 +377,7 @@ public class RubyRational extends RubyNumeric {
         return convertCommon(context, (RubyClass) recv, a1, a2, raise);
     }
 
-    /** nurat_s_convert
-     * 
-     */
+    @CRuby(value = "nurat_s_convert", file = "rational.c")
     @JRubyMethod(name = "convert", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject convert(ThreadContext context, IRubyObject recv, IRubyObject a1, IRubyObject a2, IRubyObject kwargs) {
         IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(context.runtime, kwargs, false);
@@ -540,18 +513,14 @@ public class RubyRational extends RubyNumeric {
         return newInstance(context, clazz, a1, a2, raise);
     }
 
-    /** nurat_numerator
-     * 
-     */
+    @CRuby(value = "nurat_numerator", file = "rational.c")
     @JRubyMethod(name = "numerator")
     @Override
     public IRubyObject numerator(ThreadContext context) {
         return num;
     }
 
-    /** nurat_denominator
-     * 
-     */
+    @CRuby(value = "nurat_denominator", file = "rational.c")
     @JRubyMethod(name = "denominator")
     @Override
     public IRubyObject denominator(ThreadContext context) {
@@ -612,9 +581,7 @@ public class RubyRational extends RubyNumeric {
         return num.signum(context);
     }
 
-    /** f_imul
-     * 
-     */
+    @CRuby(value = "f_imul", file = "rational.c")
     private static RubyInteger f_imul(ThreadContext context, long a, long b) {
         if (a == 0 || b == 0) return asFixnum(context, 0);
         if (a == 1) return asFixnum(context, b);
@@ -626,9 +593,7 @@ public class RubyRational extends RubyNumeric {
                 asFixnum(context, c);
     }
     
-    /** f_addsub
-     * 
-     */
+    @CRuby(value = "f_addsub", file = "rational.c")
     private static RubyNumeric f_addsub(ThreadContext context, RubyClass metaClass,
                                         RubyInteger anum, RubyInteger aden, RubyInteger bnum, RubyInteger bden,
                                         final boolean plus) {
@@ -705,9 +670,7 @@ public class RubyRational extends RubyNumeric {
         return RubyRational.newRationalNoReduce(context, num.negate(context), den);
     }
 
-    /** f_muldiv
-     * 
-     */
+    @CRuby(value = "f_muldiv", file = "rational.c")
     private static RubyNumeric f_muldiv(ThreadContext context, RubyClass clazz,
                                         RubyInteger anum, RubyInteger aden,
                                         RubyInteger bnum, RubyInteger bden, final boolean mult) {
@@ -797,9 +760,7 @@ public class RubyRational extends RubyNumeric {
         return f_div(context, r_to_f(context, this), other);
     }
 
-    /** nurat_expt
-     * 
-     */
+    @CRuby(value = "nurat_expt", file = "rational.c")
     @JRubyMethod(name = "**")
     public IRubyObject op_expt(ThreadContext context, IRubyObject other) {
         if (k_exact_p(other) && f_zero_p(context, other)) {
@@ -952,9 +913,7 @@ public class RubyRational extends RubyNumeric {
         return op_equal(context, (RubyRational) other);
     }
 
-    /** nurat_coerce
-     * 
-     */
+    @CRuby(value = "nurat_coerce", file = "rational.c")
     @JRubyMethod(name = "coerce")
     public IRubyObject op_coerce(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum || other instanceof RubyBignum) {
@@ -1016,9 +975,7 @@ public class RubyRational extends RubyNumeric {
         return f_negate(context, this);
     }
 
-    /**
-     * MRI: nurat_floor_n
-     */
+    @CRuby(value = "nurat_floor_n", file = "rational.c")
     @JRubyMethod(name = "floor")
     public IRubyObject floor(ThreadContext context) {
         return roundCommon(context, null, RoundingMode.FLOOR);
@@ -1029,14 +986,12 @@ public class RubyRational extends RubyNumeric {
         return roundCommon(context, n, RoundingMode.FLOOR);
     }
 
-    // MRI: nurat_floor
+    @CRuby(value = "nurat_floor", file = "rational.c")
     private IRubyObject mriFloor(ThreadContext context) {
         return num.idiv(context, den);
     }
 
-    /**
-     * MRI: nurat_ceil_n
-     */
+    @CRuby(value = "nurat_ceil_n", file = "rational.c")
     @Override
     @JRubyMethod(name = "ceil")
     public IRubyObject ceil(ThreadContext context) {
@@ -1048,7 +1003,7 @@ public class RubyRational extends RubyNumeric {
         return roundCommon(context, n, RoundingMode.CEILING);
     }
 
-    // MRI: nurat_ceil
+    @CRuby(value = "nurat_ceil", file = "rational.c")
     private IRubyObject mriCeil(ThreadContext context) {
         return ((RubyInteger) ((RubyInteger) num.op_uminus(context)).idiv(context, den)).op_uminus(context);
     }
@@ -1075,9 +1030,7 @@ public class RubyRational extends RubyNumeric {
         return convertToInteger().asLong(context);
     }
 
-    /**
-     * MRI: nurat_truncate
-     */
+    @CRuby(value = "nurat_truncate", file = "rational.c")
     @JRubyMethod(name = "truncate")
     public IRubyObject truncate(ThreadContext context) {
         return roundCommon(context, null, RoundingMode.UNNECESSARY);
@@ -1115,7 +1068,7 @@ public class RubyRational extends RubyNumeric {
         return roundCommon(context, n, RubyNumeric.getRoundingMode(context, opts));
     }
 
-    // MRI: f_round_common
+    @CRuby(value = "f_round_common", file = "rational.c")
     public IRubyObject roundCommon(ThreadContext context, final IRubyObject n, RoundingMode mode) {
         // case : precision arg is not given
         if (n == null) return doRound(context, mode);
@@ -1145,7 +1098,7 @@ public class RubyRational extends RubyNumeric {
         };
     }
 
-    // MRI: nurat_round_half_down
+    @CRuby(value = "nurat_round_half_down", file = "rational.c")
     private RubyInteger roundHalfDown(ThreadContext context) {
         RubyInteger num = this.num, den = this.den;
         final boolean neg = num.isNegativeNumber(context);
@@ -1162,7 +1115,7 @@ public class RubyRational extends RubyNumeric {
         return num;
     }
 
-    // MRI: nurat_round_half_even
+    @CRuby(value = "nurat_round_half_even", file = "rational.c")
     private RubyInteger roundHalfEven(ThreadContext context) {
         var num = this.num;
         var den = this.den;
@@ -1181,7 +1134,7 @@ public class RubyRational extends RubyNumeric {
         return num;
     }
 
-    // MRI: nurat_round_half_up
+    @CRuby(value = "nurat_round_half_up", file = "rational.c")
     private RubyInteger roundHalfUp(ThreadContext context) {
         RubyInteger num = this.num, den = this.den;
 
@@ -1198,10 +1151,8 @@ public class RubyRational extends RubyNumeric {
         return num;
     }
 
-    /** nurat_to_f
-     * 
-     */
 
+    @CRuby(value = "nurat_to_f", file = "rational.c")
     @JRubyMethod(name = "to_f")
     public IRubyObject to_f(ThreadContext context) {
         return asFloat(context, asDouble(context));
@@ -1266,17 +1217,13 @@ public class RubyRational extends RubyNumeric {
         return asDouble(context);
     }
 
-    /** nurat_to_r
-     * 
-     */
+    @CRuby(value = "nurat_to_r", file = "rational.c")
     @JRubyMethod(name = "to_r")
     public IRubyObject to_r(ThreadContext context) {
         return this;
     }
 
-    /** nurat_rationalize
-     *
-     */
+    @CRuby(value = "nurat_rationalize", file = "rational.c")
     @JRubyMethod(name = "rationalize", optional = 1, checkArity = false)
     public IRubyObject rationalize(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 0, 1);
@@ -1300,9 +1247,7 @@ public class RubyRational extends RubyNumeric {
         return newInstance(context, this.metaClass, (RubyInteger) ans[0], (RubyInteger) ans[1]);
     }
 
-    /** nurat_hash
-     * 
-     */
+    @CRuby(value = "nurat_hash", file = "rational.c")
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
         return (RubyFixnum) f_xor(context,
@@ -1315,9 +1260,7 @@ public class RubyRational extends RubyNumeric {
         return num.hashCode() ^ den.hashCode();
     }
 
-    /** nurat_to_s
-     * 
-     */
+    @CRuby(value = "nurat_to_s", file = "rational.c")
     @Override
     @JRubyMethod(name = "to_s")
     public RubyString to_s(ThreadContext context) {
@@ -1325,9 +1268,7 @@ public class RubyRational extends RubyNumeric {
         return str.append(num.to_s(context)).cat((byte)'/').append(den.to_s(context));
     }
 
-    /** nurat_inspect
-     * 
-     */
+    @CRuby(value = "nurat_inspect", file = "rational.c")
     @JRubyMethod(name = "inspect")
     public RubyString inspect(ThreadContext context) {
         RubyString str = newString(context, new ByteList(12), USASCIIEncoding.INSTANCE);
@@ -1339,9 +1280,7 @@ public class RubyRational extends RubyNumeric {
         return str;
     }
 
-    /** nurat_marshal_dump
-     * 
-     */
+    @CRuby(value = "nurat_marshal_dump", file = "rational.c")
     @JRubyMethod(name = "marshal_dump", visibility = Visibility.PRIVATE)
     public IRubyObject marshal_dump(ThreadContext context) {
         var dump = newArray(context, num, den);
@@ -1349,9 +1288,7 @@ public class RubyRational extends RubyNumeric {
         return dump;
     }
 
-    /** nurat_marshal_load
-     * 
-     */
+    @CRuby(value = "nurat_marshal_load", file = "rational.c")
     @JRubyMethod(name = "marshal_load")
     public IRubyObject marshal_load(ThreadContext context, IRubyObject arg) {
         checkFrozen();
@@ -1519,9 +1456,7 @@ public class RubyRational extends RubyNumeric {
         return ary[0]; // (RubyRational)
     }
 
-    /**
-     * rb_numeric_quo
-     */
+    @CRuby(value = "rb_numeric_quo", file = "rational.c")
     public static IRubyObject numericQuo(ThreadContext context, IRubyObject x, IRubyObject y) {
         if (x instanceof RubyComplex c) {
             return c.op_div(context, y);

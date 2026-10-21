@@ -28,6 +28,7 @@ package org.jruby;
 
 import java.math.BigInteger;
 
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
@@ -42,6 +43,8 @@ import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.runtime.Visibility.PRIVATE;
 import org.jruby.runtime.builtin.IRubyObject;
+import static org.jruby.util.BitPacker.unpackHigh;
+import static org.jruby.util.BitPacker.unpackLow;
 import org.jruby.util.Random;
 
 /**
@@ -86,8 +89,8 @@ public class RubyRandom extends RubyRandomBase {
                 return new Random((int) v);
             } else {
                 int[] ints = new int[2];
-                ints[0] = (int) v;
-                ints[1] = (int) (v >> 32);
+                ints[0] = unpackLow(v);
+                ints[1] = unpackHigh(v);
                 return new Random(ints);
             }
         }
@@ -265,14 +268,14 @@ public class RubyRandom extends RubyRandomBase {
         return this;
     }
 
-    // MRI: random_s_rand
+    @CRuby(value = "random_s_rand", file = "random.c")
     @JRubyMethod(name = "rand", meta = true)
     public static IRubyObject randDefault(ThreadContext context, IRubyObject recv) {
         RandomType random = getDefaultRand(context);
         return randFloat(context, random);
     }
 
-    // MRI: random_s_rand
+    @CRuby(value = "random_s_rand", file = "random.c")
     @JRubyMethod(name = "rand", meta = true)
     public static IRubyObject randDefault(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         RandomType random = getDefaultRand(context);
@@ -432,7 +435,7 @@ public class RubyRandom extends RubyRandomBase {
             return v;
         }
 
-        // MRI: try_get_rnd
+        @CRuby(value = "try_get_rnd", file = "random.c")
         static RandomType tryGetRnd(ThreadContext context, IRubyObject obj) {
             if (obj == context.runtime.getRandomClass()) {
                 return getDefaultRand(context);

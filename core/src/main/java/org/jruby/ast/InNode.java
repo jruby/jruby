@@ -48,4 +48,29 @@ public class InNode extends Node {
     public NodeType getNodeType() {
         return NodeType.INNODE;
     }
+
+    // ---- branch coverage: where the 'else' keyword following this clause starts (when nextCase is an else body) ----
+
+    // null when there is none, or positions are not recorded
+    private SourcePosition elseStart() {
+        return (SourcePosition) getSourceDetail();
+    }
+
+    public void setElseStart(long elseStart) {
+        setSourceDetail(SourcePosition.of(elseStart));
+    }
+
+    public boolean hasElseStart() {
+        return elseStart() != null;
+    }
+
+    public int getElseStartLine() {
+        SourcePosition elseStart = elseStart();
+        return elseStart == null ? -1 : elseStart.line();
+    }
+
+    public int getElseStartColumn() {
+        SourcePosition elseStart = elseStart();
+        return elseStart == null ? -1 : elseStart.column();
+    }
 }

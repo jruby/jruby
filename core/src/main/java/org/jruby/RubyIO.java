@@ -65,6 +65,7 @@ import jnr.posix.POSIX;
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.transcode.EConvFlags;
+import org.jruby.anno.CRuby;
 import org.jruby.api.API;
 import org.jruby.api.Convert;
 import org.jruby.ast.util.ArgsUtil;
@@ -221,7 +222,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         setupPopen(context, ioOptions.getModeFlags(), process);
     }
 
-    // MRI: prep_stdio
+    @CRuby(value = "prep_stdio", file = "io.c")
     public static RubyIO prepStdio(Ruby runtime, InputStream f, Channel c, int fmode, RubyClass klass, String path) {
         OpenFile fptr;
         RubyIO io = prepIO(runtime.getCurrentContext(), c, fmode | OpenFile.PREP | EncodingUtils.DEFAULT_TEXTMODE, klass, path);
@@ -243,7 +244,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return recheckTTY(runtime, fptr, io);
     }
 
-    // MRI: prep_stdio
+    @CRuby(value = "prep_stdio", file = "io.c")
     public static RubyIO prepStdio(Ruby runtime, OutputStream f, Channel c, int fmode, RubyClass klass, String path) {
         OpenFile fptr;
         RubyIO io = prepIO(runtime.getCurrentContext(), c, fmode | OpenFile.PREP | EncodingUtils.DEFAULT_TEXTMODE, klass, path);
@@ -289,7 +290,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
-    // MRI: prep_io
+    @CRuby(value = "prep_io", file = "io.c")
     private static RubyIO prepIO(ThreadContext context, Channel fd, int fmode, RubyClass klass, String path) {
         OpenFile fp;
         RubyIO io = (RubyIO)klass.allocate(context);
@@ -326,7 +327,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return openFile;
     }
 
-    // MRI: rb_io_get_fptr
+    @CRuby(value = "rb_io_get_fptr", file = "io.c")
     public OpenFile getOpenFileInitialized() {
         checkInitialized();
         return openFile;
@@ -478,7 +479,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return getOpenFileChecked().channel();
     }
 
-    // io_reopen
+    @CRuby(value = "io_reopen", file = "io.c")
     protected RubyIO reopenIO(ThreadContext context, RubyIO nfile) {
         OpenFile fptr, orig;
         ChannelFD fd, fd2;
@@ -595,7 +596,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         OpenFile.cloexecDup2(new PosixShim(runtime), oldfd, newfd);
     }
 
-    // rb_io_binmode
+    @CRuby(value = "rb_io_binmode", file = "io.c")
     private void setBinmode() {
         OpenFile fptr;
 
@@ -624,7 +625,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
-    // MRI: rb_io_reopen
+    @CRuby(value = "rb_io_reopen", file = "io.c")
     @JRubyMethod(name = "reopen", required = 1, optional = 1, checkArity = false)
     public IRubyObject reopen(ThreadContext context, IRubyObject[] args) {
         int argc = Arity.checkArgumentCount(context, args, 1, 2);
@@ -794,7 +795,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
-    // MRI rb_io_getline_0
+    @CRuby(value = "rb_io_getline_0", file = "io.c")
     private IRubyObject getlineImplSlowPart(ThreadContext context, final OpenFile fptr,
         RubyString str, IRubyObject rs, final int limit, final boolean chomp) {
 
@@ -1181,7 +1182,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return this;
     }
 
-    // MRI: rb_io_set_encoding_by_bom
+    @CRuby(value = "rb_io_set_encoding_by_bom", file = "io.c")
     @JRubyMethod
     public IRubyObject set_encoding_by_bom(ThreadContext context) {
         OpenFile fptr;
@@ -1294,7 +1295,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return port;
     }
 
-    // rb_io_s_sysopen
+    @CRuby(value = "rb_io_s_sysopen", file = "io.c")
     @JRubyMethod(name = "sysopen", required = 1, optional = 2, checkArity = false, meta = true)
     public static IRubyObject sysopen(ThreadContext context, IRubyObject recv, IRubyObject[] argv, Block block) {
         int argc = Arity.checkArgumentCount(context, argv, 1, 3);
@@ -1336,7 +1337,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         public Errno errno;
     }
 
-    // rb_sysopen
+    @CRuby(value = "rb_sysopen", file = "io.c")
     protected static ChannelFD sysopen(Ruby runtime, String fname, int oflags, int perm) {
         ChannelFD fd;
         Sysopen data = new Sysopen();
@@ -1356,7 +1357,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return fd;
     }
 
-    // rb_sysopen_internal
+    @CRuby(value = "rb_sysopen_internal", file = "io.c")
     private static ChannelFD sysopenInternal(Ruby runtime, Sysopen data) {
         ChannelFD fd;
         // TODO: thread eventing as in MRI
@@ -1366,12 +1367,12 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return fd;
     }
 
-    // sysopen_func
+    @CRuby(value = "sysopen_func", file = "io.c")
     private static ChannelFD sysopenFunc(Ruby runtime, Sysopen data) {
         return cloexecOpen(runtime, data);
     }
 
-    // rb_cloexec_open
+    @CRuby(value = "rb_cloexec_open", file = "io.c")
     public static ChannelFD cloexecOpen(Ruby runtime, Sysopen data) {
         Channel ret = null;
         if (OpenFlags.O_CLOEXEC.defined()) {
@@ -1393,14 +1394,14 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return fd;
     }
 
-    // MRI: rb_io_autoclose_p
+    @CRuby(value = "rb_io_autoclose_p", file = "io.c")
     public boolean isAutoclose() {
         OpenFile fptr;
         fptr = getOpenFileChecked();
         return fptr.isAutoclose();
     }
 
-    // MRI: rb_io_set_autoclose
+    @CRuby(value = "rb_io_set_autoclose", file = "io.c")
     public void setAutoclose(boolean autoclose) {
         OpenFile fptr;
         fptr = getOpenFileChecked();
@@ -1427,7 +1428,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return binmode(getCurrentContext());
     }
 
-        // MRI: rb_io_binmode_m
+    @CRuby(value = "rb_io_binmode_m", file = "io.c")
     @JRubyMethod(name = "binmode")
     public IRubyObject binmode(ThreadContext context) {
         setAscii8bitBinmode();
@@ -1439,13 +1440,13 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return this;
     }
 
-    // MRI: rb_io_binmode_p
+    @CRuby(value = "rb_io_binmode_p", file = "io.c")
     @JRubyMethod(name = "binmode?")
     public IRubyObject op_binmode(ThreadContext context) {
         return asBoolean(context, getOpenFileChecked().isBinmode());
     }
 
-    // rb_io_syswrite
+    @CRuby(value = "rb_io_syswrite", file = "io.c")
     @JRubyMethod(name = "syswrite")
     public IRubyObject syswrite(ThreadContext context, IRubyObject str) {
         OpenFile fptr;
@@ -1490,7 +1491,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return ioWriteNonblock(context, context.runtime, arg0, !exception);
     }
 
-    // MRI: io_write_nonblock
+    @CRuby(value = "io_write_nonblock", file = "io.c")
     private IRubyObject ioWriteNonblock(ThreadContext context, Ruby runtime, IRubyObject str, boolean no_exception) {
         OpenFile fptr;
         long n;
@@ -1779,9 +1780,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         write(getRuntime().getCurrentContext(), (byte) bite);
     }
 
-    /** rb_io_addstr
-     *
-     */
+    @CRuby(value = "rb_io_addstr", file = "io.c")
     @JRubyMethod(name = "<<")
     public IRubyObject op_append(ThreadContext context, IRubyObject anObject) {
         // Claims conversion is done via 'to_s' in docs.
@@ -1817,10 +1816,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     /** Returns the current sync mode.
      *
-     * MRI: rb_io_sync
      *
      * @return the current sync mode.
      */
+    @CRuby(value = "rb_io_sync", file = "io.c")
     @JRubyMethod
     public RubyBoolean sync(ThreadContext context) {
         OpenFile fptr;
@@ -1873,7 +1872,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
-    // rb_io_set_pos
+    @CRuby(value = "rb_io_set_pos", file = "io.c")
     @JRubyMethod(name = "pos=")
     public RubyFixnum pos_set(ThreadContext context, IRubyObject offset) {
         long pos = toLong(context, offset);
@@ -1920,9 +1919,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     /**
      * Print some objects to the stream.
-     *
-     * MRI: rb_io_print
      */
+    @CRuby(value = "rb_io_print", file = "io.c")
     public static IRubyObject print(ThreadContext context, IRubyObject out, IRubyObject[] args) {
         switch (args.length) {
             case 0:
@@ -2049,7 +2047,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return asFixnum(context, doSeek(context, toLong(context, off), interpretSeekWhence(context, whence)));
     }
 
-    // rb_io_seek
+    @CRuby(value = "rb_io_seek", file = "io.c")
     private long doSeek(ThreadContext context, long pos, int whence) {
         OpenFile fptr;
 
@@ -2116,7 +2114,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return toInt(context, whence);
     }
 
-    // rb_io_rewind
+    @CRuby(value = "rb_io_rewind", file = "io.c")
     @JRubyMethod
     public RubyFixnum rewind(ThreadContext context) {
         Ruby runtime = context.runtime;
@@ -2143,7 +2141,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return RubyFixnum.zero(runtime);
     }
 
-    // rb_io_fsync
+    @CRuby(value = "rb_io_fsync", file = "io.c")
     @JRubyMethod
     public RubyFixnum fsync(ThreadContext context) {
         RubyIO io = GetWriteIO();
@@ -2178,10 +2176,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     /** Sets the current sync mode.
      *
-     * MRI: rb_io_set_sync
      *
      * @param sync The new sync mode.
      */
+    @CRuby(value = "rb_io_set_sync", file = "io.c")
     @JRubyMethod(name = "sync=")
     public IRubyObject sync_set(ThreadContext context, IRubyObject sync) {
         setSync(sync.isTrue());
@@ -2201,7 +2199,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return fptr.isSync();
     }
 
-    // rb_io_eof
+    @CRuby(value = "rb_io_eof", file = "io.c")
     @JRubyMethod(name = {"eof?", "eof"})
     public RubyBoolean eof_p(ThreadContext context) {
         OpenFile fptr;
@@ -2257,7 +2255,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
-    // MRI: rb_io_init_copy
+    @CRuby(value = "rb_io_init_copy", file = "io.c")
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize_copy(ThreadContext context, IRubyObject _io){
         RubyIO dest = this;
@@ -2346,9 +2344,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
      * it from our magical all open file descriptor pool.</p>
      *
      * @return The IO. Returns nil if the IO was already closed.
-     *
-     * MRI: rb_io_close_m
      */
+    @CRuby(value = "rb_io_close_m", file = "io.c")
     @JRubyMethod
     public IRubyObject close(final ThreadContext context) {
         if (isClosed()) return context.nil;
@@ -2357,7 +2354,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     public final void close() { close(getRuntime().getCurrentContext()); }
 
-    // io_close
+    @CRuby("io_close")
     protected static IRubyObject ioClose(ThreadContext context, IRubyObject io) {
         IOSites sites = sites(context);
         IRubyObject closed = io.checkCallMethod(context, sites.closed_checked);
@@ -2377,7 +2374,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
-    // rb_io_close
+    @CRuby(value = "rb_io_close", file = "io.c")
     protected IRubyObject rbIoClose(ThreadContext context) {
         OpenFile fptr;
         RubyIO write_io;
@@ -2411,6 +2408,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             fptr.interruptBlockingThreads(context);
             try {
                 fptr.unlock();
+                fptr.interruptSchedulerWaiters(context);
                 fptr.waitForBlockingThreads(context);
             } finally {
                 fptr.lock();
@@ -2444,7 +2442,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return context.nil;
     }
 
-    // MRI: rb_io_close_write
+    @CRuby(value = "rb_io_close_write", file = "io.c")
     @JRubyMethod
     public IRubyObject close_write(ThreadContext context) {
         Ruby runtime = context.runtime;
@@ -2626,10 +2624,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     /** Flushes the IO output stream.
      *
-     * MRI: rb_io_flush
      *
      * @return The IO.
      */
+    @CRuby("rb_io_flush")
     @JRubyMethod
     public RubyIO flush(ThreadContext context) {
         return flushRaw(context, true);
@@ -2637,7 +2635,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     public void flush() { flush(getRuntime().getCurrentContext()); }
 
-    // rb_io_flush_raw
+    @CRuby(value = "rb_io_flush_raw", file = "io.c")
     protected RubyIO flushRaw(ThreadContext context, boolean sync) {
         OpenFile fptr;
 
@@ -2674,27 +2672,27 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
      *
      */
 
-    // rb_io_gets_m
+    @CRuby(value = "rb_io_gets_m", file = "io.c")
     @JRubyMethod(name = "gets", writes = LASTLINE, keywords = true)
     public IRubyObject gets(ThreadContext context) {
         return Getline.getlineCall(context, GETLINE, this, getReadEncoding(context));
     }
 
-    // rb_io_gets_m
+    @CRuby(value = "rb_io_gets_m", file = "io.c")
     @JRubyMethod(name = "gets", writes = LASTLINE, keywords = true)
     public IRubyObject gets(ThreadContext context, IRubyObject arg) {
         boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
         return Getline.getlineCall(context, GETLINE, this, getReadEncoding(context), arg, keywords);
     }
 
-    // rb_io_gets_m
+    @CRuby(value = "rb_io_gets_m", file = "io.c")
     @JRubyMethod(name = "gets", writes = LASTLINE, keywords = true)
     public IRubyObject gets(ThreadContext context, IRubyObject rs, IRubyObject limit_arg) {
         boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
         return Getline.getlineCall(context, GETLINE, this, getReadEncoding(context), rs, limit_arg, keywords);
     }
 
-    // rb_io_gets_m
+    @CRuby(value = "rb_io_gets_m", file = "io.c")
     @JRubyMethod(name = "gets", writes = LASTLINE, keywords = true)
     public IRubyObject gets(ThreadContext context, IRubyObject rs, IRubyObject limit_arg, IRubyObject opt) {
         boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
@@ -3010,7 +3008,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return write.call(context, maybeIO, maybeIO, arg0, arg1);
     }
 
-    // MRI: rb_io_writev
+    @CRuby(value = "rb_io_writev", file = "io.c")
     public static IRubyObject writev(ThreadContext context, IRubyObject io, IRubyObject[] args) {
         switch (args.length) {
             case 0:
@@ -3038,17 +3036,17 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return write.call(context, io, io, args);
     }
 
-    // MRI: rb_io_writev
+    @CRuby(value = "rb_io_writev", file = "io.c")
     public static IRubyObject writev(ThreadContext context, IRubyObject io) {
         return sites(context).write.call(context, io, io);
     }
 
-    // MRI: rb_io_writev
+    @CRuby(value = "rb_io_writev", file = "io.c")
     public static IRubyObject writev(ThreadContext context, IRubyObject io, IRubyObject arg0) {
         return sites(context).write.call(context, io, io, arg0);
     }
 
-    // MRI: rb_io_writev
+    @CRuby(value = "rb_io_writev", file = "io.c")
     public static IRubyObject writev(ThreadContext context, IRubyObject io, IRubyObject arg0, IRubyObject arg1) {
         CachingCallSite write = sites(context).write;
 
@@ -3064,7 +3062,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return write.call(context, io, io, arg0, arg1);
     }
 
-    // MRI: rb_io_writev
+    @CRuby(value = "rb_io_writev", file = "io.c")
     public static IRubyObject writev(ThreadContext context, IRubyObject io, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         CachingCallSite write = sites(context).write;
 
@@ -3180,7 +3178,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return c == -1 ? context.nil : asFixnum(context, c & 0xff);
     }
 
-    // rb_io_getbyte
+    @CRuby(value = "rb_io_getbyte", file = "io.c")
     public int getByte(ThreadContext context) {
         OpenFile fptr = getOpenFileChecked();
 
@@ -3207,7 +3205,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
-    // rb_io_readbyte
+    @CRuby(value = "rb_io_readbyte", file = "io.c")
     @JRubyMethod
     public IRubyObject readbyte(ThreadContext context) {
         IRubyObject c = getbyte(context);
@@ -3217,7 +3215,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return c;
     }
 
-    // rb_io_getc
+    @CRuby(value = "rb_io_getc", file = "io.c")
     @JRubyMethod(name = "getc")
     public IRubyObject getc(ThreadContext context) {
         Ruby runtime = context.runtime;
@@ -3237,7 +3235,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
-    // rb_io_ungetbyte
+    @CRuby(value = "rb_io_ungetbyte", file = "io.c")
     @JRubyMethod
     public IRubyObject ungetbyte(ThreadContext context, IRubyObject b) {
         OpenFile fptr = getOpenFileChecked();
@@ -3260,7 +3258,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return context.nil;
     }
 
-    // MRI: rb_io_ungetc
+    @CRuby(value = "rb_io_ungetc", file = "io.c")
     @JRubyMethod
     public IRubyObject ungetc(ThreadContext context, IRubyObject c) {
         Ruby runtime = context.runtime;
@@ -3326,25 +3324,25 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return doReadNonblock(context, arg0, arg1, arg2, exception);
     }
 
-    // MRI: io_read_nonblock
+    @CRuby(value = "io_read_nonblock", file = "io.c")
     public IRubyObject doReadNonblock(ThreadContext context, IRubyObject arg0, boolean exception) {
         IRubyObject ret = getPartial(context, arg0, true, !exception);
         return ret == context.nil ? nonblockEOF(context.runtime, !exception) : ret;
     }
 
-    // MRI: io_read_nonblock
+    @CRuby(value = "io_read_nonblock", file = "io.c")
     public IRubyObject doReadNonblock(ThreadContext context, IRubyObject arg0, IRubyObject arg1, boolean exception) {
         IRubyObject ret = getPartial(context, arg0, arg1, true, !exception);
         return ret == context.nil ? nonblockEOF(context.runtime, !exception) : ret;
     }
 
-    // MRI: io_read_nonblock
+    @CRuby(value = "io_read_nonblock", file = "io.c")
     public IRubyObject doReadNonblock(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, boolean exception) {
         IRubyObject ret = getPartial(context, arg0, arg1, arg2, true, !exception);
         return ret == context.nil ? nonblockEOF(context.runtime, !exception) : ret;
     }
 
-    // MRI: io_read_nonblock
+    @CRuby(value = "io_read_nonblock", file = "io.c")
     public IRubyObject doReadNonblock(ThreadContext context, IRubyObject[] args, boolean exception) {
         IRubyObject ret = getPartial(context, args, true, !exception);
         return ret == context.nil ? nonblockEOF(context.runtime, !exception) : ret;
@@ -3381,7 +3379,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return value;
     }
 
-    // MRI: io_getpartial
+    @CRuby(value = "io_getpartial", file = "io.c")
     IRubyObject getPartial(ThreadContext context, boolean nonblock, boolean noException) {
         return getPartialCommon(context, context.runtime, context.nil, context.nil, nonblock, noException);
     }
@@ -3475,13 +3473,13 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return n == 0 ? context.nil : str;
     }
 
-    // MRI: rb_io_sysread
+    @CRuby(value = "rb_io_sysread", file = "io.c")
     @JRubyMethod(name = "sysread")
     public IRubyObject sysread(ThreadContext context, IRubyObject _length) {
         return sysreadCommon(context, context.runtime, _length, context.nil);
     }
 
-    // MRI: rb_io_sysread
+    @CRuby(value = "rb_io_sysread", file = "io.c")
     @JRubyMethod(name = "sysread")
     public IRubyObject sysread(ThreadContext context, IRubyObject _length, IRubyObject _str) {
         return sysreadCommon(context, context.runtime, _length, _str);
@@ -3538,7 +3536,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return read(getCurrentContext(), args);
     }
 
-    // io_read
+    @CRuby(value = "io_read", file = "io.c")
     public IRubyObject read(ThreadContext context, IRubyObject[] args) {
         return switch (args.length) {
             case 0 -> read(context);
@@ -3704,9 +3702,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     /**
      * <p>Invoke a block for each byte.</p>
-     *
-     * MRI: rb_io_each_byte
      */
+    @CRuby(value = "rb_io_each_byte", file = "io.c")
     public IRubyObject each_byteInternal(ThreadContext context, Block block) {
         if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_byte");
 
@@ -3742,7 +3739,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return each_byte(context, block);
     }
 
-    // rb_io_each_char
+    @CRuby(value = "rb_io_each_char", file = "io.c")
     public IRubyObject each_charInternal(ThreadContext context, Block block) {
         Ruby runtime = context.runtime;
         OpenFile fptr;
@@ -3790,7 +3787,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return eachCodePointCommon(context, block, "each_codepoint");
     }
 
-    // rb_io_each_codepoint
+    @CRuby(value = "rb_io_each_codepoint", file = "io.c")
     private IRubyObject eachCodePointCommon(ThreadContext context, Block block, String methodName) {
         OpenFile fptr;
         Encoding enc;
@@ -3895,7 +3892,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     @JRubyMethod(keywords = true)
     public IRubyObject each(final ThreadContext context, IRubyObject arg0, final Block block) {
         boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
-        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each");
+        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each", new IRubyObject[] { arg0 }, keywords);
 
         return Getline.getlineCall(context, GETLINE_YIELD, this, getReadEncoding(context), arg0, block, keywords);
     }
@@ -3903,7 +3900,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     @JRubyMethod(keywords = true)
     public IRubyObject each(final ThreadContext context, IRubyObject arg0, IRubyObject arg1, final Block block) {
         boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
-        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each");
+        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each", new IRubyObject[] { arg0, arg1 }, keywords);
 
         return Getline.getlineCall(context, GETLINE_YIELD, this, getReadEncoding(context), arg0, arg1, block, keywords);
     }
@@ -3911,7 +3908,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     @JRubyMethod(keywords = true)
     public IRubyObject each(final ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, final Block block) {
         boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
-        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each");
+        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each", new IRubyObject[] { arg0, arg1, arg2 }, keywords);
 
         return Getline.getlineCall(context, GETLINE_YIELD, this, getReadEncoding(context), arg0, arg1, arg2, block, keywords);
     }
@@ -3943,7 +3940,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     public IRubyObject each_line(final ThreadContext context, IRubyObject arg0, final Block block) {
         boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
 
-        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line", arg0);
+        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line", new IRubyObject[] { arg0 }, keywords);
 
         return Getline.getlineCall(context, GETLINE_YIELD, this, getReadEncoding(context), arg0, block, keywords);
     }
@@ -3952,7 +3949,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     public IRubyObject each_line(final ThreadContext context, IRubyObject arg0, IRubyObject arg1, final Block block) {
         boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
 
-        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line", arg0, arg1);
+        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line", new IRubyObject[] { arg0, arg1 }, keywords);
 
         return Getline.getlineCall(context, GETLINE_YIELD, this, getReadEncoding(context), arg0, arg1, block, keywords);
     }
@@ -3961,7 +3958,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     public IRubyObject each_line(final ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, final Block block) {
         boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
 
-        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line", arg0, arg1, arg2);
+        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_line", new IRubyObject[] { arg0, arg1, arg2 }, keywords);
 
         return Getline.getlineCall(context, GETLINE_YIELD, this, getReadEncoding(context), arg0, arg1, arg2, block, keywords);
     }
@@ -4044,7 +4041,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     /* class methods for IO */
 
-    // rb_io_s_foreach
+    @CRuby(value = "rb_io_s_foreach", file = "io.c")
     private static IRubyObject foreachInternal(ThreadContext context, IRubyObject recv, IRubyObject[] args, boolean keywords, Block block) {
         IRubyObject opt = ArgsUtil.getOptionsArg(context.runtime, args);
         RubyIO io = openKeyArgs(context, recv, args, opt);
@@ -4084,7 +4081,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         Arity.checkArgumentCount(context, args.length - (keywords ? 1 : 0), 1, 4);
 
-        if (!block.isGiven()) return enumeratorize(context.runtime, recv, "foreach", args);
+        if (!block.isGiven()) return enumeratorize(context.runtime, recv, "foreach", args, keywords);
 
         return foreachInternal(context, recv, args, keywords, block);
     }
@@ -4133,7 +4130,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return args.go(context);
     }
 
-    // MRI: io_wait_readable
+    @CRuby("io_wait_readable")
     @JRubyMethod(optional = 1)
     public IRubyObject wait_readable(ThreadContext context, IRubyObject[] argv) {
         OpenFile fptr = this.getOpenFileChecked();
@@ -4145,7 +4142,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return ioWaitEvent(context, IOEvent.IO_READABLE.value, argv.length == 1 ? argv[0] : context.nil, true);
     }
 
-    // MRI: io_wait_writable
+    @CRuby("io_wait_writable")
     @JRubyMethod(optional = 1)
     public IRubyObject wait_writable(ThreadContext context, IRubyObject[] argv) {
         OpenFile fptr = this.getOpenFileChecked();
@@ -4155,7 +4152,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return ioWaitEvent(context, IOEvent.IO_WRITABLE.value, argv.length == 1 ? argv[0] : context.nil, true);
     }
 
-    // MRI: io_wait
+    @CRuby("io_wait")
     @JRubyMethod(rest = true)
     public IRubyObject wait(ThreadContext context, IRubyObject[] argv) {
         OpenFile fptr = this.getOpenFileChecked();
@@ -4195,7 +4192,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return ioWaitEvent(context, events, timeout, returnIO);
     }
 
-    // MRI: io_wait_event
+    @CRuby(value = "io_wait_event", file = "io.c")
     private IRubyObject ioWaitEvent(ThreadContext context, int events, IRubyObject timeout, boolean returnIO) {
         IRubyObject result = ioWait(context, events, timeout);
 
@@ -4228,7 +4225,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return ready == 0 ? context.fals : asFixnum(context, ready);
     }
 
-    // MRI: wait_mode_sym
+    @CRuby(value = "wait_mode_sym", file = "io.c")
     private static int waitModeSym(ThreadContext context, RubySymbol mode) {
         return switch (mode.asJavaString()) { // 7 bit comparison
             case "r", "read", "readable" -> IOEvent.IO_READABLE.value;
@@ -4238,7 +4235,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         };
     }
 
-    // MRI: io_event_from_value
+    @CRuby(value = "io_event_from_value", file = "io.c")
     private static int ioEventFromValue(ThreadContext context, IRubyObject value) {
         int events = toInt(context, value);
 
@@ -4269,7 +4266,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return (long) (RubyTime.convertTimeInterval(context, timeout) * 1000);
     }
 
-    // MRI: rb_io_advise
+    @CRuby(value = "rb_io_advise", file = "io.c")
     @JRubyMethod(required = 1, optional = 2, checkArity = false)
     public IRubyObject advise(ThreadContext context, IRubyObject[] argv) {
         IRubyObject advice, offset, len;
@@ -4312,7 +4309,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return context.nil;
     }
 
-    // MRI: advice_arg_check
+    @CRuby(value = "advice_arg_check", file = "io.c")
     static PosixFadvise adviceArgCheck(ThreadContext context, IRubyObject advice) {
         if (!(advice instanceof RubySymbol)) throw typeError(context, "advise must be a symbol");
 
@@ -4334,7 +4331,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
-    // open_key_args
+    @CRuby(value = "open_key_args", file = "io.c")
     private static RubyIO openKeyArgs(ThreadContext context, IRubyObject recv, IRubyObject[] argv, IRubyObject opt) {
         IRubyObject vmode = context.nil, vperm = context.nil, v;
 
@@ -4365,7 +4362,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return ioOpen(context, recv, path, vmode, vperm, opt);
     }
 
-    // MRI: rb_io_open
+    @CRuby(value = "rb_io_open", file = "io.c")
     public static IRubyObject ioOpen(ThreadContext context, IRubyObject recv, IRubyObject filename, IRubyObject vmode, IRubyObject vperm, IRubyObject opt) {
         return ioOpen(context, recv, filename.asString(), vmode, vperm, opt);
     }
@@ -4382,7 +4379,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return ioOpenGeneric(context, recv, filename, oflags_p[0], fmode_p[0], convConfig, perm);
     }
 
-    // MRI: rb_io_open_generic
+    @CRuby(value = "rb_io_open_generic", file = "io.c")
     private static RubyIO ioOpenGeneric(ThreadContext context, IRubyObject recv, IRubyObject filename, int oflags, int fmode, IOEncodable convconfig, int perm) {
         if ((filename instanceof RubyString name) && name.isEmpty()) throw context.runtime.newErrnoENOENTError();
 
@@ -4487,19 +4484,19 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return read(context, recv, args, Block.NULL_BLOCK);
     }
 
-    // rb_io_s_binwrite
+    @CRuby(value = "rb_io_s_binwrite", file = "io.c")
     @JRubyMethod(meta = true, required = 2, optional = 2, checkArity = false, keywords = true)
     public static IRubyObject binwrite(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return ioStaticWrite(context, recv, args, true);
     }
 
-    // MRI: rb_io_s_write
+    @CRuby(value = "rb_io_s_write", file = "io.c")
     @JRubyMethod(name = "write", meta = true, required = 2, optional = 2, checkArity = false, keywords = true)
     public static IRubyObject write(ThreadContext context, IRubyObject recv, IRubyObject[] argv) {
         return (ioStaticWrite(context, recv, argv, false));
     }
 
-    // MRI: io_s_write
+    @CRuby(value = "io_s_write", file = "io.c")
     public static IRubyObject ioStaticWrite(ThreadContext context, IRubyObject recv, IRubyObject[] argv, boolean binary) {
         IRubyObject keywords = IRRuntimeHelpers.receiveKeywords(context, argv, false, true, false);
         final Ruby runtime = context.runtime;
@@ -4564,7 +4561,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return io.seek(context, offset);
     }
 
-    // rb_io_s_readlines
+    @CRuby(value = "rb_io_s_readlines", file = "io.c")
     @JRubyMethod(name = "readlines", required = 1, optional = 2, checkArity = false, meta = true, keywords = true)
     public static IRubyObject readlines(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         // FIXME: readlines and friends all look at kwargs deep in IO code but we also do it at beginning of methods
@@ -4883,7 +4880,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         }
     }
 
-    // MRI: pipe_pair_close
+    @CRuby(value = "pipe_pair_close", file = "io.c")
     private static void pipePairClose(ThreadContext context, RubyIO r, RubyIO w) {
         try {
             ioClose(context, r);
@@ -5217,11 +5214,21 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         ByteList strByteList = string.getByteList();
         ByteBuffer wrap = ByteBuffer.wrap(strByteList.unsafeBytes(), strByteList.begin(), length);
-        int read = OpenFile.preadInternal(context, fptr, fd, wrap, from, length);
 
-        string.setReadLength(read);
+        boolean locked = fptr.lock();
+        try {
+            int read = OpenFile.preadInternal(context, fptr, fd, wrap, from, length);
 
-        return string;
+            string.setReadLength(read);
+
+            return string;
+        } catch (EOFError e) {
+            string.setReadLength(0);
+
+            throw e;
+        } finally {
+            if (locked) fptr.unlock();
+        }
     }
 
     @JRubyMethod(name = "pwrite")
@@ -5238,9 +5245,14 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         int length = strByteList.realSize();
         ByteBuffer wrap = ByteBuffer.wrap(strByteList.unsafeBytes(), strByteList.begin(), length);
 
-        int written = OpenFile.pwriteInternal(context, fptr, fd, wrap, off, length);
+        boolean locked = fptr.lock();
+        try {
+            int written = OpenFile.pwriteInternal(context, fptr, fd, wrap, off, length);
 
-        return asFixnum(context, written);
+            return asFixnum(context, written);
+        } finally {
+            if (locked) fptr.unlock();
+        }
     }
 
     @JRubyMethod(name = {"path", "to_path"})
@@ -5507,7 +5519,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         return super.toJava(target);
     }
 
-    // MRI: rb_io_ascii8bit_binmode
+    @CRuby(value = "rb_io_ascii8bit_binmode", file = "io.c")
     protected RubyIO setAscii8bitBinmode() {
         OpenFile fptr;
 

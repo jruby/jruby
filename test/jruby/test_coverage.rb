@@ -9,7 +9,7 @@ class TestCoverage < Test::Unit::TestCase
   def teardown
     Coverage.result if Coverage.state != :idle
     # each test loads METHODS again; drop the classes so definitions do not pile up across tests
-    [:Sub, :Prepended, :Mixin, :Covered].each { |c| Object.send(:remove_const, c) if Object.const_defined?(c, false) }
+    [:Sub, :Prepended, :Mixin, :Covered, :Branchy].each { |c| Object.send(:remove_const, c) if Object.const_defined?(c, false) }
   end
 
   def test_coverage_handles_null_filename # jruby/jruby#5099
@@ -18,8 +18,8 @@ class TestCoverage < Test::Unit::TestCase
     assert_nothing_raised { Coverage.result }
   end
 
-  # The MRI suite covers the basics of method coverage. These tests cover what is specific to JRuby: the
-  # execution engines, real parallelism, and the ways a method entry can be created.
+  # The Ruby specs (spec/ruby/library/coverage) cover method coverage as every Ruby reports it. These tests cover
+  # what is specific to JRuby: the execution engines, real parallelism, and the ways a method entry can be created.
 
   METHODS = <<~'RUBY'
     class Covered
@@ -51,56 +51,17 @@ class TestCoverage < Test::Unit::TestCase
     end
   RUBY
 
-  def test_method_coverage_keys_and_counts
+  def test_method_coverage_keys_and_counts_of_blocks_turned_into_methods
     with_source(METHODS) do |path|
       Coverage.start(methods: true)
       load path
       c = Covered.new
-      c.plain(1, d: 2)
       c.block(1)
-      c.lam(1)
-      2.times { c.aliased(1, d: 2) }
-      Covered.single
-      Covered.single2
-      Mixin.mixed
-      Prepended.new.prepended
-      Sub.new.send(:plain, 1, d: 2)
+      2.times { c.lam(1) }
       methods = Coverage.result[path][:methods]
-
-      expected = {
-        key(Covered, :plain, 2, 'def', 'end') => 4,
-        key(Covered, :block, 3, '{', '}') => 1,
-        key(Covered, :lam, 4, '(x)', '}') => 1,
-        key(Covered.singleton_class, :single, 6, 'def', 'end') => 1,
-        key(Covered.singleton_class, :single2, 8, 'def', 'end') => 1,
-        key(Covered, :strict, 10, 'def', 'end') => 0,
-        key(Covered, :keyword, 11, 'def', 'end') => 0,
-        key(Covered, :default, 12, 'def', 'end') => 0,
-        [Covered, :multi, 13, 2, 15, 5] => 0,
-        key(Mixin, :mixed, 18, 'def', 'end') => 0,
-        key(Mixin.singleton_class, :mixed, 18, 'def', 'end') => 1,
-        key(Prepended, :prepended, 23, 'def', 'end') => 1,
-      }
-      assert_equal expected, methods
-    end
-  end
-
-  EVALED = <<~'RUBY'
-    class Covered
-      class_eval <<-INNER, __FILE__, __LINE__ + 1
-        def from_eval(x); x; end
-      INNER
-    end
-  RUBY
-
-  # An eval that is not covered still counts the calls of the methods it defines, as in MRI. Only its lines are
-  # left out (see Coverage.setup's eval option).
-  def test_method_coverage_counts_methods_defined_by_an_eval
-    with_source(EVALED) do |path|
-      Coverage.start(methods: true)
-      load path
-      3.times { Covered.new.from_eval(1) }
-      assert_equal 3, Coverage.result[path][:methods][key(Covered, :from_eval, 3, 'def', 'end')]
+      assert_equal 12, methods.size
+      assert_equal 1, methods[key(Covered, :block, 3, '{', '}')]
+      assert_equal 2, methods[key(Covered, :lam, 4, '(x)', '}')]
     end
   end
 
@@ -135,32 +96,20 @@ class TestCoverage < Test::Unit::TestCase
     end
   end
 
-  def test_method_coverage_counts_only_calls_that_get_past_argument_processing
+  def test_method_coverage_counts_only_block_calls_that_get_past_argument_processing
     with_source(METHODS) do |path|
       Coverage.start(methods: true)
       load path
       c = Covered.new
-      assert_raise(ArgumentError) { c.strict(1, 2) }
-      assert_raise(ArgumentError) { c.keyword }
-      assert_raise(RuntimeError) { c.default }
       assert_raise(ArgumentError) { c.block(1, 2) }
       assert_raise(ArgumentError) { c.lam }
       methods = Coverage.peek_result[path][:methods]
-      assert_equal 0, methods[key(Covered, :strict, 10, 'def', 'end')]
-      assert_equal 0, methods[key(Covered, :keyword, 11, 'def', 'end')]
-      assert_equal 0, methods[key(Covered, :default, 12, 'def', 'end')]
       assert_equal 0, methods[key(Covered, :block, 3, '{', '}')]
       assert_equal 0, methods[key(Covered, :lam, 4, '(x)', '}')]
 
-      c.strict(1)
-      c.keyword(a: 1)
-      c.default(1)
       c.block(1)
       c.lam(1)
       methods = Coverage.result[path][:methods]
-      assert_equal 1, methods[key(Covered, :strict, 10, 'def', 'end')]
-      assert_equal 1, methods[key(Covered, :keyword, 11, 'def', 'end')]
-      assert_equal 1, methods[key(Covered, :default, 12, 'def', 'end')]
       assert_equal 1, methods[key(Covered, :block, 3, '{', '}')]
       assert_equal 1, methods[key(Covered, :lam, 4, '(x)', '}')]
     end
@@ -210,41 +159,6 @@ class TestCoverage < Test::Unit::TestCase
     end
   end
 
-  def test_method_coverage_follows_suspend_resume_and_clear
-    with_source(METHODS) do |path|
-      Coverage.setup(methods: true)
-      load path
-      c = Covered.new
-      c.strict(1)                                 # set up but not running: not counted
-      Coverage.resume
-      c.strict(1)
-      Coverage.suspend
-      c.strict(1)                                 # suspended: not counted
-      assert_equal 1, Coverage.peek_result[path][:methods][key(Covered, :strict, 10, 'def', 'end')]
-      Coverage.resume
-      c.strict(1)
-      assert_equal 2, Coverage.result(stop: false, clear: true)[path][:methods][key(Covered, :strict, 10, 'def', 'end')]
-      assert_equal 0, Coverage.peek_result[path][:methods][key(Covered, :strict, 10, 'def', 'end')]
-      c.strict(1)
-      assert_equal 1, Coverage.result[path][:methods][key(Covered, :strict, 10, 'def', 'end')]
-      assert_equal :idle, Coverage.state
-    end
-  end
-
-  # define_method(name, method_object) binds a copy that keeps its own name. MRI keys the entry by the name it
-  # was defined under, not the name it was copied from.
-  def test_method_coverage_keys_define_method_from_method_object_by_its_new_name
-    source = "class Covered\n  def original; end\nend\nclass Sub < Covered\n  define_method(:renamed, instance_method(:original))\nend\n"
-    with_source(source) do |path|
-      Coverage.start(methods: true)
-      load path
-      Sub.new.renamed
-      methods = Coverage.result[path][:methods]
-      assert_equal 1, methods[key(Sub, :renamed, 2, 'def', 'end')]
-      assert_equal 0, methods[key(Covered, :original, 2, 'def', 'end')]
-    end
-  end
-
   # Once measurement stops nothing stays instrumented: the counter is detached, so later calls do not pay for it.
   def test_method_coverage_detaches_counters_when_measurement_stops
     with_source("class Covered\n  def ping; end\nend\n") do |path|
@@ -278,26 +192,6 @@ class TestCoverage < Test::Unit::TestCase
     end
   end
 
-  def test_method_coverage_result_shape_per_mode
-    with_source("def shape; end\n") do |path|
-      Coverage.start(methods: true)
-      load path
-      assert_equal({ methods: { key(Object, :shape, 1, 'def', 'end') => 0 } }, Coverage.result[path])
-
-      Coverage.start(lines: true, methods: true)
-      load path
-      assert_equal({ lines: [1], methods: { key(Object, :shape, 1, 'def', 'end') => 0 } }, Coverage.result[path])
-
-      Coverage.start(oneshot_lines: true, methods: true)
-      load path
-      assert_equal({ oneshot_lines: [1], methods: { key(Object, :shape, 1, 'def', 'end') => 0 } }, Coverage.result[path])
-
-      Coverage.start(:all)
-      load path
-      assert_equal [:lines, :branches, :methods], Coverage.result[path].keys
-    end
-  end
-
   def test_method_coverage_across_execution_modes
     with_source(METHODS) do |path|
       script = File.join(File.dirname(path), 'driver.rb')
@@ -322,6 +216,217 @@ class TestCoverage < Test::Unit::TestCase
         assert_equal expected, jruby("#{flags} #{script}").lines, flags
       end
     end
+  end
+
+  # Branch coverage. The Ruby specs cover what a branch is and where it is; these tests cover what is specific to
+  # JRuby, as for method coverage above.
+
+  BRANCHES = <<~'RUBY'
+    class Branchy
+      def classify(x)
+        if x > 0
+          :positive
+        elsif x < 0
+          :negative
+        else
+          :zero
+        end
+      end
+
+      def describe(x)
+        kind = x.zero? ? :zero : :nonzero
+        kind = :big unless x < 100
+        case x
+        when 0 then :none
+        when 1, 2
+          :few
+        else
+          :many
+        end
+      end
+
+      def count_down(x)
+        while x > 0
+          x -= 1
+        end
+        x += 1 until x > 2
+        x
+      end
+
+      def safe(x)
+        x&.abs
+      end
+
+      def match(x)
+        case x
+        in Integer => n if n > 10 then :large
+        in Integer
+          :small
+        end
+      end
+    end
+  RUBY
+
+  def test_branch_coverage_counts_are_exact_under_parallel_calls
+    source = "def pick(x)\n  x.odd? ? :odd : :even\nend\ndef spin(n)\n  n -= 1 while n > 0\nend\n"
+    with_source(source) do |path|
+      Coverage.start(branches: true)
+      load path
+      threads, calls = 8, 5000
+      threads.times.map { Thread.new { calls.times { |i| pick(i); spin(3) } } }.each(&:join)
+      branches = Coverage.result[path][:branches]
+      assert_equal({ [:then, 1, 2, 11, 2, 15] => threads * calls / 2, [:else, 2, 2, 18, 2, 23] => threads * calls / 2 }, branches[[:if, 0, 2, 2, 2, 23]])
+      assert_equal({ [:body, 4, 5, 2, 5, 8] => threads * calls * 3 }, branches[[:while, 3, 5, 2, 5, 20]])
+    end
+  end
+
+  def test_branch_coverage_of_blocks_turned_into_methods_and_reloaded_files
+    source = "class Reloaded\n  define_method(:sign) { |x| x < 0 ? :neg : :pos }\nend\n"
+    with_source(source) do |path|
+      Coverage.start(branches: true)
+      load path
+      Reloaded.new.sign(1)
+      load path                                    # loading the file again starts its counts over, as in MRI
+      Reloaded.new.sign(-1)
+      branches = Coverage.result[path][:branches]
+      assert_equal({ [:if, 0, 2, 29, 2, 48] => { [:then, 1, 2, 37, 2, 41] => 1, [:else, 2, 2, 44, 2, 48] => 0 } }, branches)
+    end
+  ensure
+    Object.send(:remove_const, :Reloaded) if Object.const_defined?(:Reloaded, false)
+  end
+
+  def test_branch_coverage_across_execution_modes
+    with_source(BRANCHES) do |path|
+      script = File.join(File.dirname(path), 'driver.rb')
+      File.write(script, <<~RUBY)
+        require 'coverage'
+        Coverage.start(branches: true)
+        load #{path.inspect}
+        b = Branchy.new
+        b.classify(1); b.classify(-1); b.classify(0)
+        b.describe(0); b.describe(1); b.describe(200)
+        b.count_down(3)
+        b.safe(nil); b.safe(-2)
+        b.match(20); b.match(3)
+        Coverage.result[#{path.inspect}][:branches].each { |k, v| puts k.inspect; v.each { |kk, vv| puts "  \#{kk.inspect} => \#{vv}" } }
+      RUBY
+
+      expected = jruby(script).lines
+      assert_equal 27, expected.size, expected.join
+
+      ['-X-C', '-X+C', '-Xjit.threshold=0 -Xjit.background=false',
+       '-Xcompile.invokedynamic=true -Xjit.threshold=0 -Xjit.background=false'].each do |flags|
+        assert_equal expected, jruby("#{flags} #{script}").lines, flags
+      end
+    end
+  end
+
+  # Which conditionals MRI folds away (reporting no branch) and which it keeps. The expected result is CRuby's.
+  def test_branch_coverage_folds_conditionals_as_mri_does
+    source = <<~'RUBY'
+      def folds(a)
+        :a if __ENCODING__
+        :b if (1; 2)
+        :c if (a; [1]; {k: a}; (a..1); 2)
+        :d if a || 1
+        :e if (nil)
+        :f if ("x")
+        :g if (true && 1)
+        :h if nil && 1
+        :i if ([a]; 2)
+        if false
+          def dead(x) = x ? 1 : 2
+          [1].each { |x| x ? 1 : 2 }
+        end
+        a => Integer
+        a in String
+      end
+    RUBY
+    with_source(source) do |path|
+      Coverage.start(branches: true)
+      verbose, $VERBOSE = $VERBOSE, nil # literals in conditions
+      begin
+        load path
+      ensure
+        $VERBOSE = verbose
+      end
+      folds(1)
+      assert_equal({
+        [:if, 0, 6, 2, 6, 13] => { [:then, 1, 6, 2, 6, 4] => 0, [:else, 2, 6, 2, 6, 13] => 1 },
+        [:if, 3, 7, 2, 7, 13] => { [:then, 4, 7, 2, 7, 4] => 1, [:else, 5, 7, 2, 7, 13] => 0 },
+        [:if, 6, 8, 2, 8, 19] => { [:then, 7, 8, 2, 8, 4] => 1, [:else, 8, 8, 2, 8, 19] => 0 },
+        [:if, 9, 9, 2, 9, 16] => { [:then, 10, 9, 2, 9, 4] => 0, [:else, 11, 9, 2, 9, 16] => 1 },
+        [:if, 12, 10, 2, 10, 16] => { [:then, 13, 10, 2, 10, 4] => 1, [:else, 14, 10, 2, 10, 16] => 0 },
+      }, Coverage.result[path][:branches])
+    end
+  ensure
+    Object.send(:remove_method, :folds) if Object.private_method_defined?(:folds)
+  end
+
+  def test_line_stub_of_an_empty_file_after_an_empty_else
+    source = <<~'RUBY'
+      x.each do
+        if x
+          1
+        else
+        end
+      end
+    RUBY
+    with_source(source) { |path| Coverage.line_stub(path) }
+    with_source("") { |path| assert_equal [], Coverage.line_stub(path) }
+  end
+
+  # An AST is large and much of it lives as long as the code does, so its nodes only carry what Coverage reports
+  # of the source when Coverage has a use for it.
+
+  POSITIONS = <<~'RUBY'
+    def located(x)
+      y = (x) ? [1].map { |v| v } : -> { 2 }
+      y = 1 unless x&.abs(1)
+      x -= 1 while x > 0
+      case x when 1 then 2 else 3 end
+    end
+  RUBY
+
+  def test_nodes_carry_no_positions_without_coverage
+    assert_equal [], classes_with_positions(POSITIONS)
+  end
+
+  def test_nodes_carry_no_positions_for_line_coverage
+    Coverage.setup(lines: true)
+    assert_equal [], classes_with_positions(POSITIONS)
+  end
+
+  def test_only_definitions_and_blocks_carry_positions_for_method_coverage
+    Coverage.setup(methods: true)
+    assert_equal %w[DefnNode IterNode LambdaNode], classes_with_positions(POSITIONS)
+  end
+
+  def test_nodes_carry_positions_for_branch_coverage
+    Coverage.setup(branches: true)
+    classes = classes_with_positions(POSITIONS)
+    assert_equal [], %w[CallNode CaseNode DefnNode IfNode IterNode LambdaNode WhenOneArgNode WhileNode] - classes, classes.inspect
+  end
+
+  # A parse decides whether to record positions when it starts. Should branch coverage start before it ends (here
+  # from the warning the first line gives while it is parsed), the file is measured with what was recorded.
+  def test_branch_coverage_starting_during_a_parse_measures_the_file_without_positions
+    source = "x = 1\nx if 1\ndef late(x)\n  x ? [1].map { |v| v&.abs } : 2 while x.nil?\nend\nlate(1)\n"
+    with_source(source) do |path|
+      warning = Warning.method(:warn)
+      verbose, $VERBOSE = $VERBOSE, true
+      begin
+        Warning.define_singleton_method(:warn) { |*, **| Coverage.start(branches: true) if Coverage.state == :idle }
+        load path
+      ensure
+        $VERBOSE = verbose
+        Warning.define_singleton_method(:warn, warning)
+      end
+      assert_equal :running, Coverage.state
+      assert_equal({}, Coverage.result.fetch(path)[:branches])
+    end
+  ensure
+    Object.send(:remove_method, :late) if Object.private_method_defined?(:late)
   end
 
   private
@@ -351,5 +456,19 @@ class TestCoverage < Test::Unit::TestCase
 
   def source_line(line)
     @source.lines[line - 1]
+  end
+
+  # The simple names of the classes of the nodes that carry source positions in the AST of the given code
+  def classes_with_positions(code)
+    span = org.jruby.ast.Node.java_class.declared_field('span')
+    span.accessible = true
+    classes = []
+    walk = ->(node) do
+      next if node.nil?
+      classes << node.java_class.simple_name if span.get(node)
+      node.child_nodes.each(&walk)
+    end
+    walk.(JRuby.parse(code, 'positions.rb'))
+    classes.uniq.sort
   end
 end

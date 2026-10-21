@@ -58,6 +58,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.RubyThread;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
@@ -731,6 +732,14 @@ public class LoadService {
         return librarySearcher.findLibraryForLoad(file);
     }
 
+    /**
+     * Whether this thread holds the require lock for the given key.
+     */
+    public boolean isRequiring(String key) {
+        RequireLocks.RequireLock lock = requireLocks.pool.get(key);
+        return lock != null && lock.isHeldByCurrentThread();
+    }
+
     public boolean featureAlreadyLoaded(String feature) {
         return librarySearcher.featureAlreadyLoaded(feature, null);
     }
@@ -769,7 +778,7 @@ public class LoadService {
         }
     }
 
-    // MRI: load_failed
+    @CRuby(value = "load_failed", file = "load.c")
     static RaiseException loadFailed(Ruby runtime, String name) {
         return runtime.newLoadError("cannot load such file -- " + name, name);
     }

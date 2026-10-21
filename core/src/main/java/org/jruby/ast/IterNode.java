@@ -35,6 +35,7 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.parser.ProductionState;
 import org.jruby.parser.StaticScope;
 
 /**
@@ -46,9 +47,8 @@ public class IterNode extends Node implements DefNode {
     
     // What static scoping relationship exists when it comes into being.
     private final StaticScope scope;
+
     private int endLine;
-    private int startColumn = -1;
-    private int endColumn = -1;
 
     /**
      *  Used by ForNode only.
@@ -73,6 +73,20 @@ public class IterNode extends Node implements DefNode {
         this.bodyNode = body == null ? NilImplicitNode.NIL : body;
         this.scope = scope;
         this.endLine = endLine;
+    }
+
+    /**
+     * Record where the block as written starts and ends: its opening brace or do, and just past its closing brace
+     * or end. Every parse needs the line it ends on; only branch and method coverage need the columns.
+     */
+    public void setBlockSpan(long start, long end, boolean recordColumns) {
+        endLine = ProductionState.line(end);
+        if (recordColumns) setSourceSpan(ProductionState.column(start), endLine, ProductionState.column(end));
+    }
+
+    @Override
+    public int getEndLine() {
+        return endLine;
     }
 
     public NodeType getNodeType() {
@@ -116,30 +130,4 @@ public class IterNode extends Node implements DefNode {
         return Node.createList(varNode, bodyNode);
     }
 
-    public int getEndLine() {
-        return endLine;
-    }
-
-    public int getStartColumn() {
-        return startColumn;
-    }
-
-    public int getEndColumn() {
-        return endColumn;
-    }
-
-    /**
-     * Record the source span of this block: from its opening brace or do keyword through its closing brace or
-     * end keyword. For a lambda: from the start of the parameter list, or just after "->" when there is none,
-     * through the end of the body.
-     *
-     * @param startColumn zero-based byte column of the first character
-     * @param endLine zero-based line of the last character
-     * @param endColumn zero-based byte column just after the last character
-     */
-    public void setSourceSpan(int startColumn, int endLine, int endColumn) {
-        this.startColumn = startColumn;
-        this.endLine = endLine;
-        this.endColumn = endColumn;
-    }
 }

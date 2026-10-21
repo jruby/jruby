@@ -252,8 +252,10 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case ALIAS: return AliasInstr.decode(this);
             case ARRAY_DEREF: return ArrayDerefInstr.decode(this);
             case ATTR_ASSIGN: return AttrAssignInstr.decode(this);
+            case AS_FIXNUM: return AsFixnumInstr.decode(this);
             case AS_STRING: return AsStringInstr.decode(this);
             case B_FALSE: return BFalseInstr.decode(this);
+            case B_INT: return BIntInstr.decode(this);
             case B_NIL: return BNilInstr.decode(this);
             case B_SWITCH: return BSwitchInstr.decode(this);
             case B_TRUE: return BTrueInstr.decode(this);
@@ -301,6 +303,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case GVAR_ALIAS: return GVarAliasInstr.decode(this);
             case INHERITANCE_SEARCH_CONST: return InheritanceSearchConstInstr.decode(this);
             case INSTANCE_SUPER: return InstanceSuperInstr.decode(this);
+            case INT_MATH: return IntegerMathInstr.decode(this);
             case JUMP: return JumpInstr.decode(this);
             case LABEL: return LabelInstr.decode(this);
             case LAMBDA: return BuildLambdaInstr.decode(this);
@@ -346,6 +349,7 @@ public class IRReaderStream implements IRReaderDecoder, IRPersistenceValues {
             case RETURN_OR_RETHROW_SAVED_EXC: return ReturnOrRethrowSavedExcInstr.decode(this);
             case RECV_METHOD_COVERAGE: return ReceiveMethodCoverageInstr.decode(this);
             case COVER_METHOD: return CoverMethodInstr.decode(this);
+            case COVER_BRANCH: return CoverBranchInstr.decode(this);
             case RUNTIME_HELPER: return RuntimeHelperCall.decode(this);
             case SEARCH_CONST: return SearchConstInstr.decode(this);
             case SEARCH_MODULE_FOR_CONST: return SearchModuleForConstInstr.decode(this);

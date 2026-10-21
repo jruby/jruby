@@ -50,6 +50,7 @@ import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
@@ -324,7 +325,7 @@ public class RubyKernel {
         return sites(context).getc.call(context, defin, defin);
     }
 
-    // MRI: rb_f_gets
+    @CRuby(value = "rb_f_gets", file = "io.c")
     @JRubyMethod(optional = 1, keywords = true, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject gets(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         var ArgsFile = argsFile(context);
@@ -348,7 +349,7 @@ public class RubyKernel {
         throw Helpers.exit(context, new IRubyObject[] { context.fals, message }, false);
     }
 
-    // MRI: rb_f_array
+    @CRuby(value = "rb_f_array", file = "object.c")
     @JRubyMethod(name = "Array", required = 1, module = true, visibility = PRIVATE)
     public static IRubyObject new_array(ThreadContext context, IRubyObject recv, IRubyObject object) {
         return TypeConverter.rb_Array(context, object);
@@ -652,7 +653,7 @@ public class RubyKernel {
         return tmp;
     }
 
-    // MRI: rb_f_p
+    @CRuby(value = "rb_f_p", file = "io.c")
     @JRubyMethod(rest = true, module = true, visibility = PRIVATE)
     public static IRubyObject p(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         return RubyThread.uninterruptible(context, args, RubyKernel::pBody);
@@ -700,8 +701,7 @@ public class RubyKernel {
         return recv.getMetaClass().newMethod(context, recv, symbol.asJavaString(), null, true, PUBLIC, true, false);
     }
 
-    /** rb_f_putc
-     */
+    @CRuby(value = "rb_f_putc", file = "io.c")
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject putc(ThreadContext context, IRubyObject recv, IRubyObject ch) {
         IRubyObject defout = globalVariables(context).get("$>");
@@ -766,7 +766,7 @@ public class RubyKernel {
         return sites(context).puts.call(context, defout, defout, args);
     }
 
-    // rb_f_print
+    @CRuby(value = "rb_f_print", file = "io.c")
     @JRubyMethod(module = true, visibility = PRIVATE, reads = LASTLINE)
     public static IRubyObject print(ThreadContext context, IRubyObject recv) {
         return RubyIO.print0(context, globalVariables(context).get("$>"));
@@ -792,7 +792,7 @@ public class RubyKernel {
         return RubyIO.print(context, globalVariables(context).get("$>"), args);
     }
 
-    // rb_f_printf
+    @CRuby(value = "rb_f_printf", file = "io.c")
     @JRubyMethod(rest = true, module = true, visibility = PRIVATE)
     public static IRubyObject printf(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         if (args.length == 0) return context.nil;
@@ -810,15 +810,14 @@ public class RubyKernel {
         return context.nil;
     }
 
+    // MRI: rb_f_readline
     @JRubyMethod(optional = 1, keywords = true, checkArity = false, module = true, visibility = PRIVATE)
     public static IRubyObject readline(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        IRubyObject line = gets(context, recv, args);
+        var ArgsFile = argsFile(context);
 
-        if (line.isNil()) {
-            throw context.runtime.newEOFError();
-        }
-
-        return line;
+        return recv == ArgsFile ?
+                RubyArgsFile.readline(context, ArgsFile, args) :
+                sites(context).readline.call(context, ArgsFile, ArgsFile, args);
     }
 
     @JRubyMethod(optional = 1, keywords = true, checkArity = false, module = true, visibility = PRIVATE)
@@ -855,7 +854,7 @@ public class RubyKernel {
         return RubyIO.select(context, recv, args);
     }
 
-    // MRI: rb_f_sleep
+    @CRuby(value = "rb_f_sleep", file = "process.c")
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject sleep(ThreadContext context, IRubyObject recv) {
         IRubyObject scheduler = FiberScheduler.current(context);
@@ -865,7 +864,7 @@ public class RubyKernel {
         return sleepCommon(context, 0);
     }
 
-    // MRI: rb_f_sleep
+    @CRuby(value = "rb_f_sleep", file = "process.c")
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject sleep(ThreadContext context, IRubyObject recv, IRubyObject timeout) {
         IRubyObject scheduler = FiberScheduler.current(context);

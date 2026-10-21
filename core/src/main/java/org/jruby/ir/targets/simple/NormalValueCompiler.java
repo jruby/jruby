@@ -78,7 +78,7 @@ public class NormalValueCompiler implements ValueCompiler {
 
     public void pushSymbolClass() {
         compiler.loadContext();
-        compiler.invokeIRHelper("getObject", sig(RubyClass.class, ThreadContext.class));
+        compiler.invokeIRHelper("getSymbol", sig(RubyClass.class, ThreadContext.class));
     }
 
     public void pushUndefined() {
@@ -199,9 +199,9 @@ public class NormalValueCompiler implements ValueCompiler {
             begin.run();
             end.run();
             if (exclusive) {
-                compiler.adapter.invokestatic(p(RubyRange.class), "newRange", sig(RubyRange.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
+                compiler.adapter.invokestatic(p(RubyRange.class), "newExclusiveRange", sig(RubyRange.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
             } else {
-                compiler.adapter.invokestatic(p(RubyRange.class), "newRange", sig(RubyRange.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
+                compiler.adapter.invokestatic(p(RubyRange.class), "newInclusiveRange", sig(RubyRange.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
             }
         });
     }
@@ -237,11 +237,11 @@ public class NormalValueCompiler implements ValueCompiler {
         });
     }
 
-    public void pushRange(ByteList begin, int beginCR, ByteList end, int endCR, boolean exclusive) {
+    public void pushRange(ByteList begin, int beginCR, ByteList end, int endCR, String file, int beginLine, int endLine, boolean exclusive) {
         cacheValuePermanentlyLoadContext("range", RubyRange.class, null, () -> {
             compiler.loadContext();
-            pushFrozenStringUncached(begin, beginCR);
-            pushFrozenStringUncached(end, endCR);
+            pushFrozenStringUncached(begin, beginCR, file, beginLine);
+            pushFrozenStringUncached(end, endCR, file, endLine);
             if (exclusive) {
                 compiler.adapter.invokestatic(p(RubyRange.class), "newExclusiveRange", sig(RubyRange.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
             } else {

@@ -36,6 +36,8 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.ast.visitor.NodeVisitor;
+import static org.jruby.util.BitPacker.unpackHighChar;
+import static org.jruby.util.BitPacker.unpackLowChar;
 
 /**
  * A Range in a boolean expression (named after a FlipFlop component in electronic?).
@@ -104,7 +106,7 @@ public class FlipNode extends Node {
      * @return 0 for current scope, 1 for one down, ...
      */
     public int getDepth() {
-        return location >> 16;
+        return unpackHighChar(location);
     }
     
     /**
@@ -114,7 +116,7 @@ public class FlipNode extends Node {
      * @return Returns an int offset into storage structure
      */
     public int getIndex() {
-        return location & 0xffff;
+        return unpackLowChar(location);
     }
     
     public List<Node> childNodes() {

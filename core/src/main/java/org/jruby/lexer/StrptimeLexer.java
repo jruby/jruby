@@ -11,6 +11,7 @@
 
 package org.jruby.lexer;
 
+import static org.jruby.util.BitPacker.pack;
 import org.jruby.util.StrptimeToken;
 
 
@@ -99,8 +100,7 @@ public class StrptimeLexer {
     int j = offset;  /* index in unpacked array */
     int l = packed.length();
     while (i < l) {
-      int high = packed.charAt(i++) << 16;
-      result[j++] = high | packed.charAt(i++);
+      result[j++] = pack(packed.charAt(i++), packed.charAt(i++));
     }
     return j;
   }

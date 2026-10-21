@@ -32,6 +32,7 @@
 
 package org.jruby;
 
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.runtime.ThreadContext;
@@ -261,7 +262,7 @@ public class RubyMath {
         return asFloat(context, Math.exp(numToDouble(context, exponent)));
     }
 
-    // MRI : get_double_rshift
+    @CRuby(value = "get_double_rshift", file = "math.c")
     private static double[] get_double_rshift(ThreadContext context, IRubyObject x) {
         int numbits = 0;
         if (x instanceof RubyBignum) {

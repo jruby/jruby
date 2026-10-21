@@ -41,6 +41,7 @@ import org.joni.Regex;
 import org.joni.Region;
 import org.joni.exception.JOniException;
 import org.joni.exception.ValueException;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Convert;
@@ -278,7 +279,7 @@ public class RubyMatchData extends RubyObject {
         charOffsetUpdated = true;
     }
 
-    // rb_match_busy
+    @CRuby(value = "rb_match_busy", file = "re.c")
     public final void use() {
         busy = true;
     }
@@ -467,9 +468,7 @@ public class RubyMatchData extends RubyObject {
         return getRegexp(context).names(context);
     }
 
-    /** match_to_a
-     *
-     */
+    @CRuby(value = "match_to_a", file = "re.c")
     @JRubyMethod
     @Override
     public RubyArray to_a(ThreadContext context) {
@@ -503,9 +502,7 @@ public class RubyMatchData extends RubyObject {
         return values_at(getCurrentContext(), args);
     }
 
-    /** match_captures
-     *
-     */
+    @CRuby(value = "match_captures", file = "re.c")
     @JRubyMethod
     public IRubyObject captures(ThreadContext context) {
         return match_array(context, 1);
@@ -559,7 +556,7 @@ public class RubyMatchData extends RubyObject {
         return toInt(context, obj);
     }
 
-    // MRI: namev_to_backref_number
+    @CRuby(value = "namev_to_backref_number", file = "re.c")
     private int namevToBackrefNumber(ThreadContext context, IRubyObject name) {
         int num = -1;
 
@@ -584,7 +581,7 @@ public class RubyMatchData extends RubyObject {
         throw indexError(context, "undefined group name reference: " + name);
     }
 
-    // MRI: match_ary_subseq
+    @CRuby(value = "match_ary_subseq", file = "re.c")
     private IRubyObject matchArySubseq(ThreadContext context, int beg, int len, RubyArray result) {
         assert result != null;
 
@@ -607,7 +604,7 @@ public class RubyMatchData extends RubyObject {
         return result;
     }
 
-    // MRI: match_ary_aref
+    @CRuby(value = "match_ary_aref", file = "re.c")
     private IRubyObject matchAryAref(ThreadContext context, IRubyObject index, RubyArray result) {
         int[] begLen = new int[2];
         int numRegs = regs.getNumRegs();
@@ -629,9 +626,7 @@ public class RubyMatchData extends RubyObject {
         return matchArySubseq(context, begLen[0], begLen[1], result);
     }
 
-    /** match_aref
-     *
-     */
+    @CRuby(value = "match_aref", file = "re.c")
     @JRubyMethod(name = "[]")
     public IRubyObject op_aref(ThreadContext context, IRubyObject idx) {
         check(context);
@@ -639,9 +634,7 @@ public class RubyMatchData extends RubyObject {
         return result == null ? to_a(context).aref(context, idx) : result;
     }
 
-    /** match_aref
-    *
-    */
+    @CRuby(value = "match_aref", file = "re.c")
     @JRubyMethod(name = "[]")
     public IRubyObject op_aref(ThreadContext context, IRubyObject idx, IRubyObject rest) {
         IRubyObject result;
@@ -670,9 +663,7 @@ public class RubyMatchData extends RubyObject {
         return RubyRegexp.nth_match(context, nth, this);
     }
 
-    /**
-     * MRI: match_integer_at
-     */
+    @CRuby(value = "match_integer_at", file = "re.c")
     @JRubyMethod
     public IRubyObject integer_at(ThreadContext context, IRubyObject idx) {
         return integerAt(context, idx, null);
@@ -709,18 +700,14 @@ public class RubyMatchData extends RubyObject {
         return ConvertBytes.byteListToInumOrNil(context.runtime, str.getByteList(), start, end, base);
     }
 
-    /** match_size
-     *
-     */
+    @CRuby(value = "match_size", file = "re.c")
     @JRubyMethod(name = {"size", "length"})
     public IRubyObject size(ThreadContext context) {
         check(context);
         return regs == null ? RubyFixnum.one(context.runtime) : asFixnum(context, regs.getNumRegs());
     }
 
-    /**
-     * MRI: match_begin
-     */
+    @CRuby(value = "match_begin", file = "re.c")
     @JRubyMethod
     public IRubyObject begin(ThreadContext context, IRubyObject index) {
         check(context);
@@ -736,9 +723,7 @@ public class RubyMatchData extends RubyObject {
         return asFixnum(context, charOffsets.getBeg(i));
     }
 
-    /** match_end
-     *
-     */
+    @CRuby(value = "match_end", file = "re.c")
     @JRubyMethod
     public IRubyObject end(ThreadContext context, IRubyObject index) {
         check(context);
@@ -763,9 +748,7 @@ public class RubyMatchData extends RubyObject {
         return offset(context, index);
     }
 
-    /** match_offset
-     *
-     */
+    @CRuby(value = "match_offset", file = "re.c")
     @JRubyMethod(name = "offset")
     public IRubyObject offset(ThreadContext context, IRubyObject index) {
         check(context);
@@ -866,9 +849,7 @@ public class RubyMatchData extends RubyObject {
                 context.nil : str.makeSharedString(context.runtime, end, str.getByteList().length() - end);
     }
 
-    /** match_to_s
-     *
-     */
+    @CRuby(value = "match_to_s", file = "re.c")
     @JRubyMethod
     @Override
     public IRubyObject to_s(ThreadContext context) {
@@ -881,9 +862,7 @@ public class RubyMatchData extends RubyObject {
     public IRubyObject string() {
         return string(getCurrentContext());
     }
-    /** match_string
-     *
-     */
+    @CRuby(value = "match_string", file = "re.c")
     @JRubyMethod
     public IRubyObject string(ThreadContext context) {
         check(context);

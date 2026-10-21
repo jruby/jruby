@@ -40,6 +40,7 @@ package org.jruby;
 import java.math.BigInteger;
 
 import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.anno.CRuby;
 import org.jruby.api.Convert;
 import org.jruby.api.Create;
 import org.jruby.api.JRubyAPI;
@@ -677,9 +678,7 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         }
     }
 
-    /** rb_fix_digits
-     *
-     */
+    @CRuby(value = "rb_fix_digits", file = "numeric.c")
     @Override
     public RubyArray digits(ThreadContext context, IRubyObject baseArg) {
         long value = this.getValue();
@@ -738,9 +737,7 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
                 newString(context, ConvertBytes.longToByteList(value, base), USASCIIEncoding.INSTANCE);
     }
 
-    /** fix_uminus
-     *
-     */
+    @CRuby(value = "fix_uminus", file = "numeric.c")
     @Override
     public IRubyObject op_uminus(ThreadContext context) {
         return negate(context, getValue());
@@ -752,9 +749,7 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
                 asFixnum(context, -value);
     }
 
-    /** fix_plus
-     *
-     */
+    @CRuby(value = "fix_plus", file = "numeric.c")
     @Override
     public IRubyObject op_plus(ThreadContext context, IRubyObject other) {
         // TODO: Add builtin check for production use:
@@ -820,9 +815,7 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         };
     }
 
-    /** fix_minus
-     *
-     */
+    @CRuby(value = "fix_minus", file = "numeric.c")
     @Override
     public IRubyObject op_minus(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum fixnum) {
@@ -885,9 +878,7 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         };
     }
 
-    /** fix_mul
-     *
-     */
+    @CRuby(value = "fix_mul", file = "numeric.c")
     @Override
     public IRubyObject op_mul(ThreadContext context, IRubyObject other) {
         return other instanceof RubyFixnum fixnum ?
@@ -924,7 +915,7 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         return context.runtime.newFloat((double) getValue() * other);
     }
 
-    /** fix_div
+    /**
      * here is terrible MRI gotcha:
      * 1.div 3.0$ -&gt; 0
      * 1 / 3.0  $ -&gt; 0.3333333333333333
@@ -934,6 +925,7 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
      *
      * also note that RubyFloat doesn't override Numeric.div
      */
+    @CRuby(value = "fix_div", file = "numeric.c")
     @Override
     public IRubyObject idiv(ThreadContext context, IRubyObject other) {
         checkZeroDivisionError(context, other);
@@ -1003,9 +995,7 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         return asFixnum(context, result);
     }
 
-    /** fix_mod
-     *
-     */
+    @CRuby(value = "fix_mod", file = "numeric.c")
     @Override
     public IRubyObject op_mod(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) {
@@ -1047,9 +1037,7 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         return asFixnum(context, mod);
     }
 
-    /** fix_divmod
-     *
-     */
+    @CRuby(value = "fix_divmod", file = "numeric.c")
     @Override
     public IRubyObject divmod(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) {
@@ -1087,9 +1075,7 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         return newArray(context, integerDiv, fixMod);
     }
 
-    /** fix_pow
-     *
-     */
+    @CRuby(value = "fix_pow", file = "numeric.c")
     @Override
     public IRubyObject op_pow(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) {
@@ -1134,7 +1120,7 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         return coerceBin(context, sites(context).op_exp, other);
     }
 
-    // MRI: fix_pow
+    @CRuby(value = "fix_pow", file = "numeric.c")
     private RubyNumeric powerFixnum(ThreadContext context, RubyFixnum other) {
         long a = getValue();
         long b = other.getValue();
@@ -1148,7 +1134,7 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         return int_pow(context, a, b);
     }
 
-    // MRI: fix_pow_inverted
+    @CRuby(value = "fix_pow_inverted", file = "numeric.c")
     private RubyNumeric fixPowInverted(ThreadContext context, long minusb) {
         if (getValue() == 0) {
             throw zeroDivisionError(context);
@@ -1164,7 +1150,7 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         }
     }
 
-    // MRI: int_pow_tmp1
+    @CRuby(value = "int_pow_tmp1", file = "bignum.c")
     protected IRubyObject intPowTmp1(ThreadContext context, RubyInteger y, long mm, boolean negaFlg) {
         long xx = this.getValue();
         long tmp = 1L;
@@ -1187,7 +1173,7 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         return asFixnum(context, tmp);
     }
 
-    // MRI: int_pow_tmp2
+    @CRuby(value = "int_pow_tmp2", file = "bignum.c")
     IRubyObject intPowTmp2(ThreadContext context, RubyInteger y, final long mm, boolean negaFlg) {
         long tmp = 1L;
         long yy;
@@ -1220,9 +1206,7 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         return (RubyFixnum) ((RubyInteger) a.op_mul(context, b.getValue())).modulo(context, c);
     }
 
-    /** fix_abs
-     *
-     */
+    @CRuby(value = "fix_abs", file = "numeric.c")
     @Override
     public IRubyObject abs(ThreadContext context) {
         if (getValue() < 0) {
@@ -1243,9 +1227,7 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         return abs(context);
     }
 
-    /** fix_equal
-     *
-     */
+    @CRuby(value = "fix_equal", file = "numeric.c")
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
         return other instanceof RubyFixnum ?
@@ -1324,9 +1306,7 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         };
     }
 
-    /** fix_cmp
-     *
-     */
+    @CRuby(value = "fix_cmp", file = "numeric.c")
     @Override
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
         return other instanceof RubyFixnum fixnum ?
@@ -1350,9 +1330,7 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         };
     }
 
-    /** fix_gt
-     *
-     */
+    @CRuby(value = "fix_gt", file = "numeric.c")
     @Override
     public IRubyObject op_gt(ThreadContext context, IRubyObject other) {
         return other instanceof RubyFixnum fixnum ?
@@ -1376,9 +1354,7 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         };
     }
 
-    /** fix_ge
-     *
-     */
+    @CRuby(value = "fix_ge", file = "numeric.c")
     @Override
     public IRubyObject op_ge(ThreadContext context, IRubyObject other) {
         return other instanceof RubyFixnum fixnum ?
@@ -1402,9 +1378,7 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         };
     }
 
-    /** fix_lt
-     *
-     */
+    @CRuby(value = "fix_lt", file = "numeric.c")
     @Override
     public IRubyObject op_lt(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) {
@@ -1432,9 +1406,7 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         return coerceRelOp(context, sites(context).op_lt, other);
     }
 
-    /** fix_le
-     *
-     */
+    @CRuby(value = "fix_le", file = "numeric.c")
     @Override
     public IRubyObject op_le(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) {
@@ -1467,9 +1439,7 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         return asFixnum(context, ~getValue());
     }
 
-    /** fix_and
-     *
-     */
+    @CRuby(value = "fix_and", file = "numeric.c")
     @Override
     public IRubyObject op_and(ThreadContext context, IRubyObject other) {
         return switch (other) {
@@ -1483,9 +1453,7 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         return asFixnum(context, getValue() & other);
     }
 
-    /** fix_or
-     *
-     */
+    @CRuby(value = "fix_or", file = "numeric.c")
     @Override
     public IRubyObject op_or(ThreadContext context, IRubyObject other) {
         return switch(other) {
@@ -1499,9 +1467,7 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         return asFixnum(context, getValue() | other);
     }
 
-    /** fix_xor
-     *
-     */
+    @CRuby(value = "fix_xor", file = "numeric.c")
     @Override
     public IRubyObject op_xor(ThreadContext context, IRubyObject other) {
         return switch(other) {
@@ -1515,9 +1481,7 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         return asFixnum(context, getValue() ^ other);
     }
 
-    /** rb_fix_aref
-     *
-     */
+    @CRuby(value = "rb_fix_aref", file = "numeric.c")
     @Override
     protected IRubyObject op_aref_subclass(ThreadContext context, IRubyObject other) {
         if (!(other instanceof RubyFixnum) && !((other = fixCoerce(context, other)) instanceof RubyFixnum)) {
@@ -1534,9 +1498,7 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         return asFixnum(context, (getValue() & (1L << otherValue)) == 0 ? 0 : 1);
     }
 
-    /** fix_lshift
-     *
-     */
+    @CRuby(value = "fix_lshift", file = "numeric.c")
     @Override
     public IRubyObject op_lshift(ThreadContext context, IRubyObject other) {
         if (!(other instanceof RubyFixnum)) {
@@ -1558,9 +1520,7 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         return asFixnum(context, getValue() << width);
     }
 
-    /** fix_rshift
-     *
-     */
+    @CRuby(value = "fix_rshift", file = "numeric.c")
     @Override
     public IRubyObject op_rshift(ThreadContext context, IRubyObject other) {
         return other instanceof RubyFixnum fix ?
@@ -1595,9 +1555,7 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         return RubyFloat.newFloat(metaClass.runtime, (double) getValue());
     }
 
-    /** fix_size
-     *
-     */
+    @CRuby(value = "fix_size", file = "numeric.c")
     @Override
     public IRubyObject size(ThreadContext context) {
         return asFixnum(context, (long) ((BIT_SIZE + 7) / 8));
@@ -1699,7 +1657,7 @@ public abstract class RubyFixnum extends RubyInteger implements Constantizable, 
         return this;
     }
 
-    // MRI: fix_fdiv_double
+    @CRuby(value = "fix_fdiv_double", file = "numeric.c")
     @Override
     public IRubyObject fdivDouble(ThreadContext context, IRubyObject y) {
         if (y instanceof RubyFixnum yy) {

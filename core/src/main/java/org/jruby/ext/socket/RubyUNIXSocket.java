@@ -47,12 +47,14 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyIO;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Access;
 import org.jruby.api.Define;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Helpers;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -238,7 +240,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
     }
 
     @JRubyMethod(name = {"socketpair", "pair"}, optional = 2, checkArity = false, meta = true)
-    public static IRubyObject socketpair(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject socketpair(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Arity.checkArgumentCount(context, args, 0, 2);
 
         final Ruby runtime = context.runtime;
@@ -246,22 +248,20 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         // TODO: type and protocol
 
         UnixSocketChannel[] sp;
+        final RubyClass UNIXSocket = Access.getClass(context, "UNIXSocket");
+        RubyUNIXSocket sock = (RubyUNIXSocket)(Helpers.invoke(context, UNIXSocket, "allocate"));
+        RubyUNIXSocket sock2 = (RubyUNIXSocket)(Helpers.invoke(context, UNIXSocket, "allocate"));
 
         try {
             sp = UnixSocketChannel.pair();
 
-            final RubyClass UNIXSocket = Access.getClass(context, "UNIXSocket");
-            RubyUNIXSocket sock = (RubyUNIXSocket)(Helpers.invoke(context, UNIXSocket, "allocate"));
             sock.init_sock(runtime, sp[0], "");
-
-            RubyUNIXSocket sock2 = (RubyUNIXSocket)(Helpers.invoke(context, UNIXSocket, "allocate"));
             sock2.init_sock(runtime, sp[1], "");
-
-            return newArray(context, sock, sock2);
-
         } catch (IOException ioe) {
             throw runtime.newIOErrorFromException(ioe);
         }
+
+        return yieldPair(context, sock, sock2, block);
     }
 
     @Override
@@ -349,7 +349,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         }
     }
 
-    // MRI: unixsock_path_value
+    @CRuby(value = "unixsock_path_value", file = "ext/socket/unixsocket.c")
     private static RubyString unixsockPathValue(ThreadContext context, IRubyObject path) {
         return checkEmbeddedNulls(context, RubyFile.get_path(context, path));
     }

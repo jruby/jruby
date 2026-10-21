@@ -91,21 +91,16 @@ namespace :spec do
   desc "Run all the specs in precompiled mode"
   task :ci_all_precompiled => ['spec:all_precompiled']
 
-  desc "Run rubyspecs expected to pass (against latest rubyspec version)"
-  task :ci_latest => ['spec:fast_forward_to_rubyspec_head', 'spec:tagged']
-
   # Note: For this point below it is your reponsibility to make sure specs
   # are checked out.
 
+  # Each mode's mspec run aborts rake as soon as it fails, so there is no
+  # separate status check after all modes have run.
   desc "Run tagged specs in interpreted, JIT, and pre-compiled modes"
-  task :tagged => [:interpreted, :compiled, :precompiled] do
-    fail "One or more Ruby spec runs have failed" if spec_run_error
-  end
+  task :tagged => [:interpreted, :compiled, :precompiled]
 
   desc "Run all specs in interpreted, JIT, and pre-compiled modes"
-  task :all => [:all_interpreted, :all_compiled, :all_precompiled] do
-    fail "One or more Ruby spec runs have failed" if spec_run_error
-  end
+  task :all => [:all_interpreted, :all_compiled, :all_precompiled]
 
   desc "Tagged specs in interpreted mode only"
   task :interpreted do
@@ -155,22 +150,6 @@ namespace :spec do
 
   # Complimentary tasks for running specs
 
-  task :fetch_latest_specs => [:install_build_gems, :fetch_latest_rubyspec_repo, :fetch_latest_mspec_repo]
-
-  task :fetch_stable_specs => :install_build_gems do
-    puts "Rolling rubyspec to stable version"
-    git_submodule_update('spec/ruby')
-
-    puts "Rolling mspec to stable version"
-    git_submodule_update('spec/mspec')
-  end
-
-  task :fast_forward_to_rubyspec_head => :fetch_latest_specs do
-    puts "Rolling to rubyspec to latest version"
-    git_checkout('rubyspec', 'origin/HEAD', RUBYSPEC_DIR)
-    git_move_to_head_detached('rubyspec', RUBYSPEC_GIT_REPO, RUBYSPEC_DIR)
-  end
-
   desc "Retrieve latest tagged rubyspec git repository"
   task :fetch_latest_rubyspec_repo do
     unless git_repo_exists? RUBYSPEC_DIR
@@ -200,10 +179,5 @@ namespace :spec do
     rm_rf MSPEC_DIR
     rm_f MSPEC_TAR_FILE
     rm_f File.join(SPEC_DIR, "rubyspecs.current.revision")
-  end
-
-  def spec_run_error
-    # Obtuseriffic - If any previous spec runs were non-zero return we failed
-    ['OFF', 'JIT', 'FORCE'].any? {|n| ant.properties["spec.status.#{n}"] != "0"}
   end
 end

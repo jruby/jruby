@@ -1157,4 +1157,34 @@ describe "Module#autoload" do
       ModuleSpecs::Autoload::FromThread::D.foo
     }.value.should == :foo
   end
+
+  it "raises in every thread when two constants autoload the same file and it raises" do
+    dir = tmp("autoload_same_file_raising")
+    mkdir_p dir
+    File.write("#{dir}/autoload_same_file_raising.rb", "raise 'autoload failed'")
+    $LOAD_PATH.unshift dir
+    begin
+      # the second thread races the first one's require, so try a few times
+      10.times do
+        mod = Module.new
+        mod.autoload :First, "autoload_same_file_raising"
+        mod.autoload :Second, "autoload_same_file_raising"
+
+        threads = [:First, :Second].map { |name|
+          Thread.new {
+            begin
+              mod.const_get(name)
+            rescue Exception => e
+              e
+            end
+          }
+        }
+
+        threads.map { |t| t.value.message }.should == ["autoload failed", "autoload failed"]
+      end
+    ensure
+      $LOAD_PATH.delete dir
+      rm_r dir
+    end
+  end
 end

@@ -45,6 +45,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.WritableByteChannel;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.Queue;
@@ -64,6 +65,7 @@ import java.util.function.BiFunction;
 import com.headius.backport9.stack.StackWalker;
 import org.jcodings.Encoding;
 import org.joni.Matcher;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Create;
@@ -72,6 +74,7 @@ import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.exceptions.Unrescuable;
+import org.jruby.ext.thread.ConditionVariable;
 import org.jruby.internal.runtime.RubyNativeThread;
 import org.jruby.internal.runtime.RubyRunnable;
 import org.jruby.internal.runtime.ThreadLike;
@@ -108,6 +111,7 @@ import static org.jruby.api.Access.runtimeErrorClass;
 import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asFloat;
 import static org.jruby.api.Convert.toDouble;
 import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Create.newString;
@@ -228,6 +232,14 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     /** Whether or not this thread has been disposed of */
     private volatile boolean disposed = false;
+
+    // a fiber joining this thread through a fiber scheduler. MRI: join_list
+    private record SchedulerJoiner(IRubyObject scheduler, RubyThread thread, IRubyObject fiber) {}
+
+    private List<SchedulerJoiner> schedulerJoiners;
+
+    /** This thread's reusable Mutex or ConditionVariable waiter; a thread waits on one thing at a time */
+    private ConditionVariable.Waiter syncWaiter;
 
     /** Interrupt flags */
     private volatile int interruptFlag = 0;
@@ -434,6 +446,14 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         this.fiberCurrentThread = fiberCurrentThread;
     }
 
+    public ConditionVariable.Waiter getSyncWaiter() {
+        return syncWaiter;
+    }
+
+    public void setSyncWaiter(ConditionVariable.Waiter syncWaiter) {
+        this.syncWaiter = syncWaiter;
+    }
+
     public RubyThread getFiberCurrentThread() {
         RubyThread fiberCurrentThread = this.fiberCurrentThread;
         return fiberCurrentThread == null ? this : fiberCurrentThread;
@@ -451,6 +471,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      */
     public void dispose() {
         if (disposed) return;
+
+        List<SchedulerJoiner> joiners;
 
         synchronized (this) {
             if (disposed) return;
@@ -473,10 +495,22 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
             // mark thread as DEAD
             beDead();
+
+            joiners = schedulerJoiners;
+            schedulerJoiners = null;
         }
 
-        // unregister from runtime's ThreadService
-        getRuntime().getThreadService().unregisterThread(this);
+        try {
+            // MRI: rb_threadptr_join_list_wakeup
+            if (joiners != null) {
+                for (SchedulerJoiner joiner : joiners) {
+                    FiberScheduler.unblock(getContext(), joiner.scheduler(), joiner.thread(), joiner.fiber());
+                }
+            }
+        } finally {
+            // unregister from runtime's ThreadService
+            getRuntime().getThreadService().unregisterThread(this);
+        }
     }
 
     public static RubyClass createThreadClass(ThreadContext context, RubyClass Object) {
@@ -823,7 +857,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
 
-    // RUBY_VM_CHECK_INTS_BLOCKING
+    @CRuby(value = "RUBY_VM_CHECK_INTS_BLOCKING", file = "thread.c")
     public void blockingThreadPoll(ThreadContext context) {
         if (pendingInterruptQueue.isEmpty() && !anyInterrupted()) {
             return;
@@ -834,14 +868,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         executeInterrupts(context, true);
     }
 
-    // RUBY_VM_INTERRUPTED_ANY
+    @CRuby(value = "RUBY_VM_INTERRUPTED_ANY", file = "vm_core.h")
     private boolean anyInterrupted() {
         return Thread.interrupted() || (interruptFlag & ~interruptMask) != 0;
     }
 
-    /**
-     * MRI: rb_threadptr_to_kill
-     */
+    @CRuby(value = "rb_threadptr_to_kill", file = "thread.c")
     private void throwThreadKill() {
         killed = true;
         throw new ThreadKill();
@@ -1287,6 +1319,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         RubyThread currentThread = context.getThread();
 
+        IRubyObject scheduler = FiberScheduler.current(context);
+        if (scheduler != null && !schedulerJoin(context, scheduler, timeoutMillis)) return context.nil;
+
         try {
             currentThread.enterSleep();
 
@@ -1324,6 +1359,38 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         currentThread.pollThreadEvents(context);
 
         return threadImpl.isAlive() ? context.nil : this;
+    }
+
+    // MRI: thread_join_sleep, which blocks the fiber through the scheduler until the thread is dead,
+    // passing what is left of the timeout each time. Returns false if the timeout expired first.
+    private boolean schedulerJoin(ThreadContext context, IRubyObject scheduler, long timeoutMillis) {
+        SchedulerJoiner joiner = new SchedulerJoiner(scheduler, context.getFiberCurrentThread(), context.getFiber());
+        long end = timeoutMillis == Long.MAX_VALUE ? Long.MAX_VALUE : System.currentTimeMillis() + timeoutMillis;
+
+        while (true) {
+            IRubyObject timeout = context.nil;
+
+            synchronized (this) {
+                if (disposed) return true;
+
+                if (end != Long.MAX_VALUE) {
+                    long left = end - System.currentTimeMillis();
+                    if (left <= 0) return false;
+                    timeout = asFloat(context, left / 1000.0);
+                }
+
+                if (schedulerJoiners == null) schedulerJoiners = new ArrayList<>(1);
+                schedulerJoiners.add(joiner);
+            }
+
+            try {
+                FiberScheduler.block(context, scheduler, this, timeout);
+            } finally {
+                synchronized (this) {
+                    if (schedulerJoiners != null) schedulerJoiners.remove(joiner);
+                }
+            }
+        }
     }
 
     @JRubyMethod
@@ -1883,8 +1950,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         @Override
         public void wakeup(RubyThread thread, Object data) {
+            // notify could wake another thread waiting on the same object instead of this one, so wake them all
             synchronized (data) {
-                data.notify();
+                data.notifyAll();
             }
         }
     }
@@ -2667,12 +2735,16 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      */
     public void unlockAll() {
         assert Thread.currentThread() == getNativeThread();
-        for (Lock lock : heldLocks) {
+        Lock[] locks = heldLocks.toArray(Lock[]::new);
+        heldLocks.clear();
+        for (Lock lock : locks) {
             try {
                 lock.unlock();
             } catch (IllegalMonitorStateException imse) {
                 // don't allow a bad lock to prevent others from unlocking
                 warn(getRuntime().getCurrentContext(), "BUG: attempted to unlock a non-acquired lock " + lock + " in thread " + toString());
+            } catch (RaiseException re) {
+                warn(getRuntime().getCurrentContext(), "unlocking " + lock + " in dying thread " + toString() + " raised " + re.getMessage());
             }
         }
     }
@@ -2736,12 +2808,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * Run the provided {@link BiFunction} without allowing for any cross-thread interrupts (equivalent to calling
      * {@link #handle_interrupt(ThreadContext, IRubyObject, IRubyObject, Block)} with Object =&gt; :never.
      *
-     * MRI: rb_uninterruptible
      *
      * @param context the current context
      * @param f the bifunction to execute
      * @return return value of f.apply.
      */
+    @CRuby(value = "rb_uninterruptible", file = "thread.c")
     public static <StateType> IRubyObject uninterruptible(ThreadContext context, StateType state, BiFunction<ThreadContext, StateType, IRubyObject> f) {
         return context.getThread().handleInterrupt(
                 context,
@@ -2757,9 +2829,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     /**
      * Set the scheduler for the current thread.
-     *
-     * MRI: rb_fiber_scheduler_set
      */
+    @CRuby(value = "rb_fiber_scheduler_set", file = "scheduler.c")
     public IRubyObject setFiberScheduler(ThreadContext context, IRubyObject scheduler) {
 //        VM_ASSERT(ruby_thread_has_gvl_p());
 
@@ -2777,7 +2848,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return scheduler;
     }
 
-    // MRI: rb_fiber_scheduler_current_for_threadptr, rb_fiber_scheduler_current
+    @CRuby(value = "rb_fiber_scheduler_current_for_threadptr", file = "scheduler.c")
+    @CRuby(value = "rb_fiber_scheduler_current", file = "scheduler.c")
     public IRubyObject getSchedulerCurrent() {
         if (!isBlocking()) {
             return scheduler;

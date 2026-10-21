@@ -67,6 +67,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.DynamicScopeGenerator;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
+import static org.jruby.util.BitPacker.pack;
 
 import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Create.allocArray;
@@ -603,15 +604,11 @@ public class StaticScope implements Serializable, Cloneable {
         addVariableNamesToCollection(current, collectionPopulator, dedup, collection, implicit);
 
         if (parents) {
-            current = current.enclosingScope;
-
+            // blocks and evals see the variables of each scope around them, up to and including the first that isn't one
             while (current.isBlockOrEval) {
-                addVariableNamesToCollection(current, collectionPopulator, dedup, collection, implicit);
                 current = current.enclosingScope;
+                addVariableNamesToCollection(current, collectionPopulator, dedup, collection, implicit);
             }
-
-            // once more for method scope
-            addVariableNamesToCollection(current, collectionPopulator, dedup, collection, implicit);
         }
 
         return collection;
@@ -677,11 +674,11 @@ public class StaticScope implements Serializable, Cloneable {
     public int isDefined(String name, int depth) {
         if (isBlockOrEval) {
             int slot = exists(name);
-            if (slot >= 0) return (depth << 16) | slot;
+            if (slot >= 0) return packLocation(depth, slot);
 
             return enclosingScope.isDefined(name, depth + 1);
         } else {
-            return (depth << 16) | exists(name);
+            return packLocation(depth, exists(name));
         }
     }
 
@@ -690,11 +687,11 @@ public class StaticScope implements Serializable, Cloneable {
             int slot = existsOrImplicit(name);
             if (slot == IMPLICIT) return slot;
 
-            if (slot >= 0) return (depth << 16) | slot;
+            if (slot >= 0) return packLocation(depth, slot);
 
             return enclosingScope.isDefinedOrImplicit(name, depth + 1);
         } else {
-            return (depth << 16) | existsOrImplicit(name);
+            return packLocation(depth, existsOrImplicit(name));
         }
     }
 
@@ -718,8 +715,8 @@ public class StaticScope implements Serializable, Cloneable {
         // We can assign if we already have variable of that name here or we are the only
         // scope in the chain (which Local scopes always are).
         if (slot >= 0) {
-            return isBlockOrEval ? new DAsgnNode(line, symbolID, ((depth << 16) | slot), value)
-                    : new LocalAsgnNode(line, symbolID, ((depth << 16) | slot), value);
+            return isBlockOrEval ? new DAsgnNode(line, symbolID, packLocation(depth, slot), value)
+                    : new LocalAsgnNode(line, symbolID, packLocation(depth, slot), value);
         } else if (!isBlockOrEval && (topScope == this)) {
             slot = addVariable(id);
 
@@ -740,11 +737,16 @@ public class StaticScope implements Serializable, Cloneable {
 
         if (slot >= 0) {
             return isBlockOrEval ?
-                    new DVarNode(line, ((depth << 16) | slot), symbolID) :
-                    new LocalVarNode(line, ((depth << 16) | slot), symbolID);
+                    new DVarNode(line, packLocation(depth, slot), symbolID) :
+                    new LocalVarNode(line, packLocation(depth, slot), symbolID);
         }
 
         return isBlockOrEval ? enclosingScope.declare(line, symbolID, depth + 1) : new VCallNode(line, symbolID);
+    }
+
+    private static int packLocation(int depth, int slot) {
+        if (slot < 0) return slot;
+        return pack((char) depth, (char) slot);
     }
 
     /**

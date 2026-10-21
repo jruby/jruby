@@ -10,13 +10,36 @@ permissions:
 
 jobs:
 
+  maven-precache:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    name: Precache Maven dependencies (${{ matrix.os }})
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v6
+      - name: set up java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'zulu'
+          java-version: 21
+          cache: 'maven'
+      - name: fetch Maven dependencies and plugins
+        # maven/* artifact modules depend on JRuby snapshots so limit to bootstrap modules.
+        run: ./mvnw -ntp -Pbootstrap dependency:go-offline
+
   rake-test:
+    needs: maven-precache
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        target: ['test:jruby:int', 'spec:ruby:fast', 'spec:ji', 'spec:ffi', 'test:mri:core:jit', 'test:mri:extra', 'spec:ruby:fast:jit', 'test:mri:stdlib', 'spec:ruby:slow', 'spec:ruby:debug', 'test:jruby:aot', 'test:slow_suites', 'spec:compiler', 'spec:regression', 'spec:jrubyc', 'spec:profiler']
-        java-version: ['21', '25', '26']
+        target: ['test:jruby:int', 'spec:ruby:fast', 'spec:ji', 'spec:ffi', 'test:mri:core:jit', 'test:mri:extra', 'spec:ruby:fast:jit', 'test:mri:stdlib', 'spec:ruby:slow', 'spec:ruby:debug', 'test:jruby:aot', 'test:slow_suites', 'spec:compiler', 'spec:regression', 'spec:jrubyc', 'spec:profiler', 'test:jit_compile']
+        java-version: ['21', '25', '27']
       fail-fast: false
 
     name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }})
@@ -24,22 +47,15 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v6
-      - name: remove default java except 21
-        run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
-      - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'zulu'
-          java-version: ${{ matrix.java-version }}
-          cache: 'maven'
       - name: bootstrap
-        run: ./mvnw -ntp -Pbootstrap clean package
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
+        uses: ./.github/actions/bootstrap
+        with:
+          java-version: ${{ matrix.java-version }}
       - name: rake ${{ matrix.target }}
         run: bin/jruby -S rake ${{ matrix.target }}
 
   error-prone:
+    needs: maven-precache
     runs-on: ubuntu-latest
 
     name: error-prone (Java 21)
@@ -50,18 +66,16 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v6
-      - name: set up java 21
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'zulu'
-          java-version: 21
-          cache: 'maven'
       - name: bootstrap
-        run: ./mvnw -ntp -Pbootstrap clean package
+        uses: ./.github/actions/bootstrap
+        with:
+          remove-old-java: false
+          bundle-install: false
 
   # This job is a fast-fail all-interp run of test:mri:code to give early indication if the jitted runs will pass.
   rake-test-mri-fast:
-    name: rake test:mri:core:int (Java 26, fast fail)
+    needs: maven-precache
+    name: rake test:mri:core:int (Java 27, fast fail)
 
     runs-on: ubuntu-latest
 
@@ -71,29 +85,22 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v6
-      - name: remove old java installs
-        run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
-      - name: set up java 26
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'zulu'
-          java-version: 26
-          cache: 'maven'
       - name: bootstrap
-        run: ./mvnw -ntp -Pbootstrap clean package
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
+        uses: ./.github/actions/bootstrap
+        with:
+          java-version: 27
       - name: rake test:mri:core:int
         run: bin/jruby -S rake test:mri:core:int
 
   rake-test-multiplatform:
+    needs: maven-precache
     runs-on: ${{ matrix.platform }}
 
     strategy:
       matrix:
         target: ['spec:jruby']
         platform: ['ubuntu-latest', 'macos-latest']
-        java-version: ['21', '25', '26']
+        java-version: ['21', '25', '27']
       fail-fast: false
 
     name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }})
@@ -101,20 +108,16 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v6
-      - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'zulu'
-          java-version: ${{ matrix.java-version }}
-          cache: 'maven'
       - name: bootstrap
-        run: ./mvnw -ntp -Pbootstrap clean package
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
+        uses: ./.github/actions/bootstrap
+        with:
+          java-version: ${{ matrix.java-version }}
+          remove-old-java: false
       - name: rake ${{ matrix.target }}
         run: bin/jruby -S rake ${{ matrix.target }}
 
   repeat-specs:
+    needs: maven-precache
     runs-on: ubuntu-latest
 
     name: run specs repeatedly to test optimizations
@@ -122,24 +125,15 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v6
-      - name: remove default java except 21
-        run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
-      - name: set up java 21
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'zulu'
-          java-version: 21
-          cache: 'maven'
       - name: bootstrap
-        run: ./mvnw -ntp -Pbootstrap clean package
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
+        uses: ./.github/actions/bootstrap
       - name: run specs
         env:
           JAVA_OPTS: '-XX:TieredStopAtLevel=1'
         run: bin/jruby spec/mspec/bin/mspec ci -R 4 -T-Xjit.threshold=0 :language
 
   jruby-tests-dev:
+    needs: maven-precache
     runs-on: ubuntu-latest
 
     env:
@@ -148,28 +142,21 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v6
-      - name: remove default java except 21
-        run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
-      - name: set up java 21
-        uses: actions/setup-java@v5
+      - name: bootstrap
+        uses: ./.github/actions/bootstrap
         with:
           distribution: 'temurin'
-          java-version: 21
-          cache: 'maven'
-      - name: bootstrap
-        run: ./mvnw -ntp -Pbootstrap clean package
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
       - name: rake test:jruby
         run: bin/jruby --dev -S rake test:jruby
 
   rake-test-indy-off:
+    needs: maven-precache
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
         target: ['test:mri:core:jit', 'test:jruby:jit', 'spec:compiler', 'spec:ruby:fast:jit', 'spec:ji']
-        java-version: ['21', '25', '26']
+        java-version: ['21', '25', '27']
       fail-fast: false
 
     name: rake ${{ matrix.target }} (Java ${{ matrix.java-version }} -indy)
@@ -180,22 +167,15 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v6
-      - name: remove default java except 21
-        run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
-      - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'zulu'
-          java-version: ${{ matrix.java-version }}
-          cache: 'maven'
       - name: bootstrap
-        run: ./mvnw -ntp -Pbootstrap clean package
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
+        uses: ./.github/actions/bootstrap
+        with:
+          java-version: ${{ matrix.java-version }}
       - name: rake ${{ matrix.target }}
         run: bin/jruby -S rake ${{ matrix.target }}
 
   mvn-test:
+    needs: maven-precache
     runs-on: ubuntu-latest
 
     strategy:
@@ -209,24 +189,17 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v6
-      - name: remove default java except 21
-        run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
-      - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'zulu'
-          java-version: ${{ matrix.java-version }}
-          cache: 'maven'
       - name: bootstrap
-        run: ./mvnw -ntp -Pbootstrap clean package
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
+        uses: ./.github/actions/bootstrap
+        with:
+          java-version: ${{ matrix.java-version }}
       - name: mvn package ${{ matrix.package-flags }}
         run: tool/maven-ci-script.sh
         env:
           PHASE: 'package ${{ matrix.package-flags }}'
 
   mvn-test-extended:
+    needs: maven-precache
     runs-on: ubuntu-latest
 
     strategy:
@@ -241,24 +214,18 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v6
-      - name: remove default java except 21
-        run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
-      - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: ${{ matrix.java-version }}
-          cache: 'maven'
       - name: bootstrap
-        run: ./mvnw -ntp -Pbootstrap clean package
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
+        uses: ./.github/actions/bootstrap
+        with:
+          java-version: ${{ matrix.java-version }}
+          distribution: 'temurin'
       - name: mvn package ${{ matrix.package-flags }}
         run: tool/maven-ci-script.sh
         env:
           PHASE: 'package ${{ matrix.package-flags }}'
 
   regression-specs-jit:
+    needs: maven-precache
     runs-on: ubuntu-latest
 
     env:
@@ -267,43 +234,26 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v6
-      - name: remove default java except 21
-        run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
-      - name: set up java 21
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'zulu'
-          java-version: 21
-          cache: 'maven'
       - name: bootstrap
-        run: ./mvnw -ntp -Pbootstrap clean package
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
+        uses: ./.github/actions/bootstrap
       - name: rake spec:regression
         run: bin/jruby -S rake spec:regression
 
   mvn-test-windows:
+    needs: maven-precache
     runs-on: windows-latest
 
     name: mvn -Ptest, rake test:jruby (Windows, Java 21)
 
-    env:
+    env: &windows-env
       JAVA_OPTS: "-Djdk.io.File.enableADS=true"
       JDK_JAVA_OPTS: "-Djdk.io.File.enableADS=true"
 
     steps:
       - name: checkout
         uses: actions/checkout@v6
-      - name: set up java 21
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'zulu'
-          java-version: 21
-          cache: 'maven'
       - name: bootstrap
-        run: ./mvnw -ntp -Pbootstrap clean package
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
+        uses: ./.github/actions/bootstrap
       - name: rake test:jruby
         run: bin/jruby -S rake test:jruby TESTOPTS="--no-show-detail-immediately"
         env:
@@ -312,6 +262,7 @@ jobs:
         run: ./mvnw -ntp package -Ptest
 
   spec-ruby-prism-wasm:
+    needs: maven-precache
     runs-on: windows-latest
 
     strategy:
@@ -323,44 +274,27 @@ jobs:
 
     steps:
       - name: checkout
-        uses: actions/checkout@v3
-      - name: set up java 21
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'zulu'
-          java-version: 21
-          cache: 'maven'
+        uses: actions/checkout@v6
       - name: bootstrap
-        run: mvn -ntp -Pbootstrap clean package
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
+        uses: ./.github/actions/bootstrap
       - name: ${{ matrix.rubyspec-target }} specs
         run: bin/jruby spec/mspec/bin/mspec ci :${{ matrix.rubyspec-target }}
         env:
           JRUBY_OPTS: -Xparser.prism -Xparser.prism.wasm
 
   spec-ruby-language-windows:
+    needs: maven-precache
     runs-on: windows-latest
 
     name: language specs (Windows, Java 21)
 
-    env:
-      JAVA_OPTS: "-Djdk.io.File.enableADS=true"
-      JDK_JAVA_OPTS: "-Djdk.io.File.enableADS=true"
+    env: *windows-env
 
     steps:
       - name: checkout
         uses: actions/checkout@v6
-      - name: set up java 21
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'zulu'
-          java-version: 21
-          cache: 'maven'
       - name: bootstrap
-        run: ./mvnw -ntp -Pbootstrap clean package
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
+        uses: ./.github/actions/bootstrap
       - name: language specs interpreted
         run: bin/jruby spec/mspec/bin/mspec ci :language
       - name: language specs compiled
@@ -369,27 +303,18 @@ jobs:
           JRUBY_OPTS: -Xjit.threshold=0
 
   spec-ruby-core-windows:
+    needs: maven-precache
     runs-on: windows-latest
 
     name: core specs (Windows, Java 21)
 
-    env:
-      JAVA_OPTS: "-Djdk.io.File.enableADS=true"
-      JDK_JAVA_OPTS: "-Djdk.io.File.enableADS=true"
+    env: *windows-env
 
     steps:
       - name: checkout
         uses: actions/checkout@v6
-      - name: set up java 21
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'zulu'
-          java-version: 21
-          cache: 'maven'
       - name: bootstrap
-        run: ./mvnw -ntp -Pbootstrap clean package
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
+        uses: ./.github/actions/bootstrap
       - name: core specs interpreted
         run: bin/jruby spec/mspec/bin/mspec ci :core
       - name: core specs compiled
@@ -398,6 +323,7 @@ jobs:
           JRUBY_OPTS: -Xjit.threshold=0
 
   spec-ruby-freebsd:
+    needs: maven-precache
     runs-on: ubuntu-latest
 
     strategy:
@@ -409,17 +335,11 @@ jobs:
 
     steps:
       - name: checkout
-        uses: actions/checkout@v3
-      - name: set up java 21
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'zulu'
-          java-version: 21
-          cache: 'maven'
+        uses: actions/checkout@v6
       - name: pre-build JRuby
-        run: |
-          ./mvnw -ntp -Pbootstrap clean package
-          bin/jruby --dev -S bundle install
+        uses: ./.github/actions/bootstrap
+        with:
+          remove-old-java: false
       - name: run in FreeBSD
         uses: vmactions/freebsd-vm@v1
         with:
@@ -431,6 +351,7 @@ jobs:
             bin/jruby spec/mspec/bin/mspec ci :${{ matrix.rubyspec-target }}
 
   spec-ruby-openbsd:
+    needs: maven-precache
     runs-on: ubuntu-latest
 
     strategy:
@@ -442,17 +363,11 @@ jobs:
 
     steps:
       - name: checkout
-        uses: actions/checkout@v3
-      - name: set up java 21
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'zulu'
-          java-version: 21
-          cache: 'maven'
+        uses: actions/checkout@v6
       - name: pre-build JRuby
-        run: |
-          ./mvnw -ntp -Pbootstrap clean package
-          bin/jruby --dev -S bundle install
+        uses: ./.github/actions/bootstrap
+        with:
+          remove-old-java: false
       - name: run in OpenBSD
         uses: vmactions/openbsd-vm@v1
         with:
@@ -464,6 +379,7 @@ jobs:
             bin/jruby spec/mspec/bin/mspec ci :${{ matrix.rubyspec-target }}
 
   dependency-check:
+    needs: maven-precache
     runs-on: ubuntu-latest
 
     name: Dependency check
@@ -478,13 +394,28 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '21'
-          cache: 'maven'
+      # Restore the cache but never save it. setup-java saves from the first job to finish,
+      # and this job does not run a full build, so its cache would be missing plugins.
+      - &restore-maven-cache
+        name: restore maven cache
+        uses: actions/cache/restore@v6
+        with:
+          path: /home/runner/.m2/repository
+          key: setup-java-Linux-x64-maven-${{ hashFiles('**/pom.xml', '**/.mvn/wrapper/maven-wrapper.properties', '**/.mvn/extensions.xml') }}
+          restore-keys: setup-java-Linux-x64-maven-
+      - &restore-maven-wrapper-cache
+        name: restore maven wrapper cache
+        uses: actions/cache/restore@v6
+        with:
+          path: /home/runner/.m2/wrapper/dists
+          key: setup-java-Linux-x64-maven-wrapper-${{ hashFiles('**/.mvn/wrapper/maven-wrapper.properties') }}
       - name: dependency convergence
         run: tool/maven-ci-script.sh
         env:
           PHASE: 'install -Pmain -Dinvoker.test=GH-6081*'
 
   test-versions:
+    needs: maven-precache
     runs-on: ubuntu-latest
 
     name: Verify build artifacts
@@ -498,13 +429,16 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: 21
-          cache: 'maven'
+      # the same restore-only steps as dependency-check
+      - *restore-maven-cache
+      - *restore-maven-wrapper-cache
       - name: maven-ci-script.sh
         run: tool/maven-ci-script.sh
         env:
           COMMAND: 'test/check_versions.sh'
 
   sequel:
+    needs: maven-precache
     runs-on: ubuntu-latest
 
     services:
@@ -532,43 +466,29 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v6
-      - name: remove default java except 21
-        run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
-      - name: set up java 21
-        uses: actions/setup-java@v5
+      - name: bootstrap
+        uses: ./.github/actions/bootstrap
         with:
           distribution: 'temurin'
-          java-version: 21
-          cache: 'maven'
-      - name: bootstrap
-        run: ./mvnw -ntp -Pbootstrap clean package
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
       - name: sequel
         run: tool/sequel-github-actions.sh
 
   concurrent-ruby:
+    needs: maven-precache
     runs-on: ubuntu-latest
 
     steps:
       - name: checkout
         uses: actions/checkout@v6
-      - name: remove default java except 21
-        run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
-      - name: set up java 21
-        uses: actions/setup-java@v5
+      - name: bootstrap
+        uses: ./.github/actions/bootstrap
         with:
           distribution: 'temurin'
-          java-version: 21
-          cache: 'maven'
-      - name: bootstrap
-        run: ./mvnw -ntp -Pbootstrap clean package
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
       - name: concurrent-ruby
         run: tool/concurrent-ruby-github-actions.sh
 
   maven-test-openj9-21:
+    needs: maven-precache
     runs-on: ubuntu-latest
 
     name: mvn -Ptest (OpenJ9 Java 21)
@@ -576,18 +496,11 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v6
-      - name: remove default java except 21
-        run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
-      - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v5
+      - name: bootstrap
+        uses: ./.github/actions/bootstrap
         with:
           distribution: 'semeru'
-          java-version: '21'
-          cache: 'maven'
-      - name: bootstrap
-        run: ./mvnw -ntp -Pbootstrap clean package
-      - name: bundle install
-        run: bin/jruby -S bundle install
+          jruby-flags: ''
       - name: test profile
         run: "tool/maven-ci-script.sh"
         env:
@@ -602,7 +515,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v6
       - name: install shellcheck
-        run: sudo apt install shellcheck
+        run: tool/ci-retry.sh sudo apt install shellcheck
       - name: run shellcheck
         run: shellcheck bin/jruby.sh
 
@@ -610,7 +523,7 @@ jobs:
     permissions:
       contents: read
     if: ${{ github.ref == 'refs/heads/master' && github.repository == 'jruby/jruby' }}
-    needs: [mvn-test, mvn-test-extended, mvn-test-windows, dependency-check, rake-test, rake-test-indy-off, rake-test, test-versions, sequel, concurrent-ruby, jruby-tests-dev, regression-specs-jit]
+    needs: [mvn-test, mvn-test-extended, mvn-test-windows, dependency-check, rake-test, rake-test-indy-off, test-versions, sequel, concurrent-ruby, jruby-tests-dev, regression-specs-jit]
     uses: ./.github/workflows/snapshot-publish.yml
     with:
       javaLevel: 21

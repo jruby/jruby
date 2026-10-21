@@ -41,6 +41,7 @@ package org.jruby;
 import java.io.IOException;
 import java.util.List;
 
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.API;
@@ -248,7 +249,7 @@ public class RubyRange extends RubyObject {
         return begLenInt(getCurrentContext(), len, err);
     }
 
-    // MRI: rb_range_component_beg_len
+    @CRuby("rb_range_component_beg_len")
     final int[] begLenInt(ThreadContext context, int len, final int err) {
         int beg = isBeginless ? 0 : toInt(context, this.begin);
         int end = isEndless ? -1 : toInt(context, this.end);
@@ -471,7 +472,7 @@ public class RubyRange extends RubyObject {
         return rangeLess(context, a, b) < 0 ? context.tru : null;
     }
 
-    // MRI: r_less
+    @CRuby(value = "r_less", file = "range.c")
     private static int rangeLess(ThreadContext context, IRubyObject a, IRubyObject b) {
         IRubyObject result = sites(context).op_cmp.call(context, a, a, b);
 
@@ -514,7 +515,7 @@ public class RubyRange extends RubyObject {
         }
     }
 
-    // MRI: r_cover_p
+    @CRuby(value = "r_cover_p", file = "range.c")
     private boolean coverRangeP(ThreadContext context, IRubyObject val) {
         if (begin.isNil() || rangeLess(context, begin, val) <= 0) {
             int excl = isExclusive ? 1 : 0;
@@ -525,7 +526,7 @@ public class RubyRange extends RubyObject {
         return false;
     }
 
-    // MRI: r_cover_range_p
+    @CRuby(value = "r_cover_range_p", file = "range.c")
     private boolean coverRange(ThreadContext context, RubyRange val) {
         int cmp;
 
@@ -618,7 +619,7 @@ public class RubyRange extends RubyObject {
         RubyInteger.fixnumUpto(context, ((RubyFixnum) begin).getValue(), to, block);
     }
 
-    // MRI: range_reverse_each
+    @CRuby(value = "range_reverse_each", file = "range.c")
     @JRubyMethod
     public IRubyObject reverse_each(ThreadContext context, Block block) {
         if (!block.isGiven()) {
@@ -654,7 +655,7 @@ public class RubyRange extends RubyObject {
         return this;
     }
 
-    // MRI: range_reverse_each_fixnum_section
+    @CRuby(value = "range_reverse_each_fixnum_section", file = "range.c")
     private void reverseEachFixnum(ThreadContext context, IRubyObject beg, RubyInteger end, Block block) {
         if (beg.isNil()) {
             beg = asFixnum(context, RubyFixnum.MIN);
@@ -663,7 +664,7 @@ public class RubyRange extends RubyObject {
         reverseEachFixnum(context, (RubyInteger) beg, end, block);
     }
 
-    // MRI: range_reverse_each_fixnum_section
+    @CRuby(value = "range_reverse_each_fixnum_section", file = "range.c")
     private void reverseEachFixnum(ThreadContext context, RubyInteger beg, RubyInteger end, Block block) {
         assert (!end.isNil());
 
@@ -689,7 +690,7 @@ public class RubyRange extends RubyObject {
         }
     }
 
-    // MRI: range_reverse_each_positive_bignum_section
+    @CRuby(value = "range_reverse_each_positive_bignum_section", file = "range.c")
     private void reverseEachPositiveBignum(ThreadContext context, IRubyObject beg, RubyInteger end, Block block) {
         assert (!end.isNil());
 
@@ -702,7 +703,7 @@ public class RubyRange extends RubyObject {
         reverseEachBignum(context, (RubyInteger) beg, end, block);
     }
 
-    // MRI: range_reverse_each_negative_bignum_section
+    @CRuby(value = "range_reverse_each_negative_bignum_section", file = "range.c")
     private void reverseEachNegativeBignum(ThreadContext context, IRubyObject beg, RubyInteger end, Block block) {
         assert (!end.isNil());
 
@@ -719,7 +720,7 @@ public class RubyRange extends RubyObject {
         reverseEachBignum(context, (RubyInteger) beg, end, block);
     }
 
-    // MRI: range_reverse_each_bignum
+    @CRuby(value = "range_reverse_each_bignum", file = "range.c")
     private void reverseEachBignum(ThreadContext context, RubyInteger beg, RubyInteger end, Block block) {
         assert (bignumPositive(context, beg) == bignumPositive(context, end));
 
@@ -734,7 +735,7 @@ public class RubyRange extends RubyObject {
         }
     }
 
-    // MRI: range_reverse_each_bignum_beginless
+    @CRuby(value = "range_reverse_each_bignum_beginless", file = "range.c")
     private void reverseEachBignumBeginless(ThreadContext context, RubyInteger end, Block block) {
         assert (bignumNegative(context, end));
 
@@ -1035,7 +1036,7 @@ public class RubyRange extends RubyObject {
         return Helpers.invokeSuper(context, this, obj, Block.NULL_BLOCK);
     }
 
-    // MRI: range_include_internal
+    @CRuby(value = "range_include_internal", file = "range.c")
     private IRubyObject includeCommon(ThreadContext context, final IRubyObject val, boolean useStringCover) {
         final Ruby runtime = context.runtime;
 
@@ -1053,7 +1054,7 @@ public class RubyRange extends RubyObject {
         return rangeIncludeFallback(context, val);
     }
 
-    // MRI: range_include_fallback
+    @CRuby(value = "range_include_fallback", file = "range.c")
     private IRubyObject rangeIncludeFallback(ThreadContext context, IRubyObject val) {
         boolean beginless = begin.isNil();
         boolean endless = end.isNil();
@@ -1074,13 +1075,13 @@ public class RubyRange extends RubyObject {
         return begin instanceof RubyString && end instanceof RubyString;
     }
 
-    // MRI: range_integer_edge_p
+    @CRuby(value = "range_integer_edge_p", file = "range.c")
     private boolean rangeIntegerEdge(ThreadContext context, RubyClass Integer, JavaSites.CheckedSites to_int_checked) {
         return !TypeConverter.convertToTypeWithCheck(context, begin, Integer, to_int_checked).isNil()
                 || !TypeConverter.convertToTypeWithCheck(context, end, Integer, to_int_checked).isNil();
     }
 
-    // MRI: discrete_object_p
+    @CRuby(value = "discrete_object_p", file = "range.c")
     private static boolean discreteObject(ThreadContext context, IRubyObject obj) {
         return sites(context).respond_to_succ.respondsTo(context, obj, obj, false);
     }
@@ -1105,7 +1106,7 @@ public class RubyRange extends RubyObject {
                 obj instanceof RubyRange range ? coverRange(context, range) : coverRangeP(context, obj));
     }
 
-    // MRI: r_cover_p
+    @CRuby(value = "r_cover_p", file = "range.c")
     private boolean rangeIncludes(ThreadContext context, IRubyObject val) {
         if (isBeginless || rangeLess(context, begin, val) <= 0) {
             int excl = isExclusive ? 1 : 0;
@@ -1373,7 +1374,7 @@ public class RubyRange extends RubyObject {
         return false;
     }
 
-    // MRI rb_int_range_last
+    @CRuby(value = "rb_int_range_last", file = "range.c")
     private RubyArray intRangeLast(ThreadContext context, IRubyObject arg) {
         RubyFixnum one = asFixnum(context, 1);
         RubyInteger e = (RubyInteger) end;
@@ -1577,7 +1578,7 @@ public class RubyRange extends RubyObject {
                 (obj.checkCallMethod(context, exclude_end_checked) != null);
     }
 
-    // MRI: rb_range_beg_len
+    @CRuby(value = "rb_range_beg_len", file = "range.c")
     public static IRubyObject rangeBeginLength(ThreadContext context, IRubyObject range, int len, int[] begLen, int err) {
         JavaSites.RangeSites sites = sites(context);
 
@@ -1639,7 +1640,7 @@ public class RubyRange extends RubyObject {
         }
     }
 
-    // MRI: rb_range_values
+    @CRuby(value = "rb_range_values", file = "range.c")
     public static RangeLike rangeValues(ThreadContext context, IRubyObject range) {
         if (range instanceof RubyRange vrange) {
             return new RangeLike(vrange.begin(context), vrange.end(context), vrange.isExcludeEnd());

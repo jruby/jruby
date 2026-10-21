@@ -41,7 +41,9 @@ import jnr.ffi.byref.IntByReference;
 import jnr.posix.Timeval;
 import jnr.posix.POSIX;
 import jnr.unixsocket.UnixSocketAddress;
+import org.jruby.FiberScheduler;
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
@@ -56,9 +58,11 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Access;
 import org.jruby.api.Convert;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -964,6 +968,23 @@ public class RubyBasicSocket extends RubyIO {
         setAscii8bitBinmode();
     }
 
+    /**
+     * Wait through the fiber scheduler for a connection, after a nonblocking accept found none pending.
+     * Call it without holding any lock on this server, since io_wait runs sibling fibers that may accept on
+     * or close it. Returns when the caller should try accepting again.
+     */
+    // MRI: rsock_s_accept on EAGAIN, which waits with rb_io_maybe_wait_readable and RUBY_IO_TIMEOUT_DEFAULT
+    protected void schedulerWaitAcceptable(ThreadContext context, IRubyObject scheduler) {
+        IRubyObject result = FiberScheduler.ioWaitReadable(context, scheduler, this);
+
+        if (result == context.fals) {
+            throw RubyIOTimeoutError.newIOTimeoutError(context.runtime, "Timed out waiting for IO to become readable!").toThrowable();
+        }
+
+        // no events ready, so MRI gives up with the EAGAIN it got from accept(2)
+        if (result.isNil() || toInt(context, result) == 0) throw context.runtime.newErrnoFromErrno(Errno.EAGAIN, "accept(2)");
+    }
+
     private Channel getOpenChannel() {
         return getOpenFileChecked().channel();
     }
@@ -1061,5 +1082,32 @@ public class RubyBasicSocket extends RubyIO {
 
         RubyString result;
         InetSocketAddress sender;
+    }
+
+    // MRI: rsock_s_socketpair, which yields the pair and then closes the second socket and the first
+    protected static IRubyObject yieldPair(ThreadContext context, RubyBasicSocket sock0, RubyBasicSocket sock1, Block block) {
+        RubyArray<?> pair = newArray(context, sock0, sock1);
+        if (!block.isGiven()) return pair;
+
+        try {
+            return block.yield(context, pair);
+        } finally {
+            try {
+                closeRescued(context, sock1);
+            } finally {
+                closeRescued(context, sock0);
+            }
+        }
+    }
+
+    // MRI: ext/socket's io_close, which rescues any StandardError, unlike RubyIO.ioClose
+    private static void closeRescued(ThreadContext context, IRubyObject io) {
+        IRubyObject errorInfo = context.getErrorInfo();
+        try {
+            io.callMethod(context, "close");
+        } catch (RaiseException re) {
+            if (!context.runtime.getStandardError().isInstance(re.getException())) throw re;
+            context.setErrorInfo(errorInfo);
+        }
     }
 }// RubyBasicSocket

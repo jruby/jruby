@@ -94,4 +94,135 @@ public class IfNode extends Node {
     public List<Node> childNodes() {
         return Node.createList(condition, thenBody, elseBody);
     }
+
+    // ---- what MRI's compiler folds away (recorded by every parse: it decides what is compiled) ----
+
+    private byte constantPredicate;         // 0: not a literal; 1: a literal MRI folds to true; -1: one it folds to false
+    private boolean foldedPredicate;        // MRI compiles nothing for the predicate (only literals decide it)
+    private boolean modifier;               // written as a modifier: stmt if cond
+
+    // ---- branch coverage (recorded by the parser when it records positions, read by the IR builder) ----
+
+    /**
+     * A Ruby-level conditional as MRI reports it (which is not every IfNode: a pattern guard is none).
+     *
+     * @param unless written as unless: then/else bodies are swapped
+     * @param elsif an elsif clause of an enclosing if
+     * @param predicateEnd just past the condition (an empty then arm is reported there), or null
+     * @param elseStart the 'else' keyword, when there is one, or null
+     * @param sourceBody for a modifier: the statement as written (before begin/end unwrapping), or null
+     */
+    private record Branch(boolean unless, boolean elsif, SourcePosition predicateEnd, SourcePosition elseStart,
+                          Node sourceBody) {
+    }
+
+    public void markBranch(boolean unless, boolean elsif, long predicateEnd, long elseStart, Node sourceBody) {
+        setSourceDetail(new Branch(unless, elsif, SourcePosition.of(predicateEnd), SourcePosition.of(elseStart), sourceBody));
+    }
+
+    // null when this is no branch, or positions are not recorded
+    private Branch branch() {
+        return (Branch) getSourceDetail();
+    }
+
+    public boolean isBranch() {
+        return branch() != null;
+    }
+
+    public boolean isUnless() {
+        Branch branch = branch();
+        return branch != null && branch.unless;
+    }
+
+    public boolean isElsif() {
+        Branch branch = branch();
+        return branch != null && branch.elsif;
+    }
+
+    private SourcePosition predicateEnd() {
+        Branch branch = branch();
+        return branch == null ? null : branch.predicateEnd;
+    }
+
+    public boolean hasPredicateEnd() {
+        return predicateEnd() != null;
+    }
+
+    public int getPredicateEndLine() {
+        SourcePosition predicateEnd = predicateEnd();
+        return predicateEnd == null ? -1 : predicateEnd.line();
+    }
+
+    public int getPredicateEndColumn() {
+        SourcePosition predicateEnd = predicateEnd();
+        return predicateEnd == null ? -1 : predicateEnd.column();
+    }
+
+    private SourcePosition elseStart() {
+        Branch branch = branch();
+        return branch == null ? null : branch.elseStart;
+    }
+
+    public boolean hasElseStart() {
+        return elseStart() != null;
+    }
+
+    public int getElseStartLine() {
+        SourcePosition elseStart = elseStart();
+        return elseStart == null ? -1 : elseStart.line();
+    }
+
+    public int getElseStartColumn() {
+        SourcePosition elseStart = elseStart();
+        return elseStart == null ? -1 : elseStart.column();
+    }
+
+    /**
+     * The statement of a modifier conditional as written, or null when this is none or positions are not recorded.
+     */
+    public Node getSourceBody() {
+        Branch branch = branch();
+        return branch == null ? null : branch.sourceBody;
+    }
+
+    public void setModifier() {
+        modifier = true;
+    }
+
+    /**
+     * Whether this conditional was written as a modifier (stmt if cond).
+     */
+    public boolean isModifier() {
+        return modifier;
+    }
+
+    /**
+     * MRI folds a conditional on a literal predicate away, reporting no branch for it and compiling nothing of
+     * the arm that cannot run.
+     *
+     * @param constantPredicate 0 when the predicate is not a literal, 1 when it is a truthy one, -1 a falsy one
+     */
+    public void setConstantPredicate(int constantPredicate) {
+        this.constantPredicate = (byte) constantPredicate;
+    }
+
+    public boolean hasConstantPredicate() {
+        return constantPredicate != 0;
+    }
+
+    public boolean isConstantlyTrue() {
+        return constantPredicate > 0;
+    }
+
+    /**
+     * @param foldedPredicate whether MRI compiles no instructions for the predicate: a constant predicate made of
+     *                        literals only (unlike <code>x and false</code>, which still calls x)
+     */
+    public void setFoldedPredicate(boolean foldedPredicate) {
+        this.foldedPredicate = foldedPredicate;
+    }
+
+    public boolean hasFoldedPredicate() {
+        return foldedPredicate;
+    }
 }

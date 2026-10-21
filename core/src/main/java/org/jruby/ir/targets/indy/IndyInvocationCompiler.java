@@ -76,6 +76,8 @@ public class IndyInvocationCompiler implements InvocationCompiler {
             return;
         }
 
+        pushCallerForFunctionalCall(call);
+
         String signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
 
         compiler.adapter.invokedynamic(
@@ -97,6 +99,8 @@ public class IndyInvocationCompiler implements InvocationCompiler {
             return;
         }
 
+        pushCallerForFunctionalCall(call);
+
         String signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
 
         compiler.adapter.invokedynamic(
@@ -107,6 +111,15 @@ public class IndyInvocationCompiler implements InvocationCompiler {
                 call.getCallType().ordinal(),
                 file,
                 compiler.getLastLine());
+    }
+
+    // The operator call sites always take a caller, but JVMVisitor doesn't push one for functional calls. A functional
+    // call's receiver is self, which is also the caller, so duplicate it.
+    private void pushCallerForFunctionalCall(CallBase call) {
+        CallType callType = call.getCallType();
+        if (callType == CallType.FUNCTIONAL || callType == CallType.VARIABLE) {
+            compiler.adapter.dup();
+        }
     }
 
     private void invokeOtherOrSelfArity1(String file, int line, CallBase call) {
@@ -232,8 +245,8 @@ public class IndyInvocationCompiler implements InvocationCompiler {
     }
 
     @Override
-    public void invokeEQQ(EQQInstr call) {
-        normalCompiler.invokeEQQ(call);
+    public void invokeEQQ(EQQInstr call, String scopeFieldName) {
+        normalCompiler.invokeEQQ(call, scopeFieldName);
     }
 
     @Override

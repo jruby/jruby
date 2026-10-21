@@ -28,6 +28,7 @@
 
 package org.jruby;
 
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.exceptions.JumpException;
@@ -2117,7 +2118,7 @@ public class RubyEnumerable {
 
     }
 
-    // chunk_i
+    @CRuby(value = "chunk_i", file = "enum.c")
     public static final class ChunkedBlockCallback implements BlockCallback {
         private final Ruby runtime;
         private final IRubyObject enumerator;

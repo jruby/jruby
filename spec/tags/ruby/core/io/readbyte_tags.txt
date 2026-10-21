@@ -1,1 +1,1 @@
-fails:IO#readbyte reads after ungetc without character conversion
+windows:IO#readbyte reads after ungetc without character conversion

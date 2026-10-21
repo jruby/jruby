@@ -180,9 +180,9 @@ public class IndyValueCompiler implements ValueCompiler {
         compiler.adapter.invokedynamic(RangeObjectSite.RANGE_BEGINLESS, sig(RubyRange.class, ThreadContext.class), RangeObjectSite.BOOTSTRAP_LONG, begin, exclusive ? 1 : 0);
     }
 
-    public void pushRange(ByteList begin, int beginCR, ByteList end, int endCR, boolean exclusive) {
+    public void pushRange(ByteList begin, int beginCR, ByteList end, int endCR, String file, int beginLine, int endLine, boolean exclusive) {
         compiler.loadContext();
-        compiler.adapter.invokedynamic("range", sig(RubyRange.class, ThreadContext.class), RangeObjectSite.BOOTSTRAP_STRING_STRING, RubyEncoding.decodeRaw(begin), begin.getEncoding().toString(), beginCR, RubyEncoding.decodeRaw(end), end.getEncoding().toString(), endCR, exclusive ? 1 : 0);
+        compiler.adapter.invokedynamic("range", sig(RubyRange.class, ThreadContext.class), RangeObjectSite.BOOTSTRAP_STRING_STRING, RubyEncoding.decodeRaw(begin), begin.getEncoding().toString(), beginCR, RubyEncoding.decodeRaw(end), end.getEncoding().toString(), endCR, file, beginLine, endLine, exclusive ? 1 : 0);
     }
 
     public void pushRegexp(ByteList source, int options) {

@@ -49,6 +49,7 @@ import org.joni.Syntax;
 import org.joni.WarnCallback;
 import org.joni.exception.JOniException;
 import org.joni.exception.TimeoutException;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Convert;
@@ -365,7 +366,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return regexp;
     }
 
-    // MRI: rb_reg_new_str
+    @CRuby(value = "rb_reg_new_str", file = "re.c")
     public static RubyRegexp newRegexpFromStr(Ruby runtime, RubyString s, int options) {
         var context = runtime.getCurrentContext();
         RubyRegexp re = (RubyRegexp)runtime.getRegexp().allocate(context);
@@ -378,8 +379,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return getOptions(getCurrentContext());
     }
 
-    /** rb_reg_options
-     */
+    @CRuby(value = "rb_reg_options", file = "re.c")
     public final RegexpOptions getOptions(ThreadContext context) {
         check(context);
         return options;
@@ -466,12 +466,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         RegexpSupport.preprocess(runtime, bytes, bytes.getEncoding(), new Encoding[]{null}, RegexpSupport.ErrorMode.RAISE);
     }
 
-    // rb_reg_preprocess_dregexp
+    @CRuby(value = "rb_reg_preprocess_dregexp", file = "re.c")
     public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject[] strings, RegexpOptions options) {
         return preprocessDRegexp(runtime.getCurrentContext(), options, strings);
     }
 
-    // rb_reg_preprocess_dregexp
+    @CRuby(value = "rb_reg_preprocess_dregexp", file = "re.c")
     public static RubyString preprocessDRegexp(ThreadContext context, RegexpOptions options, IRubyObject... args) {
         RubyString string = null;
         Encoding regexpEnc = null;
@@ -606,9 +606,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return TypeConverter.convertToTypeWithCheck(args, context.runtime.getRegexp(), "to_regexp");
     }
 
-    /** rb_reg_s_quote
-     *
-     */
+    @CRuby(value = "rb_reg_s_quote", file = "re.c")
     @JRubyMethod(name = {"quote", "escape"}, meta = true)
     public static RubyString quote(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         return newSharedString(context, quote(operandCheck(context, arg)));
@@ -621,9 +619,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return qBytes;
     }
 
-    /** rb_reg_quote
-     *
-     */
+    @CRuby(value = "rb_reg_quote", file = "re.c")
     private static final int QUOTED_V = 11;
     static ByteList quote(ByteList bs, boolean asciiOnly) {
         int p = bs.getBegin();
@@ -742,9 +738,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return context.getBackRef();
     }
 
-    /** rb_reg_s_last_match
-    *
-    */
+    @CRuby(value = "rb_reg_s_last_match", file = "re.c")
     @JRubyMethod(name = "last_match", meta = true, reads = BACKREF)
     public static IRubyObject last_match_s(ThreadContext context, IRubyObject recv, IRubyObject nth) {
         return context.getBackRef() instanceof RubyMatchData match ?
@@ -752,9 +746,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 context.nil;
     }
 
-    /** rb_reg_s_union
-    *
-    */
+    @CRuby(value = "rb_reg_s_union", file = "re.c")
     @JRubyMethod(name = "union", rest = true, meta = true)
     public static IRubyObject union(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         IRubyObject obj;
@@ -848,8 +840,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
     }
 
-    /** rb_reg_init_copy
-     */
+    @CRuby(value = "rb_reg_init_copy", file = "re.c")
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize_copy(ThreadContext context, IRubyObject re) {
         if (this == re) return this;
@@ -947,7 +938,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return regexpInitialize(regexp.str, regexp.getEncoding(), newOptions, timeoutProvided != null ? timeoutProvided : regexp.timeout);
     }
 
-    // rb_reg_initialize_str
+    @CRuby(value = "rb_reg_initialize_str", file = "re.c")
     private RubyRegexp regexpInitializeString(ThreadContext context, RubyString str, RegexpOptions options, IRubyObject timeout) {
         if (isLiteral()) throw context.runtime.newFrozenError(this);
         ByteList bytes = str.getByteList();
@@ -967,7 +958,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     public final RubyRegexp regexpInitialize(ByteList bytes, Encoding enc, RegexpOptions options) {
         return regexpInitialize(bytes, enc, options, null);
     }
-    // rb_reg_initialize
+    @CRuby(value = "rb_reg_initialize", file = "re.c")
     public final RubyRegexp regexpInitialize(ByteList bytes, Encoding enc, RegexpOptions options, IRubyObject timeout) {
         Ruby runtime = metaClass.runtime;
         this.options = options;
@@ -1047,9 +1038,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return context.nil;
     }
 
-    /** rb_reg_eqq
-     *
-     */
+    @CRuby(value = "rb_reg_eqq", file = "re.c")
     @JRubyMethod(name = "===", writes = BACKREF)
     public IRubyObject eqq(ThreadContext context, IRubyObject arg) {
         arg = operandNoCheck(context, arg);
@@ -1070,8 +1059,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return context.fals;
     }
 
-    // MRI: rb_reg_match
 
+    @CRuby(value = "rb_reg_match", file = "re.c")
     @Override
     @JRubyMethod(name = "=~", writes = BACKREF)
     public IRubyObject op_match(ThreadContext context, IRubyObject str) {
@@ -1082,9 +1071,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return asFixnum(context, pos);
     }
 
-    /** rb_reg_match_m
-     *
-     */
+    @CRuby(value = "rb_reg_match_m", file = "re.c")
     @JRubyMethod(name = "match", writes = BACKREF)
     public IRubyObject match_m(ThreadContext context, IRubyObject str, Block block) {
         return matchCommon(context, str, 0, true, block);
@@ -1120,14 +1107,13 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     /**
-     * MRI: reg_match_pos
-     *
      * @param context thread context
      * @param arg the stringlike to match
      * @param strp an out param to hold the coerced string; ignored if null
      * @param useBackref whether to update the current execution frame's backref
      * @param pos the position from which to start matching
      */
+    @CRuby(value = "reg_match_pos", file = "re.c")
     private int matchPos(ThreadContext context, IRubyObject arg, RubyString[] strp, boolean useBackref, int pos) {
         if (arg == context.nil) {
             context.clearLocalMatch();
@@ -1225,10 +1211,9 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     }
 
     /**
-     * MRI: rb_reg_search
-     *
      * This version uses current thread context to hold the resulting match data.
      */
+    @CRuby(value = "rb_reg_search", file = "re.c")
     public final int search(ThreadContext context, RubyString str, int pos, boolean reverse) {
         int result = searchString(context, str, pos, reverse);
 
@@ -1351,9 +1336,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return asBoolean(context, getOptions(context).isIgnorecase());
     }
 
-    /** rb_reg_source
-     *
-     */
+    @CRuby(value = "rb_reg_source", file = "re.c")
     @JRubyMethod
     public IRubyObject source(ThreadContext context) {
         check(context);
@@ -1376,9 +1359,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return str.getRealSize();
     }
 
-    /** rb_reg_inspect
-     *
-     */
+    @CRuby(value = "rb_reg_inspect", file = "re.c")
     @Override
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect(ThreadContext context) {
@@ -1499,9 +1480,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return names;
     }
 
-    /** rb_reg_names
-     *
-     */
+    @CRuby(value = "rb_reg_names", file = "re.c")
     @JRubyMethod
     public IRubyObject names(ThreadContext context) {
         check(context);
@@ -1518,9 +1497,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return ary;
     }
 
-    /** rb_reg_named_captures
-     *
-     */
+    @CRuby(value = "rb_reg_named_captures", file = "re.c")
     @JRubyMethod
     public IRubyObject named_captures(ThreadContext context) {
         check(context);
@@ -1599,9 +1576,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return nth_match(((RubyBasicObject) match).getCurrentContext(), nth, match);
     }
 
-    /** rb_reg_nth_match
-    *
-    */
+    @CRuby(value = "rb_reg_nth_match", file = "re.c")
     public static IRubyObject nth_match(ThreadContext context, int nth, IRubyObject matchArg) {
         return matchArg instanceof RubyMatchData match ?
                 nth_match(context, nth, match) : context.nil;
@@ -1632,9 +1607,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return last_match(((RubyBasicObject) match).getCurrentContext(), match);
     }
 
-    /** rb_reg_last_match
-     *
-     */
+    @CRuby(value = "rb_reg_last_match", file = "re.c")
     public static IRubyObject last_match(ThreadContext context, IRubyObject match) {
         return nth_match(context, 0, match);
     }
@@ -1645,9 +1618,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return match_pre(((RubyBasicObject) match).getCurrentContext(), match);
     }
 
-    /** rb_reg_match_pre
-     *
-     */
+    @CRuby(value = "rb_reg_match_pre", file = "re.c")
     public static IRubyObject match_pre(ThreadContext context, IRubyObject matchArg) {
         if (!(matchArg instanceof RubyMatchData match)) return context.nil;
 
@@ -1662,9 +1633,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return match_post(((RubyBasicObject) match).getCurrentContext(), match);
     }
 
-    /** rb_reg_match_post
-     *
-     */
+    @CRuby(value = "rb_reg_match_post", file = "re.c")
     public static IRubyObject match_post(ThreadContext context, IRubyObject matchArg) {
         if (!(matchArg instanceof RubyMatchData match)) return context.nil;
 
@@ -1680,9 +1649,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return match_last(((RubyBasicObject) match).getCurrentContext(), match);
     }
 
-    /** rb_reg_match_last
-     *
-     */
+    @CRuby(value = "rb_reg_match_last", file = "re.c")
     public static IRubyObject match_last(ThreadContext context, IRubyObject matchArg) {
         if (!(matchArg instanceof RubyMatchData match)) return matchArg;
 
@@ -1710,7 +1677,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return regsub(context, str, src, pattern, matcher.getRegion(), matcher.getBegin(), matcher.getEnd());
     }
 
-    // rb_reg_regsub
+    @CRuby(value = "rb_reg_regsub", file = "re.c")
     static RubyString regsub(ThreadContext context, RubyString str, RubyString src, Regex pattern, Region regs,
                              final int begin, final int end) {
         RubyString val = null;
@@ -1854,7 +1821,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return (RubyString) regOperand(context, str, true);
     }
 
-    // MRI: reg_operand
+    @CRuby(value = "reg_operand", file = "re.c")
     private static IRubyObject regOperand(ThreadContext context, IRubyObject str, boolean check) {
         if (str instanceof RubySymbol sym) return sym.to_s(context);
         return check ? str.convertToString() : str.checkStringType();
