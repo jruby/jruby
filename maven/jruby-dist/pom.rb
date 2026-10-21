@@ -11,6 +11,10 @@ project 'JRuby Dist' do
   inherit "org.jruby:jruby-artifacts:#{version}"
   packaging 'pom'
 
+  # Same as core/pom.rb
+  properties("maven.build.timestamp.format": 'yyyy-MM-dd',
+             "jruby.basedir": '${basedir}/../..')
+
   phase 'prepare-package' do
     plugin :dependency do
       execute_goals('unpack',
@@ -60,6 +64,22 @@ project 'JRuby Dist' do
             <arg value="data.tar.xz"/>
             <arg value="-C"/>
             <arg value="${project.build.directory}/rdoc/unpacked"/>
+          </exec>
+        </target>')])
+
+      execute_goals('run',
+                    id: 'generate-man-page',
+                    configuration: [xml('<target>
+          <mkdir dir="${jruby.basedir}/core/target/generated-man"/>
+          <exec dir="${jruby.basedir}" executable="java" failonerror="true">
+            <arg value="-Djruby.home=${jruby.basedir}"/>
+            <arg value="-cp"/>
+            <arg value="${jruby.basedir}/lib/jruby.jar"/>
+            <arg value="org.jruby.main.Main"/>
+            <arg value="tool/man/man_page.rb"/>
+            <arg value="core/target/generated-man/jruby.1"/>
+            <arg value="--date"/>
+            <arg value="${maven.build.timestamp}"/>
           </exec>
         </target>')])
     end
