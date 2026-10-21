@@ -3375,6 +3375,9 @@ public final class Ruby implements Constantizable {
 
         javaSupport.tearDown();
         javaSupport = loadJavaSupport();
+
+        // Release parser resources
+        parserManager.tearDown();
     }
 
     private int userTeardown(ThreadContext context) {
