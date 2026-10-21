@@ -169,6 +169,34 @@ describe "String#tr" do
         ).should == "hello".encode(Encoding::UTF_16LE)
       end
 
+      it "replaces characters above U+00FF" do
+        "日本語".tr("本" => "ほん").should == "日ほん語"
+      end
+
+      it "does not modify the receiver" do
+        str = "hello"
+        str.tr("l" => "L").should == "heLLo"
+        str.should == "hello"
+      end
+
+      it "does not match an invalid key against characters of a valid string" do
+        "abc".tr("\xFF".dup.force_encoding(Encoding::UTF_8) => "x").should == "abc"
+      end
+
+      it "skips entries deleted from the Hash by a key's #to_str" do
+        pairs = {}
+        key = Object.new
+        key.define_singleton_method(:to_str) { pairs.delete("b"); "a" }
+        pairs[key] = "x"
+        pairs["b"] = "y"
+        "ab".tr(pairs).should == "xb"
+      end
+
+      it "raises TypeError if the only argument is not a Hash" do
+        -> { "hello".tr(1) }.should.raise(TypeError, "wrong argument type Integer (expected Hash)")
+        -> { "hello".tr(nil) }.should.raise(TypeError, "wrong argument type nil (expected Hash)")
+      end
+
       it "raises ArgumentError if a key is more than one codepoint" do
         -> { "hello".tr("hel" => "") }.should.raise(ArgumentError)
         -> { "🤦🏼‍♂️".tr("🤦🏼‍♂️" => "") }.should.raise(ArgumentError)
@@ -241,6 +269,24 @@ describe "String#tr!" do
 
       it "returns nil if the string wasn't modified" do
         "hello".tr!("€" => "", "Ø" => "").should == nil
+      end
+
+      it "replaces characters above U+00FF" do
+        "日本語".tr!("本" => "ほん").should == "日ほん語"
+      end
+
+      it "modifies the receiver in place" do
+        str = "hello"
+        str.tr!("l" => "L").should.equal?(str)
+        str.should == "heLLo"
+      end
+
+      it "raises FrozenError if the receiver is frozen" do
+        -> { "hello".freeze.tr!("l" => "L") }.should.raise(FrozenError)
+      end
+
+      it "raises TypeError if the only argument is not a Hash" do
+        -> { "hello".tr!(1) }.should.raise(TypeError, "wrong argument type Integer (expected Hash)")
       end
 
       it "raises ArgumentError if a key is more than one codepoint" do
