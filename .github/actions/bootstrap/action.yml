@@ -1,0 +1,53 @@
+name: Bootstrap JRuby
+description: Set up Java, build JRuby with Maven, and install the bundled gems
+
+inputs:
+  java-version:
+    description: Java version to set up
+    default: '21'
+  distribution:
+    description: Java distribution to set up
+    default: 'zulu'
+  remove-old-java:
+    description: Remove the JDKs preinstalled on Linux runners other than 21
+    default: 'true'
+  build-args:
+    description: Arguments passed to the Maven wrapper
+    default: '-Pbootstrap clean package'
+  bundle-install:
+    description: Run bundle install after the build
+    default: 'true'
+  jruby-flags:
+    description: Flags passed to bin/jruby for bundle install
+    default: '--dev'
+
+runs:
+  using: composite
+  steps:
+    - name: remove default java except 21
+      if: runner.os == 'Linux' && inputs.remove-old-java == 'true'
+      shell: bash
+      run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
+    - name: set up java ${{ inputs.java-version }}
+      uses: actions/setup-java@v5
+      with:
+        distribution: ${{ inputs.distribution }}
+        java-version: ${{ inputs.java-version }}
+        cache: 'maven'
+    # tool/ci-retry.sh needs bash, so Windows builds run the wrapper directly and are not retried.
+    - name: build
+      if: runner.os != 'Windows'
+      shell: bash
+      run: tool/ci-retry.sh ./mvnw -ntp ${{ inputs.build-args }}
+    - name: build (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: ./mvnw -ntp ${{ inputs.build-args }}
+    - name: bundle install
+      if: runner.os != 'Windows' && inputs.bundle-install == 'true'
+      shell: bash
+      run: tool/ci-retry.sh bin/jruby ${{ inputs.jruby-flags }} -S bundle install
+    - name: bundle install (Windows)
+      if: runner.os == 'Windows' && inputs.bundle-install == 'true'
+      shell: pwsh
+      run: bin/jruby ${{ inputs.jruby-flags }} -S bundle install
