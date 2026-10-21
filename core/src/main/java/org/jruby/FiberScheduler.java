@@ -77,6 +77,11 @@ public class FiberScheduler {
         return ioWait(context, scheduler, io, asFixnum(context, RubyIO.IOEvent.IO_WRITABLE.value), context.nil);
     }
 
+    // MRI: rb_io_wait for RUBY_IO_READABLE|RUBY_IO_WRITABLE, as wait_connectable does, since a failed connect turns on both
+    public static IRubyObject ioWaitReadableWritable(ThreadContext context, IRubyObject scheduler, IRubyObject io, IRubyObject timeout) {
+        return ioWait(context, scheduler, io, asFixnum(context, RubyIO.IOEvent.IO_READABLE.value | RubyIO.IOEvent.IO_WRITABLE.value), timeout);
+    }
+
     @CRuby(value = "rb_fiber_scheduler_io_select", file = "scheduler.c")
     public static IRubyObject ioSelect(ThreadContext context, IRubyObject scheduler, IRubyObject readables, IRubyObject writables, IRubyObject exceptables, IRubyObject timeout) {
         return ioSelectv(context, scheduler, readables, writables, exceptables, timeout);
