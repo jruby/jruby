@@ -16,7 +16,8 @@ nodename nor servname|Failed to connect to|Failed to fetch|Unable to fetch some 
 The remote end hung up|RPC failed|Unexpected end of file from server
 Remote host terminated the handshake|SSLException
 502 Bad Gateway|504 Gateway|Service Unavailable
-Errno::ECONNRESET|Errno::ETIMEDOUT'
+Errno::ECONNRESET|Errno::ETIMEDOUT
+Could not find artifact'
 
 output=$(mktemp "${TMPDIR:-/tmp}/ci-retry.XXXXXX")
 trap 'rm -f "$output"' EXIT
