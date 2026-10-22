@@ -2129,6 +2129,7 @@ public class Helpers {
         var singletonClass = containingClass.singletonClass(context);
         singletonMethod.setImplementationClass(singletonClass);
         singletonMethod.setVisibility(Visibility.PUBLIC);
+        org.jruby.ir.runtime.IRRuntimeHelpers.moduleFunctionBacktraceLabel(context, singletonMethod, containingClass, sym.idString());
         singletonClass.addMethod(context, sym.idString(), singletonMethod);
         containingClass.callMethod(context, "singleton_method_added", sym);
     }

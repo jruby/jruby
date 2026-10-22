@@ -372,6 +372,89 @@ public abstract class IRScope implements ParseResult {
         return n;
     }
 
+    // Ruby 3.4+ backtrace label of a method scope ("Foo#bar", "Foo.baz"),
+    // recorded once when the method is defined (owner known only then) and
+    // read by the interpreter's backtrace push and the JIT's frame naming --
+    // so call paths only pay a field read. A scope defined into two
+    // different owners falls back to its bare name: less qualified, never a
+    // wrong owner.
+    private volatile String backtraceLabel;
+
+    public String getBacktraceLabel() {
+        return backtraceLabel;
+    }
+
+    public void recordBacktraceLabel(String label) {
+        String current = backtraceLabel;
+        if (current == null) {
+            backtraceLabel = label;
+        } else if (!current.equals(label)) {
+            backtraceLabel = getId();
+        }
+    }
+
+    /** Label of the method a block frame belongs to ("block in " + this), or null. */
+    public String getEnclosingBacktraceLabel() {
+        IRScope top = getNearestTopLocalVariableScope();
+        return top == null ? null : top.getBacktraceLabel();
+    }
+
+    /**
+     * For a block scope, its backtrace frame name -- what follows "block ":
+     * "Foo#bar" (rendered "block in Foo#bar") or, nested, "(2 levels) in Foo#bar".
+     * The top is the enclosing method's label, "<class:C>"/"<module:M>" for a
+     * class/module body, else fallbackTop (e.g. "<main>"). Static per scope.
+     */
+    public String getBlockFrameName(String fallbackTop) {
+        int depth = 0;
+        IRScope s = this;
+        while (true) {
+            if (s instanceof IRClosure && !(s instanceof IREvalScript)) {
+                depth++;
+                s = s.getLexicalParent();
+            } else if (s instanceof IRMethod m && m.getDefinedFrom() != null) {
+                s = m.getDefinedFrom(); // a define_method body counts as its block
+            } else {
+                break;
+            }
+        }
+
+        String top;
+        if (s instanceof IRMethod) {
+            top = s.getBacktraceLabel();
+            if (top == null) top = fallbackTop;
+        } else if (s instanceof IRMetaClassBody) {
+            top = "singleton class";
+        } else if (s instanceof IRClassBody) {
+            top = "<class:" + s.getId() + ">";
+        } else if (s instanceof IRModuleBody) {
+            top = "<module:" + s.getId() + ">";
+        } else if (s instanceof IRScriptBody script) {
+            top = script.getTopLabel();
+        } else {
+            top = fallbackTop;
+        }
+
+        return depth > 1 ? "(" + depth + " levels) in " + top : top;
+    }
+
+    /** The full block label: "block in Foo#bar" / "block (2 levels) in Foo#bar". */
+    public String getBlockBacktraceLabel(String fallbackTop) {
+        String name = getBlockFrameName(fallbackTop);
+        return (name.startsWith("(") ? "block " : "block in ") + name;
+    }
+
+    /** True when getBlockFrameName doesn't depend on its fallback (so it can be cached). */
+    public boolean isBlockFrameNameStatic() {
+        IRScope s = this;
+        while (true) {
+            if (s instanceof IRClosure && !(s instanceof IREvalScript)) s = s.getLexicalParent();
+            else if (s instanceof IRMethod m && m.getDefinedFrom() != null) s = m.getDefinedFrom();
+            else break;
+        }
+        return (s instanceof IRMethod && s.getBacktraceLabel() != null) || s instanceof IRModuleBody || s instanceof IRScriptBody;
+    }
+
     public String getId() {
         return getName().idString();
     }

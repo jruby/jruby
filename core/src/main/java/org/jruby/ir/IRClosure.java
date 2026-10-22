@@ -211,6 +211,7 @@ public class IRClosure extends IRScope {
         LazyMethodDefinitionAST defn = new LazyMethodDefinitionAST(def);
         IRMethod method = new IRMethod(getManager(), getLexicalParent(), defn, name, true,  getLine(), getStaticScope().duplicate(), getCoverageMode());
         method.setSourceSpan(getStartColumn(), getEndLine(), getEndColumn());
+        method.setDefinedFrom(this); // backtraces label it as this block (MRI: "block in <class:C>")
         return method;
     }
 

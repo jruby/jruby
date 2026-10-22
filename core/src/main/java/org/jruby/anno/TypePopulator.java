@@ -133,27 +133,30 @@ public abstract class TypePopulator {
                 final String name = entry.getKey();
                 final List<JavaMethodDescriptor> methods = entry.getValue();
                 target.defineAnnotatedMethod(context, name, methods, methodFactory);
-                addBoundMethodsUnlessOmitted(context.runtime, name, methods);
+                addBoundMethodsUnlessOmitted(context.runtime, target, name, methods);
             }
 
             for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getAnnotatedMethods().entrySet()) {
                 final String name = entry.getKey();
                 final List<JavaMethodDescriptor> methods = entry.getValue();
                 target.defineAnnotatedMethod(context, name, methods, methodFactory);
-                addBoundMethodsUnlessOmitted(context.runtime, name, methods);
+                addBoundMethodsUnlessOmitted(context.runtime, target, name, methods);
             }
         }
 
-        private void addBoundMethodsUnlessOmitted(final Ruby runtime, final String name, final List<JavaMethodDescriptor> methods) {
+        private void addBoundMethodsUnlessOmitted(final Ruby runtime, final RubyModule target, final String name, final List<JavaMethodDescriptor> methods) {
             final int size = methods.size();
             final List<String> classAndSubs = this.classAndSubs;
+            String ownerName = target.getName();
+            if (ownerName.startsWith("#<")) ownerName = null;
 
             for ( int i=0; i<size; i++ ) {
                 final JavaMethodDescriptor desc = methods.get(i);
                 if (!desc.anno.omit()) {
                     String javaName = desc.name;
+                    String label = Ruby.qualifiedLabel(ownerName, desc.anno.meta() && !desc.anno.module() ? "." + name : name);
                     for (int j = 0; j < classAndSubs.size(); j++) {
-                        runtime.addBoundMethod(classAndSubs.get(j), javaName, name);
+                        runtime.addBoundMethod(classAndSubs.get(j), javaName, label);
                     }
                 }
             }

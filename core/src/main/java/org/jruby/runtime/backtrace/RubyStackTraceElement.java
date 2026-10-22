@@ -68,6 +68,31 @@ public class RubyStackTraceElement implements java.io.Serializable {
         return methodName;
     }
 
+    /**
+     * The method name without its Ruby 3.4+ owner qualifier: "each" for
+     * "Array#each", "sqrt" for "Integer.sqrt", "x" for "A::B#x".
+     */
+    /** "block in " for a block frame, or "block " when its name already carries "(N levels) in ". */
+    public static String blockPrefix(String name) {
+        if (name == null) return "block in ";
+        if (name.startsWith("block ")) return "";  // interpreted frames carry the full label
+        return name.startsWith("(") && name.contains(" levels) in ") ? "block " : "block in ";
+    }
+
+    public static String baseName(String label) {
+        if (label == null) return null;
+        if (label.startsWith("block in ")) label = label.substring("block in ".length());
+        else if (label.startsWith("block (")) label = label.substring("block ".length());
+        int levels = label.indexOf(" levels) in ");
+        if (label.startsWith("(") && levels > 0) label = label.substring(levels + " levels) in ".length());
+        if (label.startsWith("<")) return label; // <main>, <class:C>, <top (required)>
+        int hash = label.lastIndexOf('#');
+        if (hash > 0) return label.substring(hash + 1);
+        int dot = label.lastIndexOf('.');
+        if (dot > 0 && dot < label.length() - 1 && Character.isUpperCase(label.charAt(0))) return label.substring(dot + 1);
+        return label;
+    }
+
     public final FrameType getFrameType() {
         return frameType;
     }
@@ -76,7 +101,8 @@ public class RubyStackTraceElement implements java.io.Serializable {
 
     public final StackTraceElement asStackTraceElement() {
         if ( element != null ) return element;
-        return element = new StackTraceElement(className, methodName, fileName, lineNumber);
+        // the Java view keeps the plain method name ("times", not "Integer#times")
+        return element = new StackTraceElement(className, baseName(methodName), fileName, lineNumber);
     }
 
     public String toString() {
@@ -93,7 +119,7 @@ public class RubyStackTraceElement implements java.io.Serializable {
         line.cat(CommonByteLists.COLON);
         line.cat(ConvertBytes.longToByteListCached(element.getLineNumber()));
         line.cat(CommonByteLists.BACKTRACE_IN);
-        if (element.getFrameType() == FrameType.BLOCK) line.catString("block in ");
+        if (element.getFrameType() == FrameType.BLOCK) line.catString(blockPrefix(element.getMethodName()));
         line.cat(methodSym.getBytes());
         line.cat('\'');
 

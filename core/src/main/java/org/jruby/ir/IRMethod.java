@@ -55,6 +55,18 @@ import java.util.Map;
 import static org.jruby.api.Error.runtimeError;
 
 public class IRMethod extends IRScope {
+    // the block this method was converted from (define_method), whose label
+    // backtraces use for it: MRI shows a define_method body as a block frame
+    private IRClosure definedFrom;
+
+    public void setDefinedFrom(IRClosure closure) {
+        this.definedFrom = closure;
+    }
+
+    public IRClosure getDefinedFrom() {
+        return definedFrom;
+    }
+
     public final boolean isInstanceMethod;
 
     // Argument description

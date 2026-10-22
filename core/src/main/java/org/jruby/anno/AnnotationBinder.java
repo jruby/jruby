@@ -238,7 +238,7 @@ public class AnnotationBinder extends AbstractProcessor {
             out.println("");
 
             // addBoundMethods(int tuplesIndex, String... classNamesAndTuples)
-            out.print("        runtime.addBoundMethods(" + classAndSubs.size() + ", ");
+            out.print("        runtime.addBoundMethods(cls, " + classAndSubs.size() + ", ");
             out.print(classAndSubs.stream().map(s -> quote(s)).collect(Collectors.joining(", ")));
             mappings.forEach((javaName, rubyName) -> out.print(", " + quote(javaName) + ", " + quote(rubyName) + ""));
             out.println(");");
@@ -299,6 +299,10 @@ public class AnnotationBinder extends AbstractProcessor {
 
             CharSequence javaName = decl.getSimpleName().toString();
             CharSequence rubyName = entry.getKey();
+
+            // "." marks a singleton method, so the backtrace label can be
+            // "Owner.name" rather than "Owner#name" (see Ruby#addBoundMethods)
+            if (anno.meta() && !anno.module()) rubyName = "." + rubyName;
 
             mappings.putIfAbsent(javaName, rubyName);
         }
