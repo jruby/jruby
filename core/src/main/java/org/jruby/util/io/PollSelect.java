@@ -38,10 +38,11 @@ final class PollSelect {
         private static LibC load() {
             Platform platform = Platform.getNativePlatform();
 
-            switch (platform.getOS()) {
-                case LINUX, ZLINUX, DARWIN, FREEBSD, OPENBSD, NETBSD, DRAGONFLY, SOLARIS: break;
-                default: return null; // AIX, for one, has other <poll.h> values
-            }
+            boolean supported = switch (platform.getOS()) {
+                case LINUX, ZLINUX, DARWIN, FREEBSD, OPENBSD, NETBSD, DRAGONFLY, SOLARIS -> true;
+                default -> false; // AIX, for one, has other <poll.h> values
+            };
+            if (!supported) return null;
 
             try {
                 return LibraryLoader.create(LibC.class).load(platform.getStandardCLibraryName());
@@ -52,7 +53,11 @@ final class PollSelect {
     }
 
     // <poll.h> on the systems above
-    private static final int POLLFD_SIZE = 8; // struct pollfd { int fd; short events; short revents; }
+    // struct pollfd { int fd; short events; short revents; }
+    private static final int POLLFD_SIZE = 8;
+    private static final int FD = 0;
+    private static final int EVENTS = 4;
+    private static final int REVENTS = 6;
     private static final short POLLIN = 0x1;
     private static final short POLLOUT = 0x4;
     private static final short POLLERR = 0x8;
@@ -74,25 +79,20 @@ final class PollSelect {
         LibC libc = LibCHolder.LIBC;
         if (libc == null) return null;
 
-        RubyArray<?> readAry = read.isNil() ? null : read.convertToArray();
-        RubyArray<?> writeAry = write.isNil() ? null : write.convertToArray();
+        // copies, since a #to_io below may change the arrays
+        IRubyObject[] reads = read.isNil() ? IRubyObject.NULL_ARRAY : read.convertToArray().toJavaArray(context);
+        IRubyObject[] writes = write.isNil() ? IRubyObject.NULL_ARRAY : write.convertToArray().toJavaArray(context);
 
-        int readCount = readAry == null ? 0 : readAry.size();
-        int writeCount = writeAry == null ? 0 : writeAry.size();
+        int readCount = reads.length;
+        int writeCount = writes.length;
         int count = readCount + writeCount;
         if (count == 0) return null;
-
-        // only exceptional conditions go unreported, as with our selectors
-        if (!except.isNil()) {
-            RubyArray<?> exceptAry = except.convertToArray();
-            for (int i = 0; i < exceptAry.size(); i++) TypeConverter.ioGetIO(runtime, exceptAry.eltOk(i)).getOpenFileChecked();
-        }
 
         ByteBuffer pollfds = pollfds(count);
         boolean[] pending = new boolean[readCount];
 
         for (int i = 0; i < readCount; i++) {
-            OpenFile fptr = TypeConverter.ioGetIO(runtime, readAry.eltOk(i)).getOpenFileChecked();
+            OpenFile fptr = TypeConverter.ioGetIO(runtime, reads[i]).getOpenFileChecked();
             int fd = pollable(fptr.fd());
             if (fd < 0) return null;
 
@@ -101,7 +101,7 @@ final class PollSelect {
         }
 
         for (int i = 0; i < writeCount; i++) {
-            RubyIO writeIO = TypeConverter.ioGetIO(runtime, writeAry.eltOk(i)).GetWriteIO();
+            RubyIO writeIO = TypeConverter.ioGetIO(runtime, writes[i]).GetWriteIO();
             ChannelFD channelFD = writeIO.getOpenFileChecked().fd();
             int fd = pollable(channelFD);
             if (fd < 0) return null;
@@ -112,6 +112,17 @@ final class PollSelect {
             setPollfd(pollfds, readCount + i, fd, POLLOUT);
         }
 
+        // only exceptional conditions go unreported, as with our selectors, which check these the same way
+        if (!except.isNil()) {
+            RubyArray<?> exceptAry = except.convertToArray();
+            for (int i = 0; i < exceptAry.size(); i++) {
+                RubyIO io = TypeConverter.ioGetIO(runtime, exceptAry.eltOk(i));
+                RubyIO writeIO = io.GetWriteIO();
+                io.getOpenFileChecked();
+                if (io != writeIO) writeIO.getOpenFileChecked();
+            }
+        }
+
         if (libc.poll(pollfds, count, 0) < 0) return null; // let the selector path report the error
 
         // macOS answers a descriptor given twice in only one of its pollfds, so go by descriptor
@@ -120,12 +131,12 @@ final class PollSelect {
 
         RubyArray<?> readReady = newEmptyArray(context);
         for (int i = 0; i < readCount; i++) {
-            if (pending[i] || readable.get(pollfds.getInt(i * POLLFD_SIZE))) readReady.append(context, readAry.eltOk(i));
+            if (pending[i] || readable.get(pollfds.getInt(i * POLLFD_SIZE + FD))) readReady.append(context, reads[i]);
         }
 
         RubyArray<?> writeReady = newEmptyArray(context);
         for (int i = 0; i < writeCount; i++) {
-            if (writable.get(pollfds.getInt((readCount + i) * POLLFD_SIZE))) writeReady.append(context, writeAry.eltOk(i));
+            if (writable.get(pollfds.getInt((readCount + i) * POLLFD_SIZE + FD))) writeReady.append(context, writes[i]);
         }
 
         if (readReady.isEmpty() && writeReady.isEmpty()) return context.nil;
@@ -143,15 +154,17 @@ final class PollSelect {
     }
 
     private static void setPollfd(ByteBuffer pollfds, int i, int fd, short events) {
-        pollfds.putInt(i * POLLFD_SIZE, fd).putShort(i * POLLFD_SIZE + 4, events).putShort(i * POLLFD_SIZE + 6, (short) 0);
+        int at = i * POLLFD_SIZE;
+        pollfds.putInt(at + FD, fd).putShort(at + EVENTS, events).putShort(at + REVENTS, (short) 0);
     }
 
     // poll(2) reports hangups and errors whatever was asked for, and select(2) counts those descriptors as ready
     private static BitSet readyFds(ByteBuffer pollfds, int from, int to, short events) {
         BitSet ready = new BitSet();
         for (int i = from; i < to; i++) {
-            if ((pollfds.getShort(i * POLLFD_SIZE + 6) & (events | POLLHUP | POLLERR | POLLNVAL)) != 0) {
-                ready.set(pollfds.getInt(i * POLLFD_SIZE));
+            int at = i * POLLFD_SIZE;
+            if ((pollfds.getShort(at + REVENTS) & (events | POLLHUP | POLLERR | POLLNVAL)) != 0) {
+                ready.set(pollfds.getInt(at + FD));
             }
         }
         return ready;
