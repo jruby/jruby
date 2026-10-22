@@ -83,57 +83,6 @@ project 'JRuby Base' do
 
   jar 'ch.randelshofer:fastdoubleparser:2.0.1'
 
-  plugin_management do
-    plugin('org.eclipse.m2e:lifecycle-mapping:1.0.0',
-           lifecycleMappingMetadata: {
-             pluginExecutions: [{ pluginExecutionFilter: {
-                                    groupId: 'org.codehaus.mojo',
-                                    artifactId: 'properties-maven-plugin',
-                                    versionRange: '[1.0-alpha-2,)',
-                                    goals: ['read-project-properties']
-                                  },
-                                  action: {
-                                    ignore: ''
-                                  } },
-                                { pluginExecutionFilter: {
-                                    groupId: 'org.codehaus.mojo',
-                                    artifactId: 'build-helper-maven-plugin',
-                                    versionRange: '[1.8,)',
-                                    goals: ['add-source']
-                                  },
-                                  action: {
-                                    ignore: ''
-                                  } },
-                                { pluginExecutionFilter: {
-                                    groupId: 'org.codehaus.mojo',
-                                    artifactId: 'exec-maven-plugin',
-                                    versionRange: '[1.2.1,)',
-                                    goals: ['exec']
-                                  },
-                                  action: {
-                                    ignore: ''
-                                  } },
-                                { pluginExecutionFilter: {
-                                    groupId: 'org.apache.maven.plugins',
-                                    artifactId: 'maven-dependency-plugin',
-                                    versionRange: '[2.8,)',
-                                    goals: ['copy']
-                                  },
-                                  action: {
-                                    ignore: ''
-                                  } },
-                                { pluginExecutionFilter: {
-                                    groupId: 'org.apache.maven.plugins',
-                                    artifactId: 'maven-clean-plugin',
-                                    versionRange: '[2.5,)',
-                                    goals: ['clean']
-                                  },
-                                  action: {
-                                    ignore: ''
-                                  } }]
-           })
-  end
-
   plugin 'org.codehaus.mojo:buildnumber-maven-plugin:1.2' do
     execute_goals('create',
                   id: 'jruby-revision',

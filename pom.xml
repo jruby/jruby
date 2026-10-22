@@ -251,7 +251,7 @@ DO NOT MODIFY - GENERATED CODE
         </plugin>
         <plugin>
           <artifactId>maven-dependency-plugin</artifactId>
-          <version>2.8</version>
+          <version>3.11.0</version>
         </plugin>
         <plugin>
           <artifactId>maven-release-plugin</artifactId>
@@ -329,11 +329,6 @@ DO NOT MODIFY - GENERATED CODE
             </goals>
             <streamLogs>true</streamLogs>
           </configuration>
-        </plugin>
-        <plugin>
-          <groupId>org.eclipse.m2e</groupId>
-          <artifactId>lifecycle-mapping</artifactId>
-          <version>1.0.0</version>
         </plugin>
         <plugin>
           <artifactId>maven-scm-publish-plugin</artifactId>

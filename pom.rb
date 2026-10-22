@@ -112,7 +112,7 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
     plugin :javadoc, '3.2.0'
     plugin :resources, '3.2.0'
     plugin :clean, '3.1.0'
-    plugin :dependency, '2.8'
+    plugin :dependency, '3.11.0'
     plugin :release, '3.0.0-M1'
     plugin :jar, '3.2.0'
 
@@ -141,7 +141,6 @@ project 'JRuby', 'https://github.com/jruby/jruby' do
                     id: 'integration-test')
     end
 
-    plugin 'org.eclipse.m2e:lifecycle-mapping:1.0.0'
     plugin :'scm-publish', '3.1.0'
   end
 
