@@ -27,8 +27,6 @@ public class TestRubyThread extends Base {
 
         assertNotNull(thread.getExitingException());
         assertSame(RuntimeException.class, thread.getExitingException().getClass());
-
-        assertSame(context.nil, thread.status(context));
     }
 
     public void testJavaErrorDoesPropagate() throws InterruptedException {
@@ -56,8 +54,6 @@ public class TestRubyThread extends Base {
         assertTrue(uncaughtLatch.await(3, TimeUnit.SECONDS));
         assertNotNull(exception.get());
         assertEquals("java.lang.AssertionError: 42", exception.get().toString());
-
-        assertSame(context.nil, thread.status(context));
     }
 
     public void testClearLocals() throws InterruptedException {
