@@ -291,26 +291,32 @@ public class RubyBasicSocket extends RubyIO {
         Channel channel = getChannel();
 
         if (channel instanceof DatagramChannel) {
+            DatagramChannel dgram = (DatagramChannel) channel;
+            boolean wasBlocking = dgram.isBlocking();
             try {
-                DatagramChannel dgram = (DatagramChannel) channel;
-
                 getOpenFile().setBlocking(runtime, false);
 
-                dgram.receive(buffer);
-
-                if (buffer.position() == 0) {
+                // receive() returns null only when no datagram was waiting; a
+                // zero-length datagram is real data ("" in MRI), not EAGAIN.
+                if (dgram.receive(buffer) == null) {
                     bytes = null;
                 } else {
                     flipBuffer(buffer);
                     bytes = new ByteList(buffer.array(), buffer.position(), buffer.limit());
                 }
             } catch (Exception e) {
-                if (exception) throwErrorFromException(runtime, e);
-                return context.nil;
+                // exception: false only silences "would block" (null above)
+                throwErrorFromException(runtime, e);
+                return context.nil; // not reached
+            } finally {
+                // MRI uses recvfrom(MSG_DONTWAIT): the IO's own mode is untouched
+                if (wasBlocking) getOpenFile().setBlocking(runtime, true);
             }
         } else {
             bytes = doReadNonblock(context, buffer, exception);
         }
+
+        if (bytes == NONBLOCK_EOF) return context.nil; // MRI: nil once the peer has shut down
 
         return handleReturnBytes(context, bytes, str, "recvfrom(2)", exception);
     }
@@ -385,17 +391,22 @@ public class RubyBasicSocket extends RubyIO {
 
             getOpenFile().setBlocking(context.runtime, false);
 
-            dgram.receive(buffer);
-
-            if (buffer.position() == 0) {
+            if (dgram.receive(buffer) == null) {
                 bytes = null;
+            } else if (buffer.position() == 0) {
+                // MRI's read_nonblock reads a zero-length datagram as EOF
+                if (!exception) return context.nil;
+                throw context.runtime.newEOFError();
             } else {
                 flipBuffer(buffer);
                 bytes = new ByteList(buffer.array(), buffer.position(), buffer.limit());
             }
+        } catch (RaiseException re) {
+            throw re;
         } catch (Exception ex) {
-            if (exception) throwErrorFromException(context.runtime, ex);
-            return context.nil;
+            // exception: false only silences "would block" (null above)
+            throwErrorFromException(context.runtime, ex);
+            return context.nil; // not reached
         } finally {
             if (Platform.IS_LINUX) {
                 // unset nonblocking to emulate recv(... MSG_DONTWAIT) leaving it blocking
@@ -765,6 +776,18 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     protected ByteList doRead(ThreadContext context, final ByteBuffer buffer) {
+        return readChannel(context, buffer) <= 0 ? null : new ByteList(buffer.array(), 0, buffer.position(), false);
+    }
+
+    /**
+     * doReadNonblock's result at EOF (peer has shut down), as opposed to null
+     * for "no data yet". doRead folds both into null, which made recv_nonblock
+     * raise EAGAIN at EOF forever instead of returning nil.
+     */
+    private static final ByteList NONBLOCK_EOF = new ByteList(0);
+
+    /** One read into buffer: bytes read, 0 if a non-blocking channel has nothing yet, -1 at EOF. */
+    private int readChannel(ThreadContext context, final ByteBuffer buffer) {
         OpenFile fptr;
 
         fptr = getOpenFileInitialized();
@@ -773,13 +796,10 @@ public class RubyBasicSocket extends RubyIO {
         try {
             context.getThread().beforeBlockingCall(context);
 
-            int read = openFile.readChannel().read(buffer);
-            if (read <= 0) return null;
-
-            return new ByteList(buffer.array(), 0, buffer.position(), false);
+            return openFile.readChannel().read(buffer);
         } catch (Exception e) {
             throwErrorFromException(context.runtime, e);
-            return null; // not reached
+            return -1; // not reached
         } finally {
             context.getThread().afterBlockingCall();
         }
@@ -801,14 +821,18 @@ public class RubyBasicSocket extends RubyIO {
                 selectable.configureBlocking(false);
 
                 try {
-                    return doRead(context, buffer);
+                    int read = readChannel(context, buffer);
+                    if (read < 0) return NONBLOCK_EOF;
+                    return read == 0 ? null : new ByteList(buffer.array(), 0, buffer.position(), false);
                 }
                 finally {
                     selectable.configureBlocking(oldBlocking);
                 }
             } catch (Exception e) {
-                if (exception) throwErrorFromException(context.runtime, e);
-                return null;
+                // exception: false only silences "would block" (read == 0 above);
+                // e.g. ENOTCONN on an unconnected socket must still raise (MRI)
+                throwErrorFromException(context.runtime, e);
+                return null; // not reached
             }
         }
     }

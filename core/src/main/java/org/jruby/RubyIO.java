@@ -3423,7 +3423,14 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         OpenFile fptr = getOpenFileChecked();
 
         final boolean locked = fptr.lock();
-        int n;
+        int n = -1;
+        // ByteList whose backing array a successful OpenFile.readInternal call
+        // below has ALREADY, irreversibly, filled from the real fd -- tracked
+        // across the catch below so it can be salvaged into rbuf if a
+        // Thread#kill/Thread#raise abandons this method before `str` is
+        // handed back to the caller. See OpenFile#salvagePartialRead's doc
+        // comment for the full WHY.
+        ByteList readInto = null;
         try {
             fptr.checkByteReadable(context);
 
@@ -3449,6 +3456,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                     //                arg.len = len;
                     //                rb_str_locktmp_ensure(str, read_internal_call, (VALUE)&arg);
                     //                n = arg.len;
+                    readInto = strByteList;
                     n = OpenFile.readInternal(context, fptr, fptr.fd(), strByteList.unsafeBytes(), strByteList.begin(), len);
                     if (n < 0) {
                         Errno e = fptr.errno();
@@ -3463,6 +3471,11 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                     break;
                 }
             }
+        } catch (RuntimeException re) {
+            if (n > 0 && readInto != null) {
+                fptr.salvagePartialRead(readInto.unsafeBytes(), readInto.begin(), n);
+            }
+            throw re;
         }
         finally {
             if ( locked ) fptr.unlock();
@@ -3493,7 +3506,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         final OpenFile fptr = getOpenFileChecked();
 
-        final int n;
+        int n = -1;
+        ByteList readInto = null; // see OpenFile#salvagePartialRead's doc comment
         boolean locked = fptr.lock();
         try {
             fptr.checkByteReadable(context);
@@ -3515,11 +3529,17 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             fptr.checkClosed();
 
             ByteList strByteList = str.getByteList();
+            readInto = strByteList;
             n = OpenFile.readInternal(context, fptr, fptr.fd(), strByteList.unsafeBytes(), strByteList.begin(), length);
 
             if (n == -1) {
                 throw runtime.newErrnoFromErrno(fptr.errno(), fptr.getPath());
             }
+        } catch (RuntimeException re) {
+            if (n > 0 && readInto != null) {
+                fptr.salvagePartialRead(readInto.unsafeBytes(), readInto.begin(), n);
+            }
+            throw re;
         }
         finally {
             if (locked) fptr.unlock();
