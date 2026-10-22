@@ -77,7 +77,12 @@ public class RubyTCPSocket extends RubyIPSocket {
 
     private SocketChannel attemptConnect(ThreadContext context, IRubyObject host, String localHost, int localPort,
                                          String remoteHost, int remotePort, RubyHash opts) throws IOException {
-        for (InetAddress address: InetAddress.getAllByName(remoteHost)) {
+        // A nil host is the loopback of either family, tried in turn (MRI);
+        // resolving "localhost" may give only one of them
+        InetAddress[] targets = host.isNil() ?
+                new InetAddress[] { InetAddress.getByName("::1"), InetAddress.getByName("127.0.0.1") } :
+                InetAddress.getAllByName(remoteHost);
+        for (InetAddress address: targets) {
             SocketChannel channel = SocketChannel.open();
 
             openFile = null; // Second or later attempts will have non-closeable failed attempt to connect.
@@ -97,7 +102,10 @@ public class RubyTCPSocket extends RubyIPSocket {
                 IRubyObject connectTimeout = context.nil;
                 if (opts != null) {
                     IRubyObject[] kwargs = ArgsUtil.extractKeywordArgs(context, opts, "connect_timeout", "open_timeout", "fast_fallback", "test_mode_settings");
-                    if (kwargs[0] != null) connectTimeout = kwargs[0];
+                    // open_timeout bounds the whole open as connect_timeout bounds the
+                    // connect; either way an unfinished connect is IO::TimeoutError
+                    if (kwargs[0] != null && !kwargs[0].isNil()) connectTimeout = kwargs[0];
+                    else if (kwargs[1] != null && !kwargs[1].isNil()) connectTimeout = kwargs[1];
                 }
 
                 // wait for connection
@@ -237,10 +245,10 @@ public class RubyTCPSocket extends RubyIPSocket {
             var addr = InetAddress.getByName(hostname.convertToString().toString());
 
             return RubyArray.newArray(context.runtime,
-                    newString(context, do_not_reverse_lookup(context, recv).isTrue() ? addr.getHostAddress() : addr.getCanonicalHostName()),
+                    newString(context, do_not_reverse_lookup(context, recv).isTrue() ? SocketUtils.ipString(addr) : addr.getCanonicalHostName()),
                     newEmptyArray(context),
                     asFixnum(context, addr instanceof Inet4Address ? AF_INET.longValue() : AF_INET6.longValue()),
-                    newString(context, addr.getHostAddress()));
+                    newString(context, SocketUtils.ipString(addr)));
         }
         catch(UnknownHostException e) {
             throw SocketUtils.sockerr(context.runtime, "gethostbyname: name or service not known");

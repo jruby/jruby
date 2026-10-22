@@ -10,6 +10,10 @@ class AddrinfoTest < Test::Unit::TestCase
   include TestHelper
 
   # these assertions emulate Addrinfo behavior in Ruby MRI 2.2.0
+
+  # link-layer interface addresses: AF_PACKET/PF_PACKET where the platform has them (Linux, as MRI)
+  LINK_AF = defined?(Socket::AF_PACKET) ? Socket::AF_PACKET : Socket::AF_UNSPEC
+  LINK_PF = defined?(Socket::PF_PACKET) ? Socket::PF_PACKET : Socket::PF_UNSPEC
   
   # get system generated addresses to test with from interfaces
   # TODO: (gf) mock Addrinfo creation for platform specific behaviors ?
@@ -22,14 +26,14 @@ class AddrinfoTest < Test::Unit::TestCase
   end
 
   def test_link_afamily_pfamily
-    # at least one address (loopback link interface) is AF/PF_UNSPEC
-    link_addrs = getaddrs.select { |addr| addr.afamily == Socket::AF_UNSPEC && addr.pfamily == Socket::PF_UNSPEC }
+    # at least one address (loopback link interface) is a link-layer address
+    link_addrs = getaddrs.select { |addr| addr.afamily == LINK_AF && addr.pfamily == LINK_PF }
     assert( link_addrs.count > 0 ) if getaddrs.count > 0  
   end
 
   def test_afamily
     getaddrs.each do |addr|
-      assert( [ Socket::AF_INET, Socket::AF_INET6, Socket::AF_UNSPEC ].include? addr.afamily )
+      assert( [ Socket::AF_INET, Socket::AF_INET6, Socket::AF_UNSPEC, LINK_AF ].include? addr.afamily )
     end
   end
 
@@ -127,7 +131,7 @@ class AddrinfoTest < Test::Unit::TestCase
   
   def test_pfamily
     getaddrs.each do |addr|
-      assert( [ Socket::PF_INET, Socket::PF_INET6, Socket::PF_UNSPEC ].include? addr.pfamily )
+      assert( [ Socket::PF_INET, Socket::PF_INET6, Socket::PF_UNSPEC, LINK_PF ].include? addr.pfamily )
     end
   end
 

@@ -204,8 +204,11 @@ public class RubyUDPSocket extends RubyIPSocket {
         Ruby runtime = context.runtime;
 
         try {
-            String host = _host.isNil() ? "localhost" : _host.convertToString().toString();
-            InetAddress[] addrs = InetAddress.getAllByName(host);
+            // a nil host is the loopback of the socket's family (MRI); "localhost"
+            // may resolve to IPv4 only, leaving an AF_INET6 socket unconnected
+            InetAddress[] addrs = _host.isNil() ?
+                    new InetAddress[] { InetAddress.getByName("::1"), InetAddress.getByName("127.0.0.1") } :
+                    InetAddress.getAllByName(_host.convertToString().toString());
 
             for (int i = 0; i < addrs.length; i++) {
                 InetAddress a = addrs[i];
@@ -224,6 +227,8 @@ public class RubyUDPSocket extends RubyIPSocket {
                     throw nrthe;
                 }
             }
+            // no address of the socket's family
+            throw runtime.newErrnoEAFNOSUPPORTError("connect(2)");
         }
         catch (UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "connect: name or service not known");
@@ -234,9 +239,6 @@ public class RubyUDPSocket extends RubyIPSocket {
         catch (IllegalArgumentException e) {
             throw SocketUtils.sockerr(runtime, e.getLocalizedMessage());
         }
-
-        // should not get here
-        return context.nil;
     }
 
     private DatagramChannel getDatagramChannel() {
@@ -306,12 +308,14 @@ public class RubyUDPSocket extends RubyIPSocket {
             // TODO: make this efficient
             if (str != null && !str.isNil()) {
                 str = str.convertToString();
+                org.jcodings.Encoding enc = ((RubyString) str).getEncoding(); // the buffer keeps its encoding (MRI)
                 ((RubyString) str).setValue(tuple.result.getByteList());
+                ((RubyString) str).setEncoding(enc);
             } else {
                 str = tuple.result;
             }
 
-            IRubyObject addressArray = socket.addrFor(context, tuple.sender, false);
+            IRubyObject addressArray = socket.addrFor(context, tuple.sender, !socket.doNotReverseLookup(context));
 
             return newArray(context, str, addressArray);
         } catch (UnknownHostException e) {
@@ -336,7 +340,9 @@ public class RubyUDPSocket extends RubyIPSocket {
             ByteList dataBL = data.getByteList();
             ByteBuffer buf = ByteBuffer.wrap(dataBL.unsafeBytes(), dataBL.begin(), dataBL.realSize());
 
-            int written = ((DatagramChannel) this.getChannel()).write(buf);
+            DatagramChannel dgram = (DatagramChannel) this.getChannel();
+            if (!dgram.isConnected()) throw new NotYetConnectedException();
+            int written = sendConnectedDatagram(context, dgram, buf);
 
             return asFixnum(context, written);
         } catch (NotYetConnectedException e) {
@@ -391,7 +397,7 @@ public class RubyUDPSocket extends RubyIPSocket {
 
                 if (_port instanceof RubyString) {
 
-                    Service service = Service.getServiceByName(_port.asJavaString(), "udp");
+                    Service service = SocketUtils.serviceByName(_port.asJavaString(), "udp");
 
                     if (service != null) {
                         port = service.getPort();
@@ -521,6 +527,9 @@ public class RubyUDPSocket extends RubyIPSocket {
         }
         catch (RaiseException e) { throw e; }
         catch (Exception e) {
+            // Thread#kill/raise (now possible: the blocking receive waits
+            // interruptibly) must propagate, not become a SocketError
+            if (e instanceof org.jruby.exceptions.Unrescuable) throw (RuntimeException) e;
             throw sockerr(runtime, e.getLocalizedMessage(), e);
         }
     }
@@ -650,7 +659,9 @@ public class RubyUDPSocket extends RubyIPSocket {
 
         ByteBuffer buf = ByteBuffer.allocate(length);
 
-        InetSocketAddress sender = (InetSocketAddress) channel.receive(buf);
+        // blocking: interruptible (see RubyBasicSocket#receiveDatagram)
+        InetSocketAddress sender = (InetSocketAddress) (non_block ? channel.receive(buf)
+                : socket.receiveDatagram(runtime.getCurrentContext(), channel, buf));
 
         if (sender == null) {
             if ( non_block ) { // non-blocking receive
