@@ -731,6 +731,19 @@ public final class ThreadContext {
      * @see #getCalleeName()
      * @return a representation of the current method's name and the name it was called under
      */
+    /**
+     * The current Ruby frame's backtrace label ("C#mm", "block in C#m"): the
+     * innermost compiled frame's when there is one, else the interpreted
+     * frame's backtrace element. Kernel#eval labels its frame with this, as MRI
+     * labels an eval frame like its caller.
+     */
+    public String getCurrentFrameLabel() {
+        org.jruby.runtime.backtrace.RubyStackTraceElement compiled = org.jruby.runtime.backtrace.BacktraceData.currentCompiledFrame(runtime);
+        if (compiled != null) return compiled.getMethodName();
+        String method = backtrace[backtraceIndex].getMethod();
+        return method == null || method.isEmpty() ? getCompositeName() : method;
+    }
+
     public String getCompositeName() {
         return getCurrentFrame().getName();
     }
@@ -1207,10 +1220,20 @@ public final class ThreadContext {
      * Return a binding representing the current call's state
      * @return the current binding
      */
+    // Binding creation in compiled code: compiled frames don't push backtrace
+    // elements, so take label/file/line from the innermost compiled Ruby frame
+    // when there is one (BacktraceData#currentCompiledFrame); otherwise the
+    // current element is the interpreted frame's own and is accurate.
+    private Binding newBinding(IRubyObject self, Frame frame, Visibility visibility, DynamicScope scope, BacktraceElement elt) {
+        org.jruby.runtime.backtrace.RubyStackTraceElement compiled = org.jruby.runtime.backtrace.BacktraceData.currentCompiledFrame(runtime);
+        if (compiled == null) return new Binding(self, frame, visibility, scope, elt.getMethod(), elt.getFilename(), elt.getLine());
+        return new Binding(self, frame, visibility, scope, compiled.getMethodName(), compiled.getFileName(), compiled.getLineNumber() - 1);
+    }
+
     public Binding currentBinding() {
         Frame frame = getCurrentFrame().capture();
         BacktraceElement elt = backtrace[backtraceIndex];
-        return new Binding(frame, getCurrentScope(), elt.getMethod(), elt.getFilename(), elt.getLine());
+        return newBinding(frame.getSelf(), frame, frame.getVisibility(), getCurrentScope(), elt);
     }
 
     /**
@@ -1221,7 +1244,7 @@ public final class ThreadContext {
     public Binding currentBinding(IRubyObject self) {
         Frame frame = getCurrentFrame().capture();
         BacktraceElement elt = backtrace[backtraceIndex];
-        return new Binding(self, frame, frame.getVisibility(), getCurrentScope(), elt.getMethod(), elt.getFilename(), elt.getLine());
+        return newBinding(self, frame, frame.getVisibility(), getCurrentScope(), elt);
     }
 
     /**
@@ -1234,7 +1257,7 @@ public final class ThreadContext {
     public Binding currentBinding(IRubyObject self, Visibility visibility) {
         Frame frame = getCurrentFrame().capture();
         BacktraceElement elt = backtrace[backtraceIndex];
-        return new Binding(self, frame, visibility, getCurrentScope(), elt.getMethod(), elt.getFilename(), elt.getLine());
+        return newBinding(self, frame, visibility, getCurrentScope(), elt);
     }
 
     /**
@@ -1247,7 +1270,7 @@ public final class ThreadContext {
     public Binding currentBinding(IRubyObject self, DynamicScope scope) {
         Frame frame = getCurrentFrame().capture();
         BacktraceElement elt = backtrace[backtraceIndex];
-        return new Binding(self, frame, frame.getVisibility(), scope, elt.getMethod(), elt.getFilename(), elt.getLine());
+        return newBinding(self, frame, frame.getVisibility(), scope, elt);
     }
 
     /**
@@ -1263,7 +1286,7 @@ public final class ThreadContext {
     public Binding currentBinding(IRubyObject self, Visibility visibility, DynamicScope scope) {
         Frame frame = getCurrentFrame().capture();
         BacktraceElement elt = backtrace[backtraceIndex];
-        return new Binding(self, frame, visibility, scope, elt.getMethod(), elt.getFilename(), elt.getLine());
+        return newBinding(self, frame, visibility, scope, elt);
     }
 
     /**

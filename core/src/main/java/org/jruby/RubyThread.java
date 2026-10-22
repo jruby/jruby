@@ -571,7 +571,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         @JRubyMethod
         public IRubyObject base_label(ThreadContext context) {
-            if (baseLabel == null) baseLabel = newString(context, element.getMethodName());
+            // MRI: label is "Array#each", base_label just "each"
+            if (baseLabel == null) baseLabel = newString(context, RubyStackTraceElement.baseName(element.getMethodName()));
             return baseLabel;
         }
 
@@ -584,11 +585,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         public IRubyObject label(ThreadContext context) {
             if (element.getFrameType() == FrameType.BLOCK) {
                 // NOTE: "block in " + ... logic, now, also at RubyStackTraceElement.to_s_mri
-                if (label == null) label = newString(context, "block in " + element.getMethodName());
+                if (label == null) label = newString(context, RubyStackTraceElement.blockPrefix(element.getMethodName()) + element.getMethodName());
                 return label;
             }
 
-            return base_label(context);
+            // the full Ruby 3.4+ label ("Array#each"); base_label strips the owner
+            if (label == null) label = newString(context, element.getMethodName());
+            return label;
         }
 
         @JRubyMethod

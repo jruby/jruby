@@ -18,6 +18,7 @@ public class BacktraceData implements Serializable {
     public static final StackTraceElement[] EMPTY_STACK_TRACE = new StackTraceElement[0];
 
     private RubyStackTraceElement[] backtraceElements;
+    private transient Ruby runtime; // for compiled-frame label lookup (null: bare names)
     private final Stream<StackWalker.StackFrame> stackStream;
     private final Stream<BacktraceElement> rubyTrace;
     private final boolean fullTrace;
@@ -51,6 +52,7 @@ public class BacktraceData implements Serializable {
 
     public final RubyStackTraceElement[] getBacktrace(Ruby runtime) {
         if (backtraceElements == null) {
+            this.runtime = runtime;
             backtraceElements = constructBacktrace(runtime.getBoundMethods());
         }
         return backtraceElements;
@@ -58,6 +60,7 @@ public class BacktraceData implements Serializable {
 
     public final RubyStackTraceElement[] getPartialBacktrace(Ruby runtime, int level) {
         if (backtraceElements == null) {
+            this.runtime = runtime;
             backtraceElements = constructBacktrace(runtime.getBoundMethods(), level);
         }
         return backtraceElements;
@@ -65,6 +68,7 @@ public class BacktraceData implements Serializable {
 
     public final void yieldPartialBacktrace(Ruby runtime, Predicate<RubyStackTraceElement> consumer) {
         if (backtraceElements == null) {
+            this.runtime = runtime;
             eachBacktrace(runtime.getBoundMethods(), consumer);
         }
     }
@@ -116,6 +120,7 @@ public class BacktraceData implements Serializable {
                 if (mangledTuple != null) {
                     FrameType type = JavaNameMangler.decodeFrameTypeFromMangledName(mangledTuple.get(1));
                     String decodedName = JavaNameMangler.decodeMethodName(type, mangledTuple);
+                    decodedName = compiledFrameLabel(className, methodName, type, decodedName);
 
                     if (decodedName != null) {
                         // skip varargs frames if we just handled the method's regular frame
@@ -148,7 +153,8 @@ public class BacktraceData implements Serializable {
                         // add duplicate if masking native and previous frame was native (Kernel#caller)
                         if (maskNative && dupFrame) {
                             dupFrame = false;
-                            if (!consumer.test(new RubyStackTraceElement(className, dupFrameName, filename, line, false, type))) {
+                            // the native method's own frame: a method frame, not the Ruby frame's type
+                            if (!consumer.test(new RubyStackTraceElement(className, dupFrameName, filename, line, false, FrameType.METHOD))) {
                                 break;
                             }
                         }
@@ -230,7 +236,9 @@ public class BacktraceData implements Serializable {
                 if (maskNative && dupFrame) {
                     dupFrame = false;
                     // for full trace we will have two levels for interpreter, so check termination condition
-                    if (!consumer.test(new RubyStackTraceElement(rubyElement.getClassName(), dupFrameName, rubyElement.getFileName(), rubyElement.getLineNumber(), rubyElement.isBinding(), rubyElement.getFrameType()))) {
+                    // the masked native method's frame is a method frame; giving it the
+                    // Ruby frame's type labeled e.g. sleep in a block "block in sleep"
+                    if (!consumer.test(new RubyStackTraceElement(rubyElement.getClassName(), dupFrameName, rubyElement.getFileName(), rubyElement.getLineNumber(), rubyElement.isBinding(), FrameType.METHOD))) {
                         break;
                     }
                 }
@@ -250,6 +258,66 @@ public class BacktraceData implements Serializable {
                 }
             }
         }
+    }
+
+    /**
+     * A compiled frame's Ruby 3.4+ label, from its scope (Ruby#compiledFrameScope)
+     * when the label was only known after the frame was generated; else decoded.
+     */
+    private String compiledFrameLabel(String className, String methodName, FrameType type, String decoded) {
+        if (runtime == null || (type != FrameType.METHOD && type != FrameType.BLOCK && type != FrameType.ROOT)) return decoded;
+        org.jruby.ir.IRScope scope = runtime.compiledFrameScope(className, methodName);
+        if (scope == null) return decoded;
+        if (type == FrameType.ROOT) {
+            return scope instanceof org.jruby.ir.IRScriptBody script ? script.getTopLabel() : decoded;
+        }
+        if (type == FrameType.METHOD) {
+            if (scope instanceof org.jruby.ir.IRMethod m && m.getDefinedFrom() != null) {
+                return m.getDefinedFrom().getBlockBacktraceLabel(scope.getId());
+            }
+            String label = scope.getBacktraceLabel();
+            return label != null ? label : decoded;
+        }
+        org.jruby.ir.IRScope top = scope.getNearestTopLocalVariableScope();
+        String fallback = top instanceof org.jruby.ir.IRScriptBody ? org.jruby.ir.interpreter.Interpreter.ROOT
+                : top != null ? top.getId() : decoded;
+        return scope.getBlockFrameName(fallback);
+    }
+
+    /**
+     * The label of the innermost Ruby frame on this thread's Java stack, for a
+     * Binding (and so an eval frame, which takes its label from the binding).
+     * Compiled Ruby code doesn't push backtrace elements, so the current one
+     * belongs to some older interpreted frame -- e.g. an eval in a compiled
+     * method was labeled with a stale or bare name (and binding.source_location
+     * was stale). Returns null when the
+     * innermost Ruby frame is interpreted (its backtrace element is current).
+     */
+    public static RubyStackTraceElement currentCompiledFrame(Ruby runtime) {
+        return org.jruby.runtime.ThreadContext.WALKER.walk(frames -> {
+            Iterator<StackWalker.StackFrame> it = frames.iterator();
+            while (it.hasNext()) {
+                StackWalker.StackFrame frame = it.next();
+                String className = frame.getClassName();
+                String methodName = frame.getMethodName();
+                if (FrameType.getInterpreterFrame(className, methodName) != null) return null;
+
+                List<String> tuple = JavaNameMangler.decodeMethodTuple(methodName);
+                if (tuple == null || methodName.endsWith(JavaNameMangler.VARARGS_MARKER)) continue;
+
+                FrameType type = JavaNameMangler.decodeFrameTypeFromMangledName(tuple.get(1));
+                String decoded = JavaNameMangler.decodeMethodName(type, tuple);
+                if (decoded == null) continue;
+
+                BacktraceData data = new BacktraceData(Stream.empty(), Stream.empty(), false, false, false, false, false);
+                data.runtime = runtime;
+                String label = data.compiledFrameLabel(className, methodName, type, decoded);
+                if (type == FrameType.BLOCK) label = RubyStackTraceElement.blockPrefix(label) + label;
+                // the frame's own file and line too: the stale element's are just as wrong
+                return new RubyStackTraceElement(className, label, frame.getFileName(), frame.getLineNumber(), false, type);
+            }
+            return null;
+        });
     }
 
     public static String getBoundMethodName(Map<String,Map<String,String>> boundMethods, String className, String methodName) {

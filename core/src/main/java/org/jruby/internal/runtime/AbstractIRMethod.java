@@ -123,6 +123,34 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
         return callCount < 0;
     }
 
+    /**
+     * This frame's backtrace label: the scope's Ruby 3.4+ label ("Foo#bar",
+     * recorded at definition) once known, else the call name.
+     */
+    protected final String backtraceName(String callName) {
+        String label = backtraceLabel;
+        if (label != null) return label;
+
+        IRScope scope = getIRScope();
+        if (scope instanceof org.jruby.ir.IRMethod m && m.getDefinedFrom() != null) scope = m.getDefinedFrom();
+        if (scope instanceof org.jruby.ir.IRClosure) {
+            // define_method: the body is a block, labeled as one ("block in <class:C>"), as MRI
+            label = scope.getBlockBacktraceLabel(callName);
+            if (scope.isBlockFrameNameStatic()) backtraceLabel = label;
+            return label;
+        }
+
+        label = scope.getBacktraceLabel();
+        return label != null ? label : callName;
+    }
+
+    // a label for this method object only, over the scope's (module_function's singleton copy)
+    private String backtraceLabel;
+
+    public void setBacktraceLabel(String label) {
+        this.backtraceLabel = label;
+    }
+
     public IRScope getIRScope() {
         try {
             if (method == null) method = staticScope.getIRScope();
@@ -277,7 +305,7 @@ public abstract class AbstractIRMethod extends DynamicMethod implements IRMethod
     public final ExitableReturn interpretSplit(ThreadContext context, MethodSplitState state, IRubyObject[] args, Block block) {
         try {
             final ExitableInterpreterContext ic = state.getInterpreterContext();
-            ThreadContext.pushBacktrace(context, state.name, ic.getFileName(), ic.getLine());
+            ThreadContext.pushBacktrace(context, backtraceName(state.name), ic.getFileName(), ic.getLine());
 
             try {
                 preSplit(ic, context, state.self, state.name, block, state.implClass, state.scope);

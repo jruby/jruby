@@ -3937,6 +3937,7 @@ public class RubyModule extends RubyObject {
                 DynamicMethod newMethod = deepMethodSearch(context, name.idString()).method.dup();
                 newMethod.setImplementationClass(singleton);
                 newMethod.setVisibility(PUBLIC);
+                org.jruby.ir.runtime.IRRuntimeHelpers.moduleFunctionBacktraceLabel(context, newMethod, this, name.idString());
                 singleton.addMethod(context, name.idString(), newMethod);
                 singleton.methodAdded(context, name);
             }
