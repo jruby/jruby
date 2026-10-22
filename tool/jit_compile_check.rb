@@ -67,8 +67,9 @@ module JITCompileCheck
   # Compiles one method or block as the JIT would (see MethodJITTask and
   # BlockJITTask), including loading the class, which is where the JVM
   # rejects invalid bytecode. Returns false if the scope is too large to JIT.
+  # JIT max size hardcoded to 3000 to admit nearly all bodies. JRuby's default is lower.
   def compile(scope)
-    return false if scope.builtInterpreterContext.getInstructions.length > Options::JIT_MAXSIZE.load
+    return false if scope.builtInterpreterContext.getInstructions.length > 3000
 
     visitor = JVMVisitor.newForJIT(runtime)
     bytes = visitor.compileToBytecode(scope, JVMVisitorMethodContext.new)
