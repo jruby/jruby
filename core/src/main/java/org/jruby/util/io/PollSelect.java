@@ -31,24 +31,22 @@ final class PollSelect {
         int poll(@In @Out ByteBuffer pollfds, int nfds, int timeout);
     }
 
-    private static final class LibCHolder {
-        static final LibC LIBC = load();
+    private static final LibC LIBC = load();
 
-        // IO.select still works through the selectors without it
-        private static LibC load() {
-            Platform platform = Platform.getNativePlatform();
+    // IO.select still works through the selectors without it
+    private static LibC load() {
+        Platform platform = Platform.getNativePlatform();
 
-            boolean supported = switch (platform.getOS()) {
-                case LINUX, ZLINUX, DARWIN, FREEBSD, OPENBSD, NETBSD, DRAGONFLY, SOLARIS -> true;
-                default -> false; // AIX, for one, has other <poll.h> values
-            };
-            if (!supported) return null;
+        boolean supported = switch (platform.getOS()) {
+            case LINUX, ZLINUX, DARWIN, FREEBSD, OPENBSD, NETBSD, DRAGONFLY, SOLARIS -> true;
+            default -> false; // AIX, for one, has other <poll.h> values
+        };
+        if (!supported) return null;
 
-            try {
-                return LibraryLoader.create(LibC.class).load(platform.getStandardCLibraryName());
-            } catch (Throwable t) {
-                return null;
-            }
+        try {
+            return LibraryLoader.create(LibC.class).load(platform.getStandardCLibraryName());
+        } catch (Throwable t) {
+            return null;
         }
     }
 
@@ -67,8 +65,6 @@ final class PollSelect {
     // allocating direct memory costs more than the poll itself, so keep a buffer per thread
     private static final ThreadLocal<ByteBuffer> POLLFDS = new ThreadLocal<>();
 
-    private PollSelect() {}
-
     /**
      * @return the select result, or null if some IO cannot be polled this way and the caller must select instead
      */
@@ -76,8 +72,7 @@ final class PollSelect {
         Ruby runtime = context.runtime;
         if (!runtime.getPosix().isNative()) return null;
 
-        LibC libc = LibCHolder.LIBC;
-        if (libc == null) return null;
+        if (LIBC == null) return null;
 
         // copies, since a #to_io below may change the arrays
         IRubyObject[] reads = read.isNil() ? IRubyObject.NULL_ARRAY : read.convertToArray().toJavaArray(context);
@@ -119,7 +114,7 @@ final class PollSelect {
         ByteBuffer pollfds = pollfds(count);
         for (int i = 0; i < count; i++) setPollfd(pollfds, i, fds[i], i < readCount ? POLLIN : POLLOUT);
 
-        if (libc.poll(pollfds, count, 0) < 0) return null; // let the selector path report the error
+        if (LIBC.poll(pollfds, count, 0) < 0) return null; // let the selector path report the error
 
         // macOS answers a descriptor given twice in only one of its pollfds, so go by descriptor
         BitSet readable = readyFds(pollfds, 0, readCount, POLLIN);
