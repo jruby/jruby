@@ -29,8 +29,9 @@ jobs:
           java-version: 21
           cache: 'maven'
       - name: fetch Maven dependencies and plugins
-        # maven/* artifact modules depend on JRuby snapshots so limit to bootstrap modules.
-        run: ./mvnw -ntp -Pbootstrap dependency:go-offline
+        # The maven/* artifact modules depend on JRuby snapshots so limit to bootstrap modules.
+        # exclude system scope for jars built by JRuby modules and included in dependencies.
+        run: ./mvnw -ntp -Pbootstrap -DexcludeScope=system dependency:go-offline
 
   rake-test:
     needs: maven-precache
