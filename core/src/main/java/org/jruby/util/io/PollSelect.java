@@ -88,7 +88,7 @@ final class PollSelect {
         int count = readCount + writeCount;
         if (count == 0) return null;
 
-        ByteBuffer pollfds = pollfds(count);
+        int[] fds = new int[count];
         boolean[] pending = new boolean[readCount];
 
         for (int i = 0; i < readCount; i++) {
@@ -96,8 +96,8 @@ final class PollSelect {
             int fd = pollable(fptr.fd());
             if (fd < 0) return null;
 
+            fds[i] = fd;
             pending[i] = fptr.READ_DATA_PENDING() || fptr.READ_CHAR_PENDING();
-            setPollfd(pollfds, i, fd, POLLIN);
         }
 
         for (int i = 0; i < writeCount; i++) {
@@ -109,7 +109,7 @@ final class PollSelect {
             // the selector path finishes a pending connect once it is writable, or hands its error to the socket
             if (channelFD.ch instanceof SocketChannel socketChannel && socketChannel.isConnectionPending()) return null;
 
-            setPollfd(pollfds, readCount + i, fd, POLLOUT);
+            fds[readCount + i] = fd;
         }
 
         // only exceptional conditions go unreported, as with our selectors, which check these the same way
@@ -123,6 +123,10 @@ final class PollSelect {
             }
         }
 
+        // filled only now, since a #to_io above may run another IO.select on this thread and its buffer
+        ByteBuffer pollfds = pollfds(count);
+        for (int i = 0; i < count; i++) setPollfd(pollfds, i, fds[i], i < readCount ? POLLIN : POLLOUT);
+
         if (libc.poll(pollfds, count, 0) < 0) return null; // let the selector path report the error
 
         // macOS answers a descriptor given twice in only one of its pollfds, so go by descriptor
@@ -131,12 +135,12 @@ final class PollSelect {
 
         RubyArray<?> readReady = newEmptyArray(context);
         for (int i = 0; i < readCount; i++) {
-            if (pending[i] || readable.get(pollfds.getInt(i * POLLFD_SIZE + FD))) readReady.append(context, reads[i]);
+            if (pending[i] || readable.get(fds[i])) readReady.append(context, reads[i]);
         }
 
         RubyArray<?> writeReady = newEmptyArray(context);
         for (int i = 0; i < writeCount; i++) {
-            if (writable.get(pollfds.getInt((readCount + i) * POLLFD_SIZE + FD))) writeReady.append(context, writes[i]);
+            if (writable.get(fds[readCount + i])) writeReady.append(context, writes[i]);
         }
 
         if (readReady.isEmpty() && writeReady.isEmpty()) return context.nil;
