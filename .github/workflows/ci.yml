@@ -520,11 +520,17 @@ jobs:
       - name: run shellcheck
         run: shellcheck bin/jruby.sh
 
+  tests-passed:
+    runs-on: ubuntu-latest
+    needs: [mvn-test, mvn-test-extended, mvn-test-windows, dependency-check, rake-test, rake-test-indy-off, test-versions, sequel, concurrent-ruby, jruby-tests-dev, regression-specs-jit]
+    steps:
+      - run: echo Everything passed!
+
   publish-snapshot:
     permissions:
       contents: read
     if: ${{ github.ref == 'refs/heads/master' && github.repository == 'jruby/jruby' }}
-    needs: [mvn-test, mvn-test-extended, mvn-test-windows, dependency-check, rake-test, rake-test-indy-off, test-versions, sequel, concurrent-ruby, jruby-tests-dev, regression-specs-jit]
+    needs: tests-passed
     uses: ./.github/workflows/snapshot-publish.yml
     with:
       javaLevel: 21
