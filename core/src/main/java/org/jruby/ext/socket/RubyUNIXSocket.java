@@ -28,6 +28,7 @@
 
 package org.jruby.ext.socket;
 
+import jnr.constants.platform.Sock;
 import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.OpenFlags;
 import jnr.constants.platform.SocketLevel;
@@ -69,6 +70,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.Channel;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 
 import static com.headius.backport9.buffer.Buffers.flipBuffer;
 import static org.jruby.api.Access.fixnumClass;
@@ -96,10 +99,13 @@ public class RubyUNIXSocket extends RubyBasicSocket {
     @JRubyMethod(meta = true)
     public static IRubyObject for_fd(ThreadContext context, IRubyObject recv, IRubyObject _fileno) {
         int fileno = toInt(context, _fileno);
+        RubyClass klass = (RubyClass) recv;
+        RubyUNIXSocket unixSocket = (RubyUNIXSocket) Helpers.invoke(context, klass, "allocate");
 
-        RubyClass klass = (RubyClass)recv;
-        RubyUNIXSocket unixSocket = (RubyUNIXSocket)(Helpers.invoke(context, klass, "allocate"));
-        UnixSocketChannel channel = UnixSocketChannel.fromFD(fileno);
+        if (FilenoUtil.isFake(fileno)) {
+            throw typeError(context, "file descriptor is not native");
+        }
+        Channel channel = UnixDomainNative.channelFromFd(fileno);
         unixSocket.init_sock(context.runtime, channel);
         return unixSocket;
     }
@@ -113,6 +119,25 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
     @JRubyMethod
     public IRubyObject path(ThreadContext context) {
+        String stored = openFile.getPath();
+        if (stored != null) return newString(context, stored);
+
+        Channel ch = getChannel();
+        try {
+            String p = UnixDomain.pathOf(UnixDomain.localAddress(ch));
+            if (!p.isEmpty()) return newString(context, p);
+        } catch (Exception ignored) {
+        }
+        if (UnixDomainNative.hasGetsockname()) {
+            try {
+                int fd = UnixDomain.fileno(ch);
+                if (!FilenoUtil.isFake(fd)) {
+                    String p = UnixDomainNative.pathOf(fd);
+                    if (!p.isEmpty()) return newString(context, p);
+                }
+            } catch (Exception ignored) {
+            }
+        }
         return newEmptyString(context);
     }
 
@@ -123,36 +148,125 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
     @JRubyMethod
     public IRubyObject peeraddr(ThreadContext context) {
-        final String _path = getUnixRemoteSocket(context).path();
-        final RubyString path = _path == null ? newEmptyString(context) : newString(context, _path);
+        final String _path = UnixDomain.pathOf(getUnixRemoteSocket(context));
+        final RubyString path = _path.isEmpty() ? newEmptyString(context) : newString(context, _path);
         return newArray(context, newString(context, "AF_UNIX"), path);
     }
 
-    @JRubyMethod(name = "recvfrom", required = 1, optional = 1, checkArity = false)
+    @JRubyMethod(name = "recvfrom", required = 1, optional = 2, checkArity = false)
     public IRubyObject recvfrom(ThreadContext context, IRubyObject[] args) {
-        int argc = Arity.checkArgumentCount(context, args, 1, 2);
+        int argc = Arity.checkArgumentCount(context, args, 1, 3);
         IRubyObject _length = args[0];
-        IRubyObject _flags = argc == 2 ? args[1] : context.nil;
+        IRubyObject _flags = argc >= 2 ? args[1] : context.nil;
+        IRubyObject _buf = argc == 3 ? args[2] : context.nil;
         int flags = _flags.isNil() ? 0 : toInt(context, _flags); // TODO
 
-        return newArray(context, recv(context, _length), peeraddr(context));
+        IRubyObject received;
+        IRubyObject address;
+
+        // Only a real SOCK_DGRAM fd (UNIXSocket.for_fd wrapping a raw
+        // Socket.new(:UNIX, :DGRAM)) takes the native recvfrom(2) path: on
+        // Linux, AF_UNIX SOCK_STREAM sockets don't reliably populate
+        // recvfrom's source address the way SOCK_DGRAM does, so leave every
+        // existing stream case (pair/accept/connect) on the established
+        // recv()+peeraddr() path completely unchanged. Only a UnixFdChannel
+        // is ever a dgram candidate (pair()/for_fd/rawSocket all wrap one,
+        // and it's always a genuine native fd, never fake) -- checking
+        // instanceof first also skips UnixDomain.fileno()'s reflective
+        // lookup entirely for the common (non-UnixFdChannel) case.
+        // ufc.sockType() caches its getsockopt(SO_TYPE) result: a socket's
+        // type can't change after socket(2) creation, so this avoids one
+        // syscall (~1.2us measured) on every single recvfrom call instead
+        // of paying it once per channel.
+        if (getChannel() instanceof UnixFdChannel ufc && ufc.sockType() == UnixDomainNative.SOCK_DGRAM) {
+            UnixDomain.DgramReceived result = UnixDomain.recvFromBlocking(
+                    context, getOpenFileChecked(), ufc.fd(), toInt(context, _length));
+            received = result.data;
+            RubyString path = result.srcPath.isEmpty() ? newEmptyString(context) : newString(context, result.srcPath);
+            address = newArray(context, newString(context, "AF_UNIX"), path);
+        } else {
+            received = recv(context, _length);
+            address = peeraddr(context);
+        }
+
+        IRubyObject data = received;
+        if (!_buf.isNil() && received instanceof RubyString receivedStr) {
+            // outbuf keeps its own encoding (e.g. IO#read(len, buf) does the
+            // same) -- setValue replaces the byte content only, then restore
+            // the caller's original encoding over it.
+            RubyString buf = (RubyString) _buf;
+            org.jcodings.Encoding keepEncoding = buf.getEncoding();
+            buf.setValue(receivedStr.getByteList());
+            buf.setEncoding(keepEncoding);
+            data = buf;
+        }
+
+        return newArray(context, data, address);
     }
 
     @JRubyMethod
     public IRubyObject send_io(ThreadContext context, IRubyObject arg) {
-        final POSIX posix = context.runtime.getPosix();
         OpenFile fptr = getOpenFileChecked();
         int fd;
 
         if (arg.callMethod(context, "kind_of?", ioClass(context)).isTrue()) {
-          fd = ((RubyIO) arg).getOpenFileChecked().getFileno();
+            fd = ((RubyIO) arg).getOpenFileChecked().getFileno();
         } else if (arg.callMethod(context, "kind_of?", fixnumClass(context)).isTrue()) {
-          fd = ((RubyFixnum) arg).asInt(context);
+            fd = ((RubyFixnum) arg).asInt(context);
         } else {
-          throw typeError(context, "neither IO nor file descriptor");
+            throw typeError(context, "neither IO nor file descriptor");
         }
 
         if (FilenoUtil.isFake(fd)) throw typeError(context, "file descriptor is not native");
+
+        int sockFd = fptr.getFileno();
+        if (FilenoUtil.isFake(sockFd)) throw typeError(context, "file descriptor is not native");
+
+        if (!UnixDomainNative.hasScm()) return sendIoPosix(context, fptr, fd);
+
+        final int passFd = fd;
+        boolean locked = fptr.lock();
+        try {
+            while (true) {
+                try {
+                    UnixDomainContext.blocking(context, sockFd, "sendmsg",
+                            () -> UnixDomainNative.sendIo(sockFd, passFd));
+                    break;
+                } catch (Exception e) {
+                    int errno = UnixDomainContext.lastErrno(context);
+                    if (errno == UnixDomainNative.EAGAIN && fptr.waitWritable(context)) continue;
+                    throw context.runtime.newErrnoFromInt(errno, "sendmsg(2)");
+                }
+            }
+        } finally {
+            if (locked) fptr.unlock();
+        }
+
+        return context.nil;
+    }
+
+    private int recvIoNative(ThreadContext context, OpenFile fptr, int sockFd) {
+        boolean locked = fptr.lock();
+        try {
+            while (true) {
+                try {
+                    return UnixDomainContext.blocking(context, sockFd, "recvmsg",
+                            () -> UnixDomainNative.recvIo(sockFd));
+                } catch (Exception e) {
+                    int errno = UnixDomainContext.lastErrno(context);
+                    if (errno == UnixDomainNative.EAGAIN && fptr.waitReadable(context)) continue;
+                    throw context.runtime.newErrnoFromInt(errno, "recvmsg(2)");
+                }
+            }
+        } finally {
+            if (locked) fptr.unlock();
+        }
+    }
+
+    // Without native access (Java 21, or denied), fd passing goes through jnr-posix's
+    // sendmsg/recvmsg exactly as JRuby always has.
+    private IRubyObject sendIoPosix(ThreadContext context, OpenFile fptr, int fd) {
+        final POSIX posix = context.runtime.getPosix();
 
         byte[] dataBytes = new byte[1];
         dataBytes[0] = 0;
@@ -189,13 +303,8 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         return context.nil;
     }
 
-    @JRubyMethod(optional = 2, checkArity = false)
-    public IRubyObject recv_io(ThreadContext context, IRubyObject[] args) {
-        int argc = Arity.checkArgumentCount(context, args, 0, 2);
+    private int recvIoPosix(ThreadContext context, OpenFile fptr) {
         final POSIX posix = context.runtime.getPosix();
-        OpenFile fptr = getOpenFileChecked();
-        IRubyObject klass = argc > 0 ? args[0] : ioClass(context);
-        IRubyObject mode = argc > 1 ? args[1] : context.nil;
         MsgHdr inMessage = posix.allocateMsgHdr();
         ByteBuffer[] inIov = new ByteBuffer[1];
         inIov[0] = ByteBuffer.allocateDirect(1);
@@ -222,39 +331,55 @@ public class RubyUNIXSocket extends RubyBasicSocket {
             if (locked) fptr.unlock();
         }
 
-
         ByteBuffer inFdBuf = inMessage.getControls()[0].getData();
         inFdBuf.order(ByteOrder.nativeOrder());
+        return inFdBuf.getInt();
+    }
 
-        IRubyObject fd = asFixnum(context, inFdBuf.getInt());
+    @JRubyMethod(optional = 2, checkArity = false)
+    public IRubyObject recv_io(ThreadContext context, IRubyObject[] args) {
+        int argc = Arity.checkArgumentCount(context, args, 0, 2);
+        OpenFile fptr = getOpenFileChecked();
+        IRubyObject klass = argc > 0 ? args[0] : ioClass(context);
+        IRubyObject mode = argc > 1 ? args[1] : context.nil;
+
+        int sockFd = fptr.getFileno();
+        if (FilenoUtil.isFake(sockFd)) throw typeError(context, "file descriptor is not native");
+
+        int receivedFd = UnixDomainNative.hasScm() ? recvIoNative(context, fptr, sockFd) : recvIoPosix(context, fptr);
+
+        IRubyObject fdObj = asFixnum(context, receivedFd);
 
         if (klass.isNil()) {
-            return fd;
+            return fdObj;
+        } else if (mode.isNil()) {
+            return Helpers.invoke(context, klass, "for_fd", fdObj);
         } else {
-            if (mode.isNil()) {
-              return Helpers.invoke(context, klass, "for_fd", fd);
-            } else {
-              return Helpers.invoke(context, klass, "for_fd", fd, mode);
-            }
+            return Helpers.invoke(context, klass, "for_fd", fdObj, mode);
         }
     }
 
     @JRubyMethod(name = {"socketpair", "pair"}, optional = 2, checkArity = false, meta = true)
     public static IRubyObject socketpair(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Arity.checkArgumentCount(context, args, 0, 2);
-
         final Ruby runtime = context.runtime;
+        // UNIXSocket.pair(type = :STREAM, protocol = 0): the type was ignored
+        // (always a stream pair); SOCK_DGRAM now gives a real datagram pair
+        Sock type = args.length > 0 ? SocketUtils.sockFromArg(context, args[0]) : Sock.SOCK_STREAM;
+        if (type == null) type = Sock.SOCK_STREAM;
+        if (type != Sock.SOCK_STREAM && type != Sock.SOCK_DGRAM && type != Sock.SOCK_SEQPACKET) {
+            throw runtime.newErrnoEOPNOTSUPPError("socketpair(2)");
+        }
+        // Only stream pairs without native access; JRuby has always returned a stream pair
+        // here then (it ignored the type), so keep doing that rather than start failing
+        if (type != Sock.SOCK_STREAM && !UnixDomainNative.hasPair()) type = Sock.SOCK_STREAM;
 
-        // TODO: type and protocol
-
-        UnixSocketChannel[] sp;
-        final RubyClass UNIXSocket = Access.getClass(context, "UNIXSocket");
-        RubyUNIXSocket sock = (RubyUNIXSocket)(Helpers.invoke(context, UNIXSocket, "allocate"));
-        RubyUNIXSocket sock2 = (RubyUNIXSocket)(Helpers.invoke(context, UNIXSocket, "allocate"));
+        RubyClass UNIXSocket = Access.getClass(context, "UNIXSocket");
+        RubyUNIXSocket sock = (RubyUNIXSocket) Helpers.invoke(context, UNIXSocket, "allocate");
+        RubyUNIXSocket sock2 = (RubyUNIXSocket) Helpers.invoke(context, UNIXSocket, "allocate");
 
         try {
-            sp = UnixSocketChannel.pair();
-
+            Channel[] sp = UnixDomain.pair(type.intValue());
             sock.init_sock(runtime, sp[0], "");
             sock2.init_sock(runtime, sp[1], "");
         } catch (IOException ioe) {
@@ -262,29 +387,6 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         }
 
         return yieldPair(context, sock, sock2, block);
-    }
-
-    @Override
-    public IRubyObject setsockopt(ThreadContext context, IRubyObject _level, IRubyObject _opt, IRubyObject val) {
-        SocketLevel level = SocketUtils.levelFromArg(context, _level);
-        SocketOption opt = SocketUtils.optionFromArg(context, _opt);
-
-        switch(level) {
-            case SOL_SOCKET:
-                switch(opt) {
-                    case SO_KEEPALIVE: {
-                        // TODO: socket options
-                    }
-                    break;
-                    default:
-                        throw context.runtime.newErrnoENOPROTOOPTError();
-                }
-                break;
-            default:
-                throw context.runtime.newErrnoENOPROTOOPTError();
-        }
-
-        return asFixnum(context, 0);
     }
 
     protected static void rb_sys_fail(Ruby runtime, String message) {
@@ -305,46 +407,29 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         ByteList path = strPath.getByteList();
         String fpath = Helpers.decodeByteList(context.runtime, path);
 
-        int maxSize = 103; // Max size from Darwin, lowest common value we know of
-        if (fpath.length() > 103) throw argumentError(context, "too long unix socket path (max: " + maxSize + "bytes)");
+        UnixDomain.checkPath(context, fpath);
 
-        Closeable closeable = null;
+        java.io.Closeable closeable = null;
         try {
             if (server) {
-                UnixServerSocketChannel channel = UnixServerSocketChannel.open();
-                UnixServerSocket socket = channel.socket();
+                ServerSocketChannel channel = UnixDomain.bind(fpath);
                 closeable = channel;
-
-                // TODO: listen backlog
-
-                socket.bind(new UnixSocketAddress(new File(fpath)));
-
                 init_sock(context.runtime, channel, fpath);
-
             } else {
-                File fpathFile = new File(fpath);
-
+                java.io.File fpathFile = new java.io.File(fpath);
                 if (!fpathFile.exists()) {
                     throw context.runtime.newErrnoENOENTError("unix socket");
                 }
-
-                UnixSocketChannel channel = UnixSocketChannel.open();
+                SocketChannel channel = UnixDomain.connect(fpath);
                 closeable = channel;
-
-                channel.connect(new UnixSocketAddress(fpathFile));
-
                 init_sock(context.runtime, channel);
-
             }
-
-            // initialized cleanly, clear closeable
             closeable = null;
-
         } catch (IOException ioe) {
             throw context.runtime.newIOErrorFromException(ioe);
         } finally {
             if (closeable != null) {
-                try {closeable.close();} catch (IOException ioe2) {}
+                try { closeable.close(); } catch (IOException ioe2) {}
             }
         }
     }
@@ -364,6 +449,56 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         openFile.setMode(modes.getOpenFileFlags());
         openFile.setSync(true);
         openFile.setPath(path);
+
+        // see rsock_init_sock in MRI; sockets are initialized to binary
+        // (matches RubyBasicSocket#initSocket, which this class doesn't
+        // go through since it builds its own OpenFile above)
+        setAscii8bitBinmode();
+
+        // MRI runs every fd non-blocking internally (rb_thread_io_blocking_region)
+        // and emulates Ruby-level blocking on top; JRuby's own OpenFile/fptr
+        // wait machinery does the same for real SelectableChannels (TCP/UDP).
+        // UnixFdChannel (pair()/for_fd/SCM_RIGHTS) is NOT selectable -- it's a
+        // plain FFM ByteChannel with no select-based retry path -- so marking
+        // it non-blocking here just breaks the EAGAIN/wait_readable machinery
+        // into a CPU-spinning busy loop instead of a real blocking read(2).
+        //
+        // A JEP-380 unix-domain SocketChannel IS selectable, so naively this
+        // would flip it non-blocking too (both the fptr.nonblock flag AND the
+        // real channel's OS mode, via setBlocking) -- but don't flip the real
+        // channel's mode. ChannelFD now routes this channel's actual
+        // read/write through UnixSocketNativeChannel's raw FFM read(2)/
+        // write(2) instead of sun.nio.ch.SocketChannelImpl's own
+        // interruptible ones (see ChannelFD_jepUnixNativeChannel.java),
+        // specifically so that path can use a genuinely blocking fd without
+        // the AbstractInterruptibleChannel close-on-interrupt hazard that
+        // bit the first two attempts at this (INTERPRETER.md Landmine 12/13):
+        // flipping the real channel non-blocking here would undo that by
+        // forcing the connect-path select() back into the hot loop
+        // (OpenFile#waitReadable has no chNative guard, by design).
+        //
+        // The fptr.nonblock FLAG is a different matter: IO#nonblock? must
+        // still report true here (spec/ruby/library/socket/unixsocket/
+        // initialize_spec.rb's "sets the socket to nonblock", the same MRI
+        // rationale this comment opened with -- every fd is non-blocking
+        // internally, which this socket's real fd now ISN'T, but Ruby-level
+        // code neither knows nor should care). setNonblockFlag sets just the
+        // bookkeeping flag, not the real channel mode -- safe for
+        // performRead/performWrite's own nonblock branch too, since
+        // UnixSocketNativeChannel already translates real EOF to -1 (the
+        // ReadableByteChannel contract), so it never produces the literal 0
+        // return that branch treats as EAGAIN.
+        //
+        // Without the FFM backend (Java 21, or native access denied) ChannelFD keeps the
+        // JDK channel's own read/write, so the channel is flipped non-blocking exactly as
+        // stock JRuby does: that is what keeps Thread#kill from closing it mid-read.
+        if (channel instanceof java.nio.channels.SelectableChannel) {
+            if (UnixDomain.isUnixChannel(channel) && UnixDomainNative.available()) {
+                openFile.setNonblockFlag(true);
+            } else {
+                openFile.setBlocking(runtime, false);
+            }
+        }
     }
 
     protected void init_sock(Ruby runtime, Channel channel) {

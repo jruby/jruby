@@ -79,6 +79,7 @@ import static org.jruby.api.Access.getModule;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Create.newArray;
+import static org.jruby.api.Create.newEmptyString;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.runtime.Helpers.extractExceptionOnlyArg;
@@ -272,6 +273,28 @@ public class RubyUDPSocket extends RubyIPSocket {
 
     private static IRubyObject recvfrom_nonblock(RubyBasicSocket socket, ThreadContext context,
                                                  IRubyObject length, IRubyObject flags, IRubyObject str, boolean exception) {
+        // Socket.new(:UNIX, :DGRAM): same (DatagramChannel) cast crash as
+        // the blocking #recvfrom fix above, in doReceiveNonblockTuple a few
+        // lines down -- confirmed with a direct repro before fixing.
+        if (socket.getChannel() instanceof UnixFdChannel ufc) {
+            UnixDomain.DgramReceived result = UnixDomain.recvFromNonBlocking(context, ufc.fd(), toInt(context, length));
+            if (result == null) {
+                if (!exception) return Convert.asSymbol(context, "wait_readable");
+                throw context.runtime.newErrnoEAGAINReadableError("recvfrom(2)");
+            }
+            IRubyObject data = result.data;
+            if (str != null && !str.isNil()) {
+                str = str.convertToString();
+                org.jcodings.Encoding enc = ((RubyString) str).getEncoding(); // the buffer keeps its encoding (MRI)
+                ((RubyString) str).setValue(result.data.getByteList());
+                ((RubyString) str).setEncoding(enc);
+                data = str;
+            }
+            RubyString path = result.srcPath.isEmpty() ? newEmptyString(context) : newString(context, result.srcPath);
+            IRubyObject addressArray = newArray(context, newString(context, "AF_UNIX"), path);
+            return newArray(context, data, addressArray);
+        }
+
         try {
             ReceiveTuple tuple = doReceiveNonblockTuple(socket, context.runtime, toInt(context, length));
 
@@ -465,10 +488,25 @@ public class RubyUDPSocket extends RubyIPSocket {
     public static IRubyObject recvfrom(RubyBasicSocket socket, ThreadContext context, IRubyObject length) {
         final Ruby runtime = context.runtime;
 
+        // Socket.new(:UNIX, :DGRAM) (see RubySocket_unixDgram.java): its
+        // channel is a plain UnixFdChannel, not a DatagramChannel -- the
+        // hard (DatagramChannel) cast in doReceive/doReceiveTuple below
+        // would ClassCastException. UnixFdChannel only ever occurs here for
+        // the SOCK_DGRAM branch of RubySocket#initChannelFD (SOCK_STREAM
+        // uses a real JNR UnixSocketChannel), so no socket-type check is
+        // needed the way RubyUNIXSocket#recvfrom needs one.
+        if (socket.getChannel() instanceof UnixFdChannel ufc) {
+            UnixDomain.DgramReceived result = UnixDomain.recvFromBlocking(
+                    context, socket.getOpenFileChecked(), ufc.fd(), toInt(context, length));
+            RubyString path = result.srcPath.isEmpty() ? newEmptyString(context) : newString(context, result.srcPath);
+            IRubyObject address = newArray(context, newString(context, "AF_UNIX"), path);
+            return newArray(context, result.data, address);
+        }
+
         try {
             ReceiveTuple tuple = doReceiveTuple(socket, runtime, false, toInt(context, length));
 
-            IRubyObject addressArray = socket.addrFor(context, tuple.sender, false);
+            IRubyObject addressArray = socket.addrFor(context, tuple.sender, !socket.doNotReverseLookup(context));
 
             return newArray(context, tuple.result, addressArray);
         }

@@ -365,6 +365,10 @@ public class Helpers {
                     return Errno.EACCES;
                 case "Protocol family not supported":
                     return Errno.EPFNOSUPPORT;
+                case "Destination address required":
+                    return Errno.EDESTADDRREQ;
+                case "Transport endpoint is not connected":
+                    return Errno.ENOTCONN;
             }
 
             // Raised on Windows for process launch with missing file

@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.Channels;
+import java.nio.channels.DatagramChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.NotYetConnectedException;
 import java.nio.channels.OverlappingFileLockException;
@@ -18,6 +19,7 @@ import jnr.posix.POSIX;
 import org.jruby.Ruby;
 import org.jruby.anno.CRuby;
 import org.jruby.ext.fcntl.FcntlLibrary;
+import org.jruby.ext.socket.UnixFdChannel;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Helpers;
 import org.jruby.util.JRubyFile;
@@ -113,7 +115,8 @@ public class PosixShim {
                 return -1;
             }
             int written;
-            if (!buffer.isDirect() && buffer.remaining() > MAX_HEAP_WRITE) {
+            // UnixFdChannel caps its own stream writes and must not split a datagram
+            if (!buffer.isDirect() && buffer.remaining() > MAX_HEAP_WRITE && !(fd.ch instanceof UnixFdChannel)) {
                 // NIO copies the whole remaining heap buffer into a temporary direct buffer on every write, even when
                 // the channel only accepts part of it. Retrying a large nonblocking write would copy the rest again
                 // each time, so cap each write and let the caller loop over the remainder.
@@ -125,7 +128,7 @@ public class PosixShim {
                     buffer.limit(limit);
                 }
             } else {
-                written = fd.chWrite.write(buffer);
+                written = performWrite(fd, buffer, nonblock);
             }
 
             if (written == 0 && length > 0) {
@@ -177,8 +180,22 @@ public class PosixShim {
         }
     }
 
+    private int performWrite(ChannelFD fd, ByteBuffer buffer, boolean nonblock) throws IOException {
+        return nonblock && fd.ch instanceof UnixFdChannel ufc ? ufc.writeNonBlocking(buffer) : fd.chWrite.write(buffer);
+    }
+
     private int performRead(ChannelFD fd, ByteBuffer buffer, boolean nonblock) throws IOException {
-        int read = fd.chRead.read(buffer);
+        int read;
+        if (nonblock && fd.ch instanceof UnixFdChannel ufc) {
+            read = ufc.readNonBlocking(buffer);
+        } else if (fd.ch instanceof DatagramChannel dgram && !dgram.isConnected()) {
+            // read(2) on a bound, unconnected datagram socket just takes the next
+            // datagram; DatagramChannel#read refuses (NotYetConnectedException).
+            int before = buffer.position();
+            read = dgram.receive(buffer) == null ? 0 : buffer.position() - before;
+        } else {
+            read = fd.chRead.read(buffer);
+        }
 
         if (nonblock) {
             if (read == JAVA_EOF) {
@@ -215,6 +232,9 @@ public class PosixShim {
                     }
                 } else if (fd.chNative != null && fd.isNativeFile) {
                     // it's a native file, so we don't do selection or nonblock
+                } else if (fd.ch instanceof UnixFdChannel) {
+                    // UNIXSocket.pair/for_fd: not selectable, but performRead does a
+                    // real O_NONBLOCK read(2), so there is no need to fake EAGAIN
                 } else {
                     setErrno(Errno.EAGAIN);
                     return true;

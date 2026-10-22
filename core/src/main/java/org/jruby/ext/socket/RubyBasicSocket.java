@@ -47,6 +47,10 @@ import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
+import org.jruby.RubyThread;
+import org.jruby.runtime.Visibility;
+import jnr.constants.platform.Sock;
+import org.jruby.RubyArray;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
 import org.jruby.RubyIO;
@@ -55,6 +59,7 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.api.Access;
 import org.jruby.api.Convert;
 import org.jruby.ast.util.ArgsUtil;
@@ -82,6 +87,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.Channel;
 import java.nio.channels.DatagramChannel;
+import java.nio.channels.NetworkChannel;
 import java.nio.channels.SelectableChannel;
 
 import static jnr.constants.platform.TCP.TCP_INFO;
@@ -91,6 +97,7 @@ import static jnr.constants.platform.TCP.TCP_KEEPINTVL;
 import static jnr.constants.platform.TCP.TCP_NODELAY;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.toInt;
+import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
@@ -187,6 +194,29 @@ public class RubyBasicSocket extends RubyIO {
                 written = ((DatagramChannel) channel).send(mesgBytes, sockaddr);
 
                 return asFixnum(context, written);
+            } else if (channel instanceof UnixFdChannel ufc && sockaddr != null) {
+                // raw Socket.new(:UNIX, :DGRAM) fd -- see RubySocket#initChannelFD.
+                // sockaddr here is jnr.unixsocket.UnixSocketAddress, same as
+                // doBind (Sockaddr's UNIX address parsing predates this PR).
+                String destPath = sockaddr instanceof UnixSocketAddress usa ? usa.path() : null;
+                if (destPath == null) throw context.runtime.newErrnoENOPROTOOPTError();
+                try {
+                    long n = UnixDomainNative.sendTo(ufc.fd(), mesgByteList.unsafeBytes(),
+                            mesgByteList.begin(), mesgByteList.realSize(), destPath);
+                    return asFixnum(context, (int) n);
+                } catch (UnixDomainNative.NativeException ne) {
+                    throw context.runtime.newErrnoFromInt(ne.errno, "sendto(2)");
+                }
+            } else if (channel instanceof UnixFdChannel ufc && ufc.sockType() == UnixDomainNative.SOCK_DGRAM) {
+                // Same for a connected unix dgram socket (UNIXSocket.pair(:DGRAM)):
+                // a real send(2), which unlike write(2) sends a zero-length datagram.
+                try {
+                    long n = UnixDomainNative.sendTo(ufc.fd(), mesgByteList.unsafeBytes(),
+                            mesgByteList.begin(), mesgByteList.realSize(), null);
+                    return asFixnum(context, (int) n);
+                } catch (UnixDomainNative.NativeException ne) {
+                    throw context.runtime.newErrnoFromInt(ne.errno, "send(2)");
+                }
             } else {
                 return syswrite(context, _mesg);
             }
@@ -653,7 +683,7 @@ public class RubyBasicSocket extends RubyIO {
 
         return sock != null ?
                 Sockaddr.pack_sockaddr_in(context, sock) :
-                Sockaddr.pack_sockaddr_un(context, getUnixRemoteSocket(context).path());
+                Sockaddr.pack_sockaddr_un(context, UnixDomain.pathOf(getUnixRemoteSocket(context)));
     }
 
     @JRubyMethod(name = "getpeereid", notImplemented = true)
@@ -670,8 +700,8 @@ public class RubyBasicSocket extends RubyIO {
             return new Addrinfo(context.runtime, Access.getClass(context, "Addrinfo"), address, socketType.getSocketType(), socketType);
         }
 
-        UnixSocketAddress unix = getUnixSocketAddress();
-        return Addrinfo.unix(context, Access.getClass(context, "Addrinfo"), newString(context, unix.path()));
+        SocketAddress unix = getUnixSocketAddress();
+        return Addrinfo.unix(context, Access.getClass(context, "Addrinfo"), newString(context, UnixDomain.pathOf(unix)));
     }
 
     @JRubyMethod
@@ -683,11 +713,11 @@ public class RubyBasicSocket extends RubyIO {
             return new Addrinfo(context.runtime, Access.getClass(context, "Addrinfo"), address, socketType.getSocketType(), socketType);
         }
 
-        UnixSocketAddress unix = getUnixRemoteSocket(context);
+        SocketAddress unix = getUnixRemoteSocket(context);
 
          if (unix == null) throw context.runtime.newErrnoENOTCONNError();
 
-        return Addrinfo.unix(context, Access.getClass(context, "Addrinfo"), newString(context, unix.path()));
+        return Addrinfo.unix(context, Access.getClass(context, "Addrinfo"), newString(context, UnixDomain.pathOf(unix)));
     }
 
     @JRubyMethod(optional = 1, checkArity = false)
@@ -765,6 +795,27 @@ public class RubyBasicSocket extends RubyIO {
         throw context.runtime.newNotImplementedError("sendmsg_nonblock is not implemented");
     }
 
+    /**
+     * Interruptible wait for an FFM socket call that got EAGAIN: poll(2) on
+     * the real fd, run as a RubyThread task, so the thread shows as "sleep"
+     * and Thread#kill/raise/Timeout wake it (executeTask's pollThreadEvents
+     * raises them). OpenFile#waitReadable can't be used here -- for a
+     * channel in blocking mode it returns at once, so the caller spun.
+     * poll(2) can't be woken from Java, so it waits in slices backing off from
+     * 1ms to 100ms, the same governor shape as Kestowv's Wave and
+     * UnixFdChannel's SCRATCH: readiness is never delayed (poll returns the
+     * moment the fd is ready), an idle wait costs ~10 wakeups/s, and an
+     * interrupt is seen within one slice.
+     */
+    final void waitFd(ThreadContext context, int fd, short events) {
+        if (!UnixDomainNative.hasPoll()) {
+            if (events == UnixDomainNative.POLLOUT) getOpenFileChecked().waitWritable(context);
+            else getOpenFileChecked().waitReadable(context);
+            return;
+        }
+        UnixDomain.waitFd(context, fd, events, -1);
+    }
+
     @JRubyMethod(rest = true, notImplemented = true)
     public IRubyObject recvmsg(ThreadContext context, IRubyObject[] args) {
         throw context.runtime.newNotImplementedError("recvmsg is not implemented");
@@ -807,6 +858,28 @@ public class RubyBasicSocket extends RubyIO {
 
     protected final ByteList doReadNonblock(ThreadContext context, final ByteBuffer buffer, boolean exception) {
         Channel channel = getChannel();
+
+        // UnixFdChannel (pair()/for_fd/rawSocket) isn't a SelectableChannel,
+        // so the generic path below would unconditionally treat it as
+        // "doesn't support nonblocking" -- confirmed by testing: it raised
+        // EAGAIN even when data was genuinely available, every time, not a
+        // real would-block signal. recvFromNonBlocking does a real
+        // single-attempt recvfrom(2) with the fd actually toggled into
+        // OS-level O_NONBLOCK; works the same for a pair() stream socket
+        // (recvfrom(2) on a connected stream socket is just a read,
+        // ignoring the sender info) or a raw dgram one.
+        if (channel instanceof UnixFdChannel ufc) {
+            try {
+                UnixDomain.DgramReceived result = UnixDomain.recvFromNonBlocking(context, ufc.fd(), buffer.remaining());
+                if (result == null) return null;
+                // recvfrom(2) returning 0 is EOF on a stream socket, but a real
+                // zero-length datagram on a dgram one.
+                if (result.data.isEmpty() && ufc.sockType() != UnixDomainNative.SOCK_DGRAM) return NONBLOCK_EOF;
+                return result.data.getByteList();
+            } catch (RuntimeException re) {
+                throw re; // EAGAIN is result == null above; anything else is a real error
+            }
+        }
 
         if ( ! (channel instanceof SelectableChannel) ) {
             throw context.runtime.newErrnoEAGAINReadableError(channel.getClass().getName() + " does not support nonblocking");
@@ -869,20 +942,19 @@ public class RubyBasicSocket extends RubyIO {
         return socketAddress instanceof InetSocketAddress sock ? sock : null;
     }
 
-    protected UnixSocketAddress getUnixSocketAddress() {
+    protected SocketAddress getUnixSocketAddress() {
         SocketAddress socketAddress = getSocketAddress();
-        if (socketAddress instanceof UnixSocketAddress) return (UnixSocketAddress) socketAddress;
-        return null;
+        return UnixDomain.isUnixAddress(socketAddress) ? socketAddress : null;
     }
 
     @Deprecated(since = "10.0.0.0")
-    protected UnixSocketAddress getUnixRemoteSocket() {
+    protected SocketAddress getUnixRemoteSocket() {
         return getUnixRemoteSocket(getCurrentContext());
     }
 
-    protected UnixSocketAddress getUnixRemoteSocket(ThreadContext context) {
+    protected SocketAddress getUnixRemoteSocket(ThreadContext context) {
         SocketAddress socketAddress = getRemoteSocket(context);
-        return socketAddress instanceof UnixSocketAddress sock ? sock : null;
+        return UnixDomain.isUnixAddress(socketAddress) ? socketAddress : null;
     }
 
     protected SocketAddress getSocketAddress() {
@@ -911,9 +983,9 @@ public class RubyBasicSocket extends RubyIO {
             return Sockaddr.pack_sockaddr_in(context, getInetSocketAddress());
         }
 
-        UnixSocketAddress unix = getUnixSocketAddress();
+        SocketAddress unix = getUnixSocketAddress();
         if (unix != null) {
-            return Sockaddr.pack_sockaddr_un(context, unix.path());
+            return Sockaddr.pack_sockaddr_un(context, UnixDomain.pathOf(unix));
         }
 
         return Sockaddr.pack_sockaddr_in(context, 0, "0.0.0.0");
