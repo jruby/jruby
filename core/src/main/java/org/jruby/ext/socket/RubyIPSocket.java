@@ -29,6 +29,7 @@
 
 package org.jruby.ext.socket;
 
+import org.jruby.util.io.OpenFile;
 import org.jruby.Ruby;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
@@ -53,16 +54,32 @@ public class RubyIPSocket extends RubyBasicSocket {
     static RubyClass createIPSocket(ThreadContext context, RubyClass BasicSocket) {
         return defineClass(context, "IPSocket", BasicSocket, RubyIPSocket::new).
                 defineMethods(context, RubyIPSocket.class).
-                undefMethods(context, "initialize");
+                undefMethods(context, "initialize", "getpeereid"); // MRI undefines getpeereid on IPSocket
     }
 
     public RubyIPSocket(Ruby runtime, RubyClass type) {
         super(runtime, type);
     }
 
+    /** MRI: #<TCPSocket:fd 9, AF_INET, 127.0.0.1, 48410>, or #<TCPSocket:(closed)> (UDPSocket has its own) */
+    @JRubyMethod
+    public IRubyObject inspect(ThreadContext context) {
+        OpenFile fptr = this.openFile;
+        String className = getMetaClass().getRealClass().getName(context);
+        if (fptr == null || fptr.fd() == null || !fptr.isOpen()) return newString(context, "#<" + className + ":(closed)>");
+
+        StringBuilder buf = new StringBuilder("#<").append(className).append(":fd ").append(fptr.fd().bestFileno());
+        InetSocketAddress local = getInetSocketAddress();
+        if (local != null) {
+            buf.append(local.getAddress() instanceof java.net.Inet6Address ? ", AF_INET6, " : ", AF_INET, ")
+                    .append(SocketUtils.ipString(local.getAddress())).append(", ").append(local.getPort());
+        }
+        return newString(context, buf.append('>').toString());
+    }
+
     @JRubyMethod(name = "addr")
     public IRubyObject addr(ThreadContext context) {
-        return addrCommon(context, !context.runtime.isDoNotReverseLookupEnabled());
+        return addrCommon(context, !doNotReverseLookup(context));
     }
 
     @JRubyMethod(name = "addr")
@@ -72,7 +89,7 @@ public class RubyIPSocket extends RubyBasicSocket {
 
     @JRubyMethod(name = "peeraddr")
     public IRubyObject peeraddr(ThreadContext context) {
-        return peeraddrCommon(context, !context.runtime.isDoNotReverseLookupEnabled());
+        return peeraddrCommon(context, !doNotReverseLookup(context));
     }
 
     @JRubyMethod(name = "peeraddr")
@@ -88,7 +105,12 @@ public class RubyIPSocket extends RubyBasicSocket {
     @JRubyMethod
     public IRubyObject recvfrom(ThreadContext context, IRubyObject _length) {
         IRubyObject result = recv(context, _length);
-        InetSocketAddress sender = getInetRemoteSocket(context);
+        // MRI: a connected stream's recvfrom gives the peer's address array
+        // (addr's format and do_not_reverse_lookup), and nil at EOF
+        if (result.isNil()) return context.nil;
+        InetSocketAddress peer = getInetRemoteSocket(context);
+        if (peer != null) return newArray(context, result, addrFor(context, peer, !doNotReverseLookup(context)));
+        InetSocketAddress sender = peer;
 
         int port;
         String hostName;
@@ -100,7 +122,7 @@ public class RubyIPSocket extends RubyBasicSocket {
         } else {
             port = sender.getPort();
             hostName = sender.getHostName();
-            hostAddress = sender.getAddress().getHostAddress();
+            hostAddress = SocketUtils.ipString(sender.getAddress());
         }
 
         IRubyObject addressArray = newArrayNoCopy(context,
@@ -135,7 +157,7 @@ public class RubyIPSocket extends RubyBasicSocket {
 
     private IRubyObject addrCommon(ThreadContext context, IRubyObject reverse) {
         Boolean doReverse = doReverseLookup(context, reverse);
-        if (doReverse == null) doReverse = false;
+        if (doReverse == null) doReverse = !doNotReverseLookup(context);
 
         return addrCommon(context, doReverse);
     }
@@ -156,7 +178,7 @@ public class RubyIPSocket extends RubyBasicSocket {
 
     private IRubyObject peeraddrCommon(ThreadContext context, IRubyObject reverse) {
         Boolean doReverse = doReverseLookup(context, reverse);
-        if (doReverse == null) doReverse = !context.runtime.isDoNotReverseLookupEnabled();
+        if (doReverse == null) doReverse = !doNotReverseLookup(context);
 
         return peeraddrCommon(context, doReverse);
     }
@@ -169,16 +191,25 @@ public class RubyIPSocket extends RubyBasicSocket {
         return addrFor(context, address, reverse);
     }
 
-    public static Boolean doReverseLookup(ThreadContext context, IRubyObject noreverse) {
-        if (noreverse == context.tru) return false;
-        if (noreverse == context.fals) return true;
-        if (noreverse == context.nil) return null;
+    /**
+     * MRI's reverse_lookup argument (IPSocket#addr/#peeraddr,
+     * Socket.getaddrinfo): true or :hostname reverse-resolves, false or
+     * :numeric doesn't, nil defers to do_not_reverse_lookup. Returns whether
+     * to reverse-resolve (null: the default). This used to return the
+     * opposite ("no reverse") while every caller treated it as "do reverse",
+     * so addr(true) and getaddrinfo(..., true) were numeric and :numeric
+     * resolved a hostname.
+     */
+    public static Boolean doReverseLookup(ThreadContext context, IRubyObject reverse) {
+        if (reverse == context.tru) return true;
+        if (reverse == context.fals) return false;
+        if (reverse == context.nil) return null;
 
-        TypeConverter.checkType(context, noreverse, symbolClass(context));
-        return switch (noreverse.toString()) {
-            case "numeric" -> true;
-            case "hostname" -> false;
-            default -> throw argumentError(context, "invalid reverse_lookup flag: " + noreverse);
+        TypeConverter.checkType(context, reverse, symbolClass(context));
+        return switch (reverse.toString()) {
+            case "numeric" -> false;
+            case "hostname" -> true;
+            default -> throw argumentError(context, "invalid reverse_lookup flag: " + reverse);
         };
     }
 }// RubyIPSocket

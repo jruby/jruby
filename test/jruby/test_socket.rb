@@ -115,7 +115,8 @@ class SocketTest < Test::Unit::TestCase
     end
     ifnames = list.collect(&:name).uniq
     ifnames.each do |ifname|
-      packet_interfaces = list.select { |ifaddr| ifaddr.name == ifname && ifaddr.addr.afamily == Socket::AF_UNSPEC } # TODO: (gf) Socket::AF_PACKET when available
+      link_af = defined?(Socket::AF_PACKET) ? Socket::AF_PACKET : Socket::AF_UNSPEC # AF_PACKET on Linux, as MRI
+      packet_interfaces = list.select { |ifaddr| ifaddr.name == ifname && ifaddr.addr&.afamily == link_af }
       assert_equal(1, packet_interfaces.count) # one for each interface
     end
   end

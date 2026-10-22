@@ -42,19 +42,30 @@ public class Option extends RubyObject {
     }
 
     public Option(Ruby runtime, RubyClass klass, ProtocolFamily family, SocketLevel level, SocketOption option, ByteList data) {
+        this(runtime, klass, family, level.intValue(), option.intValue(), data);
+    }
+
+    // WHY ints, not SocketLevel/SocketOption: option names are only unique
+    // within a level (IP_TTL and SO_REUSEADDR are both 2), and most levels
+    // (IP, IPV6, TCP, UDP, anything numeric) have no SocketOption at all.
+    public Option(Ruby runtime, ProtocolFamily family, int level, int optname, ByteList data) {
+        this(runtime, (RubyClass)runtime.getClassFromPath("Socket::Option"), family, level, optname, data);
+    }
+
+    public Option(Ruby runtime, RubyClass klass, ProtocolFamily family, int level, int optname, ByteList data) {
         super(runtime, klass);
 
         this.family = family;
         this.level = level;
-        this.option = option;
+        this.optname = optname;
         this.data = data;
     }
 
     @JRubyMethod(required = 4, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         family = SocketUtils.protocolFamilyFromArg(context, args[0]);
-        level = SocketUtils.levelFromArg(context, args[1]);
-        option = SocketUtils.optionFromArg(context, args[2]);
+        level = SocketUtils.levelToInt(context, args[1]);
+        optname = SocketUtils.optnameToInt(context, level, args[2]);
         data = args[3].convertToString().getByteList();
 
         return this;
@@ -67,12 +78,12 @@ public class Option extends RubyObject {
 
     @JRubyMethod
     public IRubyObject level(ThreadContext context) {
-        return asFixnum(context, level.longValue());
+        return asFixnum(context, level);
     }
 
     @JRubyMethod
     public IRubyObject optname(ThreadContext context) {
-        return asFixnum(context, option.longValue());
+        return asFixnum(context, optname);
     }
 
     @JRubyMethod
@@ -91,27 +102,22 @@ public class Option extends RubyObject {
             .append(": ")
             .append(noPrefix(family));
 
-        if (level == SocketLevel.SOL_SOCKET) {
-            buf
-                .append(" SOCKET ")
-                .append(noPrefix(option));
-        } else if (family == ProtocolFamily.PF_UNIX) {
-            buf
-                .append(" level:")
-                .append(level.longValue())
-                .append(' ')
-                .append(noPrefix(option));
+        String prefix = SocketUtils.optnamePrefix(level);
+        String levelName = levelName();
+        String optName = prefix == null ? null : constantName(context, prefix, optname);
+
+        if (levelName == null) {
+            buf.append(" level:").append(level).append(" optname:").append(optname);
         } else {
-            buf
-                .append(" level:")
-                .append(level.description())
-                .append(' ')
-                .append(noPrefix(option));
+            buf.append(' ').append(levelName).append(' ');
+            if (optName == null) buf.append("optname:").append(optname);
+            else buf.append(optName.substring(prefix.length()));
         }
 
+        String value = optName == null ? null : optionValue(optName);
         buf
             .append(' ')
-            .append(optionValue())
+            .append(value != null ? value : newString(context, data).inspect(context).toString())
             .append('>');
 
         return newString(context, buf.toString());
@@ -121,27 +127,50 @@ public class Option extends RubyObject {
         return family.description().substring("PF_".length());
     }
 
-    private String noPrefix(SocketOption option) {
-        return option.description().substring("SO_".length());
+    private String levelName() {
+        String prefix = SocketUtils.optnamePrefix(level);
+        if (prefix == null) return null;
+        return prefix.equals("SO_") ? "SOCKET" : prefix.substring(0, prefix.length() - 1);
     }
 
-    // from rb_sockopt_inspect
-    private String optionValue() {
-        return switch (option) {
-            case SO_DEBUG, SO_ACCEPTCONN, SO_BROADCAST, SO_REUSEADDR, SO_KEEPALIVE, SO_OOBINLINE, SO_SNDBUF, SO_RCVBUF,
-                 SO_DONTROUTE, SO_RCVLOWAT, SO_SNDLOWAT -> String.valueOf(unpackInt(data));
-            case SO_LINGER -> {
+    /** Name of the Socket::Constants constant with this prefix and value, or null. */
+    private static String constantName(ThreadContext context, String prefix, int value) {
+        org.jruby.RubyModule constants = (org.jruby.RubyModule) context.runtime.getClassFromPath("Socket::Constants");
+        for (String name : constants.getConstantMap().keySet()) {
+            if (!name.startsWith(prefix)) continue;
+            IRubyObject v = constants.getConstantNoConstMissing(name);
+            if (v instanceof RubyInteger i && i.getLongValue() == value) return name;
+        }
+        return null;
+    }
+
+    // from rb_sockopt_inspect: options MRI formats as a value; anything else
+    // (null here) is shown as the inspected raw data, as MRI does.
+    private String optionValue(String name) {
+        int size = data.realSize();
+        switch (name) {
+            case "SO_DEBUG", "SO_ACCEPTCONN", "SO_BROADCAST", "SO_REUSEADDR", "SO_REUSEPORT", "SO_KEEPALIVE",
+                 "SO_OOBINLINE", "SO_SNDBUF", "SO_RCVBUF", "SO_DONTROUTE", "SO_RCVLOWAT", "SO_SNDLOWAT",
+                 "SO_PASSCRED", "SO_PRIORITY",
+                 "IPV6_V6ONLY", "IPV6_UNICAST_HOPS", "IPV6_MULTICAST_HOPS", "IPV6_MULTICAST_LOOP",
+                 "IPV6_MULTICAST_IF", "IPV6_RECVPKTINFO",
+                 "TCP_NODELAY", "TCP_MAXSEG", "TCP_CORK", "TCP_KEEPIDLE", "TCP_KEEPINTVL", "TCP_KEEPCNT",
+                 "TCP_SYNCNT", "TCP_LINGER2", "TCP_DEFER_ACCEPT", "TCP_WINDOW_CLAMP", "TCP_QUICKACK",
+                 "TCP_USER_TIMEOUT", "TCP_FASTOPEN":
+                return size == 4 ? String.valueOf(unpackInt(data)) : null;
+            case "SO_LINGER":
+                if (size != 8) return null;
                 int[] linger = Option.unpackLinger(data);
-
-                yield ((linger[0] == 0) ? "off " : "on ") + linger[1] + "sec";
-            }
-            case SO_RCVTIMEO, SO_SNDTIMEO ->
-                    Sprintf.getNumberFormat(Locale.getDefault()).format(unpackInt(data) / 1000.0);
-            case SO_ERROR -> Errno.valueOf(unpackInt(data)).description();
-            case SO_TYPE -> Sock.valueOf(unpackInt(data)).description();
-            default -> "";
-        };
-
+                return ((linger[0] == 0) ? "off " : "on ") + linger[1] + "sec";
+            case "SO_RCVTIMEO", "SO_SNDTIMEO":
+                return size == 4 ? Sprintf.getNumberFormat(Locale.getDefault()).format(unpackInt(data) / 1000.0) : null;
+            case "SO_ERROR":
+                return size == 4 ? Errno.valueOf(unpackInt(data)).description() : null;
+            case "SO_TYPE":
+                return size == 4 ? Sock.valueOf(unpackInt(data)).description() : null;
+            default:
+                return null;
+        }
     }
 
     public static ByteList packInt(int i) {
@@ -171,8 +200,8 @@ public class Option extends RubyObject {
     @JRubyMethod(name = "int", required = 4, meta = true)
     public static IRubyObject rb_int(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         ProtocolFamily family = SocketUtils.protocolFamilyFromArg(context, args[0]);
-        SocketLevel level = SocketUtils.levelFromArg(context, args[1]);
-        SocketOption option = SocketUtils.optionFromArg(context, args[2]);
+        int level = SocketUtils.levelToInt(context, args[1]);
+        int option = SocketUtils.optnameToInt(context, level, args[2]);
         ByteList data = packInt(toInt(context, args[3]));
 
         return new Option(context.getRuntime(), family, level, option, data);
@@ -188,8 +217,8 @@ public class Option extends RubyObject {
     @JRubyMethod(required = 4, meta = true)
     public static IRubyObject bool(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         ProtocolFamily family = SocketUtils.protocolFamilyFromArg(context, args[0]);
-        SocketLevel level = SocketUtils.levelFromArg(context, args[1]);
-        SocketOption option = SocketUtils.optionFromArg(context, args[2]);
+        int level = SocketUtils.levelToInt(context, args[1]);
+        int option = SocketUtils.optnameToInt(context, level, args[2]);
         ByteList data = packInt(args[3].isTrue() ? 1 : 0);
 
         return new Option(context.getRuntime(), family, level, option, data);
@@ -237,7 +266,7 @@ public class Option extends RubyObject {
     }
 
     private ProtocolFamily family;
-    private SocketLevel level;
-    private SocketOption option;
+    private int level;
+    private int optname;
     private ByteList data;
 }

@@ -61,6 +61,7 @@ import static org.jruby.api.Convert.asSymbol;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Convert.toInt;
 
 @JRubyClass(name="TCPServer", parent="TCPSocket")
 public class RubyTCPServer extends RubyTCPSocket {
@@ -108,7 +109,10 @@ public class RubyTCPServer extends RubyTCPSocket {
         try {
             InetAddress addr = InetAddress.getByName(host);
 
-            ssc = ServerSocketChannel.open();
+            // the address's own family: a no-arg open() is a dual-stack IPv6
+            // socket, so "0.0.0.0" / "" reported itself as AF_INET6 "::"
+            ssc = ServerSocketChannel.open(addr instanceof java.net.Inet6Address ?
+                    java.net.StandardProtocolFamily.INET6 : java.net.StandardProtocolFamily.INET);
             ssc.socket().setReuseAddress(true);
 
             InetSocketAddress socket_address = new InetSocketAddress(addr, port);
@@ -300,17 +304,18 @@ public class RubyTCPServer extends RubyTCPSocket {
 
     @JRubyMethod(name = "listen")
     public IRubyObject listen(ThreadContext context, IRubyObject backlog) {
+        toInt(context, backlog); // MRI: the backlog must be an Integer (TypeError otherwise); TCPServer already listens
         return RubyFixnum.zero(context.runtime);
     }
 
     @JRubyMethod(name = "peeraddr", rest = true)
     public IRubyObject peeraddr(ThreadContext context, IRubyObject[] args) {
-        throw context.runtime.newNotImplementedError("not supported");
+        throw context.runtime.newErrnoENOTCONNError(); // a listening socket has no peer (MRI: getpeername(2) ENOTCONN)
     }
 
     @JRubyMethod(name = "getpeername", rest = true)
     public IRubyObject getpeername(ThreadContext context, IRubyObject[] args) {
-        throw context.runtime.newNotImplementedError("not supported");
+        throw context.runtime.newErrnoENOTCONNError();
     }
 
     @JRubyMethod(rest = true, meta = true)
