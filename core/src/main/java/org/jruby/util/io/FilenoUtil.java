@@ -66,9 +66,12 @@ public class FilenoUtil {
         } else if (ReflectiveAccess.FILE_DESCRIPTOR_SET_FILENO_HANDLE != null) {
             FileDescriptor unixFD = new FileDescriptor();
 
-            // UNIX sockets, from jnr-unixsocket
             try {
-                if (channel instanceof UnixSocketChannel) {
+                if (channel instanceof org.jruby.ext.socket.UnixFdChannel) {
+                    ReflectiveAccess.FILE_DESCRIPTOR_SET_FILENO.accept(unixFD, ((org.jruby.ext.socket.UnixFdChannel) channel).fd());
+                    return unixFD;
+                } else if (channel instanceof UnixSocketChannel) {
+                    // UNIX sockets, from jnr-unixsocket
                     ReflectiveAccess.FILE_DESCRIPTOR_SET_FILENO.accept(unixFD, ((UnixSocketChannel)channel).getFD());
                     return unixFD;
                 } else if (channel instanceof UnixServerSocketChannel) {

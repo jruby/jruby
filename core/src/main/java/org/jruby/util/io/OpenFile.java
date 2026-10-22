@@ -626,8 +626,22 @@ public class OpenFile implements Finalizable {
                 return thread.selectReadyOps(fd.chSelect, this, realOps, timeout);
             }
 
-            // Channels that cannot be selected, regular files among them, are always ready
-            return ops;
+// A pair/for_fd unix socket (UnixFdChannel) can't be selected but has a real fd: wait on it
+// with poll(2), or a blocking read on a nonblock pair spins into EAGAIN (GH-3799). The IO
+// lock is released while waiting, as the scheduler waits do.
+if (fd.ch instanceof org.jruby.ext.socket.UnixFdChannel ufc && org.jruby.ext.socket.UnixDomainNative.hasPoll()) {
+    short events = (short) (((ops & (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) != 0 ? org.jruby.ext.socket.UnixDomainNative.POLLIN : 0)
+            | ((ops & (SelectionKey.OP_WRITE | SelectionKey.OP_CONNECT)) != 0 ? org.jruby.ext.socket.UnixDomainNative.POLLOUT : 0));
+    unlock();
+    try {
+        return org.jruby.ext.socket.UnixDomain.waitFd(thread.getContext(), ufc.fd(), events, timeout) ? ops : 0;
+    } finally {
+        lock();
+    }
+}
+
+// Channels that cannot be selected, regular files among them, are always ready
+return ops;
         } finally {
             if (locked) unlock();
         }
@@ -1573,7 +1587,9 @@ public class OpenFile implements Finalizable {
 
                 // MRI's sockets and pipes are nonblocking, so its plain read yields in io_wait on
                 // EAGAIN. Ours block and would park the fiber's thread, so emulate that here.
-                if (fd.chSelect != null && fptr.isBlocking()) {
+                // A pair/for_fd unix socket (UnixFdChannel) isn't selectable but reads nonblocking
+                // and waits through io_wait the same way (see PosixShim and waitReadable).
+                if ((fd.chSelect != null || fd.ch instanceof org.jruby.ext.socket.UnixFdChannel) && fptr.isBlocking()) {
                     return schedulerRead(context, fptr, buffer, buf, count);
                 }
             }
@@ -1725,6 +1741,17 @@ public class OpenFile implements Finalizable {
                 unlock();
                 try {
                     return context.getThread().select(fd.chSelect, this, SelectionKey.OP_READ);
+                } finally {
+                    lock();
+                }
+            }
+
+            // A pair/for_fd unix socket (UnixFdChannel) can't be selected but has a real fd: wait
+            // on it with poll(2), or IO#read on a nonblock pair gives up with EAGAIN (GH-3799)
+            if (fd.ch instanceof org.jruby.ext.socket.UnixFdChannel ufc && org.jruby.ext.socket.UnixDomainNative.hasPoll()) {
+                unlock();
+                try {
+                    return org.jruby.ext.socket.UnixDomain.waitFd(context, ufc.fd(), org.jruby.ext.socket.UnixDomainNative.POLLIN, -1);
                 } finally {
                     lock();
                 }
@@ -2842,6 +2869,32 @@ public class OpenFile implements Finalizable {
 
     public boolean isBlocking() {
         return !nonblock;
+    }
+
+    /**
+     * Mark the Ruby-visible "nonblock?" bookkeeping flag without touching
+     * the real channel's actual OS-level blocking mode (setBlocking's own
+     * fd.chSelect.configureBlocking(...) call). For a channel whose real
+     * read/write already goes around performRead/performWrite's own
+     * chSelect-based machinery entirely (see UnixSocketNativeChannel), the
+     * two are legitimately independent: MRI reports every fd as
+     * non-blocking internally regardless of what blocking behavior Ruby
+     * code actually observes (rb_thread_io_blocking_region) -- IO#nonblock?
+     * mirrors that MRI-visible bookkeeping fact, which has nothing to do
+     * with whether THIS JVM's underlying fd happens to be configured
+     * O_NONBLOCK or not. Safe for performRead/performWrite's own nonblock
+     * branch too: it only ever special-cases a literal 0 return as EAGAIN,
+     * and a channel that already maps real EOF to -1 (the ReadableByteChannel
+     * contract -- see UnixFdChannel#rawRead) never produces that literal 0
+     * in the first place, so there is nothing for this flag to misroute.
+     */
+    public void setNonblockFlag(boolean nonblock) {
+        boolean locked = lock();
+        try {
+            this.nonblock = nonblock;
+        } finally {
+            if (locked) unlock();
+        }
     }
 
     // MRI: check_tty

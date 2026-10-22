@@ -249,9 +249,40 @@ public enum SocketType {
         }
     },
 
+    UNIX_NIO(Sock.SOCK_STREAM) {
+        public SocketAddress getRemoteSocketAddress(Channel channel) {
+            try {
+                return UnixDomain.remoteAddress(channel);
+            } catch (IOException ioe) {
+                return null;
+            }
+        }
+
+        public SocketAddress getLocalSocketAddress(Channel channel) {
+            try {
+                return UnixDomain.localAddress(channel);
+            } catch (IOException ioe) {
+                return null;
+            }
+        }
+
+        public void shutdownInput(Channel channel) throws IOException {
+            if (channel instanceof SocketChannel sc) sc.shutdownInput();
+            else if (channel instanceof UnixFdChannel ufc) UnixDomainNative.shutdown(ufc.fd(), UnixDomainNative.SHUT_RD);
+        }
+
+        public void shutdownOutput(Channel channel) throws IOException {
+            if (channel instanceof SocketChannel sc) sc.shutdownOutput();
+            else if (channel instanceof UnixFdChannel ufc) UnixDomainNative.shutdown(ufc.fd(), UnixDomainNative.SHUT_WR);
+        }
+    },
+
     UNKNOWN(Sock.SOCK_STREAM);
 
     public static SocketType forChannel(Channel channel) {
+        if (UnixDomain.isUnixChannel(channel)) {
+            return UNIX_NIO;
+        }
         if (channel instanceof SocketChannel) {
             return SOCKET;
 
