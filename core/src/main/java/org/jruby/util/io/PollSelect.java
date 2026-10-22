@@ -112,16 +112,8 @@ final class PollSelect {
             fds[readCount + i] = fd;
         }
 
-        // only exceptional conditions go unreported, as with our selectors, which check these the same way
-        if (!except.isNil()) {
-            RubyArray<?> exceptAry = except.convertToArray();
-            for (int i = 0; i < exceptAry.size(); i++) {
-                RubyIO io = TypeConverter.ioGetIO(runtime, exceptAry.eltOk(i));
-                RubyIO writeIO = io.GetWriteIO();
-                io.getOpenFileChecked();
-                if (io != writeIO) writeIO.getOpenFileChecked();
-            }
-        }
+        // only exceptional conditions go unreported, as with our selectors
+        SelectExecutor.checkExcept(runtime, except);
 
         // filled only now, since a #to_io above may run another IO.select on this thread and its buffer
         ByteBuffer pollfds = pollfds(count);
