@@ -59,38 +59,52 @@ describe "Kernel.require" do
   end
 end
 
-describe "Kernel#require with a Fiber scheduler" do
-  require_relative '../fiber/fixtures/scheduler'
-
+describe "Kernel#require of a file another Fiber is still requiring" do
   before :each do
-    @path = fixture(__FILE__, "require_sleep.rb")
+    @path = fixture(__FILE__, "require_fiber_yield.rb")
+    @fibers = []
     ScratchPad.record []
-    Fiber.set_scheduler(FiberSpecs::LoggingScheduler.new)
   end
 
   after :each do
+    @fibers.each { |fiber| fiber.resume while fiber.alive? }
     Fiber.set_scheduler(nil)
     $LOADED_FEATURES.delete(@path)
   end
 
-  it "blocks through the scheduler while another fiber is requiring the same file" do
-    loader = Fiber.schedule { require @path }
-    ScratchPad.recorded.should == [:loading]
+  it "raises a ThreadError without a Fiber scheduler" do
+    @fibers << Fiber.new { require @path }
+    @fibers.last.resume
 
-    result = nil
-    waiter = Fiber.schedule { result = require @path }
-    event = Fiber.scheduler.events.last
-    event[:event].should == :block
-    event[:fiber].should.equal?(waiter)
+    -> { require @path }.should.raise(ThreadError, "deadlock; lock already owned by another fiber belonging to the same thread")
+  end
 
-    loader.resume
-    ScratchPad.recorded.should == [:loading, :loaded]
-    event = Fiber.scheduler.events.last
-    event[:event].should == :unblock
-    event[:fiber].should.equal?(loader)
-    event[:args].last.should.equal?(waiter)
+  describe "with a Fiber scheduler" do
+    require_relative '../fiber/fixtures/scheduler'
 
-    [loader, waiter].each { |f| f.resume while f.alive? }
-    result.should == false
+    before :each do
+      Fiber.set_scheduler(FiberSpecs::LoggingScheduler.new)
+    end
+
+    it "blocks through the scheduler until the other Fiber finishes" do
+      @fibers << loader = Fiber.schedule { require @path }
+      ScratchPad.recorded.should == [:loading]
+
+      result = nil
+      @fibers << waiter = Fiber.schedule { result = require @path }
+      event = Fiber.scheduler.events.last
+      event[:event].should == :block
+      event[:fiber].should.equal?(waiter)
+
+      loader.resume
+      ScratchPad.recorded.should == [:loading, :loaded]
+      event = Fiber.scheduler.events.last
+      event[:event].should == :unblock
+      event[:fiber].should.equal?(loader)
+      event[:args].last.should.equal?(waiter)
+
+      waiter.resume
+      result.should == false
+    end
   end
 end

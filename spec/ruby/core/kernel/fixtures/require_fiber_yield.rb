@@ -1,3 +1,3 @@
 ScratchPad << :loading
-sleep
+Fiber.yield
 ScratchPad << :loaded
