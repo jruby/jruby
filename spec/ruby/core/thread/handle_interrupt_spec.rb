@@ -102,6 +102,28 @@ describe "Thread.handle_interrupt" do
     fiber.resume
   end
 
+  it "defers an interrupt raised while the thread waits for a Fiber it resumed" do
+    ready = Queue.new
+    go = Queue.new
+    log = []
+    thread = Thread.new do
+      Thread.handle_interrupt(RuntimeError => :never) do
+        log << Fiber.new { ready << true; go.pop; :done }.resume
+        log << :after_resume
+      end
+      log << :not_reached
+    end
+    thread.report_on_exception = false
+
+    ready.pop
+    thread.raise "interrupt while resuming"
+    Thread.pass until thread.pending_interrupt?
+    go << true
+
+    -> { thread.join }.should.raise(RuntimeError, "interrupt while resuming")
+    log.should == [:done, :after_resume]
+  end
+
   it "runs pending interrupts at the end of the block, even if there was an exception raised in the block" do
     executed = false
     -> {
