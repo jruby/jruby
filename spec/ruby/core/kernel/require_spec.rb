@@ -58,3 +58,53 @@ describe "Kernel.require" do
     Kernel.public_methods(false).should.include?(:require)
   end
 end
+
+describe "Kernel#require of a file another Fiber is still requiring" do
+  before :each do
+    @path = fixture(__FILE__, "require_fiber_yield.rb")
+    @fibers = []
+    ScratchPad.record []
+  end
+
+  after :each do
+    @fibers.each { |fiber| fiber.resume while fiber.alive? }
+    Fiber.set_scheduler(nil)
+    $LOADED_FEATURES.delete(@path)
+  end
+
+  it "raises a ThreadError without a Fiber scheduler" do
+    @fibers << Fiber.new { require @path }
+    @fibers.last.resume
+
+    -> { require @path }.should.raise(ThreadError, "deadlock; lock already owned by another fiber belonging to the same thread")
+  end
+
+  describe "with a Fiber scheduler" do
+    require_relative '../fiber/fixtures/scheduler'
+
+    before :each do
+      Fiber.set_scheduler(FiberSpecs::LoggingScheduler.new)
+    end
+
+    it "blocks through the scheduler until the other Fiber finishes" do
+      @fibers << loader = Fiber.schedule { require @path }
+      ScratchPad.recorded.should == [:loading]
+
+      result = nil
+      @fibers << waiter = Fiber.schedule { result = require @path }
+      event = Fiber.scheduler.events.last
+      event[:event].should == :block
+      event[:fiber].should.equal?(waiter)
+
+      loader.resume
+      ScratchPad.recorded.should == [:loading, :loaded]
+      event = Fiber.scheduler.events.last
+      event[:event].should == :unblock
+      event[:fiber].should.equal?(loader)
+      event[:args].last.should.equal?(waiter)
+
+      waiter.resume
+      result.should == false
+    end
+  end
+end
