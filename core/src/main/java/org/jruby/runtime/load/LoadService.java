@@ -37,13 +37,14 @@ package org.jruby.runtime.load;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayDeque;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.ArrayDeque;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.jar.JarFile;
@@ -66,6 +67,7 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
+import org.jruby.ext.thread.Mutex.FiberWaiter;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -424,45 +426,60 @@ public class LoadService {
     final class RequireLocks {
         final class RequireLock extends ReentrantLock {
             volatile boolean destroyed;
-            // the fiber loading, as fibers can share a thread
-            volatile Object owner;
-            // fibers waiting through a fiber scheduler for the load to finish, as {scheduler, fiber} pairs
-            final ArrayDeque<IRubyObject[]> schedulerWaiters = new ArrayDeque<>();
+            // fibers waiting through a fiber scheduler for the load to finish, created by the first one
+            volatile SchedulerWaiters schedulerWaiters;
 
-            boolean heldByCurrentFiber(ThreadContext context) {
-                return isHeldByCurrentThread() && owner == context.getFiber();
-            }
-
-            // MRI's require lock is a mutex, which a fiber waits on through the scheduler
+            @CRuby(value = "load_lock", file = "load.c")
             void waitThroughScheduler(ThreadContext context, IRubyObject scheduler) {
-                IRubyObject[] waiter = {scheduler, context.getFiber()};
+                FiberWaiter waiter = FiberWaiter.cached(context, scheduler);
+                SchedulerWaiters waiters = schedulerWaiters();
 
-                while (true) {
-                    synchronized (schedulerWaiters) {
-                        if (!isLocked()) return;
-                        schedulerWaiters.add(waiter);
-                    }
+                synchronized (waiters) {
+                    if (!isLocked()) return;
+                    waiters.add(waiter);
+                }
 
-                    try {
-                        FiberScheduler.block(context, scheduler, context.nil, context.nil);
-                    } finally {
-                        synchronized (schedulerWaiters) {
-                            schedulerWaiters.remove(waiter);
-                        }
+                try {
+                    FiberScheduler.block(context, scheduler, context.nil, context.nil);
+                } finally {
+                    synchronized (waiters) {
+                        waiters.remove(waiter);
                     }
                 }
             }
 
-            void wakeSchedulerWaiters(ThreadContext context) {
-                IRubyObject[][] waiters;
-                synchronized (schedulerWaiters) {
-                    waiters = schedulerWaiters.toArray(new IRubyObject[0][]);
-                    schedulerWaiters.clear();
+            // Wakes the scheduler waiters on every release, including a thread's that only locked to wait for the load.
+            @Override
+            public void unlock() {
+                super.unlock();
+                if (schedulerWaiters != null && !isHeldByCurrentThread()) wakeSchedulerWaiters();
+            }
+
+            private SchedulerWaiters schedulerWaiters() {
+                SchedulerWaiters waiters = schedulerWaiters;
+                if (waiters != null) return waiters;
+
+                SCHEDULER_WAITERS_UPDATER.compareAndSet(this, null, new SchedulerWaiters());
+                return schedulerWaiters;
+            }
+
+            private void wakeSchedulerWaiters() {
+                SchedulerWaiters waiters = schedulerWaiters;
+                FiberWaiter[] woken;
+                synchronized (waiters) {
+                    if (waiters.isEmpty()) return;
+                    woken = waiters.toArray(new FiberWaiter[0]);
+                    waiters.clear();
                 }
 
-                for (IRubyObject[] waiter : waiters) FiberScheduler.unblock(context, waiter[0], context.nil, waiter[1]);
+                ThreadContext context = runtime.getCurrentContext();
+                for (FiberWaiter waiter : woken) FiberScheduler.unblock(context, waiter.scheduler(), context.nil, waiter.fiber());
             }
+
+            private static final AtomicReferenceFieldUpdater<RequireLock, SchedulerWaiters> SCHEDULER_WAITERS_UPDATER =
+                    AtomicReferenceFieldUpdater.newUpdater(RequireLock.class, SchedulerWaiters.class, "schedulerWaiters");
         }
+        static final class SchedulerWaiters extends ArrayDeque<FiberWaiter> {}
         final ConcurrentHashMap<String, RequireLock> pool;
         // global lock for require must be fair
         //private final ReentrantLock globalLock;
@@ -501,7 +518,6 @@ public class LoadService {
                     // If lock is new, lock and return LOCKED
                     lock = pool.computeIfAbsent(path, (name) -> {
                         thread.lock(newLock);
-                        newLock.owner = currentContext.getFiber();
                         return newLock;
                     });
 
@@ -517,15 +533,6 @@ public class LoadService {
                     }
                 }
 
-                IRubyObject scheduler = FiberScheduler.current(currentContext);
-
-                // held by our thread, but for a sibling fiber that has a scheduler to wait through
-                if (scheduler != null && lock.isHeldByCurrentThread() && !lock.heldByCurrentFiber(currentContext)) {
-                    lock.waitThroughScheduler(currentContext, scheduler);
-                    if (lock.destroyed) return defaultResult;
-                    continue;
-                }
-
                 if (lock.isHeldByCurrentThread()) {
                     // we hold the lock, which means we're re-locking for the same file; warn about this
                     if (circularRequireWarning && runtime.isVerbose()) {
@@ -536,6 +543,7 @@ public class LoadService {
                 }
 
                 // Other thread holds the lock, wait to acquire
+                IRubyObject scheduler = FiberScheduler.current(currentContext);
                 if (scheduler != null) {
                     lock.waitThroughScheduler(currentContext, scheduler);
                     if (lock.destroyed) return defaultResult;
@@ -577,9 +585,7 @@ public class LoadService {
                     lock.destroyed = true;
                     pool.remove(path);
                 }
-                lock.owner = null;
                 thread.unlock(lock);
-                lock.wakeSchedulerWaiters(runtime.getCurrentContext());
             }
         }
     }
