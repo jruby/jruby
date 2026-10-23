@@ -29,11 +29,14 @@ runs:
       shell: bash
       run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
     - name: set up java ${{ inputs.java-version }}
-      uses: actions/setup-java@v5
+      uses: actions/setup-java@v6
       with:
         distribution: ${{ inputs.distribution }}
         java-version: ${{ inputs.java-version }}
         cache: 'maven'
+        cache-dependency-path: "**/pom.rb"
+        cache-read-only: true
+
     # tool/ci-retry.sh needs bash, so Windows builds run the wrapper directly and are not retried.
     - name: build
       if: runner.os != 'Windows'

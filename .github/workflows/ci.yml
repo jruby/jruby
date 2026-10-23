@@ -23,11 +23,12 @@ jobs:
       - name: checkout
         uses: actions/checkout@v6
       - name: set up java 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: 'zulu'
           java-version: 21
           cache: 'maven'
+          cache-dependency-path: "**/pom.rb"
       - name: fetch Maven dependencies and plugins
         # The maven/* artifact modules depend on JRuby snapshots so limit to bootstrap modules.
         # exclude system scope for jars built by JRuby modules and included in dependencies.
@@ -92,6 +93,28 @@ jobs:
           java-version: 27
       - name: rake test:mri:core:int
         run: bin/jruby -S rake test:mri:core:int
+
+  rake-test-mri-slow:
+    needs: maven-precache
+    name: rake test:mri:core_slow (Java 27)
+
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+
+    env:
+      JRUBY_OPTS: '--dev'
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v6
+      - name: bootstrap
+        uses: ./.github/actions/bootstrap
+        with:
+          java-version: 27
+      - name: rake test:mri:core:int
+        run: bin/jruby -S rake test:mri:core_slow
 
   rake-test-multiplatform:
     needs: maven-precache
