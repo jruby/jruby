@@ -422,7 +422,7 @@ public class LoadService {
         // A Mutex like MRI's thread shield, so a fiber waiting for another's load goes through the fiber scheduler
         @CRuby(value = "rb_thread_shield_new", file = "thread.c")
         final class RequireLock {
-            final Mutex mutex = new Mutex(runtime, runtime.getMutex());
+            final Mutex mutex = Mutex.newInternal(runtime);
             volatile boolean destroyed;
         }
         final ConcurrentHashMap<String, RequireLock> pool;
