@@ -339,7 +339,11 @@ public class Mutex extends RubyObject implements DataType {
 
     @JRubyMethod(name = "owned?")
     public IRubyObject owned_p(ThreadContext context) {
-        return asBoolean(context, lock.isHeldByCurrentThread());
+        return asBoolean(context, isOwned());
+    }
+
+    public boolean isOwned() {
+        return lock.isHeldByCurrentThread();
     }
 
     private void checkRelocking(ThreadContext context) {
