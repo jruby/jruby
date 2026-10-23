@@ -6628,7 +6628,7 @@ public class RubyModule extends RubyObject {
 
             Mutex loading = loading(context);
             // also ours when ctx is stale, left by a load that failed with other than a LoadError or RuntimeError
-            if (loading.owned_p(context).isTrue()) return loadLocked(context);
+            if (loading.isOwned()) return loadLocked(context);
 
             loading.lock(context);
             try {
@@ -6700,7 +6700,7 @@ public class RubyModule extends RubyObject {
         IRubyObject getValue(ThreadContext context) {
             Mutex loading = this.loading;
 
-            if (loading != null && loading.isLocked() && !isSelf(context) && !loading.owned_p(context).isTrue()) {
+            if (loading != null && loading.isLocked() && !isSelf(context) && !loading.isOwned()) {
                 loading.lock(context);
                 loading.unlock(context);
             }
