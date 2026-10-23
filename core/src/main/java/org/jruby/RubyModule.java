@@ -6705,9 +6705,7 @@ public class RubyModule extends RubyObject {
                 loading.unlock(context);
             }
 
-            synchronized (this) {
-                return value;
-            }
+            return value;
         }
 
         // Returns the assigned feature.
