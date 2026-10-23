@@ -95,6 +95,7 @@ import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.BlockingIO;
+import org.jruby.ext.socket.UnixDomainNative;
 import org.jruby.util.io.ChannelFD;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.log.Logger;
@@ -570,7 +571,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         @JRubyMethod
         public IRubyObject base_label(ThreadContext context) {
-            if (baseLabel == null) baseLabel = newString(context, element.getMethodName());
+            // MRI: label is "Array#each", base_label just "each"
+            if (baseLabel == null) baseLabel = newString(context, RubyStackTraceElement.baseName(element.getMethodName()));
             return baseLabel;
         }
 
@@ -583,11 +585,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         public IRubyObject label(ThreadContext context) {
             if (element.getFrameType() == FrameType.BLOCK) {
                 // NOTE: "block in " + ... logic, now, also at RubyStackTraceElement.to_s_mri
-                if (label == null) label = newString(context, "block in " + element.getMethodName());
+                if (label == null) label = newString(context, RubyStackTraceElement.blockPrefix(element.getMethodName()) + element.getMethodName());
                 return label;
             }
 
-            return base_label(context);
+            // the full Ruby 3.4+ label ("Array#each"); base_label strips the owner
+            if (label == null) label = newString(context, element.getMethodName());
+            return label;
         }
 
         @JRubyMethod
@@ -2453,6 +2457,30 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public int selectReadyOps(Channel channel, OpenFile fptr, int ops, long timeout) {
         // Use selectables but only if they're not associated with a file (which has odd select semantics)
         ChannelFD fd = fptr == null ? null : fptr.fd();
+        // WHY: a channel with a real OS fd (jnr's or a JEP-380 unix socket's,
+        // see ChannelFD#jepUnixNativeChannel) is asked poll(2) first, with a
+        // zero timeout. Registering it with a Selector costs a
+        // configureBlocking(false)/(true) round trip plus a register/deregister
+        // on every call -- ~6us of the ~8us a 100-byte UNIXSocket#sysread took
+        // (JFR) -- and in request/response traffic the data is usually already
+        // there. Not ready: a zero timeout is answered here, otherwise the
+        // Selector path below waits as before, so Thread#kill/raise and
+        // IO#close still wake it. The pollfd lives in the calling thread's
+        // FFM scratch segment, so the probe allocates nothing. Single-op
+        // requests only: the probe reports ready-or-not, not which op.
+        int nativeFd;
+        if (fd != null && fd.chNative != null && channel == fd.chSelect
+                && (nativeFd = fd.chNative.getFD()) >= 0 && UnixDomainNative.hasPoll()) {
+            short events = ops == SelectionKey.OP_READ || ops == SelectionKey.OP_ACCEPT ? UnixDomainNative.POLLIN
+                    : ops == SelectionKey.OP_WRITE || ops == SelectionKey.OP_CONNECT ? UnixDomainNative.POLLOUT : 0;
+            if (events != 0) {
+                if (UnixDomainNative.poll(nativeFd, events, 0) > 0) {
+                    pollThreadEvents(); // as after a select(): a pending kill/raise lands before the I/O
+                    return ops;
+                }
+                if (timeout == 0) return 0;
+            }
+        }
         if (channel instanceof SelectableChannel && fd != null) {
             SelectableChannel selectable = (SelectableChannel)channel;
 

@@ -101,13 +101,13 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
     @Override
     protected IRubyObject callDirect(ThreadContext context, Block block, IRubyObject[] args, Block blockArg) {
         ensureInstrsReady(); // so we get debugging output
-        return Interpreter.INTERPRET_BLOCK(context, block, null, fullInterpreterContext, args, block.getBinding().getMethod(), blockArg);
+        return Interpreter.INTERPRET_BLOCK(context, block, null, fullInterpreterContext, args, backtraceName(block.getBinding().getMethod()), blockArg);
     }
 
     @Override
     protected IRubyObject yieldDirect(ThreadContext context, Block block, IRubyObject[] args, IRubyObject self) {
         ensureInstrsReady(); // so we get debugging output
-        return Interpreter.INTERPRET_BLOCK(context, block, self, fullInterpreterContext, args, block.getBinding().getMethod(), Block.NULL_BLOCK);
+        return Interpreter.INTERPRET_BLOCK(context, block, self, fullInterpreterContext, args, backtraceName(block.getBinding().getMethod()), Block.NULL_BLOCK);
     }
 
     // TODO: Duplicated in InterpretedIRBlockBody
@@ -145,7 +145,7 @@ public class InterpretedIRBlockBody extends IRBlockBody implements Compilable<In
         self = IRRuntimeHelpers.updateBlockState(block, self);
 
         try {
-            return Interpreter.INTERPRET_BLOCK(context, block, self, ic, args, binding.getMethod(), blockArg);
+            return Interpreter.INTERPRET_BLOCK(context, block, self, ic, args, backtraceName(binding.getMethod()), blockArg);
         }
         finally {
             postYield(context, ic, binding, oldVis, prevFrame);

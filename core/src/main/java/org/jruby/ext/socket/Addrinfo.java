@@ -84,6 +84,7 @@ public class Addrinfo extends RubyObject {
     public Addrinfo(Ruby runtime, RubyClass cls, InetAddress inetAddress) {
         super(runtime, cls);
         this.socketAddress = new InetSocketAddress(inetAddress, 0);
+        this.pfamily = ProtocolFamily.valueOf(getAddressFamily().intValue()); // getifaddrs: PF_INET/PF_INET6 (MRI)
         this.socketType = SocketType.SOCKET;
     }
 
@@ -123,6 +124,22 @@ public class Addrinfo extends RubyObject {
         this.socketAddress = socketAddress;
         this.pfamily = ProtocolFamily.valueOf(getAddressFamily().intValue());
         setSockAndProtocol(SOCK_STREAM);
+    }
+
+    /**
+     * A socket's own local_address/remote_address. MRI builds these from
+     * getsockname(2)/getpeername(2) plus the socktype, with protocol 0 -- not
+     * the 6/17 the general constructor derives from the socktype. Also used for
+     * an unbound inet socket's wildcard (0.0.0.0 / ::, port 0).
+     */
+    static Addrinfo socketAddress(Ruby runtime, RubyClass cls, InetSocketAddress address, Sock sock, SocketType socketType) {
+        Addrinfo addrinfo = new Addrinfo(runtime, cls, address, sock, socketType);
+        addrinfo.protocol = Protocol.getProtocolByNumber(0);
+        return addrinfo;
+    }
+
+    void setProtocol(Protocol protocol) {
+        this.protocol = protocol;
     }
 
     public int getPort() {
@@ -261,6 +278,10 @@ public class Addrinfo extends RubyObject {
                     IRubyObject service = sockaddAry.entry(1).convertToInteger();
                     IRubyObject nodename = sockaddAry.entry(2);
                     String numericnode = sockaddAry.entry(3).convertToString().toString();
+                    if (numericnode.isEmpty() && (nodename.isNil() || nodename.convertToString().isEmpty())) {
+                        numericnode = af == AF_INET6 ? "::" : "0.0.0.0";
+                        nodename = context.nil;
+                    }
                     int _port = toInt(context, service);
 
                     InetAddress inetAddress;
@@ -294,6 +315,7 @@ public class Addrinfo extends RubyObject {
                     // constants and netdb not lining up (constants which should not exist of db entries not existing
                     // which should).
                     this.protocol = Protocol.getProtocolByNumber(proto);
+                    this.rawProtocol = proto; // a number /etc/protocols doesn't list stays as given (MRI)
                     return;
                 } else {
                     throw sockerr(runtime, "getaddrinfo: unknown address family: " + protocolFamilyArg);
@@ -335,7 +357,11 @@ public class Addrinfo extends RubyObject {
         }
         
         if ((pfamily == PF_INET || pfamily == PF_INET6) && (sock == SOCK_STREAM || sock == SOCK_DGRAM)) {
-            val.append(" ").append(protocol.getName().toUpperCase());
+            // MRI labels a protocol-0 inet address by its socktype (e.g. an
+            // unbound socket's local_address is "0.0.0.0 TCP", protocol 0).
+            String name = protocol == null || protocol.getProto() == 0 ?
+                    (sock == SOCK_STREAM ? "TCP" : "UDP") : protocol.getName().toUpperCase();
+            val.append(" ").append(name);
         } else if (sock != null) {
             val.append(" ").append(sock.name().toUpperCase());
         } else if (protocol != null && protocol.getProto() != 0) {
@@ -352,9 +378,14 @@ public class Addrinfo extends RubyObject {
 
     @JRubyMethod
     public IRubyObject inspect_sockaddr(ThreadContext context) {
+        // e.g. recvmsg's sender on a stream socket: recvmsg(2) gave no address
+        if (socketAddress == null) return newString(context, "empty-sockaddr");
+
         if (socketAddress instanceof UnixSocketAddress) {
             String path = getUnixSocketAddress().path();
 
+            // MRI's inspect_sockaddr: an unnamed (socketpair/unbound) unix socket has no path
+            if (path == null || path.isEmpty()) return newString(context, "empty-path-AF_UNIX-sockaddr");
             return newString(context, path.startsWith("/") ? path : "UNIX " + path);
         }
 
@@ -376,6 +407,16 @@ public class Addrinfo extends RubyObject {
 
     @JRubyMethod(rest = true, meta = true)
     public static IRubyObject getaddrinfo(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        // getaddrinfo(node, service, family = nil, socktype = nil, protocol = nil, flags = nil, timeout: nil):
+        // keywords arrive as a trailing Hash wherever the positionals stop
+        // (Socket.tcp passes four), but the list builder reads them from slot 6
+        if (args.length > 2 && args.length < 7 && args[args.length - 1] instanceof org.jruby.RubyHash opts) {
+            IRubyObject[] full = new IRubyObject[7];
+            java.util.Arrays.fill(full, context.nil);
+            System.arraycopy(args, 0, full, 0, args.length - 1);
+            full[6] = opts;
+            args = full;
+        }
         return RubyArray.newArray(context.runtime, SocketUtils.getaddrinfoList(context, args));
     }
 
@@ -442,11 +483,15 @@ public class Addrinfo extends RubyObject {
 
     @JRubyMethod
     public IRubyObject afamily(ThreadContext context) {
+        // a getifaddrs link-layer entry is AF_PACKET on Linux (MRI), not AF_UNSPEC; other
+        // platforms keep AF_UNSPEC, as Socket::AF_PACKET is only defined on Linux
+        if (interfaceLink && org.jruby.platform.Platform.IS_LINUX) return asFixnum(context, AF_PACKET);
         return asFixnum(context, getAddressFamily().intValue());
     }
 
     @JRubyMethod
     public IRubyObject pfamily(ThreadContext context) {
+        if (interfaceLink && org.jruby.platform.Platform.IS_LINUX) return asFixnum(context, AF_PACKET); // PF_PACKET == AF_PACKET
         return asFixnum(context, pfamily.intValue());
     }
 
@@ -458,11 +503,13 @@ public class Addrinfo extends RubyObject {
     @JRubyMethod
     public IRubyObject protocol(ThreadContext context) {
         // Any unknown protocol will end up null but the one case we see is IPPROTO_RAW is not listed in /etc/protocols
+        if (protocol == null && rawProtocol >= 0) return asFixnum(context, rawProtocol);
         return asFixnum(context, protocol == null ? 255 : protocol.getProto());
     }
 
     @JRubyMethod
     public IRubyObject canonname(ThreadContext context) {
+        if (canonnameOverride != null) return newString(context, canonnameOverride);
         if (!displaysCanonical) return context.nil;
 
         if (socketAddress instanceof InetSocketAddress) {
@@ -871,23 +918,19 @@ public class Addrinfo extends RubyObject {
         } else if (unix) {
             serviceName = getUnixSocketAddress().path();
         } else {
-            serviceName = Service.getServiceByPort(getPort(), protocol.getName()).getName();
+            serviceName = SocketUtils.serviceByPort(getPort(), protocol.getName()).getName();
         }
 
         return newArray(context, hostname, newString(context, serviceName));
     }
 
 
-    @JRubyMethod(notImplemented = true)
-    public IRubyObject marshal_dump(ThreadContext context) {
-        // unimplemented
-        return context.nil;
-    }
-
-    @JRubyMethod(notImplemented = true)
-    public IRubyObject marshal_load(ThreadContext context, IRubyObject arg) {
-        // unimplemented
-        return context.nil;
+    // marshal_dump/marshal_load: lib/ruby/stdlib/socket.rb; this restores the
+    // dumped canonical name
+    @JRubyMethod(name = "__canonname=", visibility = Visibility.PRIVATE)
+    public IRubyObject set_canonname(ThreadContext context, IRubyObject name) {
+        canonnameOverride = name.isNil() ? null : name.convertToString().toString();
+        return name;
     }
 
     @JRubyMethod
@@ -956,6 +999,8 @@ public class Addrinfo extends RubyObject {
     private SocketType socketType;
     private String interfaceName;
     private boolean interfaceLink;
+    private int rawProtocol = -1;
+    private String canonnameOverride;
     private NetworkInterface networkInterface;
     private boolean isBroadcast;
     private boolean displaysCanonical;

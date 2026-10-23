@@ -59,7 +59,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
             LOG.info("Printing simple IR for " + irScope.getId() + ":\n" + new String(baos.toByteArray()));
         }
 
-        String name = ROOT;
+        String name = irScope.getTopLabel(); // "<main>" or "<top (required)>"
 
         if (IRRuntimeHelpers.isDebug()) LOG.info("Executing {}", ic);
 
@@ -166,7 +166,8 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
         boolean hasExplicitCallProtocol =  ic.hasExplicitCallProtocol();
 
         try {
-            ThreadContext.pushBacktrace(context, id, ic.getFileName(), ic.getLine());
+            String label = body.getBacktraceLabel(); // Ruby 3.4+ "Foo#bar", recorded at definition
+            ThreadContext.pushBacktrace(context, label != null ? label : id, ic.getFileName(), ic.getLine());
 
             if (!hasExplicitCallProtocol) preFrameScope(ic, context, self, frameName, block, clazz, parentScope, visibility);
 

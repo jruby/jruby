@@ -32,6 +32,21 @@ public abstract class IRBlockBody extends ContextAwareBlockBody {
         this.lineNumber = line;
     }
 
+    // this block's backtrace frame name ("A#m", "(2 levels) in A#m",
+    // "<class:C>"), computed once by a scope walk, then a field read per call
+    private String backtraceFrameName;
+
+    /** This block's Ruby 3.4+ frame name (see IRScope#getBlockFrameName). */
+    protected final String backtraceName(String frameName) {
+        String cached = backtraceFrameName;
+        if (cached != null) return cached;
+        IRScope self = scope.getIRScope();
+        if (self == null) return frameName;
+        String name = self.getBlockBacktraceLabel(frameName);
+        if (self.isBlockFrameNameStatic()) backtraceFrameName = name;
+        return name;
+    }
+
     @Override
     public abstract boolean canCallDirect();
 

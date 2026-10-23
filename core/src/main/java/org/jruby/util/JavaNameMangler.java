@@ -297,15 +297,16 @@ public class JavaNameMangler {
         String base;
 
         if (scope instanceof IRMethod) {
-            base = RUBY_MARKER + DELIMITER + METHOD_MARKER + DELIMITER + mangleMethodNameInternal(scope.getId());
+            // the Ruby 3.4+ label ("Foo#bar") when the method was defined before
+            // being compiled (always, for the JIT); AOT-compiled scripts keep the id
+            // a define_method body (converted from a block) is labeled as that block
+            IRClosure definedFrom = ((IRMethod) scope).getDefinedFrom();
+            String label = definedFrom != null ? definedFrom.getBlockBacktraceLabel(scope.getId()) : scope.getBacktraceLabel();
+            base = RUBY_MARKER + DELIMITER + METHOD_MARKER + DELIMITER + mangleMethodNameInternal(label != null ? label : scope.getId());
         } else if (scope instanceof IRClosure) {
             IRScope ancestorScope = scope.getNearestTopLocalVariableScope();
-            String name;
-            if (ancestorScope instanceof IRScriptBody) {
-                name = Interpreter.ROOT;
-            } else {
-                name = ancestorScope.getId();
-            }
+            String fallback = ancestorScope instanceof IRScriptBody ? Interpreter.ROOT : ancestorScope.getId();
+            String name = scope.getBlockFrameName(fallback);
             base = RUBY_MARKER + DELIMITER + BLOCK_MARKER + DELIMITER + mangleMethodNameInternal(name);
         } else if (scope instanceof IRMetaClassBody) {
             base = RUBY_MARKER + DELIMITER + METACLASS_MARKER;

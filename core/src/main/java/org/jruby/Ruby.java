@@ -3151,6 +3151,53 @@ public final class Ruby implements Constantizable {
         }
     }
 
+    /**
+     * Generated populators: bound Java methods with their owner, so a
+     * backtrace frame for one is labeled as Ruby 3.4+ does -- "Array#each",
+     * "Integer.sqrt" -- not just "each". A rubyName starting with "." is a
+     * singleton method. An anonymous owner gives the bare name.
+     */
+    public void addBoundMethods(RubyModule owner, int tuplesIndex, String... classNamesAndTuples) {
+        String ownerName = owner == null ? null : owner.getName();
+        if (ownerName != null && ownerName.startsWith("#<")) ownerName = null;
+
+        String[] labeled = classNamesAndTuples.clone();
+        for (int i = tuplesIndex + 1; i < labeled.length; i += 2) {
+            labeled[i] = qualifiedLabel(ownerName, labeled[i]);
+        }
+        addBoundMethods(tuplesIndex, labeled);
+    }
+
+    /** "Owner#name" / "Owner.name" (rubyName prefixed with "."), or the bare name without an owner. */
+    public static String qualifiedLabel(String ownerName, String rubyName) {
+        boolean singleton = rubyName.startsWith(".");
+        String name = singleton ? rubyName.substring(1) : rubyName;
+        if (ownerName == null) return name;
+        return ownerName + (singleton ? "." : "#") + name;
+    }
+
+    // WHY: a compiled Ruby frame is named when its class is generated, which
+    // for a whole compiled script is before its methods are defined -- so the
+    // name can't carry the Ruby 3.4+ owner label ("Foo#bar"). This maps each
+    // compiled frame (JVM class + method name) back to its IR scope, where the
+    // label is recorded at definition, so a backtrace resolves it then. Scopes
+    // are held weakly so redefined/eval'd code can still be collected.
+    private final Map<String, Map<String, java.lang.ref.WeakReference<org.jruby.ir.IRScope>>> compiledFrames = new ConcurrentHashMap<>();
+
+    public void registerCompiledFrames(String className, Map<String, org.jruby.ir.IRScope> frames) {
+        if (frames.isEmpty()) return;
+        Map<String, java.lang.ref.WeakReference<org.jruby.ir.IRScope>> refs = new HashMap<>(frames.size() * 2);
+        frames.forEach((name, scope) -> refs.put(name, new java.lang.ref.WeakReference<>(scope)));
+        compiledFrames.put(className, refs);
+    }
+
+    public org.jruby.ir.IRScope compiledFrameScope(String className, String methodName) {
+        Map<String, java.lang.ref.WeakReference<org.jruby.ir.IRScope>> refs = compiledFrames.get(className);
+        if (refs == null) return null;
+        java.lang.ref.WeakReference<org.jruby.ir.IRScope> ref = refs.get(methodName);
+        return ref == null ? null : ref.get();
+    }
+
     public Map<String, Map<String, String>> getBoundMethods() {
         return boundMethods;
     }

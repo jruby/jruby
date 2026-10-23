@@ -8,6 +8,23 @@ public class IRScriptBody extends IRScope {
     private DynamicScope toplevelScope;
     private String fileName;
 
+    private String topLabel;
+
+    /**
+     * MRI's label for this script's top-level frame: "<main>" for the main
+     * program, "<top (required)>" for a file loaded by require/load.
+     */
+    public String getTopLabel() {
+        String label = topLabel;
+        if (label == null) {
+            String main = getManager().getRuntime().getInstanceConfig().displayedFileName();
+            String file = getFile();
+            label = file == null || main == null || file.equals(main) || file.equals("-e") ? "<main>" : "<top (required)>";
+            topLabel = label;
+        }
+        return label;
+    }
+
     public IRScriptBody(IRManager manager, String sourceName, StaticScope staticScope) {
         super(manager, null, null, 0, staticScope);
         this.toplevelScope = null;
