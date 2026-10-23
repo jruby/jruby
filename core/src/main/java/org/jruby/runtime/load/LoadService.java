@@ -461,6 +461,7 @@ public class LoadService {
 
                     // If lock is new, lock and return LOCKED
                     lock = pool.computeIfAbsent(path, (name) -> {
+                        // a fresh mutex, so this always succeeds, and never blocks inside computeIfAbsent
                         newLock.mutex.tryLock(currentContext);
                         return newLock;
                     });

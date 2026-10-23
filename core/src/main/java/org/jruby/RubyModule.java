@@ -6498,8 +6498,8 @@ public class RubyModule extends RubyObject {
             return hidden;
         }
 
-        // Returns an object for the constant if the caller is the autoloading thread.
-        // Otherwise, try to start autoloading and returns the defined object by autoload.
+        // Returns the constant's value if the caller is the one autoloading it. Otherwise waits for a load in
+        // progress in another thread or fiber, loads if still needed, and returns the value.
         @CRuby(value = "rb_autoload_load", file = "variable.c")
         IRubyObject load(ThreadContext context) {
             // a constant referenced while its own autoload runs; we already hold the lock
@@ -6541,11 +6541,12 @@ public class RubyModule extends RubyObject {
             return getValue(context);
         }
 
-        @CRuby(value = "autoload_load_needed", file = "variable.c")
+        @CRuby(value = "autoload_load_needed", file = "variable.c", note = "lazy mutex creation")
         private Mutex loading(ThreadContext context) {
             Mutex loading = this.loading;
             if (loading != null) return loading;
 
+            // a plain, visible Mutex like MRI's; only require locks are hidden, as thread shields are
             LOADING_UPDATER.compareAndSet(this, null, new Mutex(context.runtime, context.runtime.getMutex()));
             return this.loading;
         }
