@@ -66,8 +66,8 @@ public class Mutex extends RubyObject implements DataType {
     volatile IRubyObject lockingFiber;
 
     /** A fiber waiting through a fiber scheduler, on a Mutex or a ConditionVariable. MRI: sync_waiter */
-    record FiberWaiter(IRubyObject scheduler, IRubyObject fiber) implements ConditionVariable.Waiter {
-        static FiberWaiter cached(ThreadContext context, IRubyObject scheduler) {
+    public record FiberWaiter(IRubyObject scheduler, IRubyObject fiber) implements ConditionVariable.Waiter {
+        public static FiberWaiter cached(ThreadContext context, IRubyObject scheduler) {
             RubyThread thread = context.getThread();
             IRubyObject fiber = context.getFiber();
             if (thread.getSyncWaiter() instanceof FiberWaiter waiter && waiter.scheduler == scheduler && waiter.fiber == fiber) {

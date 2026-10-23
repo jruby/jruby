@@ -58,3 +58,39 @@ describe "Kernel.require" do
     Kernel.public_methods(false).should.include?(:require)
   end
 end
+
+describe "Kernel#require with a Fiber scheduler" do
+  require_relative '../fiber/fixtures/scheduler'
+
+  before :each do
+    @path = fixture(__FILE__, "require_sleep.rb")
+    ScratchPad.record []
+    Fiber.set_scheduler(FiberSpecs::LoggingScheduler.new)
+  end
+
+  after :each do
+    Fiber.set_scheduler(nil)
+    $LOADED_FEATURES.delete(@path)
+  end
+
+  it "blocks through the scheduler while another fiber is requiring the same file" do
+    loader = Fiber.schedule { require @path }
+    ScratchPad.recorded.should == [:loading]
+
+    result = nil
+    waiter = Fiber.schedule { result = require @path }
+    event = Fiber.scheduler.events.last
+    event[:event].should == :block
+    event[:fiber].should.equal?(waiter)
+
+    loader.resume
+    ScratchPad.recorded.should == [:loading, :loaded]
+    event = Fiber.scheduler.events.last
+    event[:event].should == :unblock
+    event[:fiber].should.equal?(loader)
+    event[:args].last.should.equal?(waiter)
+
+    [loader, waiter].each { |f| f.resume while f.alive? }
+    result.should == false
+  end
+end

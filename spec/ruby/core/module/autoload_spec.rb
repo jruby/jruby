@@ -618,6 +618,18 @@ describe "Module#autoload" do
     ScratchPad.recorded.should == [:raise, :raise]
   end
 
+  it "loads the file again in another thread after a NameError left the first load unfinished" do
+    path = fixture(__FILE__, "autoload_name_error_then_define.rb")
+    ScratchPad.record []
+    ModuleSpecs::Autoload.autoload :NameErrorThenDefine, path
+    @remove << :NameErrorThenDefine
+
+    -> { ModuleSpecs::Autoload::NameErrorThenDefine }.should.raise(NameError, "first load fails")
+
+    Thread.new { ModuleSpecs::Autoload::NameErrorThenDefine }.value.should.kind_of?(Class)
+    ScratchPad.recorded.should == [:load, :load]
+  end
+
   it "removes the constant from Module#constants if the loaded file does not define it" do
     path = fixture(__FILE__, "autoload_o.rb")
     ScratchPad.record []

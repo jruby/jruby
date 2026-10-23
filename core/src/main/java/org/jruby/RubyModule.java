@@ -58,6 +58,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.function.Consumer;
 
 import jnr.constants.Constant;
@@ -79,6 +80,7 @@ import org.jruby.embed.Extension;
 import org.jruby.exceptions.LoadError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.RuntimeError;
+import org.jruby.ext.thread.Mutex;
 import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.AttrReaderMethod;
@@ -321,7 +323,7 @@ public class RubyModule extends RubyObject {
                 if (autoload == null) return context.nil;
 
                 // autoload has been completed
-                if (autoload.getValue() != null) return context.nil;
+                if (autoload.getValue(context) != null) return context.nil;
 
                 file = autoload.getPath();
 
@@ -5372,7 +5374,8 @@ public class RubyModule extends RubyObject {
                 final RubyModule.Autoload autoload = getAutoloadMap().get(name);
 
                 if (autoload == null) return null;
-                if (autoload.getValue() != null) return autoload.getValue();
+                IRubyObject value = autoload.getValue(context);
+                if (value != null) return value;
 
                 autoload.load(context);
                 continue;
@@ -5733,7 +5736,7 @@ public class RubyModule extends RubyObject {
         final Autoload autoload = getAutoloadMap().get(name);
 
         // Has autoload not been evacuated and is in progress on this thread and has updated the value?
-        return autoload != null && autoload.isSelf(context) && autoload.getValue() != null;
+        return autoload != null && autoload.isSelf(context) && autoload.getValue(context) != null;
     }
 
     @CRuby(value = "check_autoload_required", file = "variable.c")
@@ -6236,7 +6239,7 @@ public class RubyModule extends RubyObject {
      */
     protected final void defineAutoload(ThreadContext context, String symbol, RubyString path) {
         final Autoload existingAutoload = getAutoloadMap().get(symbol);
-        if (existingAutoload == null || existingAutoload.getValue() == null) {
+        if (existingAutoload == null || existingAutoload.getValue(context) == null) {
             storeConstant(context, symbol, RubyObject.UNDEF, false, context.getFile(), context.getLine());
             RubyStackTraceElement caller = context.getSingleBacktrace();
             getAutoloadMapForWrite().put(symbol, new Autoload(symbol, path, caller.getFileName(), caller.getLineNumber()));
@@ -6254,7 +6257,7 @@ public class RubyModule extends RubyObject {
     protected final IRubyObject finishAutoload(ThreadContext context, String name) {
         final Autoload autoload = getAutoloadMap().get(name);
         if ( autoload == null ) return null;
-        final IRubyObject value = autoload.getValue();
+        final IRubyObject value = autoload.getValue(context);
 
         if (value != null && value != UNDEF) {
             storeConstant(context, name, value, autoload.hidden, autoload.getFile(), autoload.getLine());
@@ -6475,17 +6478,14 @@ public class RubyModule extends RubyObject {
         private final RubyString path;
         public String file;
         public int line;
-        // Held while loading. A Thread::Mutex rather than a monitor, so a fiber waiting on another fiber's
-        // autoload waits through the fiber scheduler instead of blocking the thread both run on.
-        // MRI: autoload_mutex
-        private final org.jruby.ext.thread.Mutex loading;
+        // Held while loading, created by the first load; a Thread::Mutex so waiting fibers go through the scheduler
+        private volatile Mutex loading;
 
         Autoload(String symbol, RubyString path, String file, int line) {
             this.symbol = symbol;
             this.path = path;
             this.file = file;
             this.line = line;
-            this.loading = new org.jruby.ext.thread.Mutex(path.getRuntime(), path.getRuntime().getMutex());
         }
 
         public String getFile() {
@@ -6502,9 +6502,14 @@ public class RubyModule extends RubyObject {
 
         // Returns an object for the constant if the caller is the autoloading thread.
         // Otherwise, try to start autoloading and returns the defined object by autoload.
+        @CRuby(value = "rb_autoload_load", file = "variable.c")
         IRubyObject load(ThreadContext context) {
             // a constant referenced while its own autoload runs; we already hold the lock
-            if (isSelf(context)) return getValue();
+            if (isSelf(context)) return getValue(context);
+
+            Mutex loading = loading(context);
+            // also ours when ctx is stale, left by a load that failed with other than a LoadError or RuntimeError
+            if (loading.owned_p(context).isTrue()) return loadLocked(context);
 
             loading.lock(context);
             try {
@@ -6518,12 +6523,10 @@ public class RubyModule extends RubyObject {
             if (this.ctx == null) {
                 this.ctx = context;
             } else if (isSelf(context)) {
-                return getValue();
+                return getValue(context);
             }
 
             try {
-                // This method needs to be synchronized for removing Autoload
-                // from autoloadMap when it's loaded.
                 LoadService loadService = loadService(context);
                 String[] loading = new String[1];
                 // If another thread is still requiring the file, autoloadRequire waits for it.
@@ -6543,7 +6546,16 @@ public class RubyModule extends RubyObject {
                 throw lre;
             }
 
-            return getValue();
+            return getValue(context);
+        }
+
+        @CRuby(value = "autoload_load_needed", file = "variable.c")
+        private Mutex loading(ThreadContext context) {
+            Mutex loading = this.loading;
+            if (loading != null) return loading;
+
+            LOADING_UPDATER.compareAndSet(this, null, new Mutex(context.runtime, context.runtime.getMutex()));
+            return this.loading;
         }
 
         // Update an object for the constant if the caller is the autoloading thread.
@@ -6566,14 +6578,12 @@ public class RubyModule extends RubyObject {
 
         // Returns an object for the constant defined by autoload, once any load by another thread or fiber is
         // done, since the value is set as soon as the constant is defined, before the file finishes loading.
-        IRubyObject getValue() {
-            if (loading.isLocked()) {
-                ThreadContext context = getRuntime().getCurrentContext();
+        IRubyObject getValue(ThreadContext context) {
+            Mutex loading = this.loading;
 
-                if (!isSelf(context) && !loading.owned_p(context).isTrue()) {
-                    loading.lock(context);
-                    loading.unlock(context);
-                }
+            if (loading != null && loading.isLocked() && !isSelf(context) && !loading.owned_p(context).isTrue()) {
+                loading.lock(context);
+                loading.unlock(context);
             }
 
             synchronized (this) {
@@ -6590,6 +6600,9 @@ public class RubyModule extends RubyObject {
             ThreadContext ctx = this.ctx;
             return ctx != null && ctx.getThread() == rhs.getThread();
         }
+
+        private static final AtomicReferenceFieldUpdater<Autoload, Mutex> LOADING_UPDATER =
+                AtomicReferenceFieldUpdater.newUpdater(Autoload.class, Mutex.class, "loading");
     }
 
     /**
