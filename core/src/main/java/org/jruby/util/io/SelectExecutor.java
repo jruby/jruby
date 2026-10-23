@@ -54,6 +54,11 @@ public class SelectExecutor {
     }
 
     IRubyObject selectCall(ThreadContext context) throws IOException {
+        if (timeout != null && timeout == 0) {
+            IRubyObject result = PollSelect.selectNow(context, read, write, except);
+            if (result != null) return result;
+        }
+
         return selectInternal(context);
     }
 
@@ -103,6 +108,23 @@ public class SelectExecutor {
         return context.nil;
     }
 
+    // This does not actually register anything because we do not have a way to select for error on JDK.
+    // We make the calls for their side effects.
+    static RubyArray checkExcept(Ruby runtime, IRubyObject except) {
+        if (except.isNil()) return null;
+
+        RubyArray exceptAry = except.convertToArray();
+        for (int i = 0; i < exceptAry.size(); i++) {
+            RubyIO io = TypeConverter.ioGetIO(runtime, exceptAry.eltOk(i));
+            RubyIO write_io = io.GetWriteIO();
+            io.getOpenFileChecked();
+            if (io != write_io) {
+                write_io.getOpenFileChecked();
+            }
+        }
+        return exceptAry;
+    }
+
     IRubyObject selectInternal(ThreadContext context) throws IOException {
         Ruby runtime = context.runtime;
         OpenFile fptr;
@@ -136,20 +158,7 @@ public class SelectExecutor {
             }
         }
 
-        RubyArray exceptAry = null;
-        if (!except.isNil()) {
-            // This does not actually register anything because we do not have a way to select for error on JDK.
-            // We make the calls for their side effects.
-            exceptAry = except.convertToArray();
-            for (int i = 0; i < exceptAry.size(); i++) {
-                RubyIO io = TypeConverter.ioGetIO(runtime, exceptAry.eltOk(i));
-                RubyIO write_io = io.GetWriteIO();
-                io.getOpenFileChecked();
-                if (io != write_io) {
-                    write_io.getOpenFileChecked();
-                }
-            }
-        }
+        RubyArray exceptAry = checkExcept(runtime, except);
 
         int n = threadFdSelect(context);
 
