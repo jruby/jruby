@@ -77,9 +77,7 @@ import org.jruby.api.Convert;
 import org.jruby.api.JRubyAPI;
 import org.jruby.api.Warn;
 import org.jruby.embed.Extension;
-import org.jruby.exceptions.LoadError;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.exceptions.RuntimeError;
 import org.jruby.ext.thread.Mutex;
 import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.internal.runtime.methods.AliasMethod;
@@ -6508,9 +6506,6 @@ public class RubyModule extends RubyObject {
             if (isSelf(context)) return getValue(context);
 
             Mutex loading = loading(context);
-            // also ours when ctx is stale, left by a load that failed with other than a LoadError or RuntimeError
-            if (loading.isOwned()) return loadLocked(context);
-
             loading.lock(context);
             try {
                 return loadLocked(context);
@@ -6520,11 +6515,8 @@ public class RubyModule extends RubyObject {
         }
 
         private IRubyObject loadLocked(ThreadContext context) {
-            if (this.ctx == null) {
-                this.ctx = context;
-            } else if (isSelf(context)) {
-                return getValue(context);
-            }
+            // we hold the lock, so we are the loader now
+            this.ctx = context;
 
             try {
                 LoadService loadService = loadService(context);
@@ -6540,10 +6532,10 @@ public class RubyModule extends RubyObject {
                     // Do not finish autoloading by cyclic autoload
                     finishAutoload(context, symbol);
                 }
-            } catch (LoadError | RuntimeError lre) {
-                // reset ctx to null for a future attempt to load
+            } catch (Throwable t) {
+                // whatever failed the load, the next attempt starts over, in this thread or another
                 this.ctx = null;
-                throw lre;
+                throw t;
             }
 
             return getValue(context);
