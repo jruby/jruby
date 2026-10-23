@@ -37,21 +37,17 @@ package org.jruby.runtime.load;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayDeque;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.jruby.FiberScheduler;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyFile;
@@ -60,14 +56,13 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
-import org.jruby.RubyThread;
 import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
-import org.jruby.ext.thread.Mutex.FiberWaiter;
+import org.jruby.ext.thread.Mutex;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -424,62 +419,12 @@ public class LoadService {
     final RequireLocks requireLocks = new RequireLocks();
 
     final class RequireLocks {
-        final class RequireLock extends ReentrantLock {
+        // A Mutex like MRI's thread shield, so a fiber waiting for another's load goes through the fiber scheduler
+        @CRuby(value = "rb_thread_shield_new", file = "thread.c")
+        final class RequireLock {
+            final Mutex mutex = new Mutex(runtime, runtime.getMutex());
             volatile boolean destroyed;
-            // fibers waiting through a fiber scheduler for the load to finish, created by the first one
-            volatile SchedulerWaiters schedulerWaiters;
-
-            @CRuby(value = "load_lock", file = "load.c")
-            void waitThroughScheduler(ThreadContext context, IRubyObject scheduler) {
-                FiberWaiter waiter = FiberWaiter.cached(context, scheduler);
-                SchedulerWaiters waiters = schedulerWaiters();
-
-                synchronized (waiters) {
-                    if (!isLocked()) return;
-                    waiters.add(waiter);
-                }
-
-                try {
-                    FiberScheduler.block(context, scheduler, context.nil, context.nil);
-                } finally {
-                    synchronized (waiters) {
-                        waiters.remove(waiter);
-                    }
-                }
-            }
-
-            // Wakes the scheduler waiters on every release, including a thread's that only locked to wait for the load.
-            @Override
-            public void unlock() {
-                super.unlock();
-                if (schedulerWaiters != null && !isHeldByCurrentThread()) wakeSchedulerWaiters();
-            }
-
-            private SchedulerWaiters schedulerWaiters() {
-                SchedulerWaiters waiters = schedulerWaiters;
-                if (waiters != null) return waiters;
-
-                SCHEDULER_WAITERS_UPDATER.compareAndSet(this, null, new SchedulerWaiters());
-                return schedulerWaiters;
-            }
-
-            private void wakeSchedulerWaiters() {
-                SchedulerWaiters waiters = schedulerWaiters;
-                FiberWaiter[] woken;
-                synchronized (waiters) {
-                    if (waiters.isEmpty()) return;
-                    woken = waiters.toArray(new FiberWaiter[0]);
-                    waiters.clear();
-                }
-
-                ThreadContext context = runtime.getCurrentContext();
-                for (FiberWaiter waiter : woken) FiberScheduler.unblock(context, waiter.scheduler(), context.nil, waiter.fiber());
-            }
-
-            private static final AtomicReferenceFieldUpdater<RequireLock, SchedulerWaiters> SCHEDULER_WAITERS_UPDATER =
-                    AtomicReferenceFieldUpdater.newUpdater(RequireLock.class, SchedulerWaiters.class, "schedulerWaiters");
         }
-        static final class SchedulerWaiters extends ArrayDeque<FiberWaiter> {}
         final ConcurrentHashMap<String, RequireLock> pool;
         // global lock for require must be fair
         //private final ReentrantLock globalLock;
@@ -505,7 +450,6 @@ public class LoadService {
                 RequireState defaultResult,
                 Function<String, RequireState> ifLocked) {
             ThreadContext currentContext = runtime.getCurrentContext();
-            RubyThread thread = currentContext.getThread();
 
             // loop until require fails for us or succeeds for another thread
             while (true) {
@@ -517,7 +461,7 @@ public class LoadService {
 
                     // If lock is new, lock and return LOCKED
                     lock = pool.computeIfAbsent(path, (name) -> {
-                        thread.lock(newLock);
+                        newLock.mutex.tryLock(currentContext);
                         return newLock;
                     });
 
@@ -525,7 +469,7 @@ public class LoadService {
                     if (lock == newLock) {
                         // Lock is ours, run ifLocked and then clean up
                         try {
-                            return state = executeAndClearLock(path, ifLocked, thread, lock);
+                            return state = executeAndClearLock(currentContext, path, ifLocked, lock);
                         } finally {
                             // failed load, remove our lock and let other threads fight it out
                             if (state == null) pool.remove(path);
@@ -533,7 +477,7 @@ public class LoadService {
                     }
                 }
 
-                if (lock.isHeldByCurrentThread()) {
+                if (lock.mutex.isOwned()) {
                     // we hold the lock, which means we're re-locking for the same file; warn about this
                     if (circularRequireWarning && runtime.isVerbose()) {
                         warnCircularRequire(path);
@@ -543,24 +487,10 @@ public class LoadService {
                 }
 
                 // Other thread holds the lock, wait to acquire
-                IRubyObject scheduler = FiberScheduler.current(currentContext);
-                if (scheduler != null) {
-                    lock.waitThroughScheduler(currentContext, scheduler);
-                    if (lock.destroyed) return defaultResult;
-                    continue;
-                }
-
-                while (true) {
-                    try {
-                        thread.lockInterruptibly(lock);
-                        break;
-                    } catch (InterruptedException ie) {
-                        currentContext.pollThreadEvents();
-                    }
-                }
+                lock.mutex.lock(currentContext);
 
                 // Lock has been acquired, confirm other thread has completed and return default
-                thread.unlock(lock);
+                lock.mutex.unlock(currentContext);
                 if (lock.destroyed) {
                     return defaultResult;
                 }
@@ -569,7 +499,7 @@ public class LoadService {
             }
         }
 
-        private RequireState executeAndClearLock(String path, Function<String, RequireState> ifLocked, RubyThread thread, RequireLock lock) {
+        private RequireState executeAndClearLock(ThreadContext context, String path, Function<String, RequireState> ifLocked, RequireLock lock) {
             boolean destroyLock = false;
             try {
                 RequireState state = ifLocked.apply(path);
@@ -585,7 +515,7 @@ public class LoadService {
                     lock.destroyed = true;
                     pool.remove(path);
                 }
-                thread.unlock(lock);
+                lock.mutex.unlock(context);
             }
         }
     }
@@ -801,7 +731,7 @@ public class LoadService {
      */
     public boolean isRequiring(String key) {
         RequireLocks.RequireLock lock = requireLocks.pool.get(key);
-        return lock != null && lock.isHeldByCurrentThread();
+        return lock != null && lock.mutex.isOwned();
     }
 
     public boolean featureAlreadyLoaded(String feature) {
