@@ -6552,7 +6552,7 @@ public class RubyModule extends RubyObject {
         }
 
         // Update an object for the constant if the caller is the autoloading thread.
-        synchronized boolean setConstant(ThreadContext ctx, IRubyObject newValue, boolean hidden, String file, int line) {
+        boolean setConstant(ThreadContext ctx, IRubyObject newValue, boolean hidden, String file, int line) {
             boolean isSelf = isSelf(ctx);
 
             if (isSelf) {
