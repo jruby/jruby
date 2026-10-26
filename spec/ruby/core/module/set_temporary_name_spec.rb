@@ -155,6 +155,60 @@ describe "Module#set_temporary_name" do
     ModuleSpecs::SetTemporaryNameSpec.send :remove_const, :Permanent
   end
 
+  it "updates the name of a nested module each time it is reassigned" do
+    m = Module.new
+    m::N = Module.new
+
+    m.set_temporary_name "a"
+    m::N.name.should == "a::N"
+
+    m.set_temporary_name "b"
+    m::N.name.should == "b::N"
+  end
+
+  it "names a nested module from the temporary name alone when nested into an anonymous module" do
+    outer = Module.new
+    m = Module.new
+    outer::M = m
+    m::N = Module.new
+
+    m.set_temporary_name "m"
+    m::N.name.should == "m::N"
+  end
+
+  it "names a nested module when an outer module gets a permanent name after its temporary name is cleared" do
+    m = Module.new
+    m::N = Module.new
+    m.set_temporary_name nil
+
+    ModuleSpecs::SetTemporaryNameSpec::Cleared = m
+    m::N.name.should == "ModuleSpecs::SetTemporaryNameSpec::Cleared::N"
+  ensure
+    ModuleSpecs::SetTemporaryNameSpec.send :remove_const, :Cleared
+  end
+
+  it "discards a temporary name of a module and names the modules nested into it when an outer anonymous module gets a permanent name" do
+    m = Module.new
+    module m::N; module O; end; end
+    m::N.set_temporary_name("fake_name")
+
+    ModuleSpecs::SetTemporaryNameSpec::Deep = m
+    m::N.name.should == "ModuleSpecs::SetTemporaryNameSpec::Deep::N"
+    m::N::O.name.should == "ModuleSpecs::SetTemporaryNameSpec::Deep::N::O"
+  ensure
+    ModuleSpecs::SetTemporaryNameSpec.send :remove_const, :Deep
+  end
+
+  it "updates the names of nested modules that refer back to the module" do
+    m = Module.new
+    m::N = Module.new
+    m::N::Back = m
+
+    m.set_temporary_name "m"
+    m::N.name.should == "m::N"
+    m::N::Back.name.should == "m"
+  end
+
   it "keeps temporary name when assigned in an anonymous module" do
     outer = Module.new
     m = Module.new

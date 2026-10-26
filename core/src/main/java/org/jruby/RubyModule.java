@@ -921,6 +921,8 @@ public class RubyModule extends RubyObject {
         // we are anonymous, use anonymous name
         if (getBaseName() == null) return calculateAnonymousName(context);
 
+        if (usingTemporaryName()) return cachedName = baseName;
+
         String name = getBaseName();
         List<RubyModule> parents = nameParents(objectClass(context));
         int parentCount = parents.size();
@@ -993,7 +995,36 @@ public class RubyModule extends RubyObject {
             baseName(asSymbol(context, name.getByteList()).idString());
         }
 
+        nameNestedModules(!arg.isNil(), new ArrayList<>(4));
+
         return this;
+    }
+
+    /**
+     * Gives each module in this module's constants that has no permanent name the path through this module, or no
+     * name at all when this module has none, and then the modules nested in those the same way, as CRuby's
+     * set_sub_temporary_name and set_namespace_path do. A constant that leads back to a module already being renamed
+     * is skipped, so a cycle of namespaces ends.
+     *
+     * @param named whether this module has a name to pass on
+     * @param renaming the modules being renamed, from the outermost to this one's parent
+     */
+    private void nameNestedModules(boolean named, List<RubyModule> renaming) {
+        renaming.add(this);
+        for (Map.Entry<String, ConstantEntry> entry : getConstantMap().entrySet()) {
+            if (!(entry.getValue().value instanceof RubyModule nested)) continue;
+            if (nested.hasPermanentName() || containsModule(renaming, nested)) continue;
+
+            nested.set(TEMP_NAME, false);
+            if (named) {
+                nested.baseName(entry.getKey());
+                nested.setParent(this);
+            } else {
+                nested.baseName(null);
+            }
+            nested.nameNestedModules(named, renaming);
+        }
+        renaming.remove(renaming.size() - 1);
     }
 
     String anonymousMetaNameWithIdentifier(ThreadContext context) {
@@ -5526,6 +5557,7 @@ public class RubyModule extends RubyObject {
                 }
                 module.baseName(name);
                 module.setParent(this);
+                if (outerIsPermanent) module.nameNestedModules(true, new ArrayList<>(4));
             }
             module.calculateName(context);
         }
@@ -6629,14 +6661,16 @@ public class RubyModule extends RubyObject {
     }
 
     /**
-     * The modules this module's name is nested in, nearest first, up to Object. A cycle of namespaces like
-     * C::A = C2; C2::A = C (jruby/jruby#2314) never reaches Object, so the walk stops before a module it has already
-     * met, this one included.
+     * The modules this module's name is nested in, nearest first, up to Object or to one with a temporary name, which
+     * is a whole name rather than a part of a path. A cycle of namespaces like C::A = C2; C2::A = C
+     * (jruby/jruby#2314) never reaches Object, so the walk stops before a module it has already met, this one
+     * included.
      */
     private List<RubyModule> nameParents(RubyClass Object) {
         List<RubyModule> parents = new ArrayList<>(4);
         for (RubyModule p = getParent(); p != null && p != Object && p != this && !containsModule(parents, p); p = p.getParent()) {
             parents.add(p);
+            if (p.usingTemporaryName()) break;
         }
         return parents;
     }
