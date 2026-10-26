@@ -1,5 +1,7 @@
 package org.jruby.runtime.backtrace;
 
+import org.jcodings.Encoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.ThreadContext;
@@ -87,17 +89,26 @@ public class RubyStackTraceElement implements java.io.Serializable {
     }
 
     public static RubyString to_s_mri(ThreadContext context, RubyStackTraceElement element) {
-        RubySymbol methodSym = asSymbol(context, element.getMethodName());
-        RubyString line = newString(context, new ByteList(methodSym.getBytes().length() + element.getFileName().length() + 18));
+        RubySymbol methodSym = context.runtime.findSymbol(element.getMethodName());
+        Encoding encoding;
+        String symStr;
+        if (methodSym != null) {
+            symStr = methodSym.asJavaString();
+            encoding = methodSym.getEncoding();
+        } else {
+            symStr = element.getMethodName();
+            encoding = UTF8Encoding.INSTANCE;
+        }
+        RubyString line = newString(context, new ByteList(symStr.length() + element.getFileName().length() + 18));
 
-        line.setEncoding(methodSym.getEncoding());
+        line.setEncoding(encoding);
 
         line.catString(element.getFileName());
         line.cat(CommonByteLists.COLON);
         line.cat(ConvertBytes.longToByteListCached(element.getLineNumber()));
         line.cat(CommonByteLists.BACKTRACE_IN);
         if (element.getFrameType() == FrameType.BLOCK) line.catString("block in ");
-        line.cat(methodSym.getBytes());
+        line.catString(symStr);
         line.cat('\'');
 
         return line;

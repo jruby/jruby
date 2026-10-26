@@ -353,12 +353,24 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         return decodeUTF8(bytes, 0, bytes.length);
     }
 
+    public static String decodeUTF8(ByteList byteList) {
+        return decodeUTF8(byteList.getUnsafeBytes(), byteList.begin(), byteList.realSize());
+    }
+
     public static String decode(byte[] bytes, int start, int length, Charset charset) {
         return charset.decode(ByteBuffer.wrap(bytes, start, length)).toString();
     }
 
     public static String decode(byte[] bytes, Charset charset) {
         return charset.decode(ByteBuffer.wrap(bytes)).toString();
+    }
+
+    public static String decode(ByteList byteList) {
+        if (byteList.getEncoding() == UTF8Encoding.INSTANCE) {
+            return decodeUTF8(byteList);
+        }
+
+        return byteList.getEncoding().getCharset().decode(ByteBuffer.wrap(byteList.getUnsafeBytes(), byteList.getBegin(), byteList.realSize())).toString();
     }
 
     /** The maximum number of characters we can encode/decode in our cached buffers */
