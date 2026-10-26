@@ -181,12 +181,12 @@ public class MethodGatherer {
                 try {
                     // add methods, including static if this is the actual class,
                     // and replacing child methods with equivalent parent methods
-                    PartitionedMethods filteredMethods = FILTERED_DECLARED_METHODS.get(klass);
+                    Method[][] filteredMethods = FILTERED_DECLARED_METHODS.get(klass);
 
-                    if (!classProcessor.test(filteredMethods.instanceMethods)) return;
+                    if (!classProcessor.test(filteredMethods[INSTANCE_METHODS])) return;
 
                     if (klass == javaClass) {
-                        if (!classProcessor.test(filteredMethods.staticMethods)) return;
+                        if (!classProcessor.test(filteredMethods[STATIC_METHODS])) return;
                     }
                 }
                 catch (SecurityException e) { /* ignored */ }
@@ -198,9 +198,9 @@ public class MethodGatherer {
                     // add methods, not including static (should be none on
                     // interfaces anyway) and not replacing child methods with
                     // parent methods
-                    PartitionedMethods filteredMethods = FILTERED_METHODS.get(iface);
+                    Method[][] filteredMethods = FILTERED_METHODS.get(iface);
 
-                    if (!interfaceProcessor.test(filteredMethods.instanceMethods)) return;
+                    if (!interfaceProcessor.test(filteredMethods[INSTANCE_METHODS])) return;
                 }
                 catch (SecurityException e) { /* ignored */ }
             }
@@ -243,7 +243,7 @@ public class MethodGatherer {
 
         final String methodName = parent.getName();
         for (Class superClass : child.getDeclaringClass().getInterfaces()) {
-            for (Method superMethod : FILTERED_DECLARED_METHODS.get(superClass).instanceMethods) {
+            for (Method superMethod : FILTERED_DECLARED_METHODS.get(superClass)[INSTANCE_METHODS]) {
                 if (methodName.equals(superMethod.getName()) && sameTypesAndAccessModifier(superMethod, child)) {
                     return true; // very same (child) method only re-declared
                 }
@@ -304,10 +304,16 @@ public class MethodGatherer {
         }
     };
 
-    private static final ClassValue<PartitionedMethods> FILTERED_DECLARED_METHODS = new ClassValue<PartitionedMethods>() {
+    // The filtered methods are stored as arrays of JDK types only. These ClassValues are computed for JDK classes
+    // too, which keep their values as long as they are loaded, so a value of a JRuby type would keep the class
+    // loader that loaded JRuby alive after every runtime in it has been torn down.
+    private static final int INSTANCE_METHODS = 0;
+    private static final int STATIC_METHODS = 1;
+
+    private static final ClassValue<Method[][]> FILTERED_DECLARED_METHODS = new ClassValue<Method[][]>() {
         @Override
-        public PartitionedMethods computeValue(Class cls) {
-            return new PartitionedMethods(DECLARED_METHODS.get(cls));
+        public Method[][] computeValue(Class cls) {
+            return partitionMethods(DECLARED_METHODS.get(cls));
         }
     };
     private static final ClassValue<Method[]> METHODS = new ClassValue<Method[]>() {
@@ -320,10 +326,10 @@ public class MethodGatherer {
             }
         }
     };
-    private static final ClassValue<PartitionedMethods> FILTERED_METHODS = new ClassValue<PartitionedMethods>() {
+    private static final ClassValue<Method[][]> FILTERED_METHODS = new ClassValue<Method[][]>() {
         @Override
-        public PartitionedMethods computeValue(Class cls) {
-            return new PartitionedMethods(METHODS.get(cls));
+        public Method[][] computeValue(Class cls) {
+            return partitionMethods(METHODS.get(cls));
         }
     };
     private static final ClassValue<Class<?>[]> INTERFACES = new ClassValue<Class<?>[]>() {
@@ -699,30 +705,31 @@ public class MethodGatherer {
         getInstanceInstallers().forEach(($, value) -> value.install(context, proxy));
     }
 
-    private static class PartitionedMethods {
-        final Method[] instanceMethods;
-        final Method[] staticMethods;
+    /**
+     * Partitions the accessible methods into instance methods, at {@link #INSTANCE_METHODS}, and static methods, at
+     * {@link #STATIC_METHODS}.
+     */
+    private static Method[][] partitionMethods(Method[] methods) {
+        List<Method> instanceMethods = Collections.EMPTY_LIST;
+        List<Method> staticMethods = Collections.EMPTY_LIST;
 
-        PartitionedMethods(Method[] methods) {
-            List<Method> instanceMethods = Collections.EMPTY_LIST;
-            List<Method> staticMethods = Collections.EMPTY_LIST;
-
-            for (Method m : methods) {
-                int modifiers = m.getModifiers();
-                if (filterAccessible(m, modifiers)) {
-                    if (Modifier.isStatic(modifiers)) {
-                        if (staticMethods == Collections.EMPTY_LIST) staticMethods = new ArrayList<>();
-                        staticMethods.add(m);
-                    } else {
-                        if (instanceMethods == Collections.EMPTY_LIST) instanceMethods = new ArrayList<>();
-                        instanceMethods.add(m);
-                    }
+        for (Method m : methods) {
+            int modifiers = m.getModifiers();
+            if (filterAccessible(m, modifiers)) {
+                if (Modifier.isStatic(modifiers)) {
+                    if (staticMethods == Collections.EMPTY_LIST) staticMethods = new ArrayList<>();
+                    staticMethods.add(m);
+                } else {
+                    if (instanceMethods == Collections.EMPTY_LIST) instanceMethods = new ArrayList<>();
+                    instanceMethods.add(m);
                 }
             }
-
-            this.instanceMethods = instanceMethods.toArray(Method[]::new);
-            this.staticMethods = staticMethods.toArray(Method[]::new);
         }
+
+        Method[][] partitioned = new Method[2][];
+        partitioned[INSTANCE_METHODS] = instanceMethods.toArray(Method[]::new);
+        partitioned[STATIC_METHODS] = staticMethods.toArray(Method[]::new);
+        return partitioned;
     }
 
     private static boolean filterAccessible(Method method, int mod) {
