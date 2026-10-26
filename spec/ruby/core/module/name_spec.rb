@@ -63,6 +63,27 @@ describe "Module#name" do
     ModuleSpecs::Anonymous.send(:remove_const, :WasAnonOuter)
   end
 
+  it "changes when a module in a cycle of anonymous modules is reachable through a constant path" do
+    m = Module.new
+    m::N = Module.new
+    m::N::Back = m
+    ModuleSpecs::Anonymous::FromCycle = m::N
+    m::N.name.should == "ModuleSpecs::Anonymous::FromCycle"
+  ensure
+    ModuleSpecs::Anonymous.send(:remove_const, :FromCycle)
+  end
+
+  it "changes when a module nested in a cycle of anonymous modules is reachable through a constant path" do
+    m = Module.new
+    m::N = Module.new
+    m::N::Back = m
+    m::N::O = Module.new
+    ModuleSpecs::Anonymous::FromCycleNested = m::N::O
+    m::N::O.name.should == "ModuleSpecs::Anonymous::FromCycleNested"
+  ensure
+    ModuleSpecs::Anonymous.send(:remove_const, :FromCycleNested)
+  end
+
   it "may be the repeated in different module objects" do
     m = Module.new
     n = Module.new
