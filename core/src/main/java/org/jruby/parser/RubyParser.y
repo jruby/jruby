@@ -3099,7 +3099,7 @@ block_call      : command do_block {
                 | block_call call_op2 paren_args {
                     /*%%%*/
                     $$ = p.new_call($1, $2, LexingCommon.CALL, $3, null, @3.start());
-                    p.safe_navigation_end($<Node>$, @3.end, @3.end, true); // o.m foo do end.(): the parentheses are the message
+                    p.safe_navigation_end($<Node>$, @3.end, @3.end, true);
                     /*% %*/
                     /*% ripper: method_add_arg!(call!($1, $2, ID2VAL(idCall)), $3) %*/
                 };

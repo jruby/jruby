@@ -4971,7 +4971,7 @@ states[491] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[492] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
                     yyVal = p.new_call(((Node)yyVals[-2+yyTop].value), ((ByteList)yyVals[-1+yyTop].value), LexingCommon.CALL, ((Node)yyVals[0+yyTop].value), null, yyVals[yyTop - count + 3].start());
-                    p.safe_navigation_end(((Node)yyVal), yyVals[yyTop - count + 3].end, yyVals[yyTop - count + 3].end, true); /* o.m foo do end.(): the parentheses are the message*/
+                    p.safe_navigation_end(((Node)yyVal), yyVals[yyTop - count + 3].end, yyVals[yyTop - count + 3].end, true);
                     /*% %*/
                     /*% ripper: method_add_arg!(call!($1, $2, ID2VAL(idCall)), $3) %*/
   return yyVal;
