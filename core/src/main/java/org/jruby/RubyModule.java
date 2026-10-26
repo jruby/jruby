@@ -1631,6 +1631,7 @@ public class RubyModule extends RubyObject {
         baseName = name;
         cachedName = null;
         cachedRubyName = null;
+        cachedSymbolName = null;
 
         return (T) this;
     }
@@ -5542,8 +5543,8 @@ public class RubyModule extends RubyObject {
     private void setParentForModule(ThreadContext context, final String name, final IRubyObject value) {
         // if adding a module under a constant name, set that module's basename to the constant name
         if ( value instanceof RubyModule module) {
-            boolean outerIsPermanent = getBaseName() != null && !usingTemporaryName();
-            if (module != this && (module.getBaseName() == null || (module.usingTemporaryName() && outerIsPermanent))) {
+            boolean outerIsPermanent = hasPermanentName();
+            if (module != this && (module.getBaseName() == null || (outerIsPermanent && !module.hasPermanentName()))) {
                 if (outerIsPermanent) {
                     module.set(TEMP_NAME, false);
                 }
@@ -6624,6 +6625,24 @@ public class RubyModule extends RubyObject {
 
     public boolean usingTemporaryName() {
         return get(TEMP_NAME);
+    }
+
+    /**
+     * Whether this module's name is permanent: given by a constant, under modules whose names are all permanent too.
+     * A name set with set_temporary_name is not, and neither is one rooted at an anonymous module, such as
+     * #&lt;Module:0x...&gt;::N. As in CRuby, a module without a permanent name takes the name of the next constant
+     * it is assigned to under a module that has one.
+     *
+     * @return true if the name is permanent
+     */
+    private boolean hasPermanentName() {
+        for (RubyModule module = this; module != null; module = module.getParent()) {
+            if (module.getBaseName() == null || module.usingTemporaryName()) return false;
+            // Break out of cyclic namespaces like C::A = C2; C2::A = C (jruby/jruby#2314)
+            if (module.getParent() == this) break;
+        }
+
+        return true;
     }
 
     public boolean isIncludedIntoRefinement() {
