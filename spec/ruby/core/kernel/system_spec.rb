@@ -13,6 +13,11 @@ describe "Kernel#system" do
     $?.should.success?
   end
 
+  it "flushes STDOUT before running the command" do
+    child = ruby_cmd('print "b"')
+    ruby_exe("print 'a'; system(#{child.inspect}); print 'c'").should == "abc"
+  end
+
   it "returns true when the command exits with a zero exit status" do
     system(ruby_cmd('exit 0')).should == true
 

@@ -928,8 +928,22 @@ public class OpenFile implements Finalizable {
         }
     }
 
+    @CRuby(value = "rb_io_fptr_finalize", file = "io.c", note = "external (prep) streams are flushed, not closed")
     public void finalize() {
-        if (fd != null && isAutoclose()) finalize(runtime.getCurrentContext(), true);
+        if (fd == null) return;
+
+        if (isAutoclose()) {
+            finalize(runtime.getCurrentContext(), true);
+        } else {
+            // Flush but don't close, like MRI, and write through from now on since nothing will flush again.
+            boolean locked = lock();
+            try {
+                if (wbuf.len != 0) flushBuffer();
+                mode |= SYNC;
+            } finally {
+                if (locked) unlock();
+            }
+        }
     }
 
     public void finalize(ThreadContext context, boolean noraise) {
@@ -2788,10 +2802,15 @@ public class OpenFile implements Finalizable {
         return !nonblock;
     }
 
-    // MRI: check_tty
+    // Only a real terminal gets TTY|DUPLEX, so stdio redirected to a file or pipe stays buffered like MRI.
+    // Without a native fileno we can't ask isatty, so stdio keeps the old assumption that it's a terminal.
+    @CRuby(value = "io_check_tty", file = "io.c")
     public void checkTTY() {
-        if (fd.realFileno != -1 && runtime.getPosix().isatty(fd.realFileno) != 0
-            || stdio_file != null) {
+        boolean tty = fd.realFileno != -1
+                ? runtime.getPosix().isatty(fd.realFileno) != 0
+                : stdio_file != null;
+
+        if (tty) {
 
             boolean locked = lock();
             try {

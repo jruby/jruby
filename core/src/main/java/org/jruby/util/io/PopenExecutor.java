@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.jruby.api.Access.globalVariables;
 import static org.jruby.api.Access.hashClass;
 import static org.jruby.api.Access.ioClass;
 import static org.jruby.api.Access.objectClass;
@@ -160,8 +161,18 @@ public class PopenExecutor {
         return context.fals;
     }
 
+    // Flush $stdout and $stderr before starting a child, so output written so far isn't left in our
+    // buffers and can't appear after the child's output.
+    @CRuby(value = "prefork", file = "process.c")
+    private static void prefork(ThreadContext context) {
+        RubyIO.rbIoFlush(context, globalVariables(context).get("$stdout"));
+        RubyIO.rbIoFlush(context, globalVariables(context).get("$stderr"));
+    }
+
     @CRuby(value = "rb_spawn_process", file = "process.c")
     long spawnProcess(ThreadContext context, ExecArg eargp, String[] errmsg) {
+        prefork(context);
+
         RubyString prog = eargp.use_shell ? eargp.command_name : eargp.command_name;
         ExecArg sarg = new ExecArg();
 
@@ -537,8 +548,12 @@ public class PopenExecutor {
         return false;
     }
 
-    // MRI: DO_SPAWN macro in pipe_open
+    // MRI only spawns here without fork. With fork it goes through rb_fork_async_signal_safe, which runs
+    // prefork on every attempt, so we do too.
+    @CRuby(value = "DO_SPAWN", file = "io.c", note = "macro in pipe_open")
     private long DO_SPAWN(ThreadContext context, ExecArg eargp, String cmd, String[] args, String[] envp) {
+        prefork(context);
+
         if (eargp.use_shell) return procSpawnSh(context, eargp, cmd, envp);
 
 //        System.out.println(Arrays.asList(
