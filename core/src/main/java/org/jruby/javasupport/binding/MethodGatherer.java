@@ -723,29 +723,29 @@ public class MethodGatherer {
             this.instanceMethods = instanceMethods.toArray(Method[]::new);
             this.staticMethods = staticMethods.toArray(Method[]::new);
         }
+    }
 
-        private static boolean filterAccessible(Method method, int mod) {
-            // Exclude bridge methods
-            if ((mod & ACC_BRIDGE) != 0) return false;
+    private static boolean filterAccessible(Method method, int mod) {
+        // Exclude bridge methods
+        if ((mod & ACC_BRIDGE) != 0) return false;
 
-            if (Modifier.isPublic(mod)) {
-                // Include public
-                return true;
-            } else if (Modifier.isPrivate(mod)) {
-                // Exclude private
-                return false;
-            } else if (Modifier.isProtected(mod)) {
-                // Include protected if they can be set accessible
+        if (Modifier.isPublic(mod)) {
+            // Include public
+            return true;
+        } else if (Modifier.isPrivate(mod)) {
+            // Exclude private
+            return false;
+        } else if (Modifier.isProtected(mod)) {
+            // Include protected if they can be set accessible
+            return Java.trySetAccessible(method);
+        } else {
+            // We split this on 17 because at that level unopened non-public functions are inaccessible
+            if (Platform.JAVA_VERSION < 17) {
+                // Include package-private if they can be set accessible on Java 16 and earlier
                 return Java.trySetAccessible(method);
             } else {
-                // We split this on 17 because at that level unopened non-public functions are inaccessible
-                if (Platform.JAVA_VERSION < 17) {
-                    // Include package-private if they can be set accessible on Java 16 and earlier
-                    return Java.trySetAccessible(method);
-                } else {
-                    // Exclude package-private on Java 17 and later
-                    return false;
-                }
+                // Exclude package-private on Java 17 and later
+                return false;
             }
         }
     }
