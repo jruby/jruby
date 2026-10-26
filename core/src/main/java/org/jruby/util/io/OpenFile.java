@@ -950,6 +950,7 @@ public class OpenFile implements Finalizable {
         finalizeFlush(context, noraise);
     }
 
+    @CRuby(value = "fptr_finalize_flush", file = "io.c")
     public void finalizeFlush(ThreadContext context, boolean noraise) {
         IRubyObject err = context.nil;
         ChannelFD fd = this.fd();
@@ -985,7 +986,8 @@ public class OpenFile implements Finalizable {
         this.clearStdio();
         mode &= ~(READABLE|WRITABLE);
 
-        if (IS_PREP_STDIO() || isStdio()) {
+        // Like MRI, never close fds 0-2, even through another IO wrapping them such as IO.new(1)
+        if (IS_PREP_STDIO() || isStdio() || (fd != null && fd.realFileno >= 0 && fd.realFileno <= 2)) {
 	        /* need to keep FILE objects of stdin, stdout and stderr */
         } else if (stdio_file != null) {
 	        /* stdio_file is deallocated anyway

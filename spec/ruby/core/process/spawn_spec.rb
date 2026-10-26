@@ -48,9 +48,12 @@ describe "Process.spawn" do
     -> { Process.wait Process.spawn("echo spawn") }.should output_to_fd("spawn\n")
   end
 
-  it "flushes STDOUT before starting the process" do
-    child = ruby_cmd('print "b"')
-    ruby_exe("print 'a'; Process.wait(Process.spawn(#{child.inspect})); print 'c'").should == "abc"
+  # Without fork, as on Windows, CRuby spawns without flushing first
+  platform_is_not :windows do
+    it "flushes STDOUT before starting the process" do
+      child = ruby_cmd('print "b"')
+      ruby_exe("print 'a'; Process.wait(Process.spawn(#{child.inspect})); print 'c'").should == "abc"
+    end
   end
 
   it "returns the process ID of the new process as an Integer" do
