@@ -137,6 +137,24 @@ describe "Module#set_temporary_name" do
     end
   end
 
+  it "can assign a temporary name to a module nested deeper into an anonymous module" do
+    m = Module.new
+    module m::N; module O; end; end
+
+    m::N::O.set_temporary_name("fake_name")
+    m::N::O.name.should == "fake_name"
+  end
+
+  it "can't assign a temporary name to a module nested into a module with a permanent name" do
+    m = Module.new
+    module m::N; module O; end; end
+    ModuleSpecs::SetTemporaryNameSpec::Permanent = m
+
+    -> { m::N::O.set_temporary_name("fake_name") }.should.raise(RuntimeError, "can't change permanent name")
+  ensure
+    ModuleSpecs::SetTemporaryNameSpec.send :remove_const, :Permanent
+  end
+
   it "keeps temporary name when assigned in an anonymous module" do
     outer = Module.new
     m = Module.new
