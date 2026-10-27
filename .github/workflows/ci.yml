@@ -395,6 +395,7 @@ jobs:
       - name: run in OpenBSD
         uses: vmactions/openbsd-vm@v1
         with:
+          release: "7.9"
           prepare: |
             pkg_add jdk--%21
           run: |
