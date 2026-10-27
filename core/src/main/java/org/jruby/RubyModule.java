@@ -836,8 +836,9 @@ public class RubyModule extends RubyObject {
             return cachedRubyName;
         }
         
-        List<RubyString> parents = new ArrayList<>(5);
-        for (RubyModule p : nameParents(objectClass(context))) {
+        RubyString[] parents = new RubyString[nameParentCount(objectClass(context))];
+        RubyModule p = getParent();
+        for (int i = 0; i < parents.length; i++, p = p.getParent()) {
             RubyString name = p.rubyBaseName(context);
 
             // This is needed when the enclosing class or module is a singleton.
@@ -850,7 +851,7 @@ public class RubyModule extends RubyObject {
                 name = p.rubyName(context);
             }
 
-            parents.add(name);
+            parents[i] = name;
         }
 
         RubyString fullName = buildPathString(context, parents);
@@ -873,9 +874,10 @@ public class RubyModule extends RubyObject {
         if (usingTemporaryName()) return asSymbol(context, baseName);
         if (!hasPermanentName()) return UNDEF;
 
-        List<RubyString> parents = new ArrayList<>(5);
-        for (RubyModule p : nameParents(objectClass(context))) {
-            parents.add(p.rubyBaseName(context));
+        RubyString[] parents = new RubyString[nameParentCount(objectClass(context))];
+        RubyModule p = getParent();
+        for (int i = 0; i < parents.length; i++, p = p.getParent()) {
+            parents[i] = p.rubyBaseName(context);
         }
 
         RubyString fullName = buildPathString(context, parents);
@@ -883,12 +885,12 @@ public class RubyModule extends RubyObject {
         return fullName.intern(context);
     }
 
-    private RubyString buildPathString(ThreadContext context, List<RubyString> parents) {
+    private RubyString buildPathString(ThreadContext context, RubyString[] parents) {
         RubyString colons = newString(context, "::");
         RubyString fullName = context.runtime.newString();       // newString creates empty ByteList which ends up as
         fullName.setEncoding(USASCIIEncoding.INSTANCE);  // ASCII-8BIT.  8BIT is unfriendly to string concats.
-        for (int i = parents.size() - 1; i >= 0; i--) {
-            RubyString rubyString = fullName.catWithCodeRange(parents.get(i));
+        for (int i = parents.length - 1; i >= 0; i--) {
+            RubyString rubyString = fullName.catWithCodeRange(parents[i]);
             rubyString.catWithCodeRange(colons);
         }
         fullName.catWithCodeRange(rubyBaseName(context));
@@ -924,14 +926,13 @@ public class RubyModule extends RubyObject {
         if (usingTemporaryName()) return cachedName = baseName;
 
         String name = getBaseName();
-        List<RubyModule> parents = nameParents(objectClass(context));
-        int parentCount = parents.size();
+        int parentCount = nameParentCount(objectClass(context));
 
         // Allocate a String array for all of their names and populate it
         String[] parentNames = new String[parentCount];
-        int i = parentCount - 1;
         int totalLength = name.length() + parentCount * 2; // name length + enough :: for all parents
-        for (RubyModule p : parents) {
+        RubyModule p = getParent();
+        for (int i = parentCount - 1; i >= 0; i--, p = p.getParent()) {
             String pName = p.getBaseName();
 
             // This is needed when the enclosing class or module is a singleton.
@@ -944,7 +945,7 @@ public class RubyModule extends RubyObject {
                 pName = p.getName(context);
              }
 
-            parentNames[i--] = pName;
+            parentNames[i] = pName;
             totalLength += pName.length();
         }
 
@@ -995,7 +996,7 @@ public class RubyModule extends RubyObject {
             baseName(asSymbol(context, name.getByteList()).idString());
         }
 
-        nameNestedModules(!arg.isNil(), new ArrayList<>(4));
+        nameNestedModules(!arg.isNil());
 
         return this;
     }
@@ -1009,6 +1010,11 @@ public class RubyModule extends RubyObject {
      * @param named whether this module has a name to pass on
      * @param renaming the modules being renamed, from the outermost to this one's parent
      */
+    private void nameNestedModules(boolean named) {
+        // Most modules have no constants, so don't build the list for them.
+        if (!getConstantMap().isEmpty()) nameNestedModules(named, new ArrayList<>(4));
+    }
+
     private void nameNestedModules(boolean named, List<RubyModule> renaming) {
         renaming.add(this);
         for (Map.Entry<String, ConstantEntry> entry : getConstantMap().entrySet()) {
@@ -5557,7 +5563,7 @@ public class RubyModule extends RubyObject {
                 }
                 module.baseName(name);
                 module.setParent(this);
-                if (outerIsPermanent) module.nameNestedModules(true, new ArrayList<>(4));
+                if (outerIsPermanent) module.nameNestedModules(true);
             }
             module.calculateName(context);
         }
@@ -6661,18 +6667,38 @@ public class RubyModule extends RubyObject {
     }
 
     /**
-     * The modules this module's name is nested in, nearest first, up to Object or to one with a temporary name, which
-     * is a whole name rather than a part of a path. A cycle of namespaces like C::A = C2; C2::A = C
-     * (jruby/jruby#2314) never reaches Object, so the walk stops before a module it has already met, this one
-     * included.
+     * How many of the modules from this module's parent upward its name is nested in, up to Object or to one with a
+     * temporary name, which is a whole name rather than a part of a path. Callers take that many steps up the parents.
+     * A cycle of namespaces like C::A = C2; C2::A = C (jruby/jruby#2314) never reaches Object, so the count stops
+     * before a module the walk has already met, this one included.
      */
-    private List<RubyModule> nameParents(RubyClass Object) {
-        List<RubyModule> parents = new ArrayList<>(4);
+    private int nameParentCount(RubyClass Object) {
+        // Brent's cycle check: compare each parent with a marker that moves to the current parent after 1, 2, 4, ...
+        // steps. Meeting the marker means a cycle, which is rare, so only then does the walk remember every module.
+        RubyModule marker = this;
+        int steps = 0;
+        int limit = 1;
+        int count = 0;
+        for (RubyModule p = getParent(); p != null && p != Object && p != this; p = p.getParent()) {
+            if (p == marker) return nameParentCountInCycle(Object);
+            count++;
+            if (p.usingTemporaryName()) break;
+            if (++steps == limit) {
+                marker = p;
+                steps = 0;
+                limit <<= 1;
+            }
+        }
+        return count;
+    }
+
+    private int nameParentCountInCycle(RubyClass Object) {
+        List<RubyModule> parents = new ArrayList<>(8);
         for (RubyModule p = getParent(); p != null && p != Object && p != this && !containsModule(parents, p); p = p.getParent()) {
             parents.add(p);
             if (p.usingTemporaryName()) break;
         }
-        return parents;
+        return parents.size();
     }
 
     private static boolean containsModule(List<RubyModule> modules, RubyModule module) {
