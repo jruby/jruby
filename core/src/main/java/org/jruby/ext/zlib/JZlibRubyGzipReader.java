@@ -428,7 +428,10 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         val.append(buffer, 0, read);
         this.position += val.length();
 
-        if (outbuf != null) outbuf.view(val);
+        if (outbuf != null) {
+            outbuf.view(val);
+            return outbuf;
+        }
 
         return newStr(context, val);
     }
