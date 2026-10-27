@@ -3618,6 +3618,17 @@ public final class Ruby implements Constantizable {
     }
 
     /**
+     * Find the symbol associated with the given ID name, but do not create it if it does not exist.
+     *
+     * @param idName the ID name for the symbol (raw bytes as String chars)
+     * @return the already-registered symbol for the ID, or null if none
+     */
+    public RubySymbol findSymbol(String idName) {
+        return symbolTable.findSymbol(idName);
+
+    }
+
+    /**
      * Faster than {@link #newSymbol(String)} if you already have an interned
      * name String. Don't intern your string just to call this version - the
      * overhead of interning will more than wipe out any benefit from the faster

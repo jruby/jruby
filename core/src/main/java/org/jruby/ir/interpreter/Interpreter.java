@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import org.jruby.EvalType;
 import org.jruby.ParseResult;
 import org.jruby.Ruby;
+import org.jruby.RubyEncoding;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.ir.IRManager;
@@ -162,7 +163,7 @@ public class Interpreter extends IRTranslator<IRubyObject, IRubyObject> {
 
     private static IRubyObject interpretFrameScope(ThreadContext context, Block selfBlock, IRScope body, RubyModule clazz, DynamicScope parentScope, Visibility visibility, IRubyObject self, String frameName, String passedName, IRubyObject[] args, Block block) {
         InterpreterContext ic = body.getInterpreterContext();
-        String id = body.getId();
+        String id = RubyEncoding.decode(body.getByteName());
         boolean hasExplicitCallProtocol =  ic.hasExplicitCallProtocol();
 
         try {
