@@ -626,8 +626,22 @@ public class OpenFile implements Finalizable {
                 return thread.selectReadyOps(fd.chSelect, this, realOps, timeout);
             }
 
-            // Channels that cannot be selected, regular files among them, are always ready
-            return ops;
+// A pair/for_fd unix socket (UnixFdChannel) can't be selected but has a real fd: wait on it
+// with poll(2), or a blocking read on a nonblock pair spins into EAGAIN (GH-3799). The IO
+// lock is released while waiting, as the scheduler waits do.
+if (fd.ch instanceof org.jruby.ext.socket.UnixFdChannel ufc && org.jruby.ext.socket.UnixDomainNative.hasPoll()) {
+    short events = (short) (((ops & (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) != 0 ? org.jruby.ext.socket.UnixDomainNative.POLLIN : 0)
+            | ((ops & (SelectionKey.OP_WRITE | SelectionKey.OP_CONNECT)) != 0 ? org.jruby.ext.socket.UnixDomainNative.POLLOUT : 0));
+    unlock();
+    try {
+        return org.jruby.ext.socket.UnixDomain.waitFd(thread.getContext(), ufc.fd(), events, timeout) ? ops : 0;
+    } finally {
+        lock();
+    }
+}
+
+// Channels that cannot be selected, regular files among them, are always ready
+return ops;
         } finally {
             if (locked) unlock();
         }
@@ -1573,7 +1587,9 @@ public class OpenFile implements Finalizable {
 
                 // MRI's sockets and pipes are nonblocking, so its plain read yields in io_wait on
                 // EAGAIN. Ours block and would park the fiber's thread, so emulate that here.
-                if (fd.chSelect != null && fptr.isBlocking()) {
+                // A pair/for_fd unix socket (UnixFdChannel) isn't selectable but reads nonblocking
+                // and waits through io_wait the same way (see PosixShim and waitReadable).
+                if ((fd.chSelect != null || fd.ch instanceof org.jruby.ext.socket.UnixFdChannel) && fptr.isBlocking()) {
                     return schedulerRead(context, fptr, buffer, buf, count);
                 }
             }
@@ -1725,6 +1741,17 @@ public class OpenFile implements Finalizable {
                 unlock();
                 try {
                     return context.getThread().select(fd.chSelect, this, SelectionKey.OP_READ);
+                } finally {
+                    lock();
+                }
+            }
+
+            // A pair/for_fd unix socket (UnixFdChannel) can't be selected but has a real fd: wait
+            // on it with poll(2), or IO#read on a nonblock pair gives up with EAGAIN (GH-3799)
+            if (fd.ch instanceof org.jruby.ext.socket.UnixFdChannel ufc && org.jruby.ext.socket.UnixDomainNative.hasPoll()) {
+                unlock();
+                try {
+                    return org.jruby.ext.socket.UnixDomain.waitFd(context, ufc.fd(), org.jruby.ext.socket.UnixDomainNative.POLLIN, -1);
                 } finally {
                     lock();
                 }
@@ -2038,20 +2065,31 @@ public class OpenFile implements Finalizable {
         try {
             if (!READ_DATA_PENDING()) {
                 outer:
-                while (n > 0) {
-                    again:
-                    while (true) {
-                        c = readInternal(context, this, fd, ptrBytes, ptr + offset, n);
-                        if (c == 0) break outer;
-                        if (c < 0) {
-                            if (waitReadable(context, fd))
-                                continue again;
-                            return -1;
+                try {
+                    while (n > 0) {
+                        again:
+                        while (true) {
+                            c = readInternal(context, this, fd, ptrBytes, ptr + offset, n);
+                            if (c == 0) break outer;
+                            if (c < 0) {
+                                if (waitReadable(context, fd))
+                                    continue again;
+                                return -1;
+                            }
+                            break;
                         }
-                        break;
+                        offset += c;
+                        if ((n -= c) <= 0) break outer;
                     }
-                    offset += c;
-                    if ((n -= c) <= 0) break outer;
+                } catch (RuntimeException re) {
+                    // See salvagePartialRead's doc comment for the full WHY.
+                    // readInternal has ALREADY, irreversibly, consumed `offset`
+                    // bytes from the real fd straight into ptrBytes by the time
+                    // a Thread#kill/Thread#raise abandons this loop between
+                    // iterations -- preserve them before the kill/raise
+                    // continues, or they silently corrupt a later read instead.
+                    salvagePartialRead(ptrBytes, ptr, offset);
+                    throw re;
                 }
                 return len - n;
             }
@@ -2071,6 +2109,51 @@ public class OpenFile implements Finalizable {
             if (locked) unlock();
         }
         return len - n;
+    }
+
+    /**
+     * Preserve bytes already, irreversibly, read from the real fd into a
+     * caller-local buffer, when the Ruby-level call that was going to return
+     * them is being abandoned by a propagating RuntimeException (in
+     * practice: Thread#kill/Thread#raise -- ThreadKill/RaiseException, see
+     * org.jruby.exceptions -- landing between one successful native read and
+     * this method actually handing the bytes back to Ruby).
+     *
+     * Without this, those bytes silently vanish from the Ruby-visible
+     * stream -- they were already consumed from the kernel, so they are not
+     * sitting in the fd waiting to be re-read either -- while any bytes NOT
+     * yet read remain in the kernel and get delivered to whoever reads this
+     * IO object next, corrupting that later, logically unrelated read with
+     * leftover mid-stream data. Confirmed on plain TCPSocket, stock JRuby,
+     * nothing channel-type- or method-specific about it: a large-transfer,
+     * randomly-timed Thread#kill stress test loses exactly one
+     * readpartial-sized chunk; ioBufread (IO#read(length)) has the identical
+     * shape for its own accumulating retry loop. Every caller that reads
+     * directly from the real fd into a throwaway buffer (not rbuf itself)
+     * needs this -- see ioBufread, RubyIO#getPartialCommon (readpartial/
+     * read_nonblock), RubyIO#sysread.
+     *
+     * Deliberately NOT used by pread/IO::Buffer#pread call sites: those read
+     * at an explicit, non-sequential offset, so stashing their bytes into
+     * rbuf (which represents the NEXT sequential bytes) would actively
+     * corrupt a later ordinary read with data from the wrong place in the
+     * file/stream -- worse than the data loss this fixes.
+     *
+     * Only intervenes if rbuf is currently empty: if something else
+     * concurrently filled it while we were blocked, don't clobber it --
+     * reading the same IO from two threads at once has no ordering
+     * guarantee to begin with, so this is "don't make that case worse," not
+     * a claim of full correctness under that pathological race.
+     */
+    public void salvagePartialRead(byte[] bytes, int off, int len) {
+        if (len <= 0 || rbuf.len != 0) return;
+        if (rbuf.ptr == null || rbuf.capa < len) {
+            rbuf.capa = Math.max(len, IO_RBUF_CAPA_FOR());
+            rbuf.ptr = new byte[rbuf.capa];
+        }
+        System.arraycopy(bytes, off, rbuf.ptr, 0, len);
+        rbuf.off = 0;
+        rbuf.len = len;
     }
 
     // io_fread with target buffer
@@ -2786,6 +2869,32 @@ public class OpenFile implements Finalizable {
 
     public boolean isBlocking() {
         return !nonblock;
+    }
+
+    /**
+     * Mark the Ruby-visible "nonblock?" bookkeeping flag without touching
+     * the real channel's actual OS-level blocking mode (setBlocking's own
+     * fd.chSelect.configureBlocking(...) call). For a channel whose real
+     * read/write already goes around performRead/performWrite's own
+     * chSelect-based machinery entirely (see UnixSocketNativeChannel), the
+     * two are legitimately independent: MRI reports every fd as
+     * non-blocking internally regardless of what blocking behavior Ruby
+     * code actually observes (rb_thread_io_blocking_region) -- IO#nonblock?
+     * mirrors that MRI-visible bookkeeping fact, which has nothing to do
+     * with whether THIS JVM's underlying fd happens to be configured
+     * O_NONBLOCK or not. Safe for performRead/performWrite's own nonblock
+     * branch too: it only ever special-cases a literal 0 return as EAGAIN,
+     * and a channel that already maps real EOF to -1 (the ReadableByteChannel
+     * contract -- see UnixFdChannel#rawRead) never produces that literal 0
+     * in the first place, so there is nothing for this flag to misroute.
+     */
+    public void setNonblockFlag(boolean nonblock) {
+        boolean locked = lock();
+        try {
+            this.nonblock = nonblock;
+        } finally {
+            if (locked) unlock();
+        }
     }
 
     // MRI: check_tty

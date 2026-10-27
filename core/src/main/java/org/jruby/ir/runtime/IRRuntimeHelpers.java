@@ -1917,6 +1917,10 @@ public class IRRuntimeHelpers {
 
         if (method.maybeUsingRefinements()) method.getStaticScope().captureParentRefinements(context);
 
+        // before the method object exists: with jit.threshold=0 it JITs at once,
+        // and the JIT names its frame from this label
+        recordBacktraceLabel(context, method, rubyClass, id);
+
         DynamicMethod newMethod;
         if (instanceConfig(context).getCompileMode() == RubyInstanceConfig.CompileMode.OFF) {
             newMethod = new InterpretedIRMethod(method, Visibility.PUBLIC, rubyClass);
@@ -1938,6 +1942,7 @@ public class IRRuntimeHelpers {
 
         if (maybeRefined) scope.captureParentRefinements(context);
 
+        recordBacktraceLabel(context, scope.getIRScope(), rubyClass, id);
         // FIXME: needs checkID and proper encoding to force hard symbol
         rubyClass.addMethod(context, id,
                 new CompiledIRMethod(handle, null, -1, id, line, scope, Visibility.PUBLIC, rubyClass,
@@ -1960,10 +1965,44 @@ public class IRRuntimeHelpers {
 
         if (maybeRefined) scope.captureParentRefinements(context);
 
+        recordBacktraceLabel(context, scope.getIRScope(), rubyClass, id);
         rubyClass.addMethod(context, id, new CompiledIRMethod(variable, specific, specificArity, id, line, scope,
                 Visibility.PUBLIC, rubyClass, encodedArgumentDescriptors, receivesKeywordArgs, needsToFindImplementer));
 
         if (!rubyClass.isRefinement()) obj.callMethod(context, "singleton_method_added", asSymbol(context, id));
+    }
+
+    /**
+     * Ruby 3.4+ backtrace label for a method defined into owner: "Foo#bar",
+     * "Foo.baz" for a named module's singleton class, else the bare name
+     * (anonymous owner, an ordinary object's singleton).
+     */
+    static String backtraceLabel(ThreadContext context, RubyModule owner, String id) {
+        if (owner.isSingleton()) {
+            if (owner instanceof MetaClass meta && meta.getAttached() instanceof RubyModule attached) {
+                String name = attached.getName(context);
+                return name == null || name.startsWith("#<") ? id : name + "." + id;
+            }
+            return id;
+        }
+        String name = owner.getName(context);
+        return name == null || name.startsWith("#<") ? id : name + "#" + id;
+    }
+
+    /**
+     * module_function: the module's singleton copy of the method is labeled
+     * "M.name" (the instance copy keeps the scope's "M#name"), as MRI. The
+     * label is on the method object, since both copies share one scope; once
+     * the method is JIT-compiled both copies share a frame name ("M#name").
+     */
+    public static void moduleFunctionBacktraceLabel(ThreadContext context, DynamicMethod singletonCopy, RubyModule module, String id) {
+        if (!(singletonCopy instanceof org.jruby.internal.runtime.AbstractIRMethod irMethod)) return;
+        String name = module.getName(context);
+        if (name != null && !name.startsWith("#<")) irMethod.setBacktraceLabel(name + "." + id);
+    }
+
+    private static void recordBacktraceLabel(ThreadContext context, IRScope method, RubyModule owner, String id) {
+        if (method != null) method.recordBacktraceLabel(backtraceLabel(context, owner, id));
     }
 
     private static RubyClass checkClassForDef(ThreadContext context, String id, IRubyObject obj) {
@@ -1986,6 +2025,8 @@ public class IRRuntimeHelpers {
 
         if (method.maybeUsingRefinements()) method.getStaticScope().captureParentRefinements(context);
 
+        // before the method object exists (see defInterpretedClassMethod)
+        recordBacktraceLabel(context, method, rubyClass, method.getId());
         DynamicMethod newMethod = instanceConfig(context).getCompileMode() == RubyInstanceConfig.CompileMode.OFF ?
             new InterpretedIRMethod(method, newVisibility, rubyClass) : new MixedModeIRMethod(method, newVisibility, rubyClass);
 
@@ -2008,6 +2049,7 @@ public class IRRuntimeHelpers {
 
         DynamicMethod newMethod = new CompiledIRMethod(handle, null, -1, id, line, scope,
                 newVisibility, clazz, encodedArgumentDescriptors, receivesKeywordArgs, needsToFindImplementer);
+        recordBacktraceLabel(context, scope.getIRScope(), clazz, id);
 
         // FIXME: needs checkID and proper encoding to force hard symbol
         Helpers.addInstanceMethod(clazz, methodName, newMethod, currVisibility, context);
@@ -2030,6 +2072,7 @@ public class IRRuntimeHelpers {
 
         DynamicMethod newMethod = new CompiledIRMethod(variable, specific, specificArity, id, line, scope,
                 newVisibility, clazz, encodedArgumentDescriptors, receivesKeywordArgs, needsToFindImplementer);
+        recordBacktraceLabel(context, scope.getIRScope(), clazz, id);
 
         // FIXME: needs checkID and proper encoding to force hard symbol
         Helpers.addInstanceMethod(clazz, methodName, newMethod, currVisibility, context);

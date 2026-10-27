@@ -305,6 +305,22 @@ project 'JRuby Base' do
     end
   end
 
+  # FFM (java.lang.foreign) is final from Java 22 and a preview API on 21: a 22+ build JDK
+  # also compiles the FFM backend for the unix socket natives (see UnixDomainNative)
+  profile 'ffm' do
+    activation do
+      jdk('[22,)')
+    end
+
+    phase 'generate-sources' do
+      plugin 'org.codehaus.mojo:build-helper-maven-plugin' do
+        execute_goals('add-source',
+                      id: 'add-ffm-sources',
+                      sources: ['src/main/java22'])
+      end
+    end
+  end
+
   jni_config = ['unpack', { :id => 'unzip native',
                             'excludes' => 'META-INF,META-INF/*',
                             'artifactItems' => [{ 'groupId' => 'com.github.jnr',

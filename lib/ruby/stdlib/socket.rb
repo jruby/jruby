@@ -9,6 +9,42 @@ unless IO.method_defined?(:wait_writable, false)
 end
 
 class Addrinfo
+  # Marshal support, in MRI's format:
+  #   [afamily, address, pfamily, socktype, protocol, canonname, inspectname]
+  # with constant names where MRI uses them ("AF_INET", "SOCK_STREAM",
+  # "IPPROTO_TCP"), address [ip, port_string] for IP or the path for UNIX.
+  def marshal_dump
+    afamily_name = __constant_name(afamily, 'AF_') || afamily
+    address = if ip?
+      [ip_address, ip_port.to_s]
+    elsif unix?
+      unix_path
+    else
+      to_sockaddr
+    end
+    proto = protocol == 0 ? 0 : (__constant_name(protocol, 'IPPROTO_') || protocol)
+    [afamily_name, address, __constant_name(pfamily, 'PF_') || pfamily,
+     __constant_name(socktype, 'SOCK_') || socktype, proto, canonname, nil]
+  end
+
+  def marshal_load(ary)
+    afamily, address, pfamily, socktype, protocol = ary
+    const = ->(v) { v.is_a?(String) ? Socket.const_get(v) : v }
+    sockaddr = case const.(afamily)
+               when Socket::AF_UNIX then Socket.sockaddr_un(address)
+               when Socket::AF_INET, Socket::AF_INET6 then Socket.sockaddr_in(address[1].to_i, address[0])
+               else address
+               end
+    __send__(:initialize, sockaddr, const.(pfamily), const.(socktype), const.(protocol))
+    __send__(:__canonname=, ary[5]) if ary[5]
+    self
+  end
+
+  private def __constant_name(value, prefix)
+    names = Socket::Constants.constants.select { |c| c.start_with?(prefix) && Socket::Constants.const_get(c) == value }
+    (names.find { |n| !n.end_with?('LOCAL') } || names.first)&.to_s # AF_UNIX over its alias AF_LOCAL, as MRI
+  end
+
   # creates an Addrinfo object from the arguments.
   #
   # The arguments are interpreted as similar to self.
@@ -199,7 +235,7 @@ class Addrinfo
 
   # creates a listening socket bound to self.
   def listen(backlog=Socket::SOMAXCONN)
-    sock = ServerSocket.new(self.pfamily, self.socktype, self.protocol)
+    sock = Socket.new(self.pfamily, self.socktype, self.protocol)
     begin
       sock.ipv6only! if self.ipv6?
       sock.setsockopt(:SOCKET, :REUSEADDR, 1) unless self.pfamily == Socket::PF_UNIX
@@ -276,179 +312,233 @@ class BasicSocket < IO
     addr
   end
 
-  # call-seq:
-  #    basicsocket.sendmsg(mesg, flags=0, dest_sockaddr=nil, *controls) => numbytes_sent
-  #
-  # sendmsg sends a message using sendmsg(2) system call in blocking manner.
-  #
-  # _mesg_ is a string to send.
-  #
-  # _flags_ is bitwise OR of MSG_* constants such as Socket::MSG_OOB.
-  #
-  # _dest_sockaddr_ is a destination socket address for connection-less socket.
-  # It should be a sockaddr such as a result of Socket.sockaddr_in.
-  # An Addrinfo object can be used too.
-  #
-  # _controls_ is a list of ancillary data.
-  # The element of _controls_ should be Socket::AncillaryData or
-  # 3-elements array.
-  # The 3-element array should contains cmsg_level, cmsg_type and data.
-  #
-  # The return value, _numbytes_sent_ is an integer which is the number of bytes sent.
-  #
-  # sendmsg can be used to implement send_io as follows:
-  #
-  #   # use Socket::AncillaryData.
-  #   ancdata = Socket::AncillaryData.int(:UNIX, :SOCKET, :RIGHTS, io.fileno)
-  #   sock.sendmsg("a", 0, nil, ancdata)
-  #
-  #   # use 3-element array.
-  #   ancdata = [:SOCKET, :RIGHTS, [io.fileno].pack("i!")]
-  #   sock.sendmsg("\0", 0, nil, ancdata)
-  #def sendmsg(mesg, flags = 0, dest_sockaddr = nil, *controls)
-  #  __sendmsg(mesg, flags, dest_sockaddr, controls)
-  #end
+  # sendmsg/recvmsg need the native socket calls (FFM, Java 22+); without them
+  # BasicSocket keeps JRuby's NotImplemented stubs for these, as before
+  if __native_msg?
+    # call-seq:
+    #    basicsocket.sendmsg(mesg, flags=0, dest_sockaddr=nil, *controls) => numbytes_sent
+    #
+    # sendmsg sends a message using sendmsg(2) system call in blocking manner.
+    #
+    # _mesg_ is a string to send.
+    #
+    # _flags_ is bitwise OR of MSG_* constants such as Socket::MSG_OOB.
+    #
+    # _dest_sockaddr_ is a destination socket address for connection-less socket.
+    # It should be a sockaddr such as a result of Socket.sockaddr_in.
+    # An Addrinfo object can be used too.
+    #
+    # _controls_ is a list of ancillary data.
+    # The element of _controls_ should be Socket::AncillaryData or
+    # 3-elements array.
+    # The 3-element array should contains cmsg_level, cmsg_type and data.
+    #
+    # The return value, _numbytes_sent_ is an integer which is the number of bytes sent.
+    #
+    # sendmsg can be used to implement send_io as follows:
+    #
+    #   # use Socket::AncillaryData.
+    #   ancdata = Socket::AncillaryData.int(:UNIX, :SOCKET, :RIGHTS, io.fileno)
+    #   sock.sendmsg("a", 0, nil, ancdata)
+    #
+    #   # use 3-element array.
+    #   ancdata = [:SOCKET, :RIGHTS, [io.fileno].pack("i!")]
+    #   sock.sendmsg("\0", 0, nil, ancdata)
+    def sendmsg(mesg, flags = 0, dest_sockaddr = nil, *controls)
+      __sendmsg(mesg, flags, dest_sockaddr, controls, false, true)
+    end
 
-  # call-seq:
-  #    basicsocket.sendmsg_nonblock(mesg, flags=0, dest_sockaddr=nil, *controls, opts={}) => numbytes_sent
-  #
-  # sendmsg_nonblock sends a message using sendmsg(2) system call in non-blocking manner.
-  #
-  # It is similar to BasicSocket#sendmsg
-  # but the non-blocking flag is set before the system call
-  # and it doesn't retry the system call.
-  #
-  # By specifying a keyword argument _exception_ to +false+, you can indicate
-  # that sendmsg_nonblock should not raise an IO::WaitWritable exception, but
-  # return the symbol +:wait_writable+ instead.
-  #def sendmsg_nonblock(mesg, flags = 0, dest_sockaddr = nil, *controls,
-  #                     exception: true)
-  #  __sendmsg_nonblock(mesg, flags, dest_sockaddr, controls, exception)
-  #end
+    # call-seq:
+    #    basicsocket.sendmsg_nonblock(mesg, flags=0, dest_sockaddr=nil, *controls, opts={}) => numbytes_sent
+    #
+    # sendmsg_nonblock sends a message using sendmsg(2) system call in non-blocking manner.
+    #
+    # It is similar to BasicSocket#sendmsg
+    # but the non-blocking flag is set before the system call
+    # and it doesn't retry the system call.
+    #
+    # By specifying a keyword argument _exception_ to +false+, you can indicate
+    # that sendmsg_nonblock should not raise an IO::WaitWritable exception, but
+    # return the symbol +:wait_writable+ instead.
+    def sendmsg_nonblock(mesg, flags = 0, dest_sockaddr = nil, *controls,
+                         exception: true)
+      __sendmsg(mesg, flags, dest_sockaddr, controls, true, exception)
+    end
 
-  # call-seq:
-  # 	basicsocket.recv_nonblock(maxlen [, flags [, buf [, options ]]]) => mesg
-  #
-  # Receives up to _maxlen_ bytes from +socket+ using recvfrom(2) after
-  # O_NONBLOCK is set for the underlying file descriptor.
-  # _flags_ is zero or more of the +MSG_+ options.
-  # The result, _mesg_, is the data received.
-  #
-  # When recvfrom(2) returns 0, Socket#recv_nonblock returns nil.
-  # In most cases it means the connection was closed, but for UDP connections
-  # it may mean an empty packet was received, as the underlying API makes
-  # it impossible to distinguish these two cases.
-  #
-  # === Parameters
-  # * +maxlen+ - the number of bytes to receive from the socket
-  # * +flags+ - zero or more of the +MSG_+ options
-  # * +buf+ - destination String buffer
-  # * +options+ - keyword hash, supporting `exception: false`
-  #
-  # === Example
-  # 	serv = TCPServer.new("127.0.0.1", 0)
-  # 	af, port, host, addr = serv.addr
-  # 	c = TCPSocket.new(addr, port)
-  # 	s = serv.accept
-  # 	c.send "aaa", 0
-  # 	begin # emulate blocking recv.
-  # 	  p s.recv_nonblock(10) #=> "aaa"
-  # 	rescue IO::WaitReadable
-  # 	  IO.select([s])
-  # 	  retry
-  # 	end
-  #
-  # Refer to Socket#recvfrom for the exceptions that may be thrown if the call
-  # to _recv_nonblock_ fails.
-  #
-  # BasicSocket#recv_nonblock may raise any error corresponding to recvfrom(2) failure,
-  # including Errno::EWOULDBLOCK.
-  #
-  # If the exception is Errno::EWOULDBLOCK or Errno::EAGAIN,
-  # it is extended by IO::WaitReadable.
-  # So IO::WaitReadable can be used to rescue the exceptions for retrying recv_nonblock.
-  #
-  # By specifying a keyword argument _exception_ to +false+, you can indicate
-  # that recv_nonblock should not raise an IO::WaitReadable exception, but
-  # return the symbol +:wait_readable+ instead.
-  #
-  # === See
-  # * Socket#recvfrom
-  #def recv_nonblock(len, flag = 0, str = nil, exception: true)
-  #  __recv_nonblock(len, flag, str, exception)
-  #end
+    # call-seq:
+    # 	basicsocket.recv_nonblock(maxlen [, flags [, buf [, options ]]]) => mesg
+    #
+    # Receives up to _maxlen_ bytes from +socket+ using recvfrom(2) after
+    # O_NONBLOCK is set for the underlying file descriptor.
+    # _flags_ is zero or more of the +MSG_+ options.
+    # The result, _mesg_, is the data received.
+    #
+    # When recvfrom(2) returns 0, Socket#recv_nonblock returns nil.
+    # In most cases it means the connection was closed, but for UDP connections
+    # it may mean an empty packet was received, as the underlying API makes
+    # it impossible to distinguish these two cases.
+    #
+    # === Parameters
+    # * +maxlen+ - the number of bytes to receive from the socket
+    # * +flags+ - zero or more of the +MSG_+ options
+    # * +buf+ - destination String buffer
+    # * +options+ - keyword hash, supporting `exception: false`
+    #
+    # === Example
+    # 	serv = TCPServer.new("127.0.0.1", 0)
+    # 	af, port, host, addr = serv.addr
+    # 	c = TCPSocket.new(addr, port)
+    # 	s = serv.accept
+    # 	c.send "aaa", 0
+    # 	begin # emulate blocking recv.
+    # 	  p s.recv_nonblock(10) #=> "aaa"
+    # 	rescue IO::WaitReadable
+    # 	  IO.select([s])
+    # 	  retry
+    # 	end
+    #
+    # Refer to Socket#recvfrom for the exceptions that may be thrown if the call
+    # to _recv_nonblock_ fails.
+    #
+    # BasicSocket#recv_nonblock may raise any error corresponding to recvfrom(2) failure,
+    # including Errno::EWOULDBLOCK.
+    #
+    # If the exception is Errno::EWOULDBLOCK or Errno::EAGAIN,
+    # it is extended by IO::WaitReadable.
+    # So IO::WaitReadable can be used to rescue the exceptions for retrying recv_nonblock.
+    #
+    # By specifying a keyword argument _exception_ to +false+, you can indicate
+    # that recv_nonblock should not raise an IO::WaitReadable exception, but
+    # return the symbol +:wait_readable+ instead.
+    #
+    # === See
+    # * Socket#recvfrom
+    #def recv_nonblock(len, flag = 0, str = nil, exception: true)
+    #  __recv_nonblock(len, flag, str, exception)
+    #end
 
-  # call-seq:
-  #    basicsocket.recvmsg(maxmesglen=nil, flags=0, maxcontrollen=nil, opts={}) => [mesg, sender_addrinfo, rflags, *controls]
-  #
-  # recvmsg receives a message using recvmsg(2) system call in blocking manner.
-  #
-  # _maxmesglen_ is the maximum length of mesg to receive.
-  #
-  # _flags_ is bitwise OR of MSG_* constants such as Socket::MSG_PEEK.
-  #
-  # _maxcontrollen_ is the maximum length of controls (ancillary data) to receive.
-  #
-  # _opts_ is option hash.
-  # Currently :scm_rights=>bool is the only option.
-  #
-  # :scm_rights option specifies that application expects SCM_RIGHTS control message.
-  # If the value is nil or false, application don't expects SCM_RIGHTS control message.
-  # In this case, recvmsg closes the passed file descriptors immediately.
-  # This is the default behavior.
-  #
-  # If :scm_rights value is neither nil nor false, application expects SCM_RIGHTS control message.
-  # In this case, recvmsg creates IO objects for each file descriptors for
-  # Socket::AncillaryData#unix_rights method.
-  #
-  # The return value is 4-elements array.
-  #
-  # _mesg_ is a string of the received message.
-  #
-  # _sender_addrinfo_ is a sender socket address for connection-less socket.
-  # It is an Addrinfo object.
-  # For connection-oriented socket such as TCP, sender_addrinfo is platform dependent.
-  #
-  # _rflags_ is a flags on the received message which is bitwise OR of MSG_* constants such as Socket::MSG_TRUNC.
-  # It will be nil if the system uses 4.3BSD style old recvmsg system call.
-  #
-  # _controls_ is ancillary data which is an array of Socket::AncillaryData objects such as:
-  #
-  #   #<Socket::AncillaryData: AF_UNIX SOCKET RIGHTS 7>
-  #
-  # _maxmesglen_ and _maxcontrollen_ can be nil.
-  # In that case, the buffer will be grown until the message is not truncated.
-  # Internally, MSG_PEEK is used.
-  # Buffer full and MSG_CTRUNC are checked for truncation.
-  #
-  # recvmsg can be used to implement recv_io as follows:
-  #
-  #   mesg, sender_sockaddr, rflags, *controls = sock.recvmsg(:scm_rights=>true)
-  #   controls.each {|ancdata|
-  #     if ancdata.cmsg_is?(:SOCKET, :RIGHTS)
-  #       return ancdata.unix_rights[0]
-  #     end
-  #   }
-  #def recvmsg(dlen = nil, flags = 0, clen = nil, scm_rights: false)
-  #  __recvmsg(dlen, flags, clen, scm_rights)
-  #end
+    # call-seq:
+    #    basicsocket.recvmsg(maxmesglen=nil, flags=0, maxcontrollen=nil, opts={}) => [mesg, sender_addrinfo, rflags, *controls]
+    #
+    # recvmsg receives a message using recvmsg(2) system call in blocking manner.
+    #
+    # _maxmesglen_ is the maximum length of mesg to receive.
+    #
+    # _flags_ is bitwise OR of MSG_* constants such as Socket::MSG_PEEK.
+    #
+    # _maxcontrollen_ is the maximum length of controls (ancillary data) to receive.
+    #
+    # _opts_ is option hash.
+    # Currently :scm_rights=>bool is the only option.
+    #
+    # :scm_rights option specifies that application expects SCM_RIGHTS control message.
+    # If the value is nil or false, application don't expects SCM_RIGHTS control message.
+    # In this case, recvmsg closes the passed file descriptors immediately.
+    # This is the default behavior.
+    #
+    # If :scm_rights value is neither nil nor false, application expects SCM_RIGHTS control message.
+    # In this case, recvmsg creates IO objects for each file descriptors for
+    # Socket::AncillaryData#unix_rights method.
+    #
+    # The return value is 4-elements array.
+    #
+    # _mesg_ is a string of the received message.
+    #
+    # _sender_addrinfo_ is a sender socket address for connection-less socket.
+    # It is an Addrinfo object.
+    # For connection-oriented socket such as TCP, sender_addrinfo is platform dependent.
+    #
+    # _rflags_ is a flags on the received message which is bitwise OR of MSG_* constants such as Socket::MSG_TRUNC.
+    # It will be nil if the system uses 4.3BSD style old recvmsg system call.
+    #
+    # _controls_ is ancillary data which is an array of Socket::AncillaryData objects such as:
+    #
+    #   #<Socket::AncillaryData: AF_UNIX SOCKET RIGHTS 7>
+    #
+    # _maxmesglen_ and _maxcontrollen_ can be nil.
+    # In that case, the buffer will be grown until the message is not truncated.
+    # Internally, MSG_PEEK is used.
+    # Buffer full and MSG_CTRUNC are checked for truncation.
+    #
+    # recvmsg can be used to implement recv_io as follows:
+    #
+    #   mesg, sender_sockaddr, rflags, *controls = sock.recvmsg(:scm_rights=>true)
+    #   controls.each {|ancdata|
+    #     if ancdata.cmsg_is?(:SOCKET, :RIGHTS)
+    #       return ancdata.unix_rights[0]
+    #     end
+    #   }
+    def recvmsg(dlen = nil, flags = 0, clen = nil, scm_rights: false)
+      __recvmsg(dlen, flags, clen, scm_rights, false, true)
+    end
 
-  # call-seq:
-  #    basicsocket.recvmsg_nonblock(maxdatalen=nil, flags=0, maxcontrollen=nil, opts={}) => [data, sender_addrinfo, rflags, *controls]
-  #
-  # recvmsg receives a message using recvmsg(2) system call in non-blocking manner.
-  #
-  # It is similar to BasicSocket#recvmsg
-  # but non-blocking flag is set before the system call
-  # and it doesn't retry the system call.
-  #
-  # By specifying a keyword argument _exception_ to +false+, you can indicate
-  # that recvmsg_nonblock should not raise an IO::WaitReadable exception, but
-  # return the symbol +:wait_readable+ instead.
-  #def recvmsg_nonblock(dlen = nil, flags = 0, clen = nil,
-  #                     scm_rights: false, exception: true)
-  #  __recvmsg_nonblock(dlen, flags, clen, scm_rights, exception)
-  #end
+    # call-seq:
+    #    basicsocket.recvmsg_nonblock(maxdatalen=nil, flags=0, maxcontrollen=nil, opts={}) => [data, sender_addrinfo, rflags, *controls]
+    #
+    # recvmsg receives a message using recvmsg(2) system call in non-blocking manner.
+    #
+    # It is similar to BasicSocket#recvmsg
+    # but non-blocking flag is set before the system call
+    # and it doesn't retry the system call.
+    #
+    # By specifying a keyword argument _exception_ to +false+, you can indicate
+    # that recvmsg_nonblock should not raise an IO::WaitReadable exception, but
+    # return the symbol +:wait_readable+ instead.
+    def recvmsg_nonblock(dlen = nil, flags = 0, clen = nil,
+                         scm_rights: false, exception: true)
+      __recvmsg(dlen, flags, clen, scm_rights, true, exception)
+    end
+
+    private
+
+    # The socket's own address family, for resolving control message names.
+    def __msg_family
+      local_address.afamily
+    rescue StandardError
+      Socket::AF_UNSPEC
+    end
+
+    def __sendmsg(mesg, flags, dest_sockaddr, controls, nonblock, exception)
+      mesg = mesg.to_str
+      dest_sockaddr = dest_sockaddr.to_sockaddr if dest_sockaddr.is_a?(Addrinfo)
+      dest_sockaddr = dest_sockaddr.to_str unless dest_sockaddr.nil?
+      family = __msg_family
+      raw = controls.map do |control|
+        if control.is_a?(Socket::AncillaryData)
+          [control.level, control.type, control.data]
+        else
+          level, type, data = control
+          level = Socket::AncillaryData.__level(family, level)
+          [level, Socket::AncillaryData.__type(family, level, type), data.to_str]
+        end
+      end
+      __sendmsg_native(mesg, flags.nil? ? 0 : flags, dest_sockaddr, raw, nonblock, exception)
+    end
+
+    def __recvmsg(dlen, flags, clen, scm_rights, nonblock, exception)
+      result = __recvmsg_native(dlen, flags.nil? ? 0 : flags, clen, nonblock, exception)
+      return result unless result.is_a?(Array)
+
+      data, sender, rflags, raw = result
+      family = __msg_family
+      controls = raw.map do |level, type, cdata|
+        anc = Socket::AncillaryData.new(family, level, type, cdata)
+        if level == Socket::SOL_SOCKET && type == Socket::SCM_RIGHTS
+          fds = cdata.unpack('i*')
+          if scm_rights
+            anc.instance_variable_set(:@unix_rights, fds.map { |fd| IO.for_fd(fd, autoclose: true) })
+          else
+            # MRI: received descriptors are closed unless scm_rights: true
+            fds.each { |fd| IO.for_fd(fd, autoclose: true).close rescue nil }
+          end
+        end
+        anc
+      end
+      [data, sender, rflags, *controls]
+    end
+  end
+
+  public
 
   # Linux-specific optimizations to avoid fcntl for IO#read_nonblock
   # and IO#write_nonblock using MSG_DONTWAIT
@@ -1133,7 +1223,7 @@ class Socket < BasicSocket
       port = nil
       ai_list.each {|ai|
         begin
-          s = ServerSocket.new(ai.pfamily, ai.socktype, ai.protocol)
+          s = Socket.new(ai.pfamily, ai.socktype, ai.protocol)
         rescue SystemCallError
           next
         end
@@ -1676,6 +1766,244 @@ class Socket < BasicSocket
   #def connect_nonblock(addr, exception: true)
   #  __connect_nonblock(addr, exception)
   #end
+  # Raised when getaddrinfo/getnameinfo fail to resolve; #error_code is
+  # the EAI_* value (Ruby 3.3+).
+  class ResolutionError < SocketError
+    attr_reader :error_code
+
+    def initialize(message = nil, error_code = nil)
+      super(message)
+      @error_code = error_code
+    end
+  end
+
+  if BasicSocket.send(:__native_msg?) # see BasicSocket#sendmsg above
+    # Socket::AncillaryData represents the ancillary data (control information)
+    # used by sendmsg and recvmsg system call. It contains socket #family,
+    # control message (cmsg) #level, cmsg #type and cmsg #data.
+    #
+    # Pure Ruby, following MRI's ext/socket/ancdata.c: name resolution,
+    # packing and #inspect output match MRI's.
+    class AncillaryData
+      attr_reader :family, :level, :type, :data
+
+      # Socket::AncillaryData.new(family, cmsg_level, cmsg_type, cmsg_data)
+      def initialize(family, cmsg_level, cmsg_type, cmsg_data)
+        @family = AncillaryData.__family(family)
+        @level = AncillaryData.__level(@family, cmsg_level)
+        @type = AncillaryData.__type(@family, @level, cmsg_type)
+        @data = String.new(cmsg_data.to_str)
+      end
+
+      # Socket::AncillaryData.int(family, cmsg_level, cmsg_type, integer) => ancillarydata
+      def self.int(family, cmsg_level, cmsg_type, integer)
+        new(family, cmsg_level, cmsg_type, [Integer(integer)].pack('I'))
+      end
+
+      # Returns the cmsg data as an int.
+      def int
+        if @data.bytesize != 4
+          raise TypeError, "size differ.  expected as sizeof(int)=4 but #{@data.bytesize}"
+        end
+        @data.unpack1('i')
+      end
+
+      # Socket::AncillaryData.unix_rights(io1, io2, ...) => ancillarydata
+      def self.unix_rights(*ios)
+        ios = ios.map do |io|
+          raise TypeError, "IO expected" unless io.respond_to?(:to_io)
+          io.to_io
+        end
+        anc = new(:UNIX, :SOCKET, :RIGHTS, ios.map(&:fileno).pack('i*'))
+        anc.instance_variable_set(:@unix_rights, ios)
+        anc
+      end
+
+      # The IO objects sent by unix_rights, or received by recvmsg with
+      # scm_rights: true; nil otherwise.
+      def unix_rights
+        if @level != Socket::SOL_SOCKET || @type != Socket::SCM_RIGHTS
+          raise TypeError, "SCM_RIGHTS ancillary data expected"
+        end
+        @unix_rights
+      end
+
+      # Socket::AncillaryData.ip_pktinfo(addr, ifindex [, spec_dst]) => ancdata
+      def self.ip_pktinfo(addr, ifindex, spec_dst = addr)
+        new(:INET, :IP, :PKTINFO,
+            [Integer(ifindex)].pack('i') + __in_addr(spec_dst, 4) + __in_addr(addr, 4))
+      end
+
+      # Returns [addr, ifindex, spec_dst] from an IP_PKTINFO message.
+      def ip_pktinfo
+        if @level != Socket::IPPROTO_IP || @type != Socket::IP_PKTINFO || @data.bytesize != 12
+          raise TypeError, "IP_PKTINFO ancillary data expected"
+        end
+        ifindex = @data.byteslice(0, 4).unpack1('i')
+        [AncillaryData.__addrinfo(@data.byteslice(8, 4)), ifindex, AncillaryData.__addrinfo(@data.byteslice(4, 4))]
+      end
+
+      # Socket::AncillaryData.ipv6_pktinfo(addr, ifindex) => ancdata
+      def self.ipv6_pktinfo(addr, ifindex)
+        new(:INET6, :IPV6, :PKTINFO, __in_addr(addr, 16) + [Integer(ifindex)].pack('I'))
+      end
+
+      # Returns [addr, ifindex] from an IPV6_PKTINFO message.
+      def ipv6_pktinfo
+        if @level != Socket::IPPROTO_IPV6 || @type != Socket::IPV6_PKTINFO || @data.bytesize != 20
+          raise TypeError, "IPV6_PKTINFO ancillary data expected"
+        end
+        [AncillaryData.__addrinfo(@data.byteslice(0, 16)), @data.byteslice(16, 4).unpack1('I')]
+      end
+
+      def ipv6_pktinfo_addr
+        ipv6_pktinfo[0]
+      end
+
+      def ipv6_pktinfo_ifindex
+        ipv6_pktinfo[1]
+      end
+
+      # Returns the time of an SCM_TIMESTAMP (timeval) or SCM_TIMESTAMPNS
+      # (timespec) message.
+      def timestamp
+        if @level == Socket::SOL_SOCKET && @data.bytesize == 16
+          sec, frac = @data.unpack('q!q!')
+          return Time.at(sec, frac, :usec) if @type == Socket::SCM_TIMESTAMP
+          return Time.at(sec, frac, :nsec) if @type == Socket::SCM_TIMESTAMPNS
+        end
+        raise TypeError, "timestamp ancillary data expected"
+      end
+
+      # tests the level and type of ancillarydata.
+      def cmsg_is?(level, type)
+        level = AncillaryData.__level(@family, level)
+        type = AncillaryData.__type(@family, level, type) # resolved (and validated) first, as MRI
+        @level == level && @type == type
+      end
+
+      def inspect
+        family = AncillaryData.__name(@family, 'AF_') || "family:#{@family}"
+        known = [Socket::AF_INET, Socket::AF_INET6, Socket::AF_UNIX].include?(@family)
+        level_name = known && (@level == Socket::SOL_SOCKET ? 'SOCKET' : (@family != Socket::AF_UNIX && AncillaryData.__name(@level, 'IPPROTO_')))
+        prefix = known && AncillaryData.__type_prefix(@family, @level)
+        type_name = prefix && AncillaryData.__name(@type, prefix)
+
+        s = +"#<#{self.class}: #{family} "
+        s << (level_name ? "#{level_name} " : "cmsg_level:#{@level} ")
+        s << (type_name || "cmsg_type:#{@type}")
+        s << ' ' << (__inspect_data(type_name && prefix + type_name) || @data.inspect)
+        s << '>'
+      end
+
+      private def __inspect_data(name)
+        case name
+        when 'SCM_RIGHTS'
+          @data.bytesize % 4 == 0 ? @data.unpack('i*').join(' ') : nil
+        when 'SCM_TIMESTAMP', 'SCM_TIMESTAMPNS'
+          timestamp.strftime('%Y-%m-%d %H:%M:%S.%6N') rescue nil
+        when 'IP_PKTINFO'
+          addr, ifindex, dst = ip_pktinfo rescue (return nil)
+          "#{addr.ip_address} ifindex:#{ifindex} spec_dst:#{dst.ip_address}"
+        when 'IPV6_PKTINFO'
+          addr, ifindex = ipv6_pktinfo rescue (return nil)
+          "#{addr.ip_address} ifindex:#{ifindex}"
+        end
+      end
+
+      # -- name resolution, as MRI's rsock_family_arg / rsock_level_arg /
+      #    rsock_cmsg_type_arg (constant names, with or without prefix) --
+
+      def self.__family(arg)
+        name = __arg_name(arg)
+        return __int(arg) unless name
+        __const(name.start_with?('AF_', 'PF_') ? name : "AF_#{name}") ||
+          __const("AF_#{name.delete_prefix('PF_')}") ||
+          raise(SocketError, "unknown socket domain: #{name}")
+      end
+
+      def self.__level(family, arg)
+        name = __arg_name(arg)
+        return __int(arg) unless name
+        if name == 'SOCKET' || name == 'SOL_SOCKET'
+          Socket::SOL_SOCKET
+        elsif family == Socket::AF_INET || family == Socket::AF_INET6
+          __const(name.start_with?('IPPROTO_') ? name : "IPPROTO_#{name}") ||
+            raise(SocketError, "unknown protocol level: #{name}")
+        else
+          raise SocketError, "unknown protocol level: #{name}"
+        end
+      end
+
+      def self.__type(family, level, arg)
+        name = __arg_name(arg)
+        return __int(arg) unless name
+        prefix = __type_prefix(family, level)
+        return __int(arg) unless prefix # no names at this level: Integer only (TypeError)
+        __const(name.start_with?(prefix) ? name : "#{prefix}#{name}") ||
+          raise(SocketError, "unknown #{__type_kind(prefix)} control message: #{name}")
+      end
+
+      def self.__type_prefix(family, level)
+        return 'SCM_' if level == Socket::SOL_SOCKET
+        return nil unless family == Socket::AF_INET || family == Socket::AF_INET6
+        case level
+        when Socket::IPPROTO_IP then 'IP_'
+        when Socket::IPPROTO_IPV6 then 'IPV6_'
+        when Socket::IPPROTO_TCP then 'TCP_'
+        when Socket::IPPROTO_UDP then 'UDP_'
+        end
+      end
+
+      def self.__type_kind(prefix)
+        { 'SCM_' => 'UNIX', 'IP_' => 'IP', 'IPV6_' => 'IPv6', 'TCP_' => 'TCP', 'UDP_' => 'UDP' }[prefix]
+      end
+
+      # NUM2INT: Integer or #to_int, never a parsed String
+      def self.__int(arg)
+        return arg if arg.is_a?(Integer)
+        return arg.to_int if !arg.is_a?(String) && arg.respond_to?(:to_int)
+        raise TypeError, "no implicit conversion of #{arg.nil? ? 'nil' : arg.class} into Integer"
+      end
+
+      def self.__arg_name(arg)
+        case arg
+        when Symbol then arg.to_s
+        when String then arg
+        when Integer then nil
+        else arg.respond_to?(:to_str) ? arg.to_str : nil
+        end
+      end
+
+      def self.__const(name)
+        Socket::Constants.const_defined?(name, false) ? Socket::Constants.const_get(name, false) : nil
+      end
+
+      # The name (minus prefix) of the Socket constant with this prefix and value.
+      def self.__name(value, prefix)
+        name = Socket::Constants.constants.find do |c|
+          c.start_with?(prefix) && Socket::Constants.const_get(c) == value
+        end
+        name && name.to_s.delete_prefix(prefix)
+      end
+
+      # in_addr / in6_addr bytes of an Addrinfo or address String
+      def self.__in_addr(addr, size)
+        ip = addr.is_a?(Addrinfo) ? addr.ip_address : addr.to_str
+        bytes = Addrinfo.ip(ip).to_sockaddr
+        size == 4 ? bytes.byteslice(4, 4) : bytes.byteslice(8, 16)
+      end
+
+      # Addrinfo (no port) for raw in_addr / in6_addr bytes
+      def self.__addrinfo(bytes)
+        return Addrinfo.ip(bytes.unpack('C4').join('.')) if bytes.bytesize == 4
+        sockaddr = Socket.sockaddr_in(0, '::').b
+        sockaddr[8, 16] = bytes
+        Addrinfo.ip(Addrinfo.new(sockaddr).ip_address)
+      end
+    end
+  end
+
 end
 
 class UDPSocket < IPSocket

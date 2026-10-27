@@ -1472,8 +1472,8 @@ public class RubyKernel {
             binding.setLine(0);
         }
 
-        // set method to current frame's, which should be caller's
-        String frameName = context.getCompositeName();
+        // set method to current frame's label, which should be caller's (MRI labels the eval frame alike)
+        String frameName = context.getCurrentFrameLabel();
         if (frameName != null) binding.setMethod(frameName);
 
         if (bindingGiven) recv = binding.getSelf();

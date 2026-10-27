@@ -184,8 +184,10 @@ public class RubyFileTest {
 
         // Try posix first
         if (!Platform.IS_WINDOWS && context.runtime.getPosix().isNative()) {
-            FileStat stat1 = file1.stat();
-            FileStat stat2 = file2.stat();
+            FileStat stat1 = ioStat(context, filename1);
+            if (stat1 == null) stat1 = file1.stat();
+            FileStat stat2 = ioStat(context, filename2);
+            if (stat2 == null) stat2 = file2.stat();
 
             return asBoolean(context, stat1 != null && stat2 != null && stat1.isIdentical(stat2));
         }
@@ -202,6 +204,16 @@ public class RubyFileTest {
         }
 
         return context.fals;
+    }
+
+    // An IO argument is statted through its open fd, as MRI's rb_stat does: a pipe or a
+    // socket has no path, so looking one up never matched (File.identical?(r, r) was false)
+    private static FileStat ioStat(ThreadContext context, IRubyObject arg) {
+        if (!(arg instanceof RubyIO io) || io.isClosed()) return null;
+        int fd = io.getOpenFileChecked().fd().realFileno;
+        if (fd < 0) return null;
+        FileStat stat = context.runtime.getPosix().fstat(fd);
+        return stat == null || stat.ino() == 0 && stat.dev() == 0 ? null : stat;
     }
 
     @JRubyMethod(name = "owned?", module = true)

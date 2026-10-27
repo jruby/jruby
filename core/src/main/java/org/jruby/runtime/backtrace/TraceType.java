@@ -692,6 +692,8 @@ public class TraceType {
 
             // method name
             String methodName = runtime == null ? frame.getMethodName() : runtime.newSymbol(frame.getMethodName()).idString();
+            // same block label whether the frame was interpreted or compiled
+            if (frame.getFrameType() == FrameType.BLOCK) methodName = RubyStackTraceElement.blockPrefix(methodName) + methodName;
             for (int j = 0; j < longestMethod - methodName.length(); j++) {
                 buffer.append(' ');
             }

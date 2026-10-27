@@ -365,6 +365,10 @@ public class Helpers {
                     return Errno.EACCES;
                 case "Protocol family not supported":
                     return Errno.EPFNOSUPPORT;
+                case "Destination address required":
+                    return Errno.EDESTADDRREQ;
+                case "Transport endpoint is not connected":
+                    return Errno.ENOTCONN;
             }
 
             // Raised on Windows for process launch with missing file
@@ -2125,6 +2129,7 @@ public class Helpers {
         var singletonClass = containingClass.singletonClass(context);
         singletonMethod.setImplementationClass(singletonClass);
         singletonMethod.setVisibility(Visibility.PUBLIC);
+        org.jruby.ir.runtime.IRRuntimeHelpers.moduleFunctionBacktraceLabel(context, singletonMethod, containingClass, sym.idString());
         singletonClass.addMethod(context, sym.idString(), singletonMethod);
         containingClass.callMethod(context, "singleton_method_added", sym);
     }

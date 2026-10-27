@@ -3,6 +3,7 @@ package org.jruby.util.io;
 import jnr.constants.platform.AddressFamily;
 import jnr.netdb.Service;
 import jnr.unixsocket.UnixSocketAddress;
+import org.jruby.platform.Platform;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyNumeric;
@@ -20,6 +21,7 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -129,7 +131,7 @@ public class Sockaddr {
             try {
                 portNum = Integer.parseInt(portString);
             } catch (NumberFormatException e) {
-                Service service = Service.getServiceByName(portString, "tcp"); // FIXME: is tcp safe here?
+                Service service = org.jruby.ext.socket.SocketUtils.serviceByName(portString, "tcp");
                 if (service == null) throw sockerr(context, "getaddrinfo: Servname not supported for ai_socktype");
                 portNum = service.getPort();
             }
@@ -137,7 +139,14 @@ public class Sockaddr {
             portNum = toInt(context, port);
         }
 
-        final String hostStr = host.isNil() ? null : host.convertToString().toString();
+        final String hostStr;
+        if (host instanceof org.jruby.RubyInteger addr) {
+            // an in_addr_t, e.g. Socket::INADDR_ANY (MRI accepts an Integer host)
+            long a = addr.getLongValue() & 0xffffffffL;
+            hostStr = (a >> 24) + "." + ((a >> 16) & 0xff) + "." + ((a >> 8) & 0xff) + "." + (a & 0xff);
+        } else {
+            hostStr = host.isNil() ? null : host.convertToString().toString();
+        }
         return pack_sockaddr_in(context, portNum, hostStr);
     }
 
@@ -149,29 +158,14 @@ public class Sockaddr {
 
             try {
                 if ( host != null && host.length() == 0 ) {
-                    writeSockaddrHeader(AddressFamily.AF_INET, ds);
-                    writeSockaddrPort(ds, port);
-                    ds.writeInt(0);
+                    writeInet(ds, null, port);
                 } else {
-                    InetAddress[] addrs = InetAddress.getAllByName(host);
-                    byte[] addr = addrs[0].getAddress();
-
-                    if (addr.length == 4) {
-                        writeSockaddrHeader(AddressFamily.AF_INET, ds);
-                    } else {
-                        writeSockaddrHeader(AddressFamily.AF_INET6, ds);
-                    }
-
-                    writeSockaddrPort(ds, port);
-
-                    ds.write(addr, 0, addr.length);
+                    writeInet(ds, InetAddress.getAllByName(host)[0], port);
                 }
             }
             catch (UnknownHostException e) {
                 throw sockerr(context, "getaddrinfo: No address associated with nodename");
             }
-
-            writeSockaddrFooter(ds);
         }
         catch (IOException e) {
             throw sockerr(context, "pack_sockaddr_in: internal error");
@@ -187,26 +181,7 @@ public class Sockaddr {
             DataOutputStream ds = new DataOutputStream(bufS);
 
             InetAddress inet = sock.getAddress();
-            if (inet instanceof Inet4Address) {
-                writeSockaddrHeader(AddressFamily.AF_INET, ds);
-            } else {
-                writeSockaddrHeader(AddressFamily.AF_INET6, ds);
-            }
-            writeSockaddrPort(ds, sock);
-
-            String host = sock.getAddress().getHostAddress();
-
-            if ("".equals(host)) {
-                ds.writeInt(0);
-
-            } else {
-                byte[] addr = sock.getAddress().getAddress();
-                ds.write(addr, 0, addr.length);
-
-            }
-
-            writeSockaddrFooter(ds);
-
+            writeInet(ds, inet == null || "".equals(inet.getHostAddress()) ? null : inet, sock.getPort());
         } catch (IOException e) {
             throw sockerr(context, "pack_sockaddr_in: internal error");
 
@@ -249,8 +224,10 @@ public class Sockaddr {
                       .append(val.get(7) & 0xff);
             ip = newString(context, formatAddr.toString());
         } else {                                    // if af == AddressFamily.AF_INET6
-            for (int i = 4; i <= 19; i++) {
-                if (i != 4 && i % 2 == 0) formatAddr.append(':');
+            if (val.length() < SOCKADDR_IN6_SIZE) throw argumentError(context, "too short sockaddr");
+            // sin6_family, sin6_port, sin6_flowinfo (4), then sin6_addr
+            for (int i = 8; i <= 23; i++) {
+                if (i != 8 && i % 2 == 0) formatAddr.append(':');
                 formatAddr.append(Integer.toHexString(val.get(i) & 0xff | 0x100).substring(1));
             }
             ip = newString(context, SocketUtilsIPV6.getIPV6Address(formatAddr.toString()));
@@ -268,11 +245,7 @@ public class Sockaddr {
             throw argumentError(context, String.format(errorMsg, path.length, SOCKADDR_UN_PATH));
         }
 
-        int afamily = AddressFamily.AF_UNIX.intValue();
-        int high = (afamily & 0xff00) >> 8;
-        int low = afamily & 0xff;
-        buf.put((byte)high);
-        buf.put((byte)low);
+        buf.put(familyHeader(AddressFamily.AF_UNIX, SOCKADDR_UN_SIZE));
         buf.put(path);
 
         return newString(context, new ByteList(buf.array()));
@@ -296,13 +269,48 @@ public class Sockaddr {
         return pathFromSockaddr_un(context, val.bytes());
     }
 
-    public static void writeSockaddrHeader(AddressFamily family, DataOutputStream ds) throws IOException {
-        int value = family.intValue();
-        int high = (value & 0xff00) >> 8;
-        int low = value & 0xff;
+    // WHY: a packed sockaddr String is the platform's real struct sockaddr,
+    // as MRI's is -- it is handed to and from C (sendmsg/recvmsg, FFI,
+    // anything comparing bytes with MRI). sa_family is a native-order u16 on
+    // Linux/Windows; on BSD/macOS it is one sa_len byte then a u8 family.
+    // JRuby used to write a big-endian u16 family everywhere, and put the
+    // IPv6 address where sin6_flowinfo belongs.
+    private static final boolean BSD_SOCKADDR = Platform.IS_BSD;
+    private static final int SOCKADDR_IN_SIZE = 16, SOCKADDR_IN6_SIZE = 28;
 
-        ds.write((byte)high);
-        ds.write((byte)low);
+    private static byte[] familyHeader(AddressFamily family, int structSize) {
+        int value = family.intValue();
+        if (BSD_SOCKADDR) return new byte[] { (byte) structSize, (byte) value };
+        return ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN ?
+                new byte[] { (byte) value, (byte) (value >> 8) } : new byte[] { (byte) (value >> 8), (byte) value };
+    }
+
+    private static int familyOf(byte b0, byte b1) {
+        if (BSD_SOCKADDR) return b1 & 0xff;
+        return ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN ? ((b1 & 0xff) << 8) | (b0 & 0xff) : uint16(b0, b1);
+    }
+
+    /** struct sockaddr_in / sockaddr_in6 for inet (null: IPv4 INADDR_ANY). */
+    private static void writeInet(DataOutputStream ds, InetAddress inet, int port) throws IOException {
+        if (inet instanceof Inet6Address inet6) {
+            ds.write(familyHeader(AddressFamily.AF_INET6, SOCKADDR_IN6_SIZE));
+            writeSockaddrPort(ds, port);
+            ds.writeInt(0);                                         // sin6_flowinfo
+            ds.write(inet6.getAddress());                           // sin6_addr
+            int scope = inet6.getScopeId();                         // sin6_scope_id, host order
+            ds.write(ByteBuffer.allocate(4).order(ByteOrder.nativeOrder()).putInt(scope).array());
+        } else {
+            ds.write(familyHeader(AddressFamily.AF_INET, SOCKADDR_IN_SIZE));
+            writeSockaddrPort(ds, port);
+            ds.write(inet == null ? new byte[4] : inet.getAddress()); // sin_addr
+            ds.writeLong(0);                                        // sin_zero
+        }
+    }
+
+    public static void writeSockaddrHeader(AddressFamily family, DataOutputStream ds) throws IOException {
+        int size = family == AddressFamily.AF_INET6 ? SOCKADDR_IN6_SIZE :
+                family == AddressFamily.AF_UNIX ? SOCKADDR_UN_SIZE : SOCKADDR_IN_SIZE;
+        ds.write(familyHeader(family, size));
     }
 
     public static void writeSockaddrFooter(DataOutputStream ds) throws IOException {
@@ -322,7 +330,7 @@ public class Sockaddr {
     public static AddressFamily getAddressFamilyFromSockaddr(ThreadContext context, ByteList val) {
         if (val.length() < 2) throw argumentError(context, "too short sockaddr");
 
-        return AddressFamily.valueOf(uint16((byte) val.get(0), (byte) val.get(1)));
+        return AddressFamily.valueOf(familyOf((byte) val.get(0), (byte) val.get(1)));
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -340,7 +348,8 @@ public class Sockaddr {
     }
 
     public static SocketAddress sockaddrFromBytes(ThreadContext context, byte[] val) throws IOException {
-        AddressFamily afamily = AddressFamily.valueOf(uint16(val[0], val[1]));
+        if (val.length < 2) throw argumentError(context, "too short sockaddr");
+        AddressFamily afamily = AddressFamily.valueOf(familyOf(val[0], val[1]));
 
         if (afamily == null || afamily == AddressFamily.__UNKNOWN_CONSTANT__) {
             throw argumentError(context, "can't resolve socket address of wrong type");
@@ -353,12 +362,14 @@ public class Sockaddr {
                 Inet4Address inet4Address = (Inet4Address)InetAddress.getByAddress(Helpers.subseq(val, 4, 4));
                 return new InetSocketAddress(inet4Address, port);
             case AF_INET6:
+                if (val.length < SOCKADDR_IN6_SIZE) throw argumentError(context, "too short sockaddr");
                 port = uint16(val[2], val[3]);
-                Inet6Address inet6Address = (Inet6Address)InetAddress.getByAddress(Helpers.subseq(val, 4, 16));
+                int scope = ByteBuffer.wrap(val, 24, 4).order(ByteOrder.nativeOrder()).getInt();
+                Inet6Address inet6Address = Inet6Address.getByAddress(null, Helpers.subseq(val, 8, 16), scope);
                 return new InetSocketAddress(inet6Address, port);
             case AF_UNIX:
-                String path = new String(val, 2, val.length - 2);
-                return new UnixSocketAddress(new File(path));
+                // sun_path is NUL-terminated within the fixed-size struct
+                return new UnixSocketAddress(new File(pathFromSockaddr_un(context, val).toString()));
             default:
                 throw argumentError(context, "can't resolve socket address of wrong type");
         }

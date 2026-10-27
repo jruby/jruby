@@ -135,7 +135,7 @@ public class MixedModeIRBlockBody extends IRBlockBody implements Compilable<Comp
         self = IRRuntimeHelpers.updateBlockState(block, self);
 
         try {
-            return Interpreter.INTERPRET_BLOCK(context, block, self, ic, args, binding.getMethod(), blockArg);
+            return Interpreter.INTERPRET_BLOCK(context, block, self, ic, args, backtraceName(binding.getMethod()), blockArg);
         }
         finally {
             postYield(context, ic, binding, oldVis, prevFrame);

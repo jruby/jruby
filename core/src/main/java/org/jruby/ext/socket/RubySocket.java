@@ -45,10 +45,11 @@ import jnr.constants.platform.TCP;
 import jnr.constants.platform.InterfaceInfo;
 import jnr.netdb.Protocol;
 import jnr.unixsocket.UnixSocketAddress;
-import jnr.unixsocket.UnixSocketChannel;
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
+import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyClass;
@@ -58,16 +59,20 @@ import org.jruby.api.Convert;
 import org.jruby.api.Create;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.platform.Platform;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.ChannelFD;
+import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.Sockaddr;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
@@ -83,13 +88,17 @@ import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.nio.channels.NetworkChannel;
+import java.nio.channels.ServerSocketChannel;
 import java.util.Enumeration;
 import java.util.regex.Pattern;
 
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.typeError;
 
 @JRubyClass(name="Socket", parent="BasicSocket", include="Socket::Constants")
 public class RubySocket extends RubyBasicSocket {
@@ -110,6 +119,7 @@ public class RubySocket extends RubyBasicSocket {
                 defineConstantsFrom(context, IPProto.class).
                 defineConstantsFrom(context, Shutdown.class).
                 defineConstantsFrom(context, TCP.class).
+                defineConstantsFrom(context, jnr.constants.platform.UDP.class).
                 defineConstantsFrom(context, IP.class).
                 defineConstantsFrom(context, InterfaceInfo.class).
                 defineConstantsFrom(context, NameInfo.class).
@@ -118,7 +128,7 @@ public class RubySocket extends RubyBasicSocket {
         // this value seems to be hardcoded in MRI to 5 when not defined, but
         // it is 128 on OS X. We use 128 for now until we can get it added to
         // jnr-constants.
-        SocketConstants.defineConstant(context, "SOMAXCONN", asFixnum(context, 128)).
+        SocketConstants.defineConstant(context, "SOMAXCONN", asFixnum(context, Platform.IS_LINUX ? 4096 : 128)). // Linux <sys/socket.h> since 5.4
                 defineConstant(context, "IPPORT_RESERVED", asFixnum(context, 1024)).
                 defineConstant(context, "IPPORT_USERRESERVED", asFixnum(context, 5000)).
                 defineConstant(context, "AI_PASSIVE", asFixnum(context, AddressInfo.AI_PASSIVE.longValue())).
@@ -131,6 +141,93 @@ public class RubySocket extends RubyBasicSocket {
                 defineConstant(context, "AI_NUMERICSERV", asFixnum(context, AddressInfo.AI_NUMERICSERV.longValue())).
                 defineConstant(context, "AI_DEFAULT", asFixnum(context, AddressInfo.AI_DEFAULT.longValue())).
                 defineConstant(context, "AI_MASK", asFixnum(context, AddressInfo.AI_MASK.longValue()));
+
+        if (Platform.IS_LINUX) {
+            // Linux values (glibc headers) MRI defines that jnr-constants has no
+            // table for -- notably the IPV6_* sockopt names and SCM_RIGHTS.
+            Object[] linux = {
+                "AF_PACKET", 17,
+                "EAI_ADDRFAMILY", -9,
+                "EAI_AGAIN", -3,
+                "EAI_BADFLAGS", -1,
+                "EAI_FAIL", -4,
+                "EAI_FAMILY", -6,
+                "EAI_MEMORY", -10,
+                "EAI_NODATA", -5,
+                "EAI_NONAME", -2,
+                "EAI_OVERFLOW", -12,
+                "EAI_SERVICE", -8,
+                "EAI_SOCKTYPE", -7,
+                "EAI_SYSTEM", -11,
+                "IF_NAMESIZE", 16,
+                "IFNAMSIZ", 16,
+                "INET6_ADDRSTRLEN", 46,
+                "INET_ADDRSTRLEN", 16,
+                "IPV6_CHECKSUM", 7,
+                "IPV6_DONTFRAG", 62,
+                "IPV6_DSTOPTS", 59,
+                "IPV6_HOPLIMIT", 52,
+                "IPV6_HOPOPTS", 54,
+                "IPV6_JOIN_GROUP", 20,
+                "IPV6_LEAVE_GROUP", 21,
+                "IPV6_MTU_DISCOVER", 23,
+                "IPV6_MULTICAST_HOPS", 18,
+                "IPV6_MULTICAST_IF", 17,
+                "IPV6_MULTICAST_LOOP", 19,
+                "IPV6_NEXTHOP", 9,
+                "IPV6_PATHMTU", 61,
+                "IPV6_PKTINFO", 50,
+                "IPV6_RECVDSTOPTS", 58,
+                "IPV6_RECVERR", 25,
+                "IPV6_RECVHOPLIMIT", 51,
+                "IPV6_RECVHOPOPTS", 53,
+                "IPV6_RECVPATHMTU", 60,
+                "IPV6_RECVPKTINFO", 49,
+                "IPV6_RECVRTHDR", 56,
+                "IPV6_RECVTCLASS", 66,
+                "IPV6_RTHDR", 57,
+                "IPV6_RTHDRDSTOPTS", 55,
+                "IPV6_RTHDR_TYPE_0", 0,
+                "IPV6_TCLASS", 67,
+                "IPV6_UNICAST_HOPS", 16,
+                "IPV6_V6ONLY", 26,
+                "MCAST_BLOCK_SOURCE", 43,
+                "MCAST_EXCLUDE", 0,
+                "MCAST_INCLUDE", 1,
+                "MCAST_JOIN_GROUP", 42,
+                "MCAST_JOIN_SOURCE_GROUP", 46,
+                "MCAST_LEAVE_GROUP", 45,
+                "MCAST_LEAVE_SOURCE_GROUP", 47,
+                "MCAST_MSFILTER", 48,
+                "MCAST_UNBLOCK_SOURCE", 44,
+                "PF_AX25", 3,
+                "PF_PACKET", 17,
+                "SCM_CREDENTIALS", 2,
+                "SCM_RIGHTS", 1,
+                "SCM_TIMESTAMP", 29,
+                "SCM_TIMESTAMPING", 37,
+                "SCM_TIMESTAMPNS", 35,
+                "SCM_WIFI_STATUS", 41,
+                "SOCK_PACKET", 10,
+                "SO_INCOMING_CPU", 49,
+                "SO_INCOMING_NAPI_ID", 56
+            };
+            for (int i = 0; i < linux.length; i += 2) {
+                String name = (String) linux[i];
+                if (SocketConstants.hasConstant(name)) continue;
+                // option names only where native setsockopt can set them: callers test
+                // defined?(Socket::IPV6_V6ONLY), and java.nio has no such option
+                if (!UnixDomainNative.hasSockopt() && (name.startsWith("IPV6_") || name.startsWith("MCAST_") || name.startsWith("SO_"))) continue;
+                SocketConstants.defineConstant(context, name, asFixnum(context, (Integer) linux[i + 1]));
+            }
+        }
+
+        // in_addr_t is unsigned: MRI's INADDR_BROADCAST is 4294967295, not -1
+        for (INAddr addr : INAddr.values()) {
+            if (addr.defined() && addr.intValue() < 0) {
+                SocketConstants.storeConstant(context, addr.name(), asFixnum(context, addr.longValue() & 0xffffffffL));
+            }
+        }
 
         Socket.include(context, SocketConstants);
 
@@ -205,6 +302,7 @@ public class RubySocket extends RubyBasicSocket {
 
     @JRubyMethod
     public IRubyObject recvfrom(ThreadContext context, IRubyObject _length) {
+        if (hasNativeMsg()) return recvfromNative(context, _length, null, null, false, true);
         return RubyUDPSocket.recvfrom(this, context, _length);
     }
 
@@ -213,7 +311,7 @@ public class RubySocket extends RubyBasicSocket {
      */
     @JRubyMethod
     public IRubyObject recvfrom(ThreadContext context, IRubyObject _length, IRubyObject _flags) {
-        // TODO: handle flags
+        if (hasNativeMsg()) return recvfromNative(context, _length, _flags, null, false, true);
         return recvfrom(context, _length);
     }
 
@@ -224,22 +322,129 @@ public class RubySocket extends RubyBasicSocket {
         if (getOpenFile() == null) {
             throw context.runtime.newErrnoENOTCONNError("socket is not connected");
         }
+
+        if (hasNativeMsg()) {
+            // recvfrom_nonblock(maxlen, flags = 0, outbuf = nil, exception: true)
+            IRubyObject opts = ArgsUtil.getOptionsArg(context.runtime, args);
+            int argc = args.length;
+            boolean exception = true;
+            if (!opts.isNil()) {
+                argc--;
+                exception = extractExceptionArg(context, opts);
+            }
+            return recvfromNative(context, args[0], argc > 1 ? args[1] : null, argc > 2 ? args[2] : null, true, exception);
+        }
         return RubyUDPSocket.recvfrom_nonblock(this, context, args);
     }
 
-    @JRubyMethod(notImplemented = true)
+    // WHY: Socket#listen/#accept were "use ServerSocket for servers". A
+    // java.nio SocketChannel can't become a listening socket, so listen()
+    // swaps this socket's channel for a ServerSocketChannel of the same family
+    // bound to the same address (copying the options the two share), and
+    // accept() takes connections from it as ordinary SocketChannels -- so an
+    // accepted Socket supports everything a connected one does. The fd number
+    // changes at listen() (a new socket(2)); everything else matches MRI.
+    @JRubyMethod
     public IRubyObject listen(ThreadContext context, IRubyObject backlog) {
-        throw SocketUtils.sockerr(context.runtime, JRUBY_SERVER_SOCKET_ERROR);
+        int log = toInt(context, backlog);
+        Channel channel = getChannel();
+
+        if (channel instanceof ServerSocketChannel) return RubyFixnum.zero(context.runtime); // already listening
+        if (!(channel instanceof SocketChannel client) || soType != Sock.SOCK_STREAM) {
+            throw context.runtime.newErrnoEOPNOTSUPPError("listen(2)");
+        }
+
+        try {
+            SocketAddress local = client.getLocalAddress();
+            if (local == null) local = unboundInetAddress();             // MRI: listen(2) binds an ephemeral port
+            if (local == null) throw context.runtime.newErrnoEINVALError("listen(2)");
+
+            boolean unix = local instanceof java.net.UnixDomainSocketAddress;
+            java.net.ProtocolFamily family = unix ? java.net.StandardProtocolFamily.UNIX : javaFamily();
+            ServerSocketChannel server = family == null ? ServerSocketChannel.open() : ServerSocketChannel.open(family);
+            for (java.net.SocketOption<?> option : client.supportedOptions()) {
+                if (server.supportedOptions().contains(option)) copyOption(client, server, option);
+            }
+
+            OpenFile fptr = getOpenFileChecked();
+            ChannelFD oldFd = fptr.fd();
+            oldFd.close();                                                // releases the address
+            if (unix) java.nio.file.Files.deleteIfExists(((java.net.UnixDomainSocketAddress) local).getPath());
+            server.bind(local, log);
+            fptr.setFD(newChannelFD(context.runtime, server));
+            return RubyFixnum.zero(context.runtime);
+        } catch (IOException e) {
+            throw sockerr(context.runtime, "listen(2): " + e.getMessage(), e);
+        }
     }
 
-    @JRubyMethod(notImplemented = true)
+    @SuppressWarnings("unchecked")
+    private static <T> void copyOption(NetworkChannel from, NetworkChannel to, java.net.SocketOption<T> option) {
+        try {
+            to.setOption(option, from.getOption(option));
+        } catch (IOException | RuntimeException ignored) {
+            // an option the listening socket can't take is simply not carried over
+        }
+    }
+
+    /** Socket#accept => [socket, client_addrinfo] */
+    @JRubyMethod
     public IRubyObject accept(ThreadContext context) {
-        throw SocketUtils.sockerr(context.runtime, JRUBY_SERVER_SOCKET_ERROR);
+        RubySocket socket = doAccept(context, false, true);
+        return newArray(context, socket, socket.remote_address(context));
     }
 
-    @JRubyMethod(notImplemented = true, optional = 1, checkArity = false)
+    /** Socket#accept_nonblock([exception: true]) => [socket, client_addrinfo] */
+    @JRubyMethod(optional = 1, checkArity = false)
     public IRubyObject accept_nonblock(ThreadContext context, IRubyObject[] args) {
-        throw SocketUtils.sockerr(context.runtime, JRUBY_SERVER_SOCKET_ERROR);
+        boolean exception = args.length == 0 || extractExceptionArg(context, args[0]);
+        RubySocket socket = doAccept(context, true, exception);
+        if (socket == null) return Convert.asSymbol(context, "wait_readable");
+        return newArray(context, socket, socket.remote_address(context));
+    }
+
+    /** Socket#sysaccept => [client_socket_fd, client_addrinfo] */
+    @JRubyMethod
+    public IRubyObject sysaccept(ThreadContext context) {
+        RubySocket socket = doAccept(context, false, true);
+        socket.getOpenFileChecked().setAutoclose(false); // the fd is the caller's now (Socket.for_fd)
+        return newArray(context, socket.fileno(context), socket.remote_address(context));
+    }
+
+    private RubySocket doAccept(ThreadContext context, boolean nonblock, boolean exception) {
+        if (!(getChannel() instanceof ServerSocketChannel server)) throw context.runtime.newErrnoEINVALError("accept(2)");
+
+        try {
+            SocketChannel connected;
+            while (true) {
+                synchronized (server.blockingLock()) {
+                    boolean wasBlocking = server.isBlocking();
+                    server.configureBlocking(false);
+                    try {
+                        connected = server.accept();
+                    } finally {
+                        server.configureBlocking(wasBlocking);
+                    }
+                }
+                if (connected != null) break;
+                if (nonblock) {
+                    if (!exception) return null;
+                    throw context.runtime.newErrnoEAGAINReadableError("accept(2) would block");
+                }
+                // same interruptible wait TCPServer#accept uses
+                if (!context.getThread().select(this, SelectionKey.OP_ACCEPT)) context.pollThreadEvents();
+            }
+
+            synchronized (connected.blockingLock()) {
+                connected.configureBlocking(true);
+            }
+
+            RubySocket socket = new RubySocket(context.runtime, Access.getClass(context, "Socket"));
+            socket.initFromServer(context.runtime, this, connected);
+            return socket;
+        } catch (IOException e) {
+            throw context.runtime.newIOErrorFromException(e);
+        }
     }
 
     @JRubyMethod(meta = true)
@@ -274,6 +479,12 @@ public class RubySocket extends RubyBasicSocket {
         Arity.checkArgumentCount(context, args, 1, -1);
 
         return SocketUtils.gethostbyaddr(context, args);
+    }
+
+    @JRubyMethod(required = 1, optional = 1, checkArity = false, meta = true)
+    public static IRubyObject getservbyport(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Arity.checkArgumentCount(context, args, 1, 2);
+        return SocketUtils.getservbyport(context, args);
     }
 
     @JRubyMethod(required = 1, optional = 1, checkArity = false, meta = true)
@@ -347,29 +558,24 @@ public class RubySocket extends RubyBasicSocket {
         Sock s = SocketUtils.sockFromArg(context, type);
         if (s == null) s = Sock.SOCK_STREAM;
 
-        if (af != AddressFamily.AF_UNIX || s != Sock.SOCK_STREAM) {
-            throw context.runtime.newErrnoEOPNOTSUPPError("Socket.socketpair only supports streaming UNIX sockets");
+        // socketpair(2) is AF_UNIX-only on Linux; stream and datagram pairs via
+        // FFM (UnixDomain#pair), replacing JNR's stream-only UnixSocketChannel.pair()
+        if (af != AddressFamily.AF_UNIX || (s != Sock.SOCK_STREAM && s != Sock.SOCK_DGRAM && s != Sock.SOCK_SEQPACKET)) {
+            throw context.runtime.newErrnoEOPNOTSUPPError("socketpair(2)");
         }
 
         final Ruby runtime = context.runtime;
 
-        // TODO: type and protocol
-
-        UnixSocketChannel[] sp;
         final RubyClass socketClass = Access.getClass(context, "Socket");
         RubySocket sock0 = new RubySocket(runtime, socketClass);
         RubySocket sock1 = new RubySocket(runtime, socketClass);
 
         try {
-            sp = UnixSocketChannel.pair();
-
-            ChannelFD fd0 = newChannelFD(runtime, sp[0]);
-            sock0.initFieldsFromDescriptor(runtime, fd0);
-            sock0.initSocket(fd0);
-
-            ChannelFD fd1 = newChannelFD(runtime, sp[1]);
-            sock1.initFieldsFromDescriptor(runtime, fd1);
-            sock1.initSocket(fd1);
+            Channel[] sp = UnixDomain.pair(s.intValue());
+            sock0.initUnixPairSocket(runtime, sp[0], s);
+            sock1.initUnixPairSocket(runtime, sp[1], s);
+        } catch (UnsupportedOperationException uoe) {
+            throw runtime.newErrnoEOPNOTSUPPError("socketpair(2)");
         } catch (IOException ioe) {
             throw runtime.newIOErrorFromException(ioe);
         }
@@ -377,21 +583,30 @@ public class RubySocket extends RubyBasicSocket {
         return yieldPair(context, sock0, sock1, block);
     }
 
+    private void initUnixPairSocket(Ruby runtime, Channel channel, Sock type) {
+        soDomain = AddressFamily.AF_UNIX;
+        soType = type;
+        soProtocolFamily = ProtocolFamily.PF_UNIX;
+        initSocket(newChannelFD(runtime, channel));
+    }
+
     private void initFieldsFromDescriptor(Ruby runtime, ChannelFD fd) {
         Channel mainChannel = fd.ch;
 
-        if (mainChannel instanceof SocketChannel) {
+        if (UnixDomain.isUnixChannel(mainChannel)) {
+            // JEP-380 unix SocketChannel or FFM UnixFdChannel
+            soDomain = AddressFamily.AF_UNIX;
+            soType = mainChannel instanceof UnixFdChannel ufc && ufc.sockType() == UnixDomainNative.SOCK_DGRAM ?
+                    Sock.SOCK_DGRAM : Sock.SOCK_STREAM;
+            soProtocolFamily = ProtocolFamily.PF_UNIX;
+
+        } else if (mainChannel instanceof SocketChannel) {
             // ok, it's a socket...set values accordingly
             // just using AF_INET since we can't tell from SocketChannel...
             soDomain = AddressFamily.AF_INET;
             soType = Sock.SOCK_STREAM;
             soProtocolFamily = ProtocolFamily.PF_INET;
             soProtocol = Protocol.getProtocolByName("tcp");
-
-        } else if (mainChannel instanceof UnixSocketChannel) {
-            soDomain = AddressFamily.AF_UNIX;
-            soType = Sock.SOCK_STREAM;
-            soProtocolFamily = ProtocolFamily.PF_UNIX;
 
         } else if (mainChannel instanceof DatagramChannel) {
             // datagram, set accordingly
@@ -422,6 +637,7 @@ public class RubySocket extends RubyBasicSocket {
         soDomain = serverSocket.soDomain;
         soType = serverSocket.soType;
         soProtocol = serverSocket.soProtocol;
+        soProtocolFamily = serverSocket.soProtocolFamily;
 
         initSocket(newChannelFD(runtime, socketChannel));
     }
@@ -433,19 +649,38 @@ public class RubySocket extends RubyBasicSocket {
                 case SOCK_STREAM:
                     if ( soProtocolFamily == ProtocolFamily.PF_UNIX ||
                          soProtocolFamily == ProtocolFamily.PF_LOCAL ) {
-                        channel = UnixSocketChannel.open();
+                        // JEP-380, as UNIXSocket/UNIXServer: this was the last
+                        // JNR UnixSocketChannel.open() (bind was a no-op on it)
+                        channel = SocketChannel.open(java.net.StandardProtocolFamily.UNIX);
                     }
                     else if ( soProtocolFamily == ProtocolFamily.PF_INET ||
                               soProtocolFamily == ProtocolFamily.PF_INET6 ||
                               soProtocolFamily == ProtocolFamily.PF_UNSPEC ) {
-                        channel = SocketChannel.open();
+                        java.net.ProtocolFamily family = javaFamily();
+                        channel = family == null ? SocketChannel.open() : SocketChannel.open(family);
                     }
                     else {
                         throw argumentError(runtime.getCurrentContext(), "unsupported protocol family '" + soProtocolFamily + "'");
                     }
                     break;
                 case SOCK_DGRAM:
-                    channel = DatagramChannel.open();
+                    if ( soProtocolFamily == ProtocolFamily.PF_UNIX ||
+                         soProtocolFamily == ProtocolFamily.PF_LOCAL ) {
+                        // JEP-380 has no Unix-domain DatagramChannel at all
+                        // (DatagramChannel.open(ProtocolFamily) rejects UNIX
+                        // outright) -- raw socket(2) via FFM, wrapped the
+                        // same way pair()/for_fd fds are (see
+                        // UnixDomainNative#rawSocket's doc comment).
+                        try {
+                            int fd = UnixDomainNative.rawSocket(UnixDomainNative.AF_UNIX, UnixDomainNative.SOCK_DGRAM, 0);
+                            channel = UnixDomainNative.channelFromFd(fd);
+                        } catch (UnixDomainNative.NativeException ne) {
+                            throw sockerr(runtime, "initialize: " + ne.getMessage(), ne);
+                        }
+                    } else {
+                        java.net.ProtocolFamily family = javaFamily();
+                        channel = family == null ? DatagramChannel.open() : DatagramChannel.open(family);
+                    }
                     break;
                 default:
                     throw argumentError(runtime.getCurrentContext(), "unsupported socket type '" + soType + "'");
@@ -458,7 +693,23 @@ public class RubySocket extends RubyBasicSocket {
         }
     }
 
+    /**
+     * The JDK family to open an inet channel with. A no-arg open() is a
+     * dual-stack IPv6 socket, so an AF_INET socket bound to 0.0.0.0 reported
+     * itself as [::] (AF_INET6) -- wrong local_address/connect_address. MRI's
+     * socket(AF_INET, ...) is IPv4-only, which an INET-family channel matches.
+     */
+    private java.net.ProtocolFamily javaFamily() {
+        if (soProtocolFamily == ProtocolFamily.PF_INET) return java.net.StandardProtocolFamily.INET;
+        if (soProtocolFamily == ProtocolFamily.PF_INET6) return java.net.StandardProtocolFamily.INET6;
+        return null;
+    }
+
     private void setProtocol(ThreadContext context, IRubyObject protocol) {
+        if (protocol instanceof RubySymbol || protocol instanceof RubyString) {
+            // MRI takes the protocol as an Integer only (Socket.new(:INET, :STREAM, :TCP) is a TypeError)
+            throw typeError(context, "no implicit conversion of " + protocol.getMetaClass().getRealClass().getName(context) + " into Integer");
+        }
         soProtocol = SocketUtils.protocolFromArg(context, protocol);
     }
 
@@ -518,19 +769,16 @@ public class RubySocket extends RubyBasicSocket {
                 try {
                     selectable.configureBlocking(false);
 
+                    boolean firstAttempt = true;
                     while (true) {
                         boolean result = true;
-                        if (channel instanceof UnixSocketChannel unix) {
-                            if (unix.isConnectionPending()) {
-                                // connection initiated but not finished
-                                result = unix.finishConnect();
-                            } else {
-                                result = unix.connect(addr);
-                            }
-                        } else if (channel instanceof SocketChannel) {
+                        if (channel instanceof SocketChannel) {
                             SocketChannel socket = (SocketChannel) channel;
 
                             if (socket.isConnected()) {
+                                // connected before this call: connect(2) says EISCONN (MRI);
+                                // connected by a pending connect this call finished: done
+                                if (firstAttempt) throw new AlreadyConnectedException();
                                 return true;
                             } else if (socket.isConnectionPending()) {
                                 // connection initiated but not finished
@@ -545,6 +793,7 @@ public class RubySocket extends RubyBasicSocket {
                         }
 
                         if (!blocking || result) return result;
+                        firstAttempt = false;
 
                         while (!context.getThread().select(channel, this, SelectionKey.OP_CONNECT)) {
                             context.blockingThreadPoll();
@@ -558,7 +807,7 @@ public class RubySocket extends RubyBasicSocket {
             cleanup = true;
             throw context.runtime.newErrnoECONNREFUSEDError();
         } catch (AlreadyConnectedException e) {
-            if (!ex) return false;
+            if (!ex) return true; // MRI connect_nonblock(exception: false): already connected => 0
             throw context.runtime.newErrnoEISCONNError();
         } catch (ConnectionPendingException e) {
             throw context.runtime.newErrnoEINPROGRESSWritableError();
@@ -587,12 +836,23 @@ public class RubySocket extends RubyBasicSocket {
         Channel channel = getChannel();
 
         try {
-            if (channel instanceof SocketChannel) {
-                Socket socket = ((SocketChannel) channel).socket();
-                socket.bind(iaddr);
+            if (channel instanceof SocketChannel sc) {
+                // SocketChannel#bind, not socket().bind: socket() is
+                // unsupported on a JEP-380 unix channel
+                sc.bind(jdkAddress(iaddr));
             }
-            else if (channel instanceof UnixSocketChannel) {
-                // do nothing
+            else if (channel instanceof UnixFdChannel ufc) {
+                // raw Socket.new(:UNIX, :DGRAM) fd (see initChannelFD) --
+                // iaddr here is jnr.unixsocket.UnixSocketAddress (Sockaddr's
+                // UNIX parsing predates this PR and wasn't in scope to
+                // replace), not JEP-380's UnixDomainSocketAddress.
+                String path = iaddr instanceof UnixSocketAddress usa ? usa.path() : null;
+                if (path == null) throw runtime.newErrnoENOPROTOOPTError();
+                try {
+                    UnixDomainNative.bindPath(ufc.fd(), path);
+                } catch (UnixDomainNative.NativeException ne) {
+                    throw sockerr(runtime, "bind(2): " + ne.getMessage(), ne);
+                }
             }
             else if (channel instanceof DatagramChannel) {
                 DatagramSocket socket = ((DatagramChannel) channel).socket();
@@ -601,6 +861,9 @@ public class RubySocket extends RubyBasicSocket {
             else {
                 throw runtime.newErrnoENOPROTOOPTError();
             }
+        }
+        catch (java.nio.channels.AlreadyBoundException e) {
+            throw runtime.newErrnoEINVALError("bind(2)"); // bind(2) on a bound socket
         }
         catch (UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "bind(2): unknown host");
@@ -652,13 +915,22 @@ public class RubySocket extends RubyBasicSocket {
         return str;
     }
 
+    /**
+     * Sockaddr/Addrinfo give unix addresses as JNR's UnixSocketAddress; a
+     * JEP-380 channel needs java.net.UnixDomainSocketAddress.
+     */
+    static SocketAddress jdkAddress(SocketAddress address) {
+        if (address instanceof UnixSocketAddress unix) return java.net.UnixDomainSocketAddress.of(unix.path());
+        return address;
+    }
+
     private SocketAddress addressForChannel(ThreadContext context, IRubyObject arg) {
-        if (arg instanceof Addrinfo) return ((Addrinfo) arg).getSocketAddress();
+        if (arg instanceof Addrinfo) return jdkAddress(((Addrinfo) arg).getSocketAddress());
 
         switch (soProtocolFamily) {
             case PF_UNIX:
             case PF_LOCAL:
-                return Sockaddr.addressFromSockaddr_un(context, arg);
+                return jdkAddress(Sockaddr.addressFromSockaddr_un(context, arg));
 
             case PF_INET:
             case PF_INET6:
@@ -719,6 +991,29 @@ public class RubySocket extends RubyBasicSocket {
 
         return SocketType.forChannel(channel).getLocalSocketAddress(channel);
     }
+
+    @Override
+    protected ProtocolFamily optionFamily() {
+        return soProtocolFamily != null ? soProtocolFamily : super.optionFamily();
+    }
+
+    @Override
+    protected InetSocketAddress unboundInetAddress() {
+        if (soDomain == AddressFamily.AF_INET) return UNBOUND_INET;
+        if (soDomain == AddressFamily.AF_INET6) return UNBOUND_INET6;
+        return null;
+    }
+
+    private static InetSocketAddress wildcard(int addressLength) {
+        try {
+            return new InetSocketAddress(InetAddress.getByAddress(new byte[addressLength]), 0);
+        } catch (UnknownHostException e) {
+            throw new AssertionError(e); // only thrown for an illegal address length
+        }
+    }
+
+    private static final InetSocketAddress UNBOUND_INET = wildcard(4);
+    private static final InetSocketAddress UNBOUND_INET6 = wildcard(16);
 
     private static final Pattern ALREADY_BOUND_PATTERN = Pattern.compile("[Aa]lready.*bound");
     private static final Pattern ADDR_NOT_AVAIL_PATTERN = Pattern.compile("assign.*address");
