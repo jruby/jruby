@@ -627,8 +627,23 @@ public class MarshalLoader {
         return (byte) b;
     }
 
+    /**
+     * Validate a length read from the stream before allocating storage for it.
+     *
+     * @param context the current context
+     * @param length the length read from the stream
+     * @param size the number of bytes per unit of length
+     * @return the length, if it is usable
+     */
+    @CRuby(value = "r_keep_readable", file = "marshal.c")
+    public static int keepReadable(ThreadContext context, int length, int size) {
+        if (length < 0) throw argumentError(context, "negative length");
+        if ((long) length * size >= Integer.MAX_VALUE - 8) throw argumentError(context, "marshaled data too big");
+        return length;
+    }
+
     public ByteList unmarshalString(ThreadContext context, RubyInputStream in) {
-        int length = unmarshalInt(context, in);
+        int length = keepReadable(context, unmarshalInt(context, in), 1);
         byte[] buffer = new byte[length];
 
         int readLength = 0;
