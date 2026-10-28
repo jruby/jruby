@@ -41,7 +41,6 @@ package org.jruby;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
-import java.util.Locale;
 
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.CRuby;
@@ -62,7 +61,6 @@ import org.jruby.runtime.marshal.MarshalLoader;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertDouble;
 import org.jruby.util.Numeric;
-import org.jruby.util.Sprintf;
 import org.jruby.util.io.RubyInputStream;
 import org.jruby.util.io.RubyOutputStream;
 
@@ -1046,14 +1044,67 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
         return Double.isInfinite(value) || Double.isNaN(value) ? context.fals : context.tru;
     }
 
+    /**
+     * The bytes Marshal.dump writes for this Float. They use the same shortest digits as
+     * Float#to_s, so they read back as the same value, but a more compact layout: no ".0"
+     * on whole numbers ("1"), and exponent notation as soon as it is shorter than padding
+     * with zeros ("1e2" for 100.0). The exponent has no "+" and no padding ("1e20", "1e-5").
+     * Fixed notation is kept for up to three zeros after the point ("0.0001"). Infinities
+     * and NaN have their own names, and -0.0 is "-0".
+     */
+    @CRuby(value = "w_float", file = "marshal.c")
     private ByteList marshalDump(ThreadContext context) {
         if (Double.isInfinite(value)) return value < 0 ? NEGATIVE_INFINITY_BYTELIST : INFINITY_BYTELIST;
         if (Double.isNaN(value)) return NAN_BYTELIST;
 
-        ByteList byteList = new ByteList();
-        // Always use US locale, to ensure "." separator. JRUBY-5918
-        Sprintf.sprintf(byteList, Locale.US, "%.17g", newArray(context, this));
-        return byteList;
+        byte[] bytes = new byte[FORMAT_FLOAT_CAPACITY];
+        int pos = 0;
+
+        // test the sign bit so that -0.0 dumps as "-0"
+        if (Double.doubleToRawLongBits(value) < 0) bytes[pos++] = '-';
+
+        // see shortestDigits for what digs and decpt mean, and formatFloat for how the digits
+        // are moved in place
+        long digitsAndPoint = shortestDigits(value, bytes, pos);
+        int digs = (int) digitsAndPoint;
+        int decpt = (int) (digitsAndPoint >> 32);
+
+        if (decpt < -3 || decpt > digs) {
+            // d.ddden or d.ddde-n, used for more than three zeros after the point or any
+            // zeros before it. A single digit has no point ("1e20").
+            if (digs > 1) {
+                System.arraycopy(bytes, pos + 1, bytes, pos + 2, digs - 1);
+                bytes[pos + 1] = '.';
+                pos++;
+            }
+            pos += digs;
+            bytes[pos++] = 'e';
+            int exp = decpt - 1;
+            if (exp < 0) {
+                bytes[pos++] = '-';
+                exp = -exp;
+            }
+            if (exp >= 100) bytes[pos++] = (byte) ('0' + exp / 100);
+            if (exp >= 10) bytes[pos++] = (byte) ('0' + exp / 10 % 10);
+            bytes[pos++] = (byte) ('0' + exp % 10);
+        } else if (decpt > 0) {
+            // ddd or ddd.ddd, with no ".0" on whole numbers
+            if (decpt < digs) {
+                System.arraycopy(bytes, pos + decpt, bytes, pos + decpt + 1, digs - decpt);
+                bytes[pos + decpt] = '.';
+                pos++;
+            }
+            pos += digs;
+        } else {
+            // 0.000ddd
+            System.arraycopy(bytes, pos, bytes, pos + 2 - decpt, digs);
+            bytes[pos++] = '0';
+            bytes[pos++] = '.';
+            for (int i = decpt; i < 0; i++) bytes[pos++] = '0';
+            pos += digs;
+        }
+
+        return new ByteList(bytes, 0, pos, false);
     }
 
     // Room for a sign, 17 digits and either "0.000" or ".e-324", with some slack.
