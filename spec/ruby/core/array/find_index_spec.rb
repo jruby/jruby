@@ -1,4 +1,5 @@
 require_relative '../../spec_helper'
+require_relative 'fixtures/classes'
 require_relative 'shared/iterable_and_tolerating_size_increasing'
 
 describe "Array#find_index" do
@@ -20,6 +21,31 @@ describe "Array#find_index" do
 
   it "returns nil if no element == to object" do
     [2, 1, 1, 1, 1].find_index(3).should == nil
+  end
+
+  it "compares an Integer with Float elements using Float#==" do
+    [0.5, 1.0, 2.5].find_index(1).should == 1
+    [0.5, 1.5, 2.5].find_index(1).should == nil
+  end
+
+  it "compares a Float with Integer elements using Integer#==" do
+    [0, 1, 2].find_index(1.0).should == 1
+    [0, 1, 2].find_index(1.5).should == nil
+  end
+
+  it "considers 0.0 and -0.0 equal" do
+    [1.0, 0.0, 2.0].find_index(-0.0).should == 1
+  end
+
+  it "finds a NaN element only if it is the same object" do
+    nan = Float::NAN
+    [1.0, nan, 2.0].find_index(nan).should == 1
+    [1.0, nan, 2.0].find_index(0.0 / 0.0).should == nil
+  end
+
+  it "uses a redefined Integer#==" do
+    result = ArraySpecs.with_redefined_integer_equality { [1, 2, 3, 2].find_index(42) }
+    result.should == 1
   end
 
   it "accepts a block instead of an argument" do
