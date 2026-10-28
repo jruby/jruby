@@ -1798,6 +1798,17 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return otherStr;
     }
 
+    public RubyString replace(byte[] bytes, int offset, int length, Encoding encoding, boolean shared) {
+        modifyCheck();
+        value = new ByteList(bytes, offset, length, encoding, false);
+        if (shared) {
+            shareLevel = SHARE_LEVEL_BUFFER;
+        } else {
+            shareLevel = SHARE_LEVEL_NONE;
+        }
+        return this;
+    }
+
     @Deprecated(since = "10.0.0.0")
     public RubyString clear() {
         return clear(getCurrentContext());
