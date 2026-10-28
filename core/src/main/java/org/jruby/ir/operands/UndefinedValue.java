@@ -224,6 +224,7 @@ public class UndefinedValue extends Operand implements IRubyObject {
     public Object dataGetStruct() { throw undefinedOperation(); }
 
     @Override
+    @Deprecated
     public IRubyObject id() { throw undefinedOperation(); }
 
     @Override
