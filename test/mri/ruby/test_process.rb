@@ -1911,6 +1911,32 @@ class TestProcess < Test::Unit::TestCase
       assert_not_equal(cpid, dpid)
     end
 
+    def test_daemon_after_getaddrinfo
+      data = IO.popen("-", "r+") do |f|
+        break f.read if f
+        require "socket"
+        Addrinfo.getaddrinfo("localhost", 80, :INET, :STREAM)
+        Process.daemon(true, true)
+        Addrinfo.getaddrinfo("localhost", 80, :INET, :STREAM)
+        Process.wait(fork {})
+        puts "ok"
+      end
+      assert_equal("ok\n", data, "[Bug #22406]")
+    end
+
+    def test_daemon_after_getnameinfo
+      data = IO.popen("-", "r+") do |f|
+        break f.read if f
+        require "socket"
+        Socket.getnameinfo(["AF_INET", 80, "127.0.0.1"], Socket::NI_NUMERICHOST)
+        Process.daemon(true, true)
+        Socket.getnameinfo(["AF_INET", 80, "127.0.0.1"], Socket::NI_NUMERICHOST)
+        Process.wait(fork {})
+        puts "ok"
+      end
+      assert_equal("ok\n", data, "[Bug #22406]")
+    end
+
     def test_daemon_detached
       IO.popen("-", "r+") do |f|
         if f
@@ -2717,6 +2743,31 @@ EOS
         puts "OK"
       end
     end;
+  end if Process.respond_to?(:_fork)
+
+  def test__fork_raisig_after_fork
+    assert_in_out_err([], "#{<<~"{#"}\n#{<<~'};'}", [], [/.*: exception during fork in child/, :*])
+    {#
+      module BadForkTracker
+        def _fork
+          pid = super
+          if pid == 0
+            raise "exception during fork in child"
+          end
+          pid
+        end
+      end
+
+      Process.singleton_class.prepend(BadForkTracker)
+
+      begin
+        fork do
+          puts "I'm child #{Process.pid} and I'm exiting"
+        end
+      rescue StandardError
+        puts "#{Process.pid} Received Error, Ignoring"
+      end
+    };
   end if Process.respond_to?(:_fork)
 
   def test_warmup_promote_all_objects_to_oldgen

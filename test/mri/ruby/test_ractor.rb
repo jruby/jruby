@@ -2,6 +2,18 @@
 require 'test/unit'
 
 class TestRactor < Test::Unit::TestCase
+  # Spawning from a Ractor must not block on the main Ractor's $stdout
+  def test_spawn_does_not_contend_on_main_ractors_stdout
+    assert_separately([], <<~'RUBY', timeout: 60)
+      Warning[:experimental] = false
+      $stdout = File.open(File::NULL, "w")
+      writer = Thread.new { loop { $stdout.write("x" * 100 + "\n"); $stdout.flush } }
+      r = Ractor.new { 20.times { system(EnvUtil.rubybin, "-e", "") }; :done }
+      assert_equal :done, r.value
+      writer.kill.join
+    RUBY
+  end
+
   def test_shareability_of_iseq_proc
     assert_raise Ractor::IsolationError do
       foo = []
@@ -42,6 +54,59 @@ class TestRactor < Test::Unit::TestCase
 =end
   end
 
+  def test_shareable_proc_define_method_super_method_missing
+    assert_ractor(<<~'RUBY', timeout: 30)
+      iterations = 1_000_000
+
+      class SuperFromShareableProcMethodMissingBase
+        def method_missing(mid, *) = mid
+      end
+
+      class SuperFromShareableProcMethodMissingChild < SuperFromShareableProcMethodMissingBase
+        BODY = Ractor.shareable_proc { super() }
+        define_method(:foo, &BODY)
+        define_method(:bar, &BODY)
+      end
+
+      [:foo, :bar].map do |mid|
+        Ractor.new(mid, iterations) do |mid, iterations|
+          obj = SuperFromShareableProcMethodMissingChild.new
+          iterations.times do
+            got = obj.__send__(mid)
+            raise "#{mid} returned #{got.inspect}" unless got == mid
+          end
+        end
+      end.each(&:value)
+    RUBY
+  end
+
+  def test_shareable_proc_define_method_super_method_entry
+    assert_ractor(<<~'RUBY', timeout: 30)
+      iterations = 1_000_000
+
+      class SuperFromShareableProcBase
+        def foo = :foo
+        def bar = :bar
+      end
+
+      class SuperFromShareableProcChild < SuperFromShareableProcBase
+        BODY = Ractor.shareable_proc { super() }
+        define_method(:foo, &BODY)
+        define_method(:bar, &BODY)
+      end
+
+      [:foo, :bar].map do |mid|
+        Ractor.new(mid, iterations) do |mid, iterations|
+          obj = SuperFromShareableProcChild.new
+          iterations.times do
+            got = obj.__send__(mid)
+            raise "#{mid} returned #{got.inspect}" unless got == mid
+          end
+        end
+      end.each(&:value)
+    RUBY
+  end
+
   def test_shareability_error_uses_inspect
     x = (+"").instance_exec { method(:to_s) }
     def x.to_s
@@ -78,6 +143,22 @@ class TestRactor < Test::Unit::TestCase
       assert_nil TestClass.instance_variable_get(:@d)
       assert_equal 4, TestClass.instance_variable_set(:@d, 4)
       assert_equal 4, TestClass.instance_variable_get(:@d)
+    RUBY
+  end
+
+
+  def test_class_variables
+    # [Bug #22072]
+    assert_ractor(<<~'RUBY')
+      module Foo
+        def self.foo = @@foo
+      end
+
+      Foo.class_variable_set(:@@foo, 1)
+
+      10.times { |i| Foo.class_variable_set(:"@@bar#{i}", i) }
+
+      assert_equal(Foo.foo, 1)
     RUBY
   end
 

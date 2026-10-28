@@ -9,3 +9,4 @@ exclude :test_no_receiver_for_anonymous_class, "line number is off by one in JIT
 exclude :test_notty_backtrace, "work in progress"
 exclude :test_backtrace_internal_frame, "no classes in backtrace yet, https://github.com/jruby/jruby/issues/8660"
 exclude :test_backtrace_on_argument_error, "no classes in backtrace yet, https://github.com/jruby/jruby/issues/8660"
+exclude :test_each_caller_location_single_cfunc_frame, "Thread.each_caller_location does not accept start and length"

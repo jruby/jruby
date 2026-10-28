@@ -613,11 +613,11 @@ public class RubyIOBuffer extends RubyObject {
 
         flags |= LOCKED;
 
-        IRubyObject result = block.yield(context, this);
-
-        flags &= ~LOCKED;
-
-        return result;
+        try {
+            return block.yield(context, this);
+        } finally {
+            flags &= ~LOCKED;
+        }
     }
 
     private void checkLocked(ThreadContext context) {

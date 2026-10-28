@@ -7,3 +7,5 @@ exclude :test_remove_instance_variable_re_embed,  "CRuby-specific ObjectSpace.du
 exclude :test_remove_method, "works behaviorally but error message with multibyte name gets mangled"
 exclude :test_singleton_methods, "work in progress"
 exclude :test_type_error_message,                             "needs investigation"
+exclude :test_inspect_mutating_ivar, "inspect does not handle instance variables added during inspection"
+exclude :test_inspect_too_complex, "depends on CRuby object shapes"

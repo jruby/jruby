@@ -1784,6 +1784,38 @@ class TestYJIT < Test::Unit::TestCase
     RUBY
   end
 
+  def test_exceptional_entry_into_env_escaped_before_yjit_enablement
+    threshold = 2
+    assert_separately(["--disable-all", "--yjit-disable", "--yjit-call-threshold=#{threshold}"], <<~RUBY)
+      def run
+        @captured_env = ->{}
+        RubyVM::YJIT.enable
+
+        i = 0
+        while i < #{threshold}
+          next_i = i + 1
+          from_break = tap { break i + 1 } # break from the block generates an exceptional entry
+          assert_equal(from_break, next_i, '[Bug #21941]')
+          i = next_i
+        end
+      end
+
+      run
+      assert_equal(#{threshold}, @captured_env.binding.local_variable_get(:i))
+    RUBY
+  end
+
+  def test_yjit_prelude_kernel_prepend
+    # Simulate what bundler/setup can do: prepend a module to Kernel during
+    # the prelude via the BUNDLER_SETUP mechanism in rubygems.rb:
+    #   require ENV["BUNDLER_SETUP"] if ENV["BUNDLER_SETUP"] && !defined?(Bundler)
+    Tempfile.create(["kernel_prepend", ".rb"]) do |f|
+      f.write("Kernel.prepend(Module.new)\n")
+      f.flush
+      assert_separately([{ "BUNDLER_SETUP" => f.path }, "--enable=gems", "--yjit"], "", ignore_stderr: true)
+    end
+  end
+
   private
 
   def code_gc_helpers

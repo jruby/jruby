@@ -10,3 +10,8 @@ exclude :test_private, "open files can't be memory-mapped due to jnr-enxio (http
 exclude :test_resize_zero_external, "missing AccessError"
 exclude :test_string_mapped_buffer_locked, "missing RuntimeError"
 exclude :test_transfer_in_block, "missing AccessError"
+exclude :test_get_string, "slices are not invalidated when their source buffer is freed"
+exclude :test_operators_raise_on_freed_mask, "slices are not invalidated when their source buffer is freed"
+exclude :test_operators_raise_on_freed_self, "slices are not invalidated when their source buffer is freed"
+exclude :test_resize_invalidated_slice, "slices are not invalidated when their source buffer is freed"
+exclude :test_set_values_invalidated_slice, "slices are not invalidated when their source buffer is freed"
