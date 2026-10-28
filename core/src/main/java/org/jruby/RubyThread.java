@@ -1826,20 +1826,34 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
 
-    @JRubyMethod(meta = true, omit = true)
-    public static IRubyObject each_caller_location(ThreadContext context, IRubyObject recv, Block block) {
-        ThreadContext.WALKER.walk(stream -> {
-            boolean[] skip = {true};
-            context.eachCallerLocation(stream, (loc) -> {
-                if (skip[0]) {
-                    skip[0] = false;
-                    return;
-                }
-                block.yieldSpecific(context, loc);
+    @JRubyMethod(meta = true, optional = 2, checkArity = false, keywords = true, omit = true)
+    public static IRubyObject each_caller_location(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        if (ThreadContext.hasKeywords(ThreadContext.resetCallInfo(context))) {
+            throw keywordError(context, "unknown", ((RubyHash) args[args.length - 1]).keys(context));
+        }
+
+        int argc = Arity.checkArgumentCount(context, args, 0, 2);
+
+        return eachCallerLocation(context, argc > 0 ? args[0] : null, argc > 1 ? args[1] : null, block);
+    }
+
+    // level and length work as they do for Kernel#caller_locations
+    private static IRubyObject eachCallerLocation(ThreadContext context, IRubyObject level, IRubyObject length, Block block) {
+        return RubyKernel.withLevelAndLength(context, level, length, 1, (ctx, lev, len) -> {
+            ThreadContext.WALKER.walk(stream -> {
+                int[] index = {0};
+                ctx.eachCallerLocationWhile(stream, (loc) -> {
+                    int i = index[0]++;
+                    if (i < lev) return true;
+                    if (i - lev >= len) return false;
+                    if (!block.isGiven()) throw ctx.runtime.newLocalJumpErrorNoBlock();
+                    block.yieldSpecific(ctx, loc);
+                    return i - lev + 1 < len;
+                });
+                return null;
             });
-            return null;
+            return ctx.nil;
         });
-        return context.nil;
     }
 
     /**
