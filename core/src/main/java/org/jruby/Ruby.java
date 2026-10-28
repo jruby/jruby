@@ -551,7 +551,11 @@ public final class Ruby implements Constantizable {
         coreIsBooted = true;
 
         // Don't load boot-time libraries when debugging IR
-        if (!RubyInstanceConfig.DEBUG_PARSER) initBootLibraries(context);
+        if (RubyInstanceConfig.DEBUG_PARSER) {
+            builtinSnapshot = Builtins.snapshot(this);
+        } else {
+            initBootLibraries(context);
+        }
 
         SecurityHelper.checkCryptoRestrictions(this);
 
@@ -588,6 +592,9 @@ public final class Ruby implements Constantizable {
 
         // init Ruby-based kernel
         initRubyKernel();
+
+        // the core methods are all defined, so later changes to them can be detected
+        builtinSnapshot = Builtins.snapshot(this);
 
         // Define blank modules for feature detection in preludes
         if (!this.config.isDisableGems()) {
@@ -4801,17 +4808,29 @@ public final class Ruby implements Constantizable {
     }
 
     /**
-     * Called when a method is defined on a class that might invalidate
-     * builtin optimizations.
+     * Called when a method is defined, removed or undefined in any module. If a core class
+     * with builtin fast paths no longer resolves that name to its builtin method, the fast
+     * paths for it are turned off.
      *
-     * @param module the module/class where the method was defined
-     * @param method the method name
+     * @param location the module or class whose method table changed
+     * @param name the method name
      */
-    void invalidateBuiltin(RubyModule module, String method) {
-        // Don't invalidate during initial core boot (we're defining builtins!)
-        if (!isBootingCore()) {
-            Builtins.invalidateBuiltin(builtinBits, module.getClassIndex(), method);
-        }
+    void recheckBuiltins(RubyModule location, String name) {
+        // Nothing to compare against until the core has booted (we're defining builtins!)
+        Builtins.Snapshot snapshot = builtinSnapshot;
+        if (snapshot != null) snapshot.recheck(builtinBits, location, name);
+    }
+
+    /**
+     * Called when a module is included or prepended into any module, which may put its
+     * methods ahead of the builtin ones of a core class with fast paths.
+     *
+     * @param target the module or class the module was included in or prepended to
+     * @param module the module included or prepended
+     */
+    void recheckBuiltins(RubyModule target, RubyModule module) {
+        Builtins.Snapshot snapshot = builtinSnapshot;
+        if (snapshot != null) snapshot.recheckIncluded(builtinBits, target, module);
     }
 
     /**
@@ -5204,6 +5223,7 @@ public final class Ruby implements Constantizable {
 
     /** Bit flags tracking which builtin methods have been redefined (thread-local builtin tracking system) */
     private final int[] builtinBits = Builtins.allocate();
+    private Builtins.Snapshot builtinSnapshot;
 
     private final POSIX posix;
     private POSIX nativePosix;

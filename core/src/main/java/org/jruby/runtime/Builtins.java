@@ -32,8 +32,18 @@
  */
 package org.jruby.runtime;
 
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.Map;
+import java.util.Set;
+
+import org.jruby.PrependedModule;
+import org.jruby.Ruby;
+import org.jruby.RubyClass;
+import org.jruby.RubyModule;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 
 public class Builtins {
 
@@ -318,8 +328,126 @@ public class Builtins {
 
     // =========================================================================
     // INVALIDATION
-    // Called when a method is defined/redefined on a tracked class
+    // Called when a method is defined, removed or undefined anywhere, or a module is
+    // included or prepended anywhere, once the core has booted
     // =========================================================================
+
+    /**
+     * Record the method each tracked core class resolves for each tracked name, once the
+     * core classes and the Ruby parts of the kernel are loaded. Later changes are found by
+     * resolving the names again and comparing against this snapshot.
+     *
+     * @param runtime the runtime whose core classes are recorded
+     * @return the snapshot to recheck classes against
+     */
+    public static Snapshot snapshot(Ruby runtime) {
+        return new Snapshot(runtime);
+    }
+
+    /**
+     * The methods the tracked core classes resolved when the core finished booting.
+     *
+     * A tracked class can stop resolving a name to its builtin method because of a change
+     * to the class itself, to a module it includes or prepends, or to an ancestor such as
+     * Numeric, Comparable, Object or Kernel. Rather than working out whether each change
+     * reaches a tracked class, the changed names are resolved again on every tracked class.
+     * A name that now resolves to a different method sets the bit for that class, and bits
+     * are never cleared, matching CRuby.
+     */
+    public static final class Snapshot {
+        private final HashMap<String, Integer> nameIndex = new HashMap<>();
+        private final Set<RubyModule> classAncestors = Collections.newSetFromMap(new IdentityHashMap<>());
+        private final String[] names;
+        private final int[] bops;
+        private final RubyModule[] classes;
+        private final int[] flags;
+        private final DynamicMethod[][] methods;
+
+        private Snapshot(Ruby runtime) {
+            int count = METHOD_IDS.size();
+            names = new String[count];
+            bops = new int[count];
+            int i = 0;
+            for (Map.Entry<String, Integer> entry : METHOD_IDS.entrySet()) {
+                nameIndex.put(entry.getKey(), i);
+                names[i] = entry.getKey();
+                bops[i++] = entry.getValue();
+            }
+
+            classes = new RubyModule[] {
+                    runtime.getInteger(), runtime.getFloat(), runtime.getString(), runtime.getArray(),
+                    runtime.getHash(), runtime.getSymbol(), runtime.getTime(), runtime.getRegexp(),
+                    runtime.getNilClass(), runtime.getTrueClass(), runtime.getFalseClass(), runtime.getProc(),
+                    runtime.getRange(), runtime.getStructClass(), runtime.getRational()
+            };
+            flags = new int[classes.length];
+            methods = new DynamicMethod[classes.length][count];
+            for (int c = 0; c < classes.length; c++) {
+                for (RubyModule ancestor = classes[c]; ancestor != null; ancestor = ancestor.getSuperClass()) {
+                    if (!ancestor.isIncluded()) classAncestors.add(ancestor);
+                }
+                flags[c] = CLASS_FLAGS.get(classes[c].getClassIndex());
+                for (int n = 0; n < count; n++) {
+                    methods[c][n] = classes[c].searchMethodInner(names[n]);
+                }
+            }
+        }
+
+        /**
+         * Set the bit for each tracked class that no longer resolves the given name to the
+         * method it had at boot. Names that no fast path depends on are ignored, and so are
+         * classes that cannot be an ancestor of a tracked class, such as user classes and
+         * singleton classes, since a class's superclasses are fixed once it is created. Only
+         * modules and the origin classes that hold the methods of a class with prepends can
+         * join the hierarchy of a tracked class later, and a module that has not been included
+         * anywhere yet is checked by {@link #recheckIncluded} once it is.
+         *
+         * @param bits the builtinBits array to modify (from Ruby runtime)
+         * @param location the module or class whose method table changed
+         * @param name the name of the method defined, removed or undefined
+         */
+        public void recheck(int[] bits, RubyModule location, String name) {
+            Integer index = nameIndex.get(name);
+            if (index == null || !mayBeAncestor(location)) return;
+
+            recheck(bits, index);
+        }
+
+        /**
+         * Recheck every tracked name the given module defines, including through the modules
+         * it includes, since including or prepending it may have put those methods ahead of
+         * the builtin ones.
+         *
+         * @param bits the builtinBits array to modify (from Ruby runtime)
+         * @param target the module or class the module was included in or prepended to
+         * @param module the module that was included or prepended
+         */
+        public void recheckIncluded(int[] bits, RubyModule target, RubyModule module) {
+            if (!mayBeAncestor(target)) return;
+
+            for (int n = 0; n < names.length; n++) {
+                if (module.searchMethodInner(names[n]) != null) recheck(bits, n);
+            }
+        }
+
+        private boolean mayBeAncestor(RubyModule module) {
+            if (!(module instanceof RubyClass)) return module.isIncludedSomewhere();
+
+            return module instanceof PrependedModule || classAncestors.contains(module);
+        }
+
+        // Synchronized so that two threads setting different flags in the same slot cannot lose one
+        private synchronized void recheck(int[] bits, int n) {
+            int bop = bops[n];
+            for (int c = 0; c < classes.length; c++) {
+                int flag = flags[c];
+                if ((bits[bop] & flag) != 0) continue;
+
+                // searchMethodInner walks the method tables directly, so stale caches do not matter
+                if (classes[c].searchMethodInner(names[n]) != methods[c][n]) bits[bop] |= flag;
+            }
+        }
+    }
 
     /**
      * Mark a builtin method as redefined for a specific class.
