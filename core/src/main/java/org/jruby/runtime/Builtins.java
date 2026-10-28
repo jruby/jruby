@@ -190,10 +190,10 @@ public class Builtins {
     /** | operator (bitwise or) */
     public static final int BOP_OR          = 30;
 
-    /** | operator (bitwise or) */
+    /** <=> operator (comparison) */
     public static final int BOP_CMP         = 31;
 
-    /** | operator (bitwise or) */
+    /** default method (Hash#default) */
     public static final int BOP_DEFAULT     = 32;
 
     /** pack method (Array#pack) */
@@ -288,6 +288,10 @@ public class Builtins {
         METHOD_IDS.put("&", BOP_AND);
         METHOD_IDS.put("|", BOP_OR);
         METHOD_IDS.put("pack", BOP_PACK);
+        METHOD_IDS.put("<=>", BOP_CMP);
+        METHOD_IDS.put("default", BOP_DEFAULT);
+        METHOD_IDS.put(">>", BOP_GTGT);
+        METHOD_IDS.put("nil?", BOP_NIL_P);
         METHOD_IDS.put("include?", BOP_INCLUDE_P);
         METHOD_IDS.put("cover?", BOP_INCLUDE_P);  // Same optimization as include?
         METHOD_IDS.put("to_f", BOP_TO_F);
