@@ -1098,6 +1098,7 @@ public class RubyLexer extends LexingCommon {
                             if (peek('n') && peek('d', 1) && !isIdentifierChar(peekAt(2))) {
                                 // leading_logical
                                 pushback(c);
+                                dispatchDelayedToken(tIGNORED_NL);
                                 commandState = false;
                                 continue loop;
                             }
