@@ -2540,17 +2540,14 @@ states[69] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop,
 };
 states[71] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.pushLocalScope();
-                    ByteList currentArg = p.getCurrentArg();
-                    p.setCurrentArg(null);
                     LexContext ctxt = p.getLexContext();
                     RubySymbol name = p.get_id(((IRubyObject)yyVals[0+yyTop].value));
                         p.numparam_name(yyVals[yyTop - count + 1].id);
-                        yyVal = new DefHolder(p.get_id(yyVals[yyTop - count + 1].id), currentArg, p.get_value(((IRubyObject)yyVals[0+yyTop].value)), (LexContext) ctxt.clone());
+                        yyVal = new DefHolder(p.get_id(yyVals[yyTop - count + 1].id), p.get_value(((IRubyObject)yyVals[0+yyTop].value)), (LexContext) ctxt.clone());
 
                     ctxt.in_def = true;
                     ctxt.in_rescue = LexContext.InRescue.BEFORE_RESCUE;
                     ctxt.cant_return = false;
-                    p.setCurrentArg(null);
   return yyVal;
 };
 states[72] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -4837,7 +4834,6 @@ states[467] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[468] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    p.setCurrentArg(null);
                     p.ordinalMaxNumParam();
                     p.getLexContext().in_argdef = false;
 {IRubyObject v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11;
@@ -4856,7 +4852,6 @@ states[468] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[469] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    p.setCurrentArg(null);
                     p.ordinalMaxNumParam();
                     p.getLexContext().in_argdef = false;
 {IRubyObject v1, v2, v3;
@@ -6378,8 +6373,6 @@ states[750] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[751] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    RubySymbol name = p.get_id(((IRubyObject)yyVals[0+yyTop].value));
-                    p.setCurrentArg(name);
                       p.arg_var(yyVals[yyTop - count + 1].id);
                       yyVal = ((IRubyObject)yyVals[0+yyTop].value);
 
@@ -6387,7 +6380,6 @@ states[751] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[752] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    p.setCurrentArg(null);
 {                    yyVal = p.get_value(((IRubyObject)yyVals[0+yyTop].value));}
   return yyVal;
 };
@@ -6409,21 +6401,18 @@ states[755] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
 states[756] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.formal_argument(yyVals[yyTop - count + 1].id, ((IRubyObject)yyVals[0+yyTop].value));
                     p.arg_var(yyVals[yyTop - count + 1].id);
-                    p.setCurrentArg(p.get_id(((IRubyObject)yyVals[0+yyTop].value)));
                     p.ordinalMaxNumParam();
                     p.getLexContext().in_argdef = false;
                     yyVal = ((IRubyObject)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[757] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    p.setCurrentArg(null);
                     p.getLexContext().in_argdef = true;
                       yyVal = p.new_assoc(p.assignable(yyVals[yyTop - count + 1].id, ((IRubyObject)yyVals[-1+yyTop].value)), ((IRubyObject)yyVals[0+yyTop].value));
 
   return yyVal;
 };
 states[758] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    p.setCurrentArg(null);
                     p.getLexContext().in_argdef = true;
                       yyVal = p.new_assoc(p.assignable(yyVals[yyTop - count + 1].id, ((IRubyObject)yyVals[0+yyTop].value)), p.nil());
 
@@ -6494,7 +6483,6 @@ states[770] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
 };
 states[771] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.getLexContext().in_argdef = true;
-                    p.setCurrentArg(null);
                       yyVal = p.new_assoc(p.assignable(yyVals[yyTop - count + 1].id, ((IRubyObject)yyVals[-2+yyTop].value)), ((IRubyObject)yyVals[0+yyTop].value));
 
   return yyVal;
@@ -6730,7 +6718,7 @@ states[828] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 }
-					// line 4719 "ripper_RubyParser.out"
+					// line 4707 "ripper_RubyParser.out"
 
 }
-					// line 15020 "-"
+					// line 15008 "-"

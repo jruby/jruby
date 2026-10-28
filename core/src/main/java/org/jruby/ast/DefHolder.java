@@ -9,7 +9,6 @@ import org.jruby.util.ByteList;
 // method getRipperSingleton() to work around this.
 public class DefHolder {
     public final RubySymbol name;
-    public final ByteList current_arg;
     public final LexContext ctxt;
     public int maxNumParam; // the enclosing scope's, restored once the method is defined
     public IRubyObject value;
@@ -19,16 +18,14 @@ public class DefHolder {
     public Object singleton = null;
     public ByteList dotOrColon;
 
-    public DefHolder(RubySymbol name, ByteList currentArg, IRubyObject value, LexContext ctxt) {
+    public DefHolder(RubySymbol name, IRubyObject value, LexContext ctxt) {
         this.name = name;
-        this.current_arg = currentArg;
         this.value = value;
         this.ctxt = ctxt;
     }
 
-    public DefHolder(RubySymbol name, ByteList currentArg, LexContext ctxt) {
+    public DefHolder(RubySymbol name, LexContext ctxt) {
         this.name = name;
-        this.current_arg = currentArg;
         this.ctxt = ctxt;
     }
 
