@@ -224,7 +224,7 @@ public class OpenFile implements Finalizable {
     }
 
     private void updateBlockingFromFD(ChannelFD fd) {
-        if (fd.chSelect != null ) {
+        if (fd != null && fd.chSelect != null) {
             this.nonblock = !fd.chSelect.isBlocking();
         }
     }
