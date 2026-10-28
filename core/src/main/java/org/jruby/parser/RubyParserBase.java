@@ -994,21 +994,17 @@ public abstract class RubyParserBase {
             args = ac.getSecondNode();
         }
 
-        if (args != null && args instanceof ArgsPushNode ap) {
-            keywords = ap.getSecondNode() instanceof KeywordArgNode || ap.getSecondNode() instanceof KeywordRestArgNode;
-        } else {
-            if (args instanceof ListNode list) {
-                for (int i = 0; i < list.size(); i++) {
-                    Node next = list.get(i);
-                    if (next instanceof HashNode hash && !hash.isLiteral()) {
-                        keywords = true;
-                    }
-                }
-            }
+        // keywords can only be the last argument, and are a hash written without braces
+        Node last = null;
+        if (args instanceof ArgsPushNode ap) {
+            last = ap.getSecondNode();
+        } else if (args instanceof ListNode list && list.size() > 0) {
+            last = list.getLast();
         }
+        keywords = last instanceof HashNode hash && !hash.isLiteral();
 
         if (keywords) {
-            yyerror("keyword arg given in index");
+            yyerror("keyword arg given in index assignment");
         }
         if (block != null) {
             yyerror("block arg given in index assignment");
