@@ -1,6 +1,5 @@
 package org.jruby.util.io;
 
-import jnr.enxio.channels.NativeSelectorProvider;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyIO;
@@ -277,9 +276,22 @@ public class SelectExecutor {
         if (fds == null) return false;
 
         for (SelectionKey key : fds) {
-            if (key.isValid() && (key.readyOps() & operations) != 0 && ((List<ChannelFD>)key.attachment()).contains(fd)) return true;
+            if (key.isValid() && (readyOps(key) & operations) != 0 && ((List<ChannelFD>)key.attachment()).contains(fd)) return true;
         }
         return false;
+    }
+
+    private static int readyOps(SelectionKey key) {
+        int readyOps = key.readyOps();
+        // macOS poll(2) answers POLLNVAL for devices like /dev/null and jnr-enxio selects the key with no ready ops;
+        // CRuby's select(2) reports such devices as ready
+        if (readyOps == 0) {
+            Selector selector = key.selector();
+            if (selector.provider() != SelectorProvider.provider() && selector.selectedKeys().contains(key)) {
+                return key.interestOps();
+            }
+        }
+        return readyOps;
     }
 
     private SelectionKey trySelectRead(ThreadContext context, ChannelFD fd) throws IOException {
@@ -312,7 +324,9 @@ public class SelectExecutor {
         }
 
         if (selector == null) {
-            if (channel.provider() instanceof NativeSelectorProvider) {
+            // A JDK selector only accepts JDK channels, so a channel from any other provider (jnr-enxio has several,
+            // e.g. NativeFileSelectorProvider for FIFOs) needs a selector from its own provider
+            if (channel.provider() != SelectorProvider.provider()) {
                 // We don't pool these, so create it directly
                 selector = channel.provider().openSelector();
 
