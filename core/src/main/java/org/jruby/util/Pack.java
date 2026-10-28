@@ -52,6 +52,8 @@ import org.jruby.*;
 import org.jruby.anno.CRuby;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.JavaInternalBlockBody;
+import org.jruby.runtime.Signature;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.EncodingUtils;
@@ -66,6 +68,7 @@ import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.rangeError;
+import static org.jruby.api.Error.runtimeError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.TypeConverter.toFloat;
@@ -1003,6 +1006,8 @@ public class Pack {
         int len = encodedString.realSize();
         int beg = encodedString.begin();
 
+        if (mode == UNPACK_BLOCK) block = checkModifiedAfterYield(context, encoded, block);
+
         if (offset < 0) throw argumentError(context, "offset can't be negative");
         if (offset > 0) {
             if (offset > len) throw argumentError(context, "offset outside of string");
@@ -1641,6 +1646,35 @@ public class Pack {
         if (limit > encode.limit() || limit < 0) throw argumentError(context, "@ outside of string");
 
         positionBuffer(encode, limit);
+    }
+
+    /**
+     * Wrap the given block so that each yield checks whether the block
+     * modified the string being unpacked, since the remaining directives
+     * would otherwise read stale bytes.
+     */
+    private static Block checkModifiedAfterYield(ThreadContext context, RubyString encoded, Block block) {
+        final ByteList original = encoded.getByteList();
+        final byte[] bytes = original.getUnsafeBytes();
+        final int begin = original.begin();
+        final int length = original.realSize();
+
+        return new Block(new JavaInternalBlockBody(context.runtime, Signature.ONE_ARGUMENT) {
+            @Override
+            public IRubyObject yield(ThreadContext context, IRubyObject[] args) {
+                return this.yield(context, args[0]);
+            }
+
+            @Override
+            public IRubyObject yield(ThreadContext context, IRubyObject value) {
+                IRubyObject ret = block.yield(context, value);
+                ByteList current = encoded.getByteList();
+                if (current.getUnsafeBytes() != bytes || current.begin() != begin || current.realSize() != length) {
+                    throw runtimeError(context, "string modified");
+                }
+                return ret;
+            }
+        });
     }
 
     private static void appendOrYield(ThreadContext context, Block block, RubyArray result, IRubyObject item, int mode) {
