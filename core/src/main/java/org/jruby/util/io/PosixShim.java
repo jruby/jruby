@@ -113,10 +113,11 @@ public class PosixShim {
                 return -1;
             }
             int written;
-            if (!buffer.isDirect() && buffer.remaining() > MAX_HEAP_WRITE) {
+            if (fd.chSelect != null && !buffer.isDirect() && buffer.remaining() > MAX_HEAP_WRITE) {
                 // NIO copies the whole remaining heap buffer into a temporary direct buffer on every write, even when
                 // the channel only accepts part of it. Retrying a large nonblocking write would copy the rest again
-                // each time, so cap each write and let the caller loop over the remainder.
+                // each time, so cap each write and let the caller loop over the remainder. Files are left alone: they
+                // accept the whole buffer in one write, and callers like syswrite expect the full length.
                 int limit = buffer.limit();
                 buffer.limit(buffer.position() + MAX_HEAP_WRITE);
                 try {
