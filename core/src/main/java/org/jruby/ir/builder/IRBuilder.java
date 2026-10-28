@@ -3362,10 +3362,31 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         }
     }
 
+    /**
+     * Whether a single **hash in the call arguments being built must be copied, because the block argument is
+     * evaluated after it and may modify it.
+     */
+    protected boolean dupSingleKeywordSplat;
+
+    /**
+     * Whether the block argument of a call, which is evaluated after the other arguments, may modify one of them,
+     * as with <code>t(**h, &amp;h.delete(:a))</code>.
+     */
+    protected boolean blockArgMayModifyArgs(U iter) {
+        return false;
+    }
+
     protected Variable createCall(Variable result, Operand receiver, CallType callType, RubySymbol name, U argsNode,
                                 U iter, int line, boolean isNewline) {
         int[] flags = new int[] { 0 };
-        Operand[] args = setupCallArgs(argsNode, flags);
+        boolean savedDupSingleKeywordSplat = dupSingleKeywordSplat;
+        dupSingleKeywordSplat = blockArgMayModifyArgs(iter);
+        Operand[] args;
+        try {
+            args = setupCallArgs(argsNode, flags);
+        } finally {
+            dupSingleKeywordSplat = savedDupSingleKeywordSplat;
+        }
         // check for refinement calls before building any closure
         if (callType == FUNCTIONAL) determineIfMaybeRefined(name, args);
         Operand block = setupCallClosure(argsNode, iter);

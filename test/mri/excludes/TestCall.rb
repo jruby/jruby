@@ -5,4 +5,3 @@ exclude :test_call_rb_call_bmethod_large_array_splat_fail, "tests internal CRuby
 exclude :test_call_rb_call_bmethod_large_array_splat_pass, "tests internal CRuby functions"
 exclude :test_call_rb_call_iseq_large_array_splat_fail, "tests internal CRuby functions"
 exclude :test_call_rb_call_iseq_large_array_splat_pass, "tests internal CRuby functions"
-exclude :test_kwsplat_block_eval_order, "needs investigation"
