@@ -27,5 +27,9 @@ module MutexSpecs
     def fiber(&block)
       Fiber.new(blocking: false, &block).tap(&:resume)
     end
+
+    def fiber_interrupt(fiber, exception)
+      # ignore it
+    end
   end
 end

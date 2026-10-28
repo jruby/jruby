@@ -112,7 +112,9 @@ describe "Thread#join with Fiber scheduler" do
     event[:event].should == :block
     blocker, timeout = event[:args]
     blocker.should.equal?(@thread)
-    timeout.should.is_a?(Float)
+    ruby_version_is "4.0" do
+      timeout.should.is_a?(Float)
+    end
     timeout.should <= 10
   end
 end

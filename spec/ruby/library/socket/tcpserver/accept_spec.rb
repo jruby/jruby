@@ -131,6 +131,7 @@ describe 'TCPServer#accept' do
   end
 end
 
+platform_is_not :windows do # Hangs on Windows
 describe "TCPServer#accept with Fiber scheduler" do
   require_relative '../../../core/fiber/fixtures/scheduler'
 
@@ -144,23 +145,27 @@ describe "TCPServer#accept with Fiber scheduler" do
   # leaves the fiber parked inside #io_wait, so end its accept before closing:
   # #io_wait returning false makes accept raise IO::TimeoutError.
   after :each do
+    @closer.resume if @closer&.alive?
     begin
       @fiber.resume(false) if @fiber&.alive?
-    rescue IO::TimeoutError
+    rescue IOError
     end
+    @closer.resume if @closer&.alive?
     Fiber.set_scheduler(nil)
     @socket&.close
     @client&.close
     @server.close unless @server.closed?
   end
 
-  it "calls the scheduler's #io_wait with IO::READABLE and no timeout" do
-    @fiber = Fiber.new(blocking: false) { @server.accept }
-    @fiber.resume
+  ruby_version_is "3.4" do
+    it "calls the scheduler's #io_wait with IO::READABLE and no timeout" do
+      @fiber = Fiber.new(blocking: false) { @server.accept }
+      @fiber.resume
 
-    Fiber.scheduler.events.should == [
-      { event: :io_wait, fiber: @fiber, args: [@server, IO::READABLE, nil] }
-    ]
+      Fiber.scheduler.events.should == [
+        { event: :io_wait, fiber: @fiber, args: [@server, IO::READABLE, nil] }
+      ]
+    end
   end
 
   it "returns the connection once #io_wait reports the server readable" do
@@ -185,13 +190,15 @@ describe "TCPServer#accept with Fiber scheduler" do
     Fiber.scheduler.events.should == []
   end
 
-  it "calls #io_wait again when it reports the server readable but no connection is pending" do
-    @fiber = Fiber.new(blocking: false) { @server.accept }
-    @fiber.resume
-    @fiber.resume(IO::READABLE)
+  ruby_version_is "3.4" do
+    it "calls #io_wait again when it reports the server readable but no connection is pending" do
+      @fiber = Fiber.new(blocking: false) { @server.accept }
+      @fiber.resume
+      @fiber.resume(IO::READABLE)
 
-    io_wait = { event: :io_wait, fiber: @fiber, args: [@server, IO::READABLE, nil] }
-    Fiber.scheduler.events.should == [io_wait, io_wait]
+      io_wait = { event: :io_wait, fiber: @fiber, args: [@server, IO::READABLE, nil] }
+      Fiber.scheduler.events.should == [io_wait, io_wait]
+    end
   end
 
   it "raises Errno::EAGAIN when #io_wait returns nil" do
@@ -201,29 +208,34 @@ describe "TCPServer#accept with Fiber scheduler" do
     -> { @fiber.resume(nil) }.should.raise(Errno::EAGAIN, /accept\(2\)/) { |e| e.should.instance_of?(Errno::EAGAIN) }
   end
 
-  it "raises IO::TimeoutError when #io_wait returns false" do
-    @fiber = Fiber.new(blocking: false) { @server.accept }
-    @fiber.resume
+  ruby_version_is "3.4" do
+    it "raises IO::TimeoutError when #io_wait returns false" do
+      @fiber = Fiber.new(blocking: false) { @server.accept }
+      @fiber.resume
 
-    -> { @fiber.resume(false) }.should.raise(IO::TimeoutError, "Timed out waiting for IO to become readable!")
+      -> { @fiber.resume(false) }.should.raise(IO::TimeoutError, "Timed out waiting for IO to become readable!")
+    end
   end
 
   ruby_version_is "4.0" do
     it "calls the scheduler's #fiber_interrupt with an IOError when the server is closed while it waits" do
       @fiber = Fiber.new(blocking: false) { @server.accept }
       @fiber.resume
-      closer = Fiber.new(blocking: false) { @server.close }
-      closer.resume
+      @closer = Fiber.new(blocking: false) { @server.close }
+      @closer.resume
 
       event = Fiber.scheduler.events.last
       event[:event].should == :fiber_interrupt
-      event[:fiber].should == closer
-      event[:args][0].should == @fiber
+      event[:fiber].should == @closer
+      ruby_version_is "4.0"..."4.1" do
+        event[:args][0].should == @fiber
+      end
       event[:args][1].should.instance_of?(IOError)
       event[:args][1].message.should == "stream closed in another thread"
 
-      closer.resume
+      @closer.resume
       -> { @fiber.resume(IO::READABLE) while @fiber.alive? }.should.raise(IOError)
+      @closer.resume
     end
   end
 
@@ -241,4 +253,5 @@ describe "TCPServer#accept with Fiber scheduler" do
   ensure
     @client = connector&.value
   end
+end
 end

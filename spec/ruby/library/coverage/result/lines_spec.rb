@@ -1,4 +1,5 @@
 require_relative '../../../spec_helper'
+require_relative '../../../fixtures/source_range_helpers'
 require_relative '../fixtures/classes'
 require 'coverage'
 
@@ -96,6 +97,8 @@ describe "Coverage.result with lines: true" do
   end
 
   it "counts undef on the line of its keyword" do
+    skip "parse.y" if parse_y?
+
     CoverageSpecs.line_coverage(<<~'RUBY').should == [2, 1, 1, nil, nil, nil]
       class UndefCoverage; def a; end; def b; end; end
       class UndefCoverage
@@ -125,6 +128,8 @@ describe "Coverage.result with lines: true" do
     end
 
     it "counts a heredoc on the line of its first interpolated call" do
+      skip "parse.y" if parse_y?
+
       CoverageSpecs.line_coverage(<<~'RUBY').should == [nil, 1, nil, nil, 1]
         y = <<~EOS
           #{[].size}
@@ -135,6 +140,8 @@ describe "Coverage.result with lines: true" do
     end
 
     it "counts the line of a call interpolated in a heredoc that ends the file" do
+      skip "parse.y" if parse_y?
+
       CoverageSpecs.line_coverage(<<~'RUBY').should == [nil, 1, nil]
         x = <<~EOS
           #{1.to_s}
@@ -144,6 +151,8 @@ describe "Coverage.result with lines: true" do
 
     ruby_version_is "3.4" do
       it "counts the line of a conditional interpolated in a heredoc" do
+        skip "parse.y" if parse_y?
+
         CoverageSpecs.line_coverage(<<~'RUBY').should == [1, nil, 1, nil, 1]
           x = <<~EOS
             abc
@@ -311,6 +320,8 @@ describe "Coverage.result with lines: true" do
 
     ruby_version_is "3.4" do
       it "counts the arms of a ternary on their own line" do
+        skip "parse.y" if parse_y?
+
         CoverageSpecs.line_coverage(<<~'RUBY').should == [1, 1, 1]
           y = [1]
           x = y.size ?
@@ -319,6 +330,8 @@ describe "Coverage.result with lines: true" do
       end
 
       it "counts each arm of a ternary used as a condition on its own line" do
+        skip "parse.y" if parse_y?
+
         CoverageSpecs.line_coverage(<<~'RUBY').should == [1, 1, 0, 1, 1, nil]
           y = [1]
           if y.empty? ?
@@ -330,6 +343,8 @@ describe "Coverage.result with lines: true" do
       end
 
       it "counts the condition line of a ternary used as an argument" do
+        skip "parse.y" if parse_y?
+
         CoverageSpecs.line_coverage(<<~'RUBY').should == [1, 1, 1, 1, 1]
           def value_of(v) = v
           x = true

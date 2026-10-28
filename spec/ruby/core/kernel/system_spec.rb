@@ -148,7 +148,7 @@ platform_is_not :windows do
 
     it "raises TypeError when the scheduler's process_wait does not return a Process::Status" do
       waiter = Fiber.new(blocking: false) do
-        -> { system(ruby_cmd('exit 0')) }.should raise_error(TypeError, "wrong argument type nil (expected Process::Status)")
+        -> { system(ruby_cmd('exit 0')) }.should.raise(TypeError, "wrong argument type nil (expected Process::Status)")
       end
       waiter.resume
     end

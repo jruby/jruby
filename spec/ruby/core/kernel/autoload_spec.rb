@@ -185,12 +185,12 @@ describe "Kernel.autoload" do
     it "defines a regular constant that no longer depends on $LOADED_FEATURES" do
       require @path
       ScratchPad.recorded.should == [:loaded]
-      Kernel.autoload?(:KSAutoloadSatisfiedByRequire).should be_nil
+      Kernel.autoload?(:KSAutoloadSatisfiedByRequire).should == nil
       klass = KSAutoloadSatisfiedByRequire
       data = Marshal.dump(klass.new)
 
       $LOADED_FEATURES.replace(@loaded_features)
-      Thread.new { Marshal.load(data).class }.value.should equal(klass)
+      Thread.new { Marshal.load(data).class }.value.should.equal?(klass)
       ScratchPad.recorded.should == [:loaded]
     end
 
@@ -198,7 +198,7 @@ describe "Kernel.autoload" do
       require @path
       klass = KSAutoloadSatisfiedByRequire
 
-      Object.send(:remove_const, :KSAutoloadSatisfiedByRequire).should equal(klass)
+      Object.send(:remove_const, :KSAutoloadSatisfiedByRequire).should.equal?(klass)
     end
   end
 end
