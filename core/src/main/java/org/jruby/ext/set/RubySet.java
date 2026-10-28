@@ -53,6 +53,7 @@ import java.util.Collection;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.api.Access.enumerableModule;
@@ -65,6 +66,7 @@ import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Error.argumentError;
+import static org.jruby.api.Error.runtimeError;
 import static org.jruby.api.Warn.warning;
 
 /**
@@ -75,6 +77,11 @@ import static org.jruby.api.Warn.warning;
 @org.jruby.anno.JRubyClass(name="Set", include = { "Enumerable" })
 public class RubySet extends RubyObject implements Set {
     private RubyHash hash;
+
+    // number of Set#each calls currently iterating over this set
+    private volatile int iterating;
+    private static final AtomicIntegerFieldUpdater<RubySet> ITERATING =
+            AtomicIntegerFieldUpdater.newUpdater(RubySet.class, "iterating");
 
     public static RubyClass createSetClass(ThreadContext context, RubyClass Object, RubyModule Enumerable) {
         RubyClass Set = defineClass(context, "Set", Object, RubySet::new).
@@ -495,6 +502,7 @@ public class RubySet extends RubyObject implements Set {
     public IRubyObject compare_by_identity(ThreadContext context) {
         if (hash.isComparedByIdentity()) return this;
         if (isFrozen()) throw context.runtime.newFrozenError("Set", this);
+        if (iterating > 0) throw runtimeError(context, "compare_by_identity during iteration");
         this.hash.compare_by_identity(context);
         return this;
     }
@@ -652,7 +660,12 @@ public class RubySet extends RubyObject implements Set {
     public IRubyObject each(final ThreadContext context, Block block) {
         if (!block.isGiven()) return enumeratorizeWithSize(context, this, "each", RubySet::size);
 
-        for (IRubyObject elem : elementsOrdered()) block.yield(context, elem);
+        ITERATING.incrementAndGet(this);
+        try {
+            for (IRubyObject elem : elementsOrdered()) block.yield(context, elem);
+        } finally {
+            ITERATING.decrementAndGet(this);
+        }
         return this;
     }
 
@@ -671,6 +684,7 @@ public class RubySet extends RubyObject implements Set {
     @JRubyMethod(name = "add", alias = "<<")
     public RubySet add(final ThreadContext context, IRubyObject obj) {
         modifyCheck(context);
+        if (iterating > 0 && !containsImpl(obj)) throw runtimeError(context, "can't add a new item into set during iteration");
         addImpl(context, obj);
         return this;
     }
@@ -805,6 +819,8 @@ public class RubySet extends RubyObject implements Set {
         if (args.length > 0 && args[args.length - 1] instanceof RubyHash) {
             throw argumentError(context, "no keywords accepted");
         }
+
+        if (iterating > 0) throw runtimeError(context, "cannot add to set during iteration");
 
         var length = args.length;
         for (int i = 0; i < length; i++) {
@@ -959,6 +975,7 @@ public class RubySet extends RubyObject implements Set {
 
     @JRubyMethod(name = "reset")
     public IRubyObject reset(ThreadContext context) {
+        if (iterating > 0) throw runtimeError(context, "reset during iteration");
         this.hash.rehash(context);
         return this;
     }
