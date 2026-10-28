@@ -269,22 +269,16 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         SocketLevel level = SocketUtils.levelFromArg(context, _level);
         SocketOption opt = SocketUtils.optionFromArg(context, _opt);
 
-        switch(level) {
-            case SOL_SOCKET:
-                switch(opt) {
-                    case SO_KEEPALIVE: {
-                        // TODO: socket options
-                    }
-                    break;
-                    default:
-                        throw context.runtime.newErrnoENOPROTOOPTError();
-                }
-                break;
-            default:
-                throw context.runtime.newErrnoENOPROTOOPTError();
+        if (level == SocketLevel.SOL_SOCKET) {
+            switch (opt) {
+                case SO_SNDBUF:
+                case SO_RCVBUF:
+                case SO_KEEPALIVE:
+                    return super.setsockopt(context, _level, _opt, val);
+            }
         }
 
-        return asFixnum(context, 0);
+        throw context.runtime.newErrnoENOPROTOOPTError();
     }
 
     protected static void rb_sys_fail(Ruby runtime, String message) {
