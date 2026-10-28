@@ -2208,14 +2208,19 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         ThreadContext selfContext = getContext();
         Thread nativeThread = getNativeThread();
 
-        // context can be nil if we have not started or GC has claimed our context
-        // nativeThread can be null if the thread has terminated and GC has claimed it
-        // nativeThread may have finished
-        if (selfContext == null || nativeThread == null || !nativeThread.isAlive()) return context.nil;
+        if (status == Status.RUN) {
+            if (selfContext == null || nativeThread == null || nativeThread.getState() == Thread.State.NEW) {
+                return Create.newEmptyArray(context);
+            }
+        } else if (status == Status.DEAD || selfContext == null) {
+            return context.nil;
+        }
 
         return RubyKernel.withLevelAndLength(
                 selfContext, level, length, 0,
-                (ctx, lev, len) -> WALKER.walk(getNativeThread().getStackTrace(), stream -> ctx.createCallerBacktrace(lev, len, stream)));
+                (ctx, lev, len) ->
+                        WALKER.walk(nativeThread.getStackTrace(), stream ->
+                                ctx.createCallerBacktrace(lev, len, stream)));
     }
 
     @JRubyMethod
