@@ -849,6 +849,16 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         Operand lhs = build(node.getFirstNode());
         Operand rhs = build(node.getSecondNode());
 
+        // Like buildArray, leave out a trailing ** that is empty, as in [*a, **{}]
+        if (node.getSecondNode() instanceof HashNode hash && hash.hasOnlyRestKwargs()) {
+            Variable empty = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { rhs }));
+            final Variable array = result;
+            if_else(empty, tru(),
+                    () -> addInstr(new BuildCompoundArrayInstr(array, lhs, new Array(), false, false)),
+                    () -> addInstr(new BuildCompoundArrayInstr(array, lhs, rhs, true, false)));
+            return array;
+        }
+
         return addResultInstr(new BuildCompoundArrayInstr(result, lhs, rhs, true, false));
     }
 

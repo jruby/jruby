@@ -1,6 +1,5 @@
 exclude :test_argument_forwarding, "work in progress"
 exclude :test_argument_forwarding_with_super_memory_leak, "uses MRI-specific memory leak checks"
-exclude :test_array_kwsplat_hash, "work in progress"
 exclude :test_class_module_Object_ancestors, "work in progress"
 exclude :test_dedented_heredoc_concatenation, "indentation does not match assertion"
 exclude :test_dedented_heredoc_with_leading_blank_line, "indentation does not match assertion"
