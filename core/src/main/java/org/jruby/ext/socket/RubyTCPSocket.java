@@ -37,8 +37,10 @@ import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -57,10 +59,16 @@ import java.net.UnknownHostException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static jnr.constants.platform.AddressFamily.AF_INET;
 import static jnr.constants.platform.AddressFamily.AF_INET6;
 import static org.jruby.api.Convert.asFixnum;
+import static org.jruby.api.Convert.asFloat;
+import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineClass;
 
@@ -77,7 +85,26 @@ public class RubyTCPSocket extends RubyIPSocket {
 
     private SocketChannel attemptConnect(ThreadContext context, IRubyObject host, String localHost, int localPort,
                                          String remoteHost, int remotePort, RubyHash opts) throws IOException {
-        for (InetAddress address: InetAddress.getAllByName(remoteHost)) {
+        IRubyObject resolvTimeout = context.nil, connectTimeout = context.nil, openTimeout = context.nil;
+        if (opts != null) {
+            IRubyObject[] kwargs = ArgsUtil.extractKeywordArgs(context, opts, "resolv_timeout", "connect_timeout", "open_timeout", "fast_fallback", "test_mode_settings");
+            if (kwargs[0] != null) resolvTimeout = kwargs[0];
+            if (kwargs[1] != null) connectTimeout = kwargs[1];
+            if (kwargs[2] != null) openTimeout = kwargs[2];
+        }
+
+        if (!openTimeout.isNil() && (!resolvTimeout.isNil() || !connectTimeout.isNil())) {
+            throw argumentError(context, "Cannot specify open_timeout along with connect_timeout or resolv_timeout");
+        }
+
+        // open_timeout covers the whole call, from resolving the host to the last connection attempt
+        long deadline = openTimeout.isNil() ? 0 : System.nanoTime() + toNanos(context, openTimeout);
+
+        InetAddress[] addresses = resolve(context, remoteHost, remotePort, openTimeout.isNil() ? resolvTimeout : openTimeout);
+
+        for (InetAddress address: addresses) {
+            if (deadline != 0 && System.nanoTime() >= deadline) throw userSpecifiedTimeout(context, remoteHost, remotePort);
+
             SocketChannel channel = SocketChannel.open();
 
             openFile = null; // Second or later attempts will have non-closeable failed attempt to connect.
@@ -94,14 +121,11 @@ public class RubyTCPSocket extends RubyIPSocket {
             try {
                 boolean connected = channel.connect(new InetSocketAddress(address, remotePort));
 
-                IRubyObject connectTimeout = context.nil;
-                if (opts != null) {
-                    IRubyObject[] kwargs = ArgsUtil.extractKeywordArgs(context, opts, "connect_timeout", "open_timeout", "fast_fallback", "test_mode_settings");
-                    if (kwargs[0] != null) connectTimeout = kwargs[0];
-                }
+                IRubyObject timeout = deadline == 0 ? connectTimeout :
+                        asFloat(context, Math.max(0, deadline - System.nanoTime()) / 1_000_000_000.0);
 
                 // wait for connection
-                if (connected || waitConnectable(context, channel, connectTimeout)) {
+                if (connected || waitConnectable(context, channel, timeout)) {
                     // complete connection
                     while (!channel.finishConnect()) {
                         context.pollThreadEvents();
@@ -112,6 +136,7 @@ public class RubyTCPSocket extends RubyIPSocket {
                     return channel;
                 }
 
+                if (deadline != 0) throw userSpecifiedTimeout(context, remoteHost, remotePort);
                 throw RubyIOTimeoutError.newIOTimeoutError(context.runtime, Errno.ETIMEDOUT.description()).toThrowable();
             } catch (ConnectException e) {
                 // fall through and try next valid address for the host.
@@ -120,6 +145,45 @@ public class RubyTCPSocket extends RubyIPSocket {
 
         // did not complete and only path out is n repeated ConnectExceptions
         throw context.runtime.newErrnoECONNREFUSEDError("connect(2) for " + host.inspect(context) + " port " + remotePort);
+    }
+
+    private static long toNanos(ThreadContext context, IRubyObject seconds) {
+        return (long) (seconds.convertToFloat().asDouble(context) * 1_000_000_000L);
+    }
+
+    @CRuby(value = "rsock_raise_user_specified_timeout", file = "ext/socket/ipsocket.c")
+    private static RaiseException userSpecifiedTimeout(ThreadContext context, String host, int port) {
+        return RubyIOTimeoutError.newIOTimeoutError(context.runtime, "user specified timeout for " + host + " port " + port).toThrowable();
+    }
+
+    /**
+     * Resolve the host, giving up after the given number of seconds if it isn't nil. InetAddress offers no
+     * timeout, so a timed lookup runs on a virtual thread.
+     */
+    private static InetAddress[] resolve(ThreadContext context, String host, int port, IRubyObject timeout) throws UnknownHostException {
+        if (timeout.isNil()) return InetAddress.getAllByName(host);
+
+        FutureTask<InetAddress[]> lookup = new FutureTask<>(() -> InetAddress.getAllByName(host));
+        Thread.ofVirtual().start(lookup);
+
+        long deadline = System.nanoTime() + toNanos(context, timeout);
+        try {
+            while (true) {
+                try {
+                    return lookup.get(Math.max(0, deadline - System.nanoTime()), TimeUnit.NANOSECONDS);
+                } catch (InterruptedException e) {
+                    // let Thread#raise and Thread#kill through, then keep waiting
+                    context.pollThreadEvents();
+                }
+            }
+        } catch (TimeoutException e) {
+            throw userSpecifiedTimeout(context, host, port);
+        } catch (ExecutionException e) {
+            if (e.getCause() instanceof UnknownHostException unknown) throw unknown;
+            throw new RuntimeException(e.getCause());
+        } finally {
+            lookup.cancel(true);
+        }
     }
 
     // MRI: wait_connectable, whose rb_io_wait goes through the fiber scheduler's io_wait if there is one
@@ -214,7 +278,7 @@ public class RubyTCPSocket extends RubyIPSocket {
             } catch (NoRouteToHostException e) {
                 throw runtime.newErrnoEHOSTUNREACHError("SocketChannel.connect");
             } catch (UnknownHostException e) {
-                throw SocketUtils.sockerr(runtime, "initialize: name or service not known");
+                throw ResolutionError.newResolutionError(context, "getaddrinfo: name or service not known", "EAI_NONAME");
             }
         } catch (ClosedChannelException e) {
             throw runtime.newErrnoECONNREFUSEDError();
