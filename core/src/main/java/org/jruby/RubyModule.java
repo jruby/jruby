@@ -3225,7 +3225,7 @@ public class RubyModule extends RubyObject {
         if (hash.isBuiltin(this)) return id;
 
         // we truncate for Java hashcode
-        return (int) hash.call(context, this, this).convertToInteger().getLongValue();
+        return (int) hash.call(context, this, this).convertToInteger().asLong(context);
     }
 
     @JRubyMethod(name = "hash")
