@@ -1110,7 +1110,8 @@ public abstract class RubyArray<T extends IRubyObject> extends RubyObject implem
             if (fixnumBypass && obj1 instanceof RubyFixnum fix1 && obj2 instanceof RubyFixnum fix2) {
                 return compareInteger(fix1, fix2);
             }
-            if (stringBypass && obj1 instanceof RubyString str1 && obj2 instanceof RubyString str2) {
+            if (stringBypass && obj1 instanceof RubyString str1 && obj2 instanceof RubyString str2 &&
+                    isString(str1) && isString(str2)) {
                 return compareString(str1, str2);
             }
             return compareGeneric(obj1, obj2);
@@ -1129,6 +1130,11 @@ public abstract class RubyArray<T extends IRubyObject> extends RubyObject implem
             long a = o1.getValue();
             long b = o2.getValue();
             return a > b ? 1 : a == b ? 0 : -1;
+        }
+
+        // A String subclass or a String with singleton methods may have its own <=>
+        private boolean isString(RubyString str) {
+            return str.getMetaClass() == context.runtime.getString();
         }
 
         public static int compareString(RubyString o1, RubyString o2) {

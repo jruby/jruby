@@ -123,4 +123,16 @@ class TestBuiltins < Test::Unit::TestCase
       assert_equal '[[3, 2, 1], [2, 1]]', result, redefinition
     end
   end
+
+  def test_sort_honors_string_subclass_and_singleton_comparison
+    reversed = Class.new(String) { def <=>(other) = -super }
+    assert_equal %w[b a], [reversed.new('a'), reversed.new('b')].sort
+    assert_equal %w[c b a], [reversed.new('b'), reversed.new('c'), reversed.new('a')].sort
+
+    a, b = +'a', +'b'
+    def a.<=>(other) = 1
+    def b.<=>(other) = -1
+    assert_equal %w[b a], [a, b].sort
+    assert_equal %w[b a], [b, a].sort
+  end
 end

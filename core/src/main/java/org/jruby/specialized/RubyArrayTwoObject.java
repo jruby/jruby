@@ -270,7 +270,8 @@ public class RubyArrayTwoObject extends RubyArraySpecialized {
         int compare;
         if (isFixnumBypass(context, honorOverride) && o1 instanceof RubyFixnum && o2 instanceof RubyFixnum) {
             compare = compareFixnums((RubyFixnum) o1, (RubyFixnum) o2);
-        } else if (isStringBypass(context, honorOverride) && o1 instanceof RubyString && o2 instanceof RubyString) {
+        } else if (isStringBypass(context, honorOverride) && o1 instanceof RubyString && o2 instanceof RubyString &&
+                (!honorOverride || o1.getMetaClass() == runtime.getString() && o2.getMetaClass() == runtime.getString())) {
             compare = ((RubyString) o1).op_cmp((RubyString) o2);
         } else {
             compare = compareOthers(context, o1, o2);
