@@ -27,9 +27,10 @@ public class OutputStrings {
                 {"-Cdirectory", "cd to directory, before executing your script"},
                 {"-d", "set debugging flags (set $DEBUG to true)"},
                 {"-e 'command'", "one line of script. Several -e's allowed. Omit [programfile]"},
-                {"-Eex[:in]", "specify the default external and internal character encodings"},
+                {"-Eex[:in], --encoding=ex[:in]", "specify the default external and internal character encodings"},
                 {"-Fpattern", "split() pattern for autosplit (-a)"},
-                {"-G", "load a Bundler Gemspec before executing any user code"},
+                {"-G, --gemfile", "load the Bundler Gemfile (bundler/setup) before executing any user code"},
+                {"-h, --help", "print this help message"},
                 {"-i[extension]", "edit ARGV files in place (make backup if extension supplied)"},
                 {"-Idirectory", "specify $LOAD_PATH directory (may be used more than once)"},
                 {"-J[java option]", "pass an option on to the JVM (e.g. -J-Xmx512m); use --properties to list JRuby properties; run 'java -help' for a list of other Java options"},
@@ -42,13 +43,17 @@ public class OutputStrings {
                 {"-U", "use UTF-8 as default internal encoding"},
                 {"-v", "print version number, then turn on verbose mode"},
                 {"-w", "turn warnings on for your script"},
-                {"-W[level]", "set warning level; 0=silence, 1=medium, 2=verbose (default)"},
+                {"-W[level=2|:category]", "set warning level: 0=silence, 1=medium, 2=verbose (default), or enable a warning category (:deprecated, :experimental or :performance, prefix the name with no- to disable it)"},
                 {"-x[directory]", "strip off text before #!ruby line and perhaps cd to directory"},
                 {"-X[option]", "enable extended option (omit option to list)"},
-                {"-y", "enable parsing debug output"},
-                {"--backtrace-limit[lines]", "limits the maximum length of a backtrace"},
+                {"-y, --yydebug", "enable parsing debug output"},
+                {"--backtrace-limit=num", "limits the maximum length of a backtrace"},
                 {"--copyright", "print the copyright"},
                 {"--debug", "sets the execution mode most suitable for debugger functionality"},
+                {"--debug=frozen-string-literal", "report where a frozen string literal was created when it is modified"},
+                {"--dump item", "dump one item: version, copyright, usage, syntax (check syntax only), yydebug (parser debug output) or insns (same as --bytecode)"},
+                {"--external-encoding=encoding", "specify the default external character encoding"},
+                {"--internal-encoding=encoding", "specify the default internal character encoding"},
                 {"--jdb", "runs JRuby process under JDB"},
                 {"--properties", "List all JRuby configuration properties"},
                 {"--sample", "run with profiling using the JVM's sampling profiler"},
@@ -58,16 +63,25 @@ public class OutputStrings {
                 {"--profile.graph", "run with instrumented (timed) profiling, graph format"},
                 {"--profile.html", "run with instrumented (timed) profiling, graph format in HTML"},
                 {"--profile.json", "run with instrumented (timed) profiling, graph format in JSON"},
-                {"--profile.out", "[file]"},
-                {"--profile.service", "<ProfilingService implementation classname> output profile data to [file]"},
+                {"--profile.out file", "output profile data to file"},
+                {"--profile.service classname", "run with profiling using the given ProfilingService implementation"},
+                {"--record", "run with JDK Flight Recorder, saving the recording when JRuby exits"},
                 {"--headless", "do not launch a GUI window, no matter what"},
                 {"--dev", "prioritize startup time over long term performance"},
                 {"--cache", "EXPERIMENTAL: Regenerate the JRuby AppCDS archive to improve startup"},
+                {"--nocache", "do not use the JRuby AppCDS archive for this run"},
+                {"--rmcache", "delete all JRuby AppCDS archives and exit"},
+                {"--logcache", "log AppCDS activity to a .log file next to the archive"},
+                {"--checkpoint[=dir]", "run any given code, then save a CRaC checkpoint of the JVM to dir (default: .jruby.checkpoint), requires a CRaC-enabled JDK"},
+                {"--restore[=dir]", "start from a CRaC checkpoint saved by --checkpoint (default: .jruby.checkpoint)"},
+                {"--environment", "print the java command line the launcher would run, with an explanation of how it was built, and exit"},
                 {"--manage", "enable remote JMX management and monitoring of JVM and JRuby"},
                 {"--bytecode", "show the JVM bytecode produced by compiling specified code"},
+                {"--verbose", "set $VERBOSE to true"},
                 {"--version", "print the version"},
                 {"--disable-gems", "do not load RubyGems on startup (only for debugging)"},
-                {"--enable=feature[,...], --disable=feature[,...]", "enable or disable features"}
+                {"--enable=feature[,...]", "enable features (see list below)"},
+                {"--disable=feature[,...]", "disable features (see list below)"}
         };
 
         String header = strBold("Usage:", tty) + " jruby [switches] [--] [programfile] [arguments]";
@@ -220,20 +234,18 @@ public class OutputStrings {
     private static String breakLine(String str, int index, int spaces) {
         StringBuilder sb = new StringBuilder();
 
-        String[] words = str.split("\\s");
         int counter = 0;
 
-        for (int i = 0; i < words.length; i++) {
-            String word = words[i];
-
-            if (counter + word.length() <= index) {
-                counter += word.length();
-                sb.append(word).append(" ");
-            } else {
+        for (String word : str.split("\\s+")) {
+            if (counter > 0 && counter + 1 + word.length() > index) {
+                sb.append('\n').append(generateSpaces(spaces));
                 counter = 0;
-                if (i == words.length - 1) sb.append("\n" + generateSpaces(spaces) + word);
-                else sb.append("\n").append(generateSpaces(spaces));
+            } else if (counter > 0) {
+                sb.append(' ');
+                counter++;
             }
+            sb.append(word);
+            counter += word.length();
         }
         return sb.toString();
     }
