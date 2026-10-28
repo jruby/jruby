@@ -3224,6 +3224,7 @@ public class RubyModule extends RubyObject {
     }
 
     @Override
+    @Deprecated(since = "10.0.0.0")
     public RubyString to_s() {
         return (RubyString) to_s(getCurrentContext());
     }

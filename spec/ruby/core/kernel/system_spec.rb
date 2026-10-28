@@ -13,6 +13,14 @@ describe "Kernel#system" do
     $?.should.success?
   end
 
+  # Without fork, as on Windows, CRuby spawns without flushing first
+  platform_is_not :windows do
+    it "flushes STDOUT before running the command" do
+      child = ruby_cmd('print "b"')
+      ruby_exe("print 'a'; system(#{child.inspect}); print 'c'").should == "abc"
+    end
+  end
+
   it "returns true when the command exits with a zero exit status" do
     system(ruby_cmd('exit 0')).should == true
 

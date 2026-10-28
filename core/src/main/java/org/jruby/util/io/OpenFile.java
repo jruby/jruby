@@ -928,14 +928,29 @@ public class OpenFile implements Finalizable {
         }
     }
 
+    @CRuby(value = "rb_io_fptr_finalize", file = "io.c", note = "external (prep) streams are flushed, not closed")
     public void finalize() {
-        if (fd != null && isAutoclose()) finalize(runtime.getCurrentContext(), true);
+        if (fd == null) return;
+
+        if (isAutoclose()) {
+            finalize(runtime.getCurrentContext(), true);
+        } else {
+            // Flush but don't close, like MRI, and write through from now on since nothing will flush again.
+            boolean locked = lock();
+            try {
+                if (wbuf.len != 0) flushBuffer();
+                mode |= SYNC;
+            } finally {
+                if (locked) unlock();
+            }
+        }
     }
 
     public void finalize(ThreadContext context, boolean noraise) {
         finalizeFlush(context, noraise);
     }
 
+    @CRuby(value = "fptr_finalize_flush", file = "io.c")
     public void finalizeFlush(ThreadContext context, boolean noraise) {
         IRubyObject err = context.nil;
         ChannelFD fd = this.fd();
@@ -971,7 +986,8 @@ public class OpenFile implements Finalizable {
         this.clearStdio();
         mode &= ~(READABLE|WRITABLE);
 
-        if (IS_PREP_STDIO() || isStdio()) {
+        // Like MRI, never close fds 0-2, even through another IO wrapping them such as IO.new(1)
+        if (IS_PREP_STDIO() || isStdio() || (fd != null && fd.realFileno >= 0 && fd.realFileno <= 2)) {
 	        /* need to keep FILE objects of stdin, stdout and stderr */
         } else if (stdio_file != null) {
 	        /* stdio_file is deallocated anyway
@@ -2788,10 +2804,15 @@ public class OpenFile implements Finalizable {
         return !nonblock;
     }
 
-    // MRI: check_tty
+    // Only a real terminal gets TTY|DUPLEX, so stdio redirected to a file or pipe stays buffered like MRI.
+    // Without a native fileno we can't ask isatty, so stdio keeps the old assumption that it's a terminal.
+    @CRuby(value = "io_check_tty", file = "io.c")
     public void checkTTY() {
-        if (fd.realFileno != -1 && runtime.getPosix().isatty(fd.realFileno) != 0
-            || stdio_file != null) {
+        boolean tty = fd.realFileno != -1
+                ? runtime.getPosix().isatty(fd.realFileno) != 0
+                : stdio_file != null;
+
+        if (tty) {
 
             boolean locked = lock();
             try {

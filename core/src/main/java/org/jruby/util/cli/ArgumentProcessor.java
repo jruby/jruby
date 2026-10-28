@@ -633,6 +633,7 @@ public class ArgumentProcessor {
                     } else if (argument.equals("--yydebug")) {
                         disallowedInRubyOpts(argument);
                         config.setParserDebug(true);
+                        break FOR;
                     } else if (argument.equals("--verbose")) {
                         config.setVerbosity(RubyInstanceConfig.Verbosity.TRUE);
                         break FOR;
