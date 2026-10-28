@@ -2610,11 +2610,18 @@ public abstract class RubyParserBase {
         keyTable.add(key);
     }
 
+    // MRI: error_duplicate_pattern_variable
     public void error_duplicate_pattern_variable(ByteList variable) {
         if (is_private_local_id(variable)) return;
-        if (variableTable.contains(variable)) yyerror("duplicated variable name");
 
-        variableTable.add(variable);
+        if (variableTable.contains(variable)) {
+            yyerror("duplicated variable name");
+        } else if (getLexContext().in_alt_pattern) {
+            yyerror("variable capture in alternative pattern");
+        } else {
+            getLexContext().capture_in_pattern = true;
+            variableTable.add(variable);
+        }
     }
 
     public Node new_find_pattern(Node constant, FindPatternNode findPattern) {

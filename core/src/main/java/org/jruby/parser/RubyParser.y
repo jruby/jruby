@@ -843,6 +843,8 @@ expr            : command_call
                     p.pop_pktbl($<Set>6);
                     LexContext ctxt = p.getLexContext();
                     ctxt.in_kwarg = $4.in_kwarg;
+                    ctxt.in_alt_pattern = $4.in_alt_pattern;
+                    ctxt.capture_in_pattern = $4.capture_in_pattern;
                     /*%%%*/
                     $$ = p.one_line_pattern(p.newPatternCaseNode(@1.start(), $1, p.newIn(@1.start(), $7, null, null)));
                     /*% %*/
@@ -855,6 +857,8 @@ expr            : command_call
                     p.pop_pktbl($<Set>6);
                     LexContext ctxt = p.getLexContext();
                     ctxt.in_kwarg = $4.in_kwarg;
+                    ctxt.in_alt_pattern = $4.in_alt_pattern;
+                    ctxt.capture_in_pattern = $4.capture_in_pattern;
                     /*%%%*/
                     $$ = p.one_line_pattern(p.newPatternCaseNode(@1.start(), $1, p.newIn(@1.start(), $7, new TrueNode(@1.start()), new FalseNode(@1.start()))));
                     /*% %*/
@@ -3271,6 +3275,8 @@ p_in_kwarg      : {
                     p.setState(EXPR_BEG|EXPR_LABEL);
                     p.setCommandStart(false);
                     p.getLexContext().in_kwarg = true;
+                    p.getLexContext().in_alt_pattern = false;
+                    p.getLexContext().capture_in_pattern = false;
                 };
 
 // InNode - [!null]
@@ -3278,6 +3284,8 @@ p_case_body     : keyword_in p_in_kwarg p_pvtbl p_pktbl p_top_expr then {
                     p.pop_pvtbl($<Set>3);
                     p.pop_pktbl($<Set>4);
                     p.getLexContext().in_kwarg = $2.in_kwarg;
+                    p.getLexContext().in_alt_pattern = $2.in_alt_pattern;
+                    p.getLexContext().capture_in_pattern = $2.capture_in_pattern;
                 } compstmt p_cases {
                     /*%%%*/
                     $$ = p.newIn(@1.start(), $5, $8, $9);
@@ -3341,11 +3349,17 @@ p_as            : p_expr tASSOC p_variable {
                 | p_alt
                 ;
 
-p_alt           : p_alt '|' p_expr_basic {
+p_alt           : p_alt '|' {
+                    p.getLexContext().in_alt_pattern = true;
+                } p_expr_basic {
+                    if (p.getLexContext().capture_in_pattern) {
+                        p.yyerror("alternative pattern after variable capture");
+                    }
+                    p.getLexContext().in_alt_pattern = false;
                     /*%%%*/
-                    $$ = p.logop($1, OR, $3);
+                    $$ = p.logop($1, OR, $4);
                     /*% %*/
-                    /*% ripper: binary!($1, STATIC_ID2SYM(idOr), $3) %*/
+                    /*% ripper: binary!($1, STATIC_ID2SYM(idOr), $4) %*/
                 }
                 | p_expr_basic
                 ;

@@ -22,6 +22,10 @@ public class LexContext {
 
     public boolean in_kwarg;
 
+    // Is the parser within the alternatives of a pattern, and has the pattern captured a variable
+    public boolean in_alt_pattern;
+    public boolean capture_in_pattern;
+
     public ShareableConstantValue shareable_constant_value;
     public boolean in_argdef;
 
@@ -36,6 +40,8 @@ public class LexContext {
         context.in_class = in_class;
         context.in_def = in_def;
         context.in_kwarg = in_kwarg;
+        context.in_alt_pattern = in_alt_pattern;
+        context.capture_in_pattern = capture_in_pattern;
         context.in_defined = in_defined;
         context.in_rescue = in_rescue;
         context.in_argdef = in_argdef;
