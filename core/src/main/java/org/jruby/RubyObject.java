@@ -360,7 +360,7 @@ public class RubyObject extends RubyBasicObject {
     private static boolean fastNumEqualInternal(final ThreadContext context, final IRubyObject a, final IRubyObject b) {
         if (a instanceof RubyFixnum) {
             if (b instanceof RubyFixnum) {
-                if (!context.sites.Fixnum.op_eqq.isBuiltin(a)) {
+                if (!Builtins.checkIntegerEquals(context)) {
                     return context.sites.Fixnum.op_eqq.call(context, a, a, b).isTrue();
                 }
                 return ((RubyFixnum) a).fastEqual((RubyFixnum) b);
