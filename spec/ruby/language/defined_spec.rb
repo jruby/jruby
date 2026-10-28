@@ -1225,6 +1225,17 @@ describe "The defined? keyword for super" do
     DefinedSpecs::ClassWithoutMethod.new.test.should == nil
   end
 
+  guard -> { !Kernel.respond_to?(:syscall, true) } do
+    it "returns nil when the superclass method is not implemented on this platform" do
+      mod = Module.new do
+        def syscall(*)
+          defined?(super)
+        end
+      end
+      Object.new.extend(mod).syscall.should == nil
+    end
+  end
+
   describe "for a method taking no arguments" do
     it "returns nil when no superclass method exists" do
       DefinedSpecs::Super.new.no_super_method_no_args.should == nil

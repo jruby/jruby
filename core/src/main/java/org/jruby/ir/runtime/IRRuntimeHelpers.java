@@ -1183,9 +1183,14 @@ public class IRRuntimeHelpers {
     public static IRubyObject isDefinedSuper(ThreadContext context, IRubyObject receiver, String frameName, RubyModule frameClass, IRubyObject definedMessage) {
         boolean defined = frameName != null && frameClass != null &&
                 frameClass.getSuperClass() != null &&
-                frameClass.getSuperClass().isMethodBound(frameName, false);
+                isSuperMethodBound(frameClass.getSuperClass().searchMethod(frameName));
 
         return defined ? definedMessage : context.nil;
+    }
+
+    // CRuby's defined?(super) also ignores not-implemented methods (rb_method_boundp returns 0).
+    private static boolean isSuperMethodBound(DynamicMethod method) {
+        return !method.isUndefined() && !method.isNotImplemented();
     }
 
     public static IRubyObject nthMatch(ThreadContext context, int matchNumber) {
