@@ -1475,6 +1475,15 @@ public class RubyClass extends RubyModule {
         // if we're not at boot time, don't bother fully clearing caches
         if (!runtime.isBootingCore()) getCachedMethods().clear();
 
+        // After a module is prepended to, each hierarchy that already included it gets its own origin holding
+        // the module's methods, and lookups through the origin are cached there. Nothing else invalidates that
+        // origin when the module's methods change, so do it along with the hierarchy that owns it.
+        RubyModule methodLocation = this.methodLocation;
+        if (methodLocation != null && methodLocation != this && isIncluded()) {
+            methodLocation.methodInvalidator.addIfUsed(invalidators);
+            if (!runtime.isBootingCore()) methodLocation.getCachedMethods().clear();
+        }
+
         getSubclassesForRead().forEachClass(invalidators);
     }
 
