@@ -2292,7 +2292,7 @@ public class RubyKernel {
         return frameName == null || frameName == Ruby.ROOT_FRAME_NAME ? context.nil : asSymbol(context, frameName);
     }
 
-    @JRubyMethod(name = "__dir__", module = true, visibility = PRIVATE, reads = FILENAME)
+    @JRubyMethod(name = "__dir__", module = true, visibility = PRIVATE, reads = {FILENAME, SCOPE})
     public static IRubyObject __dir__(ThreadContext context, IRubyObject recv) {
         // NOTE: not using __FILE__ = context.getFile() since it won't work with JIT
         String __FILE__ = context.getSingleBacktrace().getFileName();
