@@ -68,13 +68,21 @@ class TestStubSpecification < Gem::TestCase
   def test_contains_requirable_file_eh_extension
     stub_with_extension do |stub|
       _, err = capture_output do
-        refute stub.contains_requirable_file? "nonexistent"
+        if RUBY_ENGINE == "jruby"
+          refute stub.ignored?
+        else
+          refute stub.contains_requirable_file? "nonexistent"
+        end
       end
 
-      expected = "Ignoring stub_e-2 because its extensions are not built. " \
-                 "Try: gem pristine stub_e --version 2\n"
+      if RUBY_ENGINE == "jruby"
+        assert_equal "", err
+      else
+        expected = "Ignoring stub_e-2 because its extensions are not built. " \
+                   "Try: gem pristine stub_e --version 2\n"
 
-      assert_equal expected, err
+        assert_equal expected, err
+      end
     end
   end
 
@@ -110,6 +118,31 @@ class TestStubSpecification < Gem::TestCase
     assert_equal code_rb, stub.matches_for_glob("code*").first
   end
 
+  def test_matches_for_glob_with_glob_metacharacters_in_gem_dir
+    base_dir = File.join @tempdir, "dir[1]"
+    gems_dir = File.join base_dir, "gems"
+    spec_dir = File.join base_dir, "specifications"
+    FileUtils.mkdir_p spec_dir
+
+    spec = File.join spec_dir, "stub-2.gemspec"
+    File.write spec, <<~STUB
+      # -*- encoding: utf-8 -*-
+      # stub: stub 2 ruby lib
+
+      Gem::Specification.new do |s|
+        s.name = 'stub'
+        s.version = Gem::Version.new '2'
+      end
+    STUB
+
+    stub = Gem::StubSpecification.gemspec_stub spec, base_dir, gems_dir
+    code_rb = File.join stub.gem_dir, "lib", "code.rb"
+    FileUtils.mkdir_p File.dirname code_rb
+    FileUtils.touch code_rb
+
+    assert_equal code_rb, stub.matches_for_glob("code*").first
+  end
+
   def test_matches_for_glob_with_bundler_inline
     stub = stub_with_extension
     code_rb = File.join stub.gem_dir, "lib", "code.rb"
@@ -137,7 +170,11 @@ class TestStubSpecification < Gem::TestCase
       end
     end
 
-    assert stub.missing_extensions?
+    if RUBY_ENGINE == "jruby"
+      refute stub.missing_extensions?
+    else
+      assert stub.missing_extensions?
+    end
 
     stub.build_extensions
 
@@ -209,7 +246,7 @@ class TestStubSpecification < Gem::TestCase
   end
 
   def stub_with_version
-    spec = File.join @gemhome, "specifications", "stub_e-2.gemspec"
+    spec = File.join @gemhome, "specifications", "stub_v-with-version.gemspec"
     File.open spec, "w" do |io|
       io.write <<~STUB
         # -*- encoding: utf-8 -*-
@@ -232,7 +269,7 @@ class TestStubSpecification < Gem::TestCase
   end
 
   def stub_without_version
-    spec = File.join @gemhome, "specifications", "stub-2.gemspec"
+    spec = File.join @gemhome, "specifications", "stub_v-without-version.gemspec"
     File.open spec, "w" do |io|
       io.write <<~STUB
         # -*- encoding: utf-8 -*-

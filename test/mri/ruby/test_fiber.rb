@@ -497,6 +497,40 @@ class TestFiber < Test::Unit::TestCase
     assert_equal :ok, ret, '[Bug #14642]'
   end
 
+  def test_gc_during_nested_resume_yield
+    assert_normal_exit <<-'RUBY', '[Bug #22196]', timeout: 10
+      parent = child1 = child2 = nil
+
+      parent = Fiber.new do
+        child1 = Fiber.new do
+          parent.resume
+        end
+
+        child2 = Fiber.new do
+          GC.start
+          parent.resume
+        end
+
+        Fiber.yield
+
+        child1 = nil
+
+        Fiber.yield
+      end
+
+      parent.resume
+
+      child = child1
+      child1 = nil
+      child.resume
+      child = nil
+
+      child = child2
+      child2 = nil
+      child.resume
+    RUBY
+  end
+
   def test_machine_stack_gc
     assert_normal_exit <<-RUBY, '[Bug #14561]', timeout: 60
       enum = Enumerator.new { |y| y << 1 }
@@ -504,6 +538,27 @@ class TestFiber < Test::Unit::TestCase
       thread.join
       sleep 5     # pause until thread cache wait time runs out. Native thread exits.
       GC.start
+    RUBY
+  end
+
+  def test_fiber_pool_stack_acquire_failure
+    omit "cannot determine max_map_count" unless File.exist?("/proc/sys/vm/max_map_count")
+    # On these platforms, excessive memory usage can cause the test to fail unexpectedly.
+    omit "not supported on IBM platforms" if RUBY_PLATFORM =~ /s390x|powerpc/
+    omit "not supported with YJIT" if defined?(RubyVM::YJIT) && RubyVM::YJIT.enabled?
+    omit "not supported with ZJIT" if defined?(RubyVM::ZJIT) && RubyVM::ZJIT.enabled?
+    omit "unstable on RubyCI for ruby_4_0" unless ENV.key?("GITHUB_ACTIONS")
+    # Memory use grows with max_map_count, and a RUBY_DEBUG build needs about 16GB at the 262144 set on GitHub Actions runners.
+    omit "max_map_count is larger than the default" if File.read("/proc/sys/vm/max_map_count").to_i > 65530
+
+    assert_separately([], <<~RUBY, timeout: 120)
+      max_map_count = File.read("/proc/sys/vm/max_map_count").to_i
+      GC.disable
+      assert_nothing_raised do
+        (max_map_count + 10).times do
+          Fiber.new { Fiber.yield }.resume
+        end
+      end
     RUBY
   end
 end

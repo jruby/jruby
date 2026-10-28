@@ -7,3 +7,4 @@ exclude :test_redefinition_mismatch, "missing original method location in warnin
 exclude :test_singleton_class_should_has_own_namespace, "new behavior for 2.3 (#3693)"
 exclude :test_uninitialized, "fails to raise TypeError"
 exclude :test_visibility_inside_method, "missing a warning"
+exclude :test_subclasses_includes_clone, "Class#subclasses does not include clones of subclasses"

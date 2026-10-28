@@ -67,3 +67,4 @@ exclude :test_tailcall_not_to_grow_stack, "may be CRuby-specific, needs investig
 exclude :test_tailcall_symbol_block_arg, "depends on RubyVM"
 exclude :test_tailcall_with_block, "needs investigation"
 exclude :test_trace_optimized_methods, "may be CRuby-specific, needs investigation"
+exclude :test_peephole_branch_dup_with_label_after_dup, "uses RubyVM::InstructionSequence"
