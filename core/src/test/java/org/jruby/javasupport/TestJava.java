@@ -81,9 +81,7 @@ public class TestJava extends junit.framework.TestCase {
     public void testJavaConstructorExceptionHandling() throws Exception {
         final Ruby runtime = Ruby.newInstance();
         ThreadContext context = runtime.getCurrentContext();
-        JavaConstructor constructor = JavaConstructor.create(runtime,
-                ThrowingConstructor.class.getDeclaredConstructor(Integer.class)
-        );
+        JavaConstructor constructor = JavaConstructor.wrap(ThrowingConstructor.class.getDeclaredConstructor(Integer.class));
 
         assertNotNull(constructor.newInstanceDirect(context, new Object[] { 1 }));
 

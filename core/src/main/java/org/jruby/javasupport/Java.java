@@ -50,7 +50,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -173,9 +172,6 @@ public class Java implements Library {
 
         var Java = defineModule(context, "Java").
                 defineMethods(context, Java.class);
-
-        //final RubyClass _JavaObject = JavaObject.createJavaObjectClass(runtime, Java);
-        //JavaArray.createJavaArrayClass(runtime, Java, _JavaObject);
 
         // set of utility methods for Java-based proxy objects
         var _JavaProxyMethods = JavaProxyMethods.createJavaProxyMethods(context);
@@ -305,11 +301,6 @@ public class Java implements Library {
             return allocateProxy(rawJavaObject, proxyClass);
         }
         return runtime.getNil();
-    }
-
-    @Deprecated(since = "9.4-")
-    public static RubyModule getInterfaceModule(final Ruby runtime, final JavaClass javaClass) {
-        return getInterfaceModule(runtime.getCurrentContext(), javaClass.javaClass());
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -443,11 +434,6 @@ public class Java implements Library {
             case "Void" : return Void.class;
         }
         return null;
-    }
-
-    @Deprecated(since = "9.4.0.0")
-    public static RubyModule getProxyClass(Ruby runtime, JavaClass javaClass) {
-        return getProxyClass(runtime.getCurrentContext(), javaClass.javaClass());
     }
 
     @Deprecated(since = "10.0.0.0")
@@ -631,36 +617,10 @@ public class Java implements Library {
                 return context.nil;
             }
         });
-        ///TODO: investigate this, should jcreate! still exist?
 
+        // __jcreate! is the fallback constructor dispatch used by NewMethodReified when no reified Java ctor
+        // is available (e.g. interface-only subclasses); also retained for backwards compatibility.
         subclass.addMethod(context, "__jcreate!", new JCreateMethod(subclassSingleton));
-    }
-
-    /**
-     * Used for concrete reified classes. Constructed in generated code (RubyClass)
-     */
-    public static class JCtorCache implements CallableSelector.CallableCache<ParameterTypes> {
-
-        private final NonBlockingHashMapLong<ParameterTypes> cache = new NonBlockingHashMapLong<>(8);
-        public final JavaConstructor[] constructors;
-        private final List<JavaConstructor> constructorList;
-
-        public JCtorCache(JavaConstructor[] constructors) {
-            this.constructors = constructors;
-            constructorList = Arrays.asList(constructors);
-        }
-
-        public int indexOf(JavaConstructor ctor) {
-            return constructorList.indexOf(ctor);
-        }
-
-        public final ParameterTypes getSignature(int signatureCode) {
-            return cache.get(signatureCode);
-        }
-
-        public final void putSignature(int signatureCode, ParameterTypes callable) {
-            cache.put(signatureCode, callable);
-        }
     }
 
     public static class JCreateMethod extends JavaMethodN implements CallableSelector.CallableCache<JavaProxyConstructor> {
@@ -678,7 +638,7 @@ public class Java implements Library {
          * @param runtime
          * @return Index of ctor in cache to call, or throws a new exception
          */
-        public static int forTypes(Ruby runtime, IRubyObject[] args, JCtorCache cache) {
+        public static int forTypes(Ruby runtime, IRubyObject[] args, ConstructorCache cache) {
             JavaConstructor ctor = matchConstructorIndex(runtime.getCurrentContext(), cache.constructors, cache,
                     args.length, args);
             int index = cache.indexOf(ctor);
@@ -1351,11 +1311,6 @@ public class Java implements Library {
         return result != null ? result : context.nil;
     }
 
-    @Deprecated(since = "9.4.0.0")
-    public static IRubyObject wrap(Ruby runtime, IRubyObject java_object) {
-        return getInstance(runtime, ((JavaObject) java_object).getValue());
-    }
-
     @Deprecated(since = "10.0.0.0")
     public static IRubyObject new_proxy_instance2(IRubyObject recv, final IRubyObject wrapper,
                                                   final IRubyObject interfaces, Block block) {
@@ -1781,10 +1736,5 @@ public class Java implements Library {
      */
     public static <T extends AccessibleObject & Member> boolean isAccessible(T member) {
         return Modules.isAccessible(member, Java.class);
-    }
-
-    public static JavaObject castToJavaObject(ThreadContext context, IRubyObject newValue) {
-        if (!(newValue instanceof JavaObject)) throw typeError(context, newValue, "a java object");
-        return (JavaObject) newValue;
     }
 }

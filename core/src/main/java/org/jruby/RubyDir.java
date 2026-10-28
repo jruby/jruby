@@ -71,6 +71,7 @@ import static org.jruby.RubyString.UTF8;
 import static org.jruby.api.Access.dirClass;
 import static org.jruby.api.Access.encodingService;
 import static org.jruby.api.Access.objectClass;
+import static org.jruby.api.Check.checkBoolean;
 import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
@@ -82,7 +83,6 @@ import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.notImplementedError;
 import static org.jruby.api.Error.runtimeError;
 import static org.jruby.api.Warn.warn;
-import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.io.EncodingUtils.newExternalStringWithEncoding;
 
 /**
@@ -246,10 +246,8 @@ public class RubyDir extends RubyObject implements Closeable {
                 if (processFlags && rets[2] != null) options.flags |= toInt(context, rets[2]);
 
                 if (rets[1] != null) {
-                    if (!(rets[1] instanceof RubyBoolean)) {
-                        throw argumentError(context, str(runtime, "expected true or false as sort:", rets[1]));
-                    }
-                    options.sort = !runtime.getFalse().equals(rets[1]); // weirdly only explicit false is honored for sort.
+                    IRubyObject rets1 = rets[1];
+                    options.sort = checkBoolean(context, rets1, "sort", true);
                 }
 
                 if (rets[0] == null || rets[0].isNil()) {

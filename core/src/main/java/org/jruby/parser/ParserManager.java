@@ -172,10 +172,13 @@ public class ParserManager {
         int length = contents.realSize();
         byte[] bytes = contents.unsafeBytes();
 
+        // One entry per line, as File.foreach yields them: a last line without a newline still counts.
+        int end = begin + length;
         int lineCount = 0;
-        for (int i = begin; i < length; i++) {
+        for (int i = begin; i < end; i++) {
             if (bytes[i] == '\n') lineCount++;
         }
+        if (length > 0 && bytes[end - 1] != '\n') lineCount++;
 
         // FIXME: Semantic problem.  Linenumber affects both differently due to prism being 1-indexed and AST being 0-indexed.
         ParseResult result = parseFile("", Options.PARSER_PRISM.load() ? 0 : -1, new LoadServiceResourceInputStream(contents.bytes()), contents.getEncoding());

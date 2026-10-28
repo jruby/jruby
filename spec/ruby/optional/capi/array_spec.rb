@@ -273,6 +273,17 @@ describe "C-API Array function" do
       b.should == [1, 2, 3]
       a.should == [1, 2, 3] # check a was not modified
     end
+
+    it "keeps Float elements alive across GC and later accesses" do
+      a = [1.5, 2.5, 3.5]
+      @s.RARRAY_PTR_iterate(a) { |e| }
+      GC.start
+      b = []
+      @s.RARRAY_PTR_iterate(a) do |e|
+        b << e
+      end
+      b.should == [1.5, 2.5, 3.5]
+    end
   end
 
   describe "RARRAY_LEN" do
@@ -343,7 +354,7 @@ describe "C-API Array function" do
     end
   end
 
-  ruby_version_is ""..."4.0" do
+  ruby_version_is ""..."4.1" do
     describe "rb_iterate" do
       it "calls an callback function as a block passed to an method" do
         s = [1,2,3,4]
@@ -375,6 +386,10 @@ describe "C-API Array function" do
         @s.rb_iterate_then_yield(o) { |x| s2 << x }
 
         s2.should == [1,2,3,4]
+      end
+
+      it "passes non-Ruby pointers to the iteration and block callbacks" do
+        @s.rb_iterate_with_pointer.should == [14]
       end
     end
   end

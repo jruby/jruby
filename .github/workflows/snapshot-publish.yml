@@ -32,6 +32,7 @@ jobs:
           server-id: central
           server-username: MAVEN_USERNAME
           server-password: MAVEN_PASSWORD
+          cache: 'maven'
       - name: Publish package
         run: ./mvnw -ntp clean deploy -Psnapshots
         env:

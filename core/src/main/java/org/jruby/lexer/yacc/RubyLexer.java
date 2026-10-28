@@ -368,10 +368,22 @@ public class RubyLexer extends LexingCommon {
     public void heredoc_dedent(Node root) {
         int indent = heredoc_indent;
 
-        if (indent <= 0) return;
+        if (indent > 0) {
+            heredoc_indent = 0;
+            dedent(root, indent);
+        }
 
-        heredoc_indent = 0;
+        // The newline flag only marked where the heredoc's lines start for dedenting; they are not statements.
+        if (root instanceof StrNode) {
+            root.unsetNewline();
+        } else if (root instanceof ListNode list) {
+            for (int i = 0; i < list.size(); i++) {
+                if (list.get(i) instanceof StrNode child) child.unsetNewline();
+            }
+        }
+    }
 
+    private void dedent(Node root, int indent) {
         if (root == null) return;
 
         if (root instanceof StrNode) {
@@ -523,10 +535,20 @@ public class RubyLexer extends LexingCommon {
         flush();
     }
 
+    // Columns of the heredoc identifier (<<~ID) just read, for its token's position; heredocTokenEnd is -1 otherwise
+    private int heredocTokenStart = -1;
+    private int heredocTokenEnd = -1;
+
     public int nextToken() throws IOException {
         token = yylex();
 
         updateTokenPosition();
+        if (heredocTokenEnd >= 0) {
+            // reading the identifier moved on to the end of its line, where the heredoc's body starts
+            start = ProductionState.pack(ruby_sourceline, heredocTokenStart);
+            end = ProductionState.pack(ruby_sourceline, heredocTokenEnd);
+            heredocTokenEnd = -1;
+        }
 
         return token == EOF ? 0 : token;
     }
@@ -772,6 +794,7 @@ public class RubyLexer extends LexingCommon {
     }
     
     private int hereDocumentIdentifier() {
+        int tokenStart = lex_p - lex_pbeg - 2; // the << just read
         int c = nextc(); 
         int term;
         int indent = 0;
@@ -846,6 +869,8 @@ public class RubyLexer extends LexingCommon {
         }
 
         int len = lex_p - lex_pbeg;
+        heredocTokenStart = tokenStart;
+        heredocTokenEnd = len;
         lex_goto_eol();
         lex_strterm = new HeredocTerm(markerValue, func, len, ruby_sourceline, lex_lastline);
         heredoc_indent = indent;
@@ -2071,9 +2096,8 @@ public class RubyLexer extends LexingCommon {
             } else {
                 c = readEscape();
             }
-        } else {
-            newtok(true);
         }
+        // No newtok: the token starts at its ?, which newtok would move past
 
         ByteList oneCharBL = new ByteList(1);
         oneCharBL.setEncoding(getEncoding());

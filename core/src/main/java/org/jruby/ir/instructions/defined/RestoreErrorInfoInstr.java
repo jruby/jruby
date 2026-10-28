@@ -8,6 +8,7 @@ import org.jruby.ir.instructions.OneOperandInstr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.transformations.inlining.CloneInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -40,7 +41,7 @@ public class RestoreErrorInfoInstr extends OneOperandInstr implements FixedArity
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        context.setErrorInfo((IRubyObject) getArg().retrieve(context, self, currScope, currDynScope, temp));
+        IRRuntimeHelpers.setErrorInfoGlobalVariable(context, getArg().retrieve(context, self, currScope, currDynScope, temp));
 
         return null;
     }

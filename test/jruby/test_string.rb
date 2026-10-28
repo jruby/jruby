@@ -274,4 +274,23 @@ class TestStringPrintf < Test::Unit::TestCase
     opponent = '41181 jpa:awh'.scan("jpa")[0]
     assert_equal('jpa', sprintf("%s", opponent))
   end
+
+  def test_strip_gb18030_four_byte
+    # Issue #9776: String#strip raises ArrayIndexOutOfBoundsException on four-byte GB18030 characters
+    s = "\u{10000}".encode("GB18030")
+    assert_equal(s, s.strip)
+    assert_equal(s, s.lstrip)
+    assert_equal(s, s.rstrip)
+
+    s2 = "\x81\x30\x81\x30".force_encoding("GB18030")
+    assert_equal(s2, s2.strip)
+    assert_equal(s2, s2.lstrip)
+    assert_equal(s2, s2.rstrip)
+
+    # Surrounded by ASCII whitespace
+    s3 = "   " + s + "   "
+    assert_equal(s, s3.strip)
+    assert_equal(s + "   ", s3.lstrip)
+    assert_equal("   " + s, s3.rstrip)
+  end
 end

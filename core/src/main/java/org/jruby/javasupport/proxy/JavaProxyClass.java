@@ -555,7 +555,7 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
                 singleton.addMethod(context, "new", new NewMethodReified(clazz, reified));
             }
             // Install initialize
-            StaticJCreateMethod.tryInstall(context.runtime, clazz, proxyClass, reified, defaultNew);
+            StaticJCreateMethod.tryInstall(context, clazz, reified, defaultNew);
         }
         return proxyClass;
     }

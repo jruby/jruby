@@ -27,6 +27,7 @@
 package org.jruby;
 
 import org.jcodings.specific.ASCIIEncoding;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Convert;
@@ -54,6 +55,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.function.BiFunction;
 
+import static org.jruby.api.Check.checkBoolean;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asFloat;
@@ -123,16 +125,12 @@ public class RubyComplex extends RubyNumeric {
         return ret;
     }
 
-    /** rb_complex_raw
-     * 
-     */
+    @CRuby(value = "rb_complex_raw", file = "complex.c")
     public static RubyComplex newComplexRaw(Ruby runtime, IRubyObject x, IRubyObject y) {
         return newComplexInternal(runtime, runtime.getComplex(), x, y);
     }
 
-    /** rb_complex_raw1
-     * 
-     */
+    @CRuby(value = "rb_complex_raw1", file = "include/ruby/internal/intern/complex.h")
     public static RubyComplex newComplexRaw(Ruby runtime, IRubyObject x) {
         return newComplexRaw(runtime, x, RubyFixnum.zero(runtime));
     }
@@ -141,16 +139,12 @@ public class RubyComplex extends RubyNumeric {
         return newComplexRaw(runtime, RubyFixnum.zero(runtime), image);
     }
 
-    /** rb_complex_new1
-     * 
-     */
+    @CRuby(value = "rb_complex_new1", file = "include/ruby/internal/intern/complex.h")
     public static IRubyObject newComplexCanonicalize(ThreadContext context, IRubyObject x) {
         return newComplexCanonicalize(context, x, RubyFixnum.zero(context.runtime));
     }
     
-    /** rb_complex_new
-     * 
-     */
+    @CRuby(value = "rb_complex_new", file = "complex.c")
     public static IRubyObject newComplexCanonicalize(ThreadContext context, IRubyObject x, IRubyObject y) {
         return canonicalizeInternal(context, context.runtime.getComplex(), x, y);
     }
@@ -169,9 +163,7 @@ public class RubyComplex extends RubyNumeric {
         return newComplex(context, clazz, x, RubyFixnum.zero(context.runtime));
     }
 
-    /** f_complex_new2
-     * 
-     */
+    @CRuby(value = "f_complex_new2", file = "complex.c")
     static RubyNumeric newComplex(ThreadContext context, RubyClass clazz, IRubyObject x, IRubyObject y) {
         assert !(x instanceof RubyComplex);
         RubyNumeric ret = canonicalizeInternal(context, clazz, x, y);
@@ -179,16 +171,12 @@ public class RubyComplex extends RubyNumeric {
         return ret;
     }
     
-    /** f_complex_new_bang2
-     * 
-     */
+    @CRuby(value = "f_complex_new_bang2", file = "complex.c")
     static RubyComplex newComplexBang(ThreadContext context, RubyClass clazz, RubyNumeric x, RubyNumeric y) {
         return newComplexInternal(context.runtime, clazz, x, y);
     }
 
-    /** f_complex_new_bang1
-     * 
-     */
+    @CRuby(value = "f_complex_new_bang1", file = "complex.c")
     static RubyComplex newComplexBang(ThreadContext context, RubyClass clazz, RubyNumeric x) {
         return newComplexBang(context, clazz, x, RubyFixnum.zero(context.runtime));
     }
@@ -204,9 +192,7 @@ public class RubyComplex extends RubyNumeric {
         return real;
     }
 
-    /** m_cos
-     * 
-     */
+    @CRuby(value = "m_cos", file = "complex.c")
     private static IRubyObject m_cos(ThreadContext context, IRubyObject x) {
         if (!(x instanceof RubyComplex)) return RubyMath.cos(context, x, x);
         RubyComplex complex = (RubyComplex)x;
@@ -215,9 +201,7 @@ public class RubyComplex extends RubyNumeric {
                           f_mul(context, f_negate(context, RubyMath.sin(context, x, complex.real)), RubyMath.sinh(context, x, complex.image)));
     }
 
-    /** m_sin
-     * 
-     */
+    @CRuby(value = "m_sin", file = "complex.c")
     private static IRubyObject m_sin(ThreadContext context, IRubyObject x) {
         if (!(x instanceof RubyComplex)) return RubyMath.sin(context, x, x);
         RubyComplex complex = (RubyComplex)x;
@@ -289,9 +273,7 @@ public class RubyComplex extends RubyNumeric {
         return true;
     }
 
-    /** nucomp_s_canonicalize_internal
-     * 
-     */
+    @CRuby(value = "nucomp_s_canonicalize_internal", file = "complex.c")
     private static RubyNumeric canonicalizeInternal(ThreadContext context, RubyClass clazz, IRubyObject real, IRubyObject image) {
         if (Numeric.CANON) {
             if (f_zero_p(context, image) && k_exact_p(image) && canonicalization) return (RubyNumeric) real;
@@ -342,9 +324,7 @@ public class RubyComplex extends RubyNumeric {
         return canonicalizeInternal(context, (RubyClass) recv, real, image);
     }
 
-    /** f_complex_polar
-     * 
-     */
+    @CRuby(value = "f_complex_polar", file = "complex.c")
     private static IRubyObject f_complex_polar(ThreadContext context, RubyClass clazz, IRubyObject x, IRubyObject y) {
         assert !(x instanceof RubyComplex) && !(y instanceof RubyComplex);
         return canonicalizeInternal(context, clazz,
@@ -352,9 +332,7 @@ public class RubyComplex extends RubyNumeric {
                                              f_mul(context, x, m_sin(context, y)));
     }
 
-    /** nucomp_s_polar
-     *
-     */
+    @CRuby(value = "nucomp_s_polar", file = "complex.c")
     @JRubyMethod(name = "polar", meta = true, required = 1, optional = 1, checkArity = false)
     public static IRubyObject polar(ThreadContext context, IRubyObject clazz, IRubyObject... args) {
         int argc = Arity.checkArgumentCount(context, args, 1, 2);
@@ -371,9 +349,7 @@ public class RubyComplex extends RubyNumeric {
         return f_complex_polar(context, (RubyClass) clazz, abs, arg);
     }
 
-    /** rb_Complex1
-     * 
-     */
+    @CRuby(value = "rb_Complex1", file = "include/ruby/internal/intern/complex.h")
     public static IRubyObject newComplexConvert(ThreadContext context, IRubyObject x) {
         return newComplexConvert(context, x, RubyFixnum.zero(context.runtime));
     }
@@ -386,34 +362,27 @@ public class RubyComplex extends RubyNumeric {
     }
 
 
-    /** nucomp_s_convert
-     * 
-     */
+    @CRuby(value = "nucomp_s_convert", file = "complex.c")
     @JRubyMethod(name = "convert", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject convert(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         if (arg instanceof RubyComplex) return arg;
         return convertCommon(context, recv, arg, null, true);
     }
 
-    /** nucomp_s_convert
-     *
-     */
+    @CRuby(value = "nucomp_s_convert", file = "complex.c")
     @JRubyMethod(name = "convert", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject convert(ThreadContext context, IRubyObject recv, IRubyObject a1, IRubyObject a2) {
         IRubyObject maybeKwargs = ArgsUtil.getOptionsArg(context.runtime, a2, false);
         if (maybeKwargs.isNil()) return convertCommon(context, recv, a1, a2, true);
 
         IRubyObject exception = ArgsUtil.extractKeywordArg(context, "exception", (RubyHash) maybeKwargs);
-        if (exception instanceof RubyBoolean) {
-            return a1 instanceof RubyComplex ? a1 : convertCommon(context, recv, a1, null, exception.isTrue());
-        }
 
-        throw argumentError(context, "'Complex': expected true or false as exception: " + exception);
+        boolean exceptionBool = checkBoolean(context,  exception, "exception", true);
+
+        return a1 instanceof RubyComplex ? a1 : convertCommon(context, recv, a1, null, exceptionBool);
     }
 
-    /** nucomp_s_convert
-     *
-     */
+    @CRuby(value = "nucomp_s_convert", file = "complex.c")
     @JRubyMethod(name = "convert", meta = true, visibility = Visibility.PRIVATE)
     public static IRubyObject convert(ThreadContext context, IRubyObject recv, IRubyObject a1, IRubyObject a2, IRubyObject kwargs) {
         Ruby runtime = context.runtime;
@@ -422,14 +391,13 @@ public class RubyComplex extends RubyNumeric {
         if (maybeKwargs.isNil()) throw argumentError(context, 3, 1, 2);
 
         IRubyObject exception = ArgsUtil.extractKeywordArg(context, "exception", (RubyHash) maybeKwargs);
-        if (exception instanceof RubyBoolean) {
-            return convertCommon(context, recv, a1, a2, exception.isTrue());
-        }
 
-        throw argumentError(context, "'Complex': expected true or false as exception: " + exception);
+        boolean exceptionBool = checkBoolean(context,  exception, "exception", true);
+
+        return convertCommon(context, recv, a1, a2, exceptionBool);
     }
 
-    // MRI: nucomp_convert
+    @CRuby(value = "nucomp_convert", file = "complex.c")
     public static IRubyObject convertCommon(ThreadContext context, IRubyObject recv, IRubyObject a1, IRubyObject a2, boolean raise) {
         final boolean singleArg = a2 == null;
 
@@ -496,12 +464,12 @@ public class RubyComplex extends RubyNumeric {
         return newInstance(context, recv, a1, a2, true);
     }
 
-    // MRI: nucomp_real_p
+    @CRuby(value = "nucomp_real_p", file = "complex.c")
     private boolean nucomp_real_p(ThreadContext context) {
         return f_zero_p(context, image);
     }
 
-    // MRI: nucomp_cmp
+    @CRuby(value = "nucomp_cmp", file = "complex.c")
     @JRubyMethod(name="<=>")
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
         if (!k_numeric_p(other)) {
@@ -665,9 +633,7 @@ public class RubyComplex extends RubyNumeric {
 
     }
 
-    /** nucomp_fdiv
-     *
-     */
+    @CRuby(value = "nucomp_fdiv", file = "complex.c")
     @JRubyMethod(name = "fdiv")
     @Override
     public IRubyObject fdiv(ThreadContext context, IRubyObject other) {
@@ -783,7 +749,7 @@ public class RubyComplex extends RubyNumeric {
         return coerceBin(context, sites(context).op_exp, other);
     }
 
-    // MRI: complex_pow_for_special_angle
+    @CRuby(value = "complex_pow_for_special_angle", file = "complex.c")
     private IRubyObject complexPowForSpecialAngle(ThreadContext context, IRubyObject other) {
         if (!(other instanceof RubyInteger integer)) {
             return UNDEF;
@@ -873,9 +839,7 @@ public class RubyComplex extends RubyNumeric {
         return f_equal(context, other, this);
     }
 
-    /** nucomp_coerce 
-     * 
-     */
+    @CRuby(value = "nucomp_coerce", file = "complex.c")
     @JRubyMethod(name = "coerce")
     public IRubyObject coerce(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyComplex) return newArray(context, other, this);
@@ -897,9 +861,7 @@ public class RubyComplex extends RubyNumeric {
         return RubyMath.hypot(context, this, real, image);
     }
 
-    /** nucomp_abs2 
-     * 
-     */
+    @CRuby(value = "nucomp_abs2", file = "complex.c")
     @JRubyMethod(name = "abs2")
     @Override
     public IRubyObject abs2(ThreadContext context) {
@@ -917,18 +879,14 @@ public class RubyComplex extends RubyNumeric {
         return RubyMath.atan2(context, this, image, real);
     }
 
-    /** nucomp_rect
-     * 
-     */
+    @CRuby(value = "nucomp_rect", file = "complex.c")
     @JRubyMethod(name = {"rectangular", "rect"})
     @Override
     public IRubyObject rect(ThreadContext context) {
         return newArray(context, real, image);
     }
 
-    /** nucomp_polar 
-     * 
-     */
+    @CRuby(value = "nucomp_polar", file = "complex.c")
     @JRubyMethod(name = "polar")
     @Override
     public IRubyObject polar(ThreadContext context) {
@@ -944,9 +902,7 @@ public class RubyComplex extends RubyNumeric {
         return newComplex(context, getMetaClass(), real, f_negate(context, image));
     }
 
-    /** nucomp_real_p
-     * 
-     */
+    @CRuby(value = "nucomp_real_p", file = "complex.c")
     @JRubyMethod(name = "real?")
     @Override
     public IRubyObject real_p(ThreadContext context) {
@@ -980,17 +936,13 @@ public class RubyComplex extends RubyNumeric {
         return exact_p(context) == context.tru ? context.fals : context.tru;
     }
 
-    /** nucomp_denominator
-     * 
-     */
+    @CRuby(value = "nucomp_denominator", file = "complex.c")
     @JRubyMethod(name = "denominator")
     public IRubyObject demoninator(ThreadContext context) {
         return f_lcm(context, f_denominator(context, real), f_denominator(context, image));
     }
 
-    /** nucomp_numerator
-     * 
-     */
+    @CRuby(value = "nucomp_numerator", file = "complex.c")
     @JRubyMethod(name = "numerator")
     @Override
     public IRubyObject numerator(ThreadContext context) {
@@ -1004,9 +956,7 @@ public class RubyComplex extends RubyNumeric {
                                 f_div(context, cd, f_denominator(context, image))));
     }
 
-    /** nucomp_hash
-     * 
-     */
+    @CRuby(value = "nucomp_hash", file = "complex.c")
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
         long realHash = toLong(context, invokedynamic(context, real, HASH));
@@ -1024,9 +974,7 @@ public class RubyComplex extends RubyNumeric {
                 nonFixnumHashCode(context, hash);
     }
 
-    /** nucomp_eql_p
-     * 
-     */
+    @CRuby(value = "nucomp_eql_p", file = "complex.c")
     @JRubyMethod(name = "eql?")
     @Override
     public IRubyObject eql_p(ThreadContext context, IRubyObject other) {
@@ -1050,9 +998,7 @@ public class RubyComplex extends RubyNumeric {
         return equals(getRuntime().getCurrentContext(), other);
     }
 
-    /** f_signbit
-     * 
-     */
+    @CRuby("f_signbit")
     private static boolean signbit(ThreadContext context, IRubyObject x) {
         if (x instanceof RubyFloat) {
             double value = ((RubyFloat) x).value;
@@ -1061,16 +1007,12 @@ public class RubyComplex extends RubyNumeric {
         return f_negative_p(context, x);
     }
 
-    /** f_tpositive_p
-     * 
-     */
+    @CRuby(value = "f_tpositive_p", file = "complex.c")
     private static boolean tpositive_p(ThreadContext context, IRubyObject x) {
         return !signbit(context, x);
     }
 
-    /** nucomp_to_s
-     * 
-     */
+    @CRuby(value = "nucomp_to_s", file = "complex.c")
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s(ThreadContext context) {
         boolean impos = tpositive_p(context, image);
@@ -1083,9 +1025,7 @@ public class RubyComplex extends RubyNumeric {
         return str;
     }
 
-    /** nucomp_inspect
-     * 
-     */
+    @CRuby(value = "nucomp_inspect", file = "complex.c")
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect(ThreadContext context) {
         boolean impos = tpositive_p(context, image);
@@ -1105,9 +1045,7 @@ public class RubyComplex extends RubyNumeric {
         return ASCIIEncoding.INSTANCE.isDigit(bytes.getUnsafeBytes()[bytes.getBegin() + bytes.getRealSize() - 1]);
     }
 
-    /** nucomp_marshal_dump
-     * 
-     */
+    @CRuby(value = "nucomp_marshal_dump", file = "complex.c")
     @JRubyMethod(name = "marshal_dump", visibility = Visibility.PRIVATE)
     public IRubyObject marshal_dump(ThreadContext context) {
         var dump = newArray(context, real, image);
@@ -1115,9 +1053,7 @@ public class RubyComplex extends RubyNumeric {
         return dump;
     }
 
-    /** nucomp_marshal_load
-     * 
-     */
+    @CRuby(value = "nucomp_marshal_load", file = "complex.c")
     @JRubyMethod(name = "marshal_load", visibility = Visibility.PRIVATE)
     public IRubyObject marshal_load(ThreadContext context, IRubyObject arg) {
         RubyArray load = arg.convertToArray();
@@ -1165,35 +1101,27 @@ public class RubyComplex extends RubyNumeric {
         }
     };
 
-    /** nucomp_to_c
-     *
-     */
+    @CRuby(value = "nucomp_to_c", file = "complex.c")
     @JRubyMethod(name = "to_c")
     public IRubyObject to_c(ThreadContext context) {
         return this;
     }
 
-    /** nucomp_to_i
-     * 
-     */
+    @CRuby(value = "nucomp_to_i", file = "complex.c")
     @JRubyMethod(name = "to_i")
     public IRubyObject to_i(ThreadContext context) {
         checkValidRational(context, "Integer");
         return f_to_i(context, real);
     }
 
-    /** nucomp_to_f
-     * 
-     */
+    @CRuby(value = "nucomp_to_f", file = "complex.c")
     @JRubyMethod(name = "to_f")
     public IRubyObject to_f(ThreadContext context) {
         checkValidRational(context, "Float");
         return f_to_f(context, real);
     }
 
-    /** nucomp_to_r
-     * 
-     */
+    @CRuby(value = "nucomp_to_r", file = "complex.c")
     @JRubyMethod(name = "to_r")
     public IRubyObject to_r(ThreadContext context) {
         if (image instanceof RubyFloat imageFloat && imageFloat.isZero(context)) {
@@ -1208,9 +1136,7 @@ public class RubyComplex extends RubyNumeric {
         return f_to_r(context, real);
     }
 
-    /** nucomp_rationalize
-     *
-     */
+    @CRuby(value = "nucomp_rationalize", file = "complex.c")
     @JRubyMethod(name = "rationalize", optional = 1, checkArity = false)
     public IRubyObject rationalize(ThreadContext context, IRubyObject[] args) {
         checkValidRational(context, "Rational");
@@ -1229,7 +1155,7 @@ public class RubyComplex extends RubyNumeric {
         return checkFinite(context, real) && checkFinite(context, image) ? context.tru : context.fals;
     }
 
-    // MRI: f_finite_p
+    @CRuby(value = "f_finite_p", file = "complex.c")
     public boolean checkFinite(ThreadContext context, IRubyObject value) {
         if (value instanceof RubyInteger || value instanceof RubyRational) return true;
 
@@ -1335,7 +1261,7 @@ public class RubyComplex extends RubyNumeric {
         return (RubyNumeric) ((RubyString) s).stringToInum(10, true);
     }
 
-    // MRI: string_to_c_strict
+    @CRuby(value = "string_to_c_strict", file = "complex.c")
     private static IRubyObject str_to_c_strict(ThreadContext context, RubyString str, boolean raise) {
         str.verifyAsciiCompatible();
 

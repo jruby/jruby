@@ -4,3 +4,29 @@ windows:IO.copy_stream from a file name to a file name copies only length bytes 
 windows:IO.copy_stream from a file name to an IO copies only length bytes from the offset
 windows:IO.copy_stream with non-IO Objects calls #read on the source Object
 windows:IO.copy_stream from an IO does change the IO offset when an offset is not specified
+fails:IO.copy_stream from an IO to a file name calls #to_int to convert length
+fails:IO.copy_stream from an IO to a file name raises a TypeError if #to_int does not return an Integer
+fails:IO.copy_stream from an IO to a file name raises a TypeError if passed an object that does not respond to #to_int
+fails:IO.copy_stream from an IO to a file name calls #to_int to convert the offset
+fails:IO.copy_stream from an IO to an IO calls #to_int to convert length
+fails:IO.copy_stream from an IO to an IO raises a TypeError if #to_int does not return an Integer
+fails:IO.copy_stream from an IO to an IO raises a TypeError if passed an object that does not respond to #to_int
+fails:IO.copy_stream from an IO to an IO calls #to_int to convert the offset
+fails:IO.copy_stream from an IO to a Tempfile calls #to_int to convert length
+fails:IO.copy_stream from an IO to a Tempfile raises a TypeError if #to_int does not return an Integer
+fails:IO.copy_stream from an IO to a Tempfile raises a TypeError if passed an object that does not respond to #to_int
+fails:IO.copy_stream from an IO to a Tempfile calls #to_int to convert the offset
+fails:IO.copy_stream from a file name to a file name calls #to_int to convert length
+fails:IO.copy_stream from a file name to a file name raises a TypeError if #to_int does not return an Integer
+fails:IO.copy_stream from a file name to a file name raises a TypeError if passed an object that does not respond to #to_int
+fails:IO.copy_stream from a file name to a file name calls #to_int to convert the offset
+fails:IO.copy_stream from a file name to an IO calls #to_int to convert length
+fails:IO.copy_stream from a file name to an IO raises a TypeError if #to_int does not return an Integer
+fails:IO.copy_stream from a file name to an IO raises a TypeError if passed an object that does not respond to #to_int
+fails:IO.copy_stream from a file name to an IO calls #to_int to convert the offset
+fails:IO.copy_stream from a pipe IO to a file name calls #to_int to convert length
+fails:IO.copy_stream from a pipe IO to a file name raises a TypeError if #to_int does not return an Integer
+fails:IO.copy_stream from a pipe IO to a file name raises a TypeError if passed an object that does not respond to #to_int
+fails:IO.copy_stream from a pipe IO to an IO calls #to_int to convert length
+fails:IO.copy_stream from a pipe IO to an IO raises a TypeError if #to_int does not return an Integer
+fails:IO.copy_stream from a pipe IO to an IO raises a TypeError if passed an object that does not respond to #to_int

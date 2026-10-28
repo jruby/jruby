@@ -10,6 +10,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyRegexp;
+import org.jruby.anno.CRuby;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.lexer.yacc.LexContext;
 import org.jruby.lexer.yacc.StackState;
@@ -173,7 +174,7 @@ public abstract class LexingCommon {
     }
 
     protected void updateStartPosition(int column) {
-        this.start = ProductionState.shift_line(ruby_sourceline) | column;
+        this.start = ProductionState.pack(ruby_sourceline, column);
     }
 
     // similar to compile_error where yyloc passes in NULL.
@@ -463,6 +464,14 @@ public abstract class LexingCommon {
 
     public int lineno() {
         return ruby_sourceline + src.getLineOffset();
+    }
+
+    /**
+     * The last line read so far. Unlike lineno(), this is past a heredoc that ends the source: lineno() is still on
+     * the line the heredoc started on, until the lexer reads the next line.
+     */
+    public int lastLineno() {
+        return Math.max(ruby_sourceline, heredoc_end) + src.getLineOffset();
     }
 
     protected void magicCommentEncoding(ByteList encoding) {
@@ -1014,10 +1023,10 @@ public abstract class LexingCommon {
         return c == ' ' || ('\t' <= c && c <= '\r');
     }
 
-    /* MRI: magic_comment_marker */
     /* This impl is a little sucky.  We basically double scan the same bytelist twice.  Once here
      * and once in parseMagicComment.
      */
+    @CRuby(value = "magic_comment_marker", file = "parse.y")
     public static int magicCommentMarker(ByteList str, int begin) {
         int i = begin;
         int len = str.length();

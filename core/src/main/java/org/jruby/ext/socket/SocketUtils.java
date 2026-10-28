@@ -33,6 +33,7 @@ import jnr.constants.platform.SocketLevel;
 import jnr.constants.platform.SocketOption;
 import jnr.netdb.Protocol;
 import jnr.netdb.Service;
+import org.jruby.FiberScheduler;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
@@ -41,6 +42,7 @@ import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.anno.CRuby;
 import org.jruby.api.Access;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
@@ -82,6 +84,7 @@ import static org.jruby.api.Create.newEmptyArray;
 import static org.jruby.api.Create.newString;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.ext.socket.Addrinfo.AI_CANONNAME;
+import static org.jruby.ext.socket.Addrinfo.AI_NUMERICHOST;
 
 /**
  * Socket class methods for addresses, structures, and so on.
@@ -291,8 +294,13 @@ public class SocketUtils {
             hostString = emptyHost ? "localhost" : host.convertToString().toString();
         }
 
+        // AI_NUMERICHOST: the host must be an address literal; never resolve a name
+        if ((flag & AI_NUMERICHOST) != 0 && !emptyHost && !isNumericHost(hostString)) {
+            throw sockerr(runtime, "getaddrinfo: name or service not known");
+        }
+
         try {
-            InetAddress[] addrs = InetAddress.getAllByName(hostString);
+            InetAddress[] addrs = getAllByName(context, host, hostString, emptyHost);
 
             for(int i = 0; i < addrs.length; i++) {
                 // filter out unrelated address families if specified
@@ -305,6 +313,54 @@ public class SocketUtils {
             throw sockerr(runtime, "getaddrinfo: name or service not known");
 
         }
+    }
+
+    // A host that is not numeric goes to the fiber scheduler's address_resolve
+    @CRuby(value = "rsock_getaddrinfo", file = "ext/socket/raddrinfo.c")
+    private static InetAddress[] getAllByName(ThreadContext context, IRubyObject host, String hostString, boolean emptyHost) throws UnknownHostException {
+        if (emptyHost || isNumericHost(hostString)) return InetAddress.getAllByName(hostString);
+
+        IRubyObject scheduler = FiberScheduler.current(context);
+        if (scheduler != null) {
+            // null when the scheduler has no address_resolve, which leaves resolving to us
+            IRubyObject resolved = FiberScheduler.addressResolve(context, scheduler, host);
+            if (resolved != null) return schedulerAddresses(hostString, resolved);
+        }
+
+        return InetAddress.getAllByName(hostString);
+    }
+
+    // Keeps the numeric addresses and fails if none are left
+    @CRuby(value = "rb_scheduler_getaddrinfo", file = "ext/socket/raddrinfo.c")
+    private static InetAddress[] schedulerAddresses(String hostString, IRubyObject resolved) throws UnknownHostException {
+        List<InetAddress> addresses = new ArrayList<>();
+
+        if (!resolved.isNil()) {
+            RubyArray<?> ips = resolved.convertToArray();
+
+            for (int i = 0; i < ips.size(); i++) {
+                String ip = ips.eltOk(i).convertToString().toString();
+                if (!isNumericHost(ip)) continue;
+
+                try {
+                    addresses.add(InetAddress.getByName(ip));
+                } catch (UnknownHostException e) {
+                    // not an address after all
+                }
+            }
+        }
+
+        if (addresses.isEmpty()) throw new UnknownHostException(hostString);
+
+        return addresses.toArray(new InetAddress[0]);
+    }
+
+    private static final Pattern NUMERIC_IPV4_HOST_PATTERN = Pattern.compile("[0-9]+(\\.[0-9]+){0,3}");
+
+    // An IPv6 literal (InetAddress parses those without a lookup) or a decimal
+    // IPv4 literal; anything else would make InetAddress.getAllByName query DNS.
+    private static boolean isNumericHost(String host) {
+        return host.contains(":") || NUMERIC_IPV4_HOST_PATTERN.matcher(host).matches();
     }
 
     public static IRubyObject getnameinfo(ThreadContext context, IRubyObject[] args) {

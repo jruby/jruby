@@ -4,5 +4,4 @@
 -Djruby.compile.mode=OFF
 -Djruby.compile.invokedynamic=false
 -Djnr.ffi.asm.enabled=false
--Xverify:none
 

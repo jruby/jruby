@@ -1,0 +1,1 @@
+fails:Set#flatten! does not retain compare_by_identity flag when flattening elements

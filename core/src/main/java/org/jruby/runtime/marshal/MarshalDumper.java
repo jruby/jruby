@@ -53,6 +53,7 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
+import org.jruby.anno.CRuby;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Constants;
@@ -145,7 +146,11 @@ public class MarshalDumper {
     private void writeAndRegisterSymbol(RubyOutputStream out, RubySymbol sym) {
         if (!getSymbolCache().ifPresent(out, sym, MarshalDumper::writeSymbolLink)) {
             registerSymbol(sym);
-            dumpSymbol(out, sym.getBytes());
+            ByteList value = sym.getBytes();
+            out.write(':');
+            int len = value.length();
+            writeInt(out, len);
+            out.write(value.getUnsafeBytes(), value.begin(), len);
         }
     }
 
@@ -331,7 +336,7 @@ public class MarshalDumper {
 
                     if (hash.isComparedByIdentity()) {
                         out.write(TYPE_UCLASS);
-                        dumpSymbol(out, HASH_BYTELIST);
+                        writeAndRegisterSymbol(out, context.runtime.newSymbol(HASH_BYTELIST));
                     }
                     if (hash.getIfNone() == RubyBasicObject.UNDEF) {
                         out.write('{');
@@ -562,9 +567,7 @@ public class MarshalDumper {
         return false;
     }
 
-    /** w_extended
-     * 
-     */
+    @CRuby(value = "w_extended", file = "marshal.c")
     private RubyClass dumpExtended(ThreadContext context, RubyOutputStream out, RubyClass type) {
         if (type.isSingleton()) {
             // any ivars, since we don't have __attached__ ivar now
@@ -596,13 +599,6 @@ public class MarshalDumper {
     }
 
     public void writeString(RubyOutputStream out, ByteList value) {
-        int len = value.length();
-        writeInt(out, len);
-        out.write(value.getUnsafeBytes(), value.begin(), len);
-    }
-
-    public void dumpSymbol(RubyOutputStream out, ByteList value) {
-        out.write(':');
         int len = value.length();
         writeInt(out, len);
         out.write(value.getUnsafeBytes(), value.begin(), len);

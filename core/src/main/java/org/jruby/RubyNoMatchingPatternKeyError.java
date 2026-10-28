@@ -47,7 +47,7 @@ import static org.jruby.runtime.Visibility.PRIVATE;
  * @see ArgumentError
  */
 @JRubyClass(name="NoMatchingPatternKeyError", parent="StandardError")
-public class RubyNoMatchingPatternKeyError extends RubyStandardError {
+public class RubyNoMatchingPatternKeyError extends RubyNoMatchingPatternError {
     private IRubyObject key;
     private IRubyObject matchee;
 
@@ -59,8 +59,8 @@ public class RubyNoMatchingPatternKeyError extends RubyStandardError {
         super(runtime, exceptionClass, message);
     }
 
-    static RubyClass define(ThreadContext context, RubyClass StandardError) {
-        return defineClass(context, "NoMatchingPatternKeyError", StandardError, RubyNoMatchingPatternKeyError::new).
+    static RubyClass define(ThreadContext context, RubyClass NoMatchingPatternError) {
+        return defineClass(context, "NoMatchingPatternKeyError", NoMatchingPatternError, RubyNoMatchingPatternKeyError::new).
                 defineMethods(context, RubyNoMatchingPatternKeyError.class);
     }
 

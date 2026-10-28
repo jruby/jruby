@@ -28,6 +28,7 @@
 
 package org.jruby;
 
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Convert;
@@ -55,7 +56,7 @@ public class RubyGenerator extends RubyObject {
         super(runtime, klass);
     }
 
-    // generator_initialize
+    @CRuby(value = "generator_initialize", file = "enumerator.c")
     @JRubyMethod(visibility = Visibility.PRIVATE, optional = 1, checkArity = false)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args, Block block) {
         if (Arity.checkArgumentCount(context, args, 0, 1) == 0) {
@@ -69,7 +70,7 @@ public class RubyGenerator extends RubyObject {
         return this;
     }
 
-    // generator_init_copy
+    @CRuby(value = "generator_init_copy", file = "enumerator.c")
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize_copy(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyGenerator generator) {
@@ -80,7 +81,7 @@ public class RubyGenerator extends RubyObject {
         throw typeError(context, other, context.runtime.getGenerator());
     }
 
-    // generator_each
+    @CRuby(value = "generator_each", file = "enumerator.c")
     @JRubyMethod(rest = true, keywords = true)
     public IRubyObject each(ThreadContext context, IRubyObject[] args, Block block) {
         return proc.call(context, ArraySupport.newCopy(RubyYielder.newYielder(context, block), args));

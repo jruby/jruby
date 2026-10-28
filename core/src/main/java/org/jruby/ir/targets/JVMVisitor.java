@@ -52,11 +52,14 @@ import org.jruby.ir.targets.IRBytecodeAdapter.BlockPassType;
 import org.jruby.ir.targets.ValueCompiler.DStringElement;
 import org.jruby.ir.targets.ValueCompiler.DStringElementType;
 import org.jruby.ir.targets.indy.CallTraceSite;
+import org.jruby.ext.coverage.MethodCoverage;
 import org.jruby.ir.targets.indy.CoverageSite;
 import org.jruby.ir.targets.indy.MetaClassBootstrap;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallArgument;
+import org.jruby.runtime.CallArgument.Identifier;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Frame;
@@ -1279,9 +1282,27 @@ public class JVMVisitor extends IRVisitor {
     }
 
     private void compileCallCommon(IRBytecodeAdapter m, CallBase call) {
+        Operand[] args = call.getCallArgs();
+
+        // narrow requirements for direct argument passing at this time
+        // * has keyword arguments
+        // * no splats or kwrest
+        // * no supers
+        // * no refinements
+        // * keywords are a literal hash with only symbol keys
+        if (jvmMethod().invocationCompiler.supportsDirectArguments() &&
+                !CallBase.containsArgSplat(args) &&
+                ThreadContext.hasKeywords(call.getFlags()) &&
+                hasLiteralSymbolKeywords(args) &&
+                call.getCallType() != CallType.SUPER &&
+                !call.isPotentiallyRefined() &&
+                (call.getFlags() & ThreadContext.CALL_KEYWORD_REST) == 0) {
+            compileCallWithKeywords(m, call);
+            return;
+        }
+
         boolean functional = call.getCallType() == CallType.FUNCTIONAL || call.getCallType() == CallType.VARIABLE;
 
-        Operand[] args = call.getCallArgs();
         BlockPassType blockPassType = BlockPassType.fromIR(call);
         m.loadContext();
         if (!functional) m.loadSelf(); // caller
@@ -1321,6 +1342,74 @@ public class JVMVisitor extends IRVisitor {
                 m.getInvocationCompiler().invokeOther(file, jvm.methodData().scopeField, call, arity);
                 break;
         }
+
+        handleCallResult(m, call.getResult());
+    }
+
+    private static boolean hasLiteralSymbolKeywords(Operand[] args) {
+        if (args.length == 0 || !(args[args.length - 1] instanceof Hash keywords)) return false;
+
+        for (KeyValuePair<Operand, Operand> pair : keywords.pairs) {
+            if (!(pair.getKey() instanceof Symbol)) return false;
+        }
+
+        return true;
+    }
+
+    private void compileCallWithKeywords(IRBytecodeAdapter m, CallBase call) {
+        boolean functional = call.getCallType() == CallType.FUNCTIONAL || call.getCallType() == CallType.VARIABLE;
+
+        Operand[] args = call.getCallArgs();
+        Hash keywords = (Hash) args[args.length - 1];
+
+        var callArguments = new ArrayList<CallArgument>();
+
+        BlockPassType blockPassType = BlockPassType.fromIR(call);
+
+        callArguments.add(new CallArgument(callArguments.size(), CallArgument.Type.CONTEXT, Identifier.CONTEXT));
+        m.loadContext();
+
+        if (!functional) {
+            callArguments.add(new CallArgument(callArguments.size(), CallArgument.Type.CALLER, Identifier.CALLER));
+            m.loadSelf(); // caller
+        }
+
+        callArguments.add(new CallArgument(callArguments.size(), CallArgument.Type.RECEIVER, Identifier.RECEIVER));
+        visit(call.getReceiver());
+
+        // compile positional arguments as normal
+        int positionalID = 0;
+        for (Operand operand : args) {
+            if (operand == keywords) break;
+            callArguments.add(
+                    new CallArgument(callArguments.size(), CallArgument.Type.POSITIONAL, new Identifier(String.valueOf(positionalID++))));
+            visit(operand);
+        }
+
+        // compile keyword values, which will be all literals or loads
+        for (int i = 0; i < keywords.pairs.length; i++) {
+            var pair = keywords.pairs[i];
+            callArguments.add(
+                    new CallArgument(callArguments.size(), CallArgument.Type.KEYWORD, new Identifier(((Symbol) pair.getKey()).getSymbol().idString())));
+            visit(pair.getValue());
+        }
+
+        switch (blockPassType) {
+            case LITERAL:
+                visit(call.getClosureArg());
+                callArguments.add(new CallArgument(callArguments.size(), CallArgument.Type.BLOCK, Identifier.BLOCK));
+                break;
+            case GIVEN:
+                // a block-pass argument can be any object, such as a Symbol or a Proc, so convert it as normal calls do
+                m.loadContext();
+                visit(call.getClosureArg());
+                m.invokeIRHelper("getBlockFromObject", sig(Block.class, ThreadContext.class, Object.class));
+                callArguments.add(new CallArgument(callArguments.size(), CallArgument.Type.BLOCK_PASS, Identifier.BLOCK));
+                break;
+            case NONE:
+        }
+
+        m.getInvocationCompiler().invoke(file, jvm.methodData().scopeField, call, callArguments.toArray(CallArgument[]::new));
 
         handleCallResult(m, call.getResult());
     }
@@ -1611,7 +1700,8 @@ public class JVMVisitor extends IRVisitor {
 
     // 'when' statements emit a 1;1 use:def temporary which we can omit and just leave eqq result on the stack.
     private boolean canOmitStoreLoad(EQQInstr eqq, Instr nextInstr) {
-        assert nextInstr != null: "Somehow EQQ is the last instr in the scope...";
+        // nextInstr is null when the eqq ends its basic block, as each in clause's eqq does inside a block
+        if (nextInstr == null) return false;
 
         return !eqq.isPattern() && nextInstr instanceof BTrueInstr && eqq.getResult().equals(((BTrueInstr) nextInstr).getArg1());
     }
@@ -1626,7 +1716,7 @@ public class JVMVisitor extends IRVisitor {
             jvmMethod().loadContext();
             visit(eqqinstr.getReceiver());
             visit(eqqinstr.getArg1());
-            jvmMethod().getInvocationCompiler().invokeEQQ(eqqinstr);
+            jvmMethod().getInvocationCompiler().invokeEQQ(eqqinstr, jvm.methodData().scopeField);
             if (!omitStoreLoad) jvmStoreLocal(eqqinstr.getResult());
         }
     }
@@ -2321,6 +2411,17 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void RuntimeHelperCall(RuntimeHelperCall runtimehelpercall) {
         switch (runtimehelpercall.getHelperMethod()) {
+            case CAPTURE_CALL_INFO:
+                jvmMethod().loadContext();
+                jvmMethod().invokeIRHelper("captureCallInfo", sig(RubyFixnum.class, ThreadContext.class));
+                jvmStoreLocal(runtimehelpercall.getResult());
+                break;
+            case RESTORE_CALL_INFO:
+                jvmMethod().loadContext();
+                visit(runtimehelpercall.getArgs()[0]);
+                jvmMethod().invokeIRHelper("restoreCallInfo", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
+                jvmStoreLocal(runtimehelpercall.getResult());
+                break;
             case RESET_GVAR_UNDERSCORE:
                 jvmMethod().loadContext();
                 visit(runtimehelpercall.getArgs()[0]);
@@ -2455,6 +2556,32 @@ public class JVMVisitor extends IRVisitor {
         jvmMethod().loadSelfBlock();
         jvmAdapter().invokevirtual(p(Block.class), "getVisibility", sig(Visibility.class));
         jvmStoreLocal(instr.getResult());
+    }
+
+    @Override
+    public void ReceiveMethodCoverageInstr(ReceiveMethodCoverageInstr instr) {
+        jvmMethod().loadContext();
+        jvmAdapter().invokevirtual(p(ThreadContext.class), "takePendingMethodCoverage", sig(MethodCoverage.class));
+        jvmStoreLocal(instr.getResult());
+    }
+
+    @Override
+    public void CoverBranchInstr(CoverBranchInstr instr) {
+        jvmMethod().loadContext();
+        jvmAdapter().invokedynamic(
+                "coverBranch",
+                sig(void.class, ThreadContext.class),
+                CoverageSite.COVER_BRANCH_BOOTSTRAP,
+                instr.getFile(),
+                instr.getIndex());
+    }
+
+    @Override
+    public void CoverMethodInstr(CoverMethodInstr instr) {
+        jvmMethod().loadContext();
+        jvmMethod().loadStaticScope();
+        visit(instr.getCoverage());
+        jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "coverMethod", sig(void.class, ThreadContext.class, StaticScope.class, Object.class));
     }
 
     @Override
@@ -2697,8 +2824,7 @@ public class JVMVisitor extends IRVisitor {
     public void RestoreErrorInfoInstr(RestoreErrorInfoInstr restoreerrorinfoinstr) {
         jvmMethod().loadContext();
         visit(restoreerrorinfoinstr.getArg());
-        jvmAdapter().invokevirtual(p(ThreadContext.class), "setErrorInfo", sig(IRubyObject.class, IRubyObject.class));
-        jvmAdapter().pop();
+        jvmAdapter().invokestatic(p(IRRuntimeHelpers.class), "setErrorInfoGlobalVariable", sig(Void.TYPE, ThreadContext.class, Object.class));
     }
 
     @Override
@@ -2714,7 +2840,6 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void GetEncodingInstr(GetEncodingInstr getencodinginstr) {
-        jvmMethod().loadContext();
         jvmMethod().getValueCompiler().pushRubyEncoding(getencodinginstr.getEncoding());
         jvmStoreLocal(getencodinginstr.getResult());
     }
@@ -2918,18 +3043,17 @@ public class JVMVisitor extends IRVisitor {
         ImmutableLiteral begin = range.getBegin();
         ImmutableLiteral end = range.getEnd();
 
-        if (begin instanceof Fixnum b) {
-            if (end instanceof Fixnum e) {
-                valueCompiler.pushRange(b.getValue(), e.getValue(), range.isExclusive());
-            } else if (end instanceof Nil) {
-                valueCompiler.pushEndlessRange(b.getValue(), range.isExclusive());
-            }
+        if (begin instanceof Fixnum b && end instanceof Fixnum e) {
+            valueCompiler.pushRange(b.getValue(), e.getValue(), range.isExclusive());
+            return;
+        } else if (begin instanceof Fixnum b && end instanceof Nil) {
+            valueCompiler.pushEndlessRange(b.getValue(), range.isExclusive());
             return;
         } else if (begin instanceof Nil && end instanceof Fixnum e) {
             valueCompiler.pushBeginlessRange(e.getValue(), range.isExclusive());
             return;
-        } else if (begin instanceof StringLiteral b && end instanceof StringLiteral e) {
-            valueCompiler.pushRange(b.getByteList(), b.getCodeRange(), e.getByteList(), e.getCodeRange(), range.isExclusive());
+        } else if (begin instanceof FrozenString b && end instanceof FrozenString e) {
+            valueCompiler.pushRange(b.getByteList(), b.getCodeRange(), e.getByteList(), e.getCodeRange(), b.getFile(), b.getLine(), e.getLine(), range.isExclusive());
             return;
         }
 
@@ -3057,8 +3181,27 @@ public class JVMVisitor extends IRVisitor {
         visit(closure.getSelf());
         jvmLoadLocal(DYNAMIC_SCOPE);
 
-        jvmMethod().getBlockCompiler().prepareBlock(closure, scopeFieldMap.get(closure.getStaticScope().getEnclosingScope()), closuresMap.get(closure), closure.getFile(), closure.getLine(),
+        jvmMethod().getBlockCompiler().prepareBlock(closure, parentScopeField(closure), closuresMap.get(closure), closure.getFile(), closure.getLine(),
                 ArgumentDescriptor.encode(closure.getArgumentDescriptors()), closure.getSignature());
+    }
+
+    // The field holding a closure's parent static scope. The parent usually has a field already, because it's being
+    // compiled in this class, but not always: a for loop doesn't get its own variable scope, so a block inside a for
+    // body has the enclosing method's scope as its parent, and that method isn't in the class when the JIT compiles
+    // the for body on its own. In that case add a field for the parent scope, which defineFromBytecode fills in.
+    private String parentScopeField(IRClosure closure) {
+        StaticScope parentScope = closure.getStaticScope().getEnclosingScope();
+        String scopeField = scopeFieldMap.get(parentScope);
+
+        if (scopeField == null) {
+            scopeField = "parent" + staticScopeMap.size() + "_StaticScope";
+            staticScopeMap.put(scopeField, parentScope);
+            scopeFieldMap.put(parentScope, scopeField);
+            staticScopeDescriptorMap.put(scopeField, Helpers.describeScope(parentScope));
+            jvm.cls().visitField(Opcodes.ACC_STATIC | Opcodes.ACC_PUBLIC | Opcodes.ACC_VOLATILE, scopeField, ci(StaticScope.class), null, null).visitEnd();
+        }
+
+        return scopeField;
     }
 
     private SkinnyMethodAdapter jvmAdapter() {

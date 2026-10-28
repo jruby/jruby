@@ -38,6 +38,7 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -924,10 +925,9 @@ public class ByteList implements Comparable, CharSequence, Serializable {
         int to = begin + toffset;
         byte[]pa = other.bytes;
         int po = other.begin;
-        int pc = other.realSize;
+        int len = other.realSize;
 
-        while (--pc >= 0) if (ta[to++] != pa[po++]) return false;
-        return true;
+        return Arrays.mismatch(ta, to, to + len, pa, po, po + len) == -1;
     }
 
     /**
@@ -1328,9 +1328,8 @@ public class ByteList implements Comparable, CharSequence, Serializable {
     public static int memcmp(final byte[] first, final int firstStart, final int firstLen, final byte[] second, final int secondStart, final int secondLen) {
         if (first == second) return 0;
         final int len =  Math.min(firstLen,secondLen);
-        int offset = -1;
-        for (  ; ++offset < len && first[firstStart + offset] == second[secondStart + offset]; ) ;
-        if (offset < len) {
+        int offset = Arrays.mismatch(first, firstStart, firstStart + len, second, secondStart, secondStart + len);
+        if (offset != -1) {
             return (first[firstStart + offset]&0xFF) > (second[secondStart + offset]&0xFF) ? 1 : -1;
         }
         return firstLen == secondLen ? 0 : firstLen == len ? -1 : 1;
@@ -1343,16 +1342,9 @@ public class ByteList implements Comparable, CharSequence, Serializable {
      * @return -1, 0, 1
      */
     public static int memcmp(final byte[] first, final int firstStart, final byte[] second, final int secondStart, int len) {
-        int a = firstStart;
-        int b = secondStart;
-        int tmp;
-
-        for (; len != 0; --len) {
-            if ((tmp = first[a++] - second[b++]) != 0) {
-                return tmp;
-            }
-        }
-        return 0;
+        int offset = Arrays.mismatch(first, firstStart, firstStart + len, second, secondStart, secondStart + len);
+        if (offset == -1) return 0;
+        return first[firstStart + offset] - second[secondStart + offset];
     }
 
 

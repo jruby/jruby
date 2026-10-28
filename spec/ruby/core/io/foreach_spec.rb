@@ -49,10 +49,23 @@ describe "IO.foreach" do
 
     # https://bugs.ruby-lang.org/issues/19630
     it "warns about deprecation given a path with a pipe" do
-      cmd = "|echo ok"
       -> {
-        IO.foreach(cmd).to_a
+        IO.foreach("|echo ok").to_a
       }.should complain(/IO process creation with a leading '\|'/)
+    end
+  end
+
+  ruby_version_is "4.0" do
+    platform_is_not :windows do
+      it "raises Errno::ENOENT when path starts with a pipe" do
+        -> { IO.foreach("|echo ok").to_a }.should.raise(Errno::ENOENT)
+      end
+    end
+
+    platform_is :windows do
+      it "raises Errno::EINVAL when path starts with a pipe" do
+        -> { IO.foreach("|echo ok").to_a }.should.raise(Errno::EINVAL)
+      end
     end
   end
 end
@@ -80,6 +93,12 @@ describe "IO.foreach" do
     it "returns an Enumerator" do
       IO.foreach(@name).should.instance_of?(Enumerator)
       IO.foreach(@name).to_a.should == IOSpecs.lines
+    end
+
+    it "returns an Enumerator that passes keyword arguments to IO.foreach" do
+      IO.foreach(@name, chomp: true).to_a.should == IOSpecs.lines_without_newline_characters
+      IO.foreach(@name, " ", chomp: true).to_a.should == IOSpecs.lines_space_separator_without_trailing_spaces
+      IO.foreach(@name, encoding: Encoding::BINARY).first.encoding.should == Encoding::BINARY
     end
 
     describe "returned Enumerator" do

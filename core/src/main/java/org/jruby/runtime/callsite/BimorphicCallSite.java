@@ -16,7 +16,11 @@ abstract class BimorphicCallSite extends CachingCallSite {
     protected CacheEntry secondaryCache = CacheEntry.NULL_CACHE;
 
     public BimorphicCallSite(String methodName) {
-        super(methodName, CallType.NORMAL);
+        this(methodName, CallType.NORMAL);
+    }
+
+    public BimorphicCallSite(String methodName, CallType callType) {
+        super(methodName, callType);
     }
 
     public final CacheEntry getSecondaryCache() {

@@ -698,4 +698,29 @@ class TestIO < Test::Unit::TestCase
     assert true
   end
 
+  # Thread#kill unblocks a write by interrupting the thread, and the JDK closes the
+  # interruptible channel in response. Ruby never closed the stream, so the close in
+  # the ensure must succeed rather than report the vanished channel as Errno::EBADF.
+  def test_close_after_kill_during_blocking_write
+    read, write = IO.pipe
+    @to_close << read
+    @to_close << write
+
+    started = Queue.new
+    thread = Thread.new do
+      begin
+        started << true
+        write.write('x' * 1_000_000) # larger than the pipe buffer, so it blocks
+      ensure
+        write.close
+      end
+    end
+
+    started.pop
+    sleep 0.2 # let the write fill the buffer and block
+    thread.kill
+
+    assert_nothing_raised { thread.join }
+  end
+
 end

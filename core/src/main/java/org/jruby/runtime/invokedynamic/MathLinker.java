@@ -44,6 +44,8 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyNumeric;
 import org.jruby.ir.targets.indy.Bootstrap;
+import org.jruby.ir.targets.indy.InvokeSite;
+import org.jruby.ir.targets.indy.SelfInvokeSite;
 import org.jruby.ir.targets.simple.NormalInvokeSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.MethodIndex;
@@ -129,16 +131,10 @@ public class MathLinker {
 
         MethodHandle target = null;
 
-        // fall back on a normal call site
-        MethodType fallbackType = site.type().appendParameterTypes(IRubyObject.class);
-        CallSite normalSite = NormalInvokeSite.newSite(LOOKUP, site.name, fallbackType, false, 0, site.file(), site.line());
-
         RubyClass classFixnum = runtime.getFixnum();
         SwitchPoint switchPoint = (SwitchPoint) classFixnum.getInvalidator().getData();
 
-        MethodHandle fallback = Binder.from(site.type())
-                .append(IRubyObject.class, asFixnum(context, value))
-                .invoke(normalSite.dynamicInvoker());
+        MethodHandle fallback = fallback(site, asFixnum(context, value));
 
         CacheEntry entry = searchWithCache(operator, caller, self.getMetaClass(), site);
 
@@ -172,6 +168,26 @@ public class MathLinker {
         }
         
         return (IRubyObject) target.invokeWithArguments(context, caller, self);
+    }
+
+    // The slow path for an operator site, used when the receiver isn't a Fixnum or Float or the operator has been
+    // redefined. A functional call, like self + 1, may call a private operator, so it falls back on a self call site,
+    // which takes no caller. Anything else falls back on a normal call site.
+    private static MethodHandle fallback(JRubyCallSite site, IRubyObject arg) {
+        Binder binder = Binder.from(site.type()).append(IRubyObject.class, arg);
+
+        if (site.callType == CallType.FUNCTIONAL || site.callType == CallType.VARIABLE) {
+            MethodType selfType = methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class);
+            InvokeSite selfSite = new SelfInvokeSite(selfType, site.name, site.callType, 0, site.file(), site.line());
+            InvokeSite.bootstrap(selfSite, LOOKUP);
+
+            return binder.drop(1).invoke(selfSite.dynamicInvoker());
+        }
+
+        MethodType fallbackType = site.type().appendParameterTypes(IRubyObject.class);
+        CallSite normalSite = NormalInvokeSite.newSite(LOOKUP, site.name, fallbackType, false, 0, site.file(), site.line());
+
+        return binder.invoke(normalSite.dynamicInvoker());
     }
 
     static boolean fixnumTest(IRubyObject self) {
@@ -272,13 +288,7 @@ public class MathLinker {
 
         MethodHandle target;
 
-        // fall back on a normal call site
-        MethodType fallbackType = site.type().appendParameterTypes(IRubyObject.class);
-        CallSite normalSite = NormalInvokeSite.newSite(LOOKUP, site.name, fallbackType, false, 0, site.file(), site.line());
-
-        MethodHandle fallback = Binder.from(site.type())
-                .append(IRubyObject.class, runtime.newFloat(value))
-                .invoke(normalSite.dynamicInvoker());
+        MethodHandle fallback = fallback(site, runtime.newFloat(value));
 
         RubyClass classFloat = runtime.getFloat();
         SwitchPoint switchPoint = (SwitchPoint) classFloat.getInvalidator().getData();

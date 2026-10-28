@@ -51,6 +51,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.IOInputStream;
 import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.func.ObjectIntIntFunction;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.PosixShim;
 
@@ -314,14 +315,51 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
     }
     private final static int BUFF_SIZE = 4096;
 
-    @JRubyMethod(name = "read", optional = 1, checkArity = false)
     public IRubyObject read(ThreadContext context, IRubyObject[] args) {
-        int argc = Arity.checkArgumentCount(context, args, 0, 1);
+        switch (args.length) {
+            case 0:
+                return read(context);
+            case 1:
+                return read(context, args[0]);
+            case 2:
+                return read(context, args[0], args[1]);
+            default:
+                Arity.raiseArgumentError(context, args, 0, 2);
+                return null; // not reached
+        }
+    }
 
+    @JRubyMethod(name = "read")
+    public IRubyObject read(ThreadContext context) {
         try {
-            if (argc == 0 || args[0].isNil()) return readAll(context);
+            return readAll(context);
+        } catch (IOException ioe) {
+            return handleIOException(context, ioe);
+        }
+    }
 
-            int len = toInt(context, args[0]);
+    private static IRubyObject handleIOException(ThreadContext context, IOException ioe) {
+        String m = ioe.getMessage();
+
+        if (m.startsWith("Unexpected end of ZLIB input stream")) {
+            throw RubyZlib.newGzipFileError(context, ioe.getMessage());
+        } else if (m.startsWith("footer is not found")) {
+            throw RubyZlib.newNoFooter(context, "footer is not found");
+        } else if (m.startsWith("incorrect data check")) {
+            throw RubyZlib.newCRCError(context, "invalid compressed data -- crc error");
+        } else if (m.startsWith("incorrect length check")) {
+            throw RubyZlib.newLengthError(context, "invalid compressed data -- length error");
+        } else {
+            throw RubyZlib.newDataError(context, ioe.getMessage());
+        }
+    }
+
+    @JRubyMethod(name = "read")
+    public IRubyObject read(ThreadContext context, IRubyObject arg0) {
+        try {
+            if (arg0.isNil()) return readAll(context);
+
+            int len = toInt(context, arg0);
             if (len < 0) throw argumentError(context, "negative length " + len + " given");
             if (len > 0) { // rb_gzfile_read
                 ByteList buf = readSize(len);
@@ -330,19 +368,32 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
             return RubyString.newEmptyBinaryString(context.runtime);
         } catch (IOException ioe) {
-            String m = ioe.getMessage();
+            return handleIOException(context, ioe);
+        }
+    }
 
-            if (m.startsWith("Unexpected end of ZLIB input stream")) {
-                throw RubyZlib.newGzipFileError(context, ioe.getMessage());
-            } else if (m.startsWith("footer is not found")) {
-                throw RubyZlib.newNoFooter(context, "footer is not found");
-            } else if (m.startsWith("incorrect data check")) {
-                throw RubyZlib.newCRCError(context, "invalid compressed data -- crc error");
-            } else if (m.startsWith("incorrect length check")) {
-                throw RubyZlib.newLengthError(context, "invalid compressed data -- length error");
-            } else {
-                throw RubyZlib.newDataError(context, ioe.getMessage());
+    @JRubyMethod(name = "read")
+    public IRubyObject read(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
+        try {
+            if (arg0.isNil()) return readAll(context);
+
+            int len = toInt(context, arg0);
+            if (len < 0) throw argumentError(context, "negative length " + len + " given");
+
+            RubyString outbuf = castAsString(context, arg1);
+
+            if (len > 0) { // rb_gzfile_read
+                RubyString result = readSize(len, (str, beg, len1) -> outbuf.replace(str, beg, len1, outbuf.getEncoding(), false));
+                if (result == null) {
+                    outbuf.clear(context);
+                    return context.nil;
+                }
+                return result;
             }
+
+            return outbuf;
+        } catch (IOException ioe) {
+            return handleIOException(context, ioe);
         }
     }
 
@@ -377,7 +428,10 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         val.append(buffer, 0, read);
         this.position += val.length();
 
-        if (outbuf != null) outbuf.view(val);
+        if (outbuf != null) {
+            outbuf.view(val);
+            return outbuf;
+        }
 
         return newStr(context, val);
     }
@@ -409,7 +463,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
     // FIXME: I think offset == 0 should return empty bytelist and not null
     // mri: gzfile_read
     // This returns a bucket of bytes trying to read length bytes.
-    private ByteList readSize(int length) throws IOException {
+    private <T> T readSize(int length, ObjectIntIntFunction<byte[], T> factory) throws IOException {
         byte[] buffer = new byte[length];
         int toRead = length;
         int offset = 0;
@@ -428,7 +482,11 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
         this.position += length - toRead;
 
-        return new ByteList(buffer, 0, length - toRead, false);
+        return factory.apply(buffer, 0, length - toRead);
+    }
+
+    private ByteList readSize(int length) throws IOException {
+        return readSize(length, (bytes, offset, readLength) -> new ByteList(bytes, offset, readLength, false));
     }
 
     @Deprecated(since = "10.0.0.0")

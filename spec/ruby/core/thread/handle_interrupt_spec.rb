@@ -102,6 +102,28 @@ describe "Thread.handle_interrupt" do
     fiber.resume
   end
 
+  it "defers an interrupt raised while the thread waits for a Fiber it resumed" do
+    ready = Queue.new
+    go = Queue.new
+    log = []
+    thread = Thread.new do
+      Thread.handle_interrupt(RuntimeError => :never) do
+        log << Fiber.new { ready << true; go.pop; :done }.resume
+        log << :after_resume
+      end
+      log << :not_reached
+    end
+    thread.report_on_exception = false
+
+    ready.pop
+    thread.raise "interrupt while resuming"
+    Thread.pass until thread.pending_interrupt?
+    go << true
+
+    -> { thread.join }.should.raise(RuntimeError, "interrupt while resuming")
+    log.should == [:done, :after_resume]
+  end
+
   it "runs pending interrupts at the end of the block, even if there was an exception raised in the block" do
     executed = false
     -> {
@@ -121,5 +143,51 @@ describe "Thread.handle_interrupt" do
 
   it "supports multiple pairs in the Hash" do
     make_handle_interrupt_thread(ArgumentError => :never, RuntimeError => :never).should == [:deferred]
+  end
+
+  ruby_version_is "4.1" do
+    platform_is_not :windows do
+      def signal_exception_deferred_by_handle_interrupt(signal)
+        ruby_exe(<<-RUBY)
+          waiting = Thread::Queue.new
+          release = Thread::Queue.new
+          inner = false
+
+          Thread.new do
+            waiting.pop
+            Process.kill(:#{signal}, Process.pid)
+            release.push(true)
+          end
+
+          begin
+            Thread.handle_interrupt(SignalException => :never) do
+              begin
+                waiting.push(true)
+                release.pop
+              rescue SignalException
+                inner = true
+                raise
+              end
+            end
+          rescue SignalException => exception
+            puts exception.class
+            puts exception.signo
+            puts inner
+          end
+        RUBY
+      end
+
+      it "defers the default SIGINT Interrupt until exiting the handle_interrupt block" do
+        out = signal_exception_deferred_by_handle_interrupt(:INT)
+
+        out.should == "Interrupt\n#{Signal.list.fetch("INT")}\nfalse\n"
+      end
+
+      it "defers the default SIGTERM SignalException until exiting the handle_interrupt block" do
+        out = signal_exception_deferred_by_handle_interrupt(:TERM)
+
+        out.should == "SignalException\n#{Signal.list.fetch("TERM")}\nfalse\n"
+      end
+    end
   end
 end

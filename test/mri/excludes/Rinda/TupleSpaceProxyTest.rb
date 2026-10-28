@@ -1,5 +1,0 @@
-exclude :test_00_template, "work in progress"
-exclude :test_core_01, "work in progress"
-exclude :test_core_02, "work in progress"
-exclude :test_core_03_notify, "work in progress"
-exclude :test_remote_array_and_hash, "work in progress"

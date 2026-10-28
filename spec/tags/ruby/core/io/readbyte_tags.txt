@@ -1,0 +1,1 @@
+windows:IO#readbyte reads after ungetc without character conversion

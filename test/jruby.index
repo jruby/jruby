@@ -3,6 +3,7 @@
 jruby/test_globals
 
 jruby/test_addrinfo
+jruby/test_alias_chaining
 jruby/test_argf
 jruby/test_array
 jruby/test_autoload
@@ -17,6 +18,7 @@ jruby/test_case
 jruby/test_class
 jruby/test_class_subclasses
 jruby/test_comparable
+jruby/test_compound_string_coderange
 jruby/test_core_arities
 jruby/test_coverage
 jruby/test_custom_enumerable
@@ -80,6 +82,7 @@ jruby/test_thread_backtrace
 jruby/test_threaded_nonlocal_return
 jruby/test_time
 jruby/test_unmarshal
+jruby/test_weakmap
 jruby/test_win32
 jruby/test_zlib
 jruby/test_yaml_charset
@@ -117,3 +120,4 @@ jruby/test_load_compiled_ruby
 jruby/test_load_compiled_ruby_class_from_classpath
 
 jruby/test_date_parse_limit
+jruby/test_jruby_vm

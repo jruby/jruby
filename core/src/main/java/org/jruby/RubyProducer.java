@@ -26,6 +26,7 @@
 
 package org.jruby;
 
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 
@@ -76,8 +77,7 @@ public class RubyProducer extends RubyObject {
         return new RubyProducer(context.runtime, context.runtime.getProducer(), init, block, size);
     }
 
-    /** MRI: producer_size
-     */
+    @CRuby(value = "producer_size", file = "enumerator.c")
     public static IRubyObject size(ThreadContext context, RubyProducer self, IRubyObject[] args) {
         IRubyObject size = self.size;
 

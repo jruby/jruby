@@ -69,7 +69,7 @@ module JRuby
       case obj
       when String
         @queue.put obj
-      when Fixnum
+      when Integer
         @queue.put obj
       end
     end

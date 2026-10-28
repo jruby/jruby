@@ -134,9 +134,12 @@ public interface ValueCompiler {
      *
      * @param begin begin value
      * @param end end value
+     * @param file file containing the range, for frozen string debugging
+     * @param beginLine line of the begin value, for frozen string debugging
+     * @param endLine line of the end value, for frozen string debugging
      * @param exclusive whether this is an exclusive range
      */
-    void pushRange(ByteList begin, int beginCR, ByteList end, int endCR, boolean exclusive);
+    void pushRange(ByteList begin, int beginCR, ByteList end, int endCR, String file, int beginLine, int endLine, boolean exclusive);
 
     /**
      * Build and save a literal regular expression.

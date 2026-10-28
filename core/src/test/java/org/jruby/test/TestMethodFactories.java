@@ -43,6 +43,7 @@ import static org.jruby.api.Define.defineModule;
 public class TestMethodFactories extends Base {
     public void testInvocationMethodFactory() {
         var mod = defineModule(context, "Wombat" + hashCode()).defineMethods(context, MyBoundClass.class);
+        confirmMethods(mod);
         confirmCheckArity(mod);
     }
 
@@ -57,6 +58,13 @@ public class TestMethodFactories extends Base {
         IRubyObject nil = context.nil;
         assertTrue("four-arg method should be callable",
                 mod.searchMethod("four_arg_method").call(context, mod, mod.getMetaClass(), "four_arg_method", new IRubyObject[] {nil, nil, nil, nil}).isTrue());
+        // methods with required <= 3 and IRubyObject[] args (missing rest=true) should bind and be callable
+        assertTrue("one-arg method should be callable",
+                mod.searchMethod("one_arg_method").call(context, mod, mod.getMetaClass(), "one_arg_method", new IRubyObject[] {nil}).isTrue());
+        assertTrue("two-arg method should be callable",
+                mod.searchMethod("two_arg_method").call(context, mod, mod.getMetaClass(), "two_arg_method", new IRubyObject[] {nil, nil}).isTrue());
+        assertTrue("three-arg method should be callable",
+                mod.searchMethod("three_arg_method").call(context, mod, mod.getMetaClass(), "three_arg_method", new IRubyObject[] {nil, nil, nil}).isTrue());
     }
 
     // jruby/jruby#7851: Restore automatic arity checking with an opt-out
@@ -88,6 +96,23 @@ public class TestMethodFactories extends Base {
         // JRUBY-3649
         @JRubyMethod(required = 4)
         public static IRubyObject four_arg_method(ThreadContext context, IRubyObject self, IRubyObject[] obj) {
+            return context.tru;
+        }
+
+        // methods with required <= 3 and IRubyObject[] args (missing rest=true) should bind correctly
+        // instead of crashing with ArrayIndexOutOfBoundsException in loadArguments
+        @JRubyMethod(required = 1)
+        public static IRubyObject one_arg_method(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+            return context.tru;
+        }
+
+        @JRubyMethod(required = 2)
+        public static IRubyObject two_arg_method(ThreadContext context, IRubyObject self, IRubyObject[] args) {
+            return context.tru;
+        }
+
+        @JRubyMethod(required = 3)
+        public static IRubyObject three_arg_method(ThreadContext context, IRubyObject self, IRubyObject[] args) {
             return context.tru;
         }
 

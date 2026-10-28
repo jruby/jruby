@@ -27,6 +27,7 @@ import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyUnboundMethod;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Access;
 import org.jruby.api.Convert;
@@ -145,11 +146,8 @@ public class JavaProxy extends RubyObject {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public final void dataWrapStruct(Object object) {
-        if (object instanceof org.jruby.javasupport.JavaObject) {
-            this.object = ((org.jruby.javasupport.JavaObject) object).getValue();
-        } else if (object instanceof JavaProxy) {
+        if (object instanceof JavaProxy) {
             this.object = ((JavaProxy) object).object;
         } else {
             this.object = object;
@@ -166,11 +164,6 @@ public class JavaProxy extends RubyObject {
 
     public Object unwrap() { return getObject(); }
 
-    @Deprecated(since = "9.4.0.0") // not used
-    @SuppressWarnings("deprecation")
-    protected org.jruby.javasupport.JavaObject asJavaObject(final Object object) {
-        return org.jruby.javasupport.JavaObject.wrap(getRuntime(), object);
-    }
 
     @Override
     public Class<?> getJavaClass() {
@@ -591,14 +584,14 @@ public class JavaProxy extends RubyObject {
         confirmCachedProxy(NONPERSISTENT_IVAR_MESSAGE);
     }
 
-    /** rb_singleton_class
-     *
+    /**
      * Note: this method is specialized for RubyFixnum, RubySymbol,
      * RubyNil and RubyBoolean
      *
      * Will either return the existing singleton class for this
      * object, or create a new one and return that.
      */
+    @CRuby(value = "rb_singleton_class", file = "class.c")
     @Override
     public RubyClass singletonClass(ThreadContext context) {
         confirmCachedProxy(NONPERSISTENT_SINGLETON_MESSAGE);

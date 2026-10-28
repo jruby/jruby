@@ -41,6 +41,7 @@
 package org.jruby;
 
 import org.jcodings.specific.UTF8Encoding;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.TypePopulator;
 import org.jruby.api.Access;
 import org.jruby.api.Create;
@@ -607,6 +608,7 @@ public final class Ruby implements Constantizable {
         loadService.provide("ruby2_keywords.rb");
         loadService.provide("set.rb");
         loadService.provide("pathname.rb");
+        loadService.provide("io/wait.rb");
 
         // Load preludes
         initRubyPreludes();
@@ -632,11 +634,19 @@ public final class Ruby implements Constantizable {
             else {
                 jrubyClassLoader = new SelfFirstJRubyClassLoader(config.getLoader());
             }
+            addReadsUnnamed(jrubyClassLoader);
+            addReadsUnnamed(config.getLoader());
         }
         else {
             jrubyClassLoader = null; // a NullClassLoader object would be better ...
         }
         return jrubyClassLoader;
+    }
+
+    // An automatic module's read edge to unnamed modules comes from Module.defineModules, which
+    // a CDS/AOT archived boot layer skips, so ask for it rather than assume it (jruby/jruby#9319).
+    private static void addReadsUnnamed(ClassLoader loader) {
+        if (loader != null && JRUBY_MODULE.isNamed()) JRUBY_MODULE.addReads(loader.getUnnamedModule());
     }
 
     private void initDefaultEncodings(ThreadContext context) {
@@ -1538,7 +1548,7 @@ public final class Ruby implements Constantizable {
         this.kcode = kcode;
     }
 
-    /** rb_define_global_const
+    /**
      * Define a constant on the global namespace (i.e. Object) with the given
      * name and value.
      *
@@ -1547,6 +1557,7 @@ public final class Ruby implements Constantizable {
      * @deprecated Use {@link RubyModule#defineConstant(ThreadContext, String, IRubyObject)} with a reference
      * to Object.
      */
+    @CRuby(value = "rb_define_global_const", file = "variable.c")
     @Deprecated(since = "10.0.0.0")
     public void defineGlobalConstant(String name, IRubyObject value) {
         objectClass.defineConstant(name, value);
@@ -1628,7 +1639,7 @@ public final class Ruby implements Constantizable {
         ifAllowed("Interrupt",              (ruby) -> interrupt = RubyInterrupt.define(context, signalException));
         ifAllowed("TypeError",              (ruby) -> typeError = RubyTypeError.define(context, standardError));
         ifAllowed("NoMatchingPatternError", (ruby) -> noMatchingPatternError = RubyNoMatchingPatternError.define(context, standardError));
-        ifAllowed("NoMatchingPatternKeyError", (ruby) -> noMatchingPatternKeyError = RubyNoMatchingPatternKeyError.define(context, standardError));
+        ifAllowed("NoMatchingPatternKeyError", (ruby) -> noMatchingPatternKeyError = RubyNoMatchingPatternKeyError.define(context, noMatchingPatternError));
         ifAllowed("ArgumentError",          (ruby) -> argumentError = RubyArgumentError.define(context, standardError));
         ifAllowed("UncaughtThrowError",     (ruby) -> uncaughtThrowError = RubyUncaughtThrowError.define(context, argumentError));
         ifAllowed("IndexError",             (ruby) -> indexError = RubyIndexError.define(context, standardError));
@@ -3377,6 +3388,9 @@ public final class Ruby implements Constantizable {
             context.pushScope(new ManyVarsDynamicScope(topStaticScope, null));
         }
 
+        // MRI: rb_ec_teardown. Run out this thread's scheduler before any at-exit handler
+        context.getFiberCurrentThread().setFiberScheduler(context, context.nil);
+
         // Run all exit functions from user hooks like at_exit
         while (!exitBlocks.isEmpty()) {
             ExitFunction fun = exitBlocks.remove(0);
@@ -3654,18 +3668,12 @@ public final class Ruby implements Constantizable {
 
     @Deprecated(since = "10.0.0.0")
     public RaiseException newArgumentError(String name, int got, int expected) {
-        return newArgumentError(name, got, expected, expected);
+        return newArgumentError(got, expected, expected);
     }
 
     @Deprecated(since = "10.0.0.0")
     public RaiseException newArgumentError(String name, int got, int min, int max) {
-        if (min == max) {
-            return newRaiseException(getArgumentError(), "wrong number of arguments (given " + got + ", expected " + min + ")");
-        } else if (max == UNLIMITED_ARGUMENTS) {
-            return newRaiseException(getArgumentError(), "wrong number of arguments (given " + got + ", expected " + min + "+)");
-        } else {
-            return newRaiseException(getArgumentError(), "wrong number of arguments (given " + got + ", expected " + min + ".." + max + ")");
-        }
+        return newArgumentError(got, min, max);
     }
 
     public RaiseException newErrnoEBADFError() {

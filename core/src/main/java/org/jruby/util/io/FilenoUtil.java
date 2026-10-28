@@ -119,6 +119,13 @@ public class FilenoUtil {
         filenoMap.remove(fileno);
     }
 
+    // Remove only if the fileno still maps to this wrapper, so a stale close cannot evict a
+    // live wrapper that has taken over a recycled descriptor number.
+    public void unregisterWrapper(int fileno, ChannelFD wrapper) {
+        if (fileno == -1) return;
+        filenoMap.remove(fileno, wrapper);
+    }
+
     // Used by testing. See test/jruby/test_io.rb, test_io_copy_stream_does_not_leak_io_like_objects
     public int getNumberOfWrappers() {
         return filenoMap.size();

@@ -1,1 +1,2 @@
 windows:IO.binread warns about deprecation given a path with a pipe
+fails:IO.binread raises Errno::EINVAL when path starts with a pipe

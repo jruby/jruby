@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import org.jruby.anno.CRuby;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.RefinedMarker;
 import org.jruby.runtime.ThreadContext;
@@ -74,9 +75,8 @@ public class PrependedModule extends RubyClass implements DelegatedModule {
 
     /**
      * Transfer refined methods from the prepend stub to the origin as markers so they trigger refinements
-     *
-     * MRI: move_refined_method
      */
+    @CRuby(value = "move_refined_method", file = "class.c")
     private boolean moveRefinedMethod(String key, DynamicMethod method, RubyModule klass) {
         if (method.isRefined()) {
             if (method instanceof RefinedMarker) {
@@ -207,6 +207,18 @@ public class PrependedModule extends RubyClass implements DelegatedModule {
     @Override
     protected Map<String, Autoload> getAutoloadMapForWrite() {
         return origin.getAutoloadMapForWrite();
+    }
+
+    /**
+     * If the origin was a module, also invalidate its hierarchies
+     */
+    @Override
+    public void invalidateCacheDescendants(ThreadContext context) {
+        super.invalidateCacheDescendants(context);
+
+        if (origin.isModule()) {
+            origin.invalidateCacheDescendants(context);
+        }
     }
 
 }

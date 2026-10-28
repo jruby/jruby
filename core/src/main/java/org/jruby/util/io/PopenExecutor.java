@@ -5,6 +5,7 @@ import jnr.constants.platform.Fcntl;
 import jnr.constants.platform.OpenFlags;
 import jnr.constants.platform.RLIMIT;
 import jnr.enxio.channels.NativeDeviceChannel;
+import jnr.posix.POSIX;
 import jnr.posix.SpawnAttribute;
 import jnr.posix.SpawnFileAction;
 import org.jcodings.transcode.EConvFlags;
@@ -16,10 +17,10 @@ import org.jruby.RubyFile;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyHash;
 import org.jruby.RubyIO;
-import org.jruby.RubyNumeric;
 import org.jruby.RubyProcess;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.anno.CRuby;
 import org.jruby.api.API;
 
 import org.jruby.exceptions.RaiseException;
@@ -46,6 +47,7 @@ import java.util.Set;
 import static org.jruby.api.Access.hashClass;
 import static org.jruby.api.Access.ioClass;
 import static org.jruby.api.Access.objectClass;
+import static org.jruby.api.Check.checkBoolean;
 import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asSymbol;
@@ -54,6 +56,8 @@ import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.runtimeError;
+import static org.jruby.api.Error.typeError;
+import static org.jruby.runtime.Helpers.arrayOf;
 
 /**
  * Port of MRI's popen+exec logic.
@@ -90,7 +94,7 @@ public class PopenExecutor {
         return context.nil;
     }
 
-    // MRI: rb_f_spawn
+    @CRuby(value = "rb_f_spawn", file = "process.c")
     public static RubyFixnum spawn(ThreadContext context, IRubyObject[] argv) {
         long pid;
         String[] errmsg = { null };
@@ -110,7 +114,7 @@ public class PopenExecutor {
         return asFixnum(context, pid);
     }
 
-    // MRI: rb_f_system
+    @CRuby(value = "rb_f_system", file = "process.c")
     public IRubyObject systemInternal(ThreadContext context, IRubyObject[] argv, String[] errmsg) {
         Ruby runtime = context.runtime;
 
@@ -125,6 +129,8 @@ public class PopenExecutor {
         if (pid > 0) {
             long ret;
             ret = RubyProcess.waitpid(context, pid, 0);
+            // a blocking waitpid only returns 0 when the scheduler's process_wait returned nil
+            if (ret == 0) throw typeError(context, "wrong argument type nil (expected Process::Status)");
             if (ret == -1)
                 throw runtime.newErrnoFromInt(runtime.getPosix().errno(), "Another thread waited the process started by system().");
         }
@@ -154,22 +160,20 @@ public class PopenExecutor {
         return context.fals;
     }
 
-    // MRI: rb_spawn_process
+    @CRuby(value = "rb_spawn_process", file = "process.c")
     long spawnProcess(ThreadContext context, ExecArg eargp, String[] errmsg) {
         RubyString prog = eargp.use_shell ? eargp.command_name : eargp.command_name;
         ExecArg sarg = new ExecArg();
 
-        if (eargp.chdirGiven) {
-            // we can'd do chdir with posix_spawn, so we should be set to use_shell and now
-            // just need to add chdir to the cmd
-            String script = "cd '" + eargp.chdir_dir + "'; ";
+        String progString;
 
-            // use exec to eliminate extra sh process if we do not need to run command as a shell script
-            if (!searchForMetaChars(prog)) script = script + "exec ";
+        if (eargp.chdirGiven) { // posix_spawn cannot chdir; run a guarded shell command instead
+            progString = chdirShellCommand(eargp.chdir_dir, prog, !searchForMetaChars(prog));
 
-            prog = (RubyString) dupString(context, prog).prepend(context, newString(context, script));
             eargp.chdir_dir = null;
             eargp.chdirGiven = false;
+        } else {
+            progString = prog.toString();
         }
 
         if (execargRunOptions(context, eargp, sarg, errmsg) < 0) return -1;
@@ -182,8 +186,8 @@ public class PopenExecutor {
 //            }
         }
         long pid = eargp.use_shell ?
-                procSpawnSh(context, prog.toString(), eargp) :
-                procSpawnCmd(context, eargp.argv_str.argv, prog.toString(), eargp);
+                procSpawnSh(context, progString, eargp) :
+                procSpawnCmd(context, eargp.argv_str.argv, progString, eargp);
 
         if (pid == -1) {
             Ruby runtime = context.runtime;
@@ -287,7 +291,7 @@ public class PopenExecutor {
         return status;
     }
 
-    // pipe_open_s
+    @CRuby(value = "pipe_open_s", file = "io.c")
     public static IRubyObject pipeOpen(ThreadContext context, IRubyObject prog, String modestr, int fmode, IOEncodable convconfig) {
         IRubyObject[] argv = {prog};
         ExecArg execArg = null;
@@ -297,7 +301,7 @@ public class PopenExecutor {
         return new PopenExecutor().pipeOpen(context, execArg, modestr, fmode, convconfig);
     }
 
-    // rb_io_s_popen
+    @CRuby(value = "rb_io_s_popen", file = "io.c")
     public static IRubyObject popen(ThreadContext context, IRubyObject[] argv, RubyClass klass, Block block) {
         Ruby runtime = context.runtime;
         String modestr;
@@ -370,11 +374,95 @@ public class PopenExecutor {
         return RubyIO.ensureYieldClose(context, port, block);
     }
 
+    public static int exec(ThreadContext context, IRubyObject[] argv, IRubyObject opt) {
+        ExecArg eargp;
+
+        eargp = execargNew(context, argv, opt, true, false);
+
+        BeforeExecState bes = null;
+        try {
+            bes = beforeExec(context);
+
+            execargParentStart1(context, eargp);
+
+            return execAsyncSignalSafe(context, eargp, null);
+        } finally {
+            // should only be reached if exec fails
+            afterExec(context, bes);
+        }
+    }
+
+    record BeforeExecState(boolean jmxStopped, String cwd) {}
+
+    private static BeforeExecState beforeExec(ThreadContext context) {
+        boolean jmxStopped;
+        // attempt to shut down the JMX server
+        jmxStopped = context.runtime.getBeanManager().tryShutdownAgent();
+
+        final POSIX posix = context.runtime.getPosix();
+
+        String cwd = posix.getcwd();
+        posix.chdir(context.runtime.getCurrentDirectory());
+
+        return new BeforeExecState(jmxStopped, cwd);
+    }
+
+    // Restore the state saved by beforeExec; only reached when exec failed.
+    private static void afterExec(ThreadContext context, BeforeExecState bes) {
+        if (bes == null) return;
+
+        if (bes.jmxStopped() && context.runtime.getBeanManager().tryRestartAgent()) context.runtime.registerMBeans();
+
+        context.runtime.getPosix().chdir(bes.cwd());
+    }
+
+    private static void prepareModifiedEnv(ThreadContext context, ExecArg eargp) {
+        boolean clearEnv = false;
+        if (eargp.unsetenvOthersGiven && eargp.unsetenvOthersDo) {
+            // we handle this elsewhere by starting from a blank env
+            clearEnv = true;
+        }
+
+        RubyArray env = eargp.env_modification;
+        if (env != null) {
+            eargp.envp_str = ShellLauncher.getModifiedEnv(context, env, clearEnv);
+        }
+    }
+
+    static int execAsyncSignalSafe(ThreadContext context, ExecArg eargp, String[] errmsg)
+    {
+        POSIX posix = context.runtime.getPosix();
+        int err;
+
+        if (execargRunOptions(context, eargp, null, errmsg) < 0) { /* hopefully async-signal-safe */
+            return posix.errno();
+        }
+
+        if (eargp.use_shell) {
+            err = procExecSh(context, eargp.command_name.asJavaString(), eargp.envp_str); /* async-signal-safe */
+        }
+        else {
+            String abspath = null;
+            // command_abspath is null (or nil) when the command could not be found in PATH
+            if (eargp.command_abspath != null && !eargp.command_abspath.isNil()) {
+                abspath = eargp.command_abspath.asJavaString();
+            } else {
+                // MRI: dln_find_1 returns names containing a slash as-is, so exec reports the real errno for
+                // them (EACCES for a directory or a file without execute permission, ENOENT if missing).
+                String name = eargp.command_name.asJavaString();
+                if (name.indexOf('/') != -1) abspath = name;
+            }
+            err = procExecCmd(context, abspath, eargp.argv_str.argv, eargp.envp_str); /* async-signal-safe */
+        }
+
+        return err;
+    }
+
     static void execargSetenv(ThreadContext context, ExecArg eargp, IRubyObject env) {
         eargp.env_modification = !env.isNil() ? checkExecEnv(context, (RubyHash)env, eargp) : null;
     }
 
-    // MRI: rb_check_exec_env
+    @CRuby(value = "rb_check_exec_env", file = "process.c")
     public static RubyArray checkExecEnv(ThreadContext context, RubyHash hash, ExecArg pathArg) {
         var env = newArray(context);
 
@@ -441,7 +529,7 @@ public class PopenExecutor {
         return nonopts != null ? nonopts : context.nil;
     }
 
-    // MRI: is_popen_fork
+    @CRuby(value = "is_popen_fork", file = "io.c")
     static boolean isPopenFork(ThreadContext context, RubyString prog) {
         if (prog.size() == 1 && prog.getByteList().get(0) == '-') {
             throw context.runtime.newNotImplementedError("fork() function is unimplemented on JRuby");
@@ -525,6 +613,57 @@ public class PopenExecutor {
         }
     }
 
+    /* This function should be async-signal-safe.  Actually it is. */
+    static int procExecSh(ThreadContext context, String str, String[] envp)
+    {
+        if (str.matches("^[ \t\n]+$")) return Errno.ENOENT.intValue();
+
+        POSIX posix = context.runtime.getPosix();
+
+        if (envp != null) {
+            posix.execve("/bin/sh", arrayOf("sh", "-c", str), envp);
+        } else {
+            posix.execv("/bin/sh", arrayOf("sh", "-c", str));
+        }
+
+        return posix.errno();
+    }
+
+    static int procExecCmd(ThreadContext context, String prog, String[] argv, String[] envp)
+    {
+        if (prog == null) {
+            return Errno.ENOENT.intValue();
+        }
+
+        POSIX posix = context.runtime.getPosix();
+
+        if (envp != null) {
+            posix.execve(prog, argv, envp);
+        } else {
+            posix.execv(prog, argv);
+        }
+        int err = posix.errno();
+        tryWithSh(context, err, prog, argv, envp); /* try_with_sh() is async-signal-safe. */
+        return err;
+    }
+
+    static void tryWithSh(ThreadContext context, int errno, String prog, String[] argv, String[] envp) {
+        if (errno == Errno.ENOEXEC.intValue()) {
+            execWithSh(context, prog, argv, envp);
+        }
+    }
+
+    static void execWithSh(ThreadContext context, String prog, String[] argv, String[] envp)
+    {
+        argv = arrayOf("sh", argv);
+        POSIX posix = context.runtime.getPosix();
+        if (envp != null) {
+            posix.exec(prog, argv, envp);
+        } else {
+            posix.exec(prog, argv);
+        }
+    }
+
     private static class PopenArg {
         ExecArg eargp;
         int modef;
@@ -542,7 +681,7 @@ public class PopenExecutor {
 
     private Errno errno = null;
 
-    // MRI: pipe_open
+    @CRuby(value = "pipe_open", file = "io.c")
     private RubyIO pipeOpen(ThreadContext context, ExecArg eargp, String modestr, int fmode, IOEncodable convconfig) {
         final Ruby runtime = context.runtime;
         IRubyObject prog = eargp != null ? (eargp.use_shell ? eargp.command_name : eargp.command_name) : null;
@@ -566,9 +705,8 @@ public class PopenExecutor {
         if (prog != null) cmd = checkEmbeddedNulls(context, prog).toString();
 
         if (eargp.chdirGiven) {
-            // we can'd do chdir with posix_spawn, so we should be set to use_shell and now
-            // just need to add chdir to the cmd
-            cmd = "cd '" + eargp.chdir_dir + "'; " + cmd;
+            // posix_spawn cannot chdir; run a guarded shell command instead.
+            cmd = chdirShellCommand(eargp.chdir_dir, cmd, false);
             eargp.chdir_dir = null;
             eargp.chdirGiven = false;
         }
@@ -835,10 +973,10 @@ public class PopenExecutor {
         }
 
         /* sort the table by oldfd: O(n log n) */
-        if (sargp == null)
-            Arrays.sort(pairs, intcmp); /* hopefully async-signal-safe */
-        else
-            Arrays.sort(pairs, intrcmp);
+        // JRuby uses posix_spawn actions for redirects, so they should always be sorted by the input "old"
+        // descriptors to ensure we dup them before they get overwritten by other actions.
+        // See https://github.com/jruby/jruby/issues/9577
+        Arrays.sort(pairs, intcmp);
 
         /* initialize older_index and num_newer: O(n log n) */
         for (i = 0; i < n; i++) {
@@ -1000,7 +1138,7 @@ public class PopenExecutor {
         return 0;
     }
 
-    int execargRunOptions(ThreadContext context, ExecArg eargp, ExecArg sargp, String[] errmsg) {
+    static int execargRunOptions(ThreadContext context, ExecArg eargp, ExecArg sargp, String[] errmsg) {
         IRubyObject obj;
 
         if (sargp != null) {
@@ -1018,16 +1156,7 @@ public class PopenExecutor {
             throw context.runtime.newNotImplementedError("setting rlimit in child is unsupported");
         }
 
-        boolean clearEnv = false;
-        if (eargp.unsetenvOthersGiven && eargp.unsetenvOthersDo) {
-            // we handle this elsewhere by starting from a blank env
-            clearEnv = true;
-        }
-
-        RubyArray env = eargp.env_modification;
-        if (env != null) {
-            eargp.envp_str = ShellLauncher.getModifiedEnv(context, env, clearEnv);
-        }
+        prepareModifiedEnv(context, eargp);
 
         if (eargp.umaskGiven) {
             throw context.runtime.newNotImplementedError("setting umask in child is unsupported");
@@ -1339,11 +1468,7 @@ public class PopenExecutor {
                         throw argumentError(context, "unsetenv_others option specified twice");
                     }
                     eargp.unsetenvOthersGiven = true;
-                    if (val.isTrue()) {
-                        eargp.unsetenvOthersDo = true;
-                    } else {
-                        eargp.unsetenvOthersDo = false;
-                    }
+                    eargp.unsetenvOthersDo = toBool(context, val, "unsetenv_others");
                 }
                 else if (id.equals("chdir")) {
                     if (eargp.chdirGiven) {
@@ -1366,11 +1491,7 @@ public class PopenExecutor {
                         throw argumentError(context, "close_others option specified twice");
                     }
                     eargp.closeOthersGiven = true;
-                    if (!val.isNil()) {
-                        eargp.closeOthersDo = true;
-                    } else {
-                        eargp.closeOthersDo = false;
-                    }
+                    eargp.closeOthersDo = toBool(context, val, "close_others");
                 } else if (id.equals("in")) {
                     key = RubyFixnum.zero(context.runtime);
                     checkExecRedirect(context, key, val, eargp);
@@ -1413,7 +1534,7 @@ public class PopenExecutor {
                         throw argumentError(context, "exception option specified twice");
                     }
                     eargp.exception_given = true;
-                    eargp.exception = val.isTrue();
+                    eargp.exception = toBool(context, val, "exception");
                 }
                 else {
                     return ST_STOP;
@@ -1437,7 +1558,12 @@ public class PopenExecutor {
         return ST_CONTINUE;
     }
 
-    // MRI: check_exec_redirect
+    // MRI: TO_BOOL in process.c
+    private static boolean toBool(ThreadContext context, IRubyObject val, String id) {
+        return val.isNil() ? false : checkBoolean(context, val, id, true);
+    }
+
+    @CRuby(value = "check_exec_redirect", file = "process.c")
     static void checkExecRedirect(ThreadContext context, IRubyObject key, IRubyObject val, ExecArg eargp) {
         IRubyObject param;
         IRubyObject path, flags, perm;
@@ -1550,7 +1676,7 @@ public class PopenExecutor {
         throw argumentError(context, "wrong exec redirect action");
     }
 
-    // MRI: check_exec_redirect_fd
+    @CRuby(value = "check_exec_redirect_fd", file = "process.c")
     static IRubyObject checkExecRedirectFd(ThreadContext context, IRubyObject v, boolean iskey) {
         IRubyObject tmp;
         int fd;
@@ -1577,7 +1703,7 @@ public class PopenExecutor {
         return asFixnum(context, fd);
     }
 
-    // MRI: check_exec_redirect1
+    @CRuby(value = "check_exec_redirect1", file = "process.c")
     static RubyArray checkExecRedirect1(ThreadContext context, RubyArray ary, IRubyObject key, IRubyObject param) {
         if (ary == null) ary = newArray(context);
 
@@ -1596,14 +1722,14 @@ public class PopenExecutor {
     private static final int ST_CONTINUE = 0;
     private static final int ST_STOP = 1;
 
-    // rb_execarg_new
+    @CRuby(value = "rb_execarg_new", file = "process.c")
     public static ExecArg execargNew(ThreadContext context, IRubyObject[] argv, IRubyObject optForChdir, boolean accept_shell, boolean allow_exc_opt) {
         ExecArg eargp = new ExecArg();
         execargInit(context, argv, optForChdir, accept_shell, eargp, allow_exc_opt);
         return eargp;
     }
 
-    // rb_execarg_init
+    @CRuby(value = "rb_execarg_init", file = "process.c")
     private static RubyString execargInit(ThreadContext context, IRubyObject[] argv, IRubyObject optForChdir, boolean accept_shell, ExecArg eargp, boolean allow_exc_opt) {
         RubyString prog, ret;
         IRubyObject[] env_opt = {context.nil, context.nil};
@@ -1633,7 +1759,7 @@ public class PopenExecutor {
         return ret;
     }
 
-    // rb_exec_getargs
+    @CRuby(value = "rb_exec_getargs", file = "process.c")
     private static RubyString execGetargs(ThreadContext context, IRubyObject[][] argv_p, boolean accept_shell, IRubyObject[] env_opt) {
         IRubyObject hash;
         RubyString prog;
@@ -1669,9 +1795,9 @@ public class PopenExecutor {
         return prog;
     }
 
-    // rb_check_argv
+    @CRuby(value = "rb_check_argv", file = "process.c")
     public static RubyString checkArgv(ThreadContext context, IRubyObject[] argv) {
-        Arity.checkArgumentCount(context, argv, 1, Integer.MAX_VALUE);
+        Arity.checkArgumentCount(context, argv, 1, -1);
 
         RubyString prog = null;
 
@@ -1857,6 +1983,15 @@ public class PopenExecutor {
         }
     }
 
+    private static String chdirShellCommand(String dir, CharSequence command, boolean exec) {
+        final String script = "cd -- " + quotePosixShellWord(dir) + " && ";
+        return exec ? (script + "exec " + command) : (script + "eval " + quotePosixShellWord(command.toString()));
+    }
+
+    private static String quotePosixShellWord(String str) {
+        return '\'' + str.replace("'", "'\\''") + '\'';
+    }
+
     /**
      * Search for meta characters in the command, to know whether we should use a shell to launch.
      *
@@ -2002,13 +2137,6 @@ public class PopenExecutor {
         @Override
         public int compare(run_exec_dup2_fd_pair o1, run_exec_dup2_fd_pair o2) {
             return Integer.compare(o1.oldfd, o2.oldfd);
-        }
-    };
-
-    private static final Comparator<run_exec_dup2_fd_pair> intrcmp = new Comparator<run_exec_dup2_fd_pair>() {
-        @Override
-        public int compare(run_exec_dup2_fd_pair o1, run_exec_dup2_fd_pair o2) {
-            return Integer.compare(o2.oldfd, o1.oldfd);
         }
     };
 

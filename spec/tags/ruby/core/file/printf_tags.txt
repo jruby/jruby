@@ -13,3 +13,5 @@ fails:File#printf integer formats x pads the empty string if precision is 0 and 
 fails:File#printf integer formats X converts to the empty string if precision is 0 and value is 0
 fails:File#printf integer formats X pads the empty string if precision is 0 and value is 0
 fails:File#printf flags # applies to formats bBxX does nothing for zero argument when combined with zero precision
+fails:File#printf other formats % raises ArgumentError if not followed by a conversion specifier
+fails:File#printf flags * raises ArgumentError if absolute argument specifier is followed by a conversion specifier

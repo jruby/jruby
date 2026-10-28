@@ -28,6 +28,7 @@
 
 package org.jruby;
 
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.exceptions.JumpException;
@@ -432,7 +433,7 @@ public class RubyEnumerable {
         return result;
     }
 
-    @JRubyMethod(name = {"to_a", "entries"})
+    @JRubyMethod(name = {"to_a", "entries"}, keywords = true)
     public static IRubyObject to_a(ThreadContext context, IRubyObject self) {
         var result = newArray(context);
         callEach(context, eachSite(context), self, Signature.OPTIONAL, new AppendBlockCallback(result));
@@ -2117,7 +2118,7 @@ public class RubyEnumerable {
 
     }
 
-    // chunk_i
+    @CRuby(value = "chunk_i", file = "enum.c")
     public static final class ChunkedBlockCallback implements BlockCallback {
         private final Ruby runtime;
         private final IRubyObject enumerator;

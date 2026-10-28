@@ -7,4 +7,3 @@ fails:IO::Buffer#resize with a file-backed buffer created with .map resizes priv
 fails:IO::Buffer#resize with a String-backed buffer created with .for without a block disallows resizing, raising IO::Buffer::AccessError
 fails:IO::Buffer#resize with a String-backed buffer created with .for with a block disallows resizing, raising IO::Buffer::AccessError
 fails:IO::Buffer#resize with a String-backed buffer created with .string disallows resizing, raising IO::Buffer::AccessError
-fails:IO::Buffer#resize with a null buffer allows resizing a 0-sized buffer, creating a regular buffer according to new size

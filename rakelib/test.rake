@@ -60,6 +60,11 @@ namespace :test do
   desc "Run tests that are too slow for the main suite"
   task :slow_suites => [:compile, *slow_tests]
 
+  desc "Check that the JIT can compile every method and block in the stdlib, ruby/spec and MRI tests"
+  task :jit_compile do
+    ruby "-J-XX:-OmitStackTraceInFastThrow tool/jit_compile_check.rb core/src/main/ruby lib/ruby/stdlib spec/ruby test/mri"
+  end
+
   task :rake_targets => long_tests
   task :extended => long_tests
 
@@ -70,7 +75,7 @@ namespace :test do
   end
 
   compile_flags = {
-    :default => :int,
+    :default => [],
     # interpreter is set to threshold=1 to encourage full builds to run for code called twice
     :int => ["-X-C", "-Xjit.threshold=1", "-Xjit.background=false"],
     # Note: jit.background=false is implied by jit.threshold=0, but we add it here to be sure
@@ -99,12 +104,13 @@ namespace :test do
         aot: "-X+C -Xjit.background=false #{get_meta_size.call()}"
     }
 
-    mri_suites = [:core, :extra, :stdlib]
     mri_suites = {
       core: "-Xbacktrace.style=mri -Xdebug.fullTrace",
       extra: "--disable-gems -Xbacktrace.style=mri -Xdebug.fullTrace -X+O",
       stdlib: "-Xbacktrace.style=mri -Xdebug.fullTrace",
     }
+
+    slowest = File.readlines("test/mri.core_slow.index").grep(/^[^#]\w+/).map(&:chomp).join("|")
 
     mri_suites.each do |suite, extra_jruby_opts|
       files = File.readlines("test/mri.#{suite}.index").grep(/^[^#]\w+/).map(&:chomp).join(' ')
@@ -115,7 +121,7 @@ namespace :test do
 
           task task do
             ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} #{extra_jruby_opts} #{opts}"
-            ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q -- #{files}"
+            ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q --name '!/#{slowest}/' -- #{files}"
           end
           task "#{task}:prism" do
             ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} #{extra_jruby_opts} -Xparser.prism #{opts}"
@@ -126,6 +132,15 @@ namespace :test do
 
       # add int shortcut names
       task suite => "test:mri:#{suite}:int"
+    end
+
+    # Slow tests, based on core but filtering to include the slowest test methods
+    task :core_slow do
+      ENV['JRUBY_OPTS'] = "#{ENV['JRUBY_OPTS']} --dev #{mri_suites[:core]}"
+
+      files = File.readlines("test/mri.core.index").grep(/^[^#]\w+/).map(&:chomp).join(' ')
+
+      ruby "test/mri/runner.rb #{ADDITIONAL_TEST_OPTIONS} --excludes=test/mri/excludes -q --name '/#{slowest}/' -- #{files}"
     end
 
     task all: jruby_opts.keys

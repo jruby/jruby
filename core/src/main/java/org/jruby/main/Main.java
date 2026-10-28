@@ -96,16 +96,16 @@ public class Main {
         this(new RubyInstanceConfig());
     }
 
-    private Main(RubyInstanceConfig config, boolean hardExit) {
+    private Main(RubyInstanceConfig config, boolean main) {
         this.config = config;
-        config.setHardExit(hardExit);
+        config.setMain(main);
     }
 
-    private Main(boolean hardExit) {
+    private Main(boolean main) {
         // used only from main(String[]), so we process dotfile here
         processDotfile();
         this.config = new RubyInstanceConfig();
-        config.setHardExit(hardExit);
+        config.setMain(main);
     }
 
     private static List<String> getDotfileDirectories() {
@@ -289,6 +289,9 @@ public class Main {
                     runtime.runFromMain(in, filename);
                 }
                 status = new Status();
+            } catch (RaiseException ex) {
+                runtime.getCurrentContext().setErrorInfo(ex.getException()); // set $! (accessible in at_exit blocks)
+                throw ex;
             } finally {
                 try {
                     runtime.tearDown();
@@ -468,12 +471,12 @@ public class Main {
             // non-null only if both STDIN and STDOUT are tty.
             boolean tty = System.console() != null;
 
-            if (rubyPager == null) {
+            if (!tty || rubyPager == null) {
                 config.getOutput().print(OutputStrings.getBasicUsageHelp(tty));
                 config.getOutput().print(OutputStrings.getFeaturesHelp(tty));
             } else {
                 try {
-                    ProcessBuilder builder = new ProcessBuilder(rubyPager);
+                    ProcessBuilder builder = new ProcessBuilder(pagerCommand(rubyPager));
                     builder.environment().put("LESS", "-R");
 
                     builder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
@@ -501,6 +504,12 @@ public class Main {
             rubyPager = System.getenv("PAGER");
 
         return rubyPager;
+    }
+
+    static String[] pagerCommand(String pager) {
+        if (Platform.IS_WINDOWS) return new String[] { "cmd.exe", "/c", pager };
+
+        return new String[] { "/bin/sh", "-c", pager };
     }
 
     private void doShowCopyright() {
@@ -583,4 +592,3 @@ public class Main {
 
     private final RubyInstanceConfig config;
 }
-

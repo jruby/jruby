@@ -13,17 +13,6 @@ import static org.jruby.api.Create.newString;
 public class TestJavaClass extends junit.framework.TestCase {
 
     @Test
-    @SuppressWarnings("deprecation")
-    public void testGet() {
-        Ruby runtime = Ruby.newInstance();
-        var context = runtime.getCurrentContext();
-        requireJava(context);
-
-        JavaClass javaClass = JavaClass.get(runtime, String.class);
-        assertSame(javaClass, JavaClass.get(runtime, String.class));
-    }
-
-    @Test
     public void testToJava() {
         Ruby runtime = Ruby.newInstance();
         var context = runtime.getCurrentContext();

@@ -1,5 +1,6 @@
 package org.jruby.api;
 
+import org.jruby.RubyBoolean;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.ThreadContext;
@@ -8,6 +9,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.api.Access.stringClass;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
+import static org.jruby.api.Warn.warning;
+import static org.jruby.util.RubyStringBuilder.str;
 import static org.jruby.util.StringSupport.strNullCheck;
 import static org.jruby.util.TypeConverter.convertToTypeWithCheck;
 
@@ -50,5 +53,37 @@ public class Check {
         if (!str.isNil()) return RubySymbol.newHardSymbol(context.runtime, str);
 
         throw typeError(context, obj.callMethod(context, "inspect") + " is not a symbol nor a string");
+    }
+
+    /**
+     * Check that the given value is a Boolean and return its boolean value.
+     * <p>
+     * If the value is not a Boolean, this function will either raise (if the 'raise' parameter is true) or warn and
+     * return true only if the object is non-nil.
+     * <p>
+     * C API: rb_bool_expected
+     *
+     * @param context the current context
+     * @param maybeBool the value that may be a Boolean
+     * @param id the keyword that referred to the value
+     * @param raise whether to raise if the value is not a Boolean
+     * @return the boolean value of the object, after checking if it is a Boolean and raising or warning if not
+     */
+    public static boolean checkBoolean(ThreadContext context, IRubyObject maybeBool, String id, boolean raise) {
+        return switch (maybeBool) {
+            case RubyBoolean.True ignored -> true;
+            case RubyBoolean.False ignored -> false;
+            default -> {
+                String message = "expected true or false as " + id + ": ";
+
+                if (raise) {
+                    throw argumentError(context, str(context.runtime, message, maybeBool));
+                }
+
+                warning(context, message);
+
+                yield !maybeBool.isNil();
+            }
+        };
     }
 }

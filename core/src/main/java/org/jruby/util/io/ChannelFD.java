@@ -136,24 +136,22 @@ public class ChannelFD implements Closeable {
                 throw new ClosedChannelException();
             }
 
-            // if channel is already closed, we're no longer valid
-            if (!ch.isOpen()) {
-                throw new ClosedChannelException();
-            }
-
             // otherwise decrement and possibly close as normal
             int count = refs.decrementAndGet();
 
             if (count <= 0) {
                 // if we're the last referrer, close the channel
                 try {
-                    ch.close();
+                    // The JDK closes an interruptible channel when the thread blocked on it is
+                    // interrupted, which is how Thread#kill unblocks IO, so Ruby never closed
+                    // that stream and there is nothing left for us to close.
+                    if (ch.isOpen()) ch.close();
                     if (needsClosing) {
                         filenoUtil.closeFilenoHandle(realFileno);
                     }
                 } finally {
-                    filenoUtil.unregisterWrapper(realFileno);
-                    filenoUtil.unregisterWrapper(fakeFileno);
+                    filenoUtil.unregisterWrapper(realFileno, this);
+                    filenoUtil.unregisterWrapper(fakeFileno, this);
                 }
             }
         }

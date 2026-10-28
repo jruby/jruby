@@ -1,7 +1,8 @@
 # JRuby - an implementation of the Ruby language on the JVM
 
-Master: [![JRuby CI](https://github.com/jruby/jruby/actions/workflows/ci.yml/badge.svg)](https://github.com/jruby/jruby/actions/workflows/ci.yml), [![JRuby CI (Windows)](https://github.com/jruby/jruby/actions/workflows/ci-windows.yml/badge.svg)](https://github.com/jruby/jruby/actions/workflows/ci-windows.yml)
-9.3 branch: [![JRuby CI](https://github.com/jruby/jruby/actions/workflows/ci.yml/badge.svg?branch=jruby-9.3)](https://github.com/jruby/jruby/actions/workflows/ci.yml), [![JRuby CI (Windows)](https://github.com/jruby/jruby/actions/workflows/ci-windows.yml/badge.svg?branch=jruby-9.3)](https://github.com/jruby/jruby/actions/workflows/ci-windows.yml)
+master/`10.1`▸ [![Master JRuby CI](https://github.com/jruby/jruby/actions/workflows/ci.yml/badge.svg)](https://github.com/jruby/jruby/actions/workflows/ci.yml)
+┃ `10.0`▸ [![10.0 JRuby CI](https://github.com/jruby/jruby/actions/workflows/ci.yml/badge.svg?branch=jruby-10.0)](https://github.com/jruby/jruby/actions/workflows/ci.yml)
+┃ `9.4`▸ [![9.4 JRuby CI](https://github.com/jruby/jruby/actions/workflows/ci.yml/badge.svg?branch=jruby-9.4)](https://github.com/jruby/jruby/actions/workflows/ci.yml)
 
 ## About
 
@@ -20,7 +21,7 @@ on the JVM and access powerful JVM libraries such as highly tuned concurrency
 primitives, you can use it to embed Ruby as a scripting language in your Java
 program, or many other possibilities.
 
-We're a welcoming community - you can talk to us on [#jruby on Libera](https://libera.chat/).
+We're a welcoming community - you can talk to us on [#jruby on Matrix](https://matrix.to/#/#jruby:matrix.org).
 There are core team members in the EU and US time zones.
 
 Visit the [JRuby website](https://www.jruby.org/) and the [JRuby wiki](https://github.com/jruby/jruby/wiki)

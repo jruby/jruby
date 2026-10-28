@@ -1,1 +1,2 @@
 fails:IO::Buffer#empty? is false for a file-mapped buffer
+fails:IO::Buffer#empty? is false for an invalid slice with a non-zero size

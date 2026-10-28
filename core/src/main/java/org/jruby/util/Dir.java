@@ -37,6 +37,7 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
+import org.jruby.anno.CRuby;
 import org.jruby.platform.Platform;
 
 import static org.jruby.api.Convert.asJavaString;
@@ -101,7 +102,7 @@ public class Dir {
             this.nocase = (flags & FNM_CASEFOLD) != 0;
         }
 
-        // MRI: fnmatch_helper
+        @CRuby(value = "fnmatch_helper", file = "dir.c")
         int helper(byte[] pbytes, int pend, byte[] sbytes, int send, Encoding enc) {
             int s = scur;
             int p = pcur;

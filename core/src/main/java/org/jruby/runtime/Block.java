@@ -390,7 +390,7 @@ public class Block implements FunctionOneOrTwoOrThree<ThreadContext, IRubyObject
 
         final Block that = (Block) other;
 
-        return this.binding.equals(that.binding) && this.body == that.body;
+        return this.binding.equals(that.binding) && this.body.equals(that.body);
     }
 
     @Override

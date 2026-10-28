@@ -124,6 +124,12 @@ public abstract class IRScope implements ParseResult {
     public Compilable compilable;
 
     private int coverageMode;
+
+    // Source span of this scope beyond its start line (see getLine()). All -1 when unknown. Set for methods and
+    // closures only, from the parser. Coverage uses it to identify method entries.
+    private int startColumn = -1;
+    private int endLine = -1;
+    private int endColumn = -1;
     // At least until we change the design all of these state fields are true from IRBuild forward.  With IR
     // optimization passes it is incredibly unlikely any of these could ever be unset anyways; So this is not
     // a poor list of 'truisms' for this Scope.
@@ -153,6 +159,9 @@ public abstract class IRScope implements ParseResult {
         this.nextClosureIndex = s.nextClosureIndex;
         this.interpreterContext = null;
         this.coverageMode = CoverageData.NONE;
+        this.startColumn = s.startColumn;
+        this.endLine = s.endLine;
+        this.endColumn = s.endColumn;
         this.localVars = new HashMap<>(s.localVars);
         this.scopeId = globalScopeCount.getAndIncrement();
 
@@ -492,6 +501,31 @@ public abstract class IRScope implements ParseResult {
 
     public int getCoverageMode() {
         return coverageMode;
+    }
+
+    /**
+     * Record where the source of this scope starts and ends. The start line is getLine().
+     *
+     * @param startColumn zero-based byte column of the first character: the def keyword, the opening brace, ...
+     * @param endLine zero-based line of the last character: the end keyword or closing brace
+     * @param endColumn zero-based byte column just after that character
+     */
+    public void setSourceSpan(int startColumn, int endLine, int endColumn) {
+        this.startColumn = startColumn;
+        this.endLine = endLine;
+        this.endColumn = endColumn;
+    }
+
+    public int getStartColumn() {
+        return startColumn;
+    }
+
+    public int getEndLine() {
+        return endLine;
+    }
+
+    public int getEndColumn() {
+        return endColumn;
     }
 
     public void setHasNonLocalReturns() {

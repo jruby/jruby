@@ -37,7 +37,7 @@ import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.keywordError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.ir.runtime.IRRuntimeHelpers.setCallInfo;
-import static org.jruby.runtime.Arity.checkArgumentCount;
+import static org.jruby.runtime.Helpers.checkArgumentCount;
 import static org.jruby.runtime.Helpers.invokedynamic;
 import static org.jruby.runtime.ThreadContext.CALL_KEYWORD;
 import static org.jruby.runtime.ThreadContext.hasNonemptyKeywords;
@@ -398,6 +398,8 @@ public class RubyData {
         Ruby runtime = context.runtime;
 
         RubyClass subclass = RubyClass.newClass(runtime, superClass);
+        subclass.makeMetaClass(context, superClass.metaClass);
+        superClass.invokeInherited(context, superClass, subclass);
 
         VariableTableManager vtm = subclass.getVariableTableManager();
         VariableAccessor[] accessors = new VariableAccessor[keySet.size()];

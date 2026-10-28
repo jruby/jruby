@@ -1,1 +1,4 @@
 hangs(excessive memory use):Enumerator::Lazy#with_index enumerates with a given block
+fails:Enumerator::Lazy#with_index value packing of source yields pairs a packed Array with the index for a multi-argument source yield
+fails:Enumerator::Lazy#with_index value packing of source yields pairs nil with the index for a zero-argument source yield
+fails:Enumerator::Lazy#with_index value packing of source yields calls the block with the packed value and the index

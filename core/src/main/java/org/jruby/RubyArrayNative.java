@@ -39,6 +39,7 @@
 package org.jruby;
 
 import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Create;
 import org.jruby.api.JRubyAPI;
@@ -150,9 +151,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return ex;
     }
 
-    /** rb_ary_s_create
-     *
-     */
+     @CRuby(value = "rb_ary_s_create", file = "array.c")
      public static IRubyObject create(ThreadContext context, IRubyObject klass, IRubyObject[] args, Block block) {
          switch (args.length) {
              case 0: return ((RubyClass) klass).allocate(context);
@@ -182,16 +181,12 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return new RubyArrayNative<>(runtime, runtime.getArray(), values, 0, 0, false);
     }
 
-    /** rb_ary_new
-     *
-     */
+    @CRuby(value = "rb_ary_new", file = "array.c")
     public static final RubyArrayNative<?> newArray(ThreadContext context) {
         return newArray(context, ARRAY_DEFAULT_SIZE);
     }
 
-    /** rb_ary_new
-     *
-     */
+    @CRuby(value = "rb_ary_new", file = "array.c")
     public static final RubyArrayNative<?> newArrayLight(final Ruby runtime) {
         /* Ruby arrays default to holding 16 elements, so we create an
          * ArrayList of the same size if we're not told otherwise
@@ -223,9 +218,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return new RubyArrayNative<>(runtime, objs, false);
     }
 
-    /** rb_assoc_new
-     *
-     */
+    @CRuby(value = "rb_assoc_new", file = "array.c")
     public static RubyArrayNative<?> newArray(Ruby runtime, IRubyObject car, IRubyObject cdr) {
         return USE_PACKED_ARRAYS ? new RubyArrayTwoObject(runtime, car, cdr) : new RubyArrayNative<>(runtime, arrayOf(car, cdr));
     }
@@ -572,9 +565,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         modifyCheck(getCurrentContext());
     }
 
-    /** rb_ary_modify_check
-     *
-     */
+    @CRuby(value = "rb_ary_modify_check", file = "array.c")
     protected final void modifyCheck(ThreadContext context) {
         if (isFrozen()) throw context.runtime.newFrozenError(this);
     }
@@ -584,9 +575,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         modify(getCurrentContext());
     }
 
-    /** rb_ary_modify
-     *
-     */
+    @CRuby(value = "rb_ary_modify", file = "array.c")
     protected void modify(ThreadContext context) {
         modifyCheck(context);
         if (isShared) {
@@ -603,9 +592,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
      *  ================
      */
 
-    /** rb_ary_initialize
-     *
-     */
+    @CRuby(value = "rb_ary_initialize", file = "array.c")
     public IRubyObject initialize(ThreadContext context, Block block) {
         modifyCheck(context);
         unpack(context);
@@ -615,16 +602,12 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return this;
     }
 
-    /** rb_ary_initialize
-     *
-     */
+    @CRuby(value = "rb_ary_initialize", file = "array.c")
     public IRubyObject initialize(ThreadContext context, IRubyObject arg0, Block block) {
         return initializeCommon(context, arg0, null, block);
     }
 
-    /** rb_ary_initialize
-     *
-     */
+    @CRuby(value = "rb_ary_initialize", file = "array.c")
     public IRubyObject initialize(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
         return initializeCommon(context, arg0, arg1, block);
     }
@@ -712,9 +695,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return dup;
     }
 
-    /** rb_ary_dup
-     *
-     */
+    @CRuby(value = "rb_ary_dup", file = "array.c")
     public RubyArrayNative aryDup() {
         // In 1.9, rb_ary_dup logic changed so that on subclasses of Array,
         // dup returns an instance of Array, rather than an instance of the subclass
@@ -722,9 +703,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return dupImpl(runtime, runtime.getArray());
     }
 
-    /** rb_ary_replace
-     *
-     */
+    @CRuby(value = "rb_ary_replace", file = "array.c")
     public IRubyObject replace(ThreadContext context, IRubyObject orig) {
         unpack(context);
         modifyCheck(context);
@@ -753,9 +732,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return this;
     }
 
-    /** rb_ary_to_s
-     *
-     */
+    @CRuby(value = "rb_ary_to_s", file = "array.c")
     @Override
     public RubyString to_s(ThreadContext context) {
         return inspect(context);
@@ -782,9 +759,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return false;
     }
 
-    /** rb_ary_hash
-     *
-     */
+    @CRuby(value = "rb_ary_hash", file = "array.c")
     public RubyFixnum hash(ThreadContext context) {
         return asFixnum(context, hashImpl(context));
     }
@@ -820,7 +795,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
      * @param value the value to be stored
      * @return the value set
      */
-    // MRI: rb_ary_store
+    @CRuby(value = "rb_ary_store", file = "array.c")
     @JRubyAPI
     public IRubyObject store(ThreadContext context, long index, IRubyObject value) {
         if (index < 0 && (index += realLength) < 0) throw indexError(context, "index " + (index - realLength) + " out of array");
@@ -870,9 +845,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         realloc(context, (int) newLength, valuesLength);
     }
 
-    /** rb_ary_elt
-     *
-     */
+    @CRuby(value = "rb_ary_elt", file = "array.c")
     @Override
     protected final IRubyObject elt(long offset) {
         if (offset < 0 || offset >= realLength) {
@@ -901,9 +874,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         }
     }
 
-    /** rb_ary_entry
-     *
-     */
+    @CRuby(value = "rb_ary_entry", file = "array.c")
     public final IRubyObject entry(long offset) {
         return (offset < 0 ) ? elt(offset + realLength) : elt(offset);
     }
@@ -930,9 +901,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return result;
     }
 
-    /** rb_ary_fetch
-     *
-     */
+    @CRuby(value = "rb_ary_fetch", file = "array.c")
     public IRubyObject fetch(ThreadContext context, IRubyObject arg0, Block block) {
         long index = toLong(context, arg0);
 
@@ -945,9 +914,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return eltOk((int) index);
     }
 
-    /** rb_ary_fetch
-    *
-    */
+   @CRuby(value = "rb_ary_fetch", file = "array.c")
    public IRubyObject fetch(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
        if (block.isGiven()) warn(context, "block supersedes default value argument");
 
@@ -962,9 +929,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
        return eltOk((int) index);
    }
 
-    /** rb_ary_to_ary
-     *
-     */
+    @CRuby(value = "rb_ary_to_ary", file = "array.c")
     public static RubyArray aryToAry(ThreadContext context, IRubyObject obj) {
         IRubyObject tmp = TypeConverter.checkArrayType(context, obj);
         return tmp != context.nil ? (RubyArray) tmp : newArray(context.runtime, obj);
@@ -992,9 +957,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         splice(context, beg, len, rplArr, rlen);
     }
 
-    /** rb_ary_splice
-     *
-     */
+    @CRuby(value = "rb_ary_splice", file = "array.c")
     private void splice(ThreadContext context, int beg, int len, final RubyArray rplArr, final int rlen) {
         if (len < 0) throw indexError(context, "negative length (" + len + ")");
         if (beg < 0 && (beg += realLength) < 0) indexError(context, "index " + (beg - realLength) + " out of array");
@@ -1028,9 +991,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         }
     }
 
-    /** rb_ary_splice
-     *
-     */
+    @CRuby(value = "rb_ary_splice", file = "array.c")
     private final void spliceOne(ThreadContext context, long beg, IRubyObject rpl) {
         if (beg < 0 && (beg += realLength) < 0) throw indexError(context, "index " + (beg - realLength) + " out of array");
 
@@ -1092,9 +1053,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         throw argumentError(getRuntime().getCurrentContext(), 0, 1);
     }
 
-    /** rb_ary_insert
-     *
-     */
+    @CRuby(value = "rb_ary_insert", file = "array.c")
     public IRubyObject insert(ThreadContext context, IRubyObject arg) {
         modifyCheck(context);
         toLong(context, arg);
@@ -1151,9 +1110,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return this;
     }
 
-    /** rb_ary_transpose
-     *
-     */
+    @CRuby(value = "rb_ary_transpose", file = "array.c")
     public RubyArray transpose(ThreadContext context) {
         int alen = realLength;
         if (alen == 0) return aryDup();
@@ -1211,9 +1168,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return result;
     }
 
-    /** rb_ary_subseq
-     *
-     */
+    @CRuby(value = "rb_ary_subseq", file = "array.c")
     public IRubyObject subseq(long beg, long len) {
         return subseq(getRuntime().getArray(), beg, len, true);
     }
@@ -1320,9 +1275,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return arg0.step(context).isNil() ? null: toLong(context, arg0.step(context));
     }
 
-    /** rb_ary_subseq
-     *
-     */
+    @CRuby(value = "rb_ary_subseq", file = "array.c")
     public IRubyObject subseqLight(long beg, long len) {
         return subseq(metaClass, beg, len, true);
     }
@@ -1340,9 +1293,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return makeShared(runtime.getCurrentContext(), begin + (int) beg, (int) len, new RubyArrayNative(runtime, metaClass, !light));
     }
 
-    /** rb_ary_length
-     *
-     */
+    @CRuby(value = "rb_ary_length", file = "array.c")
     public RubyFixnum length(ThreadContext context) {
         return asFixnum(context, realLength);
     }
@@ -1395,9 +1346,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return this;
     }
 
-    /** rb_ary_pop
-     *
-     */
+    @CRuby(value = "rb_ary_pop", file = "array.c")
     public IRubyObject pop(ThreadContext context) {
         unpack(context);
         modifyCheck(context);
@@ -1420,9 +1369,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return result;
     }
 
-    /** rb_ary_shift
-     *
-     */
+    @CRuby(value = "rb_ary_shift", file = "array.c")
     public IRubyObject shift(ThreadContext context) {
         unpack(context);
         modifyCheck(context);
@@ -1453,9 +1400,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return this;
     }
     
-    /** rb_ary_unshift
-     *
-     */
+    @CRuby("rb_ary_unshift")
     public IRubyObject unshift(ThreadContext context, IRubyObject item) {
         unpack(context);
 
@@ -1500,15 +1445,12 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return this;
     }
 
-    /** rb_ary_includes
-     *
-     */
+    @CRuby(value = "rb_ary_includes", file = "array.c")
     public RubyBoolean include_p(ThreadContext context, IRubyObject item) {
         return asBoolean(context, includes(context, item));
     }
 
-    /** rb_ary_aref
-     */
+    @CRuby(value = "rb_ary_aref", file = "array.c")
     public IRubyObject aref(ThreadContext context, IRubyObject arg0) {
         if (arg0 instanceof RubyArithmeticSequence) {
             return subseq_step(context, (RubyArithmeticSequence) arg0);
@@ -1575,25 +1517,19 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         }
     }
 
-    /** rb_ary_aset
-    *
-    */
+    @CRuby(value = "rb_ary_aset", file = "array.c")
     public IRubyObject aset(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         modifyCheck(context);
         splice(context, toInt(context, arg0), toInt(context, arg1), arg2);
         return arg2;
     }
 
-    /** rb_ary_at
-     *
-     */
+    @CRuby(value = "rb_ary_at", file = "array.c")
     public IRubyObject at(ThreadContext context, IRubyObject pos) {
         return entry(toLong(context, pos));
     }
 
-	/** rb_ary_concat
-     *
-     */
+    @CRuby(value = "rb_ary_concat", file = "array.c")
     public RubyArray concat(ThreadContext context, IRubyObject obj) {
         modifyCheck(context);
 
@@ -1605,15 +1541,13 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         splice(context, realLength, 0, obj, obj.getLength());
     }
 
-    // MRI: ary_append
+    @CRuby(value = "ary_append", file = "array.c")
     public RubyArray aryAppend(ThreadContext context, RubyArray<?> y) {
         if (y.getLength() > 0) splice(context, realLength, 0, y, y.getLength());
         return this;
     }
 
-    /** rb_ary_concat_multi
-     *
-     */
+    @CRuby(value = "rb_ary_concat_multi", file = "array.c")
     public RubyArray concat(ThreadContext context, IRubyObject[] objs) {
         modifyCheck(context);
         if (objs.length == 0) return this;
@@ -1632,9 +1566,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return concat(metaClass.runtime.getCurrentContext(), obj);
     }
 
-    /** inspect_ary
-     *
-     */
+    @CRuby(value = "inspect_ary", file = "array.c")
     protected IRubyObject inspectAry(ThreadContext context) {
         RubyString str = RubyString.newStringLight(context.runtime, DEFAULT_INSPECT_STR_SIZE, USASCIIEncoding.INSTANCE);
         str.cat((byte) '[');
@@ -1655,9 +1587,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return str;
     }
 
-    /** rb_ary_inspect
-    *
-    */
+    @CRuby(value = "rb_ary_inspect", file = "array.c")
     public RubyString inspect(ThreadContext context) {
         final Ruby runtime = context.runtime;
         if (realLength == 0) return newSharedString(context, EMPTY_ARRAY_BL);
@@ -1671,13 +1601,13 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         }
     }
 
-    // MRI: rb_ary_first
+    @CRuby(value = "rb_ary_first", file = "array.c")
     @JRubyAPI
     public IRubyObject first(ThreadContext context) {
         return realLength == 0 ? context.nil : eltOk(0);
     }
 
-    // MRI: rb_ary_first
+    @CRuby(value = "rb_ary_first", file = "array.c")
     @JRubyAPI
     public IRubyObject first(ThreadContext context, IRubyObject arg0) {
         long n = toLong(context, arg0);
@@ -1696,15 +1626,13 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
     }
 
 
-    // MRI: rb_ary_last
+    @CRuby(value = "rb_ary_last", file = "array.c")
     @JRubyAPI
     public IRubyObject last(ThreadContext context) {
         return realLength == 0 ? context.nil : eltOk(realLength - 1);
     }
 
-    /** rb_ary_last
-     *
-     */
+    @CRuby(value = "rb_ary_last", file = "array.c")
     public IRubyObject last(ThreadContext context, IRubyObject arg0) {
         long n = toLong(context, arg0);
         if (n > realLength) n = realLength;
@@ -1771,9 +1699,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
                 enumeratorizeWithSize(context, this, "each_slice", arg, arg);
     }
 
-    /** rb_ary_each_index
-     *
-     */
+    @CRuby(value = "rb_ary_each_index", file = "array.c")
     public IRubyObject eachIndex(ThreadContext context, Block block) {
         if (!block.isGiven()) throw context.runtime.newLocalJumpErrorNoBlock();
 
@@ -1787,9 +1713,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return block.isGiven() ? eachIndex(context, block) : enumeratorizeWithSize(context, this, "each_index", RubyArray::size);
     }
 
-    /** rb_ary_reverse_each
-     *
-     */
+    @CRuby(value = "rb_ary_reverse_each", file = "array.c")
     public IRubyObject reverseEach(ThreadContext context, Block block) {
         int len = realLength;
 
@@ -1807,7 +1731,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return block.isGiven() ? reverseEach(context, block) : enumeratorizeWithSize(context, this, "reverse_each", RubyArray::size);
     }
 
-    // MRI: ary_join_0
+    @CRuby(value = "ary_join_0", file = "array.c")
     protected int joinStrings(RubyString sep, int max, RubyString result) {
         if (max > 0 && eltOk(0) instanceof EncodingCapable ec) result.setEncoding(ec.getEncoding());
 
@@ -1826,7 +1750,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return i;
     }
 
-    // MRI: ary_join_1
+    @CRuby(value = "ary_join_1", file = "array.c")
     private RubyString joinAny(ThreadContext context, RubyString sep, int i, RubyString result, boolean[] first) {
         assert i >= 0 : "joining elements before beginning of array";
         JavaSites.CheckedSites to_ary_checked = null;
@@ -1886,9 +1810,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         context.safeRecurse(JOIN_RECURSIVE, new JoinRecursive.State(ary, outValue, sep, result, first), outValue, "join", true);
     }
 
-    /** rb_ary_join
-     *
-     */
+    @CRuby(value = "rb_ary_join", file = "array.c")
     public IRubyObject join(final ThreadContext context, IRubyObject sep) {
         if (sep == context.nil) sep = getDefaultSeparator(context);
 
@@ -1934,9 +1856,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return sep;
     }
 
-    /** rb_ary_to_a
-     *
-     */
+    @CRuby(value = "rb_ary_to_a", file = "array.c")
     @Override
     public RubyArray to_a(ThreadContext context) {
         final RubyClass arrayClass = arrayClass(context);
@@ -1969,9 +1889,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return hash;
     }
 
-    /** rb_ary_equal
-     *
-     */
+    @CRuby(value = "rb_ary_equal", file = "array.c")
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
         if (this == obj) return context.tru;
@@ -2010,9 +1928,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return context.tru;
     }
 
-    /** rb_ary_eql
-     *
-     */
+    @CRuby(value = "rb_ary_eql", file = "array.c")
     public IRubyObject eql(ThreadContext context, IRubyObject obj) {
         if(!(obj instanceof RubyArray)) {
             return context.fals;
@@ -2020,9 +1936,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return RecursiveComparator.compare(context, sites(context).eql, this, obj, true);
     }
 
-    /** rb_ary_compact_bang
-     *
-     */
+    @CRuby(value = "rb_ary_compact_bang", file = "array.c")
     public IRubyObject compact_bang(ThreadContext context) {
         unpack(context);
         modify(context);
@@ -2051,23 +1965,19 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return this;
     }
 
-    // MRI: rb_ary_compact
+    @CRuby(value = "rb_ary_compact", file = "array.c")
     public IRubyObject compact(ThreadContext context) {
         RubyArray ary = aryDup();
         ary.compact_bang(context);
         return ary;
     }
 
-    /** rb_ary_empty_p
-     *
-     */
+    @CRuby(value = "rb_ary_empty_p", file = "array.c")
     public IRubyObject empty_p(ThreadContext context) {
         return realLength == 0 ? context.tru : context.fals;
     }
 
-    /** rb_ary_clear
-     *
-     */
+    @CRuby(value = "rb_ary_clear", file = "array.c")
     public IRubyObject rb_clear(ThreadContext context) {
         modifyCheck(context);
 
@@ -2186,9 +2096,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
     }
 
 
-    /** rb_ary_index
-     *
-     */
+    @CRuby(value = "rb_ary_index", file = "array.c")
     public IRubyObject index(ThreadContext context, IRubyObject obj) {
         for (int i = 0; i < realLength; i++) {
             if (equalInternal(context, eltOk(i), obj)) return asFixnum(context, i);
@@ -2280,9 +2188,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return low;
     }
 
-    /** rb_ary_rindex
-     *
-     */
+    @CRuby(value = "rb_ary_rindex", file = "array.c")
     public IRubyObject rindex(ThreadContext context, IRubyObject obj) {
         unpack(context);
         
@@ -2320,9 +2226,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return context.nil;
     }
 
-    /** rb_ary_reverse_bang
-     *
-     */
+    @CRuby(value = "rb_ary_reverse_bang", file = "array.c")
     public IRubyObject reverse_bang(ThreadContext context) {
         modify(context);
 
@@ -2341,7 +2245,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return this;
     }
 
-    // MRI: rb_ary_reverse_m
+    @CRuby(value = "rb_ary_reverse_m", file = "array.c")
     @JRubyAPI
     public IRubyObject reverse(ThreadContext context) {
         return realLength > 1 ? safeReverse() : aryDup();
@@ -2404,9 +2308,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return collectArray(context, block);
     }
 
-    /** rb_ary_collect
-     *
-     */
+    @CRuby(value = "rb_ary_collect", file = "array.c")
     public IRubyObject rbCollect(ThreadContext context, Block block) {
         return block.isGiven() ? collectArray(context, block) : collectEnum(context);
     }
@@ -2415,9 +2317,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return block.isGiven() ? collectArray(context, block) : enumeratorizeWithSize(context, this, "map", RubyArray::size);
     }
 
-    /** rb_ary_collect_bang
-     *
-     */
+    @CRuby(value = "rb_ary_collect_bang", file = "array.c")
     public RubyArray collectBang(ThreadContext context, Block block) {
         if (!block.isGiven()) throw context.runtime.newLocalJumpErrorNoBlock();
         modify(context);
@@ -2431,23 +2331,17 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return this;
     }
 
-    /** rb_ary_collect_bang
-    *
-    */
+    @CRuby(value = "rb_ary_collect_bang", file = "array.c")
     public IRubyObject collect_bang(ThreadContext context, Block block) {
         return block.isGiven() ? collectBang(context, block) : enumeratorizeWithSize(context, this, "collect!", RubyArray::size);
     }
 
-    /** rb_ary_collect_bang
-    *
-    */
+    @CRuby(value = "rb_ary_collect_bang", file = "array.c")
     public IRubyObject map_bang(ThreadContext context, Block block) {
         return block.isGiven() ? collectBang(context, block) : enumeratorizeWithSize(context, this, "map!", RubyArray::size);
     }
 
-    /** rb_ary_select
-     *
-     */
+    @CRuby(value = "rb_ary_select", file = "array.c")
     public IRubyObject selectCommon(ThreadContext context, Block block) {
         final Ruby runtime = context.runtime;
 
@@ -2527,9 +2421,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return this;
     }
 
-    /** rb_ary_delete
-     *
-     */
+    @CRuby(value = "rb_ary_delete", file = "array.c")
     public IRubyObject delete(ThreadContext context, IRubyObject item, Block block) {
         unpack(context);
         int i2 = 0;
@@ -2567,9 +2459,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return value;
     }
 
-    /** rb_ary_delete_at
-     *
-     */
+    @CRuby(value = "rb_ary_delete_at", file = "array.c")
     public IRubyObject delete_at(ThreadContext context, int pos) {
         int len = realLength;
         if (pos >= len || (pos < 0 && (pos += len) < 0)) return context.nil;
@@ -2601,16 +2491,12 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         }
     }
 
-    /** rb_ary_delete_at_m
-     *
-     */
+    @CRuby(value = "rb_ary_delete_at_m", file = "array.c")
     public IRubyObject delete_at(ThreadContext context, IRubyObject obj) {
         return delete_at(toInt(context, obj));
     }
 
-    /** rb_ary_reject_bang
-     *
-     */
+    @CRuby(value = "rb_ary_reject_bang", file = "array.c")
     public final IRubyObject rejectCommon(ThreadContext context, Block block) {
         var ary = Create.newArray(context);
 
@@ -2627,7 +2513,8 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return block.isGiven() ? rejectCommon(context, block) : enumeratorizeWithSize(context, this, "reject", RubyArray::size);
     }
 
-    // MRI: ary_reject_bang and reject_bang_i
+    @CRuby(value = "ary_reject_bang", file = "array.c")
+    @CRuby(value = "reject_bang_i", file = "array.c")
     public IRubyObject rejectBang(ThreadContext context, Block block) {
         unpack(context);
         modify(context);
@@ -2660,7 +2547,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         }
     }
 
-    // MRI: select_bang_ensure
+    @CRuby(value = "select_bang_ensure", file = "array.c")
     private void selectBangEnsure(ThreadContext context, int i1, int i2) {
         int len = realLength;
 
@@ -2687,9 +2574,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return block.isGiven() ? rejectBang(context, block) : enumeratorizeWithSize(context, this, "reject!", RubyArray::size);
     }
 
-    /** rb_ary_delete_if
-     *
-     */
+    @CRuby(value = "rb_ary_delete_if", file = "array.c")
     public IRubyObject deleteIf(ThreadContext context, Block block) {
         rejectBang(context, block);
         return this;
@@ -2699,9 +2584,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return block.isGiven() ? deleteIf(context, block) : enumeratorizeWithSize(context, this, "delete_if", RubyArray::size);
     }
 
-    /** rb_ary_zip
-     *
-     */
+    @CRuby(value = "rb_ary_zip", file = "array.c")
     public IRubyObject zip(ThreadContext context, IRubyObject[] args, Block block) {
         RubyClass array = arrayClass(context);
         ArraySites sites = sites(context);
@@ -2771,9 +2654,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return newArrayMayCopy(context.runtime, result);
     }
 
-    /** rb_ary_cmp
-     *
-     */
+    @CRuby(value = "rb_ary_cmp", file = "array.c")
     public IRubyObject op_cmp(ThreadContext context, IRubyObject obj) {
         boolean isAnArray = (obj instanceof RubyArray) || obj.getMetaClass().getSuperClass() == arrayClass(context);
 
@@ -2836,9 +2717,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return result;
     }
 
-        /** rb_ary_slice_bang
-         *
-         */
+    @CRuby(value = "rb_ary_slice_bang", file = "array.c")
     public IRubyObject slice_bang(ThreadContext context, IRubyObject arg0) {
         modifyCheck(context);
 
@@ -2852,18 +2731,14 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return delete_at(toInt(context, arg0));
     }
 
-    /** rb_ary_slice_bang
-    *
-    */
+    @CRuby(value = "rb_ary_slice_bang", file = "array.c")
     public IRubyObject slice_bang(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         modifyCheck(context);
 
         return slice_internal(context, toInt(context, arg0), toInt(context, arg1));
     }
 
-    /** rb_ary_assoc
-     *
-     */
+    @CRuby(value = "rb_ary_assoc", file = "array.c")
     public IRubyObject assoc(ThreadContext context, IRubyObject key) {
         for (int i = 0; i < realLength; i++) {
             IRubyObject v = TypeConverter.checkArrayType(context, sites(context).to_ary_checked, eltOk(i));
@@ -2875,9 +2750,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return context.nil;
     }
 
-    /** rb_ary_rassoc
-     *
-     */
+    @CRuby(value = "rb_ary_rassoc", file = "array.c")
     public IRubyObject rassoc(ThreadContext context, IRubyObject value) {
         for (int i = 0; i < realLength; i++) {
             IRubyObject v = TypeConverter.checkArrayType(context, sites(context).to_ary_checked, eltOk(i));
@@ -3044,9 +2917,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return asFixnum(context, n);
     }
 
-    /** rb_ary_plus
-     *
-     */
+    @CRuby(value = "rb_ary_plus", file = "array.c")
     public IRubyObject op_plus(ThreadContext context, IRubyObject obj) {
         RubyArray y = obj.convertToArray();
         int len = realLength + y.getLength();
@@ -3076,9 +2947,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return z;
     }
 
-    /** rb_ary_times
-     *
-     */
+    @CRuby(value = "rb_ary_times", file = "array.c")
     public IRubyObject op_times(ThreadContext context, IRubyObject times) {
         IRubyObject tmp = times.checkStringType();
 
@@ -3151,9 +3020,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         }
     }
 
-    /** rb_ary_uniq_bang
-     *
-     */
+    @CRuby(value = "rb_ary_uniq_bang", file = "array.c")
     public IRubyObject uniq_bang(ThreadContext context) {
         final RubyHash hash = makeHash(context.runtime);
         final int newLength = hash.size();
@@ -3189,9 +3056,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return this;
     }
 
-    /** rb_ary_uniq
-     *
-     */
+    @CRuby(value = "rb_ary_uniq", file = "array.c")
     public IRubyObject uniq(ThreadContext context) {
         RubyHash hash = makeHash(context.runtime);
         final int newLength = hash.size();
@@ -3215,15 +3080,19 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return result;
     }
 
-    /** rb_ary_diff
-     *
-     */
+    @CRuby(value = "rb_ary_diff", file = "array.c")
     public IRubyObject op_diff(ThreadContext context, IRubyObject other) {
         final int len = realLength;
+        RubyArray<?> ary2 = other.convertToArray();
+
+        if (len <= SMALL_ARRAY_LEN || ary2.size() <= SMALL_ARRAY_LEN) {
+            return op_diffSmallArray(context, ary2);
+        }
+
         RubyArrayNative<?> res = newBlankArrayInternal(context.runtime, len);
 
         int index = 0;
-        RubyHash hash = other.convertToArray().makeHash(context.runtime);
+        RubyHash hash = ary2.makeHash(context.runtime);
         for (int i = 0; i < len; i++) {
             IRubyObject val = eltOk(i);
             if (hash.fastARef(val) == null) res.storeInternal(context, index++, val);
@@ -3241,9 +3110,17 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return res;
     }
 
-    /** rb_ary_difference_multi
-     *
-     */
+    private RubyArray op_diffSmallArray(ThreadContext context, RubyArray other) {
+        final int len = realLength;
+        RubyArray result = RubyArray.newArray(context, len);
+        for (int i = 0; i < len; i++) {
+            IRubyObject elt = elt(i);
+            if (!other.includesByEql(context, elt)) result.append(context, elt);
+        }
+        return result;
+    }
+
+    @CRuby(value = "rb_ary_difference_multi", file = "array.c")
     public IRubyObject difference(ThreadContext context, IRubyObject[] args) {
         BitSet isHash = new BitSet(args.length);
         RubyArray[] arrays = new RubyArray[args.length];
@@ -3283,17 +3160,16 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return result;
     }
 
-    /** MRI: rb_ary_intersect_p
-     *
-     */
+    @CRuby(value = "rb_ary_intersect_p", file = "array.c")
     public IRubyObject intersect_p(ThreadContext context, IRubyObject other) {
 
         RubyArray ary2 = other.convertToArray();
         final int len = realLength;
+        final int len2 = ary2.size();
 
-        if (len == 0 || ary2.getLength() == 0) return context.fals;
+        if (len == 0 || len2 == 0) return context.fals;
 
-        if (len <= SMALL_ARRAY_LEN && ary2.getLength() <= SMALL_ARRAY_LEN) {
+        if (len <= SMALL_ARRAY_LEN && len2 <= SMALL_ARRAY_LEN) {
             for (int i = 0; i < len; i++) {
                 if (ary2.includesByEql(context, elt(i))) return context.tru;
             }
@@ -3303,13 +3179,13 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         RubyArray shorter = this;
         RubyArray longer = ary2;
 
-        if (len > ary2.getLength()) {
+        if (len > len2) {
             longer = this;
             shorter = ary2;
         }
 
         RubyHash hash = shorter.makeHash(context.runtime);
-        for (int i = 0; i < longer.getLength(); i++) {
+        for (int i = 0; i < longer.size(); i++) {
             IRubyObject val = longer.eltOk(i);
             if (hash.fastARef(val) != null) return context.tru;
         }
@@ -3317,20 +3193,23 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return context.fals;
     }
 
-    /** MRI: rb_ary_and
-     *
-     */
+    @CRuby(value = "rb_ary_and", file = "array.c")
     public IRubyObject op_and(ThreadContext context, IRubyObject other) {
         RubyArray<?> ary2 = other.convertToArray();
 
         final int len = realLength;
-        int maxSize = len < ary2.getLength() ? len : ary2.getLength();
+        final int len2 = ary2.size();
+        if (len <= SMALL_ARRAY_LEN && len2 <= SMALL_ARRAY_LEN) {
+            return op_andSmallArray(context, ary2);
+        }
+
+        int maxSize = len < len2 ? len : len2;
         RubyArrayNative res;
         switch (maxSize) {
             case 0:
                 return newEmptyArray(context.runtime);
             case 1:
-                if (len == 0 || ary2.getLength() == 0) return newEmptyArray(context.runtime);
+                if (len == 0 || len2 == 0) return newEmptyArray(context.runtime);
             default:
                 res = newBlankArrayInternal(context.runtime, maxSize);
                 break;
@@ -3347,7 +3226,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         if (index == 0) return Create.newEmptyArray(context);
         if (index == 1 && maxSize == 2) return Create.newArray(context, res.eltInternal(0));
 
-        assert index == res.getLength();
+        assert index == res.size();
         if (!(res instanceof RubyArraySpecialized)) {
             Helpers.fillNil(context, res.values, index, res.values.length);
         }
@@ -3355,30 +3234,44 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return res;
     }
 
-    /** rb_ary_or
-     *
-     */
+    private RubyArray op_andSmallArray(ThreadContext context, RubyArray other) {
+        final int len = realLength;
+        RubyArray result = RubyArray.newArray(context, len);
+        for (int i = 0; i < len; i++) {
+            IRubyObject elt = elt(i);
+            if (other.includesByEql(context, elt) && !result.includesByEql(context, elt)) {
+                result.append(context, elt);
+            }
+        }
+        return result;
+    }
+
+    @CRuby(value = "rb_ary_or", file = "array.c")
     public IRubyObject op_or(ThreadContext context, IRubyObject other) {
         RubyArray ary2 = other.convertToArray();
 
-        int maxSize = realLength + ary2.getLength();
-        if (maxSize == 0) return Create.newEmptyArray(context);
+        int maxSize = realLength + ary2.size();
+        if (maxSize <= SMALL_ARRAY_LEN) {
+            return op_orSmallArray(context, ary2);
+        }
 
         RubyHash set = ary2.makeHash(makeHash(context.runtime));
         RubyArrayNative res = newBlankArrayInternal(context.runtime, set.size());
         res.setValuesFrom(context, set);
         res.realLength = set.size();
 
-        int index = res.getLength();
-        // if index is 1 and we made a size 2 array, repack
-        if (index == 1 && maxSize == 2) return Create.newArray(context, res.eltInternal(0));
+        int index = res.realLength;
 
         return res;
     }
 
-    /** rb_ary_union_multi
-     *
-     */
+    private RubyArray op_orSmallArray(ThreadContext context, RubyArray other) {
+        RubyArray result = newArray(context);
+        result.unionInternal(context, this, other);
+        return result;
+    }
+
+    @CRuby(value = "rb_ary_union_multi", file = "array.c")
     public IRubyObject union(ThreadContext context, IRubyObject[] args) {
         RubyArray[] arrays = new RubyArray[args.length];
         RubyArray result;
@@ -3411,9 +3304,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return result;
     }
 
-    /** rb_ary_union
-     *
-     */
+    @CRuby(value = "rb_ary_union", file = "array.c")
     @Override
     protected void unionInternal(ThreadContext context, RubyArray... args) {
         for (int i = 0; i < args.length; i++) {
@@ -3425,18 +3316,14 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         }
     }
 
-    /** rb_ary_sort
-     *
-     */
+    @CRuby(value = "rb_ary_sort", file = "array.c")
     public RubyArray sort(ThreadContext context, Block block) {
         RubyArray ary = aryDup();
         ary.sort_bang(context, block);
         return ary;
     }
 
-    /** rb_ary_sort_bang
-     *
-     */
+    @CRuby(value = "rb_ary_sort_bang", file = "array.c")
     public IRubyObject sort_bang(ThreadContext context, Block block) {
         modify(context);
         if (realLength > 1) {
@@ -3528,9 +3415,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return this;
     }
 
-    /** rb_ary_sort_by_bang
-     *
-     */
+    @CRuby(value = "rb_ary_sort_by_bang", file = "array.c")
     public IRubyObject sort_by_bang(ThreadContext context, Block block) {
         if (!block.isGiven()) return enumeratorizeWithSize(context, this, "sort_by!", RubyArray::size);
 
@@ -3543,9 +3428,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return this;
     }
 
-    /** rb_ary_take
-     *
-     */
+    @CRuby(value = "rb_ary_take", file = "array.c")
     public IRubyObject take(ThreadContext context, IRubyObject n) {
         long len = toLong(context, n);
         if (len < 0) throw argumentError(context, "attempt to take negative size");
@@ -3553,9 +3436,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return subseq(0, len);
     }
 
-    /** rb_ary_take_while
-     *
-     */
+    @CRuby(value = "rb_ary_take_while", file = "array.c")
     public IRubyObject take_while(ThreadContext context, Block block) {
         if (!block.isGiven()) return enumeratorize(context.runtime, this, "take_while");
 
@@ -3566,9 +3447,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return subseq(0, i);
     }
 
-    /** rb_ary_take
-     *
-     */
+    @CRuby(value = "rb_ary_take", file = "array.c")
     public IRubyObject drop(ThreadContext context, IRubyObject n) {
         long pos = toLong(context, n);
         if (pos < 0) throw argumentError(context, "attempt to drop negative size");
@@ -3577,9 +3456,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return result.isNil() ? Create.newEmptyArray(context) : result;
     }
 
-    /** rb_ary_take_while
-     *
-     */
+    @CRuby(value = "rb_ary_take_while", file = "array.c")
     public IRubyObject drop_while(ThreadContext context, Block block) {
         if (!block.isGiven()) return enumeratorize(context.runtime, this, "drop_while");
 
@@ -3591,17 +3468,13 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return result.isNil() ? Create.newEmptyArray(context) : result;
     }
 
-    /** rb_ary_cycle
-     *
-     */
+    @CRuby(value = "rb_ary_cycle", file = "array.c")
     public IRubyObject cycle(ThreadContext context, Block block) {
         if (!block.isGiven()) return enumeratorizeWithSize(context, this, "cycle", RubyArrayNative::cycleSize);
         return cycleCommon(context, -1, block);
     }
 
-    /** rb_ary_cycle
-     *
-     */
+    @CRuby(value = "rb_ary_cycle", file = "array.c")
     public IRubyObject cycle(ThreadContext context, IRubyObject arg, Block block) {
         if (arg.isNil()) return cycle(context, block);
         if (!block.isGiven()) return enumeratorizeWithSize(context, this, "cycle", new IRubyObject[] {arg}, RubyArrayNative::cycleSize);
@@ -3641,9 +3514,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
     }
 
 
-    /** rb_ary_product
-     *
-     */
+    @CRuby(value = "rb_ary_product", file = "array.c")
     public IRubyObject product(ThreadContext context, IRubyObject[] args) {
         return product(context, args, Block.NULL_BLOCK);
     }
@@ -3698,9 +3569,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return result;
     }
 
-    /** rb_ary_combination
-     *
-     */
+    @CRuby(value = "rb_ary_combination", file = "array.c")
     public IRubyObject combination(ThreadContext context, IRubyObject num, Block block) {
         if (!block.isGiven()) return enumeratorizeWithSize(context, this, "combination", new IRubyObject[]{num}, RubyArrayNative::combinationSize);
 
@@ -3874,9 +3743,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         }
     }
 
-    /** rb_ary_permutation
-     *
-     */
+    @CRuby(value = "rb_ary_permutation", file = "array.c")
     public IRubyObject permutation(ThreadContext context, IRubyObject num, Block block) {
         return block.isGiven() ?
                 permutationCommon(context, toInt(context, num), false, block) :

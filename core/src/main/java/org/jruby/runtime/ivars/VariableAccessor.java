@@ -146,7 +146,7 @@ public abstract class VariableAccessor {
 
     /**
      * Retrieve the variable's value from the given object. This version is
-     * static, allowing it to be more direct, and accepts nnly with
+     * static, allowing it to be more direct, and accepts only
      * RubyBasicObject and subclasses along with the direct index of the
      * variable.
      * 

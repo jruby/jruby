@@ -33,6 +33,7 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
+import org.jruby.anno.CRuby;
 import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.runtime.ArgumentDescriptor;
 import org.jruby.runtime.Arity;
@@ -68,7 +69,7 @@ public class AliasMethod extends DynamicMethod {
      */ 
     public AliasMethod(RubyModule implementationClass, CacheEntry entry, String newName, String oldName) {
         super(implementationClass, determineVisibility(newName, entry.method.getVisibility()), oldName);
-        entry.method.setAliased();
+        entry.method.getRealMethod().setAliased();
 
         this.entry = entry;
 
@@ -157,8 +158,16 @@ public class AliasMethod extends DynamicMethod {
     }
 
 
+    @Override
     public String getOldName() {
-        return getRealMethod().getName();
+        return entry.method.getOldName();
+    }
+
+    /**
+     * The entry this alias points at, so that aliasing an alias can reuse it rather than wrap us.
+     */
+    public CacheEntry getEntry() {
+        return entry;
     }
 
     @Override
@@ -171,13 +180,14 @@ public class AliasMethod extends DynamicMethod {
         return entry.method.getSerialNumber();
     }
 
-    // MRI: vm_call0_body and aliased_callable_method_entry
     /* FIXME: This is not quite right. It appears that MRI does this logic at call time, but I believe
               the calculated class is cached somewhere along with the "callable" method entry. The code
               below means all aliases in modules will do the implementer search, unless we can detect
               that the related method does not need "super". We can improve this at cache time in either
               CacheEntry logic or CallSite logic.
      */
+    @CRuby(value = "vm_call0_body", file = "vm_eval.c")
+    @CRuby(value = "aliased_callable_method_entry", file = "vm_insnhelper.c")
     private RubyModule calculateSourceModule(IRubyObject self, RubyModule incomingSourceModule) {
         if (findImplementer) {
             return Helpers.findImplementerIfNecessary(self.getMetaClass(), entry.method.getImplementationClass());

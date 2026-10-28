@@ -8,12 +8,15 @@ import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.instructions.AsStringInstr;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.EQQInstr;
+import org.jruby.ir.operands.Symbol;
 import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.ir.targets.IRBytecodeAdapter;
 import org.jruby.ir.targets.InvocationCompiler;
 import org.jruby.ir.targets.JVM;
 import org.jruby.ir.targets.indy.IndyInvocationCompiler;
+import org.jruby.ir.targets.indy.MetaCallSite;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallArgument;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.MethodIndex;
@@ -258,7 +261,8 @@ public class NormalInvocationCompiler implements InvocationCompiler {
             adapter.ifnonnull(doCall);
             adapter.pop();
             adapter.ldc(id);
-            adapter.invokestatic(p(MethodIndex.class), "getFastFixnumOpsCallSite", sig(CallSite.class, String.class));
+            adapter.getstatic(p(CallType.class), call.getCallType().name(), ci(CallType.class));
+            adapter.invokestatic(p(MethodIndex.class), "getFastFixnumOpsCallSite", sig(CallSite.class, String.class, CallType.class));
             adapter.dup();
             adapter.putstatic(compiler.getClassData().clsName, methodName, ci(CallSite.class));
 
@@ -327,7 +331,8 @@ public class NormalInvocationCompiler implements InvocationCompiler {
             adapter.ifnonnull(doCall);
             adapter.pop();
             adapter.ldc(id);
-            adapter.invokestatic(p(MethodIndex.class), "getFastFloatOpsCallSite", sig(CallSite.class, String.class));
+            adapter.getstatic(p(CallType.class), call.getCallType().name(), ci(CallType.class));
+            adapter.invokestatic(p(MethodIndex.class), "getFastFloatOpsCallSite", sig(CallSite.class, String.class, CallType.class));
             adapter.dup();
             adapter.putstatic(compiler.getClassData().clsName, methodName, ci(CallSite.class));
 
@@ -358,6 +363,16 @@ public class NormalInvocationCompiler implements InvocationCompiler {
             throw new NotCompilableException("call to '" + call.getId() + "' has more than " + IRBytecodeAdapter.MAX_ARGUMENTS + " arguments");
 
         invoke(file, compiler.getLastLine(), scopeFieldName, call, arity);
+    }
+
+    @Override
+    public boolean supportsDirectArguments() {
+        return false;
+    }
+
+    @Override
+    public void invoke(String file, String scopeFieldName, CallBase call, CallArgument[] callArguments) {
+        throw new NotCompilableException("unimplemented");
     }
 
     public void invokeInstanceSuper(String file, String name, int arity, boolean hasClosure, boolean literalClosure, boolean[] splatmap, int flags) {
@@ -462,8 +477,8 @@ public class NormalInvocationCompiler implements InvocationCompiler {
     }
 
     @Override
-    public void invokeEQQ(EQQInstr call) {
-        compiler.getValueCompiler().pushCallSite(compiler.getClassData().clsName, compiler.getUniqueSiteName(call.getId()), null, call);
+    public void invokeEQQ(EQQInstr call, String scopeFieldName) {
+        compiler.getValueCompiler().pushCallSite(compiler.getClassData().clsName, compiler.getUniqueSiteName(call.getId()), scopeFieldName, call);
         compiler.adapter.ldc(call.isSplattedValue());
         compiler.invokeIRHelper("isEQQ", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, CallSite.class, boolean.class));
     }

@@ -12,6 +12,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.io.ChannelHelper;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.nio.channels.Channel;
 
 import static org.jruby.api.Create.newString;
@@ -73,14 +74,12 @@ public class ByteListLexerSource extends LexerSource {
     }
 
     @Override
-    public Channel getRemainingAsChannel() {
-        ByteArrayInputStream bais = new ByteArrayInputStream(completeSource.unsafeBytes(), completeSource.begin(), completeSource.realSize());
-        bais.skip(offset);
-        return ChannelHelper.readableChannel(bais);
+    public Channel getRemainingAsChannel() throws IOException {
+        return ChannelHelper.seekableChannel(completeSource.unsafeBytes(), completeSource.begin(), completeSource.realSize()).position(offset);
     }
 
     @Override
-    public IRubyObject getRemainingAsIO() {
+    public IRubyObject getRemainingAsIO() throws IOException {
         if (scriptLines == null) return null;
         return new RubyIO(scriptLines.getRuntime(), getRemainingAsChannel());
     }

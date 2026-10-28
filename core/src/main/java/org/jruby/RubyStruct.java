@@ -37,6 +37,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Create;
@@ -417,10 +418,10 @@ public class RubyStruct extends RubyObject {
 
     /** Create new Structure.
      *
-     * MRI: struct_alloc
      *
      * @deprecated Use {@link org.jruby.api.Create#newStruct(ThreadContext, RubyClass, IRubyObject[], Block)} instead.
      */
+    @CRuby(value = "struct_alloc", file = "struct.c")
     @Deprecated(since = "10.0.0.0")
     public static RubyStruct newStruct(IRubyObject recv, IRubyObject[] args, Block block) {
         return Create.newStruct(((RubyBasicObject) recv).getCurrentContext(), (RubyClass) recv, args, block);
@@ -480,17 +481,10 @@ public class RubyStruct extends RubyObject {
         if (length > values.length) throw argumentError(context, "struct size differs (" + length +" for " + values.length + ")");
     }
 
-    private void checkForKeywords(ThreadContext context, int callInfo, boolean keywordInit) {
-        if (hasKeywords(callInfo) && !keywordInit) {
-            warn(context, "Passing only keyword arguments to Struct#initialize will behave differently from Ruby 3.2. Please use a Hash literal like .new({k: v}) instead of .new(k: v).");
-        }
-    }
-
     @JRubyMethod(rest = true, visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         final int callInfo = ThreadContext.resetCallInfo(context);
         IRubyObject keywordInit = RubyStruct.getInternalVariable(context, classOf(), KEYWORD_INIT_VAR);
-        checkForKeywords(context, callInfo, !keywordInit.isNil());
         modify(context);
         checkSize(context, args.length);
 
@@ -510,20 +504,31 @@ public class RubyStruct extends RubyObject {
         RubyArray __members__ = __member__(context);
         Set<Map.Entry<IRubyObject, IRubyObject>> entries = kwArgs.directEntrySet();
 
-        entries.stream().forEach(
-                entry -> {
-                    IRubyObject key = entry.getKey();
-                    if (!(key instanceof RubySymbol))
-                        key = asSymbol(context, key.convertToString().getByteList());
-                    IRubyObject index = __members__.index(context, key);
-                    if (index.isNil()) throw argumentError(context, str(context.runtime, "unknown keywords: ", key));
-                    values[toInt(context, index)] = entry.getValue();
-                });
+        RubyArray<?> unknownKeywords = null;
+        for (Map.Entry<IRubyObject, IRubyObject> entry : entries) {
+            IRubyObject key = entry.getKey();
+            if (!(key instanceof RubySymbol))
+                key = asSymbol(context, key.convertToString().getByteList());
+            IRubyObject index = __members__.index(context, key);
+            if (index.isNil()) {
+                if (unknownKeywords == null) unknownKeywords = newArray(context);
+                unknownKeywords.append(context, key);
+                continue;
+            }
+            values[toInt(context, index)] = entry.getValue();
+        }
+
+        if (unknownKeywords != null) {
+            throw argumentError(context,
+                    str(context.runtime,
+                            "unknown keywords: ",
+                            unknownKeywords.join(context, Create.newString(context, ", "))));
+        }
 
         return context.nil;
     }
 
-    @JRubyMethod(visibility = PRIVATE)
+    @JRubyMethod(visibility = PRIVATE, keywords = true)
     @Override
     public IRubyObject initialize(ThreadContext context) {
         IRubyObject nil = context.nil;
@@ -717,9 +722,7 @@ public class RubyStruct extends RubyObject {
     private static final byte[] STRUCT_BEG = { '#','<','s','t','r','u','c','t',' ' };
     private static final byte[] STRUCT_END = { ':','.','.','.','>' };
 
-    /** inspect_struct
-    *
-    */
+    @CRuby(value = "inspect_struct", file = "struct.c")
     private RubyString inspectStruct(final ThreadContext context, final boolean recur) {
         RubyString buffer = newString(context, new ByteList(32));
         buffer.cat(STRUCT_BEG);
@@ -1087,7 +1090,7 @@ public class RubyStruct extends RubyObject {
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            Arity.checkArgumentCount(context, name, args, 0, 0);
+            Arity.checkArgumentCount(context, args, 0, 0);
             return ((RubyStruct)self).get(index);
         }
 
@@ -1116,7 +1119,7 @@ public class RubyStruct extends RubyObject {
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            Arity.checkArgumentCount(context, name, args, 1, 1);
+            Arity.checkArgumentCount(context, args, 1, 1);
             return ((RubyStruct)self).set(context, args[0], index);
         }
 

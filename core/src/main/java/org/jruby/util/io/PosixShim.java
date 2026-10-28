@@ -16,6 +16,7 @@ import jnr.posix.FileStat;
 import jnr.posix.POSIX;
 
 import org.jruby.Ruby;
+import org.jruby.anno.CRuby;
 import org.jruby.ext.fcntl.FcntlLibrary;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Helpers;
@@ -34,6 +35,8 @@ public class PosixShim {
     public static final int SEEK_SET = 0;
     public static final int SEEK_CUR = 1;
     public static final int SEEK_END = 2;
+
+    private static final int MAX_HEAP_WRITE = 2 * 1024 * 1024;
 
     public PosixShim(Ruby runtime) {
         this.runtime = runtime;
@@ -109,7 +112,21 @@ public class PosixShim {
                 setErrno(Errno.EACCES);
                 return -1;
             }
-            int written = fd.chWrite.write(buffer);
+            int written;
+            if (!buffer.isDirect() && buffer.remaining() > MAX_HEAP_WRITE) {
+                // NIO copies the whole remaining heap buffer into a temporary direct buffer on every write, even when
+                // the channel only accepts part of it. Retrying a large nonblocking write would copy the rest again
+                // each time, so cap each write and let the caller loop over the remainder.
+                int limit = buffer.limit();
+                buffer.limit(buffer.position() + MAX_HEAP_WRITE);
+                try {
+                    written = fd.chWrite.write(buffer);
+                } finally {
+                    buffer.limit(limit);
+                }
+            } else {
+                written = fd.chWrite.write(buffer);
+            }
 
             if (written == 0 && length > 0) {
                 // if it's a nonblocking write against a file and we've hit EOF, do EAGAIN
@@ -207,7 +224,7 @@ public class PosixShim {
         return false;
     }
 
-    // rb_thread_flock
+    @CRuby(value = "rb_thread_flock", file = "file.c")
     public int flock(ChannelFD fd, int lockMode) {
         // TODO: null channel always succeeds for all locking operations
 //        if (descriptor.isNull()) return RubyFixnum.zero(runtime);

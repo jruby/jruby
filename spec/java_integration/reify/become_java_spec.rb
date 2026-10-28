@@ -505,6 +505,33 @@ describe "JRuby class reification" do
     expect( j_class.newInstance.ola('Jozko') ).to eql 'OLA Jozko'
   end
 
+  it "inherits explicit signatures for methods with mangled Java names" do
+    class ReifiedMangledSignatureParent < java.util.ArrayList
+      add_method_signature "[]", [java.lang.String, java.lang.String]
+
+      def [](value)
+        "parent #{value}"
+      end
+    end
+
+    class ReifiedMangledSignatureChild < ReifiedMangledSignatureParent
+      def [](value)
+        "child #{value}"
+      end
+    end
+
+    ReifiedMangledSignatureParent.become_java!
+    ReifiedMangledSignatureChild.become_java!
+
+    method = ReifiedMangledSignatureChild.java_class.declared_methods.find do |declared_method|
+      declared_method.name == org.jruby.util.JavaNameMangler.mangleMethodName("[]")
+    end
+
+    expect(method.return_type).to eq(java.lang.String.java_class)
+    expect(method.parameter_types.to_a).to eq([java.lang.String.java_class])
+    expect(ReifiedMangledSignatureChild.new["value"]).to eq("child value")
+  end
+
   it 'has a similar Java class name' do
     ReifiedSample.become_java!
     klass = ReifiedSample.java_class

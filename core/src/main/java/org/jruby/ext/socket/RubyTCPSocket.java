@@ -31,6 +31,7 @@
 package org.jruby.ext.socket;
 
 import jnr.constants.platform.Errno;
+import org.jruby.FiberScheduler;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
@@ -91,19 +92,16 @@ public class RubyTCPSocket extends RubyIPSocket {
                 channel.bind( new InetSocketAddress(InetAddress.getByName(localHost), localPort) );
             }
             try {
-                channel.connect(new InetSocketAddress(address, remotePort));
+                boolean connected = channel.connect(new InetSocketAddress(address, remotePort));
 
-                long timeout = -1;
+                IRubyObject connectTimeout = context.nil;
                 if (opts != null) {
                     IRubyObject[] kwargs = ArgsUtil.extractKeywordArgs(context, opts, "connect_timeout", "open_timeout", "fast_fallback", "test_mode_settings");
-                    IRubyObject connectTimeout = kwargs[0];
-                    if (connectTimeout != null && !connectTimeout.isNil()) {
-                        timeout = (long) (connectTimeout.convertToFloat().asDouble(context) * 1000);
-                    }
+                    if (kwargs[0] != null) connectTimeout = kwargs[0];
                 }
 
                 // wait for connection
-                if (context.getThread().select(channel, this, SelectionKey.OP_CONNECT, timeout)) {
+                if (connected || waitConnectable(context, channel, connectTimeout)) {
                     // complete connection
                     while (!channel.finishConnect()) {
                         context.pollThreadEvents();
@@ -122,6 +120,17 @@ public class RubyTCPSocket extends RubyIPSocket {
 
         // did not complete and only path out is n repeated ConnectExceptions
         throw context.runtime.newErrnoECONNREFUSEDError("connect(2) for " + host.inspect(context) + " port " + remotePort);
+    }
+
+    // MRI: wait_connectable, whose rb_io_wait goes through the fiber scheduler's io_wait if there is one
+    private boolean waitConnectable(ThreadContext context, SocketChannel channel, IRubyObject connectTimeout) {
+        IRubyObject scheduler = FiberScheduler.current(context);
+        if (scheduler == null) {
+            long timeout = connectTimeout.isNil() ? -1 : (long) (connectTimeout.convertToFloat().asDouble(context) * 1000);
+            return context.getThread().select(channel, this, SelectionKey.OP_CONNECT, timeout);
+        }
+
+        return FiberScheduler.ioWaitReadableWritable(context, scheduler, this, connectTimeout) != context.fals;
     }
 
     @JRubyMethod(visibility = Visibility.PRIVATE)

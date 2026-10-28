@@ -47,6 +47,11 @@ public abstract class MethodDefNode extends Node implements INameNode, DefNode {
     protected boolean containsNextBreak = false;
 
     public MethodDefNode(int line, RubySymbol name, ArgsNode argsNode, StaticScope scope, Node bodyNode, int endLine) {
+        this(line, -1, name, argsNode, scope, bodyNode, endLine, -1);
+    }
+
+    public MethodDefNode(int line, int startColumn, RubySymbol name, ArgsNode argsNode, StaticScope scope, Node bodyNode,
+                         int endLine, int endColumn) {
         super(line, bodyNode.containsVariableAssignment());
 
         this.name = name;
@@ -54,6 +59,13 @@ public abstract class MethodDefNode extends Node implements INameNode, DefNode {
         this.scope = scope;
         this.bodyNode = bodyNode;
         this.endLine = endLine;
+        // the columns are only known when the parser records positions
+        if (startColumn >= 0) setSourceSpan(startColumn, endLine, endColumn);
+    }
+
+    @Override
+    public int getEndLine() {
+        return endLine;
     }
 
     /**
@@ -90,13 +102,6 @@ public abstract class MethodDefNode extends Node implements INameNode, DefNode {
         return name;
     }
 
-    /**
-     * Which line is the 'end' encountered on.  Useful for RETURN event generation.
-     * @return the zero-based line number
-     */
-    public int getEndLine() {
-        return endLine;
-    }
 
     public void setContainsNextBreak() {
         containsNextBreak = true;

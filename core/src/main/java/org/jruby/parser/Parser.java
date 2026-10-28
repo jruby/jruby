@@ -243,7 +243,7 @@ public class Parser {
         LineStubVisitor lineVisitor = new LineStubVisitor(context.runtime, lines);
         lineVisitor.visitRootNode(((RootNode) result));
 
-        for (int i = 0; i <= lineCount - lines.size(); i++) {
+        while (lines.size() < lineCount) {
             lines.append(context, context.nil);
         }
         return lines;

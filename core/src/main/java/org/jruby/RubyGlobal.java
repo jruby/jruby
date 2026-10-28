@@ -42,6 +42,7 @@ import jnr.enxio.channels.NativeDeviceChannel;
 import jnr.posix.POSIX;
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Create;
 import org.jruby.api.Define;
@@ -343,7 +344,7 @@ public class RubyGlobal {
         // If we're the main for the process and native stdio is enabled, use default descriptors
         if (!Platform.IS_WINDOWS && // Windows does not do native IO yet
                 runtime.getPosix().isNative() &&
-                runtime.getInstanceConfig().isHardExit() && // main JRuby only
+                runtime.getInstanceConfig().isMain() && // main JRuby only
                 Options.NATIVE_STDIO.load()) {
             stdin = RubyIO.prepStdio(
                     runtime, runtime.getIn(), new NativeDeviceChannel(0), OpenFile.READABLE, runtime.getIO(), "<STDIN>");
@@ -858,12 +859,12 @@ public class RubyGlobal {
             return result;
         }
 
-        // MRI: env_str_new
+        @CRuby(value = "env_str_new", file = "hash.c")
         protected static IRubyObject newString(ThreadContext context, RubyString value) {
             return newString(context, value, encodingService(context).getEnvEncoding());
         }
 
-        // MRI: env_str_new2
+        @CRuby(value = "env_str_new2", file = "hash.c")
         protected static IRubyObject newString(ThreadContext context, IRubyObject obj) {
             return obj.isNil() ? context.nil : newString(context, (RubyString) obj);
         }

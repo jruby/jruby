@@ -4,6 +4,11 @@ package org.jruby.ext.ffi;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import org.jruby.Ruby;
+import static org.jruby.util.BitPacker.pack;
+import static org.jruby.util.BitPacker.unpackHigh;
+import static org.jruby.util.BitPacker.unpackHighByte;
+import static org.jruby.util.BitPacker.unpackLow;
+import static org.jruby.util.BitPacker.unpackLowByte;
 
 public final class ArrayMemoryIO extends MemoryIO {
 
@@ -360,7 +365,7 @@ public final class ArrayMemoryIO extends MemoryIO {
     }
     private static abstract class LittleEndianArrayIO extends ArrayIO {
         public final short getInt16(byte[] array, int offset) {
-            return (short) ((array[offset] & 0xff) | ((array[offset + 1] & 0xff) << 8));
+            return pack(array[offset + 1], array[offset]);
         }
         public final int getInt32(byte[] array, int offset) {
             return    ((array[offset + 0] & 0xff) << 0)
@@ -369,18 +374,12 @@ public final class ArrayMemoryIO extends MemoryIO {
                     | ((array[offset + 3] & 0xff) << 24);
         }
         public final long getInt64(byte[] array, int offset) {
-            return    (((long)array[offset + 0] & 0xff) << 0)
-                    | (((long)array[offset + 1] & 0xff) << 8)
-                    | (((long)array[offset + 2] & 0xff) << 16)
-                    | (((long)array[offset + 3] & 0xff) << 24)
-                    | (((long)array[offset + 4] & 0xff) << 32)
-                    | (((long)array[offset + 5] & 0xff) << 40)
-                    | (((long)array[offset + 6] & 0xff) << 48)
-                    | (((long)array[offset + 7] & 0xff) << 56);
+            return pack(getInt32(array, offset + 4), getInt32(array, offset));
         }
         public final void putInt16(byte[] buffer, int offset, int value) {
-            buffer[offset + 0] = (byte) (value >> 0);
-            buffer[offset + 1] = (byte) (value >> 8);
+            short packed = (short) value;
+            buffer[offset + 0] = unpackLowByte(packed);
+            buffer[offset + 1] = unpackHighByte(packed);
         }
         public final void putInt32(byte[] buffer, int offset, int value) {
             buffer[offset + 0] = (byte) (value >> 0);
@@ -389,20 +388,13 @@ public final class ArrayMemoryIO extends MemoryIO {
             buffer[offset + 3] = (byte) (value >> 24);
         }
         public final void putInt64(byte[] buffer, int offset, long value) {
-            buffer[offset + 0] = (byte) (value >> 0);
-            buffer[offset + 1] = (byte) (value >> 8);
-            buffer[offset + 2] = (byte) (value >> 16);
-            buffer[offset + 3] = (byte) (value >> 24);
-            buffer[offset + 4] = (byte) (value >> 32);
-            buffer[offset + 5] = (byte) (value >> 40);
-            buffer[offset + 6] = (byte) (value >> 48);
-            buffer[offset + 7] = (byte) (value >> 56);
+            putInt32(buffer, offset, unpackLow(value));
+            putInt32(buffer, offset + 4, unpackHigh(value));
         }
     }
     private static abstract class BigEndianArrayIO extends ArrayIO {
         public short getInt16(byte[] array, int offset) {
-            return (short) (((array[offset + 0] & 0xff) << 8)
-                    | (array[offset + 1] & 0xff));
+            return pack(array[offset], array[offset + 1]);
         }
         public int getInt32(byte[] array, int offset) {
             return    ((array[offset + 0] & 0xff) << 24)
@@ -411,18 +403,12 @@ public final class ArrayMemoryIO extends MemoryIO {
                     | ((array[offset + 3] & 0xff) << 0);
         }
         public long getInt64(byte[] array, int offset) {
-            return    (((long)array[offset + 0] & 0xff) << 56)
-                    | (((long)array[offset + 1] & 0xff) << 48)
-                    | (((long)array[offset + 2] & 0xff) << 40)
-                    | (((long)array[offset + 3] & 0xff) << 32)
-                    | (((long)array[offset + 4] & 0xff) << 24)
-                    | (((long)array[offset + 5] & 0xff) << 16)
-                    | (((long)array[offset + 6] & 0xff) << 8)
-                    | (((long)array[offset + 7] & 0xff) << 0);
+            return pack(getInt32(array, offset), getInt32(array, offset + 4));
         }
         public final void putInt16(byte[] buffer, int offset, int value) {
-            buffer[offset + 0] = (byte) (value >> 8);
-            buffer[offset + 1] = (byte) (value >> 0);
+            short packed = (short) value;
+            buffer[offset + 0] = unpackHighByte(packed);
+            buffer[offset + 1] = unpackLowByte(packed);
         }
         public final void putInt32(byte[] buffer, int offset, int value) {
             buffer[offset + 0] = (byte) (value >> 24);
@@ -431,14 +417,8 @@ public final class ArrayMemoryIO extends MemoryIO {
             buffer[offset + 3] = (byte) (value >> 0);
         }
         public final void putInt64(byte[] buffer, int offset, long value) {
-            buffer[offset + 0] = (byte) (value >> 56);
-            buffer[offset + 1] = (byte) (value >> 48);
-            buffer[offset + 2] = (byte) (value >> 40);
-            buffer[offset + 3] = (byte) (value >> 32);
-            buffer[offset + 4] = (byte) (value >> 24);
-            buffer[offset + 5] = (byte) (value >> 16);
-            buffer[offset + 6] = (byte) (value >> 8);
-            buffer[offset + 7] = (byte) (value >> 0);
+            putInt32(buffer, offset, unpackHigh(value));
+            putInt32(buffer, offset + 4, unpackLow(value));
         }
     }
     private static final class LE32ArrayIO extends LittleEndianArrayIO {

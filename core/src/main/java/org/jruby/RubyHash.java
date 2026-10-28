@@ -39,6 +39,7 @@
 
 package org.jruby;
 
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Create;
@@ -137,9 +138,7 @@ public class RubyHash extends RubyObject implements Map {
         return ClassIndex.HASH;
     }
 
-    /** rb_hash_s_create
-     *
-     */
+    @CRuby(value = "rb_hash_s_create", file = "hash.c")
     @JRubyMethod(name = "[]", rest = true, meta = true)
     public static IRubyObject create(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         if (args.length == 1) {
@@ -187,17 +186,13 @@ public class RubyHash extends RubyObject implements Map {
         return TypeConverter.convertToTypeWithCheck(args, hashClass(context), "to_hash");
     }
 
-    /** rb_hash_new
-     *
-     */
+    @CRuby(value = "rb_hash_new", file = "hash.c")
     @Deprecated(since = "10.1.1.0")
     public static final RubyHash newHash(Ruby runtime) {
         return RubyHashLinkedBuckets.newLBHash(runtime);
     }
 
-    /** rb_hash_new
-     *
-     */
+    @CRuby(value = "rb_hash_new", file = "hash.c")
     @SuppressWarnings("deprecation")
     public static final RubyHash newSmallHash(Ruby runtime) {
         return RubyHashLinkedBuckets.newLBHash(runtime, 1);
@@ -228,9 +223,7 @@ public class RubyHash extends RubyObject implements Map {
         return RubyHashLinkedBuckets.newLBHash(runtime, defaultValue, buckets);
     }
 
-    /** rb_hash_new
-     *
-     */
+    @CRuby(value = "rb_hash_new", file = "hash.c")
     public static final RubyHash newHash(Ruby runtime, Map valueMap, IRubyObject defaultValue) {
         assert defaultValue != null;
 
@@ -553,7 +546,7 @@ public class RubyHash extends RubyObject implements Map {
      *  ================
      */
 
-    @JRubyMethod(visibility = PRIVATE)
+    @JRubyMethod(visibility = PRIVATE, keywords = true)
     public IRubyObject initialize(ThreadContext context, final Block block) {
         return getDelegate().initialize(context, block);
     }
@@ -734,7 +727,7 @@ public class RubyHash extends RubyObject implements Map {
         return getDelegate().op_ge(context, other);
     }
 
-    // MRI: rb_hash_hash
+    @CRuby(value = "rb_hash_hash", file = "hash.c")
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
         return getDelegate().hash(context);

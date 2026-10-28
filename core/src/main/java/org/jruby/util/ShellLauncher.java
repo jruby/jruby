@@ -365,7 +365,9 @@ public class ShellLauncher {
         return false;
     }
 
-    private static File isValidFile(Ruby runtime, String fdir, String fname, boolean isExec) {
+    // With raiseOnNotExecutable false a non-executable match is treated as no match, as MRI's dln_find_1
+    // does while walking PATH, rather than raising EACCES.
+    private static File isValidFile(Ruby runtime, String fdir, String fname, boolean isExec, boolean raiseOnNotExecutable) {
         File validFile = null;
         if (isExec && Platform.IS_WINDOWS) {
             if (withExeSuffix(fname)) {
@@ -386,6 +388,7 @@ public class ShellLauncher {
                     return null;
                 }
                 if (isExec && !runtime.getPosix().stat(validFile.getAbsolutePath()).isExecutable()) {
+                    if (!raiseOnNotExecutable) return null;
                     throw runtime.newErrnoEACCESError(validFile.getAbsolutePath());
                 }
             }
@@ -395,11 +398,14 @@ public class ShellLauncher {
 
     private static File isValidFile(Ruby runtime, String fname, boolean isExec) {
         String fdir = null;
-        return isValidFile(runtime, fdir, fname, isExec);
+        return isValidFile(runtime, fdir, fname, isExec, true);
     }
 
     private static File findPathFile(Ruby runtime, String fname, String[] path, boolean isExec) {
         File pathFile = null;
+        // MRI: dln_find_1 skips non-regular files, so an empty name never resolves (each candidate is a PATH
+        // dir); here the search would instead hit the dir entries themselves and can raise EACCES
+        if (fname.isEmpty()) return null;
         if (Platform.IS_WINDOWS && fname.startsWith("\"") && fname.endsWith("\"")) {
             fname = fname.substring(1, fname.length() - 1); // remove double quotes if present
         }
@@ -410,7 +416,8 @@ public class ShellLauncher {
                 //       MRI's, which can't handle user names after the tilde
                 //       when searching the executable path
                 try {
-                    pathFile = isValidFile(runtime, fdir, fname, isExec);
+                    // MRI: dln_find_1 skips candidates it cannot execute and keeps walking PATH
+                    pathFile = isValidFile(runtime, fdir, fname, isExec, false);
                     if (pathFile != null) {
                         break;
                     }

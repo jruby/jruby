@@ -63,4 +63,15 @@ public class LambdaNode extends IterNode {
     public List<Node> childNodes() {
         return Node.createList(getArgs(), getBody());
     }
+
+    public void setOperatorColumn(int operatorColumn) {
+        setSourceDetail(new SourcePosition(getLine(), operatorColumn));
+    }
+
+    /**
+     * The column of the -> the lambda is written with (on its line), or -1. MRI's lambda node starts there.
+     */
+    public int getOperatorColumn() {
+        return getSourceDetail() instanceof SourcePosition operator ? operator.column() : -1;
+    }
 }

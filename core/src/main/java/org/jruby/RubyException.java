@@ -37,6 +37,7 @@
 
 package org.jruby;
 
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Create;
@@ -130,6 +131,10 @@ public class RubyException extends RubyObject {
         super(runtime, rubyClass);
 
         this.setMessage(message == null ? runtime.getNil() : runtime.newString(message));
+    }
+
+    public static void raise(ThreadContext context, IRubyObject exception) {
+        RubyKernel.raiseInternal(context, exception, RubyKernel.lastErrorCause(context));
     }
 
     @JRubyMethod(name = "exception", rest = true, meta = true)
@@ -350,7 +355,7 @@ public class RubyException extends RubyObject {
         }
     }
 
-    // MRI: rb_check_backtrace
+    @CRuby(value = "rb_check_backtrace", file = "error.c")
     private static IRubyObject checkBacktrace(ThreadContext context, IRubyObject obj) {
         if (obj.isNil() || isArrayOfStrings(obj)) {
             return obj;
@@ -361,7 +366,7 @@ public class RubyException extends RubyObject {
         }
     }
 
-    // MRI: rb_location_ary_to_backtrace
+    @CRuby(value = "rb_location_ary_to_backtrace", file = "vm_backtrace.c")
     private BacktraceData locationArrayToBacktrace(IRubyObject ary) {
         if (!(ary instanceof RubyArray array) || array.size() == 0 || asBacktraceLocation(array.eltOk(0)) == null) {
             return null;
@@ -383,7 +388,7 @@ public class RubyException extends RubyObject {
         return new BacktraceData(backtrace);
     }
 
-    // MRI: rb_frame_info_p
+    @CRuby(value = "rb_frame_info_p", file = "vm_backtrace.c")
     private static RubyThread.Location asBacktraceLocation(IRubyObject object) {
         if (object instanceof RubyThread.Location) {
             return (RubyThread.Location) object;
@@ -407,7 +412,7 @@ public class RubyException extends RubyObject {
             case 1 :
                 if (args[0] == this) return this;
                 RubyException ret = (RubyException) rbClone();
-                ret.initialize(args, Block.NULL_BLOCK); // This looks wrong, but it's the way MRI does it.
+                ret.initialize(getRuntime().getCurrentContext(), args[0]);
                 return ret;
             default :
                 throw argumentError(getRuntime().getCurrentContext(), "Wrong argument count");
@@ -562,6 +567,24 @@ public class RubyException extends RubyObject {
 
     public void captureBacktrace(ThreadContext context) {
         backtrace.backtraceData = instanceConfig(context).getTraceType().getBacktrace(context);
+    }
+
+    private void clearBacktraceObject() {
+        backtrace.backtraceObject = null;
+        backtrace.backtraceLocations = null;
+    }
+
+    /**
+     * Populate backtrace from the current position when exception is (re-)raised without one.
+     *
+     * MRI {@code setup_exception} which fills the backtrace only when it is <code>nil</code>
+     */
+    public void prepareBacktrace(ThreadContext context) {
+        if (getBacktrace().isNil()) {
+            clearBacktraceObject();
+            captureBacktrace(context);
+            backtrace.generateBacktrace(context.runtime);
+        }
     }
 
     public IRubyObject getBacktrace() {

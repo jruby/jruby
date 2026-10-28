@@ -66,7 +66,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.Inspector;
 import org.jruby.util.Numeric;
-import org.jruby.util.collections.WeakValuedIdentityMap;
+import org.jruby.util.collections.WeakKeyValueIdentityMap;
 import org.jruby.util.collections.WeakValuedMap;
 
 @JRubyModule(name="ObjectSpace")
@@ -356,6 +356,8 @@ public class RubyObjectSpace {
             super(runtime, cls);
         }
 
+        // Fixnum and Float keys stand in for immediates, which never get collected: they are held
+        // strongly and compared by value. Every other key is held weakly and compared by identity.
         protected Map<IRubyObject, IRubyObject> getWeakMapFor(IRubyObject key) {
             if (key instanceof RubyFixnum || key instanceof RubyFloat) {
                 return valueMap;
@@ -396,7 +398,7 @@ public class RubyObjectSpace {
             return this;
         }
 
-        private final WeakValuedIdentityMap<IRubyObject, IRubyObject> identityMap = new WeakValuedIdentityMap<>();
+        private final WeakKeyValueIdentityMap<IRubyObject, IRubyObject> identityMap = new WeakKeyValueIdentityMap<>();
         private final WeakValuedMap<IRubyObject, IRubyObject> valueMap = new WeakValuedMap<>();
     }
 

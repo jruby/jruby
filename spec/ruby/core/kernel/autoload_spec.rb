@@ -131,6 +131,10 @@ describe "Kernel.autoload" do
     $".replace @loaded_features
   end
 
+  it "is a public method" do
+    Kernel.public_methods(false).should.include?(:autoload)
+  end
+
   it "registers a file to load the first time the toplevel constant is accessed" do
     Kernel.autoload :KSAutoloadAA, @non_existent
     Kernel.autoload?(:KSAutoloadAA).should == @non_existent
@@ -164,9 +168,46 @@ describe "Kernel.autoload" do
       KernelSpecs::AutoloadMethod2::AutoloadFromIncludedModule2.loaded.should == :autoload_from_included_module2
     end
   end
+
+  describe "after the autoload was satisfied by requiring the file directly" do
+    before :each do
+      @path = fixture(__FILE__, "autoload_satisfied_by_require.rb")
+      Kernel.autoload :KSAutoloadSatisfiedByRequire, @path
+      ScratchPad.record []
+    end
+
+    after :each do
+      if Object.const_defined?(:KSAutoloadSatisfiedByRequire, false)
+        Object.send(:remove_const, :KSAutoloadSatisfiedByRequire)
+      end
+    end
+
+    it "defines a regular constant that no longer depends on $LOADED_FEATURES" do
+      require @path
+      ScratchPad.recorded.should == [:loaded]
+      Kernel.autoload?(:KSAutoloadSatisfiedByRequire).should be_nil
+      klass = KSAutoloadSatisfiedByRequire
+      data = Marshal.dump(klass.new)
+
+      $LOADED_FEATURES.replace(@loaded_features)
+      Thread.new { Marshal.load(data).class }.value.should equal(klass)
+      ScratchPad.recorded.should == [:loaded]
+    end
+
+    it "returns the constant from remove_const" do
+      require @path
+      klass = KSAutoloadSatisfiedByRequire
+
+      Object.send(:remove_const, :KSAutoloadSatisfiedByRequire).should equal(klass)
+    end
+  end
 end
 
 describe "Kernel.autoload?" do
+  it "is a public method" do
+    Kernel.public_methods(false).should.include?(:autoload?)
+  end
+
   it "returns the name of the file that will be autoloaded" do
     Kernel.autoload :KSAutoload, "autoload.rb"
     Kernel.autoload?(:KSAutoload).should == "autoload.rb"

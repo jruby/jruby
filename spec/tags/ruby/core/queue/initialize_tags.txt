@@ -1,1 +1,0 @@
-fails:Queue#initialize raises TypeError if #to_a does not return Array

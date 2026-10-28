@@ -71,6 +71,7 @@ public class JavaSupportImpl extends JavaSupport {
         return new HashMap<>(8, 1);
     }
 
+
     public ClassValue<Map<String, AssignedName>> getStaticAssignedNames() {
         return staticAssignedNames;
     }

@@ -35,6 +35,8 @@
 
 package org.jruby.exceptions;
 
+import java.util.Arrays;
+
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -49,9 +51,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
-
-import java.lang.reflect.Member;
-import java.util.Arrays;
 
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Error.nameError;
@@ -212,8 +211,6 @@ public class RaiseException extends JumpException {
         context.runtime.incrementExceptionCount();
         if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.logException(exception);
 
-        doSetLastError(context);
-
         if (backtrace == null) {
             if (capture) { // only false to support legacy RaiseException construction (not setting trace)
                 if (requiresBacktrace(context)) exception.captureBacktrace(context);
@@ -226,8 +223,6 @@ public class RaiseException extends JumpException {
             }
             setStackTraceFromException();
         }
-
-        IRRuntimeHelpers.traceRaise(context);
     }
 
     private void setStackTraceFromException() {
@@ -263,17 +258,6 @@ public class RaiseException extends JumpException {
             return Arrays.copyOfRange(trace, skip, len);
         }
         return trace;
-    }
-
-    private void fillInStackTraceSkipPreRaise() {
-        originalFillInStackTrace(); // (fillInStackTraceSkipPreRaise) originalFillInStackTrace, preRaise
-        StackTraceElement[] curTrace = getStackTrace();
-        StackTraceElement[] newTrace = skipFillInStackTracePart(curTrace);
-        if (newTrace != curTrace) setStackTrace(newTrace);
-    }
-
-    private void doSetLastError(final ThreadContext context) {
-        context.setErrorInfo(exception); // $!
     }
 
     /**

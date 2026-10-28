@@ -31,6 +31,8 @@ package org.jruby.embed;
 
 import org.jruby.Profile;
 import org.jruby.Ruby;
+import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.RubyInstanceConfig.LoadServiceCreator;
 import org.jruby.ast.Node;
@@ -44,7 +46,9 @@ import org.jruby.exceptions.NoMethodError;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.SyntaxError;
 import org.jruby.javasupport.JavaEmbedUtils;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.Constants;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.KCode;
 import org.jruby.util.cli.Options;
@@ -2663,5 +2667,239 @@ public class ScriptingContainerTest {
 //                    spawnedThreadIds.contains(thread.getId()));
 //        }
 //    }
+
+    @Test
+    public void testCallMethodWithKeywordArgs_kwargsOnly() {
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        try {
+            String script =
+                "def greet(name:, greeting: 'Hello')\n" +
+                "  \"#{greeting}, #{name}!\"\n" +
+                "end\n" +
+                "self";
+            Object receiver = instance.runScriptlet(script);
+
+            Map<String, Object> kwargs = new HashMap<>();
+            kwargs.put("name", "World");
+            Object result = instance.callMethodWithKeywordArgs(receiver, "greet", kwargs);
+            assertEquals("Hello, World!", result.toString());
+
+            kwargs.put("greeting", "Hi");
+            result = instance.callMethodWithKeywordArgs(receiver, "greet", kwargs);
+            assertEquals("Hi, World!", result.toString());
+        } finally {
+            instance.terminate();
+        }
+    }
+
+    @Test
+    public void testCallMethodWithKeywordArgs_positionalAndKwargs() {
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        try {
+            String script =
+                "def combine(a, b, separator: ', ')\n" +
+                "  \"#{a}#{separator}#{b}\"\n" +
+                "end\n" +
+                "self";
+            Object receiver = instance.runScriptlet(script);
+
+            Object[] args = {"foo", "bar"};
+            Map<String, Object> kwargs = new HashMap<>();
+            kwargs.put("separator", " - ");
+            String result = instance.callMethodWithKeywordArgs(receiver, "combine", args, kwargs, String.class);
+            assertEquals("foo - bar", result);
+        } finally {
+            instance.terminate();
+        }
+    }
+
+    @Test
+    public void testCallMethodWithKeywordArgs_returnType() {
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        try {
+            String script = "def add(x:, y:)\n  x + y\nend\nself";
+            Object receiver = instance.runScriptlet(script);
+
+            Map<String, Object> kwargs = new HashMap<>();
+            kwargs.put("x", 3);
+            kwargs.put("y", 4);
+            Long result = instance.callMethodWithKeywordArgs(receiver, "add", null, kwargs, Long.class);
+            assertEquals(Long.valueOf(7), result);
+        } finally {
+            instance.terminate();
+        }
+    }
+
+    @Test
+    public void testCallMethodWithKeywordArgs_nullValue() {
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        try {
+            String script = "def check_nil(val: 'default')\n  val.nil?\nend\nself";
+            Object receiver = instance.runScriptlet(script);
+
+            Map<String, Object> kwargs = new HashMap<>();
+            kwargs.put("val", null);
+            Boolean result = instance.callMethodWithKeywordArgs(receiver, "check_nil", null, kwargs, Boolean.class);
+            assertTrue(result);
+        } finally {
+            instance.terminate();
+        }
+    }
+
+    @Test
+    public void testCallMethodWithKeywordArgs_emptyKwargs() {
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        try {
+            String script = "def double(a)\n  a * 2\nend\nself";
+            Object receiver = instance.runScriptlet(script);
+
+            Object[] args = {5};
+            Map<String, Object> kwargs = new HashMap<>();
+            Long result = instance.callMethodWithKeywordArgs(receiver, "double", args, kwargs, Long.class);
+            assertEquals(Long.valueOf(10), result);
+        } finally {
+            instance.terminate();
+        }
+    }
+
+    @Test
+    public void testCallMethodWithKeywordArgs_block() {
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        try {
+            String script =
+                "def transform(x, factor:)\n" +
+                "  block_given? ? yield(x * factor) : (x * factor)\n" +
+                "end\n" +
+                "self";
+            Object receiver = instance.runScriptlet(script);
+
+            Object[] args = {5};
+            Map<String, Object> kwargs = new HashMap<>();
+            kwargs.put("factor", 3);
+            Long result = instance.callMethodWithKeywordArgs(receiver, "transform", args, kwargs,
+                    Block.NULL_BLOCK, Long.class);
+            assertEquals(Long.valueOf(15), result);
+        } finally {
+            instance.terminate();
+        }
+    }
+
+    @Test
+    public void testCallMethodWithKeywordArgs_callInfoIsRestored() {
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        try {
+            String script =
+                "def greet(name:)\n" +
+                "  \"Hello, #{name}!\"\n" +
+                "end\n" +
+                "self";
+            Object receiver = instance.runScriptlet(script);
+
+            ThreadContext context = instance.getProvider().getRuntime().getCurrentContext();
+            int sentinel = 0xCAFE;
+            context.callInfo = sentinel;
+
+            Map<String, Object> kwargs = new HashMap<>();
+            kwargs.put("name", "World");
+            instance.callMethodWithKeywordArgs(receiver, "greet", kwargs);
+
+            assertEquals("callInfo should be restored to the value present before the kwargs call",
+                    sentinel, context.callInfo);
+        } finally {
+            instance.terminate();
+        }
+    }
+
+    @Test
+    public void testCallMethodWithKeywordArgs_callInfoRestoredAfterException() {
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        try {
+            String script =
+                "def boom(msg:)\n" +
+                "  raise msg\n" +
+                "end\n" +
+                "self";
+            Object receiver = instance.runScriptlet(script);
+
+            ThreadContext context = instance.getProvider().getRuntime().getCurrentContext();
+            int sentinel = 0xBEEF;
+            context.callInfo = sentinel;
+
+            Map<String, Object> kwargs = new HashMap<>();
+            kwargs.put("msg", "kaboom");
+            try {
+                instance.callMethodWithKeywordArgs(receiver, "boom", kwargs);
+                fail("expected the Ruby method to raise");
+            } catch (InvokeFailedException expected) {
+            }
+
+            assertEquals("callInfo should be restored even when the Ruby method raises",
+                    sentinel, context.callInfo);
+        } finally {
+            instance.terminate();
+        }
+    }
+
+    @Test
+    public void testCallMethodWithKeywordArgs_rubyStringKeys() {
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        try {
+            String script =
+                "def greet(name:)\n" +
+                "  \"Hello, #{name}!\"\n" +
+                "end\n" +
+                "self";
+            Object receiver = instance.runScriptlet(script);
+
+            Ruby runtime = instance.getProvider().getRuntime();
+            Map<RubyString, Object> kwargs = new HashMap<>();
+            kwargs.put(RubyString.newString(runtime, "name"), "World");
+            Object result = instance.callMethodWithKeywordArgs(receiver, "greet", kwargs);
+            assertEquals("Hello, World!", result.toString());
+        } finally {
+            instance.terminate();
+        }
+    }
+
+    @Test
+    public void testCallMethodWithKeywordArgs_symbolKeys() {
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        try {
+            String script =
+                "def greet(name:, greeting: 'Hello')\n" +
+                "  \"#{greeting}, #{name}!\"\n" +
+                "end\n" +
+                "self";
+            Object receiver = instance.runScriptlet(script);
+
+            Ruby runtime = instance.getProvider().getRuntime();
+            Map<RubySymbol, Object> kwargs = new HashMap<>();
+            kwargs.put(runtime.newSymbol("name"), "World");
+            kwargs.put(runtime.newSymbol("greeting"), "Hi");
+            Object result = instance.callMethodWithKeywordArgs(receiver, "greet", kwargs);
+            assertEquals("Hi, World!", result.toString());
+        } finally {
+            instance.terminate();
+        }
+    }
+
+    @Test
+    public void testCallMethodWithKeywordArgs_symbolKeysPositionalAndReturnType() {
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        try {
+            String script = "def add(base, x:, y:)\n  base + x + y\nend\nself";
+            Object receiver = instance.runScriptlet(script);
+
+            Ruby runtime = instance.getProvider().getRuntime();
+            Object[] args = {10};
+            Map<RubySymbol, Object> kwargs = new HashMap<>();
+            kwargs.put(runtime.newSymbol("x"), 3);
+            kwargs.put(runtime.newSymbol("y"), 4);
+            Long result = instance.callMethodWithKeywordArgs(receiver, "add", args, kwargs, Long.class);
+            assertEquals(Long.valueOf(17), result);
+        } finally {
+            instance.terminate();
+        }
+    }
 
 }
