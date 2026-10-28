@@ -357,13 +357,24 @@ public abstract class RubyParserBase {
         return true;
     }
 
+    // MRI: it_used_p
     private boolean isItUsed() {
-        if (it_id() != null) {
-            compile_error("'it' is already used in\n" + lexer.getFile() + ":" + it_id().getLine() + ": " +
-                    (numParamOuter != null ? "outer" : "inner") + " block here");
-            // FIXME: Show error line
-        }
-        return false;
+        if (it_id() == null) return false;
+
+        compile_error("numbered parameters are not allowed when 'it' is already used\n" + lexer.getFile() + ":" +
+                it_id().getLine() + ": 'it' is already used here");
+        // FIXME: Show error line
+        return true;
+    }
+
+    // MRI: numparam_used_p
+    private boolean isNumParamUsed() {
+        if (numParamCurrent == null) return false;
+
+        compile_error("'it' is not allowed when a numbered parameter is already used\n" + lexer.getFile() + ":" +
+                numParamCurrent.getLine() + ": numbered parameter is already used here");
+        // FIXME: Show error line
+        return true;
     }
 
     private boolean isNumParamId(String id) {
@@ -392,7 +403,7 @@ public abstract class RubyParserBase {
         Node node;
         int slot;
         if (isNumParam && numberedParam(id)) {
-            if (isNumParamNested()) return null;
+            if (isNumParamNested() || isItUsed()) return null;
 
             // We go over the top here and make sure the order is always ascending even if the other
             // numbered params are not used. This is so local_variables will properly display in
@@ -409,6 +420,12 @@ public abstract class RubyParserBase {
             node = new LocalVarNode(lexer.tokline, slot, name);
         } else if (dyna_in_block() && id.equals("it")) {
             if (!hasArguments()) {
+                if (isNumParamUsed()) return null;
+                if (maxNumParam == ORDINAL_PARAM) { // {|| it} and {|;a| it} declare parameters, if none
+                    compile_error("ordinary parameter is defined");
+                    return null;
+                }
+
                 int existing = currentScope.isDefinedOrImplicit(id);
                 boolean newIt = false;
 
@@ -431,9 +448,18 @@ public abstract class RubyParserBase {
                 slot = currentScope.isDefinedOrImplicit(id);
                 // A special it cannot exist without being marked as a special it.
                 if (it_id() != null) compile_error("`it` is not allowed when an ordinary parameter is defined");
+                // without a local variable named it, it would be the block's implicit parameter
+                if (slot < 0 && maxNumParam == ORDINAL_PARAM) {
+                    compile_error("ordinary parameter is defined");
+                    return null;
+                }
 
                 node = currentScope.declare(lexer.tokline, name);
             }
+        } else if (id.equals("it") && currentScope.isDefinedOrImplicit(id) == StaticScope.IMPLICIT) {
+            // a block's implicit it is not a variable to code evaluated within the block, as in { it; eval("it") }
+            node = new VCallNode(lexer.tokline, name);
+            slot = -1;
         }  else {
             node = currentScope.declare(lexer.tokline, name);
             slot = currentScope.isDefined(id); // FIXME: we should not do this extra call.
@@ -2509,9 +2535,11 @@ public abstract class RubyParserBase {
         return body;
     }
 
+    // MRI: restore_defun
     public void restore_defun(DefHolder holder) {
         lexer.getLexContext().restore(holder);
         lexer.setCurrentArg(holder.current_arg);
+        restoreMaxNumParam(holder.maxNumParam);
     }
 
     public ArrayPatternNode new_array_pattern(int line, Node constant, Node preArg, ArrayPatternNode arrayPattern) {
@@ -3040,6 +3068,8 @@ public abstract class RubyParserBase {
     }
 
     private boolean hasArguments() {
-        return !currentScope.getSignature().isNoArguments();
+        // no signature yet means its parameters are still being parsed, as in ->x=it{}
+        Signature signature = currentScope.getSignature();
+        return signature == null || !signature.isNoArguments();
     }
 }

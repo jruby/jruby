@@ -2486,6 +2486,8 @@ states[71] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
                     /*%%%*/
                     p.numparam_name(((ByteList)yyVals[0+yyTop].value));
                     yyVal = new DefHolder(name, currentArg, (LexContext) ctxt.clone());
+                    /* a method's parameters must not change what an enclosing block allows, as in {def foo(_);end;it}*/
+                    ((DefHolder) yyVal).maxNumParam = p.resetMaxNumParam();
                     /* Changed from MRI*/
                     /*%
                         p.numparam_name(yyVals[yyTop - count + 1].id);
@@ -6926,7 +6928,7 @@ states[827] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4918 "parse.y"
+					// line 4920 "parse.y"
 
 }
-					// line 15222 "-"
+					// line 15224 "-"

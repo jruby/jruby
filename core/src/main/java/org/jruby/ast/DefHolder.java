@@ -11,6 +11,7 @@ public class DefHolder {
     public final RubySymbol name;
     public final ByteList current_arg;
     public final LexContext ctxt;
+    public int maxNumParam; // the enclosing scope's, restored once the method is defined
     public IRubyObject value;
 
     public int line;

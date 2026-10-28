@@ -874,6 +874,8 @@ def_name        : fname {
                     /*%%%*/
                     p.numparam_name($1);
                     $$ = new DefHolder(name, currentArg, (LexContext) ctxt.clone());
+                    // a method's parameters must not change what an enclosing block allows, as in {def foo(_);end;it}
+                    ((DefHolder) $$).maxNumParam = p.resetMaxNumParam();
                     // Changed from MRI
                     /*%
                         p.numparam_name(@1.id);
