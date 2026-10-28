@@ -9,6 +9,14 @@ describe "Array#eql?" do
     [1, 2, 3, 4].should_not.eql?([1, 2, 3, 4.0])
   end
 
+  it "returns false for Floats that are NaN and not identical" do
+    [0.0 / 0.0].should_not.eql?([0.0 / 0.0])
+  end
+
+  it "returns true for 0.0 and -0.0" do
+    [0.0].should.eql?([-0.0])
+  end
+
   it "returns false if other is not a kind of Array" do
     obj = mock("array eql?")
     obj.should_not_receive(:to_ary)

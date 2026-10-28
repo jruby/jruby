@@ -1,8 +1,11 @@
 require 'test/unit'
+require 'test/jruby/test_helper'
 
 ## NOTE: Most of the tests that were here have been moved to the RubySpec.
 
 class TestArray < Test::Unit::TestCase
+  include TestHelper
+
   ##### splat test #####
   class ATest
     def to_a; 1; end
@@ -165,6 +168,44 @@ class TestArray < Test::Unit::TestCase
     a = Foo2.new
     assert_not_equal(a, a)
     assert(!(a == a))
+  end
+
+  # Array#== and Array#eql? compare Fixnums and Floats by value only while the
+  # relevant methods are builtin. Each case runs in a separate runtime so the
+  # redefinition does not leak into other tests. CRuby skips the call for
+  # Fixnums of equal value, since they are the same VALUE, but JRuby only
+  # shares small cached Fixnums, so non-identical Integers still dispatch here.
+  def test_redefined_integer_equality_is_honored
+    {
+      'class Integer; def ==(other) = true; end' => '[true, true]',
+      'class Integer; def eql?(other) = true; end' => '[false, true]',
+      'class Numeric; def eql?(other) = true; end' => '[false, true]',
+      'Integer.prepend(Module.new { def ==(other) = true })' => '[true, true]',
+      'Integer.prepend(Module.new { def eql?(other) = true })' => '[false, true]',
+      'class Float; def ==(other) = true; def eql?(other) = true; end' => '[false, false]'
+    }.each do |redefinition, expected|
+      result = run_in_sub_runtime(<<~RUBY)
+        a = [1, 2**40]
+        b = [3, 2**40 + 1]
+        a == b
+        a.eql?(b)
+        #{redefinition}
+        [a == b, a.eql?(b)].inspect
+      RUBY
+      assert_equal expected, result, redefinition
+    end
+  end
+
+  def test_redefined_float_equality_is_honored
+    result = run_in_sub_runtime(<<~RUBY)
+      a = [1.5, 1e300]
+      b = [2.5, 2e300]
+      a == b
+      a.eql?(b)
+      class Float; def ==(other) = true; def eql?(other) = true; end
+      [a == b, a.eql?(b)].inspect
+    RUBY
+    assert_equal '[true, true]', result
   end
 
   # This is unspecified behavior, and has no tests in the ruby/spec or CRuby
