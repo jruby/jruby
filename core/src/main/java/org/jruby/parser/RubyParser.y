@@ -2185,8 +2185,8 @@ block_arg       : tAMPER arg_value {
                     /*% ripper: $2 %*/
                 }
                 | tAMPER {
+                    p.forwarding_arg_check(FWD_BLOCK, FWD_ALL, "block");
                     /*%%%*/
-                    if (!p.local_id(ANON_BLOCK)) p.compile_error("no anonymous block parameter");
                     $$ = new BlockPassNode(@1.start(), p.arg_var(ANON_BLOCK));
                     // Changed from MRI
                     /*%
@@ -4769,7 +4769,7 @@ f_rest_arg      : restarg_mark tIDENTIFIER {
                 }
                 | restarg_mark {
                     /*%%%*/
-                    $$ = new UnnamedRestArgNode(p.src_line(), p.symbolID(CommonByteLists.EMPTY), p.getCurrentScope().addVariable("*"));
+                    $$ = new UnnamedRestArgNode(p.src_line(), p.symbolID(CommonByteLists.EMPTY), p.getCurrentScope().addVariableThisScope("*"));
                     /*% %*/
                     /*% ripper: rest_param!(Qnil) %*/
                 };

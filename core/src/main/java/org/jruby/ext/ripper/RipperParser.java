@@ -4061,6 +4061,7 @@ states[326] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 states[327] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+                    p.forwarding_arg_check(FWD_BLOCK, FWD_ALL, "block");
                     yyVal = p.nil();
 
   return yyVal;
@@ -6712,7 +6713,7 @@ states[827] = (RipperParser p, Object yyVal, ProductionState[] yyVals, int yyTop
   return yyVal;
 };
 }
-					// line 4704 "ripper_RubyParser.out"
+					// line 4705 "ripper_RubyParser.out"
 
 }
-					// line 15008 "-"
+					// line 15009 "-"

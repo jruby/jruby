@@ -1,8 +1,4 @@
-exclude :test_anonymous_block_forwarding, "missing error for forwarding & args with ambiguous incoming block in lambda"
-exclude :test_anonymous_keyword_rest_forwarding, "missing error for forwarding ** args without incoming **"
-exclude :test_anonymous_rest_forwarding, "missing error for forwarding * args without incoming *"
 exclude :test_argument_forwarding, "work in progress"
-exclude :test_argument_forwarding_with_anon_rest_kwrest_and_block, "missing error for forwarding * args with incoming ..."
 exclude :test_argument_forwarding_with_super_memory_leak, "uses MRI-specific memory leak checks"
 exclude :test_array_kwsplat_hash, "work in progress"
 exclude :test_class_module_Object_ancestors, "work in progress"

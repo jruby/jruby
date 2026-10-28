@@ -3976,8 +3976,8 @@ states[326] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[327] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
+                    p.forwarding_arg_check(FWD_BLOCK, FWD_ALL, "block");
                     /*%%%*/
-                    if (!p.local_id(ANON_BLOCK)) p.compile_error("no anonymous block parameter");
                     yyVal = new BlockPassNode(yyVals[yyTop - count + 1].start(), p.arg_var(ANON_BLOCK));
                     /* Changed from MRI*/
                     /*%
@@ -6707,7 +6707,7 @@ states[777] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[778] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    yyVal = new UnnamedRestArgNode(p.src_line(), p.symbolID(CommonByteLists.EMPTY), p.getCurrentScope().addVariable("*"));
+                    yyVal = new UnnamedRestArgNode(p.src_line(), p.symbolID(CommonByteLists.EMPTY), p.getCurrentScope().addVariableThisScope("*"));
                     /*% %*/
                     /*% ripper: rest_param!(Qnil) %*/
   return yyVal;

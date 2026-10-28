@@ -2060,8 +2060,8 @@ public abstract class RubyParserBase {
         RubySymbol restKwargsName = symbolID(keywordRestArgName);
         String id = restKwargsName.idString();
 
-        int slot = currentScope.exists(id);
-        if (slot == -1) slot = currentScope.addVariable(id);
+        // a block's own **, named or not, is a new variable even when an enclosing scope has one
+        int slot = currentScope.addVariableThisScope(id);
 
         KeywordRestArgNode keywordRestArg = new KeywordRestArgNode(line, restKwargsName, slot);
 
@@ -3003,8 +3003,32 @@ public abstract class RubyParserBase {
         return new ErrorNode(loc);
     }
 
-    protected void forwarding_arg_check(ByteList rest, ByteList all, String var) {
-        // FIXME: Impl
+    // MRI: forwarding_arg_check
+    protected void forwarding_arg_check(ByteList arg, ByteList all, String var) {
+        String argId = symbolID(arg).idString();
+        String allId = symbolID(all).idString();
+
+        // A block between here and the method that declares the same kind of anonymous parameter would take it
+        boolean conflict = false;
+        StaticScope scope = getCurrentScope();
+        while (scope != null && scope.isBlockScope() && scope.getType() != StaticScope.Type.EVAL) {
+            conflict |= scope.exists(argId) >= 0 && scope.exists(allId) < 0;
+            scope = scope.getEnclosingScope();
+        }
+
+        // The method must declare it itself, and not only through ... (eval code sees the scopes around it)
+        boolean found;
+        if (scope != null && scope.getType() == StaticScope.Type.EVAL) {
+            found = scope.isDefined(argId) >= 0 && scope.isDefined(allId) < 0;
+        } else {
+            found = scope != null && scope.exists(argId) >= 0 && scope.exists(allId) < 0;
+        }
+
+        if (!found) {
+            compile_error("no anonymous " + var + " parameter");
+        } else if (conflict) {
+            compile_error("anonymous " + var + " parameter is also used within block");
+        }
     }
 
     protected void WARN_EOL(String name) {
