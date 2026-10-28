@@ -1440,6 +1440,17 @@ public class IRRuntimeHelpers {
         return result;
     }
 
+    /**
+     * Like {@link #getPreArgSafe(ThreadContext, IRubyObject[], int)}, but when the last argument was received
+     * as keywords it is not a positional argument. A proc called with only keywords, as in
+     * <code>proc {|c, a: 1|}.call(a: 3)</code>, gets nil for c rather than the keywords hash.
+     */
+    @Interp @JIT
+    public static IRubyObject getPreArgSafe(ThreadContext context, IRubyObject[] args, IRubyObject keywords, int argIndex) {
+        int argsLength = keywords != UNDEFINED ? args.length - 1 : args.length;
+        return argIndex < argsLength ? args[argIndex] : context.nil;
+    }
+
     @JIT
     public static IRubyObject receiveKeywordArg(ThreadContext context, IRubyObject keywords, String id) {
         return receiveKeywordArg(keywords, asSymbol(context, id));

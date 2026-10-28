@@ -272,8 +272,10 @@ public class InterpreterEngine {
 
         switch(operation) {
             case RECV_PRE_REQD_ARG:
-                int argIndex = ((ReceivePreReqdArgInstr)instr).getArgIndex();
-                result = IRRuntimeHelpers.getPreArgSafe(context, args, argIndex);
+                ReceivePreReqdArgInstr receivePre = (ReceivePreReqdArgInstr) instr;
+                // the keywords operand may have been replaced by UNDEFINED, so do not use getKeywords
+                IRubyObject keywords = (IRubyObject) receivePre.getOperand1().retrieve(context, self, currScope, currDynScope, temp);
+                result = IRRuntimeHelpers.getPreArgSafe(context, args, keywords, receivePre.getArgIndex());
                 setResult(temp, currDynScope, instr.getResult(), result);
                 return;
             case RECV_POST_REQD_ARG:

@@ -2317,8 +2317,10 @@ public class JVMVisitor extends IRVisitor {
         } else {
             jvmMethod().loadContext();
             jvmMethod().loadArgs();
+            // the keywords operand may have been replaced by UNDEFINED, so do not use getKeywords
+            visit(instr.getOperand1());
             jvmAdapter().pushInt(instr.getArgIndex());
-            jvmMethod().invokeIRHelper("getPreArgSafe", sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, int.class));
+            jvmMethod().invokeIRHelper("getPreArgSafe", sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, IRubyObject.class, int.class));
         }
         jvmStoreLocal(instr.getResult());
     }
