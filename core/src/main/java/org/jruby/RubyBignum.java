@@ -1015,7 +1015,7 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
 
         // compare as integers to avoid precision loss
         IRubyObject rel = op_cmp(context, newBignorm(context.runtime, yd));
-        return rel instanceof RubyFixnum fix && fix.getLongValue() == 0;
+        return rel instanceof RubyFixnum fix && fix.getValue() == 0;
     }
 
     @Override

@@ -40,10 +40,10 @@ public class RubyTimeParser {
         if (prec < 0) prec = Long.MAX_VALUE;
 
         if (!isEOS() && (isSpace() || Character.isWhitespace(bytes[end - 1]))) {
-            throw argumentError(context, str(context.runtime, "can't parse: ", str.inspect()));
+            throw argumentError(context, str(context.runtime, "can't parse: ", str.inspect(context)));
         }
         year = parseInt(context, true, Long.MAX_VALUE);
-        if (year.isNil()) throw argumentError(context, str(context.runtime, "can't parse: ", str.inspect()));
+        if (year.isNil()) throw argumentError(context, str(context.runtime, "can't parse: ", str.inspect(context)));
         if (ndigits < 4) {
             IRubyObject invalidYear = context.runtime.newString(new ByteList(bytes, ptr - ndigits - beg, ndigits, true));
             throw argumentError(context, str(context.runtime, "year must be 4 or more digits: ", invalidYear));

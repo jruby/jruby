@@ -73,7 +73,6 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 
 import static org.jruby.RubyBasicObject.getMetaClass;
-import static org.jruby.api.Access.stringClass;
 import static org.jruby.api.Convert.*;
 import static org.jruby.api.Error.*;
 import static org.jruby.runtime.marshal.MarshalCommon.TYPE_IVAR;
@@ -552,7 +551,7 @@ public class MarshalDumper {
             writeObjectData(context, out, context.tru);
         } else {
             writeAndRegisterSymbol(out, symbolTable.getEncodingSymbol());
-            RubyString encodingString = new RubyString(context.runtime, stringClass(context), encoding.getName());
+            RubyString encodingString = RubyString.newString(context.runtime, encoding.getName());
             writeObjectData(context, out, encodingString);
         }
     }
