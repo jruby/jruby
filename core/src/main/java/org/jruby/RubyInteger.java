@@ -460,7 +460,8 @@ public abstract class RubyInteger extends RubyNumeric {
 
         if (bytes == null) {
             // just share byte array
-            return RubyString.newStringShared(runtime, SINGLE_CHAR_BYTES[ub], 0, SINGLE_CHAR_BYTES[ub].length, enc);
+            byte[] single = SINGLE_CHAR_BYTES[ub];
+            return RubyString.newStringShared(runtime, single, 0, single.length, enc);
         }
 
         // use shared for cached bytelists
