@@ -189,6 +189,7 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -2932,6 +2933,16 @@ public final class Ruby implements Constantizable {
      *
      */
     public void printError(final RubyException ex) {
+        printError(ex, new HashSet<>());
+    }
+
+    /**
+     * Prints an exception and its causes to stderr, skipping causes that have already been shown.
+     *
+     * @param ex the exception to print
+     * @param shownCauses causes already shown, which is updated with the causes printed here
+     */
+    public void printError(final RubyException ex, Set<Object> shownCauses) {
         if (ex == null) return;
 
         boolean formatted =
@@ -2939,7 +2950,7 @@ public final class Ruby implements Constantizable {
                         getErr() == System.err &&
                         getPosix().isatty(FileDescriptor.err);
 
-        String backtrace = config.getTraceType().printBacktrace(ex, formatted);
+        String backtrace = config.getTraceType().printBacktrace(ex, formatted, shownCauses);
         printErrorString(backtrace);
     }
 
@@ -3284,7 +3295,8 @@ public final class Ruby implements Constantizable {
 
         int status = userTeardown(context);
 
-        systemTeardown(context);
+        int systemStatus = systemTeardown(context);
+        if (status == 0) status = systemStatus;
 
         if (systemExit && status != 0) {
             throw newSystemExit(status);
@@ -3304,7 +3316,9 @@ public final class Ruby implements Constantizable {
     }
 
     @SuppressWarnings("ReturnValueIgnored")
-    private void systemTeardown(final ThreadContext context) {
+    private int systemTeardown(final ThreadContext context) {
+        int status = 0;
+
         // Run post-user exit hooks, such as for shutting down internal JRuby services
         while (!postExitBlocks.isEmpty()) {
             ExitFunction fun = postExitBlocks.remove(0);
@@ -3360,7 +3374,19 @@ public final class Ruby implements Constantizable {
             IRubyObject[] trapResultEntries = ary.toJavaArray(context);
             IRubyObject exitHandlerProc = trapResultEntries[0];
             if (exitHandlerProc instanceof RubyProc) {
-                ((RubyProc) exitHandlerProc).call(context, getSingleNilArray());
+                IRubyObject previousError = context.getErrorInfo();
+                try {
+                    ((RubyProc) exitHandlerProc).call(context, getSingleNilArray());
+                } catch (SystemExit exit) {
+                    throw exit;
+                } catch (RaiseException re) {
+                    // report like an at_exit handler, without repeating causes those handlers already reported
+                    Set<Object> shownCauses = exitShownCauses;
+                    if (shownCauses == null) shownCauses = new HashSet<>();
+                    if (previousError instanceof RubyException) shownCauses.add(previousError);
+                    printError(re.getException(), shownCauses);
+                    status = 1;
+                }
             }
         }
 
@@ -3382,6 +3408,8 @@ public final class Ruby implements Constantizable {
 
         javaSupport.tearDown();
         javaSupport = loadJavaSupport();
+
+        return status;
     }
 
     private int userTeardown(ThreadContext context) {
@@ -3398,7 +3426,9 @@ public final class Ruby implements Constantizable {
         // MRI: rb_ec_teardown. Run out this thread's scheduler before any at-exit handler
         context.getFiberCurrentThread().setFiberScheduler(context, context.nil);
 
-        // Run all exit functions from user hooks like at_exit
+        // Run all exit functions from user hooks like at_exit, sharing the causes they have already
+        // reported so an error is not shown again as the cause of an error from a later handler
+        exitShownCauses = new HashSet<>();
         while (!exitBlocks.isEmpty()) {
             ExitFunction fun = exitBlocks.remove(0);
             int ret = fun.applyAsInt(context);
@@ -5497,6 +5527,9 @@ public final class Ruby implements Constantizable {
      */
     private final List<ExitFunction> exitBlocks = Collections.synchronizedList(new LinkedList<>());
 
+    // causes already reported by at_exit and END handlers during teardown
+    private volatile Set<Object> exitShownCauses;
+
     /**
      * Registry of shutdown operations that should happen after all user code has been run (e.g. at_exit hooks).
      */
@@ -5683,9 +5716,11 @@ public final class Ruby implements Constantizable {
         }
 
         @Override
+        @CRuby(value = "rb_ec_exec_end_proc", file = "eval_jump.c")
         public int applyAsInt(ThreadContext context) {
+            // the error left in $! by an earlier handler counts as shown
+            IRubyObject previousError = context.getErrorInfo();
             try {
-                // IRubyObject oldExc = context.runtime.getGlobalVariables().get("$!"); // Save $!
                 proc.call(context, IRubyObject.NULL_ARRAY);
 
             } catch (LocalJumpError rj) {
@@ -5710,7 +5745,10 @@ public final class Ruby implements Constantizable {
                 return toInt(context, raisedException.callMethod(context, "status"));
             } catch (RaiseException re) {
                 // display and set error result but do not propagate other errors raised during at_exit
-                Ruby.this.printError(re.getException());
+                Set<Object> shownCauses = exitShownCauses;
+                if (shownCauses == null) shownCauses = new HashSet<>();
+                if (previousError instanceof RubyException) shownCauses.add(previousError);
+                Ruby.this.printError(re.getException(), shownCauses);
                 return 1;
 
             } catch (IRReturnJump e) {
