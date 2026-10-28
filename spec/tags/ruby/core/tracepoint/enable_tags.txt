@@ -35,3 +35,4 @@ fails:TracePoint#enable with a block enables the trace object within a block
 fails:TracePoint#enable with a block enables the trace object only for the current thread
 fails:TracePoint#enable with a block can accept arguments within a block but it should not yield arguments
 fails:TracePoint#enable with a block disables the trace object outside the block
+fails:TracePoint#enable with multiple enabled TracePoints for the same event calls the most recently enabled TracePoint first

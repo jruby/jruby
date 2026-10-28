@@ -1,0 +1,2 @@
+fails:ENV.[]= supports concurrent access from multiple threads
+fails:ENV.[]= accepts a BINARY variable name containing non-ASCII bytes
