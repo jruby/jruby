@@ -1161,6 +1161,13 @@ public class RubyClass extends RubyModule {
         RubyClass originalClazz = (RubyClass) original;
         allocator = originalClazz.allocator;
 
+        // register the copy with its superclass so it shows up in Class#subclasses
+        RubyClass superClazz = superClass;
+        while (superClazz != null && (superClazz.isIncluded() || superClazz.isPrepended())) {
+            superClazz = superClazz.superClass;
+        }
+        if (superClazz != null) superClazz.addSubclass(this);
+
         // copy over reify options
         javaClassConfiguration = originalClazz.javaClassConfiguration == null ? null : originalClazz.javaClassConfiguration.clone();
 
