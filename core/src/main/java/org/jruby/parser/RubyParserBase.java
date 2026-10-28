@@ -2197,6 +2197,14 @@ public abstract class RubyParserBase {
     public ByteList formal_argument(ByteList identifier, Object _unused) {
         lexer.validateFormalIdentifier(identifier);
 
+        // a keyword parameter's label still ends with ':' here (see arg_var), so drop it before checking for a
+        // parameter with the same name
+        int length = identifier.length();
+        if (length > 0 && identifier.get(length - 1) == ':') {
+            shadowing_lvar(identifier.makeShared(0, length - 1));
+            return identifier;
+        }
+
         return shadowing_lvar(identifier);
     }
 
