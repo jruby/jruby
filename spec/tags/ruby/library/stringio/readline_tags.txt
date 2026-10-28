@@ -6,3 +6,6 @@ fails:StringIO#readline when passed [separator] and [limit] when passed [separat
 fails:StringIO#readline when passed [separator] and [limit] when passed [separator] and [limit] tries to convert the passed separator to a String using #to_str
 fails:StringIO#readline when passed [separator] and [limit] when passed [separator] and [limit] does not raise TypeError if passed separator is nil
 fails:StringIO#readline when passed [separator] and [limit] when passed [separator] and [limit] tries to convert the passed limit to an Integer using #to_int
+fails:StringIO#readline when passed [limit] when passed [limit] does not extend over a character that starts before the current position
+fails:StringIO#readline when passed [separator] and [limit] when passed [separator] and [limit] does not split a multi-byte character when the limit is met before the separator
+fails:StringIO#readline when passed [separator] and [limit] when passed [separator] and [limit] does not split a multi-byte character when passed a nil separator

@@ -1,0 +1,1 @@
+fails:StringIO#gets when passed [limit] when passed [limit] does not extend over a character that starts before the current position

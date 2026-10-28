@@ -331,12 +331,12 @@ describe "Module#autoload" do
     it "defines a regular constant that no longer depends on $LOADED_FEATURES" do
       require @path
       ScratchPad.recorded.should == [:loaded]
-      ModuleSpecs::Autoload.autoload?(:SatisfiedByRequire).should be_nil
+      ModuleSpecs::Autoload.autoload?(:SatisfiedByRequire).should == nil
       klass = ModuleSpecs::Autoload::SatisfiedByRequire
       data = Marshal.dump(klass.new)
 
       $LOADED_FEATURES.replace(@loaded_features)
-      Thread.new { Marshal.load(data).class }.value.should equal(klass)
+      Thread.new { Marshal.load(data).class }.value.should.equal?(klass)
       ScratchPad.recorded.should == [:loaded]
     end
 
@@ -352,7 +352,7 @@ describe "Module#autoload" do
       klass = ModuleSpecs::Autoload::SatisfiedByRequire
       data = Marshal.dump(klass.new)
 
-      Thread.new { Marshal.load(data).class }.value.should equal(klass)
+      Thread.new { Marshal.load(data).class }.value.should.equal?(klass)
       ScratchPad.recorded.should == [:loaded]
     end
 
@@ -361,8 +361,8 @@ describe "Module#autoload" do
       klass = ModuleSpecs::Autoload::SatisfiedByRequire
       @remove.delete(:SatisfiedByRequire)
 
-      ModuleSpecs::Autoload.send(:remove_const, :SatisfiedByRequire).should equal(klass)
-      ModuleSpecs::Autoload.const_defined?(:SatisfiedByRequire).should be_false
+      ModuleSpecs::Autoload.send(:remove_const, :SatisfiedByRequire).should.equal?(klass)
+      ModuleSpecs::Autoload.const_defined?(:SatisfiedByRequire).should == false
     end
 
     it "can be registered as an autoload again after remove_const" do
@@ -373,7 +373,7 @@ describe "Module#autoload" do
 
       ModuleSpecs::Autoload.autoload :SatisfiedByRequire, @path
       ModuleSpecs::Autoload.autoload?(:SatisfiedByRequire).should == @path
-      ModuleSpecs::Autoload::SatisfiedByRequire.should_not equal(klass)
+      ModuleSpecs::Autoload::SatisfiedByRequire.should_not.equal?(klass)
       ScratchPad.recorded.should == [:loaded, :loaded]
     end
 
@@ -382,13 +382,13 @@ describe "Module#autoload" do
       ModuleSpecs::Autoload.autoload :SatisfiedByRequireRaise, path
       @remove << :SatisfiedByRequireRaise
 
-      -> { require path }.should raise_error(RuntimeError, "raised after defining the constant")
+      -> { require path }.should.raise(RuntimeError, "raised after defining the constant")
       ScratchPad.recorded.should == [:loaded]
-      ModuleSpecs::Autoload.autoload?(:SatisfiedByRequireRaise).should be_nil
+      ModuleSpecs::Autoload.autoload?(:SatisfiedByRequireRaise).should == nil
       klass = ModuleSpecs::Autoload::SatisfiedByRequireRaise
       data = Marshal.dump(klass.new)
 
-      Thread.new { Marshal.load(data).class }.value.should equal(klass)
+      Thread.new { Marshal.load(data).class }.value.should.equal?(klass)
       ScratchPad.recorded.should == [:loaded]
     end
 
@@ -401,12 +401,12 @@ describe "Module#autoload" do
       require nested
       ModuleSpecs::Autoload::SatisfiedByRequireNested.autoload?(:Inner).should == inner
       require inner
-      ModuleSpecs::Autoload::SatisfiedByRequireNested.autoload?(:Inner).should be_nil
+      ModuleSpecs::Autoload::SatisfiedByRequireNested.autoload?(:Inner).should == nil
       klass = ModuleSpecs::Autoload::SatisfiedByRequireNested::Inner
       data = Marshal.dump(klass.new)
 
       $LOADED_FEATURES.replace(@loaded_features)
-      Thread.new { Marshal.load(data).class }.value.should equal(klass)
+      Thread.new { Marshal.load(data).class }.value.should.equal?(klass)
       ScratchPad.recorded.should == [:nested_loaded, :inner_loaded]
     end
 
@@ -417,7 +417,7 @@ describe "Module#autoload" do
       data = Marshal.dump(klass.new)
 
       $LOADED_FEATURES.replace(@loaded_features)
-      Thread.new { Marshal.load(data).class }.value.should equal(klass)
+      Thread.new { Marshal.load(data).class }.value.should.equal?(klass)
       ScratchPad.recorded.should == [:loaded]
     end
   end
@@ -434,12 +434,12 @@ describe "Module#autoload" do
     it "defines every constant the file declares as a regular constant" do
       ModuleSpecs::Autoload::SiblingA
       ScratchPad.recorded.should == [:loaded]
-      ModuleSpecs::Autoload.autoload?(:SiblingB).should be_nil
+      ModuleSpecs::Autoload.autoload?(:SiblingB).should == nil
       klass = ModuleSpecs::Autoload::SiblingB
       data = Marshal.dump(klass.new)
 
       $LOADED_FEATURES.replace(@loaded_features)
-      Thread.new { Marshal.load(data).class }.value.should equal(klass)
+      Thread.new { Marshal.load(data).class }.value.should.equal?(klass)
       ScratchPad.recorded.should == [:loaded]
     end
 
@@ -448,7 +448,7 @@ describe "Module#autoload" do
       klass = ModuleSpecs::Autoload::SiblingB
       @remove.delete(:SiblingB)
 
-      ModuleSpecs::Autoload.send(:remove_const, :SiblingB).should equal(klass)
+      ModuleSpecs::Autoload.send(:remove_const, :SiblingB).should.equal?(klass)
     end
   end
 
