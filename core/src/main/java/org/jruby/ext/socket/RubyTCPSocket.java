@@ -189,6 +189,8 @@ public class RubyTCPSocket extends RubyIPSocket {
 
                 break;
             case 5:
+                if (!args[2].isNil()) localHost = args[2].convertToString().toString();
+                if (!args[3].isNil()) localPort = SocketUtils.getPortFrom(context, args[3]);
                 if (!args[4].isNil()) opts = (RubyHash) ArgsUtil.getOptionsArg(context.runtime, args[4], true);
                 break;
         }
