@@ -2635,6 +2635,12 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     public void flush() { flush(getRuntime().getCurrentContext()); }
 
+    // Flushes an IO directly, and calls #flush on anything else, such as a StringIO assigned to $stdout.
+    @CRuby(value = "rb_io_flush", file = "io.c")
+    public static IRubyObject rbIoFlush(ThreadContext context, IRubyObject io) {
+        return io instanceof RubyIO rubyIO ? rubyIO.flush(context) : io.callMethod(context, "flush");
+    }
+
     @CRuby(value = "rb_io_flush_raw", file = "io.c")
     protected RubyIO flushRaw(ThreadContext context, boolean sync) {
         OpenFile fptr;
