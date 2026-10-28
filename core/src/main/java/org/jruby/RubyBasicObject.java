@@ -1209,13 +1209,21 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         }
 
         if (ivars == null || ivars.isNil()) {
-            // no ivars specified, do all of them
-            boolean first = true;
-            for (Map.Entry<String, VariableAccessor> entry : metaClass.getVariableTableManager().getVariableAccessorsForRead().entrySet()) {
-                VariableAccessor accessor = entry.getValue();
-                String name = entry.getKey();
+            // no ivars specified, do all of them. Values are read up front so
+            // an inspect that adds or removes ivars does not affect the result
+            var accessors = metaClass.getVariableTableManager().getVariableAccessorsForRead();
+            List<String> names = new ArrayList<>(accessors.size());
+            List<Object> values = new ArrayList<>(accessors.size());
+            for (Map.Entry<String, VariableAccessor> entry : accessors.entrySet()) {
+                Object value = entry.getValue().get(this);
+                if (!(value instanceof IRubyObject)) continue;
+                names.add(entry.getKey());
+                values.add(value);
+            }
 
-                if (appendInstanceVariable(context, part, accessor, name, first, runtime)) continue;
+            boolean first = true;
+            for (int i = 0; i < names.size(); i++) {
+                if (appendInstanceVariable(context, part, values.get(i), names.get(i), first, runtime)) continue;
 
                 first = false;
             }
@@ -1230,7 +1238,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
                 VariableAccessor accessor = accessors.get(name);
                 if (accessor == null) continue;
 
-                if (appendInstanceVariable(context, part, accessor, name, first, runtime)) continue;
+                if (appendInstanceVariable(context, part, accessor.get(this), name, first, runtime)) continue;
 
                 first = false;
             }
@@ -1240,8 +1248,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return part;
     }
 
-    private boolean appendInstanceVariable(ThreadContext context, RubyString part, VariableAccessor accessor, String name, boolean first, Ruby runtime) {
-        Object value = accessor.get(this);
+    private boolean appendInstanceVariable(ThreadContext context, RubyString part, Object value, String name, boolean first, Ruby runtime) {
         if (!(value instanceof IRubyObject)) return true;
         RubySymbol symbol = asSymbol(context, name);
         if (!symbol.validInstanceVariableName()) return true;
