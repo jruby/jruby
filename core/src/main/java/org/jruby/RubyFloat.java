@@ -38,11 +38,11 @@
 
 package org.jruby;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.util.Locale;
 
-import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
@@ -1056,45 +1056,219 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
         return byteList;
     }
 
+    // Room for a sign, 17 digits and either "0.000" or ".e-324", with some slack.
+    private static final int FORMAT_FLOAT_CAPACITY = 32;
+
+    /**
+     * Write the Float#to_s form of self into buf, replacing its contents.
+     *
+     * The digits are the shortest ones that read back as the same double (see
+     * {@link #shortestDigits}). Where the decimal point goes depends on decpt, the number
+     * of digits before it: 1.5 has digits "15" and decpt 1, 0.015 has decpt -1 and 1500.0
+     * has decpt 4. Fixed notation is used when the point falls inside the digits, when it
+     * needs at most DIG (15) digits before the point ("100000000000000.0"), or when it needs
+     * at most three zeros after the point ("0.0001"). Anything else is exponent notation
+     * ("1.0e+15", "1.0e-05"). Fixed notation always has a digit after the point.
+     */
+    @CRuby(value = "flo_to_s", file = "numeric.c")
     public static ByteList formatFloat(RubyFloat self, ByteList buf) {
-      buf.setRealSize(0);
+        buf.setRealSize(0);
 
-      double value = self.value;
+        double value = self.value;
 
-      if (Double.isInfinite(value)) {
-          buf.append(value < 0
-              ? NEGATIVE_INFINITY_TO_S_BYTELIST
-              : POSITIVE_INFINITY_TO_S_BYTELIST);
-          buf.setEncoding(USASCIIEncoding.INSTANCE);
-          return buf;
-      }
+        if (Double.isInfinite(value)) {
+            buf.append(value < 0
+                ? NEGATIVE_INFINITY_TO_S_BYTELIST
+                : POSITIVE_INFINITY_TO_S_BYTELIST);
+            buf.setEncoding(USASCIIEncoding.INSTANCE);
+            return buf;
+        }
 
-      if (Double.isNaN(value)) {
-          buf.append(NAN_TO_S_BYTELIST);
-          buf.setEncoding(USASCIIEncoding.INSTANCE);
-          return buf;
-      }
+        if (Double.isNaN(value)) {
+            buf.append(NAN_TO_S_BYTELIST);
+            buf.setEncoding(USASCIIEncoding.INSTANCE);
+            return buf;
+        }
 
-      Sprintf.sprintf(buf, Locale.US, "%#.20g", self);
+        buf.ensure(FORMAT_FLOAT_CAPACITY);
+        byte[] bytes = buf.getUnsafeBytes();
+        int begin = buf.getBegin();
+        int pos = begin;
 
-      int e = buf.indexOf('e');
-      if (e == -1) e = buf.getRealSize();
-      ASCIIEncoding ascii = ASCIIEncoding.INSTANCE;
+        // test the sign bit so that -0.0 keeps its sign
+        if (Double.doubleToRawLongBits(value) < 0) bytes[pos++] = '-';
 
-      if (!ascii.isDigit(buf.get(e - 1))) {
-          buf.setRealSize(0);
-          Sprintf.sprintf(buf, Locale.US, "%#.14e", self);
-          e = buf.indexOf('e');
-          if (e == -1) e = buf.getRealSize();
-      }
+        // The digits are written at pos, then moved in place to make room for "0.", a "."
+        // or padding zeros, which saves a second buffer.
+        long digitsAndPoint = shortestDigits(value, bytes, pos);
+        int digs = (int) digitsAndPoint;
+        int decpt = (int) (digitsAndPoint >> 32);
 
-      int p = e;
-      while (buf.get(p - 1) == '0' && ascii.isDigit(buf.get(p - 2))) p--;
-      System.arraycopy(buf.getUnsafeBytes(), e, buf.getUnsafeBytes(), p, buf.getRealSize() - e);
-      buf.setRealSize(p + buf.getRealSize() - e);
+        if (decpt > 0) {
+            if (decpt < digs) {
+                // ddd.ddd: shift the fraction digits right by one to insert the point
+                System.arraycopy(bytes, pos + decpt, bytes, pos + decpt + 1, digs - decpt);
+                bytes[pos + decpt] = '.';
+                pos += digs + 1;
+            } else if (decpt <= DIG) {
+                // ddd000.0: a whole number, padded with zeros up to the point
+                pos += digs;
+                for (int i = digs; i < decpt; i++) bytes[pos++] = '0';
+                bytes[pos++] = '.';
+                bytes[pos++] = '0';
+            } else {
+                pos = formatFloatExponent(bytes, pos, digs, decpt);
+            }
+        } else if (decpt > -4) {
+            // 0.000ddd: shift the digits right past "0." and the -decpt zeros before them
+            System.arraycopy(bytes, pos, bytes, pos + 2 - decpt, digs);
+            bytes[pos++] = '0';
+            bytes[pos++] = '.';
+            for (int i = decpt; i < 0; i++) bytes[pos++] = '0';
+            pos += digs;
+        } else {
+            pos = formatFloatExponent(bytes, pos, digs, decpt);
+        }
 
-      buf.setEncoding(USASCIIEncoding.INSTANCE);
-      return buf;
+        buf.setRealSize(pos - begin);
+        buf.setEncoding(USASCIIEncoding.INSTANCE);
+        return buf;
+    }
+
+    /**
+     * Turn the digits at pos into d.ddde+XX, the exponent form of Float#to_s. There is always
+     * a digit after the point ("1.0e+20"), and the exponent always has a sign and at least two
+     * digits ("1.0e-05"), like C's "e%+03d". A value with digits "15" and decpt 21 is
+     * 1.5 times ten to the 20th, so the exponent is decpt - 1.
+     *
+     * @return the position after the last byte written
+     */
+    private static int formatFloatExponent(byte[] bytes, int pos, int digs, int decpt) {
+        if (digs > 1) {
+            // shift everything after the first digit right by one to insert the point
+            System.arraycopy(bytes, pos + 1, bytes, pos + 2, digs - 1);
+        } else {
+            // a single digit gets a "0" after the point
+            bytes[pos + 2] = '0';
+            digs++;
+        }
+        bytes[pos + 1] = '.';
+        pos += digs + 1;
+
+        bytes[pos++] = 'e';
+        int exp = decpt - 1;
+        if (exp < 0) {
+            bytes[pos++] = '-';
+            exp = -exp;
+        } else {
+            bytes[pos++] = '+';
+        }
+        if (exp >= 100) {
+            bytes[pos++] = (byte) ('0' + exp / 100);
+            exp %= 100;
+        }
+        bytes[pos++] = (byte) ('0' + exp / 10);
+        bytes[pos++] = (byte) ('0' + exp % 10);
+        return pos;
+    }
+
+    /**
+     * Write the shortest decimal digits that round-trip to the given finite value, as dtoa's
+     * mode 0 does: no sign, no leading or trailing zeros, and "0" for zero. The value is
+     * 0.ddd times ten to the power decpt, so decpt is the number of digits before the
+     * decimal point, which is zero or negative for values below 1. For example 1500.0 gives
+     * "15" with decpt 4 and 0.015 gives "15" with decpt -1.
+     *
+     * Since JDK 19, Double.toString uses Raffaello Giulietti's Schubfach algorithm, which
+     * yields the shortest digits, so they are taken from its result rather than computed
+     * here. Only the layout differs: Double.toString writes "1500.0" or "1.5E-5", so the
+     * digits are copied out without the point or exponent, and decpt is worked out from
+     * where the point and exponent were.
+     *
+     * @return decpt in the high 32 bits and the number of digits in the low 32 bits
+     */
+    @CRuby(value = "ruby_dtoa", file = "missing/dtoa.c", note = "mode 0")
+    static long shortestDigits(double value, byte[] out, int off) {
+        String str = Double.toString(value);
+        int len = str.length();
+        int n = 0, intDigits = 0, leadingZeros = 0, exp = 0;
+        boolean fraction = false;
+
+        // str is "ddd.ddd" or "d.dddE[-]n", after a "-" for a negative value. Count the
+        // digits before the point, skip leading zeros such as those in "0.0015", and copy
+        // the rest of the digits out.
+        for (int i = str.charAt(0) == '-' ? 1 : 0; i < len; i++) {
+            char c = str.charAt(i);
+            if (c == '.') {
+                fraction = true;
+            } else if (c == 'E') {
+                exp = Integer.parseInt(str, i + 1, len, 10);
+                break;
+            } else {
+                if (!fraction) intDigits++;
+                if (n == 0 && c == '0') {
+                    leadingZeros++;
+                } else {
+                    out[off + n++] = (byte) c;
+                }
+            }
+        }
+
+        // drop trailing zeros, such as the one in "1500.0" or "1.0"
+        while (n > 0 && out[off + n - 1] == '0') n--;
+
+        // zero has no nonzero digits, and dtoa reports it as "0" with decpt 1
+        if (n == 0) {
+            out[off] = '0';
+            return (1L << 32) | 1;
+        }
+
+        // "1500.0" has 4 digits before the point, "0.0015" has 1 minus 3 leading zeros, and
+        // "1.5E-5" has 1 plus the exponent
+        int decpt = intDigits - leadingZeros + exp;
+
+        if (n == 2 && Math.abs(value) < Double.MIN_NORMAL) {
+            long oneDigit = oneSubnormalDigit(Math.abs(value), out, off, decpt);
+            if (oneDigit != 0) return oneDigit;
+        }
+
+        return ((long) decpt << 32) | n;
+    }
+
+    /**
+     * When a single digit would round-trip, Double.toString may still choose two digits if
+     * they are closer to the exact value, as with Double.MIN_VALUE ("4.9E-324"). That can only
+     * happen to subnormals, which have few significant bits. dtoa wants the shortest digits,
+     * so choose the closest single digit that round-trips, if any.
+     *
+     * @return the result for shortestDigits, or 0 to keep the two digits
+     */
+    private static long oneSubnormalDigit(double abs, byte[] out, int off, int decpt) {
+        int lower = out[off] - '0';
+        int exp = decpt - 1;
+        // the exact value lies strictly between lower and lower + 1 times 10 ** exp
+        boolean lowerFits = Double.parseDouble(lower + "e" + exp) == abs;
+        boolean upperFits = Double.parseDouble((lower + 1) + "e" + exp) == abs;
+
+        boolean upper;
+        if (lowerFits && upperFits) {
+            BigDecimal midpoint = new BigDecimal(BigInteger.valueOf(lower * 10 + 5), -(exp - 1));
+            upper = new BigDecimal(abs).compareTo(midpoint) > 0;
+        } else if (lowerFits || upperFits) {
+            upper = upperFits;
+        } else {
+            return 0;
+        }
+
+        if (!upper) {
+            out[off] = (byte) ('0' + lower);
+        } else if (lower == 9) {
+            out[off] = '1';
+            decpt++;
+        } else {
+            out[off] = (byte) ('0' + lower + 1);
+        }
+        return ((long) decpt << 32) | 1;
     }
 
     @Deprecated(since = "10.0.0.0", forRemoval = true)
