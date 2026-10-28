@@ -210,7 +210,19 @@ public class RubySet extends RubyObject implements Set {
      * @return a new Set
      */
     RubySet newSetFast(final Ruby runtime) {
-        return newSet(runtime, getMetaClass());
+        return copyIdentityTo(runtime.getCurrentContext(), newSet(runtime, getMetaClass()));
+    }
+
+    /**
+     * Make the given set compare by identity if this one does.
+     *
+     * @param context the current context
+     * @param set a newly created set
+     * @return the given set
+     */
+    final RubySet copyIdentityTo(final ThreadContext context, final RubySet set) {
+        if (hash.isComparedByIdentity()) set.hash.compare_by_identity(context);
+        return set;
     }
 
     /**
@@ -887,7 +899,7 @@ public class RubySet extends RubyObject implements Set {
             });
         }
 
-        return newSet;
+        return copyIdentityTo(context, newSet);
     }
 
     /**
@@ -901,8 +913,20 @@ public class RubySet extends RubyObject implements Set {
         if (enume instanceof RubySet set) {
             otherSet = set;
         } else {
-            otherSet = new RubySet(context.runtime, getMetaClass(), false);
-            otherSet.initialize(context, enume, Block.NULL_BLOCK); // Set.new(enum)
+            // Set.new(enum), comparing by identity if this set does
+            final RubySet other = new RubySet(context.runtime, getMetaClass(), false);
+            other.allocHash(context);
+            copyIdentityTo(context, other);
+            if (enume instanceof RubyArray ary) {
+                for (int i = 0; i < ary.size(); i++) other.addImpl(context, ary.eltInternal(i));
+            } else {
+                doWithEnum(context, enume, new EachBody(context) {
+                    IRubyObject yieldImpl(ThreadContext context, IRubyObject val) {
+                        other.addImpl(context, val); return context.nil;
+                    }
+                });
+            }
+            otherSet = other;
         }
         for (IRubyObject o : otherSet.elementsOrdered()) {
             if (newSet.containsImpl(o)) {
@@ -1056,7 +1080,7 @@ public class RubySet extends RubyObject implements Set {
             IRubyObject set = hash.op_aref(context, asFixnum(context, root));
 
             if (set.isNil()) {
-                set = newSet(context.runtime, setClass);
+                set = copyIdentityTo(context, newSet(context.runtime, setClass));
                 hash.op_aset(context, asFixnum(context, root), set);
                 finalSet.add(context, set);
             }
