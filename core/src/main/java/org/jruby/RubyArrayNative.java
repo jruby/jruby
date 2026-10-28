@@ -49,6 +49,7 @@ import org.jruby.java.util.ArrayUtils;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Builtins;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Helpers;
@@ -738,11 +739,46 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
         return inspect(context);
     }
 
+    // How searchEqual compares an element with the searched-for item
+    private static final int SEARCH_GENERIC = 0;
+    private static final int SEARCH_FIXNUM = 1;
+    private static final int SEARCH_FLOAT = 2;
+
+    /**
+     * Decide once per search how {@link #searchEqual} compares elements with item. While
+     * Integer#== (or Float#==) is still builtin, a Fixnum (or Float) item is compared with
+     * elements of the same class directly instead of dispatching == for every element.
+     */
+    private static int searchKind(ThreadContext context, IRubyObject item) {
+        if (item instanceof RubyFixnum) {
+            return context.sites.Fixnum.op_eqq.isBuiltin(item) ? SEARCH_FIXNUM : SEARCH_GENERIC;
+        }
+        if (item instanceof RubyFloat) {
+            return Builtins.checkFloatEquals(context) ? SEARCH_FLOAT : SEARCH_GENERIC;
+        }
+        return SEARCH_GENERIC;
+    }
+
+    /**
+     * Same result as {@code element == item}, given the kind {@link #searchKind} chose for item.
+     * Elements of any other class still dispatch ==, so 1.0 == 1 keeps its Float semantics.
+     */
+    private static boolean searchEqual(ThreadContext context, int kind, IRubyObject element, IRubyObject item) {
+        if (kind == SEARCH_FIXNUM) {
+            if (element instanceof RubyFixnum fixnum) return fixnum.fastEqual((RubyFixnum) item);
+        } else if (kind == SEARCH_FLOAT) {
+            // identity first, so the very same NaN object is still found
+            if (element instanceof RubyFloat flote) return element == item || flote.fastEqual((RubyFloat) item);
+        }
+        return equalInternal(context, element, item);
+    }
+
     public boolean includes(ThreadContext context, IRubyObject item) {
+        final int kind = searchKind(context, item);
         int end = realLength;
         for (int i = 0; i < end; i++) {
             final IRubyObject value = eltOk(i);
-            if (equalInternal(context, value, item)) return true;
+            if (searchEqual(context, kind, value, item)) return true;
         }
 
         return false;
@@ -2098,8 +2134,9 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
 
     @CRuby(value = "rb_ary_index", file = "array.c")
     public IRubyObject index(ThreadContext context, IRubyObject obj) {
+        final int kind = searchKind(context, obj);
         for (int i = 0; i < realLength; i++) {
-            if (equalInternal(context, eltOk(i), obj)) return asFixnum(context, i);
+            if (searchEqual(context, kind, eltOk(i), obj)) return asFixnum(context, i);
         }
 
         return context.nil;
@@ -2191,7 +2228,8 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
     @CRuby(value = "rb_ary_rindex", file = "array.c")
     public IRubyObject rindex(ThreadContext context, IRubyObject obj) {
         unpack(context);
-        
+
+        final int kind = searchKind(context, obj);
         int i = realLength;
 
         while (i-- > 0) {
@@ -2199,7 +2237,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
                 i = realLength;
                 continue;
             }
-            if (equalInternal(context, eltOk(i), obj)) return asFixnum(context, i);
+            if (searchEqual(context, kind, eltOk(i), obj)) return asFixnum(context, i);
         }
 
         return context.nil;
@@ -2897,9 +2935,10 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
     public IRubyObject count(ThreadContext context, IRubyObject obj, Block block) {
         if (block.isGiven()) warn(context, "given block not used");
 
+        final int kind = searchKind(context, obj);
         int n = 0;
         for (int i = 0; i < realLength; i++) {
-            if (equalInternal(context, elt(i), obj)) n++;
+            if (searchEqual(context, kind, elt(i), obj)) n++;
         }
         return asFixnum(context, n);
     }
