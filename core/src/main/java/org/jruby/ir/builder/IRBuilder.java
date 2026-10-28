@@ -1136,7 +1136,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
                 IRScope returnScope = scope.getLexicalParent();
                 if (scope instanceof IREvalScript || returnScope == null) {
                     // We are not in a closure or a loop => bad break instr!
-                    throwSyntaxError(line, "Can't escape from eval with redo");
+                    throwSyntaxError(line, "Invalid break");
                 } else {
                     addInstr(new BreakInstr(value.run(), returnScope.getId()));
                 }
@@ -1927,7 +1927,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             // If a closure, the next is simply a return from the closure!
             if (scope instanceof IRClosure) {
                 if (scope instanceof IREvalScript) {
-                    throwSyntaxError(line, "Can't escape from eval with next");
+                    throwSyntaxError(line, "Invalid next");
                 } else {
                     addInstr(new ReturnInstr(rv));
                 }
@@ -2646,7 +2646,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         } else {
             if (scope instanceof IRClosure) {
                 if (scope instanceof IREvalScript) {
-                    throwSyntaxError(line, "Can't escape from eval with redo");
+                    throwSyntaxError(line, "Invalid redo");
                 } else {
                     addInstr(new ThreadPollInstr(true));
                     Label startLabel = new Label(scope.getId() + "_START", 0);
