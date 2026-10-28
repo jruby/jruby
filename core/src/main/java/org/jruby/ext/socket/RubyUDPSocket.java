@@ -612,7 +612,9 @@ public class RubyUDPSocket extends RubyIPSocket {
 
         ByteBuffer buf = ByteBuffer.allocate(length);
 
-        InetSocketAddress sender = (InetSocketAddress) channel.receive(buf);
+        InetSocketAddress sender = non_block ?
+                (InetSocketAddress) channel.receive(buf) :
+                (InetSocketAddress) receiveBlocking(runtime.getCurrentContext(), socket, channel, buf);
 
         if (sender == null) {
             if ( non_block ) { // non-blocking receive
