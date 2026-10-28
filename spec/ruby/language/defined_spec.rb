@@ -73,6 +73,13 @@ describe "The defined? keyword when called with a method name" do
       defined?(defined_specs_undefined_method).should == nil
     end
 
+    guard -> { !Kernel.respond_to?(:syscall, true) } do
+      it "returns nil if the method is not implemented on this platform" do
+        defined?(syscall).should == nil
+        defined?(syscall(0)).should == nil
+      end
+    end
+
     it "returns 'method' if the method is defined and private" do
       obj = DefinedSpecs::Basic.new
       obj.private_method_defined.should == "method"
@@ -99,6 +106,12 @@ describe "The defined? keyword when called with a method name" do
 
     it "returns nil if the method is not defined" do
       defined?(Kernel.defined_specs_undefined_method).should == nil
+    end
+
+    guard -> { !Kernel.respond_to?(:syscall, true) } do
+      it "returns 'method' if the method is not implemented on this platform" do
+        defined?(Kernel.syscall).should == "method"
+      end
     end
 
     it "returns nil if the class is not defined" do

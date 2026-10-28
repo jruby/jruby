@@ -1163,8 +1163,9 @@ public class IRRuntimeHelpers {
         boolean defined = !method.isUndefined();
 
         if (defined) {
-            // If we find the method we optionally check if it is public before returning "method".
-            defined = !checkIfPublic || method.getVisibility() == Visibility.PUBLIC;
+            // With a receiver the method must be public; without one CRuby checks respond_to?,
+            // which is false for a not-implemented method.
+            defined = checkIfPublic ? method.getVisibility() == Visibility.PUBLIC : !method.isNotImplemented();
         } else {
             // If we did not find the method, check respond_to_missing?
             defined = RubyClass.checkRespondToMissing(context, receiver, name);
