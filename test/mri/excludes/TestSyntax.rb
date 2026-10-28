@@ -14,7 +14,6 @@ exclude :test_invalid_symbol_in_hash_memory_leak, "uses MRI-specific memory leak
 exclude :test_keyword_invalid_name, "work in progress"
 exclude :test_numbered_parameter, "work in progress"
 exclude :test_return_toplevel, "uses RubyVM for verification"
-exclude :test_safe_call_in_for_variable, "work in progress"
 exclude :test_script_lines, "canonical path matching issue in assertion"
 exclude :test_syntax_error_at_newline, "work in progress"
 exclude :test_unterminated_heredoc, "work in progress"

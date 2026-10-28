@@ -861,10 +861,20 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     public Operand buildAttrAssignAssignment(Node node, Operand value) {
         final AttrAssignNode attrAssignNode = (AttrAssignNode) node;
         Operand obj = build(attrAssignNode.getReceiverNode());
+
+        // a safe-navigation target such as the variable of "for foo&.bar in" is skipped when the receiver is nil
+        Label skipLabel = null;
+        if (attrAssignNode.isLazy()) {
+            skipLabel = getNewLabel();
+            addInstr(new BNilInstr(skipLabel, obj));
+        }
+
         int[] flags = new int[] { 0 };
         Operand[] args = setupCallArgs(attrAssignNode.getArgsNode(), flags);
         args = addArg(args, value);
         addInstr(AttrAssignInstr.create(scope, obj, attrAssignNode.getName(), args, flags[0], scope.maybeUsingRefinements()));
+
+        if (skipLabel != null) addInstr(new LabelInstr(skipLabel));
         return value;
     }
 
