@@ -117,12 +117,17 @@ public class RubyUnboundMethod extends AbstractRubyMethod {
     @JRubyMethod
     public RubyMethod bind(ThreadContext context, IRubyObject aReceiver) {
         RubyClass receiverClass = aReceiver.getMetaClass();
-        
-        receiverClass.checkValidBindTargetFrom(context, (RubyModule) owner(context), true);
+        RubyModule owner = (RubyModule) owner(context);
+
+        receiverClass.checkValidBindTargetFrom(context, owner, true);
 
         CacheEntry methodEntry = convertUnboundMethodToCallableEntry(context, receiverClass);
 
-        return RubyMethod.newMethod(implementationModule, methodName, receiverClass, originName, methodEntry, aReceiver);
+        // like CRuby, a method owned by a module is bound through the module's include in the receiver's class,
+        // so it reports the module rather than the receiver's class
+        RubyModule originModule = owner instanceof RubyClass ? receiverClass : owner;
+
+        return RubyMethod.newMethod(implementationModule, methodName, originModule, originName, methodEntry, aReceiver);
     }
 
     private CacheEntry convertUnboundMethodToCallableEntry(ThreadContext context, RubyClass receiverClass) {
