@@ -132,6 +132,8 @@ public class RubySocket extends RubyBasicSocket {
                 defineConstant(context, "AI_DEFAULT", asFixnum(context, AddressInfo.AI_DEFAULT.longValue())).
                 defineConstant(context, "AI_MASK", asFixnum(context, AddressInfo.AI_MASK.longValue()));
 
+        ResolutionError.createResolutionError(context, Socket, SocketConstants);
+
         Socket.include(context, SocketConstants);
 
         return Socket;

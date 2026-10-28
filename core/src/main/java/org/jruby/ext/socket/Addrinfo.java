@@ -54,6 +54,7 @@ import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.ext.socket.SocketUtils.IP_V4_MAPPED_ADDRESS_PREFIX;
+import static org.jruby.ext.socket.ResolutionError.newResolutionError;
 import static org.jruby.ext.socket.SocketUtils.sockerr;
 
 public class Addrinfo extends RubyObject {
@@ -233,24 +234,24 @@ public class Addrinfo extends RubyObject {
                 int socketType = socketTypeArg.isNil() ? 0 : toInt(context, socketTypeArg);
 
                 if (socketType == 0) {
-                    if (proto != 0 && proto != IPPROTO_UDP.intValue()) throw sockerr(runtime, "getaddrinfo: ai_socktype not supported");
+                    if (proto != 0 && proto != IPPROTO_UDP.intValue()) throw newResolutionError(context, "getaddrinfo: ai_socktype not supported", "EAI_SOCKTYPE");
                 } else if (socketType == SOCK_DGRAM.intValue()) {
                     if (proto != 0 && proto != IPPROTO_UDP.intValue()) {
-                        throw sockerr(runtime, "getaddrinfo: ai_socktype not supported");
+                        throw newResolutionError(context, "getaddrinfo: ai_socktype not supported", "EAI_SOCKTYPE");
                     }
                 } else if (socketType == SOCK_STREAM.intValue()) {
                     if (proto != 0 && proto != IPPROTO_TCP.intValue()) {
-                        throw sockerr(runtime, "getaddrinfo: ai_socktype not supported");
+                        throw newResolutionError(context, "getaddrinfo: ai_socktype not supported", "EAI_SOCKTYPE");
                     }
                 } else if (socketType == SOCK_SEQPACKET.intValue()) {
-                    if (proto != 0) throw sockerr(runtime, "getaddrinfo: ai_socktype not supported");
+                    if (proto != 0) throw newResolutionError(context, "getaddrinfo: ai_socktype not supported", "EAI_SOCKTYPE");
                 } else if (socketType != SOCK_RAW.intValue()) {
-                    throw sockerr(runtime, "getaddrinfo: ai_socktype not supported");
+                    throw newResolutionError(context, "getaddrinfo: ai_socktype not supported", "EAI_SOCKTYPE");
                 }
 
                 if (af == AF_UNIX || pf == PF_UNIX) { /* ["AF_UNIX", "/tmp/sock"] */
                     IRubyObject path = sockaddAry.eltOk(1).checkStringType();
-                    if (path.isNil()) throw sockerr(runtime, "getaddrinfo: ai_family not supported");
+                    if (path.isNil()) throw newResolutionError(context, "getaddrinfo: ai_family not supported", "EAI_FAMILY");
                     socketAddress = new UnixSocketAddress(new File(path.toString()));
                     this.socketType = SocketType.UNIX;
                     this.sock = SOCK_STREAM;

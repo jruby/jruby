@@ -1,6 +1,5 @@
 exclude :test_addrinfo_getaddrinfo_any_non_blocking, ""
 exclude :test_addrinfo_getaddrinfo_full_domain_blocking, ""
-exclude :test_addrinfo_getaddrinfo_non_existing_domain_blocking, "new exception we don't have Socket::ResolutionError"
 exclude :test_addrinfo_ip_domain_blocking, ""
 exclude :test_addrinfo_tcp_domain_blocking, ""
 exclude :test_addrinfo_udp_domain_blocking, ""
