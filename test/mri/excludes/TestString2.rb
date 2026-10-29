@@ -1,4 +1,3 @@
-exclude :test_AREF_invalid_encoding, "needs investigation"
 exclude :test_AREF_underflow, "needs investigation"
 exclude :test_ASET, "expected behavior; JRuby can only do int range offsets into a string (integer -9223372036854775808 too small to convert to `int')"
 exclude :test_crypt, "no working assert_no_memory_leak method"

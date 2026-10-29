@@ -3904,7 +3904,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         if (beg < 0) {
             if (len > -beg) len = -beg;
-            if (-beg * enc.maxLength() < length >>> 3) {
+            // walking back from the end only finds character heads in a valid string
+            if (scanForCodeRange() == CR_VALID && -beg * enc.maxLength() < length >>> 3) {
                 beg = -beg;
                 int e = end;
                 while (beg-- > len && (e = enc.prevCharHead(bytes, s, e, e)) != -1) {} // nothing
