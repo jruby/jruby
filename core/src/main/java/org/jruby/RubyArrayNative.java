@@ -751,7 +751,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
      */
     private static int searchKind(ThreadContext context, IRubyObject item) {
         if (item instanceof RubyFixnum) {
-            return context.sites.Fixnum.op_eqq.isBuiltin(item) ? SEARCH_FIXNUM : SEARCH_GENERIC;
+            return Builtins.checkIntegerEquals(context) ? SEARCH_FIXNUM : SEARCH_GENERIC;
         }
         if (item instanceof RubyFloat) {
             return Builtins.checkFloatEquals(context) ? SEARCH_FLOAT : SEARCH_GENERIC;
@@ -1952,10 +1952,12 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
 
         if (realLength != ary.getLength()) return context.fals;
 
-        // Whether a builtin value comparison may stand in for the call: 0 unknown, 1 yes, -1 no.
-        // Each is resolved at most once per compare, on the first pair of its kind.
-        int fixnumFast = 0;
-        int floatFast = 0;
+        // Whether a builtin value comparison may stand in for the call. The site calls == or eql?,
+        // and the bits for both are shared, so a redefinition of either (including the Numeric#eql?
+        // that Integer inherits, which dispatches to ==) turns the fast path off. Both Float builtins
+        // are false for NaN and treat 0.0 and -0.0 as equal.
+        boolean fixnumFast = Builtins.checkIntegerEquals(context);
+        boolean floatFast = Builtins.checkFloatEquals(context);
 
         for (int i = 0; i < realLength; i++) {
             IRubyObject a = elt(i);
@@ -1963,43 +1965,19 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
 
             if (a == b) continue; // matching MRI opt. mock frameworks can throw errors if we don't
 
-            if (a instanceof RubyFixnum fixA && b instanceof RubyFixnum fixB) {
-                if (fixnumFast == 0) fixnumFast = builtinFixnumCompare(context, site, a) ? 1 : -1;
-                if (fixnumFast > 0) {
-                    if (fixA.getValue() != fixB.getValue()) return context.fals;
-                    continue;
-                }
-            } else if (a instanceof RubyFloat floatA && b instanceof RubyFloat floatB) {
-                if (floatFast == 0) floatFast = builtinFloatCompare(site, a) ? 1 : -1;
-                if (floatFast > 0) {
-                    if (!floatA.fastEqual(floatB)) return context.fals;
-                    continue;
-                }
+            if (fixnumFast && a instanceof RubyFixnum fixA && b instanceof RubyFixnum fixB) {
+                if (fixA.getValue() != fixB.getValue()) return context.fals;
+                continue;
+            }
+            if (floatFast && a instanceof RubyFloat floatA && b instanceof RubyFloat floatB) {
+                if (!floatA.fastEqual(floatB)) return context.fals;
+                continue;
             }
 
             if (!site.call(context, a, a, b).isTrue()) return context.fals;
         }
 
         return context.tru;
-    }
-
-    /**
-     * Whether Integer's builtin == or eql? (whichever the site calls) is in effect, so two Fixnums
-     * can be compared by value. The builtin Numeric#eql? dispatches to ==, so == must be builtin too.
-     * Asking the call sites resolves the method Integer actually sees, which also covers prepended
-     * modules and redefinitions in an ancestor such as Numeric.
-     */
-    private static boolean builtinFixnumCompare(ThreadContext context, CallSite site, IRubyObject fixnum) {
-        return site instanceof CachingCallSite caching && caching.isBuiltin(fixnum) &&
-                context.sites.Fixnum.op_eqq.isBuiltin(fixnum);
-    }
-
-    /**
-     * Whether Float's builtin == or eql? (whichever the site calls) is in effect, so two distinct
-     * Floats can be compared by value. Both builtins are false for NaN and treat 0.0 and -0.0 as equal.
-     */
-    private static boolean builtinFloatCompare(CallSite site, IRubyObject flote) {
-        return site instanceof CachingCallSite caching && caching.isBuiltin(flote);
     }
 
     @CRuby(value = "rb_ary_eql", file = "array.c")

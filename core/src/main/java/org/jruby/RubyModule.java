@@ -440,6 +440,14 @@ public class RubyModule extends RubyObject {
         return includingHierarchies;
     }
 
+    /**
+     * @return whether this module has been included in or prepended to a class or module
+     * that still exists, and so may be among the ancestors of some class
+     */
+    public boolean isIncludedSomewhere() {
+        return !getIncludingHierarchiesForRead().isEmptyOfClasses();
+    }
+
     @SuppressWarnings("unchecked")
     public void addIncludingHierarchy(IncludedModule hierarchy) {
         getIncludingHierarchiesForWrite().addClass(hierarchy);
@@ -689,7 +697,7 @@ public class RubyModule extends RubyObject {
         }
 
         context.runtime.addProfiledMethod(id, method);
-        context.runtime.invalidateBuiltin(methodLocation, id);
+        context.runtime.recheckBuiltins(methodLocation, id);
         return method;
     }
 
@@ -1350,6 +1358,7 @@ public class RubyModule extends RubyObject {
 
             invalidateCacheDescendants(context);
             invalidateConstantCacheForModuleInclusion(context, module);
+            context.runtime.recheckBuiltins(this, module);
         }
     }
 
@@ -1402,6 +1411,7 @@ public class RubyModule extends RubyObject {
 
             invalidateCacheDescendants(context);
             invalidateConstantCacheForModuleInclusion(context, module);
+            context.runtime.recheckBuiltins(this, module);
         }
     }
 
@@ -1985,6 +1995,8 @@ public class RubyModule extends RubyObject {
         synchronized (getRuntime().getHierarchyLock()) {
             invalidateCacheDescendants(context);
         }
+
+        context.runtime.recheckBuiltins(getMethodLocation(), id);
 
         methodRemoved(context, name);
     }
