@@ -21,6 +21,7 @@ require_relative '../leakchecker' if RUBY_ENGINE == 'ruby'
 require_relative '../test/unit/testcase'
 require_relative '../test/jobserver'
 require 'optparse'
+require 'timeout'
 
 # See Test::Unit
 module Test
@@ -1324,7 +1325,12 @@ module Test
               exclusion, owner = ExcludedMethods.exclusion_for(self.class, method)
               return super(*args, **kw, &block) unless exclusion
               begin
-                super(*args, **kw, &block)
+                # A known-broken test can hang, and a hang would stall the
+                # whole suite, so excluded tests get a time limit.
+                limit = ExcludedMethods.time_limit
+                Timeout.timeout(limit, ExcludedTestTimeout) { super(*args, **kw, &block) }
+              rescue ExcludedTestTimeout
+                omit "excluded and timed out after #{limit} seconds, consider run: false: #{exclusion.reason}"
               rescue Test::Unit::PendedError, *Test::Unit::TestCase::PASSTHROUGH_EXCEPTIONS
                 raise
               rescue Exception => e
@@ -1337,6 +1343,16 @@ module Test
                     "Remove its exclude from #{exclusion.path}: #{exclusion.reason}"
             end
           end
+        end
+
+        class ExcludedTestTimeout < StandardError; end
+
+        # Seconds, before the --timeout-scale factor. EXCLUDED_TEST_TIME_LIMIT
+        # overrides it.
+        TIME_LIMIT = Integer(ENV.fetch("EXCLUDED_TEST_TIME_LIMIT", 120))
+
+        def self.time_limit
+          defined?(EnvUtil.apply_timeout_scale) ? EnvUtil.apply_timeout_scale(TIME_LIMIT) : TIME_LIMIT
         end
 
         def self.exclusion_for(klass, method)
