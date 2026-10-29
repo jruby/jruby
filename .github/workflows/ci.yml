@@ -25,7 +25,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v6
       - name: remove default java except 21
-        run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
+        run: sudo apt remove $(dpkg-query -W -f '${Package} ' temurin-8-jdk temurin-11-jdk temurin-17-jdk 2>/dev/null)
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v5
         with:
@@ -76,7 +76,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v6
       - name: remove default java except 21
-        run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
+        run: sudo apt remove $(dpkg-query -W -f '${Package} ' temurin-8-jdk temurin-11-jdk temurin-17-jdk 2>/dev/null)
       - name: set up java 21
         uses: actions/setup-java@v5
         with:
@@ -102,7 +102,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v6
       - name: remove default java except 21
-        run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
+        run: sudo apt remove $(dpkg-query -W -f '${Package} ' temurin-8-jdk temurin-11-jdk temurin-17-jdk 2>/dev/null)
       - name: set up java 21
         uses: actions/setup-java@v5
         with:
@@ -134,7 +134,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v6
       - name: remove default java except 21
-        run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
+        run: sudo apt remove $(dpkg-query -W -f '${Package} ' temurin-8-jdk temurin-11-jdk temurin-17-jdk 2>/dev/null)
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v5
         with:
@@ -163,7 +163,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v6
       - name: remove default java except 21
-        run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
+        run: sudo apt remove $(dpkg-query -W -f '${Package} ' temurin-8-jdk temurin-11-jdk temurin-17-jdk 2>/dev/null)
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v5
         with:
@@ -195,7 +195,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v6
       - name: remove default java except 21
-        run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
+        run: sudo apt remove $(dpkg-query -W -f '${Package} ' temurin-8-jdk temurin-11-jdk temurin-17-jdk 2>/dev/null)
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v5
         with:
@@ -221,7 +221,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v6
       - name: remove default java except 21
-        run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
+        run: sudo apt remove $(dpkg-query -W -f '${Package} ' temurin-8-jdk temurin-11-jdk temurin-17-jdk 2>/dev/null)
       - name: set up java 21
         uses: actions/setup-java@v5
         with:
@@ -331,7 +331,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v6
       - name: remove default java except 21
-        run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
+        run: sudo apt remove $(dpkg-query -W -f '${Package} ' temurin-8-jdk temurin-11-jdk temurin-17-jdk 2>/dev/null)
       - name: set up java 21
         uses: actions/setup-java@v5
         with:
@@ -351,7 +351,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v6
       - name: remove default java except 21
-        run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
+        run: sudo apt remove $(dpkg-query -W -f '${Package} ' temurin-8-jdk temurin-11-jdk temurin-17-jdk 2>/dev/null)
       - name: set up java 21
         uses: actions/setup-java@v5
         with:
@@ -392,7 +392,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v6
       - name: remove default java except 21
-        run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
+        run: sudo apt remove $(dpkg-query -W -f '${Package} ' temurin-8-jdk temurin-11-jdk temurin-17-jdk 2>/dev/null)
       - name: set up java 21
         uses: actions/setup-java@v5
         with:
@@ -413,7 +413,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v6
       - name: remove default java except 21
-        run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
+        run: sudo apt remove $(dpkg-query -W -f '${Package} ' temurin-8-jdk temurin-11-jdk temurin-17-jdk 2>/dev/null)
       - name: set up java 21
         uses: actions/setup-java@v5
         with:
@@ -436,7 +436,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v6
       - name: remove default java except 21
-        run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
+        run: sudo apt remove $(dpkg-query -W -f '${Package} ' temurin-8-jdk temurin-11-jdk temurin-17-jdk 2>/dev/null)
       - name: set up java ${{ matrix.java-version }}
         uses: actions/setup-java@v5
         with:
