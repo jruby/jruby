@@ -1,7 +1,6 @@
 exclude :test_client_session, "HANGS"
 exclude :test_ctx_client_session_cb, "session_new_cb= not supported"
 exclude :test_ctx_client_session_cb_tls12, "work in progress"
-exclude :test_ctx_client_session_cb_tls13, "work in progress"
 exclude :test_ctx_client_session_cb_tls13_exception, "work in progress"
 exclude :test_ctx_server_session_cb, "session_get_cb= not supported"
 exclude :test_dup, "work in progress"
