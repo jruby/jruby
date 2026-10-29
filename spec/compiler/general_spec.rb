@@ -210,6 +210,71 @@ modes.each do |mode|
       run("1.1i") {|result| expect(result).to eq (Complex(0, 1.1))}
     end
 
+    it "compiles Complex literals with integer, float, bignum, and rational imaginary parts" do
+      run('[1i, -1i, 1.1i, -1.1i, 18446744073709551616i, -18446744073709551616i, 1.1ri]') do |result|
+        expect(result).to eq [Complex(0, 1), Complex(0, -1), Complex(0, 1.1), Complex(0, -1.1),
+                             Complex(0, 18446744073709551616), Complex(0, -18446744073709551616),
+                             Complex(0, Rational(11, 10))]
+      end
+    end
+
+    it "reuses Complex literals on repeated evaluation" do
+      run('a = []; 2.times { a << [1i, 1.1i, 18446744073709551616i, 1ri, 1.1ri, 18446744073709551616ri, 0.00000000000000000001ri] }; a') do |result|
+        first, second = result
+        first.each_index do |index|
+          expect(first[index]).to equal(second[index])
+          expect(first[index]).to be_frozen
+        end
+      end
+    end
+
+    it "caches Rational literals with large numerators and denominators" do
+      run('a = []; 2.times { a << [1r, 1.1r, 18446744073709551616r, 0.00000000000000000001r] }; a') do |result|
+        first, second = result
+        expect(first).to eq [Rational(1), Rational(11, 10), Rational(18446744073709551616), Rational(1, 100000000000000000000)]
+        first.each_index { |index| expect(first[index]).to equal(second[index]) }
+      end
+    end
+
+    it "caches normalized Rational literals with small and large numerators and denominators" do
+      forms = {
+        '0.5000000000000000000000000000' => [1, 2],
+        '0.00000000000000000001' => [1, 100000000000000000000],
+        '100000000000000000000.5000000000000000000000' => [200000000000000000001, 2],
+        '1.23456789012345678901' => [123456789012345678901, 100000000000000000000],
+        '-9223372036854775808' => [-9223372036854775808, 1],
+        '0.0000000000000000000000000000' => [0, 1]
+      }
+      forms.each do |literal, parts|
+        run("a = []; 2.times { a << [#{literal}r, #{literal}ri] }; a") do |result|
+          first, second = result
+          first_rational, first_complex = first
+          second_rational, second_complex = second
+          expect(first_rational).to equal(second_rational)
+          expect(first_complex).to equal(second_complex)
+          expect(first_rational).to be_frozen
+          expect(first_complex).to be_frozen
+          expect([first_rational.numerator, first_rational.denominator]).to eq parts
+          expect([first_complex.imaginary.numerator, first_complex.imaginary.denominator]).to eq parts
+        end
+      end
+    end
+
+    it "preserves the numeric types of Complex imaginary parts" do
+      run('[1i, 1.0i, 1ri].map { |c| c.imaginary.class }') do |result|
+        expect(result).to eq [Integer, Float, Rational]
+      end
+      run('[18446744073709551616ri, -0.00000000000000000001ri]') do |result|
+        expect(result).to eq [Complex(0, Rational(18446744073709551616)), Complex(0, Rational(-1, 100000000000000000000))]
+      end
+    end
+
+    it "preserves the sign of zero in Complex float literals" do
+      run('[0.0i, -0.0i].map { |c| 1.0 / c.imaginary }') do |result|
+        expect(result).to eq [Float::INFINITY, -Float::INFINITY]
+      end
+    end
+
     # See https://github.com/jruby/jruby/issues/9823
     it "compiles a range with an Integer begin and a non-Integer literal end" do
       run('[(1..2.0), (1...2.5).include?(2), (1..2r), (1..18446744073709551616).size]') do |x|

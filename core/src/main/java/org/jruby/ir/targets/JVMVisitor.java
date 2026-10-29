@@ -12,7 +12,6 @@ import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.RubyRange;
-import org.jruby.RubyRational;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.compiler.NotCompilableException;
@@ -2899,8 +2898,26 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void Complex(Complex complex) {
+        Operand number = complex.getNumber();
+        ValueCompiler valueCompiler = jvmMethod().getValueCompiler();
+
+        if (number instanceof Fixnum f) {
+            valueCompiler.pushComplex(f.getValue());
+            return;
+        } else if (number instanceof Float f) {
+            valueCompiler.pushComplex(f.getValue());
+            return;
+        } else if (number instanceof Bignum b) {
+            valueCompiler.pushComplex(b.value);
+            return;
+        } else if (number instanceof Rational r) {
+            valueCompiler.pushComplex(r.getNumerator(), r.getDenominator());
+            return;
+        }
+
+        // fallback
         jvmMethod().loadContext();
-        visit(complex.getNumber());
+        visit(number);
         jvmMethod().invokeIRHelper("newComplexRaw", sig(RubyComplex.class, ThreadContext.class, IRubyObject.class));
     }
 
@@ -3031,10 +3048,7 @@ public class JVMVisitor extends IRVisitor {
 
     @Override
     public void Rational(Rational rational) {
-        jvmMethod().loadContext();
-        visit(rational.getNumerator());
-        visit(rational.getDenominator());
-        jvmMethod().invokeIRHelper("newRationalCanonicalize", sig(RubyRational.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
+        jvmMethod().getValueCompiler().pushRational(rational.getNumerator(), rational.getDenominator());
     }
 
     @Override

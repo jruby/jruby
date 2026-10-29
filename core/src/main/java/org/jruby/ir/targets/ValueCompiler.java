@@ -241,6 +241,43 @@ public interface ValueCompiler {
 
     void pushFloatArray(List<Double> values);
 
+    /**
+     * Push a fixnum-based complex value on the stack
+     * </p>
+     * Stack required: none
+     */
+    void pushComplex(long value);
+
+    /**
+     * Push a float-based complex value on the stack
+     * </p>
+     * Stack required: none
+     */
+    void pushComplex(double value);
+
+    /**
+     * Push a bignum-based complex value on the stack
+     * </p>
+     * Stack required: none
+     */
+    void pushComplex(BigInteger value);
+
+    /**
+     * Push a normalized complex literal with a rational imaginary part on the stack.
+     * Numerator and denominator must be coprime, with a positive denominator.
+     * </p>
+     * Stack required: none
+     */
+    void pushComplex(BigInteger numerator, BigInteger denominator);
+
+    /**
+     * Push a normalized rational literal on the stack.
+     * Numerator and denominator must be coprime, with a positive denominator.
+     * </p>
+     * Stack required: none
+     */
+    void pushRational(BigInteger numerator, BigInteger denominator);
+
     enum DStringElementType { STRING, OTHER }
     record DStringElement<T>(DStringElementType type, T value) {}
 

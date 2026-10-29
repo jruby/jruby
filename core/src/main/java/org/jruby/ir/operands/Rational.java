@@ -1,24 +1,38 @@
 package org.jruby.ir.operands;
 
-import org.jruby.RubyRational;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
+import org.jruby.ir.runtime.IRRuntimeHelpers;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
+
+import java.math.BigInteger;
 
 /**
- * Literal Rational number.
+ * Literal Rational number, reduced at construction with a positive denominator.
  */
 public class Rational extends ImmutableLiteral {
-    private final ImmutableLiteral numerator;
-    private final ImmutableLiteral denominator;
+    private final BigInteger numerator;
+    private final BigInteger denominator;
 
     public Rational(ImmutableLiteral numerator, ImmutableLiteral denominator) {
-        super();
+        this(integerValue(numerator), integerValue(denominator));
+    }
 
-        this.numerator = numerator;
-        this.denominator = denominator;
+    public Rational(BigInteger num, BigInteger den) {
+        super();
+        if (den.signum() == 0) throw new IllegalArgumentException("Rational literal denominator must not be zero");
+
+        BigInteger gcd = num.gcd(den);
+        if (den.signum() < 0) gcd = gcd.negate();
+        this.numerator = num.divide(gcd);
+        this.denominator = den.divide(gcd);
+    }
+
+    private static BigInteger integerValue(ImmutableLiteral value) {
+        if (value instanceof Fixnum f) return BigInteger.valueOf(f.getValue());
+        if (value instanceof Bignum b) return b.value;
+        throw new IllegalArgumentException("Expected an integer literal: " + value);
     }
 
     @Override
@@ -28,15 +42,15 @@ public class Rational extends ImmutableLiteral {
 
     @Override
     public Object createCacheObject(ThreadContext context) {
-        return RubyRational.newRationalCanonicalize(context,
-                (IRubyObject) numerator.cachedObject(context), (IRubyObject) denominator.cachedObject(context));
+        return IRRuntimeHelpers.newRationalRaw(context, numerator, denominator);
     }
 
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
-        numerator.encode(e);
-        denominator.encode(e);
+        // Preserve the integer-operand format used by persisted Rational literals.
+        new Bignum(numerator).encode(e);
+        new Bignum(denominator).encode(e);
     }
 
     public static Rational decode(IRReaderDecoder d) {
@@ -45,7 +59,7 @@ public class Rational extends ImmutableLiteral {
 
     @Override
     public String toString() {
-        return "Rational:" + numerator + "/1";
+        return "Rational:" + numerator + "/" + denominator;
     }
 
     @Override
@@ -53,11 +67,11 @@ public class Rational extends ImmutableLiteral {
         visitor.Rational(this);
     }
 
-    public ImmutableLiteral getNumerator() {
+    public BigInteger getNumerator() {
         return numerator;
     }
 
-    public ImmutableLiteral getDenominator() {
+    public BigInteger getDenominator() {
         return denominator;
     }
 
