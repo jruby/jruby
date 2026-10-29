@@ -51,6 +51,8 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyBignum;
+import org.jruby.RubyComplex;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
@@ -2101,19 +2103,20 @@ public abstract class RubyParserBase {
     }
 
     public Node remove_duplicate_keys(final HashNode hash) {
-        final Map<Node, KeyValuePair<Node, Node>> encounteredKeys = new HashMap<>();
+        final Map<Object, KeyValuePair<Node, Node>> encounteredKeys = new HashMap<>();
 
         for (KeyValuePair<Node,Node> pair: hash.getPairs()) {
             final Node key = pair.getKey();
-            if (!(key instanceof LiteralValue)) continue;
-            if (encounteredKeys.containsKey(key)) {
+            Object literalKey = duplicateKeyFor(key);
+            if (literalKey == null) continue;
+            if (encounteredKeys.containsKey(literalKey)) {
                 Ruby runtime = getRuntime();
-                IRubyObject value = ((LiteralValue) key).literalValue(runtime);
+                IRubyObject value = literalKeyValue(runtime, key);
                 warning(ID.AMBIGUOUS_ARGUMENT, lexer.getFile(), hash.getLine(), str(runtime, "key ", value.inspect(runtime.getCurrentContext()),
                         " is duplicated and overwritten on line " + (key.getLine() + 1)));
             }
             // even if the key was previously seen, we replace the value to properly remove multiple duplicates
-            encounteredKeys.put(key, pair);
+            encounteredKeys.put(literalKey, pair);
         }
 
         // NOTE: we do not really remove the value part (RHS) as in that case we should evaluate the code - despite
@@ -2121,6 +2124,43 @@ public abstract class RubyParserBase {
         // with JRuby the modification of the hash should be done in the IR and not here (during the parsing phase)...
 
         return hash;
+    }
+
+    /**
+     * What a literal hash key is compared by to find duplicates, or null for a key that is not a
+     * literal. Like CRuby, this covers numbers of every kind, Strings, Symbols, Regexps and
+     * __ENCODING__ as well as __FILE__ and __LINE__.
+     */
+    private static Object duplicateKeyFor(Node key) {
+        if (key == null) return null; // a **splat
+
+        return switch (key) {
+            case BignumNode bignum -> List.of("bignum", bignum.getValue());
+            case RationalNode rational -> {
+                Object numerator = duplicateKeyFor(rational.getNumerator());
+                Object denominator = duplicateKeyFor(rational.getDenominator());
+                yield numerator == null || denominator == null ? null : List.of("rational", numerator, denominator);
+            }
+            case ComplexNode complex -> {
+                Object imaginary = duplicateKeyFor(complex.getNumber());
+                yield imaginary == null ? null : List.of("complex", imaginary);
+            }
+            case RegexpNode regexp -> List.of("regexp", regexp.getValue(), regexp.getOptions().toEmbeddedOptions());
+            case EncodingNode encoding -> List.of("encoding", encoding.getEncoding());
+            case LiteralValue literal -> key;
+            default -> null;
+        };
+    }
+
+    // the value of a key duplicateKeyFor accepted, for the warning
+    private static IRubyObject literalKeyValue(Ruby runtime, Node key) {
+        return switch (key) {
+            case BignumNode bignum -> RubyBignum.newBignum(runtime, bignum.getValue());
+            case ComplexNode complex -> RubyComplex.newComplexRaw(runtime, RubyFixnum.zero(runtime), literalKeyValue(runtime, complex.getNumber()));
+            case RegexpNode regexp -> RubyRegexp.newRegexp(runtime, regexp.getValue(), regexp.getOptions());
+            case EncodingNode encoding -> runtime.getEncodingService().getEncoding(encoding.getEncoding());
+            default -> ((LiteralValue) key).literalValue(runtime);
+        };
     }
 
     public static Node newAlias(int line, Node newNode, Node oldNode) {
