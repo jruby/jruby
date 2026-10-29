@@ -31,6 +31,4 @@ exclude :test_std_fileno, "passes in isolation; some other test is causing STDIN
 exclude :test_stdout_to_closed_pipe, "work in progress"
 exclude :test_sysread_locktmp, "needs investigation"
 exclude :test_sysread_locktmp, "requires string locking we do not support"
-exclude :test_ungetbyte_with_seek, "needs investigation"
-exclude :test_ungetc_with_seek, "needs investigation"
 exclude :test_write_nonblock_invalid_exception, "work in progress"

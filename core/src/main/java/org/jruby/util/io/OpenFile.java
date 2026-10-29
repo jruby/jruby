@@ -741,7 +741,7 @@ public class OpenFile implements Finalizable {
     public long seek(ThreadContext context, long offset, int whence) {
         boolean locked = lock();
         try {
-            flushBeforeSeek(context);
+            flushBeforeSeek(context, true);
             return posix.lseek(fd, offset, whence);
         } finally {
             if (locked) unlock();
@@ -749,12 +749,12 @@ public class OpenFile implements Finalizable {
     }
 
     @CRuby(value = "flush_before_seek", file = "io.c")
-    private void flushBeforeSeek(ThreadContext context) {
+    private void flushBeforeSeek(ThreadContext context, boolean discardReadBuffer) {
         boolean locked = lock();
         try {
             if (io_fflush(context) < 0)
                 throw context.runtime.newErrnoFromErrno(posix.getErrno(), "");
-            unread(context);
+            unread(context, discardReadBuffer);
             posix.setErrno(null);
         } finally {
             if (locked) unlock();
@@ -2248,20 +2248,34 @@ public class OpenFile implements Finalizable {
 
     @CRuby(value = "io_tell", file = "io.c")
     public synchronized long tell(ThreadContext context) {
-        flushBeforeSeek(context);
+        flushBeforeSeek(context, false);
         return posix.lseek(fd, 0, PosixShim.SEEK_CUR);
     }
 
-    public synchronized void unread(ThreadContext context) {
+    public void unread(ThreadContext context) {
+        unread(context, true);
+    }
+
+    /**
+     * Move the file position back over the bytes read ahead into the read buffer and empty it.
+     *
+     * @param context the current thread context
+     * @param discardReadBuffer whether to empty the read buffer even when the position cannot be
+     * moved back, such as when bytes pushed back by ungetc or ungetbyte go before the start of
+     * the file. A seek passes true so it never returns those bytes, while tell passes false so
+     * the position it reports still counts them.
+     */
+    @CRuby(value = "io_unread", file = "io.c")
+    public synchronized void unread(ThreadContext context, boolean discardReadBuffer) {
         if (Platform.IS_WINDOWS) {
-            unreadWindows(context);
+            unreadWindows(context, discardReadBuffer);
         } else {
-            unreadPosix();
+            unreadPosix(discardReadBuffer);
         }
     }
 
     // io_unread, UNIX version
-    private void unreadPosix() {
+    private void unreadPosix(boolean discardReadBuffer) {
         long r;
         boolean locked = lock();
         try {
@@ -2274,7 +2288,7 @@ public class OpenFile implements Finalizable {
             if (r == -1 && posix.getErrno() != null) {
                 if (posix.getErrno() == Errno.ESPIPE)
                     mode |= DUPLEX;
-                return;
+                if (!discardReadBuffer) return;
             }
             rbuf.off = 0;
             rbuf.len = 0;
@@ -2284,7 +2298,7 @@ public class OpenFile implements Finalizable {
     }
 
     // io_unread, Windows version
-    private void unreadWindows(ThreadContext context) {
+    private void unreadWindows(ThreadContext context, boolean discardReadBuffer) {
         Ruby runtime = context.runtime;
         long r, pos;
         int read_size;
@@ -2321,6 +2335,10 @@ public class OpenFile implements Finalizable {
             if (pos == -1 && posix.getErrno() != null) {
                 if (posix.getErrno() == Errno.ESPIPE)
                     mode |= DUPLEX;
+                if (discardReadBuffer) {
+                    rbuf.off = 0;
+                    rbuf.len = 0;
+                }
                 return;
             }
 
