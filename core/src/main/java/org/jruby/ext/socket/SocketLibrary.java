@@ -16,10 +16,11 @@ public class SocketLibrary implements Library {
         var StandardError = standardErrorClass(context);
         var IO = ioClass(context);
 
-        defineClass(context, "SocketError", StandardError, StandardError.getAllocator());
+        var SocketError = defineClass(context, "SocketError", StandardError, StandardError.getAllocator());
 
         var BasicSocket = RubyBasicSocket.createBasicSocket(context, IO);
         var Socket = RubySocket.createSocket(context, BasicSocket);
+        ResolutionError.createResolutionError(context, Socket, SocketError);
         RubyServerSocket.createServerSocket(context, Socket);
 
         if (instanceConfig(context).isNativeEnabled() && !Platform.IS_WINDOWS) {

@@ -122,17 +122,21 @@ describe "Addrinfo.getaddrinfo with a Fiber scheduler" do
     getaddrinfo("example.invalid", 80, :INET, :STREAM).map(&:ip_address).should == ["127.0.0.2"]
   end
 
-  it "raises SocketError when #address_resolve returns an empty Array, without resolving the host itself" do
+  it "raises Socket::ResolutionError when #address_resolve returns an empty Array, without resolving the host itself" do
     @scheduler.addresses = []
 
-    -> { getaddrinfo("localhost", 80) }.should.raise(SocketError)
+    -> { getaddrinfo("localhost", 80) }.should.raise(Socket::ResolutionError) { |e|
+      e.error_code.should == Socket::EAI_NONAME
+    }
     @scheduler.events.map { |e| e[:event] }.should == [:address_resolve]
   end
 
-  it "raises SocketError when #address_resolve returns nil, without resolving the host itself" do
+  it "raises Socket::ResolutionError when #address_resolve returns nil, without resolving the host itself" do
     @scheduler.addresses = nil
 
-    -> { getaddrinfo("localhost", 80) }.should.raise(SocketError)
+    -> { getaddrinfo("localhost", 80) }.should.raise(Socket::ResolutionError) { |e|
+      e.error_code.should == Socket::EAI_NONAME
+    }
     @scheduler.events.map { |e| e[:event] }.should == [:address_resolve]
   end
 

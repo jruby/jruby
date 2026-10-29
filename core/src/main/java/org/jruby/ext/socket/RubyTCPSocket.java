@@ -212,7 +212,7 @@ public class RubyTCPSocket extends RubyIPSocket {
             } catch (NoRouteToHostException e) {
                 throw runtime.newErrnoEHOSTUNREACHError("SocketChannel.connect");
             } catch (UnknownHostException e) {
-                throw SocketUtils.sockerr(runtime, "initialize: name or service not known");
+                throw SocketUtils.resolutionError(runtime, "initialize: name or service not known");
             }
         } catch (ClosedChannelException e) {
             throw runtime.newErrnoECONNREFUSEDError();
@@ -243,7 +243,7 @@ public class RubyTCPSocket extends RubyIPSocket {
                     newString(context, addr.getHostAddress()));
         }
         catch(UnknownHostException e) {
-            throw SocketUtils.sockerr(context.runtime, "gethostbyname: name or service not known");
+            throw SocketUtils.resolutionError(context.runtime, "gethostbyname: name or service not known");
         }
     }
 }

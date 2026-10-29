@@ -54,6 +54,7 @@ import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Create.*;
 import static org.jruby.api.Define.defineClass;
 import static org.jruby.ext.socket.SocketUtils.IP_V4_MAPPED_ADDRESS_PREFIX;
+import static org.jruby.ext.socket.SocketUtils.resolutionError;
 import static org.jruby.ext.socket.SocketUtils.sockerr;
 
 public class Addrinfo extends RubyObject {
@@ -398,7 +399,7 @@ public class Addrinfo extends RubyObject {
 
             return addrinfo;
         } catch (UnknownHostException uhe) {
-            throw sockerr(context.runtime, "host not found");
+            throw resolutionError(context.runtime, "host not found");
         }
     }
 
@@ -829,7 +830,7 @@ public class Addrinfo extends RubyObject {
             }
             return SocketUtils.getRubyInetAddress(node.convertToString().toString());
         } catch (UnknownHostException uhe) {
-            return null;
+            throw resolutionError(context.runtime, "getaddrinfo: name or service not known");
         }
     }
 

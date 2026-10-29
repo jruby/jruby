@@ -31,6 +31,7 @@ package org.jruby.ext.socket;
 import jnr.constants.platform.AddressFamily;
 import jnr.constants.platform.AddressInfo;
 import jnr.constants.platform.Errno;
+import jnr.constants.platform.ErrnoAddressInfo;
 import jnr.constants.platform.INAddr;
 import jnr.constants.platform.IP;
 import jnr.constants.platform.IPProto;
@@ -113,6 +114,7 @@ public class RubySocket extends RubyBasicSocket {
                 defineConstantsFrom(context, IP.class).
                 defineConstantsFrom(context, InterfaceInfo.class).
                 defineConstantsFrom(context, NameInfo.class).
+                defineConstantsFrom(context, ErrnoAddressInfo.class).
                 defineConstantsFrom(context, SocketMessage.class);
 
         // this value seems to be hardcoded in MRI to 5 when not defined, but

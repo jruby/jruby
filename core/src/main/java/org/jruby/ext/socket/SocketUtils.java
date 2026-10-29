@@ -27,6 +27,7 @@
 package org.jruby.ext.socket;
 
 import jnr.constants.platform.AddressFamily;
+import jnr.constants.platform.ErrnoAddressInfo;
 import jnr.constants.platform.ProtocolFamily;
 import jnr.constants.platform.Sock;
 import jnr.constants.platform.SocketLevel;
@@ -145,7 +146,7 @@ public class SocketUtils {
                     asFixnum(context, AF_INET.longValue()),
                     newString(context, new ByteList(addr.getAddress())));
         } catch(UnknownHostException e) {
-            throw sockerr(context.runtime, "gethostbyname: name or service not known");
+            throw resolutionError(context.runtime, "gethostbyname: name or service not known");
 
         }
     }
@@ -269,6 +270,7 @@ public class SocketUtils {
         }
 
         AddressFamily addressFamily = family.isNil() ? null : addressFamilyFromArg(context, family);
+        checkResolvableFamily(context, addressFamily);
 
         Sock sock = socktype.isNil() ? SOCK_STREAM : sockFromArg(context, socktype);
 
@@ -296,7 +298,7 @@ public class SocketUtils {
 
         // AI_NUMERICHOST: the host must be an address literal; never resolve a name
         if ((flag & AI_NUMERICHOST) != 0 && !emptyHost && !isNumericHost(hostString)) {
-            throw sockerr(runtime, "getaddrinfo: name or service not known");
+            throw resolutionError(runtime, "getaddrinfo: name or service not known");
         }
 
         try {
@@ -310,7 +312,7 @@ public class SocketUtils {
             }
 
         } catch(UnknownHostException e) {
-            throw sockerr(runtime, "getaddrinfo: name or service not known");
+            throw resolutionError(runtime, "getaddrinfo: name or service not known");
 
         }
     }
@@ -375,6 +377,9 @@ public class SocketUtils {
                 throw argumentError(context, "array size should be 3 or 4, "+ len +" given");
             }
 
+            IRubyObject family = ary.eltInternal(0);
+            checkResolvableFamily(context, family.isNil() ? null : addressFamilyFromArg(context, family));
+
             // if array has 4 elements, third element is ignored
             port = ary.eltInternal(1).toString();
             host = len == 3 ? ary.eltInternal(2).toString() : ary.eltInternal(3).toString();
@@ -414,7 +419,7 @@ public class SocketUtils {
         try {
             addr = InetAddress.getByName(host);
         } catch (UnknownHostException e) {
-            throw sockerr(context.runtime, "unknown host: "+ host);
+            throw resolutionError(context.runtime, "unknown host: "+ host);
         }
 
         host = (flags & NI_NUMERICHOST.intValue()) == 0 ? addr.getCanonicalHostName() : addr.getHostAddress();
@@ -512,8 +517,20 @@ public class SocketUtils {
                 return RubyString.newInternalFromJavaExternal(context.runtime, address.getHostAddress());
             }
         } catch(UnknownHostException e) {
-            throw sockerr(context.runtime, "getaddress: name or service not known");
+            throw resolutionError(context.runtime, "getaddress: name or service not known");
         }
+    }
+
+    // getaddrinfo(3) only resolves internet addresses, so another family such as AF_UNIX fails with EAI_FAMILY
+    private static void checkResolvableFamily(ThreadContext context, AddressFamily family) {
+        if (family != null && family != AF_INET && family != AF_INET6 && family != AddressFamily.AF_UNSPEC) {
+            throw ResolutionError.newResolutionError(context, "getaddrinfo: ai_family not supported", ErrnoAddressInfo.EAI_FAMILY);
+        }
+    }
+
+    // A host that could not be resolved, which getaddrinfo(3) reports as EAI_NONAME
+    public static RuntimeException resolutionError(Ruby runtime, String msg) {
+        return ResolutionError.newResolutionError(runtime.getCurrentContext(), msg, ErrnoAddressInfo.EAI_NONAME);
     }
 
     public static RuntimeException sockerr(Ruby runtime, String msg) {
