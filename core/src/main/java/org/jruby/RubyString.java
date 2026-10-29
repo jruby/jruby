@@ -1233,7 +1233,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             byte savedFlags = flags;
             flags &= ~(CHILLED_LITERAL|CHILLED_SYMBOL_TO_S);
             if ((savedFlags & CHILLED_LITERAL) != 0) {
-                getRuntime().getWarnings().warn("literal string will be frozen in the future, the string was created here: " + file + ":" + line);
+                getRuntime().getWarnings().warnDeprecated("literal string will be frozen in the future, the string was created here: " + file + ":" + line);
             } else {
                 super.mutateChilledString();
             }
