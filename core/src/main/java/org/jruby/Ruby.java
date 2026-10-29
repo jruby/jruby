@@ -5102,7 +5102,12 @@ public final class Ruby implements Constantizable {
         RubyString string;
 
         static FStringEqual cached(Ruby runtime, RubyString string) {
-            FStringEqual wrapper = runtime.DEDUP_WRAPPER_CACHE.get();
+            WeakReference<FStringEqual> ref = runtime.DEDUP_WRAPPER_CACHE.get();
+            FStringEqual wrapper;
+            if (ref == null || (wrapper = ref.get()) == null) {
+                wrapper = new FStringEqual();
+                runtime.DEDUP_WRAPPER_CACHE.set(new WeakReference<>(wrapper));
+            }
             wrapper.string = string;
             return wrapper;
         }
@@ -5138,7 +5143,9 @@ public final class Ruby implements Constantizable {
         }
     }
 
-    private final ThreadLocal<FStringEqual> DEDUP_WRAPPER_CACHE = ThreadLocal.withInitial(FStringEqual::new);
+    // The wrapper is held weakly, so that the threads that used this runtime only keep JDK types in their
+    // thread-local maps after it is torn down, and not the class loader that loaded JRuby.
+    private final ThreadLocal<WeakReference<FStringEqual>> DEDUP_WRAPPER_CACHE = new ThreadLocal<>();
 
     public int getRuntimeNumber() {
         return runtimeNumber;
