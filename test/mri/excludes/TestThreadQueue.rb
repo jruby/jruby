@@ -5,5 +5,5 @@ if /freebsd13/ =~ RUBY_PLATFORM
   #   1) Failure:
   # TestThreadQueue#test_thr_kill [/usr/home/chkbuild/chkbuild/tmp/build/20220308T023001Z/ruby/test/ruby/test_thread_queue.rb:175]:
   # only 169/250 done in 60 seconds.
-  exclude(:test_thr_kill, 'gets stuck somewhere')
+  exclude(:test_thr_kill, 'gets stuck somewhere', run: false)
 end

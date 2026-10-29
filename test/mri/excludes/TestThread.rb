@@ -1,19 +1,19 @@
-exclude :test_abort_on_exception, "very sensitive to thread timing and parallelism"
-exclude :test_deadlock_backtrace, "JRuby does not do deadlock detection beyond what JVM provides"
+exclude :test_abort_on_exception, "very sensitive to thread timing and parallelism", run: false
+exclude :test_deadlock_backtrace, "JRuby does not do deadlock detection beyond what JVM provides", run: false
 exclude :test_inspect_with_fiber, "Thread.current is known to reflect the fiber, not the thread, in JRuby"
-exclude :test_list, "JVM finalizer threads get adopted, randomly skewing the result (#4960)"
-exclude :test_machine_stack_size, "slow and unreliable"
+exclude :test_list, "JVM finalizer threads get adopted, randomly skewing the result (#4960)", run: false
+exclude :test_machine_stack_size, "slow and unreliable", run: false
 exclude :test_main_thread_status_at_exit, "we do not set main thread to aborting when it terminates; differing opinions on thread lifecycle at main shutdown"
 exclude :test_main_thread_variable_in_enumerator, "differing notions of current thread within a fiber"
 exclude :test_mutex_unlock_on_trap, "traps execute in a separate thread in JRuby, and can't unlock a mutex"
 exclude :test_no_valid_cfp, "raises NullPointerException, may depend on MRI internal stack structures for nesting call without block"
-exclude :test_priority, "unreliably depends on thread scheduling"
-exclude :test_report_on_exception, "very sensitive to thread timing and parallelism"
-exclude :test_stack_size, 'often too expensive'
-exclude :test_thread_join_main_thread, "hangs"
+exclude :test_priority, "unreliably depends on thread scheduling", run: false
+exclude :test_report_on_exception, "very sensitive to thread timing and parallelism", run: false
+exclude :test_stack_size, 'often too expensive', run: false
+exclude :test_thread_join_main_thread, "hangs", run: false
 exclude :test_thread_setname_in_initialize, "needs investigation #4308"
-exclude :test_thread_timer_and_interrupt, "event statuses do not match expected"
+exclude :test_thread_timer_and_interrupt, "event statuses do not match expected, hangs when run", run: false
 exclude :test_thread_variable_in_enumerator, "fibers in JRuby have their own Thread.current"
-exclude :test_vm_machine_stack_size, "slow and unreliable"
+exclude :test_vm_machine_stack_size, "slow and unreliable", run: false
 exclude :test_yield_across_thread_through_enum, "JRuby prevents parallelism in enum in a different way than CRuby"
 exclude :test_handle_interrupt_masks_sigint, "handle_interrupt does not mask SIGINT"

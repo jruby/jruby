@@ -1,4 +1,4 @@
-exclude :test_proxy_cacert_dir, "work in progress"
+exclude :test_proxy_cacert_dir, "work in progress", run: false
 exclude :test_proxy_cacert_file, "work in progress"
 exclude :test_ssl_min_version, "needs investigation"
 exclude :test_validation_noverify, "needs investigation"

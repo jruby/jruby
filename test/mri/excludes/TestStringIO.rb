@@ -1,5 +1,0 @@
-exclude :"test_strip_bom:UTF-16BE", "work in progress"
-exclude :"test_strip_bom:UTF-16LE", "work in progress"
-exclude :"test_strip_bom:UTF-32BE", "work in progress"
-exclude :"test_strip_bom:UTF-32LE", "work in progress"
-exclude :"test_strip_bom:UTF-8", "work in progress"

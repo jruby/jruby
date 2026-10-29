@@ -1,5 +1,5 @@
 exclude :test_CHAR, "needs investigation"
-exclude :test_event_coverage, "needs investigation"
+exclude :test_event_coverage, "needs investigation, passes in some runs and fails in others", run: false
 exclude :test_invalid_char, "needs investigation"
 exclude :test_invalid_escape, "needs investigation"
 exclude :test_invalid_hex_escape_regexp, "needs investigation"

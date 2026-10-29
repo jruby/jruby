@@ -6,6 +6,6 @@ exclude :test_fd_passing, "close_on_exec? not implemented"
 exclude :test_fd_passing_class_mode, "send_io fails with EPIPE"
 exclude :test_fd_passing_race_condition, "needs investigation"
 exclude :test_getpeereid, "needs investigation"
-exclude :test_seqpacket_pair, "hangs (tested on macos M1)"
-exclude :test_stream_pair, "hangs (tested on macos M1)"
+exclude :test_seqpacket_pair, "hangs (tested on macos M1)", run: false
+exclude :test_stream_pair, "hangs (tested on macos M1)", run: false
 exclude :test_unix_server_socket, "needs investigation"

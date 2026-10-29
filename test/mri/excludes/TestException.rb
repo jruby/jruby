@@ -10,7 +10,7 @@ exclude :test_output_string_encoding, "encoding challenges with exception messag
 exclude :test_redefined_backtrace, "we don't dynamically call #backtrace"
 exclude :test_stackoverflow, "expects Ruby SystemStackError, but we only propagate java.lang.StackOverflowError"
 exclude :test_syntax_error_detailed_message, "passes with Prism parser"
-exclude :test_too_many_args_in_eval, "JRuby has much higher limits for passing arguments in the interpreter"
+exclude :test_too_many_args_in_eval, "JRuby has much higher limits for passing arguments in the interpreter", run: false
 exclude :test_wrong_backtrace, "we don't dynamically call #backtrace"
 exclude :test_cause_in_exit_handler, "errors raised in END blocks and exit handlers are not all reported with their causes"
 exclude :test_multiple_error_handle, "errors raised in END blocks and exit handlers are not all reported"

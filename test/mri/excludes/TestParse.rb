@@ -29,6 +29,6 @@ exclude :test_unassignable, "work in progress"
 exclude :test_unclosed_unicode_escape_at_eol_bug_19750, "needs investigation"
 exclude :test_unexpected_eof, "work in progress"
 exclude :test_unexpected_token_after_numeric, "work in progress"
-exclude :test_void_expr_stmts_value, "We pass the last invalid next but the test harness runs with eval for JRuby which then changes semantics"
+exclude :test_void_expr_stmts_value, "We pass the last invalid next but the test harness runs with eval for JRuby which then changes semantics", run: false
 exclude :test_void_value_in_rhs, "needs investigation"
-exclude :test_do_lambda, "do-block lambda after an interpolated command call with do block is a syntax error"
+exclude :test_do_lambda, "do-block lambda after an interpolated command call with do block is a syntax error", run: false

@@ -5,7 +5,7 @@ exclude :test_callee, "fails for unoptimized define_method due to capturing a fr
 exclude :test_define_method_visibility, "needs investigation"
 exclude :test_warn_unused_block, "needs investigation"
 exclude :test_singleton_method_included_or_prepended_bug_20620, "needs investigation"
-exclude :test_gced_bmethod, "often 'Timeout::Error: execution of assert_normal_exit expired' on CI"
+exclude :test_gced_bmethod, "often 'Timeout::Error: execution of assert_normal_exit expired' on CI", run: false
 exclude :test_hash, "won't pass since Array#map is not a Array#collect alias as in MRI"
 exclude :test_hash_does_not_change_after_compaction, "needs investigation"
 exclude :test_kwarg_eval_memory_leak, "no working assert_no_memory_leak method"

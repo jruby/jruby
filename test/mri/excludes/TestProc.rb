@@ -1,10 +1,10 @@
 exclude :test_attr_source_location, "needs investigation"
 exclude :test_binding_error_unless_ruby_frame, "appears to rely on CRuby framing logic"
-exclude :test_binding_source_location, "fails in JIT mode on Linux CI on GHA"
-exclude :test_curry_with_trace, "fails in JIT mode on Linux CI on GHA"
+exclude :test_binding_source_location, "fails in JIT mode on Linux CI on GHA", run: false
+exclude :test_curry_with_trace, "fails in JIT mode on Linux CI on GHA", run: false
 exclude :test_hash_does_not_change_after_compaction, "GC.verify_compaction_references is not implemented"
 exclude :test_implicit_parameters_for_it_complex, "parser needs to treat `it` assignment as a new local variable (https://github.com/jruby/jruby/issues/9265)"
-exclude :test_lambda_warning_pass_block, "fails in JIT mode on Linux CI on GHA"
+exclude :test_lambda_warning_pass_block, "fails in JIT mode on Linux CI on GHA", run: false
 exclude :test_proc_args_single_kw_no_autosplat, "needs investigation"
 exclude :test_proc_args_single_kwsplat_no_autosplat, "needs investigation"
 exclude :test_proc_autosplat, "work in progress"

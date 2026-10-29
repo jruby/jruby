@@ -4,7 +4,7 @@ exclude :test_connect_in_rescue, "needs investigation"
 exclude :test_listen_in_rescue, "needs investigation"
 exclude :test_recvmsg_udp_no_arg, "needs investigation"
 exclude :test_sysaccept, "needs investigation"
-exclude :test_tcp_socket_v6_hostname_resolved_earlier_and_v6_server_is_not_listening, "needs investigation"
+exclude :test_tcp_socket_v6_hostname_resolved_earlier_and_v6_server_is_not_listening, "needs investigation", run: false
 exclude :test_udp_read_truncation, "needs investigation"
 exclude :test_udp_recv_truncation, "needs investigation"
 exclude :test_udp_recvmsg_truncation, "needs investigation"

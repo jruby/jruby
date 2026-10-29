@@ -1,9 +1,9 @@
 exclude :test_error_nonascii, "needs investigation"
 exclude :test_filename_as_bytes_extutf8, "needs investigation"
-exclude :test_filename_bytes_euc_jp, "fails on Linux CI on GHA in JIT mode"
+exclude :test_filename_bytes_euc_jp, "fails on Linux CI on GHA in JIT mode", run: false
 exclude :test_filename_euc_jp, "needs investigation"
 exclude :test_filename_ext_euc_jp_and_int_utf_8, "needs investigation"
-exclude :test_filename_extutf8, "fails on Linux, passes on OS X, file gets opened with garbled ? filename"
+exclude :test_filename_extutf8, "fails on Linux, passes on OS X, file gets opened with garbled ? filename", run: false
 exclude :test_filename_extutf8_inteucjp_representable, "needs investigation"
 exclude :test_filename_extutf8_inteucjp_unrepresentable, "needs investigation"
 exclude :test_filename_extutf8_invalid, "needs investigation"

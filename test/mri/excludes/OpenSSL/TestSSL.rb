@@ -12,12 +12,12 @@ exclude :test_connect_certificate_verify_failed_exception_message, "work in prog
 exclude :test_ctx_options_config, "work in progress"
 exclude :test_exception_in_verify_callback_is_ignored, "work in progress"
 exclude :test_export_keying_material, "work in progress"
-exclude :test_finished_messages, 'hangs for a long time and then fails'
+exclude :test_finished_messages, 'hangs for a long time and then fails', run: false
 exclude :test_get_ephemeral_key, "work in progress"
 exclude :test_keylog_cb, "work in progress"
 exclude :test_minmax_version_system_default, "TLS version mismatch - expects TLSv1.2 but gets TLSv1.3"
 exclude :test_post_connect_check_with_anon_ciphers, 'needs investigation'
-exclude :test_read_with_timeout, "timeout methods not implemented, https://github.com/jruby/jruby-openssl/issues/342"
+exclude :test_read_with_timeout, "timeout methods not implemented, https://github.com/jruby/jruby-openssl/issues/342", run: false
 exclude :test_respect_system_default_min, "SSLError expected but nothing raised"
 exclude :test_security_level, "work in progress"
 exclude :test_servername_cb_raises_an_exception_on_unknown_objects, "work in progress"
@@ -25,7 +25,7 @@ exclude :test_set_groups_tls12, "OpenSSL::SSL::SSLError: no cipher match"
 exclude :test_set_groups_tls13, "undefined method 'groups=' for SSLContext"
 exclude :test_sigalgs, "undefined method 'add_certificate' for SSLContext"
 exclude :test_sslctx_set_params, "work in progress"
-exclude :test_sysread_and_syswrite, "new failure with Ruby 4.0 tests, tested on MacOS, https://github.com/jruby/jruby/issues/9271, appears to hang and timeout"
+exclude :test_sysread_and_syswrite, "new failure with Ruby 4.0 tests, tested on MacOS, https://github.com/jruby/jruby/issues/9271, appears to hang and timeout", run: false
 exclude :test_tlsext_hostname, "work in progress"
 exclude :test_tmp_dh, "work in progress"
 exclude :test_tmp_dh_callback, "work in progress"

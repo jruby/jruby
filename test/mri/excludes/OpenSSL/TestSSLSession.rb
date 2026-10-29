@@ -4,7 +4,7 @@ exclude :test_ctx_server_session_cb, "session_get_cb= not supported"
 exclude :test_dup, "work in progress"
 exclude :test_resumption, "work in progress"
 exclude :test_server_session_cache, "work in progress"
-exclude :test_session, "HANGS"
+exclude :test_session, "HANGS", run: false
 exclude :test_session_exts_read, "OpenSSL::SSL::Session.new not implemented"
 exclude :test_session_time, "OpenSSL::SSL::Session.new not implemented"
 exclude :test_session_timeout, "OpenSSL::SSL::Session.new not implemented"

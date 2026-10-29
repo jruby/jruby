@@ -4,7 +4,7 @@ exclude :test_anonymous_rest_forwarding, "needs investigation"
 exclude :test_args_forward, "needs investigation"
 exclude :test_assign_error_backref, "needs investigation"
 exclude :test_call_colon2, "needs investigation"
-exclude :test_event_coverage, "needs investigation"
+exclude :test_event_coverage, "needs investigation, passes in some runs and fails in others", run: false
 exclude :test_return_out_of_compile_error_no_memory_leak, "uses CRuby memory leak detection"
 exclude :test_return_out_of_warn_no_memory_leak, "uses CRuby memory leak detection"
 exclude :test_warn_duplicated_hash_keys, "needs investigation"

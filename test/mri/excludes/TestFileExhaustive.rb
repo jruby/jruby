@@ -5,8 +5,8 @@ exclude :test_dirname, "work in progress"
 exclude :test_expand_path_home_dir_string, "needs investigation"
 exclude :test_expand_path_memsize, "uses ObjectSpace.memsize_of"
 exclude :test_extname, "needs investigation"
-exclude :test_flock_exclusive, "exceeds 10s timeout"
-exclude :test_flock_shared, "exceeds 10s timeout"
+exclude :test_flock_exclusive, "exceeds 10s timeout", run: false
+exclude :test_flock_shared, "exceeds 10s timeout", run: false
 exclude :test_grpowned_p, "work in progress"
 exclude :test_join_ascii_incompatible, "needs investigation"
 exclude :test_join_with_changed_separator, "needs investigation"
