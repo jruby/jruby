@@ -139,7 +139,17 @@ You can pass `-v` to the runner for verbose output or `-n test_method_name` to o
 
 The runner script provides a mechanism for "excluding" known failing tests. These are usually features that JRuby has not yet implemented or can't implement on the JVM.
 
-Excludes are in the form of Ruby scripts under `test/mri/exclude`, named based on the name of the test case's class, exclude with comment tests known to fail.
+Excludes are in the form of Ruby scripts under `test/mri/excludes`, named based on the name of the test case's class, with one line per known-failing test:
+
+```ruby
+exclude :test_something, "why it fails"
+```
+
+Excluded tests still run, and they must fail. A failure is reported as a skip. A pass fails the run with a message naming the exclude file, so the exclude gets removed once the test passes. Tests that hang, crash, fail only sometimes or fail only in some modes (for example only in the JIT or only on Linux) can't be run safely, so mark those with `run: false` and they will not be run at all:
+
+```ruby
+exclude :test_something, "hangs", run: false
+```
 
 To run a given test with these excludes enabled, you can use the --excludes flag:
 

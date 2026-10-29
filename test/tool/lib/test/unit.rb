@@ -1294,17 +1294,99 @@ module Test
       end
     end
 
+    # Excluded tests still run, and they must fail. A failure is reported
+    # as a skip. A pass fails the run, so the exclude gets removed instead
+    # of going stale. Tests that hang, crash or only fail sometimes can't
+    # be run safely, so `exclude :name, "reason", run: false` removes them
+    # without running them.
     module ExcludesOption # :nodoc: all
       class ExcludedMethods < Struct.new(:excludes)
-        def exclude(name, reason)
-          excludes[name] = reason
+        Exclusion = Struct.new(:reason, :run, :path)
+
+        # Wrappers for excluded tests, prepended to a test class. Each
+        # wrapper finds the exclusion that applies to the running test's
+        # class, so a subclass with its own exclude file uses that one.
+        class Wrappers < Module
+          def initialize
+            super
+            @exclusions = {}
+          end
+
+          attr_reader :exclusions
+
+          def wrap(method)
+            return if method_defined?(method, false)
+            define_method(method) do |*args, **kw, &block|
+              # Only the outermost wrapper checks, when a parent class and
+              # a subclass both exclude the same test.
+              return super(*args, **kw, &block) if @__exclusion_checked__
+              @__exclusion_checked__ = true
+              exclusion, owner = ExcludedMethods.exclusion_for(self.class, method)
+              return super(*args, **kw, &block) unless exclusion
+              begin
+                super(*args, **kw, &block)
+              rescue Test::Unit::PendedError, *Test::Unit::TestCase::PASSTHROUGH_EXCEPTIONS
+                raise
+              rescue Exception => e
+                omit "excluded and fails as expected (#{e.class}): #{exclusion.reason}"
+              end
+              # An exclude inherited from a parent class may still be needed
+              # there, so a subclass passing it doesn't make it stale.
+              return unless owner == self.class
+              flunk "#{self.class}##{method} is excluded but passed. " \
+                    "Remove its exclude from #{exclusion.path}: #{exclusion.reason}"
+            end
+          end
+        end
+
+        def self.exclusion_for(klass, method)
+          klass.ancestors.each do |mod|
+            wrappers = mod.instance_variable_get(:@__excluded_tests__) if mod.is_a?(Class)
+            next unless wrappers
+            wrappers.exclusions.each do |name, exclusion|
+              return exclusion, mod if name == method or (Regexp === name and name =~ method)
+            end
+          end
+          nil
+        end
+
+        def exclude(name, reason, run: true)
+          path = caller_locations(1, 1).first&.path
+          excludes[name] = Exclusion.new(reason, run, path)
         end
 
         def exclude_from(klass)
-          excludes = self.excludes
-          pattern = excludes.keys.grep(Regexp).tap {|k|
+          skipped = excludes.reject {|_, exclusion| exclusion.run}
+          remove_from(klass, skipped)
+
+          expected = excludes.select {|_, exclusion| exclusion.run}
+          return if expected.empty?
+          wrappers = klass.instance_variable_get(:@__excluded_tests__)
+          unless wrappers
+            wrappers = Wrappers.new
+            klass.instance_variable_set(:@__excluded_tests__, wrappers)
+            klass.prepend(wrappers)
+          end
+          wrappers.exclusions.update(expected)
+          pattern = pattern_for(expected)
+          klass.public_instance_methods(true).each do |method|
+            if expected[method] or (pattern and pattern =~ method)
+              wrappers.wrap(method)
+            end
+          end
+        end
+
+        private
+
+        def pattern_for(excludes)
+          excludes.keys.grep(Regexp).tap {|k|
             break (Regexp.new(k.join('|')) unless k.empty?)
           }
+        end
+
+        def remove_from(klass, excludes)
+          return if excludes.empty?
+          pattern = pattern_for(excludes)
           klass.class_eval do
             public_instance_methods(false).each do |method|
               if excludes[method] or (pattern and pattern =~ method)
@@ -1318,6 +1400,8 @@ module Test
             end
           end
         end
+
+        public
 
         def self.load(dirs, name)
           return unless dirs and name
