@@ -1924,6 +1924,11 @@ public class OpenFile implements Finalizable {
                         readBufferedData(strByteList.unsafeBytes(), strByteList.begin() + len, pending - chomplen);
                         rbuf.off += chomplen;
                         rbuf.len -= chomplen;
+                        // the \r of a \r\n split across two reads is already at the end of str
+                        if (pending == 1 && chomplen == 1 && len > 0 && strByteList.get(len - 1) == '\r') {
+                            str.resize(--len);
+                            break;
+                        }
                     }
                     len += pending - chomplen;
                     if (cr != StringSupport.CR_BROKEN) {
