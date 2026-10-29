@@ -10,6 +10,16 @@ module CompilerSpecUtils
   ensure
     $VERBOSE = verb
   end
+
+  # Create interpreted block bodies even when the host uses forced compilation or a zero JIT threshold.
+  def without_compilation
+    config = JRuby.runtime.instance_config
+    previous_mode = config.compile_mode
+    config.compile_mode = org.jruby.RubyInstanceConfig::CompileMode::OFF
+    yield
+  ensure
+    config.compile_mode = previous_mode
+  end
 end
 
 module InterpreterSpecUtils
@@ -20,7 +30,8 @@ module InterpreterSpecUtils
   end
 
   def run(src, filename = caller_locations[0].path, line = caller_locations[0].lineno)
-    yield eval(src, TOPLEVEL_BINDING, filename, line)
+    result = without_compilation { eval(src, TOPLEVEL_BINDING, filename, line) }
+    yield result
   end
 
   def self.name; "interpreter"; end
@@ -41,7 +52,8 @@ module PersistenceSpecUtils
   end
 
   def run(src, filename = caller_locations[0].path, line = caller_locations[0].lineno)
-    yield encode_decode_run(src, filename, line)
+    result = without_compilation { encode_decode_run(src, filename, line) }
+    yield result
   end
 
   def self.name; "persistence"; end
