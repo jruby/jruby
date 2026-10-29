@@ -1,4 +1,3 @@
-exclude :test_Float, "needs investigation"
 exclude :test_cmp_int, "needs investigation"
 exclude :test_strtod, "needs investigation"
 exclude :test_ceil_with_precision_min, "Float::MIN.ceil(n) does not return the exact power of ten"
