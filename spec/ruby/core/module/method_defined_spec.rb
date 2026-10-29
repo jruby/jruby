@@ -145,4 +145,11 @@ describe "Module#method_defined?" do
       end
     end
   end
+
+  guard -> { !Kernel.respond_to?(:syscall, true) } do
+    it "returns false for a method that is not implemented on this platform" do
+      Kernel.singleton_class.method_defined?(:syscall).should == false
+      Kernel.singleton_class.method_defined?(:syscall, false).should == false
+    end
+  end
 end

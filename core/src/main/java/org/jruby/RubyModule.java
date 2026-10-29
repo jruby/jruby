@@ -4003,15 +4003,15 @@ public class RubyModule extends RubyObject {
 
     @JRubyMethod(name = "method_defined?")
     public RubyBoolean method_defined_p(ThreadContext context, IRubyObject symbol) {
-        return asBoolean(context, isMethodBound(checkID(context, symbol).idString(), true));
+        return methodDefined(context, symbol, true);
     }
 
     @JRubyMethod(name = "method_defined?")
     public RubyBoolean method_defined_p(ThreadContext context, IRubyObject symbol, IRubyObject includeSuper) {
-        boolean parents = includeSuper.isTrue();
+        return methodDefined(context, symbol, includeSuper.isTrue());
+    }
 
-        if (parents) return method_defined_p(context, symbol);
-
+    private RubyBoolean methodDefined(ThreadContext context, IRubyObject symbol, boolean parents) {
         Visibility visibility = checkMethodVisibility(context, symbol, parents);
         return asBoolean(context, visibility != UNDEFINED && visibility != PRIVATE);
     }
@@ -4062,7 +4062,7 @@ public class RubyModule extends RubyObject {
         CacheEntry entry = mod.searchWithCache(name);
         DynamicMethod method = entry.method;
 
-        if (method.isUndefined()) return Visibility.UNDEFINED;
+        if (method.isUndefined() || method.isNotImplemented()) return Visibility.UNDEFINED;
 
         if (!parents && entry.sourceModule != mod) return Visibility.UNDEFINED;
 

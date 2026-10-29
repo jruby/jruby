@@ -1163,8 +1163,9 @@ public class IRRuntimeHelpers {
         boolean defined = !method.isUndefined();
 
         if (defined) {
-            // If we find the method we optionally check if it is public before returning "method".
-            defined = !checkIfPublic || method.getVisibility() == Visibility.PUBLIC;
+            // With a receiver the method must be public; without one CRuby checks respond_to?,
+            // which is false for a not-implemented method.
+            defined = checkIfPublic ? method.getVisibility() == Visibility.PUBLIC : !method.isNotImplemented();
         } else {
             // If we did not find the method, check respond_to_missing?
             defined = RubyClass.checkRespondToMissing(context, receiver, name);
@@ -1182,9 +1183,14 @@ public class IRRuntimeHelpers {
     public static IRubyObject isDefinedSuper(ThreadContext context, IRubyObject receiver, String frameName, RubyModule frameClass, IRubyObject definedMessage) {
         boolean defined = frameName != null && frameClass != null &&
                 frameClass.getSuperClass() != null &&
-                frameClass.getSuperClass().isMethodBound(frameName, false);
+                isSuperMethodBound(frameClass.getSuperClass().searchMethod(frameName));
 
         return defined ? definedMessage : context.nil;
+    }
+
+    // CRuby's defined?(super) also ignores not-implemented methods (rb_method_boundp returns 0).
+    private static boolean isSuperMethodBound(DynamicMethod method) {
+        return !method.isUndefined() && !method.isNotImplemented();
     }
 
     public static IRubyObject nthMatch(ThreadContext context, int matchNumber) {

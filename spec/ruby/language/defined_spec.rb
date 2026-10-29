@@ -73,6 +73,13 @@ describe "The defined? keyword when called with a method name" do
       defined?(defined_specs_undefined_method).should == nil
     end
 
+    guard -> { !Kernel.respond_to?(:syscall, true) } do
+      it "returns nil if the method is not implemented on this platform" do
+        defined?(syscall).should == nil
+        defined?(syscall(0)).should == nil
+      end
+    end
+
     it "returns 'method' if the method is defined and private" do
       obj = DefinedSpecs::Basic.new
       obj.private_method_defined.should == "method"
@@ -99,6 +106,12 @@ describe "The defined? keyword when called with a method name" do
 
     it "returns nil if the method is not defined" do
       defined?(Kernel.defined_specs_undefined_method).should == nil
+    end
+
+    guard -> { !Kernel.respond_to?(:syscall, true) } do
+      it "returns 'method' if the method is not implemented on this platform" do
+        defined?(Kernel.syscall).should == "method"
+      end
     end
 
     it "returns nil if the class is not defined" do
@@ -1210,6 +1223,17 @@ end
 describe "The defined? keyword for super" do
   it "returns nil when a superclass undef's the method" do
     DefinedSpecs::ClassWithoutMethod.new.test.should == nil
+  end
+
+  guard -> { !Kernel.respond_to?(:syscall, true) } do
+    it "returns nil when the superclass method is not implemented on this platform" do
+      mod = Module.new do
+        def syscall(*)
+          defined?(super)
+        end
+      end
+      Object.new.extend(mod).syscall.should == nil
+    end
   end
 
   describe "for a method taking no arguments" do
