@@ -48,12 +48,13 @@ import org.jruby.util.io.RubyInputStream;
 import org.jruby.util.io.RubyOutputStream;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.lang.reflect.Array;
 import java.util.Collection;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 import static org.jruby.RubyEnumerator.enumeratorizeWithSize;
 import static org.jruby.api.Access.enumerableModule;
@@ -80,8 +81,14 @@ public class RubySet extends RubyObject implements Set {
 
     // number of Set#each calls currently iterating over this set
     private volatile int iterating;
-    private static final AtomicIntegerFieldUpdater<RubySet> ITERATING =
-            AtomicIntegerFieldUpdater.newUpdater(RubySet.class, "iterating");
+    private static final VarHandle ITERATING;
+    static {
+        try {
+            ITERATING = MethodHandles.lookup().findVarHandle(RubySet.class, "iterating", int.class);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
 
     public static RubyClass createSetClass(ThreadContext context, RubyClass Object, RubyModule Enumerable) {
         RubyClass Set = defineClass(context, "Set", Object, RubySet::new).
@@ -660,11 +667,11 @@ public class RubySet extends RubyObject implements Set {
     public IRubyObject each(final ThreadContext context, Block block) {
         if (!block.isGiven()) return enumeratorizeWithSize(context, this, "each", RubySet::size);
 
-        ITERATING.incrementAndGet(this);
+        ITERATING.getAndAdd(this, 1);
         try {
             for (IRubyObject elem : elementsOrdered()) block.yield(context, elem);
         } finally {
-            ITERATING.decrementAndGet(this);
+            ITERATING.getAndAdd(this, -1);
         }
         return this;
     }
