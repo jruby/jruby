@@ -1,6 +1,5 @@
 exclude :test_cloexec, "needs investigation"
 exclude :test_copy_stream_pipe_nonblock, "copy_stream does not block against a nonblocking stream (#2439)"
-exclude :test_copy_stream_read_pipe, "needs investigation"
 exclude :test_copy_stream_socket7, "uses fork"
 exclude :test_cross_thread_close_stdio, "needs investigation"
 exclude :test_dup_many, "needs investigation"

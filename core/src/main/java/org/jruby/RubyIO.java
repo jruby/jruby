@@ -5024,7 +5024,18 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 }
 
                 try {
-                    if ((channel1 instanceof FileChannel)) {
+                    // tell moved a seekable source back over its read buffer, so data is only
+                    // still buffered for a pipe or other stream, and it comes before the rest
+                    long buffered = 0;
+                    if (userProvidedReadIO && offset == null) {
+                        buffered = copyBufferedData(context, fptr1, (WritableByteChannel) channel2,
+                                length == null ? -1 : length.asLong(context));
+                        size = buffered;
+                    }
+
+                    if (length != null && length.asLong(context) == buffered) {
+                        // the buffered data was all that was asked for
+                    } else if ((channel1 instanceof FileChannel)) {
                         FileChannel from = (FileChannel) channel1;
                         WritableByteChannel to = (WritableByteChannel) channel2;
                         long remaining = length == null ? from.size() : length.asLong(context);
@@ -5032,18 +5043,18 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
                         size = transfer(from, to, remaining, position);
                     } else {
-                        long remaining = length == null ? -1 : length.asLong(context);
+                        long remaining = length == null ? -1 : length.asLong(context) - buffered;
                         long position = offset == null ? -1 : offset.asLong(context);
                         if ((channel2 instanceof FileChannel)) {
                             ReadableByteChannel from = (ReadableByteChannel) channel1;
                             FileChannel to = (FileChannel) channel2;
 
-                            size = transfer(context, from, to, remaining, position);
+                            size += transfer(context, from, to, remaining, position);
                         } else {
                             ReadableByteChannel from = (ReadableByteChannel) channel1;
                             WritableByteChannel to = (WritableByteChannel) channel2;
 
-                            size = transfer(context, from, to, remaining, position);
+                            size += transfer(context, from, to, remaining, position);
                         }
                     }
 
@@ -5054,7 +5065,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 } catch (IOException ioe) {
                     throw runtime.newIOErrorFromException(ioe);
                 } finally {
-                    if (userProvidedReadIO) {
+                    if (userProvidedReadIO && pos >= 0) {
                         if (offset != null) {
                             fptr1.seek(context, pos, PosixShim.SEEK_SET);
                         } else {
@@ -5078,6 +5089,27 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             }
 
         }
+    }
+
+    /**
+     * Write out the data already read into the source's buffer, up to length bytes when length is
+     * not negative, before copying the rest from its channel.
+     *
+     * @return the number of bytes written
+     */
+    @CRuby(value = "copy_stream_body", file = "io.c")
+    private static long copyBufferedData(ThreadContext context, OpenFile fptr, WritableByteChannel to, long length) throws IOException {
+        int len = fptr.READ_DATA_PENDING_COUNT();
+        if (len == 0) return 0;
+        if (length >= 0 && length < len) len = (int) length;
+
+        byte[] bytes = new byte[len];
+        fptr.readBufferedData(bytes, 0, len);
+
+        ByteBuffer buffer = ByteBuffer.wrap(bytes);
+        while (buffer.hasRemaining()) to.write(buffer);
+
+        return len;
     }
 
     private static long transfer(ThreadContext context, ReadableByteChannel from, FileChannel to, long length, long position) throws IOException {
