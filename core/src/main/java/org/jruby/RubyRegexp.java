@@ -403,7 +403,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     private static void encodingMatchError(ThreadContext context, Regex pattern, Encoding strEnc) {
         throw context.runtime.newEncodingCompatibilityError("incompatible encoding regexp match (" +
-                pattern.getEncoding() + " regexp with " + strEnc + " string)");
+                RubyEncoding.inspectName(pattern.getEncoding()) + " regexp with " + RubyEncoding.inspectName(strEnc) + " string)");
     }
 
     private Encoding prepareEncoding(ThreadContext context, RubyString str, boolean warn) {

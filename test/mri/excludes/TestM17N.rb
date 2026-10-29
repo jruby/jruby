@@ -1,4 +1,3 @@
-exclude :test_index, "error message does not show BINARY (ASCII-8BIT)"
 exclude :test_nonascii_method_name, "lexer is not pulling mbc characters off the wire correctly"
 exclude :test_regexp_usascii, "needs investigation"
 exclude :test_scrub_modification_inside_block, "missing RuntimeError"

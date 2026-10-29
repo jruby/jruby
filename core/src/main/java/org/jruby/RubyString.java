@@ -345,7 +345,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         var context = ((RubyBasicObject) other).getCurrentContext();
         Encoding enc = isCompatibleWith(other);
         if (enc == null) throw context.runtime.newEncodingCompatibilityError("incompatible character encodings: " +
-                                value.getEncoding() + " and " + other.getEncoding());
+                                RubyEncoding.inspectName(value.getEncoding()) + " and " + RubyEncoding.inspectName(other.getEncoding()));
         return enc;
     }
 
@@ -353,7 +353,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     public final Encoding checkEncoding(CodeRangeable other) {
         Encoding enc = StringSupport.areCompatible(this, other);
         if (enc == null) throw getRuntime().newEncodingCompatibilityError("incompatible character encodings: " +
-                value.getEncoding() + " and " + other.getByteList().getEncoding());
+                RubyEncoding.inspectName(value.getEncoding()) + " and " + RubyEncoding.inspectName(other.getByteList().getEncoding()));
         return enc;
     }
 
@@ -362,7 +362,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         Encoding enc = StringSupport.areCompatible(str1, str2);
         if (enc == null) {
             throw runtime.newEncodingCompatibilityError("incompatible character encodings: " +
-                    str1.getEncoding() + " and " + str2.getEncoding());
+                    RubyEncoding.inspectName(str1.getEncoding()) + " and " + RubyEncoding.inspectName(str2.getEncoding()));
         }
         return enc;
     }
@@ -3337,7 +3337,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (codeRangeScan(strEnc, bytes, p, beg) != CR_7BIT ||
             codeRangeScan(strEnc, bytes, p + end, len - end) != CR_7BIT) {
             throw context.runtime.newEncodingCompatibilityError(
-                    "incompatible character encodings " + strEnc + " and " + repl.value.getEncoding());
+                    "incompatible character encodings: " + RubyEncoding.inspectName(strEnc) + " and " +
+                            RubyEncoding.inspectName(repl.value.getEncoding()));
         }
         return repl.value.getEncoding();
     }

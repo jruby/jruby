@@ -2050,7 +2050,8 @@ public class EncodingUtils {
                 (strEnc != ptrEnc &&
                 str_cr != StringSupport.CR_7BIT &&
                 ptr_cr != StringSupport.CR_7BIT)) {
-            throw runtime.newEncodingCompatibilityError("incompatible encodings: " + strEnc + " and " + ptrEnc);
+            throw runtime.newEncodingCompatibilityError("incompatible character encodings: " +
+                    RubyEncoding.inspectName(strEnc) + " and " + RubyEncoding.inspectName(ptrEnc));
         }
 
         if (str_cr == StringSupport.CR_UNKNOWN) {
@@ -2349,7 +2350,8 @@ public class EncodingUtils {
         else {
             Encoding e = STR_ENC_GET(str);
             if (cr == StringSupport.CR_7BIT ? enc.minLength() != 1 : enc != e) {
-                throw context.runtime.newEncodingCompatibilityError("incompatible character encodings: " + enc + " and " + e);
+                throw context.runtime.newEncodingCompatibilityError("incompatible character encodings: " +
+                        RubyEncoding.inspectName(enc) + " and " + RubyEncoding.inspectName(e));
             }
         }
         return str;
