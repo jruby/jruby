@@ -2735,7 +2735,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     private static final Getline.Callback<RubyIO, RubyArray> GETLINE_ARY = new Getline.Callback<RubyIO, RubyArray>() {
         @Override
         public RubyArray getline(ThreadContext context, RubyIO self, IRubyObject rs, int limit, boolean chomp, Block block) {
-            
+            if (limit == 0) {
+                throw argumentError(context, "invalid limit: 0 for readlines");
+            }
+
             var ary = newArray(context);
             IRubyObject line;
 

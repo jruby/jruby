@@ -16,7 +16,6 @@ exclude :test_puts_recursive_ary, "stack overflow in StringIO inspect"
 exclude :test_race_gets_and_close, "racey test may not be valid since gets may proceed after stream is closed"
 exclude :test_read_lock, "needs investigation"
 exclude :test_read_nonblock_invalid_exception, "work in progress"
-exclude :test_readlines_limit_0, "hangs"
 exclude :test_readpartial_lock, "needs investigation"
 exclude :test_readpartial_locktmp, "requires string locking we do not support"
 exclude :test_recycled_fd_close, 'fails on GHA Linux CI, NullPointerException: Cannot invoke "Object.getClass()" because "object" is null'
