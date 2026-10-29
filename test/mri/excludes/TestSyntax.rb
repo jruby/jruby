@@ -27,7 +27,7 @@ exclude :test_numbered_parameter, "work in progress"
 exclude :test_optional_self_reference, "circular variable reference error"
 exclude :test_return_toplevel, "uses RubyVM for verification"
 exclude :test_safe_call_in_for_variable, "work in progress"
-exclude :test_script_lines, "canonical path matching issue in assertion"
+exclude :test_script_lines, "canonical path matching issue in assertion, passes on Linux", run: false
 exclude :test_syntax_error_at_newline, "work in progress"
 exclude :test_unterminated_heredoc, "work in progress"
 exclude :test_unterminated_heredoc_cr, "work in progress"

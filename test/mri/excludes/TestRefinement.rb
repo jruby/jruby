@@ -1,5 +1,5 @@
 exclude :test_ancestors, "work in progress"
-exclude :test_inlinecache, "needs investigation"
+exclude :test_inlinecache, "needs investigation, passes in the JIT", run: false
 exclude :test_prepend_refined_module, "work in progress"
 exclude :test_refine_frozen_class, "work in progress"
 exclude :test_refine_prepended_class, "markers not being applied properly to prepended module"

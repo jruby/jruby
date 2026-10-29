@@ -12,7 +12,7 @@ exclude :test_magic_comment, "work in progress"
 exclude :test_method_block_location, "work in progress"
 exclude :test_method_location_in_rescue, "raise is not adding call_location element for obj.location"
 exclude :test_named_capture_in_block, "needs investigation"
-exclude :test_negative_line_number, "needs investigation, fails in the JIT"
+exclude :test_negative_line_number, "needs investigation, fails in the JIT", run: false
 exclude :test_no_blockarg, "work in progress"
 exclude :test_question, "work in progress"
 exclude :test_shareable_constant_value_hash_with_keyword_splat, "needs investigation"

@@ -15,7 +15,7 @@ exclude :test_execopts_exec, "ENOENT looking for foo, writes files into the work
 exclude :test_execopts_open_chdir, "needs investigation, writes files into the working directory when run", run: false
 exclude :test_execopts_open_chdir_m17n_path, "needs investigation #4303, writes files into the working directory when run", run: false
 exclude :test_execopts_open_failure, "may depend on error handling after fork, not possible with posix_spawn"
-exclude :test_execopts_pgroup, "ESPIPE illegal seek on bin/jruby"
+exclude :test_execopts_pgroup, "ESPIPE illegal seek on bin/jruby, passes on Linux", run: false
 exclude :test_execopts_popen, "needs investigation"
 exclude :test_execopts_popen_extra_fd, "appears chdir is screwing up the resulting command line, writes files into the working directory when run", run: false
 exclude :test_execopts_redirect_dup2_child, "Errno::ENOENT: No such file or directory - out, writes files into the working directory when run", run: false
