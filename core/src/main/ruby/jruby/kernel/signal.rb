@@ -15,7 +15,8 @@ module Signal
       raise ArgumentError.new("bad signal type #{sig.class}")
     end
     sig = SIGNALS[sig] if sig.kind_of?(Integer)
-    sig = sig.to_s.sub(/^SIG(.+)/,'\1')
+    sig = sig.to_s
+    sig = sig[3..-1] if sig.start_with?('SIG') && sig.length > 3
 
     if %w(SEGV BUS ILL FPE VTALRM).include?(sig)
       raise ArgumentError.new("can't trap reserved signal: SIG%s" % sig)
