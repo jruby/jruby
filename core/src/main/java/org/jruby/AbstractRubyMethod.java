@@ -33,6 +33,7 @@
 
 package org.jruby;
 
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.AliasMethod;
@@ -252,17 +253,7 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
 
         str.catString("(");
         ArgumentDescriptor[] descriptors = Helpers.methodToArgumentDescriptors(context, method);
-        if (descriptors.length > 0) {
-            RubyString desc = descriptors[0].asParameterName(context);
-
-            str.cat(desc);
-            for (int i = 1; i < descriptors.length; i++) {
-                desc = descriptors[i].asParameterName(context);
-
-                str.catString(", ");
-                str.cat(desc);
-            }
-        }
+        appendParameters(context, str, Helpers.argumentDescriptorsToParameters(context, descriptors, true));
         str.catString(")");
         String fileName = getFilename();
         if (fileName != null) { // Only Ruby Methods will have this info.
@@ -271,6 +262,79 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
         }
         str.catString(">");
 
+        return str;
+    }
+
+    /**
+     * Describe the parameters, as Method#parameters lists them, the way CRuby's Method#inspect
+     * does. Anonymous *, ** and & show as just their sigils, except that **, & and the *, ** and &
+     * of ... are left out where CRuby leaves them out, and ... shows as "...".
+     */
+    @CRuby(value = "method_inspect", file = "proc.c")
+    private static void appendParameters(ThreadContext context, RubyString str, RubyArray<?> params) {
+        int length = params.size();
+        boolean forwarding = length == 3 &&
+                isParameter(params.eltInternal(0), "rest", "*") &&
+                isParameter(params.eltInternal(1), "keyrest", "**") &&
+                isParameter(params.eltInternal(2), "block", "&");
+
+        for (int i = 0; i < length; i++) {
+            RubyArray<?> pair = (RubyArray<?>) params.eltInternal(i);
+            String kind = ((RubySymbol) pair.eltInternal(0)).idString();
+            IRubyObject name = pair.size() > 1 ? pair.eltInternal(1) : context.nil;
+
+            switch (kind) {
+                case "req" -> appendParameterName(str, name, "_");
+                case "opt" -> appendParameterName(str, name, "_").catString("=...");
+                case "keyreq" -> appendParameterName(str, name, null).catString(":");
+                case "key" -> appendParameterName(str, name, null).catString(": ...");
+                case "rest" -> {
+                    str.catString(forwarding ? "..." : "*");
+                    if (!isName(name, "*")) appendParameterName(str, name, null);
+                }
+                case "keyrest" -> {
+                    if (!isName(name, "**")) {
+                        appendParameterName(str.catString("**"), name, null);
+                    } else if (i > 0) {
+                        str.getByteList().setRealSize(str.getByteList().getRealSize() - 2);
+                    } else {
+                        str.catString("**");
+                    }
+                }
+                case "block" -> {
+                    if (isName(name, "&")) {
+                        if (forwarding) {
+                            str.getByteList().setRealSize(str.getByteList().getRealSize() - 2);
+                        } else {
+                            str.catString("...");
+                        }
+                    } else {
+                        appendParameterName(str.catString("&"), name, null);
+                    }
+                }
+                case "nokey" -> str.catString("**nil");
+                case "noblock" -> str.catString("&nil");
+            }
+
+            if (i < length - 1) str.catString(", ");
+        }
+    }
+
+    private static boolean isParameter(IRubyObject param, String kind, String name) {
+        RubyArray<?> pair = (RubyArray<?>) param;
+        return ((RubySymbol) pair.eltInternal(0)).idString().equals(kind) && pair.size() > 1 && isName(pair.eltInternal(1), name);
+    }
+
+    private static boolean isName(IRubyObject name, String expected) {
+        return name instanceof RubySymbol symbol && symbol.idString().equals(expected);
+    }
+
+    private static RubyString appendParameterName(RubyString str, IRubyObject name, String fallback) {
+        if (name.isNil()) {
+            if (fallback != null) str.catString(fallback);
+        } else {
+            str.cat(((RubySymbol) name).asString());
+        }
         return str;
     }
 }
