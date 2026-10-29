@@ -19,7 +19,6 @@ exclude :test_readpartial_lock, "needs investigation"
 exclude :test_readpartial_locktmp, "requires string locking we do not support"
 exclude :test_recycled_fd_close, 'fails on GHA Linux CI, NullPointerException: Cannot invoke "Object.getClass()" because "object" is null'
 exclude :test_reinitialize, "needs investigation"
-exclude :test_reopen_opt, "needs investigation"
 exclude :test_s_readlines, "needs investigation"
 exclude :test_select_exceptfds, "hangs, and Java select does not really support erroring FDs"
 exclude :test_select_memory_leak, "no working assert_no_memory_leak method"

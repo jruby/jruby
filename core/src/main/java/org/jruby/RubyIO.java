@@ -626,9 +626,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     @CRuby(value = "rb_io_reopen", file = "io.c")
-    @JRubyMethod(name = "reopen", required = 1, optional = 1, checkArity = false)
+    @JRubyMethod(name = "reopen", required = 1, optional = 2, checkArity = false, keywords = true)
     public IRubyObject reopen(ThreadContext context, IRubyObject[] args) {
-        int argc = Arity.checkArgumentCount(context, args, 1, 2);
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
+        int argc = args.length;
 
         final Ruby runtime = context.runtime;
         final IRubyObject nil = context.nil;
@@ -637,10 +638,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         int[] oflags_p = {0};
         OpenFile fptr;
 
+        if (keywords) opt = args[--argc];
+        Arity.checkArgumentCount(context, argc, 1, 2);
+
         switch (argc) {
-            case 3:
-                opt = TypeConverter.checkHashType(runtime, args[2]);
-                if (opt == nil) throw argumentError(context, 3, 2);
             case 2:
                 if (opt == nil) {
                     opt = TypeConverter.checkHashType(runtime, args[1]);
