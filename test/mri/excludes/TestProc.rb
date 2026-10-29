@@ -1,4 +1,3 @@
-exclude :test_attr_source_location, "needs investigation"
 exclude :test_binding_error_unless_ruby_frame, "appears to rely on CRuby framing logic"
 exclude :test_binding_source_location, "fails in JIT mode on Linux CI on GHA"
 exclude :test_curry_with_trace, "fails in JIT mode on Linux CI on GHA"
