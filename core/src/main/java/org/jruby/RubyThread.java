@@ -2072,22 +2072,20 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     /**
-     * Execute an interruptible regexp operation with the given function and bytess.
-     * @param context
-     * @param matcher
-     * @param start
-     * @param range
-     * @param option
-     * @param task
-     * @return ""
-     * @param <Data>
+     * Execute an interruptible {@link RegexMatch} with the given parameters.
+     * @param context the current context
+     * @param matcher the matcher with which to perform the matching operation
+     * @param start the start of the match
+     * @param range the range of the match
+     * @param option option for the match
+     * @param task the interruptible match task to call
+     * @return an int result of the match operation
      * @throws InterruptedException when interrupted
      */
-    public <Data> int executeRegexp(
+    public int executeRegexp(
             ThreadContext context,
             Matcher matcher, int start, int range, int option,
             RegexMatch task) throws InterruptedException {
-        Status oldStatus = STATUS.get(this);
         try {
             this.unblockArg = matcher;
             this.unblockFunc = task;
@@ -2095,11 +2093,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             // check for interrupt before going into blocking call
             blockingThreadPoll(context);
 
-            STATUS.set(this, Status.SLEEP);
-
             return task.run(matcher, start, range, option);
         } finally {
-            STATUS.set(this, oldStatus);
             this.unblockFunc = null;
             this.unblockArg = null;
             pollThreadEvents(context);
