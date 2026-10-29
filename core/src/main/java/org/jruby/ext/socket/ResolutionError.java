@@ -44,6 +44,16 @@ public class ResolutionError {
      * @param eai the error code's constant name, such as "EAI_NONAME"
      * @return the exception to throw
      */
+    /**
+     * The Socket::ResolutionError for a host that does not resolve.
+     *
+     * @param context the current thread context
+     * @return the exception to throw
+     */
+    public static RaiseException newNameNotKnown(ThreadContext context) {
+        return newResolutionError(context, "getaddrinfo: name or service not known", "EAI_NONAME");
+    }
+
     @CRuby(value = "rsock_raise_resolution_error_for_host", file = "ext/socket/init.c")
     public static RaiseException newResolutionError(ThreadContext context, String message, String eai) {
         RubyClass ResolutionError = Access.getClass(context, "Socket", "ResolutionError");

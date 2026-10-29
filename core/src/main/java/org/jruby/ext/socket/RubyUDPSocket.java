@@ -162,7 +162,7 @@ public class RubyUDPSocket extends RubyIPSocket {
             ProtocolFamily family = this.family == null ? StandardProtocolFamily.INET : this.family;
             throw SocketUtils.sockerr(runtime, "bind: unsupported address " + host.inspect(context) + " for protocol family " + family);
         } catch (UnknownHostException e) {
-            throw SocketUtils.sockerr(runtime, "bind: name or service not known");
+            throw ResolutionError.newNameNotKnown(context);
         } catch (BindException e) {
             throw runtime.newErrnoFromBindException(e, bindContextMessage(context, host, port));
         } catch (AlreadyBoundException e) {
@@ -225,7 +225,7 @@ public class RubyUDPSocket extends RubyIPSocket {
             }
         }
         catch (UnknownHostException e) {
-            throw SocketUtils.sockerr(runtime, "connect: name or service not known");
+            throw ResolutionError.newNameNotKnown(context);
         }
         catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
@@ -319,7 +319,7 @@ public class RubyUDPSocket extends RubyIPSocket {
         } catch (NotYetConnectedException e) {
             throw context.runtime.newErrnoEDESTADDRREQError("send(2)");
         } catch (UnknownHostException e) {
-            throw SocketUtils.sockerr(context.runtime, "send: name or service not known");
+            throw ResolutionError.newNameNotKnown(context);
         } catch (IOException e) { // SocketException
             throw context.runtime.newIOErrorFromException(e);
         } catch (RaiseException e) {
@@ -415,7 +415,7 @@ public class RubyUDPSocket extends RubyIPSocket {
                 }
             }
         } catch (UnknownHostException e) {
-            throw SocketUtils.sockerr(runtime, "send: name or service not known");
+            throw ResolutionError.newNameNotKnown(context);
         } catch (IOException e) { // SocketException
             final String message = e.getMessage();
             if (message != null) {

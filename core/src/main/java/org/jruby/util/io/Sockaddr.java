@@ -168,7 +168,7 @@ public class Sockaddr {
                 }
             }
             catch (UnknownHostException e) {
-                throw sockerr(context, "getaddrinfo: No address associated with nodename");
+                throw org.jruby.ext.socket.ResolutionError.newNameNotKnown(context);
             }
 
             writeSockaddrFooter(ds);

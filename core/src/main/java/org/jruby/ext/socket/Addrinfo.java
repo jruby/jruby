@@ -399,7 +399,7 @@ public class Addrinfo extends RubyObject {
 
             return addrinfo;
         } catch (UnknownHostException uhe) {
-            throw sockerr(context.runtime, "host not found");
+            throw ResolutionError.newNameNotKnown(context);
         }
     }
 
@@ -830,7 +830,7 @@ public class Addrinfo extends RubyObject {
             }
             return SocketUtils.getRubyInetAddress(node.convertToString().toString());
         } catch (UnknownHostException uhe) {
-            return null;
+            throw ResolutionError.newNameNotKnown(context);
         }
     }
 

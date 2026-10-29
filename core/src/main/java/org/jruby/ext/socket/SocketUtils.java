@@ -147,7 +147,7 @@ public class SocketUtils {
                     asFixnum(context, AF_INET.longValue()),
                     newString(context, new ByteList(addr.getAddress())));
         } catch(UnknownHostException e) {
-            throw sockerr(context.runtime, "gethostbyname: name or service not known");
+            throw ResolutionError.newNameNotKnown(context);
 
         }
     }
@@ -277,7 +277,7 @@ public class SocketUtils {
             throw newResolutionError(context, "getaddrinfo: ai_family not supported", "EAI_FAMILY");
         }
         if (host.isNil() && port.isNil()) {
-            throw newResolutionError(context, "getaddrinfo: name or service not known", "EAI_NONAME");
+            throw ResolutionError.newNameNotKnown(context);
         }
 
         Sock sock = socktype.isNil() ? SOCK_STREAM : sockFromArg(context, socktype);
@@ -306,7 +306,7 @@ public class SocketUtils {
 
         // AI_NUMERICHOST: the host must be an address literal; never resolve a name
         if ((flag & AI_NUMERICHOST) != 0 && !emptyHost && !isNumericHost(hostString)) {
-            throw newResolutionError(context, "getaddrinfo: name or service not known", "EAI_NONAME");
+            throw ResolutionError.newNameNotKnown(context);
         }
 
         try {
@@ -320,7 +320,7 @@ public class SocketUtils {
             }
 
         } catch(UnknownHostException e) {
-            throw newResolutionError(context, "getaddrinfo: name or service not known", "EAI_NONAME");
+            throw ResolutionError.newNameNotKnown(context);
         }
     }
 
@@ -433,7 +433,7 @@ public class SocketUtils {
         try {
             addr = InetAddress.getByName(host);
         } catch (UnknownHostException e) {
-            throw newResolutionError(context, "getaddrinfo: name or service not known", "EAI_NONAME");
+            throw ResolutionError.newNameNotKnown(context);
         }
 
         host = (flags & NI_NUMERICHOST.intValue()) == 0 ? addr.getCanonicalHostName() : addr.getHostAddress();
@@ -444,7 +444,7 @@ public class SocketUtils {
             portNumber = Integer.parseInt(port);
         } catch (NumberFormatException e) {
             Service named = Service.getServiceByName(port, null);
-            if (named == null) throw newResolutionError(context, "getaddrinfo: name or service not known", "EAI_NONAME");
+            if (named == null) throw ResolutionError.newNameNotKnown(context);
             portNumber = named.getPort();
             port = Integer.toString(portNumber);
         }
@@ -542,7 +542,7 @@ public class SocketUtils {
                 return RubyString.newInternalFromJavaExternal(context.runtime, address.getHostAddress());
             }
         } catch(UnknownHostException e) {
-            throw sockerr(context.runtime, "getaddress: name or service not known");
+            throw ResolutionError.newNameNotKnown(context);
         }
     }
 
