@@ -54,11 +54,11 @@ import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.func.ObjectIntIntFunction;
 import org.jruby.util.io.EncodingUtils;
+import org.jruby.util.io.GrowingPushbackInputStream;
 import org.jruby.util.io.PosixShim;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PushbackInputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -923,36 +923,4 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
     private IOInputStream ioInputStream;
     private GZIPInputStream io;
     private PushbackInputStream bufferedStream;
-
-    /**
-     * A PushbackInputStream that grows its buffer as needed, since ungetc and ungetbyte accept any amount of data.
-     */
-    private static class GrowingPushbackInputStream extends PushbackInputStream {
-        GrowingPushbackInputStream(InputStream in, int size) {
-            super(in, size);
-        }
-
-        @Override
-        public synchronized void unread(int b) throws IOException {
-            ensurePushbackSpace(1);
-            super.unread(b);
-        }
-
-        @Override
-        public synchronized void unread(byte[] b, int off, int len) throws IOException {
-            ensurePushbackSpace(len);
-            super.unread(b, off, len);
-        }
-
-        private void ensurePushbackSpace(int needed) {
-            if (buf == null || needed <= pos) return;
-
-            int used = buf.length - pos;
-            byte[] newBuf = new byte[Math.max(buf.length * 2, used + needed)];
-            int newPos = newBuf.length - used;
-            System.arraycopy(buf, pos, newBuf, newPos, used);
-            buf = newBuf;
-            pos = newPos;
-        }
-    }
 }
