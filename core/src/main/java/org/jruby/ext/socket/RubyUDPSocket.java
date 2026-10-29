@@ -195,7 +195,7 @@ public class RubyUDPSocket extends RubyIPSocket {
         }
 
         // Specific host specified.
-        return new InetSocketAddress(InetAddress.getByName(host.convertToString().toString()), port);
+        return new InetSocketAddress(SocketUtils.getRubyInetAddress(context, host.convertToString().toString()), port);
     }
 
     @JRubyMethod
@@ -204,7 +204,7 @@ public class RubyUDPSocket extends RubyIPSocket {
 
         try {
             String host = _host.isNil() ? "localhost" : _host.convertToString().toString();
-            InetAddress[] addrs = InetAddress.getAllByName(host);
+            InetAddress[] addrs = SocketUtils.getRubyInetAddresses(context, host);
 
             for (int i = 0; i < addrs.length; i++) {
                 InetAddress a = addrs[i];
@@ -380,7 +380,7 @@ public class RubyUDPSocket extends RubyIPSocket {
                     port = toInt(context, _port);
                 }
 
-                addrs = SocketUtils.getRubyInetAddresses(nameStr.toString());
+                addrs = SocketUtils.getRubyInetAddresses(context, nameStr.toString());
             }
 
             RubyString data = _mesg.convertToString();
