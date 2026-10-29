@@ -40,6 +40,7 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyClass;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Arity;
@@ -62,6 +63,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.jruby.RubyIO.PARAGRAPH_SEPARATOR;
+import static org.jruby.api.Access.encodingService;
 import static org.jruby.api.Access.fileClass;
 import static org.jruby.api.Access.globalVariables;
 import static org.jruby.api.Convert.asFixnum;
@@ -183,6 +185,12 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         initialize(context, realIo);
 
         return context.nil;
+    }
+
+    @CRuby(value = "rb_gzreader_external_encoding", file = "ext/zlib/zlib.c")
+    @JRubyMethod(name = "external_encoding")
+    public IRubyObject external_encoding(ThreadContext context) {
+        return encodingService(context).getEncoding(getReadEncoding(context));
     }
 
     @JRubyMethod(name = "lineno")
