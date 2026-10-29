@@ -3,7 +3,6 @@ exclude :test_copy_stream_pipe_nonblock, "copy_stream does not block against a n
 exclude :test_copy_stream_socket7, "uses fork"
 exclude :test_cross_thread_close_stdio, "needs investigation"
 exclude :test_dup_many, "needs investigation"
-exclude :test_each_line, "needs investigation"
 exclude :test_each_line_limit_0, "fails in JIT mode on Linux CI on GHA"
 exclude :test_fcntl_dupfd, "needs investigation"
 exclude :test_flush_in_finalizer1, "uses ObjectSpace"
