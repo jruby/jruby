@@ -163,6 +163,7 @@ public class RubyTCPServer extends RubyTCPSocket {
                     if (connected == null) continue;
 
                     connected.finishConnect();
+                    connected.configureBlocking(false);
 
                     // otherwise one key has been selected (ours) so we get the channel and hand it off
                     return initAcceptedSocket(context, socket, connected);
