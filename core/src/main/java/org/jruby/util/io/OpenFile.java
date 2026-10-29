@@ -538,10 +538,17 @@ public class OpenFile implements Finalizable {
     private boolean schedulerWaitWritable(ThreadContext context, IRubyObject scheduler) {
         unlock();
         try {
-            return FiberScheduler.ioWaitWritable(context, scheduler, io).isTrue();
+            return eventsReady(FiberScheduler.ioWaitWritable(context, scheduler, io));
         } finally {
             lock();
         }
+    }
+
+    // nil or 0 from io_wait means no events are ready, so the caller fails with its errno
+    @CRuby(value = "rb_io_maybe_wait_readable", file = "io.c")
+    @CRuby(value = "rb_io_maybe_wait_writable", file = "io.c")
+    private static boolean eventsReady(IRubyObject result) {
+        return result.isTrue() && !(result instanceof RubyFixnum events && events.getValue() == 0);
     }
 
     @CRuby(value = "rb_io_wait_readable", file = "io.c")
@@ -585,7 +592,7 @@ public class OpenFile implements Finalizable {
     private boolean schedulerWaitReadable(ThreadContext context, IRubyObject scheduler) {
         unlock();
         try {
-            return FiberScheduler.ioWaitReadable(context, scheduler, io).isTrue();
+            return eventsReady(FiberScheduler.ioWaitReadable(context, scheduler, io));
         } finally {
             lock();
         }
