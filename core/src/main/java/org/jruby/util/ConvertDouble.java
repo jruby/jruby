@@ -29,6 +29,7 @@
 package org.jruby.util;
 
 import ch.randelshofer.fastdoubleparser.ConfigurableDoubleParser;
+import org.jruby.anno.CRuby;
 import ch.randelshofer.fastdoubleparser.NumberFormatSymbols;
 
 import java.util.Collections;
@@ -56,6 +57,13 @@ public class ConvertDouble {
         int begin = bytes.begin();
         int length = bytes.length();
 
+        if (bytes.indexOf('_') >= 0) {
+            bytes = squeezeUnderscores(b, begin, length, strict);
+            b = bytes.getUnsafeBytes();
+            begin = bytes.begin();
+            length = bytes.length();
+        }
+
         if (!rejectedByRuby(b, begin, length)) {
             try {
                 // Fast path:
@@ -68,6 +76,97 @@ public class ConvertDouble {
         // Determine how many bytes we can safely consume, and then
         // call the fast parser again.
         return new DoubleConverter().parse(bytes, strict, true);
+    }
+
+    // The most bytes of a number's sign, digits and point kept, and room for its exponent after them
+    private static final int SQUEEZE_DIGITS = 15 * 4;
+    private static final int SQUEEZE_SIZE = SQUEEZE_DIGITS + 10;
+
+    /**
+     * Copy a number without the underscores between its digits, as CRuby does before parsing one
+     * that has them. An underscore that isn't between two digits ends the number, or is an error
+     * when strict, and so does any other character that can't continue it. Like CRuby, digits past
+     * the first 60 bytes of the number before its exponent are dropped.
+     *
+     * @param b the bytes
+     * @param begin where the number's text starts
+     * @param length how long its text is
+     * @param strict whether to throw for text that does not continue the number
+     * @return the number without its underscores
+     */
+    @CRuby(value = "rb_cstr_to_dbl_raise", file = "object.c")
+    static ByteList squeezeUnderscores(byte[] b, int begin, int length, boolean strict) {
+        byte[] buf = new byte[SQUEEZE_SIZE];
+        int n = 0;
+        int e = SQUEEZE_DIGITS;
+        int p = begin;
+        int end = begin + length;
+        byte prev = 0;
+        int dotSeen = 0;
+        int base = 10;
+        byte expLetter = 'e';
+
+        while (p < end && isSpace(b[p])) p++;
+
+        if (p < end && (b[p] == '+' || b[p] == '-')) prev = buf[n++] = b[p++];
+        if (p < end && b[p] == '0') {
+            prev = buf[n++] = '0';
+            p++;
+            if (p < end && (b[p] == 'x' || b[p] == 'X')) {
+                prev = buf[n++] = 'x';
+                base = 16;
+                expLetter = 'p';
+                p++;
+                if (p < end && b[p] == '0') {
+                    while (p < end && b[p] == '0') p++;
+                }
+            } else {
+                while (p < end && b[p] == '0') p++; // squeeze successive zeros
+            }
+        }
+
+        while (p < end) {
+            if (b[p] == '_') {
+                // remove an underscore between digits
+                if (n == 0 || !isDigit(prev, base) || ++p == end || !isDigit(b[p], base)) {
+                    if (strict) throw new DoubleConverter.LightweightNumberFormatException("invalid underscore");
+                    break;
+                }
+            }
+            prev = b[p++];
+            if (e == SQUEEZE_DIGITS && Character.toLowerCase(prev) == expLetter) {
+                e = SQUEEZE_SIZE - 1;
+                buf[n++] = prev;
+                if (p < end && (b[p] == '+' || b[p] == '-')) prev = buf[n++] = b[p++];
+                if (p < end && b[p] == '0') {
+                    prev = buf[n++] = '0';
+                    while (++p < end && b[p] == '0');
+                }
+                base = 10; // the exponent is decimal, even for a hex number
+                continue;
+            } else if (isSpace(prev)) {
+                while (p < end && isSpace(b[p])) p++;
+                if (p < end) {
+                    if (strict) throw new DoubleConverter.LightweightNumberFormatException("text after number");
+                    break;
+                }
+            } else if (prev == '.' ? dotSeen++ > 0 : !isDigit(prev, base)) {
+                if (strict) throw new DoubleConverter.LightweightNumberFormatException("not a number");
+                break;
+            }
+            if (n < e) buf[n++] = prev;
+        }
+
+        return new ByteList(buf, 0, n, false);
+    }
+
+    private static boolean isSpace(byte c) {
+        return c == ' ' || (c >= '\t' && c <= '\r');
+    }
+
+    // an ASCII digit of the base, since a negative byte is part of a multibyte character
+    private static boolean isDigit(byte c, int base) {
+        return c >= 0 && Character.digit((char) c, base) >= 0;
     }
 
     /**
@@ -400,6 +499,7 @@ public class ConvertDouble {
 
             int exponent = 0;
             int digits = 0;
+            boolean sawDigit = false; // digits does not count leading 0s
             boolean negative = false;
 
             if (value == '-') {
@@ -412,6 +512,7 @@ public class ConvertDouble {
                 value = next();
 
                 if (isDigit(value)) {
+                    sawDigit = true;
                     if (digits < EXPONENT_DIGITS_LIMIT) {
                         // Ignore leading 0s
                         if (value != '0' || digits > 0) {
@@ -432,6 +533,8 @@ public class ConvertDouble {
                     break;
                 }
             } 
+
+            if (isStrict && !sawDigit) strictError(); // an exponent needs a digit
 
             if (negative) {
                 exponent = -exponent;
