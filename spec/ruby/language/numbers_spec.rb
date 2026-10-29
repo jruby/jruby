@@ -88,6 +88,80 @@ describe "A number literal" do
     eval('-0.6i').should == Complex(0, -0.6)
   end
 
+  # Warm the literal blocks before comparing results, since JIT compilation may
+  # replace the interpreter's literal cache after an initial invocation.
+  it "reuses the same Complex object when an integer imaginary literal is evaluated repeatedly" do
+    literal = -> { 5i }
+    2.times { literal.call }
+    first = literal.call
+    second = literal.call
+    first.should.equal?(second)
+    first.should.frozen?
+  end
+
+  it "reuses the same Complex object when a float imaginary literal is evaluated repeatedly" do
+    literal = -> { 0.6i }
+    2.times { literal.call }
+    first = literal.call
+    second = literal.call
+    first.should.equal?(second)
+    first.should.frozen?
+  end
+
+  it "reuses the same Complex object when a bignum imaginary literal is evaluated repeatedly" do
+    literal = -> { 18446744073709551616i }
+    2.times { literal.call }
+    first = literal.call
+    second = literal.call
+    first.should.equal?(second)
+    first.should.frozen?
+  end
+
+  it "reuses the same Complex object when a rational imaginary literal is evaluated repeatedly" do
+    literals = [-> { 5ri }, -> { 0.6ri }, -> { 18446744073709551616ri }, -> { 0.00000000000000000001ri }]
+    literals.each do |literal|
+      2.times { literal.call }
+      first = literal.call
+      second = literal.call
+      first.should.equal?(second)
+      first.should.frozen?
+    end
+  end
+
+  it "reuses the same Rational object when a rational literal is evaluated repeatedly" do
+    literals = [-> { 5r }, -> { 0.6r }, -> { 18446744073709551616r }, -> { 0.00000000000000000001r }]
+    literals.each do |literal|
+      2.times { literal.call }
+      first = literal.call
+      second = literal.call
+      first.should.equal?(second)
+      first.should.frozen?
+    end
+  end
+
+  it "normalizes and reuses Rational and Complex literals with large decimal components" do
+    literals = [
+      [-> { 0.5000000000000000000000000000r }, -> { 0.5000000000000000000000000000ri }, 1, 2],
+      [-> { 0.00000000000000000001r }, -> { 0.00000000000000000001ri }, 1, 100000000000000000000],
+      [-> { 100000000000000000000.5000000000000000000000r }, -> { 100000000000000000000.5000000000000000000000ri }, 200000000000000000001, 2],
+      [-> { 1.23456789012345678901r }, -> { 1.23456789012345678901ri }, 123456789012345678901, 100000000000000000000]
+    ]
+    literals.each do |rational, complex, numerator, denominator|
+      2.times do
+        rational.call
+        complex.call
+      end
+      first_rational = rational.call
+      second_rational = rational.call
+      first_complex = complex.call
+      second_complex = complex.call
+      first_rational.should.equal?(second_rational)
+      first_complex.should.equal?(second_complex)
+      [first_rational.numerator, first_rational.denominator].should == [numerator, denominator]
+      [first_complex.imaginary.numerator, first_complex.imaginary.denominator].should == [numerator, denominator]
+    end
+  end
+
   it "can be a hexadecimal literal with trailing 'i' to represent a Complex" do
     eval('0xffi').should == Complex(0, 255)
     eval('-0xffi').should == Complex(0, -255)
