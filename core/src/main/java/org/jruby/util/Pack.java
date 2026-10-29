@@ -1436,19 +1436,19 @@ public class Pack {
         return index;
     }
 
+    // uuencoded lines, each starting with its length and optionally ending with a checksum byte
+    @CRuby(value = "pack_unpack_internal", file = "pack.c", note = "'u' directive")
     private static IRubyObject unpack_u(ThreadContext context, Block block, RubyArray result, ByteBuffer encode, int mode) {
-        int length = unpackUMMaxOutputBytes(encode.remaining());
+        int s = encode.position();
+        int send = encode.limit();
+        int length = unpackUMMaxOutputBytes(send - s);
         byte[] lElem = new byte[length];
         int index = 0;
-        int s = 0;
         int total = 0;
-        if (length > 0) s = encode.get();
-        while (encode.hasRemaining() && s > ' ' && s < 'a') {
-            int a, b, c, d;
-            byte[] hunk = new byte[3];
 
-            int len = (s - ' ') & 077;
-            s = safeGet(encode);
+        while (s < send && isUUChar(byteAt(encode, s), ' ' + 1)) {
+            int len = uuValue(byteAt(encode, s++));
+
             total += len;
             if (total > length) {
                 len -= total - length;
@@ -1457,49 +1457,39 @@ public class Pack {
 
             while (len > 0) {
                 int mlen = len > 3 ? 3 : len;
+                int a = 0, b = 0, c = 0, d = 0;
 
-                if (encode.hasRemaining() && s >= ' ') {
-                    a = (s - ' ') & 077;
-                    s = safeGet(encode);
-                } else
-                    a = 0;
-                if (encode.hasRemaining() && s >= ' ') {
-                    b = (s - ' ') & 077;
-                    s = safeGet(encode);
-                } else
-                    b = 0;
-                if (encode.hasRemaining() && s >= ' ') {
-                    c = (s - ' ') & 077;
-                    s = safeGet(encode);
-                } else
-                    c = 0;
-                if (encode.hasRemaining() && s >= ' ') {
-                    d = (s - ' ') & 077;
-                    s = safeGet(encode);
-                } else
-                    d = 0;
-                hunk[0] = (byte)((a << 2 | b >> 4) & 255);
-                hunk[1] = (byte)((b << 4 | c >> 2) & 255);
-                hunk[2] = (byte)((c << 6 | d) & 255);
+                if (s < send && isUUChar(byteAt(encode, s), ' ')) a = uuValue(byteAt(encode, s++));
+                if (s < send && isUUChar(byteAt(encode, s), ' ')) b = uuValue(byteAt(encode, s++));
+                if (s < send && isUUChar(byteAt(encode, s), ' ')) c = uuValue(byteAt(encode, s++));
+                if (s < send && isUUChar(byteAt(encode, s), ' ')) d = uuValue(byteAt(encode, s++));
 
+                byte[] hunk = { (byte) (a << 2 | b >> 4), (byte) (b << 4 | c >> 2), (byte) (c << 6 | d) };
                 for (int i = 0; i < mlen; i++) lElem[index++] = hunk[i];
                 len -= mlen;
             }
-            if (s == '\r') {
-                s = safeGet(encode);
-            }
-            if (s == '\n') {
-                s = safeGet(encode);
-            }
-            else if (encode.hasRemaining()) {
-                if (safeGet(encode) == '\n') {
-                    safeGet(encode); // Possible Checksum Byte
-                } else if (encode.hasRemaining()) {
-                    positionBuffer(encode, encode.position() - 1);
-                }
-            }
+            if (s < send && byteAt(encode, s) != '\r' && byteAt(encode, s) != '\n') s++; // possible checksum byte
+            if (s < send && byteAt(encode, s) == '\r') s++;
+            if (s < send && byteAt(encode, s) == '\n') s++;
         }
-        return appendOrYield(context, block, result, new ByteList(lElem, 0, index, ASCII, false), mode);
+        encode.position(s);
+
+        return appendOrYield(context, block, result, new ByteList(lElem, 0, total, ASCII, false), mode);
+    }
+
+    // whether a character is in the range uuencoding uses, from the given lowest one up to but not including 'a'
+    private static boolean isUUChar(int c, int lowest) {
+        return c >= lowest && c < 'a';
+    }
+
+    // the 6 bits a uuencoded character stands for
+    private static int uuValue(int c) {
+        return (c - ' ') & 077;
+    }
+
+    // the byte at the given index, as an unsigned value like CRuby's (unsigned char)
+    private static int byteAt(ByteBuffer buffer, int index) {
+        return Byte.toUnsignedInt(buffer.get(index));
     }
 
     private static int unpackUMMaxOutputBytes(int length) {
