@@ -176,6 +176,12 @@ describe "Ruby character strings" do
     eval("[1, ?\u3053, ?a, ?\u00e9]").should == [1, "\u3053", "a", "\u00e9"]
   end
 
+  it "are not frozen unless String literals are" do
+    eval("?z").should_not.frozen?
+    eval("[1, ?\u3053]").last.should_not.frozen?
+    eval("# frozen_string_literal: true\n?z").should.frozen?
+  end
+
   describe "Unicode escaping" do
     it "can be done with \\u and four hex digits" do
       [ ["\u0000", 0x0000],
