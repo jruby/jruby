@@ -4,6 +4,7 @@ import com.headius.invokebinder.Signature;
 
 import java.io.IOException;
 import java.lang.invoke.MethodHandle;
+import java.math.BigInteger;
 
 import org.jcodings.Encoding;
 import org.jruby.EvalType;
@@ -11,6 +12,7 @@ import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
+import org.jruby.RubyBignum;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyComplex;
@@ -2674,6 +2676,17 @@ public class IRRuntimeHelpers {
     @JIT
     public static RubyRational newRationalCanonicalize(ThreadContext context, IRubyObject num, IRubyObject den) {
         return (RubyRational) RubyRational.newRationalCanonicalize(context, num, den);
+    }
+
+    @JIT
+    public static RubyRational newRationalRaw(ThreadContext context, String numerator, String denominator) {
+        return newRationalRaw(context, new BigInteger(numerator), new BigInteger(denominator));
+    }
+
+    @Interp @JIT
+    public static RubyRational newRationalRaw(ThreadContext context, BigInteger numerator, BigInteger denominator) {
+        return RubyRational.newRationalRaw(context.runtime,
+                RubyBignum.bignorm(context.runtime, numerator), RubyBignum.bignorm(context.runtime, denominator));
     }
 
     @JIT
