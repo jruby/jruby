@@ -1269,37 +1269,45 @@ public class Pack {
         return context.nil;
     }
 
+    // Quoted-printable. A malformed escape and everything after it is kept as it is.
+    @CRuby(value = "pack_unpack_internal", file = "pack.c", note = "'M' directive")
     private static IRubyObject unpack_M(ThreadContext context, Block block, RubyArray result, ByteBuffer encode, int mode) {
-        byte[] lElem = new byte[Math.max(encode.remaining(),0)];
+        int s = encode.position();
+        int send = encode.limit();
+        byte[] lElem = new byte[send - s];
         int index = 0;
-        for(;;) {
-            if (!encode.hasRemaining()) break;
-            int c = safeGet(encode);
-            if (c != '=') {
-                lElem[index++] = (byte)c;
+        int ss = s; // the start of what has not been decoded yet
+
+        while (s < send) {
+            if (byteAt(encode, s) == '=') {
+                if (++s == send) break;
+                if (s + 1 < send && byteAt(encode, s) == '\r' && byteAt(encode, s + 1) == '\n') s++;
+                if (byteAt(encode, s) != '\n') {
+                    int c1 = hex2num(byteAt(encode, s));
+                    if (c1 == -1) break;
+                    if (++s == send) break;
+                    int c2 = hex2num(byteAt(encode, s));
+                    if (c2 == -1) break;
+                    lElem[index++] = (byte) (c1 << 4 | c2);
+                }
             } else {
-                if (!encode.hasRemaining()) break;
-                markBuffer(encode);
-                int c1 = safeGet(encode);
-                if (c1 == '\n' || (c1 == '\r' && (c1 = safeGet(encode)) == '\n')) continue;
-                int d1 = Character.digit(c1, 16);
-                if (d1 == -1) {
-                    encode.reset();
-                    break;
-                }
-                markBuffer(encode);
-                if (!encode.hasRemaining()) break;
-                int c2 = safeGet(encode);
-                int d2 = Character.digit(c2, 16);
-                if (d2 == -1) {
-                    encode.reset();
-                    break;
-                }
-                byte value = (byte)(d1 << 4 | d2);
-                lElem[index++] = value;
+                lElem[index++] = encode.get(s);
             }
+            s++;
+            ss = s;
         }
+        encode.get(ss, lElem, index, send - ss);
+        index += send - ss;
+        encode.position(s);
+
         return appendOrYield(context, block, result, new ByteList(lElem, 0, index, ASCII, false), mode);
+    }
+
+    private static int hex2num(int c) {
+        if (c >= '0' && c <= '9') return c - '0';
+        if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+        if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+        return -1;
     }
 
     private static IRubyObject unpack_m(ThreadContext context, Block block, RubyArray result, ByteBuffer encode, int occurrences, int mode) {
