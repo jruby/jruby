@@ -3954,6 +3954,7 @@ public class RubyModule extends RubyObject {
 
     private void setVisibility(ThreadContext context, IRubyObject[] args, Visibility visibility) {
         if (args.length == 0) {
+            scopeVisibilityCheck(context, visibility.name().toLowerCase());
             // Note: we change current frames visibility here because the methods which call
             // this method are all "fast" (e.g. they do not created their own frame).
             context.setCurrentVisibility(visibility);
@@ -3962,8 +3963,21 @@ public class RubyModule extends RubyObject {
         }
     }
 
+    /**
+     * Warn that public, protected, private or module_function without arguments only changes the
+     * default visibility of the scope it is called from, when that scope is a method body. Those
+     * methods read the caller's scope, so even compiled code makes it available here.
+     */
+    @CRuby(value = "scope_visibility_check", file = "vm_method.c")
+    private static void scopeVisibilityCheck(ThreadContext context, String name) {
+        StaticScope scope = context.getCurrentStaticScope();
+        if (scope != null && scope.getScopeType() != null && scope.getScopeType().isMethodType()) {
+            warn(context, "calling " + name + " without arguments inside a method may not have the intended effect");
+        }
+    }
+
     @CRuby(value = "rb_mod_public", file = "vm_method.c")
-    @JRubyMethod(name = "public", rest = true, visibility = PRIVATE, writes = VISIBILITY)
+    @JRubyMethod(name = "public", rest = true, visibility = PRIVATE, reads = SCOPE, writes = VISIBILITY)
     public IRubyObject _public(ThreadContext context, IRubyObject[] args) {
         checkFrozen();
         setVisibility(context, args, PUBLIC);
@@ -3982,7 +3996,7 @@ public class RubyModule extends RubyObject {
     }
 
     @CRuby(value = "rb_mod_protected", file = "vm_method.c")
-    @JRubyMethod(name = "protected", rest = true, visibility = PRIVATE, writes = VISIBILITY)
+    @JRubyMethod(name = "protected", rest = true, visibility = PRIVATE, reads = SCOPE, writes = VISIBILITY)
     public IRubyObject _protected(ThreadContext context, IRubyObject[] args) {
         checkFrozen();
         setVisibility(context, args, PROTECTED);
@@ -4001,7 +4015,7 @@ public class RubyModule extends RubyObject {
     }
 
     @CRuby(value = "rb_mod_private", file = "vm_method.c")
-    @JRubyMethod(name = "private", rest = true, visibility = PRIVATE, writes = VISIBILITY)
+    @JRubyMethod(name = "private", rest = true, visibility = PRIVATE, reads = SCOPE, writes = VISIBILITY)
     public IRubyObject _private(ThreadContext context, IRubyObject[] args) {
         checkFrozen();
         setVisibility(context, args, PRIVATE);
@@ -4020,11 +4034,12 @@ public class RubyModule extends RubyObject {
     }
 
     @CRuby(value = "rb_mod_modfunc", file = "vm_method.c")
-    @JRubyMethod(name = "module_function", rest = true, visibility = PRIVATE, writes = VISIBILITY)
+    @JRubyMethod(name = "module_function", rest = true, visibility = PRIVATE, reads = SCOPE, writes = VISIBILITY)
     public IRubyObject _module_function(ThreadContext context, IRubyObject[] args) {
         if (!isModule()) throw typeError(context, "module_function must be called for modules");
 
         if (args.length == 0) {
+            scopeVisibilityCheck(context, "module_function");
             context.setCurrentVisibility(MODULE_FUNCTION);
         } else {
             setMethodVisibility(context, args, PRIVATE);
