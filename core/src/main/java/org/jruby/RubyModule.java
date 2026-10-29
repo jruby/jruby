@@ -1935,6 +1935,56 @@ public class RubyModule extends RubyObject {
         addMethodInternal(context, id, method);
     }
 
+    /**
+     * The warning, when $VERBOSE is true, that a method about to be defined replaces one this
+     * module already has, to give once the new one is in place. Like CRuby, there is none when the
+     * old method was aliased, since the alias keeps it, or when it is undefined, refined, an alias
+     * itself or a visibility change of an inherited method. For a Ruby method, the warning also
+     * says where the old one was defined. Unlike CRuby, replacing a method written in Java doesn't
+     * warn.
+     *
+     * @param context the current thread context
+     * @param id the name of the method being defined
+     * @return the warning, or null if there is none
+     */
+    @CRuby(value = "rb_method_entry_make", file = "vm_method.c", note = "method redefinition check")
+    public String methodRedefinitionWarning(ThreadContext context, String id) {
+        // the Ruby parts of the kernel replace some core methods while booting
+        if (!context.runtime.isVerbose() || context.runtime.isBooting()) return null;
+
+        DynamicMethod old = getMethodLocation().getMethods().get(id);
+        if (old == null || old.isUndefined() || old.isRefined() ||
+                old instanceof AliasMethod || old instanceof PartialDelegatingMethod) {
+            return null;
+        }
+
+        DynamicMethod real = old.getRealMethod();
+        if (real.isAliased()) return null;
+
+        // JRuby's Java-backed libraries, such as json, openssl and ffi, replace some of their own
+        // Java methods and the Ruby methods JRuby ships inside its jar, where CRuby's C extensions
+        // don't, so only methods a Ruby program defined warn
+        if (!isUserDefined(real)) return null;
+
+        if (real instanceof PositionAware position && position.getFile() != null) {
+            return "method redefined; discarding old " + id + "\n" +
+                    position.getFile() + ":" + (position.getLine() + 1) + ": warning: previous definition of " + id + " was here";
+        }
+        return "method redefined; discarding old " + id;
+    }
+
+    // whether a method came from a Ruby program, rather than from Java or JRuby's own Ruby files
+    private static boolean isUserDefined(DynamicMethod method) {
+        if (method instanceof AttrReaderMethod reader) return reader.isFromRuby();
+        if (method instanceof AttrWriterMethod writer) return writer.isFromRuby();
+        if (method instanceof JavaMethod) return false;
+        if (method instanceof PositionAware position) {
+            String file = position.getFile();
+            return file == null || !(file.startsWith("uri:classloader:/jruby/") || file.contains("jruby.jar!/jruby/"));
+        }
+        return true;
+    }
+
     @CRuby(value = "rb_add_refined_method_entry", file = "vm_method.c")
     private void addRefinedMethodEntry(ThreadContext context, String id, DynamicMethod method) {
         RubyModule refinedClass = refinementStore.refinedClass;
@@ -2747,7 +2797,11 @@ public class RubyModule extends RubyObject {
         return defineModuleUnder(getCurrentContext(), name);
     }
 
-    private void addAccessor(ThreadContext context, RubySymbol identifier, Visibility visibility, boolean readable, boolean writeable) {
+    /**
+     * @param fromRuby whether Ruby code called attr_* to make these, rather than Java code, which
+     * decides whether replacing them warns
+     */
+    private void addAccessor(ThreadContext context, RubySymbol identifier, Visibility visibility, boolean readable, boolean writeable, boolean fromRuby) {
         String internedIdentifier = identifier.idString();
 
         if (visibility == MODULE_FUNCTION) {
@@ -2765,16 +2819,22 @@ public class RubyModule extends RubyObject {
         int line = context.getLine();
 
         if (readable) {
+            String redefined = fromRuby ? methodRedefinitionWarning(context, internedIdentifier) : null;
             AttrReaderMethod reader = new AttrReaderMethod(getMethodLocation(), visibility, variableName);
             reader.setSourcePosition(file, line);
+            reader.setFromRuby(fromRuby);
             addMethod(context, internedIdentifier, reader);
+            if (redefined != null) warning(context, redefined);
             methodAdded(context, identifier);
         }
         if (writeable) {
             identifier = identifier.asWriter();
+            String redefined = fromRuby ? methodRedefinitionWarning(context, identifier.idString()) : null;
             AttrWriterMethod writer = new AttrWriterMethod(getMethodLocation(), visibility, variableName);
             writer.setSourcePosition(file, line);
+            writer.setFromRuby(fromRuby);
             addMethod(context, identifier.idString(), writer);
+            if (redefined != null) warning(context, redefined);
             methodAdded(context, identifier);
         }
     }
@@ -2997,14 +3057,16 @@ public class RubyModule extends RubyObject {
                 IRMethod method = closure.convertToMethod(name.getBytes());
                 if (method != null) {
                     var newMethod = new DefineMethodMethod(method, visibility, this, context.getFrameBlock());
-                    Helpers.addInstanceMethod(this, name, newMethod, visibility, context);
+                    String redefined = methodRedefinitionWarning(context, name.idString());
+                    Helpers.addInstanceMethod(this, name, newMethod, visibility, context, redefined);
                     return name;
                 }
             }
         }
 
         var newMethod = createProcMethod(context.runtime, name.idString(), visibility, block);
-        Helpers.addInstanceMethod(this, name, newMethod, visibility, context);
+        String redefined = methodRedefinitionWarning(context, name.idString());
+        Helpers.addInstanceMethod(this, name, newMethod, visibility, context, redefined);
 
         return name;
     }
@@ -3039,7 +3101,8 @@ public class RubyModule extends RubyObject {
             throw typeError(context, arg1, "Proc/Method/UnboundMethod");
         }
 
-        Helpers.addInstanceMethod(this, name, newMethod, visibility, context);
+        String redefined = methodRedefinitionWarning(context, name.idString());
+        Helpers.addInstanceMethod(this, name, newMethod, visibility, context, redefined);
 
         return name;
     }
@@ -3429,15 +3492,15 @@ public class RubyModule extends RubyObject {
     }
 
     public void addReadWriteAttribute(ThreadContext context, String name) {
-        addAccessor(context, newHardSymbol(context.runtime, name.intern()), PUBLIC, true, true);
+        addAccessor(context, newHardSymbol(context.runtime, name.intern()), PUBLIC, true, true, false);
     }
 
     public void addReadAttribute(ThreadContext context, String name) {
-        addAccessor(context, newHardSymbol(context.runtime, name.intern()), PUBLIC, true, false);
+        addAccessor(context, newHardSymbol(context.runtime, name.intern()), PUBLIC, true, false, false);
     }
 
     public void addWriteAttribute(ThreadContext context, String name) {
-        addAccessor(context, newHardSymbol(context.runtime, name.intern()), PUBLIC, false, true);
+        addAccessor(context, newHardSymbol(context.runtime, name.intern()), PUBLIC, false, true, false);
     }
 
     @JRubyMethod(required = 1, rest = true, checkArity = false, visibility = PRIVATE)
@@ -3487,7 +3550,7 @@ public class RubyModule extends RubyObject {
             warningDeprecated(context, "optional boolean argument is obsoleted");
             boolean writeable = args[1].isTrue();
             RubySymbol sym = checkID(context, args[0]);
-            addAccessor(context, sym, getCurrentVisibilityForDefineMethod(context), args[0].isTrue(), writeable);
+            addAccessor(context, sym, getCurrentVisibilityForDefineMethod(context), args[0].isTrue(), writeable, true);
 
             return writeable ?
                     newArray(context, sym, asSymbol(context, sym.getBytes().dup().append('='))) :
@@ -3508,7 +3571,7 @@ public class RubyModule extends RubyObject {
             RubySymbol sym = checkID(context, args[i]);
             result[i] = sym;
 
-            addAccessor(context, sym, visibility, true, false);
+            addAccessor(context, sym, visibility, true, false, true);
         }
 
         return newArray(context, result);
@@ -3526,7 +3589,7 @@ public class RubyModule extends RubyObject {
             ByteList writer = sym.getBytes().dup().append('=');
             result[i] = asSymbol(context, writer);
 
-            addAccessor(context, sym, visibility, false, true);
+            addAccessor(context, sym, visibility, false, true, true);
         }
 
         return newArray(context, result);
@@ -3556,7 +3619,7 @@ public class RubyModule extends RubyObject {
             // This is almost always already interned, since it will be called with a symbol in most cases
             // but when created from Java code, we might getService an argument that needs to be interned.
             // addAccessor has as a precondition that the string MUST be interned
-            addAccessor(context, sym, visibility, true, true);
+            addAccessor(context, sym, visibility, true, true, true);
         }
 
         return newArray(context, result);

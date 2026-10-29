@@ -9,7 +9,6 @@ exclude :test_define_module_under_private_constant, "we don't evaluate colon2-li
 exclude :test_deprecate_constant, "work in progress"
 exclude :test_iclass_memory_leak, "no working assert_no_memory_leak method"
 exclude :test_include_with_prepend, "work in progress"
-exclude :test_method_redefinition, "needs investigation"
 exclude :test_module_clone_memory_leak, "no working assert_no_memory_leak method"
 exclude :test_module_function_inside_method, "work in progress"
 exclude :test_prepend_constant_lookup, "work in progress"
