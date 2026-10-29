@@ -119,6 +119,15 @@ public class Mutex extends RubyObject implements DataType {
         super(runtime, type);
     }
 
+    private Mutex(Ruby runtime, RubyClass type, boolean useObjectSpace) {
+        super(runtime, type, useObjectSpace);
+    }
+
+    /** A Mutex for runtime internals, kept out of ObjectSpace like MRI's hidden mutexes. */
+    public static Mutex newInternal(Ruby runtime) {
+        return new Mutex(runtime, runtime.getMutex(), false);
+    }
+
     public static RubyClass setup(ThreadContext context, RubyClass Thread, RubyClass Object) {
         return (RubyClass) Object.setConstant(context, "Mutex",
                 Thread.defineClassUnder(context, "Mutex", Object, Mutex::new).reifiedClass(Mutex.class).defineMethods(context, Mutex.class));
@@ -339,7 +348,11 @@ public class Mutex extends RubyObject implements DataType {
 
     @JRubyMethod(name = "owned?")
     public IRubyObject owned_p(ThreadContext context) {
-        return asBoolean(context, lock.isHeldByCurrentThread());
+        return asBoolean(context, isOwned());
+    }
+
+    public boolean isOwned() {
+        return lock.isHeldByCurrentThread();
     }
 
     private void checkRelocking(ThreadContext context) {
