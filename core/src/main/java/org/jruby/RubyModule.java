@@ -4864,6 +4864,8 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "remove_const", visibility = PRIVATE)
     public IRubyObject remove_const(ThreadContext context, IRubyObject rubyName) {
         String id = validateConstant(context, rubyName);
+        ConstantEntry entry = constantEntryFetch(id);
+        if (entry != null && entry.deprecated) warnDeprecatedConstant(context, id);
         IRubyObject value = deleteConstant(id);
 
         if (value != null) { // found it!
@@ -6117,12 +6119,15 @@ public class RubyModule extends RubyObject {
             context.setPrivateConstantReference(getOrigin());
             return null;
         }
-        if (entry.deprecated) {
-            String parent = "Object".equals(getName(context)) ? "" : getName(context);
-            warnDeprecated(context, "constant " + parent + "::" + name + " is deprecated");
-        }
+        if (entry.deprecated) warnDeprecatedConstant(context, name);
 
         return entry;
+    }
+
+    @CRuby(value = "rb_const_warn_if_deprecated", file = "variable.c", note = "warning only, callers check the deprecated flag")
+    private void warnDeprecatedConstant(ThreadContext context, String name) {
+        String parent = "Object".equals(getName(context)) ? "" : getName(context);
+        warnDeprecated(context, "constant " + parent + "::" + name + " is deprecated");
     }
 
     @Deprecated(since = "10.0.0.0")
