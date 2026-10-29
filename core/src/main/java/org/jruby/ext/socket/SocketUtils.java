@@ -67,6 +67,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static jnr.constants.platform.AddressFamily.AF_INET;
+import static jnr.constants.platform.AddressFamily.AF_UNSPEC;
+import static org.jruby.ext.socket.ResolutionError.newResolutionError;
 import static jnr.constants.platform.AddressFamily.AF_INET6;
 import static jnr.constants.platform.IPProto.IPPROTO_TCP;
 import static jnr.constants.platform.IPProto.IPPROTO_UDP;
@@ -145,7 +147,7 @@ public class SocketUtils {
                     asFixnum(context, AF_INET.longValue()),
                     newString(context, new ByteList(addr.getAddress())));
         } catch(UnknownHostException e) {
-            throw sockerr(context.runtime, "gethostbyname: name or service not known");
+            throw ResolutionError.newNameNotKnown(context);
 
         }
     }
@@ -270,6 +272,14 @@ public class SocketUtils {
 
         AddressFamily addressFamily = family.isNil() ? null : addressFamilyFromArg(context, family);
 
+        // like getaddrinfo(3), which only resolves IP addresses and needs a host or a service
+        if (addressFamily != null && addressFamily != AF_INET && addressFamily != AF_INET6 && addressFamily != AF_UNSPEC) {
+            throw newResolutionError(context, "getaddrinfo: ai_family not supported", "EAI_FAMILY");
+        }
+        if (host.isNil() && port.isNil()) {
+            throw ResolutionError.newNameNotKnown(context);
+        }
+
         Sock sock = socktype.isNil() ? SOCK_STREAM : sockFromArg(context, socktype);
 
         if(port instanceof RubyString) {
@@ -296,7 +306,7 @@ public class SocketUtils {
 
         // AI_NUMERICHOST: the host must be an address literal; never resolve a name
         if ((flag & AI_NUMERICHOST) != 0 && !emptyHost && !isNumericHost(hostString)) {
-            throw sockerr(runtime, "getaddrinfo: name or service not known");
+            throw ResolutionError.newNameNotKnown(context);
         }
 
         try {
@@ -310,8 +320,7 @@ public class SocketUtils {
             }
 
         } catch(UnknownHostException e) {
-            throw sockerr(runtime, "getaddrinfo: name or service not known");
-
+            throw ResolutionError.newNameNotKnown(context);
         }
     }
 
@@ -375,9 +384,19 @@ public class SocketUtils {
                 throw argumentError(context, "array size should be 3 or 4, "+ len +" given");
             }
 
+            // CRuby resolves the array with getaddrinfo(3), which only handles IP families
+            IRubyObject family = ary.eltInternal(0);
+            AddressFamily addressFamily = family.isNil() ? null : addressFamilyFromArg(context, family);
+            if (addressFamily != null && addressFamily != AF_INET && addressFamily != AF_INET6 && addressFamily != AF_UNSPEC) {
+                throw newResolutionError(context, "getaddrinfo: ai_family not supported", "EAI_FAMILY");
+            }
+
             // if array has 4 elements, third element is ignored
-            port = ary.eltInternal(1).toString();
-            host = len == 3 ? ary.eltInternal(2).toString() : ary.eltInternal(3).toString();
+            IRubyObject portArg = ary.eltInternal(1);
+            IRubyObject hostArg = len == 3 ? ary.eltInternal(2) : ary.eltInternal(3);
+            port = portArg.toString();
+            host = hostArg.toString();
+            if (port.indexOf('\0') >= 0 || host.indexOf('\0') >= 0) throw argumentError(context, "string contains null byte");
 
         } else if (arg0 instanceof RubyString argS) {
             String arg = argS.toString();
@@ -414,12 +433,23 @@ public class SocketUtils {
         try {
             addr = InetAddress.getByName(host);
         } catch (UnknownHostException e) {
-            throw sockerr(context.runtime, "unknown host: "+ host);
+            throw ResolutionError.newNameNotKnown(context);
         }
 
         host = (flags & NI_NUMERICHOST.intValue()) == 0 ? addr.getCanonicalHostName() : addr.getHostAddress();
 
-        Service serv = Service.getServiceByPort(Integer.parseInt(port), null);
+        // the port may also be given as a service name, such as "http"
+        int portNumber;
+        try {
+            portNumber = Integer.parseInt(port);
+        } catch (NumberFormatException e) {
+            Service named = Service.getServiceByName(port, null);
+            if (named == null) throw ResolutionError.newNameNotKnown(context);
+            portNumber = named.getPort();
+            port = Integer.toString(portNumber);
+        }
+
+        Service serv = Service.getServiceByPort(portNumber, null);
 
         if (serv != null) {
             port = (flags & NI_NUMERICSERV.intValue()) == 0 ? serv.getName() : Integer.toString(serv.getPort());
@@ -512,7 +542,7 @@ public class SocketUtils {
                 return RubyString.newInternalFromJavaExternal(context.runtime, address.getHostAddress());
             }
         } catch(UnknownHostException e) {
-            throw sockerr(context.runtime, "getaddress: name or service not known");
+            throw ResolutionError.newNameNotKnown(context);
         }
     }
 
