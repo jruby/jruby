@@ -26,6 +26,14 @@ describe "Kernel#__dir__" do
       Object.new.instance_eval("__dir__", "foo/bar.rb").should == "foo"
     end
 
+    it "returns File.dirname(filename) when the filename is \"(eval)\"" do
+      eval("__dir__", nil, "(eval)").should == "."
+    end
+
+    it "returns nil when the filename looks like the one eval makes up" do
+      eval("__dir__", nil, "(eval at foo.rb:1)").should == nil
+    end
+
     it "returns File.dirname(filename) in methods defined by eval" do
       klass = Class.new
       klass.class_eval("def evaluated_dir; __dir__; end", "foo/bar.rb")

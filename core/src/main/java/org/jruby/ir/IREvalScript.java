@@ -3,6 +3,7 @@ package org.jruby.ir;
 import org.jruby.EvalType;
 import org.jruby.ir.operands.Label;
 import org.jruby.parser.StaticScope;
+import org.jruby.anno.CRuby;
 import org.jruby.util.ByteList;
 
 public class IREvalScript extends IRClosure {
@@ -10,6 +11,9 @@ public class IREvalScript extends IRClosure {
     private final boolean fileNameSynthetic;
 
     private static final ByteList EVAL = new ByteList(new byte[] {'E', 'V', 'A', 'L'});
+
+    // the start of the "(eval at FILE:LINE)" filename eval uses when none is given
+    private static final String EVAL_LOCATION_MARK = "(eval at ";
 
     public IREvalScript(IRManager manager, IRScope lexicalParent, String fileName,
             int lineNumber, StaticScope staticScope, EvalType evalType) {
@@ -77,5 +81,22 @@ public class IREvalScript extends IRClosure {
 
     public boolean isFileNameSynthetic() {
         return fileNameSynthetic;
+    }
+
+    /**
+     * Whether code in this eval has no path for require_relative and __dir__ to use, as CRuby's
+     * rb_current_realfilepath decides. That's when eval made the filename up, or when it looks like
+     * the "(eval at FILE:LINE)" name eval makes up, which CRuby recognizes by its shape. A filename
+     * of "(eval)" given explicitly is a real path in CRuby, since only the one eval makes up counts.
+     *
+     * @return true if there is no path
+     */
+    @CRuby(value = "rb_current_realfilepath", file = "vm_eval.c")
+    public boolean hasNoRealPath() {
+        if (fileNameSynthetic) return true;
+
+        String name = fileName;
+        return name != null && name.length() > EVAL_LOCATION_MARK.length() + 1 &&
+                name.startsWith(EVAL_LOCATION_MARK) && name.endsWith(")");
     }
 }

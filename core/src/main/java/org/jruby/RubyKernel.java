@@ -1384,16 +1384,22 @@ public class RubyKernel {
     public static IRubyObject require_relative(ThreadContext context, IRubyObject recv, IRubyObject name){
         RubyString relativePath = RubyFile.get_path(context, name);
         String file = context.getCurrentStaticScope().getFile();
+        IREvalScript evalScript = getEvalScript(context);
 
-        if (file == null || file.equals("-") || file.equals("-e") || file.matches("\\A\\((.*)\\)")) {
+        if (file == null || (evalScript != null ? evalScript.hasNoRealPath() :
+                (file.equals("-") || file.equals("-e") || file.matches("\\A\\((.*)\\)")))) {
             throw context.runtime.newLoadError("cannot infer basepath");
         }
 
         file = loadService(context).getPathForLocation(file);
 
         RubyClass fileClass = fileClass(context);
-        IRubyObject realpath = RubyFile.realpath(context, fileClass, newString(context, file));
-        IRubyObject dirname = RubyFile.dirname(context, fileClass, realpath);
+        // Like CRuby, code evaluated with an explicit filename uses that
+        // filename as is. It need not exist on disk, so only resolve the
+        // real path of files that were actually loaded.
+        IRubyObject base = newString(context, file);
+        if (evalScript == null) base = RubyFile.realpath(context, fileClass, base);
+        IRubyObject dirname = RubyFile.dirname(context, fileClass, base);
         IRubyObject absoluteFeature = RubyFile.expand_path(context, fileClass, relativePath, dirname);
 
         return RubyKernel.require(context, kernelModule(context), absoluteFeature, Block.NULL_BLOCK);
@@ -2198,7 +2204,7 @@ public class RubyKernel {
         IREvalScript evalScript = getEvalScript(context);
 
         if (evalScript != null) {
-            if (evalScript.isFileNameSynthetic()) return context.nil;
+            if (evalScript.hasNoRealPath()) return context.nil;
 
             return newString(context, RubyFile.dirname(context, __FILE__));
         }
