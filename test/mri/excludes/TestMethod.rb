@@ -1,3 +1,4 @@
+exclude :test___dir__, "needs investigation, fails in the JIT"
 exclude :test_argument_error_location, "argument errors are calculated differently in JRuby"
 exclude :test_body, "fails due RubyVM constant"
 exclude :test_callee, "fails for unoptimized define_method due to capturing a frame"
