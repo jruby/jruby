@@ -26,7 +26,7 @@ exclude :test_select_exceptfds, "hangs, and Java select does not really support 
 exclude :test_select_memory_leak, "no working assert_no_memory_leak method"
 exclude :test_set_lineno, "needs investigation"
 exclude :test_set_stdout, "needs investigation"
-exclude :test_std_fileno, "passes in isolation; some other test is causing STDIN to get a different fd"
+exclude :test_std_fileno, "passes in isolation, some other test is causing STDIN to get a different fd", run: false
 exclude :test_stdout_to_closed_pipe, "work in progress"
 exclude :test_sysread_locktmp, "needs investigation"
 exclude :test_sysread_locktmp, "requires string locking we do not support"
