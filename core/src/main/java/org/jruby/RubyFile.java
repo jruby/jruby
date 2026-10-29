@@ -534,10 +534,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         if (ext != null) {
             final String extStr = RubyString.stringValue(ext).toString();
             if (".*".equals(extStr)) {
-                index = name.lastIndexOf('.');
-                if (index > 0) {  // -1 no match; 0 it is dot file not extension
-                    name = name.substring(0, index);
-                }
+                int[] extname = findExtname(name);
+                if (extname[1] > 0) name = name.substring(0, extname[0]);
             } else if (name.endsWith(extStr)) {
                 name = name.substring(0, name.length() - extStr.length());
             }
@@ -756,31 +754,55 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      */
     @JRubyMethod(meta = true)
     public static IRubyObject extname(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        String filename = basename(context, recv, arg).toString();
-        int dotIndex = filename.indexOf('.');
+        RubyString base = basename(context, recv, arg);
+        String name = base.toString();
+        int[] extname = findExtname(name);
 
-        if (dotIndex < 0) return newEmptyString(context);
+        if (extname[1] == 0) return newEmptyString(context);
 
-        int length = filename.length();
-        if (dotIndex == length - 1 && length != 1) return newString(context, filename.substring(dotIndex));
+        return newString(context, RubyString.encodeBytelist(name.substring(extname[0], extname[0] + extname[1]), base.getEncoding()));
+    }
 
-        int e = dotIndex;
-        // skip through whole sequence of '........'
-        for (e = e + 1; e < length; e++) {
-            if (filename.charAt(e) != '.') {
-                e = e - 1;
-                break;
+    /**
+     * Find the extension of a file name, without any directories. Leading dots don't start one,
+     * and on Windows trailing dots and spaces are ignored, as NTFS does.
+     *
+     * @param name the file name
+     * @return the start and the length of the extension, a length of 0 meaning there is none
+     */
+    @CRuby(value = "ruby_enc_find_extname", file = "file.c")
+    private static int[] findExtname(String name) {
+        int end = name.length();
+        int p = 0;
+        int e = -1; // the last dot of the name
+
+        while (p < end && name.charAt(p) == '.') p++;
+        while (p < end) {
+            char c = name.charAt(p);
+            if (Platform.IS_WINDOWS) {
+                if (c == '.' || c == ' ') {
+                    int last = p++, dot = last;
+                    while (p < end && (name.charAt(p) == '.' || name.charAt(p) == ' ')) {
+                        if (name.charAt(p) == '.') dot = p;
+                        p++;
+                    }
+                    if (p == end || name.charAt(p) == ':') { // a ':' starts an alternate data stream
+                        p = last;
+                        break;
+                    }
+                    if (name.charAt(last) == '.' || dot > last) e = dot;
+                    continue;
+                }
+                if (c == ':') break;
+            } else if (c == '.') {
+                e = p;
             }
+            p++;
         }
 
-        if (e == length) return newEmptyString(context);  // all dots
+        if (e < 0) return new int[] { 0, 0 };
 
-        for (int i = e; i < length; i++) {
-            char c = filename.charAt(i);
-            if (c == '.' || c == ' ') e = i;
-        }
-
-        return e == 0 ? newEmptyString(context) : newString(context, filename.substring(e));
+        return new int[] { e, e + 1 == p ? 1 : p - e };
     }
 
     /**
