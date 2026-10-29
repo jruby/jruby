@@ -56,6 +56,33 @@ jobs:
       - name: rake ${{ matrix.target }}
         run: bin/jruby -S rake ${{ matrix.target }}
 
+  # Specs in spec/ruby are synced to ruby/spec so they must still pass on all supported CRuby versions.
+  # This also ensures the needed ruby_version_is guards are there, see spec/ruby/README.md.
+  spec-ruby-cruby:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        ruby: ['3.3', '3.4', '4.0']
+      fail-fast: false
+
+    name: ruby/spec on CRuby ${{ matrix.ruby }}
+
+    env:
+      CHECK_LEAKS: true
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v6
+      - name: set up ruby ${{ matrix.ruby }}
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler: none
+      - name: run ruby/spec on CRuby ${{ matrix.ruby }}
+        run: ruby ../mspec/bin/mspec -j --timeout 30
+        working-directory: spec/ruby
+
   error-prone:
     needs: maven-precache
     runs-on: ubuntu-latest
@@ -545,7 +572,7 @@ jobs:
 
   tests-passed:
     runs-on: ubuntu-latest
-    needs: [mvn-test, mvn-test-extended, mvn-test-windows, dependency-check, rake-test, rake-test-indy-off, test-versions, sequel, concurrent-ruby, jruby-tests-dev, regression-specs-jit]
+    needs: [mvn-test, mvn-test-extended, mvn-test-windows, dependency-check, rake-test, rake-test-indy-off, test-versions, sequel, concurrent-ruby, jruby-tests-dev, regression-specs-jit, spec-ruby-cruby]
     steps:
       - run: echo Everything passed!
 
