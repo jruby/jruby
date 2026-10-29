@@ -19,7 +19,6 @@ exclude :test_rstrip_bang_with_chars, "selectors are not yet supported (https://
 exclude :test_rstrip_with_selectors, "selectors are not yet supported (https://github.com/jruby/jruby/issues/9267)"
 exclude :test_scan_segv, "requires ObjectSpace.each_object"
 exclude :test_split_with_block, "test for use-after-free in CRuby not possible in JRuby"
-exclude :test_start_with?, "needs investigation"
 exclude :test_start_with_timeout_memory_leak, "no working assert_no_memory_leak method"
 exclude :test_string_interpolations_across_heaps_get_embedded, "uses internal GC constants"
 exclude :test_strip_bang_with_chars, "selectors are not yet supported (https://github.com/jruby/jruby/issues/9267)"

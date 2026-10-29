@@ -5277,14 +5277,21 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return context.fals;
     }
 
+    @CRuby(value = "rb_str_start_with", file = "string.c")
     public boolean startsWith(final RubyString str) {
-        checkEncoding(str);
+        Encoding enc = checkEncoding(str);
 
         int otherLength = str.value.getRealSize();
 
         if (otherLength == 0) return true; // other is '', so return true
 
         if (value.getRealSize() < otherLength) return false;
+
+        // a prefix that ends partway through a character does not match
+        int p = value.begin();
+        int s = p + otherLength;
+        int e = p + value.getRealSize();
+        if (s < e && enc.rightAdjustCharHead(value.unsafeBytes(), p, s, e) != s) return false;
 
         return value.startsWith(str.value);
     }
