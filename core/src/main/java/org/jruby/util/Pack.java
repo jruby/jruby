@@ -581,7 +581,13 @@ public class Pack {
             return;
         }
 
-        occurrences = occurrences <= 2 ? 45 : occurrences / 3 * 3;
+        if (occurrences <= 2) {
+            occurrences = 45;
+        } else if (occurrences > 63 && type == 'u') {
+            occurrences = 63; // the most one uuencoded line's length character can say
+        } else {
+            occurrences = occurrences / 3 * 3;
+        }
         if (lCurElemString.isEmpty()) return;
 
         byte[] charsToEncode = lCurElemString.getUnsafeBytes();
