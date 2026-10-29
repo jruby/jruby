@@ -1,4 +1,3 @@
-exclude :test_binmode_pipe, "work in progress"
 exclude :test_cloexec, "needs investigation"
 exclude :test_copy_stream_pipe_nonblock, "copy_stream does not block against a nonblocking stream (#2439)"
 exclude :test_copy_stream_read_pipe, "needs investigation"

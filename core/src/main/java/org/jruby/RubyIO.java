@@ -4852,6 +4852,12 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         EncodingUtils.extractBinmode(context, opt, fmode_p);
 
+        // binmode: true with no encoding given makes both ends BINARY, like calling binmode on them
+        if ((fmode_p[0] & OpenFile.BINMODE) != 0 && v1.isNil()) {
+            r.setAscii8bitBinmode();
+            w.setAscii8bitBinmode();
+        }
+
         if (EncodingUtils.DEFAULT_TEXTMODE != 0) {
             if ((fptr.getMode() & OpenFile.TEXTMODE) != 0 && (fmode_p[0] & OpenFile.BINMODE) != 0) {
                 fptr.setMode(fptr.getMode() & ~OpenFile.TEXTMODE);
