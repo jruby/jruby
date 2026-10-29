@@ -1209,21 +1209,23 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         }
 
         if (ivars == null || ivars.isNil()) {
-            // no ivars specified, do all of them. Values are read up front so
-            // an inspect that adds or removes ivars does not affect the result
+            // no ivars specified, do all of them. With more than one ivar, the
+            // values are read up front so an inspect that removes ivars does not
+            // affect the result. The accessor map is copy-on-write, so iterating
+            // it twice sees the same entries in the same order.
             var accessors = metaClass.getVariableTableManager().getVariableAccessorsForRead();
-            List<String> names = new ArrayList<>(accessors.size());
-            List<Object> values = new ArrayList<>(accessors.size());
-            for (Map.Entry<String, VariableAccessor> entry : accessors.entrySet()) {
-                Object value = entry.getValue().get(this);
-                if (!(value instanceof IRubyObject)) continue;
-                names.add(entry.getKey());
-                values.add(value);
+            Object[] values = null;
+            if (accessors.size() > 1) {
+                values = new Object[accessors.size()];
+                int i = 0;
+                for (VariableAccessor accessor : accessors.values()) values[i++] = accessor.get(this);
             }
 
             boolean first = true;
-            for (int i = 0; i < names.size(); i++) {
-                if (appendInstanceVariable(context, part, values.get(i), names.get(i), first, runtime)) continue;
+            int i = 0;
+            for (Map.Entry<String, VariableAccessor> entry : accessors.entrySet()) {
+                Object value = values == null ? entry.getValue().get(this) : values[i++];
+                if (appendInstanceVariable(context, part, value, entry.getKey(), first, runtime)) continue;
 
                 first = false;
             }
