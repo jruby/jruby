@@ -1970,6 +1970,14 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                     && value.caseInsensitiveCmp(otherStr.value) == 0);
         }
 
+        if (getEncoding().isUTF8() && otherStr.getEncoding().isUTF8()
+                && (!isCodeRangeAsciiOnly() || !otherStr.isCodeRangeAsciiOnly())) {
+            if (scanForCodeRange() == CR_BROKEN || otherStr.scanForCodeRange() == CR_BROKEN) {
+                throw argumentError(context, "input string invalid");
+            }
+            return asBoolean(context, StringSupport.utf8CaseFoldEquals(getEncoding(), value, otherStr.value));
+        }
+
         int flags = Config.CASE_FOLD;
         RubyString down = dupString(context, this);
         down.downcase_bang(context, flags);

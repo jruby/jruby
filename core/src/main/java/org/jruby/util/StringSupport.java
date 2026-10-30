@@ -2879,6 +2879,49 @@ public final class StringSupport {
         }
     }
 
+    // Compare full folds of UTF-8 operands. Callers must validate both first: an early mismatch
+    // must not hide invalid bytes later in either original string.
+    public static boolean utf8CaseFoldEquals(Encoding enc, ByteList left, ByteList right) {
+        byte[] leftBytes = left.getUnsafeBytes();
+        byte[] rightBytes = right.getUnsafeBytes();
+        IntHolder leftInput = new IntHolder();
+        IntHolder rightInput = new IntHolder();
+        leftInput.value = left.getBegin();
+        rightInput.value = right.getBegin();
+        int leftEnd = leftInput.value + left.getRealSize();
+        int rightEnd = rightInput.value + right.getRealSize();
+        byte[] leftFold = new byte[Config.ENC_MBC_CASE_FOLD_MAXLEN];
+        byte[] rightFold = new byte[Config.ENC_MBC_CASE_FOLD_MAXLEN];
+        int leftPosition = 0, leftLength = 0;
+        int rightPosition = 0, rightLength = 0;
+
+        while (true) {
+            if (leftPosition == leftLength) {
+                if (leftInput.value == leftEnd) {
+                    return rightInput.value == rightEnd && rightPosition == rightLength;
+                }
+                leftPosition = 0;
+                if (Encoding.isAscii(leftBytes[leftInput.value])) {
+                    leftFold[0] = Encoding.asciiToLower(leftBytes[leftInput.value++]);
+                    leftLength = 1;
+                } else {
+                    leftLength = enc.mbcCaseFold(Config.CASE_FOLD, leftBytes, leftInput, leftEnd, leftFold);
+                }
+            }
+            if (rightPosition == rightLength) {
+                if (rightInput.value == rightEnd) return false;
+                rightPosition = 0;
+                if (Encoding.isAscii(rightBytes[rightInput.value])) {
+                    rightFold[0] = Encoding.asciiToLower(rightBytes[rightInput.value++]);
+                    rightLength = 1;
+                } else {
+                    rightLength = enc.mbcCaseFold(Config.CASE_FOLD, rightBytes, rightInput, rightEnd, rightFold);
+                }
+            }
+            if (leftFold[leftPosition++] != rightFold[rightPosition++]) return false;
+        }
+    }
+
     private static final int CASE_MAPPING_ADDITIONAL_LENGTH = 20;
 
     @Deprecated(since = "10.0.0.0")
