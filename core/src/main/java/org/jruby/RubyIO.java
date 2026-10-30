@@ -626,9 +626,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     }
 
     @CRuby(value = "rb_io_reopen", file = "io.c")
-    @JRubyMethod(name = "reopen", required = 1, optional = 1, checkArity = false)
+    @JRubyMethod(name = "reopen", required = 1, optional = 2, checkArity = false, keywords = true)
     public IRubyObject reopen(ThreadContext context, IRubyObject[] args) {
-        int argc = Arity.checkArgumentCount(context, args, 1, 2);
+        boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
+        int argc = args.length;
 
         final Ruby runtime = context.runtime;
         final IRubyObject nil = context.nil;
@@ -637,10 +638,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         int[] oflags_p = {0};
         OpenFile fptr;
 
+        if (keywords) opt = args[--argc];
+        Arity.checkArgumentCount(context, argc, 1, 2);
+
         switch (argc) {
-            case 3:
-                opt = TypeConverter.checkHashType(runtime, args[2]);
-                if (opt == nil) throw argumentError(context, 3, 2);
             case 2:
                 if (opt == nil) {
                     opt = TypeConverter.checkHashType(runtime, args[1]);
@@ -2735,7 +2736,10 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     private static final Getline.Callback<RubyIO, RubyArray> GETLINE_ARY = new Getline.Callback<RubyIO, RubyArray>() {
         @Override
         public RubyArray getline(ThreadContext context, RubyIO self, IRubyObject rs, int limit, boolean chomp, Block block) {
-            
+            if (limit == 0) {
+                throw argumentError(context, "invalid limit: 0 for readlines");
+            }
+
             var ary = newArray(context);
             IRubyObject line;
 
@@ -4085,7 +4089,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
     public static IRubyObject foreach(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
         boolean keywords = hasKeywords(ThreadContext.resetCallInfo(context));
 
-        Arity.checkArgumentCount(context, args.length - (keywords ? 1 : 0), 1, 4);
+        Arity.checkArgumentCount(context, args.length - (keywords ? 1 : 0), 1, 3);
 
         if (!block.isGiven()) return enumeratorize(context.runtime, recv, "foreach", args, keywords);
 
@@ -4849,6 +4853,12 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         EncodingUtils.extractBinmode(context, opt, fmode_p);
 
+        // binmode: true with no encoding given makes both ends BINARY, like calling binmode on them
+        if ((fmode_p[0] & OpenFile.BINMODE) != 0 && v1.isNil()) {
+            r.setAscii8bitBinmode();
+            w.setAscii8bitBinmode();
+        }
+
         if (EncodingUtils.DEFAULT_TEXTMODE != 0) {
             if ((fptr.getMode() & OpenFile.TEXTMODE) != 0 && (fmode_p[0] & OpenFile.BINMODE) != 0) {
                 fptr.setMode(fptr.getMode() & ~OpenFile.TEXTMODE);
@@ -5014,7 +5024,18 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 }
 
                 try {
-                    if ((channel1 instanceof FileChannel)) {
+                    // tell moved a seekable source back over its read buffer, so data is only
+                    // still buffered for a pipe or other stream, and it comes before the rest
+                    long buffered = 0;
+                    if (userProvidedReadIO && offset == null) {
+                        buffered = copyBufferedData(context, fptr1, (WritableByteChannel) channel2,
+                                length == null ? -1 : length.asLong(context));
+                        size = buffered;
+                    }
+
+                    if (length != null && length.asLong(context) == buffered) {
+                        // the buffered data was all that was asked for
+                    } else if ((channel1 instanceof FileChannel)) {
                         FileChannel from = (FileChannel) channel1;
                         WritableByteChannel to = (WritableByteChannel) channel2;
                         long remaining = length == null ? from.size() : length.asLong(context);
@@ -5022,18 +5043,18 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
                         size = transfer(from, to, remaining, position);
                     } else {
-                        long remaining = length == null ? -1 : length.asLong(context);
+                        long remaining = length == null ? -1 : length.asLong(context) - buffered;
                         long position = offset == null ? -1 : offset.asLong(context);
                         if ((channel2 instanceof FileChannel)) {
                             ReadableByteChannel from = (ReadableByteChannel) channel1;
                             FileChannel to = (FileChannel) channel2;
 
-                            size = transfer(context, from, to, remaining, position);
+                            size += transfer(context, from, to, remaining, position);
                         } else {
                             ReadableByteChannel from = (ReadableByteChannel) channel1;
                             WritableByteChannel to = (WritableByteChannel) channel2;
 
-                            size = transfer(context, from, to, remaining, position);
+                            size += transfer(context, from, to, remaining, position);
                         }
                     }
 
@@ -5044,7 +5065,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 } catch (IOException ioe) {
                     throw runtime.newIOErrorFromException(ioe);
                 } finally {
-                    if (userProvidedReadIO) {
+                    if (userProvidedReadIO && pos >= 0) {
                         if (offset != null) {
                             fptr1.seek(context, pos, PosixShim.SEEK_SET);
                         } else {
@@ -5068,6 +5089,27 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             }
 
         }
+    }
+
+    /**
+     * Write out the data already read into the source's buffer, up to length bytes when length is
+     * not negative, before copying the rest from its channel.
+     *
+     * @return the number of bytes written
+     */
+    @CRuby(value = "copy_stream_body", file = "io.c")
+    private static long copyBufferedData(ThreadContext context, OpenFile fptr, WritableByteChannel to, long length) throws IOException {
+        int len = fptr.READ_DATA_PENDING_COUNT();
+        if (len == 0) return 0;
+        if (length >= 0 && length < len) len = (int) length;
+
+        byte[] bytes = new byte[len];
+        fptr.readBufferedData(bytes, 0, len);
+
+        ByteBuffer buffer = ByteBuffer.wrap(bytes);
+        while (buffer.hasRemaining()) to.write(buffer);
+
+        return len;
     }
 
     private static long transfer(ThreadContext context, ReadableByteChannel from, FileChannel to, long length, long position) throws IOException {

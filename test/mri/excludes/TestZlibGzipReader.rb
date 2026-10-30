@@ -1,3 +1,2 @@
-exclude :test_encoding, "needs investigation"
 exclude :test_gzfile_read_size_boundary, "needs investigation"
 exclude :test_ungetc_buffer_underflow, "ungetc of a large string raises IOError: Push back buffer is full"

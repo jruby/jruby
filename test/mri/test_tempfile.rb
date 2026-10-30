@@ -3,7 +3,8 @@ require 'test/unit'
 require 'tempfile'
 
 class TestTempfile < Test::Unit::TestCase
-  LIB_TEMPFILE_RB_PATH = File.expand_path(__dir__ + "/../lib/tempfile.rb")
+  # JRuby: the stdlib is not in a lib directory next to the tests, so use the tempfile.rb on the load path
+  LIB_TEMPFILE_RB_PATH = $LOAD_PATH.resolve_feature_path("tempfile")[1]
 
   def initialize(*)
     super
