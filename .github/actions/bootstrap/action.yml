@@ -27,7 +27,7 @@ runs:
     - name: remove default java except 21
       if: runner.os == 'Linux' && inputs.remove-old-java == 'true'
       shell: bash
-      run: sudo apt remove temurin-8-jdk temurin-11-jdk temurin-17-jdk
+      run: sudo apt remove $(dpkg-query -W -f '${Package} ' temurin-8-jdk temurin-11-jdk temurin-17-jdk 2>/dev/null)
     - name: set up java ${{ inputs.java-version }}
       uses: actions/setup-java@v6
       with:

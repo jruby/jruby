@@ -39,6 +39,7 @@ jobs:
           remove-old-java: false
           build-args: 'clean package -Pall'
           jruby-flags: ''
+          bundle-install: false
       - name: cache release artifacts
         run: |
           mv maven/jruby-dist/target/jruby-dist*-bin.tar.gz jruby-dist-bin.tar.gz
