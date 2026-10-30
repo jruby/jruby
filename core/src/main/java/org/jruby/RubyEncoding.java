@@ -183,14 +183,17 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     }
 
     public static byte[] encodeUTF8(String str) {
-        return encodeUTF8((CharSequence) str);
+        return str.getBytes(UTF8);
     }
 
     public static byte[] encodeUTF8(CharSequence str) {
-        if (str.length() > CHAR_THRESHOLD) {
-            return getBytes(UTF8.encode(toCharBuffer(str)));
+        if (str instanceof String) return encodeUTF8((String) str);
+        // RubyString's CharSequence view can differ from its decoded String.
+        if (str instanceof RubyString) {
+            if (str.length() > CHAR_THRESHOLD) return getBytes(UTF8.encode(toCharBuffer(str)));
+            return getBytes(getUTF8Coder().encode(str));
         }
-        return getBytes(getUTF8Coder().encode(str));
+        return str.toString().getBytes(UTF8);
     }
 
     public static byte[] encodeISO(CharSequence str) {
@@ -220,17 +223,15 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     }
 
     static ByteList doEncodeUTF8(String str) {
-        if (str.length() > CHAR_THRESHOLD) {
-            return getByteList(UTF8.encode(CharBuffer.wrap(str)), UTF8Encoding.INSTANCE, false);
-        }
-        return getByteList(getUTF8Coder().encode(str), UTF8Encoding.INSTANCE, true);
+        return new ByteList(str.getBytes(UTF8), UTF8Encoding.INSTANCE, false);
     }
 
     static ByteList doEncodeUTF8(CharSequence str) {
-        if (str.length() > CHAR_THRESHOLD) {
-            return getByteList(UTF8.encode(toCharBuffer(str)), UTF8Encoding.INSTANCE, false);
+        if (str instanceof RubyString) {
+            if (str.length() > CHAR_THRESHOLD) return getByteList(UTF8.encode(toCharBuffer(str)), UTF8Encoding.INSTANCE, false);
+            return getByteList(getUTF8Coder().encode(str), UTF8Encoding.INSTANCE, true);
         }
-        return getByteList(getUTF8Coder().encode(str), UTF8Encoding.INSTANCE, true);
+        return new ByteList(encodeUTF8(str), UTF8Encoding.INSTANCE, false);
     }
 
     private static CharBuffer toCharBuffer(CharSequence str) {
@@ -368,7 +369,9 @@ public class RubyEncoding extends RubyObject implements Constantizable {
      * A cached decoder for UTF-8 bytes.
      */
     private static class UTF8Coder {
-        private final CharsetEncoder encoder = UTF8.newEncoder();
+        private final CharsetEncoder encoder = UTF8.newEncoder()
+                .onMalformedInput(CodingErrorAction.REPLACE)
+                .onUnmappableCharacter(CodingErrorAction.REPLACE);
         private final CharsetDecoder decoder = UTF8.newDecoder();
         /** The resulting encode/decode buffer sized by the max number of
          * characters (using 4 bytes per char possible for utf-8) */
@@ -381,26 +384,11 @@ public class RubyEncoding extends RubyObject implements Constantizable {
             decoder.onUnmappableCharacter(CodingErrorAction.REPLACE);
         }
 
-        public final ByteBuffer encode(String str) {
-            ByteBuffer buf = byteBuffer;
-            CharBuffer cbuf = charBuffer;
-            clearBuffer(buf);
-            clearBuffer(cbuf);
-            cbuf.put(str);
-            flipBuffer(cbuf);
-            encoder.encode(cbuf, buf, true);
-            flipBuffer(buf);
-
-            return buf;
-        }
-
         public final ByteBuffer encode(CharSequence str) {
             ByteBuffer buf = byteBuffer;
             CharBuffer cbuf = charBuffer;
             clearBuffer(buf);
             clearBuffer(cbuf);
-            // NOTE: doesn't matter is we toString here in terms of speed
-            // ... so we "safe" some space at least by not copy-ing char[]
             for (int i = 0; i < str.length(); i++) cbuf.put(str.charAt(i));
             flipBuffer(cbuf);
             encoder.encode(cbuf, buf, true);
