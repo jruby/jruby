@@ -24,18 +24,10 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v6
-      - name: remove default java except 21
-        run: sudo apt remove $(dpkg-query -W -f '${Package} ' temurin-8-jdk temurin-11-jdk temurin-17-jdk 2>/dev/null)
-      - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'zulu'
-          java-version: ${{ matrix.java-version }}
-          cache: 'maven'
       - name: bootstrap
-        run: tool/ci-retry.sh ./mvnw -ntp -Pbootstrap clean package
-      - name: bundle install
-        run: tool/ci-retry.sh bin/jruby --dev -S bundle install
+        uses: ./.github/actions/bootstrap
+        with:
+          java-version: ${{ matrix.java-version }}
       - name: rake ${{ matrix.target }}
         run: bin/jruby -S rake ${{ matrix.target }}
 
@@ -54,16 +46,11 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v6
-      - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'zulu'
-          java-version: ${{ matrix.java-version }}
-          cache: 'maven'
       - name: bootstrap
-        run: tool/ci-retry.sh ./mvnw -ntp -Pbootstrap clean package
-      - name: bundle install
-        run: tool/ci-retry.sh bin/jruby --dev -S bundle install
+        uses: ./.github/actions/bootstrap
+        with:
+          java-version: ${{ matrix.java-version }}
+          remove-old-java: false
       - name: rake ${{ matrix.target }}
         run: bin/jruby -S rake ${{ matrix.target }}
 
@@ -75,18 +62,8 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v6
-      - name: remove default java except 21
-        run: sudo apt remove $(dpkg-query -W -f '${Package} ' temurin-8-jdk temurin-11-jdk temurin-17-jdk 2>/dev/null)
-      - name: set up java 21
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'zulu'
-          java-version: 21
-          cache: 'maven'
       - name: bootstrap
-        run: tool/ci-retry.sh ./mvnw -ntp -Pbootstrap clean package
-      - name: bundle install
-        run: tool/ci-retry.sh bin/jruby --dev -S bundle install
+        uses: ./.github/actions/bootstrap
       - name: run specs
         env:
           JAVA_OPTS: '-XX:TieredStopAtLevel=1'
@@ -101,18 +78,10 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v6
-      - name: remove default java except 21
-        run: sudo apt remove $(dpkg-query -W -f '${Package} ' temurin-8-jdk temurin-11-jdk temurin-17-jdk 2>/dev/null)
-      - name: set up java 21
-        uses: actions/setup-java@v5
+      - name: bootstrap
+        uses: ./.github/actions/bootstrap
         with:
           distribution: 'temurin'
-          java-version: 21
-          cache: 'maven'
-      - name: bootstrap
-        run: tool/ci-retry.sh ./mvnw -ntp -Pbootstrap clean package
-      - name: bundle install
-        run: tool/ci-retry.sh bin/jruby --dev -S bundle install
       - name: rake test:jruby
         run: bin/jruby --dev -S rake test:jruby
 
@@ -133,18 +102,10 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v6
-      - name: remove default java except 21
-        run: sudo apt remove $(dpkg-query -W -f '${Package} ' temurin-8-jdk temurin-11-jdk temurin-17-jdk 2>/dev/null)
-      - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'zulu'
-          java-version: ${{ matrix.java-version }}
-          cache: 'maven'
       - name: bootstrap
-        run: tool/ci-retry.sh ./mvnw -ntp -Pbootstrap clean package
-      - name: bundle install
-        run: tool/ci-retry.sh bin/jruby --dev -S bundle install
+        uses: ./.github/actions/bootstrap
+        with:
+          java-version: ${{ matrix.java-version }}
       - name: rake ${{ matrix.target }}
         run: bin/jruby -S rake ${{ matrix.target }}
 
@@ -162,18 +123,10 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v6
-      - name: remove default java except 21
-        run: sudo apt remove $(dpkg-query -W -f '${Package} ' temurin-8-jdk temurin-11-jdk temurin-17-jdk 2>/dev/null)
-      - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'zulu'
-          java-version: ${{ matrix.java-version }}
-          cache: 'maven'
       - name: bootstrap
-        run: tool/ci-retry.sh ./mvnw -ntp -Pbootstrap clean package
-      - name: bundle install
-        run: tool/ci-retry.sh bin/jruby --dev -S bundle install
+        uses: ./.github/actions/bootstrap
+        with:
+          java-version: ${{ matrix.java-version }}
       - name: mvn package ${{ matrix.package-flags }}
         run: tool/maven-ci-script.sh
         env:
@@ -194,18 +147,11 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v6
-      - name: remove default java except 21
-        run: sudo apt remove $(dpkg-query -W -f '${Package} ' temurin-8-jdk temurin-11-jdk temurin-17-jdk 2>/dev/null)
-      - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: ${{ matrix.java-version }}
-          cache: 'maven'
       - name: bootstrap
-        run: tool/ci-retry.sh ./mvnw -ntp -Pbootstrap clean package
-      - name: bundle install
-        run: tool/ci-retry.sh bin/jruby --dev -S bundle install
+        uses: ./.github/actions/bootstrap
+        with:
+          java-version: ${{ matrix.java-version }}
+          distribution: 'temurin'
       - name: mvn package ${{ matrix.package-flags }}
         run: tool/maven-ci-script.sh
         env:
@@ -220,18 +166,8 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v6
-      - name: remove default java except 21
-        run: sudo apt remove $(dpkg-query -W -f '${Package} ' temurin-8-jdk temurin-11-jdk temurin-17-jdk 2>/dev/null)
-      - name: set up java 21
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'zulu'
-          java-version: 21
-          cache: 'maven'
       - name: bootstrap
-        run: tool/ci-retry.sh ./mvnw -ntp -Pbootstrap clean package
-      - name: bundle install
-        run: tool/ci-retry.sh bin/jruby --dev -S bundle install
+        uses: ./.github/actions/bootstrap
       - name: rake spec:regression
         run: bin/jruby -S rake spec:regression
 
@@ -247,16 +183,10 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v6
-      - name: set up java 21
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'zulu'
-          java-version: 21
-          cache: 'maven'
       - name: bootstrap
-        run: ./mvnw -ntp -Pbootstrap clean package
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
+        uses: ./.github/actions/bootstrap
+        with:
+          remove-old-java: false
       - name: rake test:jruby
         run: bin/jruby -S rake test:jruby TESTOPTS="--no-show-detail-immediately"
         env:
@@ -276,16 +206,10 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v6
-      - name: set up java 21
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'zulu'
-          java-version: 21
-          cache: 'maven'
       - name: bootstrap
-        run: ./mvnw -ntp -Pbootstrap clean package
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
+        uses: ./.github/actions/bootstrap
+        with:
+          remove-old-java: false
       - name: language specs interpreted
         run: bin/jruby spec/mspec/bin/mspec ci :language
       - name: language specs compiled
@@ -305,16 +229,10 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v6
-      - name: set up java 21
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'zulu'
-          java-version: 21
-          cache: 'maven'
       - name: bootstrap
-        run: ./mvnw -ntp -Pbootstrap clean package
-      - name: bundle install
-        run: bin/jruby --dev -S bundle install
+        uses: ./.github/actions/bootstrap
+        with:
+          remove-old-java: false
       - name: core specs interpreted
         run: bin/jruby spec/mspec/bin/mspec ci :core
       - name: core specs compiled
@@ -391,18 +309,10 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v6
-      - name: remove default java except 21
-        run: sudo apt remove $(dpkg-query -W -f '${Package} ' temurin-8-jdk temurin-11-jdk temurin-17-jdk 2>/dev/null)
-      - name: set up java 21
-        uses: actions/setup-java@v5
+      - name: bootstrap
+        uses: ./.github/actions/bootstrap
         with:
           distribution: 'temurin'
-          java-version: 21
-          cache: 'maven'
-      - name: bootstrap
-        run: tool/ci-retry.sh ./mvnw -ntp -Pbootstrap clean package
-      - name: bundle install
-        run: tool/ci-retry.sh bin/jruby --dev -S bundle install
       - name: sequel
         run: tool/sequel-github-actions.sh
 
@@ -412,18 +322,10 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v6
-      - name: remove default java except 21
-        run: sudo apt remove $(dpkg-query -W -f '${Package} ' temurin-8-jdk temurin-11-jdk temurin-17-jdk 2>/dev/null)
-      - name: set up java 21
-        uses: actions/setup-java@v5
+      - name: bootstrap
+        uses: ./.github/actions/bootstrap
         with:
           distribution: 'temurin'
-          java-version: 21
-          cache: 'maven'
-      - name: bootstrap
-        run: tool/ci-retry.sh ./mvnw -ntp -Pbootstrap clean package
-      - name: bundle install
-        run: tool/ci-retry.sh bin/jruby --dev -S bundle install
       - name: concurrent-ruby
         run: tool/concurrent-ruby-github-actions.sh
 
@@ -435,18 +337,11 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v6
-      - name: remove default java except 21
-        run: sudo apt remove $(dpkg-query -W -f '${Package} ' temurin-8-jdk temurin-11-jdk temurin-17-jdk 2>/dev/null)
-      - name: set up java ${{ matrix.java-version }}
-        uses: actions/setup-java@v5
+      - name: bootstrap
+        uses: ./.github/actions/bootstrap
         with:
           distribution: 'semeru'
-          java-version: '21'
-          cache: 'maven'
-      - name: bootstrap
-        run: tool/ci-retry.sh ./mvnw -ntp -Pbootstrap clean package
-      - name: bundle install
-        run: tool/ci-retry.sh bin/jruby -S bundle install
+          jruby-flags: ''
       - name: test profile
         run: "tool/maven-ci-script.sh"
         env:
