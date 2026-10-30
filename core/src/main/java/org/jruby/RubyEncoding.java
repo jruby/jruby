@@ -31,7 +31,6 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 
@@ -188,12 +187,14 @@ public class RubyEncoding extends RubyObject implements Constantizable {
 
     public static byte[] encodeUTF8(CharSequence str) {
         if (str instanceof String) return encodeUTF8((String) str);
-        // RubyString's CharSequence view can differ from its decoded String.
-        if (str instanceof RubyString) {
-            if (str.length() > CHAR_THRESHOLD) return getBytes(UTF8.encode(toCharBuffer(str)));
-            return getBytes(getUTF8Coder().encode(str));
+        if (str instanceof StringBuilder || str instanceof StringBuffer || str instanceof CharBuffer) {
+            return str.toString().getBytes(UTF8);
         }
-        return str.toString().getBytes(UTF8);
+        // RubyString's CharSequence view can differ from its decoded String.
+        // Other CharSequences need not expose their charAt() contents through toString().
+        char[] chars = new char[str.length()];
+        for (int i = 0; i < chars.length; i++) chars[i] = str.charAt(i);
+        return new String(chars).getBytes(UTF8);
     }
 
     public static byte[] encodeISO(CharSequence str) {
@@ -227,10 +228,6 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     }
 
     static ByteList doEncodeUTF8(CharSequence str) {
-        if (str instanceof RubyString) {
-            if (str.length() > CHAR_THRESHOLD) return getByteList(UTF8.encode(toCharBuffer(str)), UTF8Encoding.INSTANCE, false);
-            return getByteList(getUTF8Coder().encode(str), UTF8Encoding.INSTANCE, true);
-        }
         return new ByteList(encodeUTF8(str), UTF8Encoding.INSTANCE, false);
     }
 
@@ -244,9 +241,9 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         return bytes;
     }
 
-    private static ByteList getByteList(final ByteBuffer buffer, final Encoding enc, final boolean shared) {
+    private static ByteList getByteList(final ByteBuffer buffer, final Encoding enc) {
         byte[] bytes; int off;
-        if (!shared && buffer.hasArray()) { // HeapByteBuffer
+        if (buffer.hasArray()) { // HeapByteBuffer
             bytes = buffer.array();
             off = buffer.arrayOffset();
         } else {
@@ -280,11 +277,11 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     }
 
     static ByteList doEncode(String cs, Charset charset, Encoding enc) {
-        return getByteList(charset.encode(CharBuffer.wrap(cs)), enc, false);
+        return getByteList(charset.encode(CharBuffer.wrap(cs)), enc);
     }
 
     static ByteList doEncode(CharSequence cs, Charset charset, Encoding enc) {
-        return getByteList(charset.encode(toCharBuffer(cs)), enc, false);
+        return getByteList(charset.encode(toCharBuffer(cs)), enc);
     }
 
     public static byte[] encode(String str, Charset charset) {
@@ -369,11 +366,8 @@ public class RubyEncoding extends RubyObject implements Constantizable {
      * A cached decoder for UTF-8 bytes.
      */
     private static class UTF8Coder {
-        private final CharsetEncoder encoder = UTF8.newEncoder()
-                .onMalformedInput(CodingErrorAction.REPLACE)
-                .onUnmappableCharacter(CodingErrorAction.REPLACE);
         private final CharsetDecoder decoder = UTF8.newDecoder();
-        /** The resulting encode/decode buffer sized by the max number of
+        /** The resulting decode buffer sized by the max number of
          * characters (using 4 bytes per char possible for utf-8) */
         private static final int BUF_SIZE = CHAR_THRESHOLD * 4;
         private final ByteBuffer byteBuffer = ByteBuffer.allocate(BUF_SIZE);
@@ -382,19 +376,6 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         UTF8Coder() {
             decoder.onMalformedInput(CodingErrorAction.REPLACE);
             decoder.onUnmappableCharacter(CodingErrorAction.REPLACE);
-        }
-
-        public final ByteBuffer encode(CharSequence str) {
-            ByteBuffer buf = byteBuffer;
-            CharBuffer cbuf = charBuffer;
-            clearBuffer(buf);
-            clearBuffer(cbuf);
-            for (int i = 0; i < str.length(); i++) cbuf.put(str.charAt(i));
-            flipBuffer(cbuf);
-            encoder.encode(cbuf, buf, true);
-            flipBuffer(buf);
-
-            return buf;
         }
 
         public final CharBuffer decode(byte[] bytes, int start, int length) {

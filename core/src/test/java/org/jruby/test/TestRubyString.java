@@ -62,78 +62,118 @@ public class TestRubyString extends Base {
         assertEquals(UTF8Encoding.INSTANCE, str.getByteList().getEncoding());
     }
 
+    private static final String[] UTF8_SAMPLES = {
+        "", "ASCII", "\u00e9\u00ff", "\u07ff\u0800\u4e2d", "\ud83d\ude00",
+        "\ud800", "\udc00", "a\ud800b", "a\udc00b", "a\ud800", "a\udc00\ud800b"
+    };
+
     public void testUTF8StringEncoding() {
-        for (String input : utf8Inputs()) {
-            assertUTF8(input, RubyString.newString(context.runtime, input));
-            assertUTF8(input, RubyString.newUTF8String(context.runtime, input));
-            assertUTF8(input, RubyString.newUnicodeString(context.runtime, input));
-            assertTrue(Arrays.equals(input.getBytes(StandardCharsets.UTF_8), RubyEncoding.encodeUTF8(input)));
+        for (int padding : new int[] { 0, 1023, 1024 }) {
+            for (String sample : UTF8_SAMPLES) {
+                String input = filler(padding) + sample;
+                String msg = utf8Case(sample, padding, input);
+                assertUTF8(msg + " newString", input, RubyString.newString(context.runtime, input));
+                assertUTF8(msg + " newUTF8String", input, RubyString.newUTF8String(context.runtime, input));
+                assertUTF8(msg + " newUnicodeString", input, RubyString.newUnicodeString(context.runtime, input));
+                assertBytes(msg + " encodeUTF8", input.getBytes(StandardCharsets.UTF_8), RubyEncoding.encodeUTF8(input));
+            }
         }
     }
 
     public void testUTF8CharSequenceEncoding() {
-        for (String input : utf8Inputs()) {
-            CharBuffer buffer = CharBuffer.wrap("[" + input + "]");
-            buffer.position(1);
-            buffer.limit(input.length() + 1);
-            CharSequence[] sequences = { input, new StringBuilder(input), buffer };
-            for (CharSequence sequence : sequences) {
-                assertUTF8(input, RubyString.newString(context.runtime, sequence));
+        for (int padding : new int[] { 0, 1023, 1024, 1025 }) {
+            for (String sample : UTF8_SAMPLES) {
+                String input = filler(padding) + sample;
+                CharBuffer buffer = CharBuffer.wrap("[" + input + "]");
                 buffer.position(1);
-                assertUTF8(input, RubyString.newUTF8String(context.runtime, sequence));
-                buffer.position(1);
-                assertUTF8(input, RubyString.newUnicodeString(context.runtime, sequence));
-                buffer.position(1);
-                assertTrue(Arrays.equals(input.getBytes(StandardCharsets.UTF_8), RubyEncoding.encodeUTF8(sequence)));
-                buffer.position(1);
+                buffer.limit(input.length() + 1);
+                CharSequence[] sequences = { input, new StringBuilder(input), new StringBuffer(input), buffer,
+                        RubyString.newString(context.runtime, input), new DifferentStringSequence(input) };
+                for (CharSequence sequence : sequences) {
+                    // Bytes must come from the charAt() view, not toString().
+                    StringBuilder chars = new StringBuilder(sequence.length());
+                    for (int i = 0; i < sequence.length(); i++) chars.append(sequence.charAt(i));
+                    String expected = chars.toString();
+                    String msg = utf8Case(sample, padding, sequence);
+
+                    assertUTF8(msg + " newString", expected, RubyString.newString(context.runtime, sequence));
+                    assertUnconsumed(msg + " newString", buffer, input);
+                    assertUTF8(msg + " newUTF8String", expected, RubyString.newUTF8String(context.runtime, sequence));
+                    assertUnconsumed(msg + " newUTF8String", buffer, input);
+                    assertUTF8(msg + " newUnicodeString", expected, RubyString.newUnicodeString(context.runtime, sequence));
+                    assertUnconsumed(msg + " newUnicodeString", buffer, input);
+                    assertBytes(msg + " encodeUTF8", expected.getBytes(StandardCharsets.UTF_8), RubyEncoding.encodeUTF8(sequence));
+                    assertUnconsumed(msg + " encodeUTF8", buffer, input);
+                }
             }
-            CharSequence rubyString = RubyString.newString(context.runtime, input);
-            StringBuilder chars = new StringBuilder();
-            for (int i = 0; i < rubyString.length(); i++) chars.append(rubyString.charAt(i));
-            assertUTF8(chars.toString(), RubyString.newString(context.runtime, rubyString));
-            assertTrue(Arrays.equals(chars.toString().getBytes(StandardCharsets.UTF_8), RubyEncoding.encodeUTF8(rubyString)));
         }
+    }
+
+    private static final class DifferentStringSequence implements CharSequence {
+        private final String value;
+
+        private DifferentStringSequence(String value) { this.value = value; }
+        public int length() { return value.length(); }
+        public char charAt(int index) { return value.charAt(index); }
+        public CharSequence subSequence(int start, int end) {
+            return new DifferentStringSequence(value.substring(start, end));
+        }
+        public String toString() { return "DifferentStringSequence(" + value + ")"; }
     }
 
     public void testUTF8UnpairedSurrogateReplacement() {
         String[] inputs = { "a\ud800b", "a\udc00b", "a\ud800", "a\udc00\ud800b", "\ud800\ud800\udc00" };
         String[] expected = { "a?b", "a?b", "a?", "a??b", "?\ud800\udc00" };
-        for (int length : new int[] { 0, 1022, 1023, 1024, 1025 }) {
-            char[] padding = new char[length];
-            Arrays.fill(padding, 'x');
-            String prefix = new String(padding);
+        for (int padding : new int[] { 0, 1022, 1023, 1024, 1025 }) {
+            String prefix = filler(padding);
             for (int i = 0; i < inputs.length; i++) {
                 byte[] bytes = (prefix + expected[i]).getBytes(StandardCharsets.UTF_8);
-                assertTrue(Arrays.equals(bytes, RubyEncoding.encodeUTF8(prefix + inputs[i])));
-                assertTrue(Arrays.equals(bytes, RubyEncoding.encodeUTF8(new StringBuilder(prefix + inputs[i]))));
+                for (CharSequence sequence : new CharSequence[] { prefix + inputs[i], new StringBuilder(prefix + inputs[i]) }) {
+                    assertBytes(utf8Case(inputs[i], padding, sequence), bytes, RubyEncoding.encodeUTF8(sequence));
+                }
             }
         }
     }
 
-    private String[] utf8Inputs() {
-        String[] samples = { "", "ASCII", "\u00e9\u00ff", "\u07ff\u0800\u4e2d", "\ud83d\ude00", "\ud800", "\udc00", "a\ud800b", "a\udc00b", "a\ud800", "a\udc00\ud800b" };
-        String[] inputs = new String[samples.length * 3];
-        char[] padding = new char[1024];
-        Arrays.fill(padding, 'x');
-        for (int i = 0; i < samples.length; i++) {
-            inputs[i] = samples[i];
-            inputs[i + samples.length] = new String(padding, 0, 1023) + samples[i];
-            inputs[i + samples.length * 2] = new String(padding) + samples[i];
+    private static String utf8Case(String sample, int padding, Object input) {
+        StringBuilder escaped = new StringBuilder();
+        for (int i = 0; i < sample.length(); i++) {
+            char c = sample.charAt(i);
+            if (c < 32 || c > 126) escaped.append(String.format("\\u%04x", (int) c));
+            else escaped.append(c);
         }
-        return inputs;
+        return "input=[" + escaped + "], padding=" + padding + ", type=" + input.getClass().getSimpleName();
     }
 
-    private void assertUTF8(String input, RubyString actual) {
+    private static String filler(int length) {
+        char[] chars = new char[length];
+        Arrays.fill(chars, 'x');
+        return new String(chars);
+    }
+
+    // Encoding must not move a CharBuffer's position or limit, at any length.
+    private static void assertUnconsumed(String msg, CharBuffer buffer, String input) {
+        assertEquals(msg + " position", 1, buffer.position());
+        assertEquals(msg + " limit", input.length() + 1, buffer.limit());
+    }
+
+    private static void assertBytes(String msg, byte[] expected, byte[] actual) {
+        assertEquals(msg, Arrays.toString(expected), Arrays.toString(actual));
+    }
+
+    private void assertUTF8(String msg, String input, RubyString actual) {
         byte[] expected = input.getBytes(StandardCharsets.UTF_8);
-        assertEquals(UTF8Encoding.INSTANCE, actual.getEncoding());
-        assertEquals(CR_UNKNOWN, actual.getCodeRange());
-        assertTrue(Arrays.equals(expected, actual.getByteList().bytes()));
+        assertEquals(msg + " encoding", UTF8Encoding.INSTANCE, actual.getEncoding());
+        assertBytes(msg + " bytes", expected, actual.getByteList().bytes());
         boolean ascii = true;
         for (byte value : expected) if (value < 0) ascii = false;
-        assertEquals(ascii ? CR_7BIT : CR_VALID, actual.scanForCodeRange());
+        int scanned = ascii ? CR_7BIT : CR_VALID;
+        assertTrue(msg + " code range=" + actual.getCodeRange(),
+                actual.getCodeRange() == CR_UNKNOWN || actual.getCodeRange() == scanned);
+        assertEquals(msg + " scanned code range", scanned, actual.scanForCodeRange());
         String normalized = new String(expected, StandardCharsets.UTF_8);
-        assertEquals(normalized, actual.getUnicodeValue());
-        assertEquals(normalized, actual.toString());
+        assertEquals(msg + " getUnicodeValue", normalized, actual.getUnicodeValue());
+        assertEquals(msg + " toString", normalized, actual.toString());
     }
 
     public void testSplit() throws RaiseException {
