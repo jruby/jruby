@@ -2,7 +2,6 @@ exclude :test_addrinfo_new_unix, "needs investigation"
 exclude :test_addrinfo_tcp, "needs investigation, passes on Linux", run: false
 exclude :test_connect_from, "needs investigation"
 exclude :test_connect_to, "needs investigation"
-exclude :test_error_message, "unfinished in initial 2.6 work, #6161"
 exclude :test_family_addrinfo, "needs investigation"
 exclude :test_ipv6_address_predicates, "needs investigation"
 exclude :test_marshal, "needs investigation"
