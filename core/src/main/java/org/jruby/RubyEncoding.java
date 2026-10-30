@@ -30,8 +30,6 @@ import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 
 import org.jcodings.Encoding;
@@ -56,8 +54,6 @@ import org.jruby.util.CodeRangeable;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingUtils;
 
-import static com.headius.backport9.buffer.Buffers.clearBuffer;
-import static com.headius.backport9.buffer.Buffers.flipBuffer;
 import static org.jruby.api.Access.encodingService;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Create.*;
@@ -294,19 +290,13 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     /**
      * Decode the range of bytes specified as UTF-8 content.
      *
-     * This will attempt to use a zero-allocation decoder if the content length is shorter than {@link #CHAR_THRESHOLD}
-     * bytes, and otherwise will used cached decoders to avoid reallocating Charset-related objects.
-     *
      * @param bytes the byte array
      * @param start start of content
      * @param length length of content
      * @return a decoded String based on UTF-8 bytes
      */
     public static String decodeUTF8(byte[] bytes, int start, int length) {
-        if (length > CHAR_THRESHOLD) {
-            return UTF8.decode(ByteBuffer.wrap(bytes, start, length)).toString();
-        }
-        return getUTF8Coder().decode(bytes, start, length).toString();
+        return new String(bytes, start, length, UTF8);
     }
 
     /**
@@ -363,37 +353,6 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     private static final int CHAR_THRESHOLD = 1024;
 
     /**
-     * A cached decoder for UTF-8 bytes.
-     */
-    private static class UTF8Coder {
-        private final CharsetDecoder decoder = UTF8.newDecoder();
-        /** The resulting decode buffer sized by the max number of
-         * characters (using 4 bytes per char possible for utf-8) */
-        private static final int BUF_SIZE = CHAR_THRESHOLD * 4;
-        private final ByteBuffer byteBuffer = ByteBuffer.allocate(BUF_SIZE);
-        private final CharBuffer charBuffer = CharBuffer.allocate(BUF_SIZE);
-
-        UTF8Coder() {
-            decoder.onMalformedInput(CodingErrorAction.REPLACE);
-            decoder.onUnmappableCharacter(CodingErrorAction.REPLACE);
-        }
-
-        public final CharBuffer decode(byte[] bytes, int start, int length) {
-            CharBuffer cbuf = charBuffer;
-            ByteBuffer buf = byteBuffer;
-            clearBuffer(cbuf);
-            clearBuffer(buf);
-            buf.put(bytes, start, length);
-            flipBuffer(buf);
-            decoder.decode(buf, cbuf, true);
-            flipBuffer(cbuf);
-
-            return cbuf;
-        }
-
-    }
-
-    /**
      * A cached decoder object to decode bytes as raw binary (ISO-8859-1 or ASCII-8BIT) content.
      */
     private static class RawCoder {
@@ -410,27 +369,10 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     }
 
     /**
-     * Thread-local UTF8Coder wrapped in a SoftReference to avoid possible ClassLoader leak.
-     * See JRUBY-6522
-     */
-    private static final ThreadLocal<SoftReference<UTF8Coder>> UTF8_CODER = new ThreadLocal<>();
-
-    /**
      * Thread-local RawCoder wrapped in a SoftReference to avoid possible ClassLoader leak.
      * See JRUBY-6522
      */
     private static final ThreadLocal<SoftReference<RawCoder>> RAW_CODER = new ThreadLocal<>();
-
-    private static UTF8Coder getUTF8Coder() {
-        UTF8Coder coder;
-        SoftReference<UTF8Coder> ref = UTF8_CODER.get();
-        if (ref == null || (coder = ref.get()) == null) {
-            coder = new UTF8Coder();
-            UTF8_CODER.set(new SoftReference<>(coder));
-        }
-
-        return coder;
-    }
 
     private static RawCoder getRawCoder() {
         RawCoder coder;

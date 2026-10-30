@@ -161,6 +161,33 @@ public class TestRubyString extends Base {
         assertEquals(msg, Arrays.toString(expected), Arrays.toString(actual));
     }
 
+    public void testUTF8MalformedDecoding() {
+        byte[][] samples = {
+            {}, { 'a' },
+            { (byte) 0xed, (byte) 0xa0, (byte) 0x80 },
+            { (byte) 0xc0, (byte) 0xaf },
+            { (byte) 0xe2, (byte) 0x82 },
+            { (byte) 0xf0, (byte) 0x80, (byte) 0x80, (byte) 0x80 },
+            { (byte) 0xf5, (byte) 0xfe, (byte) 0xff }
+        };
+        String[] expected = { "", "a", "\ufffd", "\ufffd\ufffd", "\ufffd", "\ufffd\ufffd\ufffd\ufffd", "\ufffd\ufffd\ufffd" };
+        for (int length : new int[] { 0, 1022, 1023, 1024, 1025, 2090 }) {
+            String prefix = filler(length);
+            for (int i = 0; i < samples.length; i++) {
+                byte[] bytes = new byte[length + samples[i].length + 4];
+                Arrays.fill(bytes, (byte) 'x');
+                System.arraycopy(samples[i], 0, bytes, length + 2, samples[i].length);
+                int size = length + samples[i].length;
+                String msg = utf8Case(expected[i], length, bytes) + ", bytes=" + Arrays.toString(samples[i]);
+                assertEquals(msg + " decodeUTF8", prefix + expected[i], RubyEncoding.decodeUTF8(bytes, 2, size));
+                RubyString string = RubyString.newString(context.runtime,
+                        new ByteList(bytes, 2, size, UTF8Encoding.INSTANCE, false));
+                assertEquals(msg + " getUnicodeValue", prefix + expected[i], string.getUnicodeValue());
+                assertEquals(msg + " toString", prefix + expected[i], string.toString());
+            }
+        }
+    }
+
     private void assertUTF8(String msg, String input, RubyString actual) {
         byte[] expected = input.getBytes(StandardCharsets.UTF_8);
         assertEquals(msg + " encoding", UTF8Encoding.INSTANCE, actual.getEncoding());
