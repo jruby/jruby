@@ -52,6 +52,19 @@ public class AttrWriterMethod extends JavaMethodOne {
     private String file;
     private int line;
 
+    private boolean fromRuby;
+
+    /**
+     * @param fromRuby whether Ruby code called attr_* to make this method, rather than Java code
+     */
+    public void setFromRuby(boolean fromRuby) {
+        this.fromRuby = fromRuby;
+    }
+
+    public boolean isFromRuby() {
+        return fromRuby;
+    }
+
     public AttrWriterMethod(RubyModule implementationClass, Visibility visibility, String variableName) {
         super(implementationClass, visibility, variableName + "=");
         this.variableName = variableName;

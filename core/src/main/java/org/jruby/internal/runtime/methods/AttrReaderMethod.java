@@ -51,6 +51,19 @@ public class AttrReaderMethod extends JavaMethodZero {
     private String file;
     private int line;
 
+    private boolean fromRuby;
+
+    /**
+     * @param fromRuby whether Ruby code called attr_* to make this method, rather than Java code
+     */
+    public void setFromRuby(boolean fromRuby) {
+        this.fromRuby = fromRuby;
+    }
+
+    public boolean isFromRuby() {
+        return fromRuby;
+    }
+
     public AttrReaderMethod(RubyModule implementationClass, Visibility visibility, String variableName) {
         super(implementationClass, visibility, variableName);
     }
