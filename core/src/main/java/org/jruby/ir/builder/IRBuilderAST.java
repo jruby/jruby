@@ -551,6 +551,13 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
 
             Operand splat = buildWithOrder(pairs.get(0).getValue(), keywordArgs.containsVariableAssignment());
 
+            // copy the hash now, before the block argument gets a chance to change it
+            if (dupSingleKeywordSplat) {
+                Variable copy = copy(new Hash(new ArrayList<>(1)));
+                addInstr(new RuntimeHelperCall(copy, MERGE_KWARGS, new Operand[] { copy, splat, fals() }));
+                return copy;
+            }
+
             return addResultInstr(new RuntimeHelperCall(temp(), HASH_CHECK, new Operand[] { splat }));
         }
 
@@ -844,10 +851,55 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         return addResultInstr(new BuildCompoundArrayInstr(result, lhs, rhs, false, false));
     }
 
+    @Override
+    protected boolean blockArgMayModifyArgs(Node iter) {
+        return iter instanceof BlockPassNode blockPass && mayHaveSideEffects(blockPass.getBodyNode());
+    }
+
+    // MRI: setup_args_dup_rest_p, the nodes that cannot change anything when evaluated
+    private static boolean mayHaveSideEffects(Node node) {
+        return switch (node) {
+            case LocalVarNode n -> false;
+            case DVarNode n -> false;
+            case GlobalVarNode n -> false;
+            case InstVarNode n -> false;
+            case ClassVarNode n -> false;
+            case ConstNode n -> false;
+            case Colon3Node n when !(n instanceof Colon2Node) -> false;
+            case Colon2Node n -> n.getLeftNode() != null && mayHaveSideEffects(n.getLeftNode());
+            case FixnumNode n -> false;
+            case BignumNode n -> false;
+            case FloatNode n -> false;
+            case RationalNode n -> false;
+            case ComplexNode n -> false;
+            case StrNode n -> false;
+            case SymbolNode n -> false;
+            case RegexpNode n -> false;
+            case SelfNode n -> false;
+            case NilNode n -> false;
+            case TrueNode n -> false;
+            case FalseNode n -> false;
+            case LambdaNode n -> false;
+            case NthRefNode n -> false;
+            case BackRefNode n -> false;
+            case null, default -> true;
+        };
+    }
+
     public Operand buildArgsPush(Variable result, ArgsPushNode node) {
         if (result == null) result = temp();
         Operand lhs = build(node.getFirstNode());
         Operand rhs = build(node.getSecondNode());
+
+        // Like buildArray, leave out a trailing ** that is empty, as in [*a, **{}]
+        if (node.getSecondNode() instanceof HashNode hash && hash.hasOnlyRestKwargs()) {
+            Variable empty = addResultInstr(new RuntimeHelperCall(temp(), IS_HASH_EMPTY, new Operand[] { rhs }));
+            final Variable array = result;
+            if_else(empty, tru(),
+                    () -> addInstr(new BuildCompoundArrayInstr(array, lhs, new Array(), false, false)),
+                    () -> addInstr(new BuildCompoundArrayInstr(array, lhs, rhs, true, false)));
+            return array;
+        }
 
         return addResultInstr(new BuildCompoundArrayInstr(result, lhs, rhs, true, false));
     }
@@ -861,10 +913,20 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
     public Operand buildAttrAssignAssignment(Node node, Operand value) {
         final AttrAssignNode attrAssignNode = (AttrAssignNode) node;
         Operand obj = build(attrAssignNode.getReceiverNode());
+
+        // a safe-navigation target such as the variable of "for foo&.bar in" is skipped when the receiver is nil
+        Label skipLabel = null;
+        if (attrAssignNode.isLazy()) {
+            skipLabel = getNewLabel();
+            addInstr(new BNilInstr(skipLabel, obj));
+        }
+
         int[] flags = new int[] { 0 };
         Operand[] args = setupCallArgs(attrAssignNode.getArgsNode(), flags);
         args = addArg(args, value);
         addInstr(AttrAssignInstr.create(scope, obj, attrAssignNode.getName(), args, flags[0], scope.maybeUsingRefinements()));
+
+        if (skipLabel != null) addInstr(new LabelInstr(skipLabel));
         return value;
     }
 

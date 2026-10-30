@@ -1434,10 +1434,42 @@ public class IRRuntimeHelpers {
         return args[preArgs + optArgIndex];
     }
 
+    /**
+     * Whether the splat ends with an empty hash flagged by ruby2_keywords, which a call leaves out of its arguments.
+     */
+    @CRuby(value = "vm_caller_setup_arg_splat", file = "vm_args.c")
+    private static boolean endsWithEmptyRuby2KeywordsHash(RubyArray splat) {
+        int size = splat.size();
+        return size > 0 && splat.eltOk(size - 1) instanceof RubyHash hash && hash.isRuby2KeywordHash() && hash.isEmpty();
+    }
+
+    /**
+     * The arguments for a call whose only argument is the given splat.
+     */
+    @JIT
+    public static IRubyObject[] splatToArgs(ThreadContext context, RubyArray splat) {
+        if (!endsWithEmptyRuby2KeywordsHash(splat)) return splat.toJavaArray(context);
+
+        IRubyObject[] args = IRubyObject.array(splat.size() - 1);
+        splat.copyInto(context, args, 0, args.length);
+        return args;
+    }
+
     public static IRubyObject getPreArgSafe(ThreadContext context, IRubyObject[] args, int argIndex) {
         IRubyObject result;
         result = argIndex < args.length ? args[argIndex] : context.nil; // SSS FIXME: This check is only required for closures, not methods
         return result;
+    }
+
+    /**
+     * Like {@link #getPreArgSafe(ThreadContext, IRubyObject[], int)}, but when the last argument was received
+     * as keywords it is not a positional argument. A proc called with only keywords, as in
+     * <code>proc {|c, a: 1|}.call(a: 3)</code>, gets nil for c rather than the keywords hash.
+     */
+    @Interp @JIT
+    public static IRubyObject getPreArgSafe(ThreadContext context, IRubyObject[] args, IRubyObject keywords, int argIndex) {
+        int argsLength = keywords != UNDEFINED ? args.length - 1 : args.length;
+        return argIndex < argsLength ? args[argIndex] : context.nil;
     }
 
     @JIT
@@ -1653,7 +1685,10 @@ public class IRRuntimeHelpers {
 
     public static IRubyObject[] splatArguments(IRubyObject[] args, boolean[] splatMap) {
         if (splatMap != null && splatMap.length > 0) {
-            int count = 0;
+            int last = splatMap.length - 1;
+            boolean dropLast = splatMap[last] && args[last] instanceof RubyArray lastSplat && endsWithEmptyRuby2KeywordsHash(lastSplat);
+
+            int count = dropLast ? -1 : 0;
             for (int i = 0; i < splatMap.length; i++) {
                 // make sure arg is still an array (zsuper can get have any args changed before it is called).
                 count += splatMap[i] && args[i] instanceof RubyArray ? ((RubyArray)args[i]).size() : 1;
@@ -1664,7 +1699,8 @@ public class IRRuntimeHelpers {
             for (int i = 0; i < splatMap.length; i++) {
                 if (splatMap[i] && args[i] instanceof RubyArray) {
                     RubyArray ary = (RubyArray) args[i];
-                    for (int j = 0; j < ary.size(); j++) {
+                    int size = i == last && dropLast ? ary.size() - 1 : ary.size();
+                    for (int j = 0; j < size; j++) {
                         newArgs[actualOffset++] = ary.eltOk(j);
                     }
                 } else {

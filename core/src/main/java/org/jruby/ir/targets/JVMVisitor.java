@@ -1309,9 +1309,9 @@ public class JVMVisitor extends IRVisitor {
         int arity = args.length;
 
         if (args.length == 1 && args[0] instanceof Splat) {
-            visit(args[0]);
             m.loadContext();
-            m.adapter.invokevirtual(p(RubyArray.class), "toJavaArray", sig(IRubyObject[].class, ThreadContext.class));
+            visit(args[0]);
+            m.invokeIRHelper("splatToArgs", sig(IRubyObject[].class, ThreadContext.class, RubyArray.class));
             arity = -1;
         } else if (CallBase.containsArgSplat(args)) {
             throw new NotCompilableException("splat in non-initial argument for normal call is unsupported in JIT");
@@ -2317,8 +2317,10 @@ public class JVMVisitor extends IRVisitor {
         } else {
             jvmMethod().loadContext();
             jvmMethod().loadArgs();
+            // the keywords operand may have been replaced by UNDEFINED, so do not use getKeywords
+            visit(instr.getOperand1());
             jvmAdapter().pushInt(instr.getArgIndex());
-            jvmMethod().invokeIRHelper("getPreArgSafe", sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, int.class));
+            jvmMethod().invokeIRHelper("getPreArgSafe", sig(IRubyObject.class, ThreadContext.class, IRubyObject[].class, IRubyObject.class, int.class));
         }
         jvmStoreLocal(instr.getResult());
     }

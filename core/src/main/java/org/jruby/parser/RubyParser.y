@@ -871,24 +871,21 @@ expr            : command_call
 // [!null] - DefHolder
 def_name        : fname {
                     p.pushLocalScope();
-                    ByteList currentArg = p.getCurrentArg();
-                    p.setCurrentArg(null);
                     LexContext ctxt = p.getLexContext();
                     RubySymbol name = p.get_id($1);
                     /*%%%*/
                     p.numparam_name($1);
-                    $$ = new DefHolder(name, currentArg, (LexContext) ctxt.clone());
+                    $$ = new DefHolder(name, (LexContext) ctxt.clone());
                     // a method's parameters must not change what an enclosing block allows, as in {def foo(_);end;it}
                     ((DefHolder) $$).maxNumParam = p.resetMaxNumParam();
                     // Changed from MRI
                     /*%
                         p.numparam_name(@1.id);
-                        $$ = new DefHolder(p.get_id(@1.id), currentArg, p.get_value($1), (LexContext) ctxt.clone());
+                        $$ = new DefHolder(p.get_id(@1.id), p.get_value($1), (LexContext) ctxt.clone());
                     %*/
                     ctxt.in_def = true;
                     ctxt.in_rescue = LexContext.InRescue.BEFORE_RESCUE;
                     ctxt.cant_return = false;
-                    p.setCurrentArg(null);
                 };
 
 
@@ -2927,7 +2924,6 @@ opt_block_param : none {
                 };
 
 block_param_def : '|' opt_bv_decl '|' {
-                    p.setCurrentArg(null);
                     p.ordinalMaxNumParam();
                     p.getLexContext().in_argdef = false;
                     /*%%%*/
@@ -2936,7 +2932,6 @@ block_param_def : '|' opt_bv_decl '|' {
                     /*% ripper: block_var!(params!(Qnil,Qnil,Qnil,Qnil,Qnil,Qnil,Qnil), escape_Qundef($2)) %*/
                 }
                 | '|' block_param opt_bv_decl '|' {
-                    p.setCurrentArg(null);
                     p.ordinalMaxNumParam();
                     p.getLexContext().in_argdef = false;
                     /*%%%*/
@@ -4580,8 +4575,6 @@ f_norm_arg      : f_bad_arg {
                 };
 
 f_arg_asgn      : f_norm_arg {
-                    RubySymbol name = p.get_id($1);
-                    p.setCurrentArg(name);
                     /*%%%*/
                     $$ = p.arg_var(@1.id);
                     /*%
@@ -4592,7 +4585,6 @@ f_arg_asgn      : f_norm_arg {
                 };
 
 f_arg_item      : f_arg_asgn {
-                    p.setCurrentArg(null);
                     /*%%%*/
                     $$ = $1;
                     /*% %*/
@@ -4623,7 +4615,6 @@ f_arg           : f_arg_item {
 f_label 	: tLABEL {
                     p.formal_argument(@1.id, $1);
                     p.arg_var(@1.id);
-                    p.setCurrentArg(p.get_id($1));
                     p.ordinalMaxNumParam();
                     p.getLexContext().in_argdef = false;
                     $$ = $1;
@@ -4631,7 +4622,6 @@ f_label 	: tLABEL {
 
 // KeywordArgNode - [!null]
 f_kw            : f_label arg_value {
-                    p.setCurrentArg(null);
                     p.getLexContext().in_argdef = true;
                     /*%%%*/
                     $$ = new KeywordArgNode(@2.start(), p.assignableKeyword($1, $2));
@@ -4640,7 +4630,6 @@ f_kw            : f_label arg_value {
                     %*/
                 }
                 | f_label {
-                    p.setCurrentArg(null);
                     p.getLexContext().in_argdef = true;
                     /*%%%*/
                     $$ = new KeywordArgNode(p.src_line(), p.assignableKeyword($1, new RequiredKeywordArgumentValueNode()));
@@ -4721,7 +4710,6 @@ f_kwrest        : kwrest_mark tIDENTIFIER {
 
 f_opt           : f_arg_asgn f_eq arg_value {
                     /*%%%*/
-                    p.setCurrentArg(null);
                     p.getLexContext().in_argdef = true;
                     $$ = new OptArgNode(@3.start(), p.assignableLabelOrIdentifier($1.getName().getBytes(), $3));
                     /*%
@@ -4731,7 +4719,6 @@ f_opt           : f_arg_asgn f_eq arg_value {
 
 f_block_opt     : f_arg_asgn f_eq primary_value {
                     p.getLexContext().in_argdef = true;
-                    p.setCurrentArg(null);
                     /*%%%*/
                     $$ = new OptArgNode(@3.start(), p.assignableLabelOrIdentifier($1.getName().getBytes(), $3));
                     /*%

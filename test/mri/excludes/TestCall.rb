@@ -1,8 +1,6 @@
-exclude :test_call_cfunc_splat_large_array_bug_4040, "seems to be passing along an empty block or hash it should not"
 exclude :test_call_ifunc_iseq_large_array_splat_fail, "tests internal CRuby functions"
 exclude :test_call_ifunc_iseq_large_array_splat_pass, "tests internal CRuby functions"
 exclude :test_call_rb_call_bmethod_large_array_splat_fail, "tests internal CRuby functions"
 exclude :test_call_rb_call_bmethod_large_array_splat_pass, "tests internal CRuby functions"
 exclude :test_call_rb_call_iseq_large_array_splat_fail, "tests internal CRuby functions"
 exclude :test_call_rb_call_iseq_large_array_splat_pass, "tests internal CRuby functions"
-exclude :test_kwsplat_block_eval_order, "needs investigation"

@@ -2484,24 +2484,21 @@ states[69] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, i
 };
 states[71] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.pushLocalScope();
-                    ByteList currentArg = p.getCurrentArg();
-                    p.setCurrentArg(null);
                     LexContext ctxt = p.getLexContext();
                     RubySymbol name = p.get_id(((ByteList)yyVals[0+yyTop].value));
                     /*%%%*/
                     p.numparam_name(((ByteList)yyVals[0+yyTop].value));
-                    yyVal = new DefHolder(name, currentArg, (LexContext) ctxt.clone());
+                    yyVal = new DefHolder(name, (LexContext) ctxt.clone());
                     /* a method's parameters must not change what an enclosing block allows, as in {def foo(_);end;it}*/
                     ((DefHolder) yyVal).maxNumParam = p.resetMaxNumParam();
                     /* Changed from MRI*/
                     /*%
                         p.numparam_name(yyVals[yyTop - count + 1].id);
-                        $$ = new DefHolder(p.get_id(yyVals[yyTop - count + 1].id), currentArg, p.get_value($1), (LexContext) ctxt.clone());
+                        $$ = new DefHolder(p.get_id(yyVals[yyTop - count + 1].id), p.get_value($1), (LexContext) ctxt.clone());
                     %*/
                     ctxt.in_def = true;
                     ctxt.in_rescue = LexContext.InRescue.BEFORE_RESCUE;
                     ctxt.cant_return = false;
-                    p.setCurrentArg(null);
   return yyVal;
 };
 states[72] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
@@ -4790,7 +4787,6 @@ states[467] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[468] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    p.setCurrentArg(null);
                     p.ordinalMaxNumParam();
                     p.getLexContext().in_argdef = false;
                     /*%%%*/
@@ -4800,7 +4796,6 @@ states[468] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[469] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    p.setCurrentArg(null);
                     p.ordinalMaxNumParam();
                     p.getLexContext().in_argdef = false;
                     /*%%%*/
@@ -6514,8 +6509,6 @@ states[750] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[751] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    RubySymbol name = p.get_id(((ByteList)yyVals[0+yyTop].value));
-                    p.setCurrentArg(name);
                     /*%%%*/
                     yyVal = p.arg_var(yyVals[yyTop - count + 1].id);
                     /*%
@@ -6526,7 +6519,6 @@ states[751] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[752] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    p.setCurrentArg(null);
                     /*%%%*/
                     yyVal = ((ArgumentNode)yyVals[0+yyTop].value);
                     /*% %*/
@@ -6558,14 +6550,12 @@ states[755] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 states[756] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.formal_argument(yyVals[yyTop - count + 1].id, ((ByteList)yyVals[0+yyTop].value));
                     p.arg_var(yyVals[yyTop - count + 1].id);
-                    p.setCurrentArg(p.get_id(((ByteList)yyVals[0+yyTop].value)));
                     p.ordinalMaxNumParam();
                     p.getLexContext().in_argdef = false;
                     yyVal = ((ByteList)yyVals[0+yyTop].value);
   return yyVal;
 };
 states[757] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    p.setCurrentArg(null);
                     p.getLexContext().in_argdef = true;
                     /*%%%*/
                     yyVal = new KeywordArgNode(yyVals[yyTop - count + 2].start(), p.assignableKeyword(((ByteList)yyVals[-1+yyTop].value), ((Node)yyVals[0+yyTop].value)));
@@ -6575,7 +6565,6 @@ states[757] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 states[758] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
-                    p.setCurrentArg(null);
                     p.getLexContext().in_argdef = true;
                     /*%%%*/
                     yyVal = new KeywordArgNode(p.src_line(), p.assignableKeyword(((ByteList)yyVals[0+yyTop].value), new RequiredKeywordArgumentValueNode()));
@@ -6659,7 +6648,6 @@ states[769] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[770] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     /*%%%*/
-                    p.setCurrentArg(null);
                     p.getLexContext().in_argdef = true;
                     yyVal = new OptArgNode(yyVals[yyTop - count + 3].start(), p.assignableLabelOrIdentifier(((ArgumentNode)yyVals[-2+yyTop].value).getName().getBytes(), ((Node)yyVals[0+yyTop].value)));
                     /*%
@@ -6669,7 +6657,6 @@ states[770] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
 };
 states[771] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, int count, int yychar) -> {
                     p.getLexContext().in_argdef = true;
-                    p.setCurrentArg(null);
                     /*%%%*/
                     yyVal = new OptArgNode(yyVals[yyTop - count + 3].start(), p.assignableLabelOrIdentifier(((ArgumentNode)yyVals[-2+yyTop].value).getName().getBytes(), ((Node)yyVals[0+yyTop].value)));
                     /*%
@@ -6945,7 +6932,7 @@ states[828] = (RubyParser p, Object yyVal, ProductionState[] yyVals, int yyTop, 
   return yyVal;
 };
 }
-					// line 4934 "parse.y"
+					// line 4921 "parse.y"
 
 }
-					// line 15235 "-"
+					// line 15222 "-"

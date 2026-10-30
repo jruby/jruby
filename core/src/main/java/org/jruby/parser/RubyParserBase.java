@@ -1297,9 +1297,6 @@ public abstract class RubyParserBase {
 
                 if (currentScope.isBlockScope() && slot != -1) {
                     if (isNumParamId(id2) && (isNumParamNested() || isItUsed())) return null;
-                    if (name.getBytes().equals(lexer.getCurrentArg())) {
-                        compile_error(str(getRuntime(), "circular argument reference - ", name));
-                    }
 
                     Node newNode = new DVarNode(loc, slot, name);
 
@@ -1311,9 +1308,6 @@ public abstract class RubyParserBase {
 
                 StaticScope.Type type = currentScope.getType();
                 if (type == StaticScope.Type.LOCAL && slot != -1) {
-                    if (name.getBytes().equals(lexer.getCurrentArg())) {
-                        compile_error(str(getRuntime(), "circular argument reference - ", name));
-                    }
 
                     Node newNode = new LocalVarNode(loc, slot, name);
 
@@ -2538,7 +2532,6 @@ public abstract class RubyParserBase {
     // MRI: restore_defun
     public void restore_defun(DefHolder holder) {
         lexer.getLexContext().restore(holder);
-        lexer.setCurrentArg(holder.current_arg);
         restoreMaxNumParam(holder.maxNumParam);
     }
 
@@ -2750,14 +2743,6 @@ public abstract class RubyParserBase {
 
     protected void setCommandStart(boolean value) {
         lexer.commandStart = value;
-    }
-
-    protected ByteList getCurrentArg() {
-        return lexer.getCurrentArg();
-    }
-
-    protected void setCurrentArg(RubySymbol value) {
-        lexer.setCurrentArg(value == null ?  null : value.getBytes());
     }
 
     protected StrNode createStr(ByteList buffer, int flags) {

@@ -55,7 +55,6 @@ public abstract class LexingCommon {
     public boolean commandStart;
     protected StackState conditionState = new StackState();
     protected StackState cmdArgumentState = new StackState();
-    private ByteList current_arg;
     private Encoding current_enc;
     protected boolean __end__seen = false;
     public boolean eofp = false;
@@ -283,10 +282,6 @@ public abstract class LexingCommon {
 
     public StackState getConditionState() {
         return conditionState;
-    }
-
-    public ByteList getCurrentArg() {
-        return current_arg;
     }
 
     public String getCurrentLine() {
@@ -637,10 +632,6 @@ public abstract class LexingCommon {
         }
 
         return value;
-    }
-
-    public void setCurrentArg(ByteList current_arg) {
-        this.current_arg = current_arg;
     }
 
     // FIXME: This is icky.  Ripper is setting encoding immediately but in Parsers lexer we are not.
