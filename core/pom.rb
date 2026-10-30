@@ -45,11 +45,11 @@ project 'JRuby Base' do
 
   # exclude jnr-ffi to avoid problems with shading and relocation of the asm packages
   jar 'com.github.jnr:jnr-netdb:1.2.0', exclusions: ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-enxio:0.33.4', exclusions: ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-unixsocket:0.39.6', exclusions: ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-posix:3.2.5', exclusions: ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-constants:0.11.2', exclusions: ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-ffi:2.3.4'
+  jar 'com.github.jnr:jnr-enxio:0.33.5', exclusions: ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-unixsocket:0.39.7', exclusions: ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-posix:3.2.6', exclusions: ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-constants:0.11.3', exclusions: ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-ffi:2.3.6'
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
