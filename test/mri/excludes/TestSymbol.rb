@@ -1,4 +1,3 @@
-exclude :test_inspect_under_gc_compact_stress, "no working assert_no_memory_leak method"
 exclude :test_symbol_fstr_memory_leak, "no working assert_no_memory_leak method"
 exclude :test_to_proc_arg, "needs investigation #4303"
 exclude :test_to_proc_arity, "needs investigation"

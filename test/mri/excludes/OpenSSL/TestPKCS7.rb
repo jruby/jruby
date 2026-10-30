@@ -5,8 +5,5 @@ exclude :test_empty_signed_data_ruby_bug_19974, "work in progress"
 exclude :test_enveloped, "work in progress"
 exclude :test_enveloped_add_recipient, "new failure with Ruby 4.0 tests, tested on MacOS, https://github.com/jruby/jruby/issues/9271, PKCS7Error: PKCS7[Method: 105, Reason: 116, Data: null]"
 exclude :test_graceful_parsing_failure, 'needs investigation'
-exclude :test_signed_add_signer, "work in progress"
 exclude :test_signed_authenticated_attributes, "new failure with Ruby 4.0 tests, tested on MacOS, https://github.com/jruby/jruby/issues/9271"
 exclude :test_signed_flags, "new failure with Ruby 4.0 tests, tested on MacOS, https://github.com/jruby/jruby/issues/9271, NullPointerException: 'element' cannot be null in SignerInfoWithPkey.toASN1Object"
-exclude :test_smime, "work in progress"
-exclude :test_to_text, "work in progress"
