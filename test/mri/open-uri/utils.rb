@@ -285,8 +285,15 @@ class SimpleHTTPSServer
     end
   end
 
-  # NOTE: patched by JRuby
+  # NOTE: patched by JRuby: CRuby kills the thread before closing the socket, and
+  # JRuby had that commented out, so the close landed under a blocked accept. The
+  # thread's own failure still reaches the test through the harness's join.
   def shutdown
+    @thread.kill
+    begin
+      @thread.join
+    rescue Exception
+    end
     @server.close
   end
 
