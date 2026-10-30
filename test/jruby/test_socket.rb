@@ -27,6 +27,39 @@ class SocketTest < Test::Unit::TestCase
     end
   end
 
+  def assert_buffered_input_survives_socket_write(socket, peer, write_method)
+    # Force pending input without depending on packet arrival or read-ahead timing.
+    socket.ungetbyte('body')
+    assert_equal 5, socket.public_send(write_method, 'reply')
+    assert_equal 'body', socket.read_nonblock(4, exception: false)
+    assert_equal 'reply', peer.read(5)
+  end
+
+  def test_tcp_socket_write_preserves_buffered_input
+    [:write, :write_nonblock].each do |write_method|
+      listener = TCPServer.new('127.0.0.1', 0)
+      peer = TCPSocket.new('127.0.0.1', listener.addr[1])
+      socket = listener.accept
+      assert_buffered_input_survives_socket_write(socket, peer, write_method)
+    ensure
+      socket&.close
+      peer&.close
+      listener&.close
+    end
+  end
+
+  if !WINDOWS
+    def test_unix_socket_write_preserves_buffered_input
+      [:write, :write_nonblock].each do |write_method|
+        socket, peer = UNIXSocket.pair
+        assert_buffered_input_survives_socket_write(socket, peer, write_method)
+      ensure
+        socket&.close
+        peer&.close
+      end
+    end
+  end
+
   def test_tcp_socket_allows_nil_for_hostname
     assert_nothing_raised do
       server = TCPServer.new(nil, 7789)

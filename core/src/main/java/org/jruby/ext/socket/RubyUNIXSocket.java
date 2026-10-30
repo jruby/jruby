@@ -355,7 +355,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         ModeFlags modes = newModeFlags(runtime, ModeFlags.RDWR);
 
         openFile.setFD(newChannelFD(runtime, channel));
-        openFile.setMode(modes.getOpenFileFlags());
+        openFile.setMode(modes.getOpenFileFlags() | OpenFile.DUPLEX);
         openFile.setSync(true);
         openFile.setPath(path);
     }
