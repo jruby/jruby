@@ -94,6 +94,7 @@ import org.jruby.runtime.backtrace.FrameType;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.cli.Options;
 import org.jruby.util.io.BlockingIO;
 import org.jruby.util.io.ChannelFD;
 import org.jruby.util.io.OpenFile;
@@ -718,8 +719,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private Thread startThread(ThreadContext context, Runnable runnable, String file, int line) throws RaiseException, OutOfMemoryError {
         final Ruby runtime = context.runtime;
         try {
-            Thread thread = new Thread(runnable);
-            thread.setDaemon(true);
+            Thread thread = createThread(runnable);
 
             this.file = file;
             this.line = line;
@@ -727,6 +727,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             initThreadName(runtime, thread, file, line);
             
             threadImpl = new RubyNativeThread(this, thread);
+            if (thread.isVirtual()) threadImpl.setPriority(context.getThread().threadImpl.getPriority());
 
             addToCorrectThreadGroup(context);
 
@@ -754,6 +755,16 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         catch (SecurityException ex) {
             throw runtime.newThreadError(ex.getMessage());
         }
+    }
+
+    // startThread must finish setting up the RubyThread before the runnable can execute.
+    private static final ThreadFactory THREAD_FACTORY =
+            Options.THREAD_VTHREADS.load() ? Thread.ofVirtual().factory() : Thread::new;
+
+    private static Thread createThread(Runnable runnable) {
+        Thread thread = THREAD_FACTORY.newThread(runnable);
+        thread.setDaemon(true);
+        return thread;
     }
 
     private static final RubyHash[] NULL_ARRAY = new RubyHash[0];
