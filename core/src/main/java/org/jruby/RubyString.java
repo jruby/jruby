@@ -1965,6 +1965,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         Encoding enc = StringSupport.areCompatible(this, otherStr);
         if (enc == null) return context.nil;
 
+        if (isAsciiOnly() && otherStr.isAsciiOnly()) {
+            return asBoolean(context, value.getRealSize() == otherStr.value.getRealSize()
+                    && value.caseInsensitiveCmp(otherStr.value) == 0);
+        }
+
         int flags = Config.CASE_FOLD;
         RubyString down = dupString(context, this);
         down.downcase_bang(context, flags);
