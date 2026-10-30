@@ -1789,6 +1789,7 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
     @CRuby(value = "ary_join_1", file = "array.c")
     private RubyString joinAny(ThreadContext context, RubyString sep, int i, RubyString result, boolean[] first) {
         assert i >= 0 : "joining elements before beginning of array";
+        JavaSites.CheckedSites to_str_checked = null;
         JavaSites.CheckedSites to_ary_checked = null;
 
         for (; i < realLength; i++) {
@@ -1803,7 +1804,9 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
             } else if (val instanceof RubyArray) {
                 throw new RuntimeException("unsupported array type: " + val.getClass().getName());
             } else {
-                IRubyObject tmp = val.checkStringType();
+                if (to_str_checked == null) to_str_checked = sites(context).to_str_checked;
+
+                IRubyObject tmp = TypeConverter.checkStringType(context, to_str_checked, val);
                 if (tmp != context.nil) {
                     strJoin(result, (RubyString) tmp, first);
                     continue;
