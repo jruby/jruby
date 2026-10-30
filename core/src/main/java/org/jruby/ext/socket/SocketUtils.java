@@ -139,7 +139,7 @@ public class SocketUtils {
 
     public static IRubyObject gethostbyname(ThreadContext context, IRubyObject hostname) {
         try {
-            InetAddress addr = getRubyInetAddress(hostname.convertToString().toString());
+            InetAddress addr = getRubyInetAddress(context, hostname.convertToString().toString());
 
             return RubyArray.newArray(context.runtime,
                     newString(context, addr.getCanonicalHostName()),
@@ -324,9 +324,11 @@ public class SocketUtils {
         }
     }
 
-    // A host that is not numeric goes to the fiber scheduler's address_resolve
+    // "<any>", "<broadcast>" and numeric hosts are used as they are; anything else goes to the fiber
+    // scheduler's address_resolve, if it has one, before the JDK's resolver
     @CRuby(value = "rsock_getaddrinfo", file = "ext/socket/raddrinfo.c")
     private static InetAddress[] getAllByName(ThreadContext context, IRubyObject host, String hostString, boolean emptyHost) throws UnknownHostException {
+        if (!emptyHost && specialAddress(hostString) instanceof InetAddress special) return new InetAddress[] { special };
         if (emptyHost || isNumericHost(hostString)) return InetAddress.getAllByName(hostString);
 
         IRubyObject scheduler = FiberScheduler.current(context);
@@ -431,7 +433,7 @@ public class SocketUtils {
         InetAddress addr;
 
         try {
-            addr = InetAddress.getByName(host);
+            addr = getRubyInetAddress(context, host);
         } catch (UnknownHostException e) {
             throw ResolutionError.newNameNotKnown(context);
         }
@@ -473,6 +475,21 @@ public class SocketUtils {
         } catch (SocketException se) {
             throw sockerr(context.runtime, se.getLocalizedMessage());
         }
+    }
+
+    /**
+     * Resolve a host the way the socket library does, through the fiber scheduler's address_resolve when there is one.
+     */
+    @CRuby(value = "rsock_addrinfo", file = "ext/socket/raddrinfo.c")
+    public static InetAddress[] getRubyInetAddresses(ThreadContext context, String host) throws UnknownHostException {
+        return getAllByName(context, newString(context, host), host, false);
+    }
+
+    /**
+     * The first address {@link #getRubyInetAddresses(ThreadContext, String)} finds for a host.
+     */
+    public static InetAddress getRubyInetAddress(ThreadContext context, String host) throws UnknownHostException {
+        return getRubyInetAddresses(context, host)[0];
     }
 
     public static InetAddress[] getRubyInetAddresses(String addressString) throws UnknownHostException {
@@ -526,7 +543,7 @@ public class SocketUtils {
     public static IRubyObject getaddress(ThreadContext context, IRubyObject hostname) {
         try {
             String hostnameString = hostname.convertToString().toString();
-            InetAddress address = InetAddress.getByName(hostnameString);
+            InetAddress address = getRubyInetAddress(context, hostnameString);
 
             if (isIPV4MappedAddressPrefix(hostnameString)) {
                 // See https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/Inet6Address.html#special-ipv6-address-heading

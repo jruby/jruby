@@ -385,7 +385,7 @@ public class Addrinfo extends RubyObject {
         String host = checkEmbeddedNulls(context, arg.convertToString()).toString();
         try {
             boolean specifiedV6 = host.indexOf(':') != -1;
-            InetAddress addy = SocketUtils.getRubyInetAddress(host);
+            InetAddress addy = SocketUtils.getRubyInetAddress(context, host);
             Addrinfo addrinfo = new Addrinfo(context.runtime, (RubyClass) recv, addy);
             addrinfo.protocol = Protocol.getProtocolByName("ip");
             if (specifiedV6 && addy instanceof Inet4Address) {
@@ -828,7 +828,7 @@ public class Addrinfo extends RubyObject {
                 }
                 return SocketUtils.getRubyInetAddress(bytes);
             }
-            return SocketUtils.getRubyInetAddress(node.convertToString().toString());
+            return SocketUtils.getRubyInetAddress(context, node.convertToString().toString());
         } catch (UnknownHostException uhe) {
             throw ResolutionError.newNameNotKnown(context);
         }

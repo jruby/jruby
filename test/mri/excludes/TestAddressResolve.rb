@@ -1,8 +1,1 @@
-exclude :test_addrinfo_getaddrinfo_any_non_blocking, ""
 exclude :test_addrinfo_getaddrinfo_full_domain_blocking, ""
-exclude :test_addrinfo_ip_domain_blocking, ""
-exclude :test_addrinfo_tcp_domain_blocking, ""
-exclude :test_addrinfo_udp_domain_blocking, ""
-exclude :test_ip_socket_getaddress_domain_blocking, ""
-exclude :test_mutex_fiber_raise, ""
-exclude :test_socket_getnameinfo_domain_blocking, ""

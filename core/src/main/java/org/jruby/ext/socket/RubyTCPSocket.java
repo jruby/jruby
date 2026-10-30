@@ -116,7 +116,7 @@ public class RubyTCPSocket extends RubyIPSocket {
 
             if (localHost != null) {
                 channel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
-                channel.bind( new InetSocketAddress(InetAddress.getByName(localHost), localPort) );
+                channel.bind( new InetSocketAddress(SocketUtils.getRubyInetAddress(context, localHost), localPort) );
             }
             try {
                 boolean connected = channel.connect(new InetSocketAddress(address, remotePort));
@@ -160,10 +160,11 @@ public class RubyTCPSocket extends RubyIPSocket {
      * Resolve the host, giving up after the given number of seconds if it isn't nil. InetAddress offers no
      * timeout, so a timed lookup runs on a virtual thread.
      */
+    // MRI: rsock_getaddrinfo, which asks the fiber scheduler's address_resolve without a timeout when there is one
     private static InetAddress[] resolve(ThreadContext context, String host, int port, IRubyObject timeout) throws UnknownHostException {
-        if (timeout.isNil()) return InetAddress.getAllByName(host);
+        if (timeout.isNil() || FiberScheduler.current(context) != null) return SocketUtils.getRubyInetAddresses(context, host);
 
-        FutureTask<InetAddress[]> lookup = new FutureTask<>(() -> InetAddress.getAllByName(host));
+        FutureTask<InetAddress[]> lookup = new FutureTask<>(() -> SocketUtils.getRubyInetAddresses(host));
         Thread.ofVirtual().start(lookup);
 
         long deadline = System.nanoTime() + toNanos(context, timeout);
@@ -300,7 +301,7 @@ public class RubyTCPSocket extends RubyIPSocket {
     @JRubyMethod(meta = true)
     public static IRubyObject gethostbyname(ThreadContext context, IRubyObject recv, IRubyObject hostname) {
         try {
-            var addr = InetAddress.getByName(hostname.convertToString().toString());
+            var addr = SocketUtils.getRubyInetAddress(context, hostname.convertToString().toString());
 
             return RubyArray.newArray(context.runtime,
                     newString(context, do_not_reverse_lookup(context, recv).isTrue() ? addr.getHostAddress() : addr.getCanonicalHostName()),
