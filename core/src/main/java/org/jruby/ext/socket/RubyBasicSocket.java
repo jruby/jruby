@@ -83,6 +83,7 @@ import java.nio.ByteOrder;
 import java.nio.channels.Channel;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectableChannel;
+import java.nio.channels.SelectionKey;
 
 import static jnr.constants.platform.TCP.TCP_INFO;
 import static jnr.constants.platform.TCP.TCP_KEEPCNT;
@@ -238,9 +239,7 @@ public class RubyBasicSocket extends RubyIO {
 
         if (channel instanceof DatagramChannel) {
             try {
-                DatagramChannel dgram = (DatagramChannel) channel;
-
-                dgram.receive(buffer);
+                receiveBlocking(context, this, (DatagramChannel) channel, buffer);
 
                 flipBuffer(buffer);
                 bytes = new ByteList(buffer.array(), buffer.position(), buffer.limit());
@@ -249,7 +248,7 @@ public class RubyBasicSocket extends RubyIO {
                 return null; // not reached
             }
         } else {
-            bytes = doRead(context, buffer);
+            bytes = doReadBlocking(context, buffer);
             if (bytes == null) return context.nil;
         }
 
@@ -785,6 +784,48 @@ public class RubyBasicSocket extends RubyIO {
         }
     }
 
+    private ByteList doReadBlocking(ThreadContext context, final ByteBuffer buffer) {
+        OpenFile fptr = getOpenFileInitialized();
+        fptr.checkReadable(context);
+
+        while (true) {
+            int read;
+
+            try {
+                context.getThread().beforeBlockingCall(context);
+
+                read = fptr.readChannel().read(buffer);
+            } catch (Exception e) {
+                throwErrorFromException(context.runtime, e);
+                return null; // not reached
+            } finally {
+                context.getThread().afterBlockingCall();
+            }
+
+            if (read < 0) return null;
+            if (read > 0 || !buffer.hasRemaining()) return new ByteList(buffer.array(), 0, buffer.position(), false);
+
+            waitUntilReadable(context, fptr);
+        }
+    }
+
+    /**
+     * Receive a datagram, waiting for one to arrive if the channel is nonblocking.
+     */
+    protected static SocketAddress receiveBlocking(ThreadContext context, RubyBasicSocket socket, DatagramChannel channel, ByteBuffer buffer) throws IOException {
+        SocketAddress sender;
+
+        while ((sender = channel.receive(buffer)) == null) {
+            waitUntilReadable(context, socket.getOpenFileInitialized());
+        }
+
+        return sender;
+    }
+
+    private static void waitUntilReadable(ThreadContext context, OpenFile fptr) {
+        fptr.ready(context.runtime, context.getThread(), SelectionKey.OP_READ, -1);
+    }
+
     protected final ByteList doReadNonblock(ThreadContext context, final ByteBuffer buffer, boolean exception) {
         Channel channel = getChannel();
 
@@ -962,6 +1003,7 @@ public class RubyBasicSocket extends RubyIO {
         MakeOpenFile();
 
         openFile.setFD(fd);
+        openFile.setBlocking(getRuntime(), false);
         openFile.setMode(OpenFile.READWRITE | OpenFile.SYNC);
 
         // see rsock_init_sock in MRI; sockets are initialized to binary

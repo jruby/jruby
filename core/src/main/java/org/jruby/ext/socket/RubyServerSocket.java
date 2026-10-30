@@ -215,6 +215,8 @@ public class RubyServerSocket extends RubySocket {
                     throw runtime.newErrnoEAGAINReadableError("accept(2) would block");
                 }
 
+                socket.configureBlocking(false);
+
                 RubySocket rubySocket = new RubySocket(runtime, Access.getClass(context, "Socket"));
                 rubySocket.initFromServer(runtime, sock, socket);
 

@@ -1002,6 +1002,15 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                     }
                 }
             }
+
+            // set to nonblocking if possible (Ruby 3.0 change for IO/fiber scheduling)
+            if (fd.chSelect != null) {
+                try {
+                    fd.chSelect.configureBlocking(false);
+                } catch (IOException ioe) {
+                    // ignore, can't set nonblocking
+                }
+            }
         } else {
             fd = runtime.getFilenoUtil().getWrapperFromFileno(fileno);
 
@@ -4603,6 +4612,8 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         openFile.setMode(modes.getOpenFileFlags() | OpenFile.SYNC);
         openFile.setProcess(process);
 
+        Ruby runtime = context.runtime;
+
         if (openFile.isReadable()) {
             Channel inChannel;
             if (process.getInput() != null) {
@@ -4613,7 +4624,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 inChannel = Channels.newChannel(process.getInputStream());
             }
 
-            ChannelFD main = new ChannelFD(inChannel, context.runtime.getPosix(), context.runtime.getFilenoUtil());
+            ChannelFD main = new ChannelFD(inChannel, runtime.getPosix(), runtime.getFilenoUtil());
 
             openFile.setFD(main);
         }
@@ -4627,7 +4638,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
                 outChannel = Channels.newChannel(process.getOutputStream());
             }
 
-            ChannelFD pipe = new ChannelFD(outChannel, context.runtime.getPosix(), context.runtime.getFilenoUtil());
+            ChannelFD pipe = new ChannelFD(outChannel, runtime.getPosix(), runtime.getFilenoUtil());
 
             // if also readable, attach as tied IO; otherwise, primary IO
             if (openFile.isReadable()) {
