@@ -126,7 +126,9 @@ public class RubyIOBuffer extends RubyObject {
             }
         }
 
-        RubyIOBuffer buffer = newBuffer(context, string, flags);
+        // The buffer shares the string's bytes, so it is external and keeps the string as its source.
+        RubyIOBuffer buffer = newBuffer(context, string, flags | EXTERNAL);
+        buffer.source = string;
 
         if (block.isGiven()) {
             return block.yieldSpecific(context, buffer);
@@ -782,8 +784,9 @@ public class RubyIOBuffer extends RubyObject {
         return this;
     }
 
+    @CRuby(value = "io_buffer_get_bytes_for_writing", file = "io_buffer.c")
     private ByteBuffer getBufferForWriting(ThreadContext context) {
-        if (isReadonly()) {
+        if (isReadonly() || (source != null && source.isFrozen())) {
             throw context.runtime.newBufferAccessError("Buffer is not writable!");
         }
 
