@@ -2113,16 +2113,63 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         IntHolder flagsP = new IntHolder();
         flagsP.value = flags;
         if ((flags & Config.CASE_ASCII_ONLY) != 0) {
-            StringSupport.asciiOnlyCaseMap(context, value, flagsP);
+            StringSupport.asciiOnlyCaseMap(context, value, flagsP, enc);
         } else {
             value = StringSupport.caseMap(context, value, flagsP, enc);
         }
         return flagsP.value;
     }
 
-    /** rb_str_upcase / rb_str_upcase_bang
-     *
-     */
+    @CRuby(value = "case_option_single_p", file = "string.c")
+    private boolean caseOptionSingle(int flags, Encoding enc) {
+        if ((flags & Config.CASE_ASCII_ONLY) != 0 && (enc == UTF8Encoding.INSTANCE || enc.maxLength() == 1)) return true;
+        return (flags & Config.CASE_FOLD_TURKISH_AZERI) == 0 &&
+                (getCodeRange() == CR_7BIT || enc == ASCIIEncoding.INSTANCE);
+    }
+
+    // Only ASCII letters change, so the code range stays as it is.
+    @CRuby(value = "upcase_single", file = "string.c")
+    private static boolean upcaseSingle(byte[] bytes, int s, int end) {
+        boolean modified = false;
+        for (; s < end; s++) {
+            int c = bytes[s] & 0xff;
+            if ('a' <= c && c <= 'z') {
+                bytes[s] = (byte) ('A' + (c - 'a'));
+                modified = true;
+            }
+        }
+        return modified;
+    }
+
+    @CRuby(value = "downcase_single", file = "string.c")
+    private static boolean downcaseSingle(byte[] bytes, int s, int end) {
+        boolean modified = false;
+        for (; s < end; s++) {
+            int c = bytes[s] & 0xff;
+            if ('A' <= c && c <= 'Z') {
+                bytes[s] = (byte) ('a' + (c - 'A'));
+                modified = true;
+            }
+        }
+        return modified;
+    }
+
+    // titlecase the first byte, then the rest is a plain downcase loop
+    @CRuby(value = "capitalize_single", file = "string.c")
+    private static boolean capitalizeSingle(byte[] bytes, int s, int end) {
+        boolean modified = false;
+        if (s < end) {
+            int c = bytes[s] & 0xff;
+            if ('a' <= c && c <= 'z') {
+                bytes[s] = (byte) ('A' + (c - 'a'));
+                modified = true;
+            }
+            s++;
+        }
+        return downcaseSingle(bytes, s, end) | modified;
+    }
+
+    @CRuby(value = "rb_str_upcase", file = "string.c")
     @JRubyMethod(name = "upcase")
     public RubyString upcase(ThreadContext context) {
         RubyString str = dupString(context, this);
@@ -2159,22 +2206,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return upcase_bang(context, StringSupport.checkCaseMapOptions(context, arg0, arg1, Config.CASE_UPCASE));
     }
 
+    @CRuby(value = "rb_str_upcase_bang", file = "string.c")
     private IRubyObject upcase_bang(ThreadContext context, int flags) {
         modifyAndKeepCodeRange();
         Encoding enc = checkDummyEncoding();
-        if (((flags & Config.CASE_ASCII_ONLY) != 0 && (enc.isUTF8() || enc.maxLength() == 1)) ||
-                (flags & Config.CASE_FOLD_TURKISH_AZERI) == 0 && getCodeRange() == CR_7BIT) {
-            int s = value.getBegin();
-            int end = s + value.getRealSize();
-            byte[]bytes = value.getUnsafeBytes();
-            while (s < end) {
-                int c = bytes[s] & 0xff;
-                if (Encoding.isAscii(c) && 'a' <= c && c <= 'z') {
-                    bytes[s] = (byte)('A' + (c - 'a'));
-                    flags |= Config.CASE_MODIFIED;
-                }
-                s++;
-            }
+        if (caseOptionSingle(flags, enc)) {
+            if (upcaseSingle(value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize())) flags |= Config.CASE_MODIFIED;
         } else {
             flags = caseMap(context, flags, enc);
             if ((flags & Config.CASE_MODIFIED) != 0) clearCodeRange();
@@ -2183,9 +2220,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return ((flags & Config.CASE_MODIFIED) != 0) ? this : context.nil;
     }
 
-    /** rb_str_downcase / rb_str_downcase_bang
-     *
-     */
+    @CRuby(value = "rb_str_downcase", file = "string.c")
     @JRubyMethod(name = "downcase")
     public RubyString downcase(ThreadContext context) {
         RubyString str = dupString(context, this);
@@ -2222,22 +2257,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return downcase_bang(context, StringSupport.checkCaseMapOptions(context, arg0, arg1, Config.CASE_DOWNCASE));
     }
 
+    @CRuby(value = "rb_str_downcase_bang", file = "string.c")
     private IRubyObject downcase_bang(ThreadContext context, int flags) {
         modifyAndKeepCodeRange();
         Encoding enc = checkDummyEncoding();
-        if (((flags & Config.CASE_ASCII_ONLY) != 0 && (enc.isUTF8() || enc.maxLength() == 1)) ||
-                (flags & Config.CASE_FOLD_TURKISH_AZERI) == 0 && getCodeRange() == CR_7BIT) {
-            int s = value.getBegin();
-            int end = s + value.getRealSize();
-            byte[]bytes = value.getUnsafeBytes();
-            while (s < end) {
-                int c = bytes[s] & 0xff;
-                if (Encoding.isAscii(c) && 'A' <= c && c <= 'Z') {
-                    bytes[s] = (byte)('a' + (c - 'A'));
-                    flags |= Config.CASE_MODIFIED;
-                }
-                s++;
-            }
+        if (caseOptionSingle(flags, enc)) {
+            if (downcaseSingle(value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize())) flags |= Config.CASE_MODIFIED;
         } else {
             flags = caseMap(context, flags, enc);
             if ((flags & Config.CASE_MODIFIED) != 0) clearCodeRange();
@@ -2246,9 +2271,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return ((flags & Config.CASE_MODIFIED) != 0) ? this : context.nil;
     }
 
-    /** rb_str_swapcase / rb_str_swapcase_bang
-     *
-     */
+    @CRuby(value = "rb_str_swapcase", file = "string.c")
     @JRubyMethod(name = "swapcase")
     public RubyString swapcase(ThreadContext context) {
         RubyString str = dupString(context, this);
@@ -2285,6 +2308,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return swapcase_bang(context, StringSupport.checkCaseMapOptions(context, arg0, arg1, Config.CASE_UPCASE | Config.CASE_DOWNCASE));
     }
 
+    @CRuby(value = "rb_str_swapcase_bang", file = "string.c")
     private IRubyObject swapcase_bang(ThreadContext context, int flags) {
         modifyAndKeepCodeRange();
         flags = caseMap(context, flags, checkDummyEncoding());
@@ -2296,9 +2320,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return context.nil;
     }
 
-    /** rb_str_capitalize / rb_str_capitalize_bang
-     *
-     */
+    @CRuby(value = "rb_str_capitalize", file = "string.c")
     @JRubyMethod(name = "capitalize")
     public RubyString capitalize(ThreadContext context) {
         RubyString str = dupString(context, this);
@@ -2335,6 +2357,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return capitalize_bang(context, StringSupport.checkCaseMapOptions(context, arg0, arg1, Config.CASE_UPCASE | Config.CASE_TITLECASE));
     }
 
+    @CRuby(value = "rb_str_capitalize_bang", file = "string.c")
     private IRubyObject capitalize_bang(ThreadContext context, int flags) {
         modifyAndKeepCodeRange();
         Encoding enc = checkDummyEncoding();
@@ -2344,13 +2367,14 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             return context.nil;
         }
 
-        flags = caseMap(context, flags, enc);
-        if ((flags & Config.CASE_MODIFIED) != 0) {
-            clearCodeRange();
-            return this;
+        if (caseOptionSingle(flags, enc)) {
+            if (capitalizeSingle(value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize())) flags |= Config.CASE_MODIFIED;
+        } else {
+            flags = caseMap(context, flags, enc);
+            if ((flags & Config.CASE_MODIFIED) != 0) clearCodeRange();
         }
 
-        return context.nil;
+        return ((flags & Config.CASE_MODIFIED) != 0) ? this : context.nil;
     }
 
     @Deprecated(since = "10.0.0.0")

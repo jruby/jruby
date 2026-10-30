@@ -2925,19 +2925,40 @@ public final class StringSupport {
 
     @Deprecated(since = "10.0.0.0")
     public static void asciiOnlyCaseMap(Ruby runtime, ByteList value, IntHolder flags, Encoding enc) {
-        asciiOnlyCaseMap(runtime.getCurrentContext(), value, flags);
+        asciiOnlyCaseMap(runtime.getCurrentContext(), value, flags, enc);
     }
 
+    @Deprecated(since = "10.1.3.0")
     public static void asciiOnlyCaseMap(ThreadContext context, ByteList value, IntHolder flags) {
-        if (value.getRealSize() == 0) return;
-        int s = value.getBegin();
-        int end = s + value.getRealSize();
-        byte[]bytes = value.getUnsafeBytes();
+        asciiOnlyCaseMap(context, value, flags, ASCIIEncoding.INSTANCE);
+    }
 
-        IntHolder pp = new IntHolder();
-        pp.value = s;
-        int len = ASCIIEncoding.INSTANCE.caseMap(flags, bytes, pp, end, bytes, s, end);
-        if (len < 0) throw argumentError(context, "input string invalid");
+    // Walks characters in enc, so invalid bytes raise and capitalize titlecases the first character, not byte.
+    // ASCII letters keep their length in every encoding, so the mapping is done in place.
+    @CRuby(value = "rb_str_ascii_casemap", file = "string.c")
+    @CRuby(value = "onigenc_ascii_only_case_map", file = "regenc.c")
+    public static void asciiOnlyCaseMap(ThreadContext context, ByteList value, IntHolder flagsP, Encoding enc) {
+        if (value.getRealSize() == 0) return;
+        int p = value.getBegin();
+        int end = p + value.getRealSize();
+        byte[] bytes = value.getUnsafeBytes();
+        int flags = flagsP.value;
+
+        while (p < end) {
+            int n = preciseLength(enc, bytes, p, end);
+            if (!MBCLEN_CHARFOUND_P(n)) throw argumentError(context, "input string invalid");
+            int code = enc.mbcToCode(bytes, p, end);
+            if ('a' <= code && code <= 'z' && (flags & Config.CASE_UPCASE) != 0) {
+                flags |= Config.CASE_MODIFIED;
+                enc.codeToMbc(code - ('a' - 'A'), bytes, p);
+            } else if ('A' <= code && code <= 'Z' && (flags & (Config.CASE_DOWNCASE | Config.CASE_FOLD)) != 0) {
+                flags |= Config.CASE_MODIFIED;
+                enc.codeToMbc(code + ('a' - 'A'), bytes, p);
+            }
+            p += MBCLEN_CHARFOUND_LEN(n);
+            if ((flags & Config.CASE_TITLECASE) != 0) flags ^= Config.CASE_UPCASE | Config.CASE_DOWNCASE | Config.CASE_TITLECASE;
+        }
+        flagsP.value = flags;
     }
 
     public static int encCoderangeClean(int cr) {
