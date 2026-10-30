@@ -274,6 +274,9 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
             // MRI: fiber_switch re-reads the current fiber; control can return into a different one
             if (currentFiberData.blocking) context.getFiberCurrentThread().incrementBlocking();
 
+            // MRI: fiber_restore_thread, th->ec now belongs to us again
+            context.getFiberCurrentThread().setRunningFiberThread(context.getThread());
+
             context.trace(RubyEvent.FIBER_SWITCH, "resume", context.runtime.getFiber());
         }
     }
@@ -612,6 +615,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                     try {
                         FiberRequest init = data.queue.pop(ctxt);
                         data.started = true;
+                        data.parent.setRunningFiberThread(rubyThread);
 
                         // MRI: rb_fiber_start. A first run does not return through a switch
                         if (data.blocking) data.parent.incrementBlocking();
