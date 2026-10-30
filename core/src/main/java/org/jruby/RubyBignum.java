@@ -970,7 +970,7 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
     }
 
     // mri : rb_integer_float_cmp
-    private IRubyObject float_cmp(ThreadContext context, RubyFloat y) {
+    IRubyObject float_cmp(ThreadContext context, RubyFloat y) {
         Ruby runtime = context.runtime;
         double yd = y.value;
         double yi, yf;

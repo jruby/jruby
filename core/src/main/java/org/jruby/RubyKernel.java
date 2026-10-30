@@ -560,12 +560,10 @@ public class RubyKernel {
             }
 
             if (isHexValue(bytes)) {
-                if (bytes.indexOf('p') != -1 || bytes.indexOf('P') != -1) {
-                    return asFloat(context, parseHexidecimalExponentString2(context, bytes));
-                }
-                IRubyObject inum = ConvertBytes.byteListToInum(runtime, bytes, 16, true, exception);
-                if (!exception && inum.isNil()) return inum;
-                return ((RubyInteger) inum).toFloat();
+                double value = parseHexFloat(bytes);
+                if (!Double.isNaN(value)) return asFloat(context, value);
+                if (!exception) return context.nil;
+                throw floatError(context, bytes);
             }
             return RubyNumeric.str2fnum(runtime, str, true, exception);
         }
@@ -600,8 +598,94 @@ public class RubyKernel {
 
     static boolean isHexValue(ByteList bytes) {
         int length = bytes.getRealSize();
-        int index = length >= 1 && bytes.get(0) == '-' ? 1 : 0;
+        int index = 0;
+        while (index < length && isSpace(bytes.get(index))) index++;
+        if (index < length && (bytes.get(index) == '-' || bytes.get(index) == '+')) index++;
         return length >= index + 2 && bytes.get(index) == '0' && (bytes.get(index + 1) == 'x' || bytes.get(index + 1) == 'X');
+    }
+
+    /**
+     * Parse a hexadecimal Float such as 0x1.8p3, as strtod does: hex digits with an optional point
+     * and fraction, then an optional binary exponent of decimal digits after a p. An underscore
+     * may only come between two digits, and only spaces may come after the number.
+     *
+     * @param str the text, which starts with 0x after any spaces and sign
+     * @return the value, or NaN if the text is not a valid hexadecimal Float
+     */
+    @CRuby(value = "rb_cstr_to_dbl_raise", file = "object.c")
+    private static double parseHexFloat(ByteList str) {
+        byte[] b = str.unsafeBytes();
+        int p = str.begin();
+        int end = p + str.realSize();
+
+        while (p < end && isSpace(b[p])) p++;
+        boolean negative = false;
+        if (p < end && (b[p] == '-' || b[p] == '+')) negative = b[p++] == '-';
+        p += 2; // 0x
+
+        BigInteger mantissa = BigInteger.ZERO;
+        int digits = 0;
+        int fractionDigits = 0;
+        boolean point = false;
+        int prev = 'x';
+        for (; p < end; p++) {
+            int c = b[p];
+            int digit = Character.digit(c, 16);
+            if (digit >= 0 && c < 0x80) {
+                mantissa = mantissa.shiftLeft(4).add(BigInteger.valueOf(digit));
+                digits++;
+                if (point) fractionDigits++;
+            } else if (c == '_') {
+                if (!isHexDigit(prev) || p + 1 == end || !isHexDigit(b[p + 1])) return Double.NaN;
+            } else if (c == '.' && !point) {
+                point = true;
+            } else {
+                break;
+            }
+            prev = c;
+        }
+        if (digits == 0) return Double.NaN;
+
+        long exponent = 0;
+        if (p < end && (b[p] == 'p' || b[p] == 'P')) {
+            p++;
+            boolean negativeExponent = false;
+            if (p < end && (b[p] == '-' || b[p] == '+')) negativeExponent = b[p++] == '-';
+            int exponentDigits = 0;
+            for (prev = 0; p < end; p++) {
+                int c = b[p];
+                if (c >= '0' && c <= '9') {
+                    if (exponent < 1_000_000_000L) exponent = exponent * 10 + (c - '0');
+                    exponentDigits++;
+                } else if (c == '_') {
+                    if (!(prev >= '0' && prev <= '9') || p + 1 == end || !(b[p + 1] >= '0' && b[p + 1] <= '9')) return Double.NaN;
+                } else {
+                    break;
+                }
+                prev = c;
+            }
+            if (exponentDigits == 0) return Double.NaN;
+            if (negativeExponent) exponent = -exponent;
+        }
+
+        while (p < end && isSpace(b[p])) p++;
+        if (p < end) return Double.NaN;
+
+        // keep the mantissa within a double's range, moving the extra bits into the exponent
+        int extraBits = Math.max(0, mantissa.bitLength() - 1000);
+        long scale = exponent - 4L * fractionDigits + extraBits;
+        double value = mantissa.shiftRight(extraBits).doubleValue();
+        value = Math.scalb(value, (int) Math.max(Integer.MIN_VALUE / 2, Math.min(Integer.MAX_VALUE / 2, scale)));
+
+        return negative ? -value : value;
+    }
+
+    private static boolean isHexDigit(int c) {
+        return c < 0x80 && Character.digit(c, 16) >= 0;
+    }
+
+    private static boolean isSpace(int c) {
+        return c == ' ' || (c >= '\t' && c <= '\r');
     }
 
     @JRubyMethod(name = "Hash", required = 1, module = true, visibility = PRIVATE)

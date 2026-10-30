@@ -2760,13 +2760,21 @@ public class RubyModule extends RubyObject {
         }
 
         final String variableName = identifier.asInstanceVariable().idString();
+        // the attr_* call doesn't have a frame of its own, so this is where it was called from
+        String file = context.getFile();
+        int line = context.getLine();
+
         if (readable) {
-            addMethod(context, internedIdentifier, new AttrReaderMethod(getMethodLocation(), visibility, variableName));
+            AttrReaderMethod reader = new AttrReaderMethod(getMethodLocation(), visibility, variableName);
+            reader.setSourcePosition(file, line);
+            addMethod(context, internedIdentifier, reader);
             methodAdded(context, identifier);
         }
         if (writeable) {
             identifier = identifier.asWriter();
-            addMethod(context, identifier.idString(), new AttrWriterMethod(getMethodLocation(), visibility, variableName));
+            AttrWriterMethod writer = new AttrWriterMethod(getMethodLocation(), visibility, variableName);
+            writer.setSourcePosition(file, line);
+            addMethod(context, identifier.idString(), writer);
             methodAdded(context, identifier);
         }
     }

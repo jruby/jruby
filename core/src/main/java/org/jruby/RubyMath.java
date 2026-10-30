@@ -301,15 +301,21 @@ public class RubyMath {
         return asFloat(context, Math.log(ret[0]) + ret[1] * LOG_E_2);
     }
 
+    @CRuby(value = "rb_math_log", file = "math.c")
     @JRubyMethod(name = "log", module = true, visibility = Visibility.PRIVATE)
     public static RubyFloat log(ThreadContext context, IRubyObject recv, IRubyObject val, IRubyObject base) {
-        double [] ret = get_double_rshift(context, val);
-        double _base = numToDouble(context, base);
+        double[] x = get_double_rshift(context, val);
+        if (x[0] < 0) throw context.runtime.newMathDomainError("log");
+        double[] b = get_double_rshift(context, base);
+        if (b[0] < 0) throw context.runtime.newMathDomainError("log");
 
-        if (ret[0] < 0 || _base < 0) throw context.runtime.newMathDomainError("log");
+        // pole errors
+        if (x[0] == 0.0) return asFloat(context, b[0] != 0.0 ? Double.NEGATIVE_INFINITY : Double.NaN);
+        if (b[0] == 0.0) return asFloat(context, -0.0);
 
-        /* log(d * 2 ** numbits) / log(base) */
-        return asFloat(context, Math.log(ret[0]) / Math.log(_base) + ret[1]);
+        /* log2(x * 2 ** xbits) / log2(b * 2 ** bbits). CRuby divides by just log2(b), which is the
+           same unless the base is too big for a double. */
+        return asFloat(context, (Math.log(x[0]) / LOG_E_2 + x[1]) / (Math.log(b[0]) / LOG_E_2 + b[1]));
     }
 
     public static RubyFloat log(ThreadContext context, IRubyObject recv, IRubyObject... args) {

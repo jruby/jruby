@@ -427,9 +427,26 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
         if (Double.isNaN(value)) return context.fals;
 
         return switch (other.getMetaClass().getClassIndex()) {
-            case INTEGER, FLOAT -> asBoolean(context, value == ((RubyNumeric) other).asDouble(context));
+            case INTEGER -> asBoolean(context, cmpInteger(context, (RubyInteger) other) == 0);
+            case FLOAT -> asBoolean(context, value == ((RubyFloat) other).value);
             default -> super.op_num_equal(context, other); // Numeric.equal
         };
+    }
+
+    /**
+     * Compare with an Integer exactly, rather than as doubles, which would round an Integer above
+     * 2**53 to the nearest double.
+     *
+     * @return -1, 0 or 1 as this is less than, equal to or greater than other, or 2 for NaN
+     */
+    private int cmpInteger(ThreadContext context, RubyInteger other) {
+        if (other instanceof RubyFixnum fixnum) {
+            int rel = RubyFixnum.floatCmp(fixnum.getValue(), value);
+            return rel == 2 ? 2 : -rel;
+        }
+
+        IRubyObject rel = ((RubyBignum) other).float_cmp(context, this);
+        return rel.isNil() ? 2 : -(int) ((RubyFixnum) rel).getValue();
     }
 
     public IRubyObject op_equal(ThreadContext context, double other) {
@@ -448,7 +465,9 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
     public final int compareTo(IRubyObject other) {
         ThreadContext context = metaClass.runtime.getCurrentContext();
         return switch (other.getMetaClass().getClassIndex()) {
-            case INTEGER, FLOAT -> Double.compare(value, ((RubyNumeric) other).asDouble(context));
+            case INTEGER -> Double.isNaN(value) ?
+                    Double.compare(value, ((RubyNumeric) other).asDouble(context)) : cmpInteger(context, (RubyInteger) other);
+            case FLOAT -> Double.compare(value, ((RubyFloat) other).value);
             default -> (int) toLong(context, coerceCmp(context, sites(context).op_cmp, other));
         };
     }
@@ -458,10 +477,10 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
         case INTEGER:
-            if (Double.isInfinite(value)) return asFixnum(context, value > 0.0 ? 1 : -1);
+            int rel = cmpInteger(context, (RubyInteger) other);
+            return rel == 2 ? context.nil : asFixnum(context, rel);
         case FLOAT:
-            double b = ((RubyNumeric) other).asDouble(context);
-            return dbl_cmp(context.runtime, value, b);
+            return dbl_cmp(context.runtime, value, ((RubyFloat) other).value);
         default:
             FloatSites sites = sites(context);
             if (Double.isInfinite(value) && sites.respond_to_infinite.respondsTo(context, other, other, true)) {
@@ -490,8 +509,10 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
     @JRubyMethod(name = ">")
     public IRubyObject op_gt(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
-        case INTEGER, FLOAT:
-            double b = ((RubyNumeric) other).asDouble(context);
+        case INTEGER:
+            return asBoolean(context, cmpInteger(context, (RubyInteger) other) == 1);
+        case FLOAT:
+            double b = ((RubyFloat) other).value;
             return asBoolean(context, !Double.isNaN(b) && value > b);
         default:
             return coerceRelOp(context, sites(context).op_gt, other);
@@ -506,8 +527,11 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
     @JRubyMethod(name = ">=")
     public IRubyObject op_ge(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
-        case INTEGER, FLOAT:
-            double b = ((RubyNumeric) other).asDouble(context);
+        case INTEGER:
+            int rel = cmpInteger(context, (RubyInteger) other);
+            return asBoolean(context, rel == 0 || rel == 1);
+        case FLOAT:
+            double b = ((RubyFloat) other).value;
             return asBoolean(context, !Double.isNaN(b) && value >= b);
         default:
             return coerceRelOp(context, sites(context).op_ge, other);
@@ -522,8 +546,10 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
     @JRubyMethod(name = "<")
     public IRubyObject op_lt(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
-        case INTEGER, FLOAT:
-            double b = ((RubyNumeric) other).asDouble(context);
+        case INTEGER:
+            return asBoolean(context, cmpInteger(context, (RubyInteger) other) == -1);
+        case FLOAT:
+            double b = ((RubyFloat) other).value;
             return asBoolean(context, !Double.isNaN(b) && value < b);
         default:
             return coerceRelOp(context, sites(context).op_lt, other);
@@ -538,8 +564,10 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
     @JRubyMethod(name = "<=")
     public IRubyObject op_le(ThreadContext context, IRubyObject other) {
         switch (other.getMetaClass().getClassIndex()) {
-        case INTEGER, FLOAT:
-            double b = ((RubyNumeric) other).asDouble(context);
+        case INTEGER:
+            return asBoolean(context, cmpInteger(context, (RubyInteger) other) <= 0);
+        case FLOAT:
+            double b = ((RubyFloat) other).value;
             return asBoolean(context, !Double.isNaN(b) && value <= b);
         default:
             return coerceRelOp(context, sites(context).op_le, other);

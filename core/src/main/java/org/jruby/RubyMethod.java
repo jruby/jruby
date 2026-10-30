@@ -34,9 +34,12 @@ package org.jruby;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
+import org.jruby.internal.runtime.AbstractIRMethod;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.IRMethodArgs;
+import org.jruby.ir.IRScriptBody;
+import org.jruby.parser.StaticScope;
 import org.jruby.internal.runtime.methods.PartialDelegatingMethod;
 import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.runtime.ArgumentDescriptor;
@@ -235,12 +238,34 @@ public class RubyMethod extends AbstractRubyMethod {
                 Helpers.methodToArgumentDescriptors(context, method);
 
         int line = getLine(); // getLine adds 1 to 1-index but we need to reset to 0-index internally
-        MethodBlockBody body = new MethodBlockBody(context.runtime.getStaticScopeFactory().getDummyScope(), signature, entry, argsDesc,
+
+        // The proc's binding gets a scope of its own, so variables set through it stay with it, and
+        // constants resolve where the method was defined, as they would inside it.
+        StaticScope scope = context.runtime.getStaticScopeFactory().newLocalScope(null);
+        scope.setModule(lexicalModule());
+        // eval in the binding needs an IR scope, which for a Ruby method is the method's own
+        if (method.getRealMethod() instanceof AbstractIRMethod irMethod) {
+            scope.setIRScope(irMethod.getIRScope());
+        } else {
+            new IRScriptBody(context.runtime.getIRManager(), "", scope); // registers itself with the scope
+        }
+
+        MethodBlockBody body = new MethodBlockBody(scope, signature, entry, argsDesc,
                 receiver, originModule, originName, getFilename(), line == -1 ? -1 : line - 1);
         Block b = MethodBlockBody.createMethodBlock(body);
 
         RubyProc proc = RubyProc.newMethodProc(context.runtime, b);
         return proc;
+    }
+
+    // the module a Ruby method was defined in, as its code sees it, or else the one it belongs to
+    private RubyModule lexicalModule() {
+        if (method.getRealMethod() instanceof AbstractIRMethod irMethod) {
+            StaticScope enclosing = irMethod.getStaticScope().getEnclosingScope();
+            RubyModule module = enclosing == null ? null : enclosing.getModule();
+            if (module != null) return module;
+        }
+        return method.getImplementationClass();
     }
 
     @JRubyMethod

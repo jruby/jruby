@@ -48,6 +48,7 @@ import static org.jruby.api.Access.globalVariables;
 import static org.jruby.api.Access.hashClass;
 import static org.jruby.api.Access.ioClass;
 import static org.jruby.api.Access.objectClass;
+import static org.jruby.api.Access.runtimeErrorClass;
 import static org.jruby.api.Check.checkBoolean;
 import static org.jruby.api.Check.checkEmbeddedNulls;
 import static org.jruby.api.Convert.asFixnum;
@@ -155,7 +156,9 @@ public class PopenExecutor {
         if (status == 0) return context.tru;
 
         if (eargp.exception) {
-            throw runtimeError(context, RubyProcess.RubyStatus.pst_message("Command failed with", pid, status));
+            RubyString message = newString(context, RubyProcess.RubyStatus.pst_message_status("Command failed with", status) + ": ");
+            message.append(eargp.command_name);
+            throw RaiseException.from(context.runtime, runtimeErrorClass(context), message);
         }
 
         return context.fals;
@@ -1957,7 +1960,7 @@ public class PopenExecutor {
                         }
                     }
                     eargp.command_name = argv_buf.size() > 0 ?
-                            RubyString.newStringNoCopy(context.runtime, argv_buf.get(0)) :
+                            RubyString.newStringNoCopy(context.runtime, argv_buf.get(0), 0, argv_buf.get(0).length, prog.getEncoding()) :
                             newEmptyString(context); // empty command will get caught below shortly
                 }
             }

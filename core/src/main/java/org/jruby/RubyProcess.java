@@ -402,8 +402,17 @@ public class RubyProcess {
 
         @CRuby(value = "pst_message", file = "process.c")
         public static String pst_message(String prefix, long pid, long status) {
+            return pst_message_status(prefix + "pid " + pid, status);
+        }
+
+        /**
+         * @param prefix the text to put before the description
+         * @param status the wait status of a process
+         * @return the prefix, then how the process ended, such as " exit 1"
+         */
+        @CRuby(value = "pst_message_status", file = "process.c")
+        public static String pst_message_status(String prefix, long status) {
             StringBuilder sb = new StringBuilder(prefix);
-            sb.append("pid ").append(pid);
             if (PosixShim.WAIT_MACROS.WIFSTOPPED(status)) {
                 long stopsig = PosixShim.WAIT_MACROS.WSTOPSIG(status);
                 String signame = RubySignal.signo2signm(stopsig);
