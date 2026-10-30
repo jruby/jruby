@@ -319,11 +319,17 @@ public class PosixShim {
      * The appropriate errno value for the last thrown error, if any.
      */
     public Errno getErrno() {
-        return errno.get();
+        int[] errno = this.errno.get();
+        return errno == null || errno[0] < 0 ? null : ERRNOS[errno[0]];
     }
 
     public void setErrno(Errno errno) {
-        this.errno.set(errno);
+        int[] holder = this.errno.get();
+        if (holder == null) {
+            if (errno == null) return;
+            this.errno.set(holder = new int[1]);
+        }
+        holder[0] = errno == null ? -1 : errno.ordinal();
     }
 
     public interface WaitMacros {
@@ -688,7 +694,12 @@ public class PosixShim {
      */
     public Throwable error;
 
-    private final ThreadLocal<Errno> errno = new ThreadLocal<>();
+    // The Errno's ordinal, or -1 for none. After this shim is collected, its entry stays in the map of each thread that
+    // set it until the map clears stale entries, and an Errno there would keep the class loader that loaded JRuby alive.
+    // The ordinal keeps the exact constant, unlike intValue(), which aliases like EWOULDBLOCK and EAGAIN share.
+    private final ThreadLocal<int[]> errno = new ThreadLocal<>();
+
+    private static final Errno[] ERRNOS = Errno.values();
 
     /**
      * The recommended error message, if any.
