@@ -33,6 +33,18 @@ describe "String#upcase" do
   end
 
   describe "ASCII-only case mapping" do
+    it "raises ArgumentError for an invalid multibyte String" do
+      -> { "aB\xA4".dup.force_encoding(Encoding::EUC_JP).upcase(:ascii) }.should.raise(ArgumentError, "input string invalid")
+    end
+
+    it "raises ArgumentError for invalid UTF8-MAC" do
+      -> { "\xFFaB".dup.force_encoding(Encoding::UTF8_MAC).upcase(:ascii) }.should.raise(ArgumentError, "input string invalid")
+    end
+
+    it "does not change ASCII bytes inside multibyte characters" do
+      "\x83AaB".dup.force_encoding(Encoding::Shift_JIS).upcase(:ascii).should == "\x83AAB".dup.force_encoding(Encoding::Shift_JIS)
+    end
+
     it "does not upcase non-ASCII characters" do
       "aßet".upcase(:ascii).should == "AßET"
     end

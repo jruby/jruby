@@ -2113,7 +2113,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         IntHolder flagsP = new IntHolder();
         flagsP.value = flags;
         if ((flags & Config.CASE_ASCII_ONLY) != 0) {
-            StringSupport.asciiOnlyCaseMap(context, value, flagsP);
+            StringSupport.asciiOnlyCaseMap(context, value, flagsP, enc);
         } else {
             value = StringSupport.caseMap(context, value, flagsP, enc);
         }
@@ -2122,7 +2122,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @CRuby(value = "case_option_single_p", file = "string.c")
     private boolean caseOptionSingle(int flags, Encoding enc) {
-        if ((flags & Config.CASE_ASCII_ONLY) != 0 && (enc.isUTF8() || enc.maxLength() == 1)) return true;
+        if ((flags & Config.CASE_ASCII_ONLY) != 0 && (enc == UTF8Encoding.INSTANCE || enc.maxLength() == 1)) return true;
         return (flags & Config.CASE_FOLD_TURKISH_AZERI) == 0 &&
                 (getCodeRange() == CR_7BIT || enc == ASCIIEncoding.INSTANCE);
     }

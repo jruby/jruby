@@ -34,6 +34,26 @@ describe "String#swapcase" do
   end
 
   describe "ASCII-only case mapping" do
+    it "raises ArgumentError for an invalid multibyte String" do
+      -> { "aB\xA4".dup.force_encoding(Encoding::EUC_JP).swapcase(:ascii) }.should.raise(ArgumentError, "input string invalid")
+    end
+
+    it "raises ArgumentError for invalid UTF8-MAC" do
+      -> { "\xFFaB".dup.force_encoding(Encoding::UTF8_MAC).swapcase(:ascii) }.should.raise(ArgumentError, "input string invalid")
+    end
+
+    it "raises ArgumentError for invalid US-ASCII" do
+      -> { "a\xFFB".dup.force_encoding(Encoding::US_ASCII).swapcase(:ascii) }.should.raise(ArgumentError, "input string invalid")
+    end
+
+    it "does not change ASCII bytes inside multibyte characters" do
+      "\x83AaB".dup.force_encoding(Encoding::Shift_JIS).swapcase(:ascii).should == "\x83AAb".dup.force_encoding(Encoding::Shift_JIS)
+    end
+
+    it "raises ArgumentError for invalid UTF-8" do
+      -> { "\xFFaB".swapcase(:ascii) }.should.raise(ArgumentError, "input string invalid")
+    end
+
     it "does not swapcase non-ASCII characters" do
       "aßet".swapcase(:ascii).should == "AßET"
     end
