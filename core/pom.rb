@@ -29,7 +29,7 @@ project 'JRuby Base' do
 
              "create.sources.jar": false,
 
-             "prism.parser.version": '0.0.5',
+             "prism.parser.version": '0.0.6',
  )
 
   IO.foreach(File.join(basedir, '..', 'default.build.properties')) do |line|
