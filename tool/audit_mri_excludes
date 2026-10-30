@@ -1,0 +1,66 @@
+#!/usr/bin/env jruby
+# frozen_string_literal: true
+
+# Audits test/mri/excludes offline. See ExcludesAudit in test/tool/lib/excludes_audit.rb for how it works.
+#
+#   bin/jruby tool/audit_mri_excludes [options] [ExcludeClass ...]
+#
+# With class names, only the excludes for those classes are audited, as in "TestString OpenSSL::TestSSL".
+# Run it with the JRuby being tested, since some exclude files check JRuby options or the platform.
+
+require 'etc'
+require 'optparse'
+require_relative '../test/tool/lib/excludes_audit'
+
+ROOT = File.expand_path('..', __dir__)
+EXCLUDES = File.join(ROOT, 'test/mri/excludes')
+
+# The JRuby options for each suite and mode, as in rakelib/test.rake.
+SUITES = {
+  'core' => '-Xbacktrace.style=mri -Xdebug.fullTrace',
+  'extra' => '--disable-gems -Xbacktrace.style=mri -Xdebug.fullTrace -X+O',
+  'stdlib' => '-Xbacktrace.style=mri -Xdebug.fullTrace',
+}
+MODES = {
+  'int' => '--dev -Xjit.threshold=1 -Xjit.background=false',
+  'jit' => '-Xjit.threshold=0 -Xjit.background=false',
+}
+
+options = { ruby: File.join(ROOT, 'bin/jruby'), jobs: [Etc.nprocessors / 2, 1].max, time_limit: 60, repeat: 1, mode: 'int', prune: false }
+OptionParser.new do |opts|
+  opts.banner = "Usage: bin/jruby tool/audit_mri_excludes [options] [ExcludeClass ...]"
+  opts.on('-j', '--jobs N', Integer, "Tests to run at once (default #{options[:jobs]})") { options[:jobs] = _1 }
+  opts.on('-t', '--time-limit SECONDS', Integer, "Kill a test after this long (default 60)") { options[:time_limit] = _1 }
+  opts.on('-r', '--repeat N', Integer, "Run a passing test N times to rule out flaky ones (default 1)") { options[:repeat] = _1 }
+  opts.on('-m', '--mode MODE', MODES.keys, "int or jit, as in rake test:mri:core:int (default int)") { options[:mode] = _1 }
+  opts.on('--ruby PATH', "The jruby to test with (default bin/jruby)") { options[:ruby] = File.expand_path(_1) }
+  opts.on('--prune', "Remove excludes for tests that pass or no longer exist") { options[:prune] = true }
+end.parse!
+
+suite_files = SUITES.keys.to_h do |suite|
+  files = File.readlines(File.join(ROOT, "test/mri.#{suite}.index")).grep(/^[^#]\w+/).map(&:strip)
+  # an index can name a directory, which the runner searches for test files
+  paths = files.map { File.join(ROOT, 'test/mri', _1) }
+  [suite, paths.flat_map { File.directory?(_1) ? Dir.glob("#{_1}/**/test_*.rb").sort : [_1] }]
+end
+suite_of = suite_files.flat_map { |suite, files| files.map { [_1, suite] } }.to_h
+
+entries = ExcludesAudit.read(EXCLUDES)
+entries.select! { ARGV.include?(_1.class_name) } unless ARGV.empty?
+abort "no excludes to audit" if entries.empty?
+
+jruby = options[:ruby]
+audit = ExcludesAudit::Audit.new(entries, suite_of.keys, **options.slice(:jobs, :time_limit, :repeat)) do |file, args|
+  env = { 'JRUBY_OPTS' => "#{ENV['JRUBY_OPTS']} #{SUITES[suite_of[file]]} #{MODES[options[:mode]]}".strip }
+  [env, [jruby, File.join(ROOT, 'test/mri/runner.rb'), '--tty=no', '--color=never', *args, '--', file]]
+end
+
+results = audit.run
+ExcludesAudit.report(results)
+
+if options[:prune]
+  removable = results.select(&:removable?).map(&:entry)
+  skipped = ExcludesAudit.prune(removable)
+  puts "", "removed #{removable.size - skipped.size} excludes"
+  skipped.each { puts "  left #{_1} at #{_1.path}:#{_1.line}, since it spans several lines" }
+end
