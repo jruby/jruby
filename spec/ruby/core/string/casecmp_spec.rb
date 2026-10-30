@@ -168,6 +168,7 @@ describe 'String#casecmp? independent of case' do
   it "case folds Latin-1 characters but not binary non-ASCII bytes" do
     "\u00c4".encode('ISO-8859-1').casecmp?("\u00e4".encode('ISO-8859-1')).should == true
     "\xc4".b.casecmp?("\xe4".b).should == false
+    "A\xc4".b.casecmp?("a\xc4".b).should == true
   end
 
   it "case folds ASCII letters in UTF-16 and UTF-32 encodings" do

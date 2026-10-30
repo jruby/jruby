@@ -13,6 +13,14 @@ describe "String#capitalize" do
     "abcdef"[1...-1].capitalize.should == "Bcde"
   end
 
+  it "changes only ASCII letters in a binary String" do
+    "aB\xE4\xC4\0cD".b.capitalize.should == "Ab\xE4\xC4\0cd".b
+  end
+
+  it "downcases the rest of a binary String when the first byte is not ASCII" do
+    "\xE4AB".b.capitalize.should == "\xE4ab".b
+  end
+
   describe "full Unicode case mapping" do
     it "works for all of Unicode with no option" do
       "äöÜ".capitalize.should == "Äöü"
@@ -39,6 +47,10 @@ describe "String#capitalize" do
 
     it "handles non-ASCII substrings properly" do
       "garçon"[1...-1].capitalize(:ascii).should == "Arço"
+    end
+
+    it "downcases the rest when the first character is not ASCII" do
+      "éAB".capitalize(:ascii).should == "éab"
     end
   end
 
@@ -187,6 +199,25 @@ describe "String#capitalize!" do
 
   it "does not allow invalid options" do
     -> { a = "abc"; a.capitalize!(:invalid_option) }.should.raise(ArgumentError)
+  end
+
+  it "changes only ASCII letters in a binary String" do
+    a = "aB\xE4\xC4\0cD".b
+    a.capitalize!.should.equal?(a)
+    a.should == "Ab\xE4\xC4\0cd".b
+    a.ascii_only?.should == false
+  end
+
+  it "returns nil for a binary String with no ASCII letters" do
+    "\xE4\xC4\0".b.capitalize!.should == nil
+  end
+
+  it "does not modify the String it was sliced from" do
+    source = +"xxaBcDxx"
+    slice = source[2, 4]
+    slice.capitalize!
+    slice.should == "Abcd"
+    source.should == "xxaBcDxx"
   end
 
   it "returns nil when no changes are made" do

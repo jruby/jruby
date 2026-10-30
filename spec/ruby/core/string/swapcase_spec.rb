@@ -14,6 +14,10 @@ describe "String#swapcase" do
     "Hello".encode("US-ASCII").swapcase.encoding.should == Encoding::US_ASCII
   end
 
+  it "changes only ASCII letters in a binary String" do
+    "aB\xE4\xC4\0cD".b.swapcase.should == "Ab\xE4\xC4\0Cd".b
+  end
+
   describe "full Unicode case mapping" do
     it "works for all of Unicode with no option" do
       "äÖü".swapcase.should == "ÄöÜ"
@@ -174,6 +178,25 @@ describe "String#swapcase!" do
 
   it "does not allow invalid options" do
     -> { a = "abc"; a.swapcase!(:invalid_option) }.should.raise(ArgumentError)
+  end
+
+  it "changes only ASCII letters in a binary String" do
+    a = "aB\xE4\xC4\0cD".b
+    a.swapcase!.should.equal?(a)
+    a.should == "Ab\xE4\xC4\0Cd".b
+    a.ascii_only?.should == false
+  end
+
+  it "returns nil for a binary String with no ASCII letters" do
+    "\xE4\xC4\0".b.swapcase!.should == nil
+  end
+
+  it "does not modify the String it was sliced from" do
+    source = +"xxaBcDxx"
+    slice = source[2, 4]
+    slice.swapcase!
+    slice.should == "AbCd"
+    source.should == "xxaBcDxx"
   end
 
   it "returns nil if no modifications were made" do

@@ -13,6 +13,10 @@ describe "String#upcase" do
     "hello".encode("US-ASCII").upcase.encoding.should == Encoding::US_ASCII
   end
 
+  it "changes only ASCII letters in a binary String" do
+    "aB\xE4\xC4\0cD".b.upcase.should == "AB\xE4\xC4\0CD".b
+  end
+
   describe "full Unicode case mapping" do
     it "works for all of Unicode with no option" do
       "äöü".upcase.should == "ÄÖÜ"
@@ -172,6 +176,25 @@ describe "String#upcase!" do
 
   it "does not allow invalid options" do
     -> { a = "abc"; a.upcase!(:invalid_option) }.should.raise(ArgumentError)
+  end
+
+  it "changes only ASCII letters in a binary String" do
+    a = "aB\xE4\xC4\0cD".b
+    a.upcase!.should.equal?(a)
+    a.should == "AB\xE4\xC4\0CD".b
+    a.ascii_only?.should == false
+  end
+
+  it "returns nil for a binary String with no ASCII letters" do
+    "\xE4\xC4\0".b.upcase!.should == nil
+  end
+
+  it "does not modify the String it was sliced from" do
+    source = +"xxaBcDxx"
+    slice = source[2, 4]
+    slice.upcase!
+    slice.should == "ABCD"
+    source.should == "xxaBcDxx"
   end
 
   it "returns nil if no modifications were made" do
