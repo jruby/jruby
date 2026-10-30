@@ -1278,6 +1278,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      * rare for a String to be converted to a Symbol and a Fixnum and a Float.
      */
     public static class FString extends RubyString {
+        Ruby.FStringEqual dedupKey;
         private IRubyObject converted;
 
         protected FString(Ruby runtime, ByteList value, int cr) {
