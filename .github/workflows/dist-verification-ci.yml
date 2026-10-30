@@ -32,15 +32,13 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v6
-      - name: set up java 21
-        uses: actions/setup-java@v5
+      - name: build release artifacts
+        uses: ./.github/actions/bootstrap
         with:
           distribution: 'temurin'
-          java-version: 21
-          cache: 'maven'
-      - name: build release artifacts
-        run: |
-          tool/ci-retry.sh ./mvnw -ntp clean package -Pall
+          remove-old-java: false
+          build-args: 'clean package -Pall'
+          bundle-install: false
       - uses: cedx/SetupAnt@v7
       - name: install dependencies
         run: tool/ci-retry.sh bin/jruby -S bundle install
