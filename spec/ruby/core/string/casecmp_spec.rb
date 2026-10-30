@@ -198,6 +198,44 @@ describe 'String#casecmp? independent of case' do
     [left, right].should == originals
   end
 
+  it "matches Unicode folds across expanded character boundaries" do
+    [
+      ["ßßa", "ssssA"],
+      ["İİ", "i\u0307i\u0307"],
+      ["ﬃß", "ffiss"],
+      ["Σς", "σσ"],
+      ["\u{10400}", "\u{10428}"],
+      ["ΐ" * 4, "ι\u0308\u0301" * 4],
+    ].each do |left, right|
+      left.freeze.casecmp?(right.freeze).should == true
+      right.casecmp?(left).should == true
+    end
+    "ßßx".casecmp?("ssssY").should == false
+  end
+
+  it "raises for invalid UTF-8 after an unequal prefix" do
+    [["a\xff", "z"], ["a", "z\xff"], ["", "z\xff"]].each do |left, right|
+      -> { left.freeze.casecmp?(right.freeze) }.should.raise(ArgumentError)
+    end
+  end
+
+  it "raises for identical invalid UTF-8 operands" do
+    invalid = "\xff".freeze
+    -> { invalid.casecmp?(invalid) }.should.raise(ArgumentError)
+  end
+
+  it "folds frozen Unicode substrings without modifying their carriers" do
+    text = "aÄßİΣKﬃ\u{10400}\0" * 64
+    fold = "aässi\u0307σkffi\u{10428}\0" * 64
+    left_carrier = ('p' * 1024 + text + 'q' * 512).freeze
+    right_carrier = ('r' * 768 + fold + 's' * 512).freeze
+    left = left_carrier.byteslice(1024, text.bytesize).freeze
+    right = right_carrier.byteslice(768, fold.bytesize).freeze
+    left.casecmp?(right).should == true
+    left_carrier.should == 'p' * 1024 + text + 'q' * 512
+    right_carrier.should == 'r' * 768 + fold + 's' * 512
+  end
+
   it 'returns true when equal to other' do
     'abc'.casecmp?('abc').should == true
     'abc'.casecmp?('ABC').should == true
