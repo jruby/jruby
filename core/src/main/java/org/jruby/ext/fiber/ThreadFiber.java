@@ -207,10 +207,21 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         }
 
         if (result.type == RequestType.RAISE) {
-            throw (RuntimeException) result.data;
+            throw raised(context, result);
         }
 
         return processResultData(context, result);
+    }
+
+    // Fiber#raise sends the exception itself, so it gets the backtrace of the fiber it is raised in
+    @CRuby(value = "setup_exception", file = "eval.c")
+    private static RuntimeException raised(ThreadContext context, FiberRequest request) {
+        if (request.data instanceof RubyException exception) {
+            exception.prepareBacktrace(context);
+            return exception.toThrowable();
+        }
+
+        return (RuntimeException) request.data;
     }
 
     private static void fiberCalledAcrossThreads(Ruby runtime) {
@@ -353,7 +364,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         }
 
         if (result.type == RequestType.RAISE) {
-            throw (RuntimeException) result.data;
+            throw raised(context, result);
         }
 
         return processResultData(context, result);
@@ -384,9 +395,8 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
         if (data.parent != context.getFiberCurrentThread()) fiberCalledAcrossThreads(runtime);
 
-        RubyException rubyException = (RubyException) exception;
-        rubyException.prepareBacktrace(context);
-        FiberRequest val = new FiberRequest(rubyException.toThrowable(), RequestType.RAISE);
+        // the backtrace is filled in where the target fiber raises it, as in MRI
+        FiberRequest val = new FiberRequest(exception, RequestType.RAISE);
 
         ThreadFiber currentFiber = context.getFiber();
         if (transfer) {
@@ -410,7 +420,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         }
 
         if (result.type == RequestType.RAISE) {
-            throw (RuntimeException) result.data;
+            throw raised(context, result);
         }
 
         return processResultData(context, result);
@@ -445,7 +455,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         }
 
         if (result.type == RequestType.RAISE) {
-            throw (RuntimeException) result.data;
+            throw raised(context, result);
         }
 
         return processResultData(context, result);
@@ -619,7 +629,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                             } else {
                                 // terminated before first resume
                                 if (init.type == RequestType.RAISE) {
-                                    throw (RuntimeException) init.data;
+                                    throw raised(ctxt, init);
                                 }
 
                                 result = new FiberRequest(block.yieldArray(ctxt, (IRubyObject) init.data, null), RequestType.DATA);
