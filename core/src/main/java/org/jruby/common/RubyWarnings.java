@@ -170,11 +170,12 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
 
         CachingCallSite warn = sites(context).warn;
 
-        if (category == null || warn.retrieveCache(warning).method.getSignature() == Signature.ONE_ARGUMENT) {
+        if (warn.retrieveCache(warning).method.getSignature() == Signature.ONE_ARGUMENT) {
             return warn.call(context, warning, warning, errorString);
         }
 
-        RubyHash opts = newSmallHash(context, asSymbol(context, "category"), asSymbol(context, category.id));
+        // like CRuby, a Warning.warn that takes more than the message always gets a category
+        RubyHash opts = newSmallHash(context, asSymbol(context, "category"), category == null ? context.nil : asSymbol(context, category.id));
 
         context.callInfo = ThreadContext.CALL_KEYWORD;
         return warn.call(context, warning, warning, errorString, opts);
