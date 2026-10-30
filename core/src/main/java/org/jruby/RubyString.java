@@ -6208,7 +6208,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return trTrans(context, src, repl, false);
     }
 
-    // MRI: rb_str_tr, Hash form
+    @CRuby(value = "rb_str_tr", note = "Hash form")
     @JRubyMethod(name = "tr")
     public IRubyObject tr(ThreadContext context, IRubyObject pairs) {
         RubyString str = dupString(context, this);
@@ -6216,18 +6216,17 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return str;
     }
 
-    // MRI: rb_str_tr_bang, Hash form
+    @CRuby(value = "rb_str_tr_bang", note = "Hash form")
     @JRubyMethod(name = "tr!")
     public IRubyObject tr_bang(ThreadContext context, IRubyObject pairs) {
         return trTransPairs(context, pairs);
     }
 
     /**
-     * MRI: tr_trans_pairs
-     *
      * Replaces each character of self that is a key of the Hash with that key's value, in one left-to-right pass,
      * so replacement text is never itself replaced. Returns self, or nil if nothing was replaced.
      */
+    @CRuby("tr_trans_pairs")
     private IRubyObject trTransPairs(ThreadContext context, IRubyObject arg) {
         if (!(arg instanceof RubyHash hash)) {
             throw typeError(context, str(context.runtime, "wrong argument type ", TypeConverter.typeAsString(arg), " (expected Hash)"));
@@ -6300,13 +6299,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         }
 
         /**
-         * MRI: rb_enc_check_multi_str
-         *
          * Folds one more string into the shared encoding, or raises Encoding::CompatibilityError. As with
          * Encoding.compatible?, two different encodings can only be mixed when one side is pure ASCII. Unlike a
          * pairwise check, codeRange remembers whether *everything* so far was ASCII: "ab".tr("a" => latin1_a_grave,
          * "b" => utf8_e_acute) must raise even though each value is compatible with "ab" on its own.
          */
+        @CRuby(value = "rb_enc_check_multi_str", file = "encoding.c")
         private void fold(ThreadContext context, RubyString str) {
             if (str.size() == 0) return;
 
