@@ -357,13 +357,24 @@ public abstract class RubyParserBase {
         return true;
     }
 
+    // MRI: it_used_p
     private boolean isItUsed() {
-        if (it_id() != null) {
-            compile_error("'it' is already used in\n" + lexer.getFile() + ":" + it_id().getLine() + ": " +
-                    (numParamOuter != null ? "outer" : "inner") + " block here");
-            // FIXME: Show error line
-        }
-        return false;
+        if (it_id() == null) return false;
+
+        compile_error("numbered parameters are not allowed when 'it' is already used\n" + lexer.getFile() + ":" +
+                it_id().getLine() + ": 'it' is already used here");
+        // FIXME: Show error line
+        return true;
+    }
+
+    // MRI: numparam_used_p
+    private boolean isNumParamUsed() {
+        if (numParamCurrent == null) return false;
+
+        compile_error("'it' is not allowed when a numbered parameter is already used\n" + lexer.getFile() + ":" +
+                numParamCurrent.getLine() + ": numbered parameter is already used here");
+        // FIXME: Show error line
+        return true;
     }
 
     private boolean isNumParamId(String id) {
@@ -392,7 +403,7 @@ public abstract class RubyParserBase {
         Node node;
         int slot;
         if (isNumParam && numberedParam(id)) {
-            if (isNumParamNested()) return null;
+            if (isNumParamNested() || isItUsed()) return null;
 
             // We go over the top here and make sure the order is always ascending even if the other
             // numbered params are not used. This is so local_variables will properly display in
@@ -409,6 +420,12 @@ public abstract class RubyParserBase {
             node = new LocalVarNode(lexer.tokline, slot, name);
         } else if (dyna_in_block() && id.equals("it")) {
             if (!hasArguments()) {
+                if (isNumParamUsed()) return null;
+                if (maxNumParam == ORDINAL_PARAM) { // {|| it} and {|;a| it} declare parameters, if none
+                    compile_error("ordinary parameter is defined");
+                    return null;
+                }
+
                 int existing = currentScope.isDefinedOrImplicit(id);
                 boolean newIt = false;
 
@@ -431,9 +448,18 @@ public abstract class RubyParserBase {
                 slot = currentScope.isDefinedOrImplicit(id);
                 // A special it cannot exist without being marked as a special it.
                 if (it_id() != null) compile_error("`it` is not allowed when an ordinary parameter is defined");
+                // without a local variable named it, it would be the block's implicit parameter
+                if (slot < 0 && maxNumParam == ORDINAL_PARAM) {
+                    compile_error("ordinary parameter is defined");
+                    return null;
+                }
 
                 node = currentScope.declare(lexer.tokline, name);
             }
+        } else if (id.equals("it") && currentScope.isDefinedOrImplicit(id) == StaticScope.IMPLICIT) {
+            // a block's implicit it is not a variable to code evaluated within the block, as in { it; eval("it") }
+            node = new VCallNode(lexer.tokline, name);
+            slot = -1;
         }  else {
             node = currentScope.declare(lexer.tokline, name);
             slot = currentScope.isDefined(id); // FIXME: we should not do this extra call.
@@ -994,21 +1020,17 @@ public abstract class RubyParserBase {
             args = ac.getSecondNode();
         }
 
-        if (args != null && args instanceof ArgsPushNode ap) {
-            keywords = ap.getSecondNode() instanceof KeywordArgNode || ap.getSecondNode() instanceof KeywordRestArgNode;
-        } else {
-            if (args instanceof ListNode list) {
-                for (int i = 0; i < list.size(); i++) {
-                    Node next = list.get(i);
-                    if (next instanceof HashNode hash && !hash.isLiteral()) {
-                        keywords = true;
-                    }
-                }
-            }
+        // keywords can only be the last argument, and are a hash written without braces
+        Node last = null;
+        if (args instanceof ArgsPushNode ap) {
+            last = ap.getSecondNode();
+        } else if (args instanceof ListNode list && list.size() > 0) {
+            last = list.getLast();
         }
+        keywords = last instanceof HashNode hash && !hash.isLiteral();
 
         if (keywords) {
-            yyerror("keyword arg given in index");
+            yyerror("keyword arg given in index assignment");
         }
         if (block != null) {
             yyerror("block arg given in index assignment");
@@ -2064,8 +2086,8 @@ public abstract class RubyParserBase {
         RubySymbol restKwargsName = symbolID(keywordRestArgName);
         String id = restKwargsName.idString();
 
-        int slot = currentScope.exists(id);
-        if (slot == -1) slot = currentScope.addVariable(id);
+        // a block's own **, named or not, is a new variable even when an enclosing scope has one
+        int slot = currentScope.addVariableThisScope(id);
 
         KeywordRestArgNode keywordRestArg = new KeywordRestArgNode(line, restKwargsName, slot);
 
@@ -2200,6 +2222,14 @@ public abstract class RubyParserBase {
 
     public ByteList formal_argument(ByteList identifier, Object _unused) {
         lexer.validateFormalIdentifier(identifier);
+
+        // a keyword parameter's label still ends with ':' here (see arg_var), so drop it before checking for a
+        // parameter with the same name
+        int length = identifier.length();
+        if (length > 0 && identifier.get(length - 1) == ':') {
+            shadowing_lvar(identifier.makeShared(0, length - 1));
+            return identifier;
+        }
 
         return shadowing_lvar(identifier);
     }
@@ -2505,9 +2535,11 @@ public abstract class RubyParserBase {
         return body;
     }
 
+    // MRI: restore_defun
     public void restore_defun(DefHolder holder) {
         lexer.getLexContext().restore(holder);
         lexer.setCurrentArg(holder.current_arg);
+        restoreMaxNumParam(holder.maxNumParam);
     }
 
     public ArrayPatternNode new_array_pattern(int line, Node constant, Node preArg, ArrayPatternNode arrayPattern) {
@@ -2578,11 +2610,18 @@ public abstract class RubyParserBase {
         keyTable.add(key);
     }
 
+    // MRI: error_duplicate_pattern_variable
     public void error_duplicate_pattern_variable(ByteList variable) {
         if (is_private_local_id(variable)) return;
-        if (variableTable.contains(variable)) yyerror("duplicated variable name");
 
-        variableTable.add(variable);
+        if (variableTable.contains(variable)) {
+            yyerror("duplicated variable name");
+        } else if (getLexContext().in_alt_pattern) {
+            yyerror("variable capture in alternative pattern");
+        } else {
+            getLexContext().capture_in_pattern = true;
+            variableTable.add(variable);
+        }
     }
 
     public Node new_find_pattern(Node constant, FindPatternNode findPattern) {
@@ -2999,8 +3038,32 @@ public abstract class RubyParserBase {
         return new ErrorNode(loc);
     }
 
-    protected void forwarding_arg_check(ByteList rest, ByteList all, String var) {
-        // FIXME: Impl
+    // MRI: forwarding_arg_check
+    protected void forwarding_arg_check(ByteList arg, ByteList all, String var) {
+        String argId = symbolID(arg).idString();
+        String allId = symbolID(all).idString();
+
+        // A block between here and the method that declares the same kind of anonymous parameter would take it
+        boolean conflict = false;
+        StaticScope scope = getCurrentScope();
+        while (scope != null && scope.isBlockScope() && scope.getType() != StaticScope.Type.EVAL) {
+            conflict |= scope.exists(argId) >= 0 && scope.exists(allId) < 0;
+            scope = scope.getEnclosingScope();
+        }
+
+        // The method must declare it itself, and not only through ... (eval code sees the scopes around it)
+        boolean found;
+        if (scope != null && scope.getType() == StaticScope.Type.EVAL) {
+            found = scope.isDefined(argId) >= 0 && scope.isDefined(allId) < 0;
+        } else {
+            found = scope != null && scope.exists(argId) >= 0 && scope.exists(allId) < 0;
+        }
+
+        if (!found) {
+            compile_error("no anonymous " + var + " parameter");
+        } else if (conflict) {
+            compile_error("anonymous " + var + " parameter is also used within block");
+        }
     }
 
     protected void WARN_EOL(String name) {
@@ -3012,6 +3075,8 @@ public abstract class RubyParserBase {
     }
 
     private boolean hasArguments() {
-        return !currentScope.getSignature().isNoArguments();
+        // no signature yet means its parameters are still being parsed, as in ->x=it{}
+        Signature signature = currentScope.getSignature();
+        return signature == null || !signature.isNoArguments();
     }
 }
