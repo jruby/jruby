@@ -5033,6 +5033,7 @@ public final class Ruby implements Constantizable {
     private RubyString.FString cacheFString(RubyString.FString candidate) {
         // new uncached wrapper since it may get inserted as a new key
         var wrapper = new FStringEqual(candidate);
+        candidate.dedupKey = wrapper;
 
         // try to get or compute until we have a result
         while (true) {
