@@ -882,7 +882,7 @@ else
     if [ -n "${JRUBY_JSA_HOME-}" ]; then
         jruby_jsa_home="$JRUBY_JSA_HOME"
     else
-        jruby_jsa_home="$JRUBY_HOME/lib"
+        jruby_jsa_home="$HOME/.cache/jruby/$JRUBY_HOME"
     fi
     mkdir -p "$jruby_jsa_home"
     jruby_jsa_file="$jruby_jsa_home/jruby-java$java_runtime_version.jsa"
