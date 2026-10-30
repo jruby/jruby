@@ -2910,6 +2910,7 @@ public final class StringSupport {
             tgt = new ByteList(buffer.bytes, 0, buffer.used, enc, false);
         } else {
             tgt = new ByteList(tgtLen);
+            tgt.setRealSize(tgtLen);
             tgt.setEncoding(enc);
             buffer = root.next;
             int tgtPos = 0;

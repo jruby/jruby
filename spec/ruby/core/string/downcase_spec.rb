@@ -67,6 +67,13 @@ describe "String#downcase" do
   end
 
   describe "case folding" do
+    it "preserves all characters when several Unicode folds expand" do
+      [4, 10, 1000].each do |count|
+        source = ("\u0390" * count).freeze
+        source.downcase(:fold).should == "\u03b9\u0308\u0301" * count
+      end
+    end
+
     it "case folds special characters" do
       "ß".downcase.should == "ß"
       "ß".downcase(:fold).should == "ss"
@@ -164,6 +171,14 @@ describe "String#downcase!" do
   end
 
   describe "case folding" do
+    it "preserves all characters when several Unicode folds expand" do
+      [4, 10, 1000].each do |count|
+        source = "\u0390" * count
+        source.downcase!(:fold)
+        source.should == "\u03b9\u0308\u0301" * count
+      end
+    end
+
     it "case folds special characters" do
       a = "ß"
       a.downcase!
