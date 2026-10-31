@@ -258,6 +258,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     private volatile RubyThread fiberCurrentThread;
 
+    // the RubyThread of the fiber now running on this thread, null for the root fiber. MRI: th->ec
+    private volatile RubyThread runningFiberThread;
+
     private IRubyObject scheduler;
     private volatile int blockingCount = 1;
 
@@ -457,6 +460,25 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public RubyThread getFiberCurrentThread() {
         RubyThread fiberCurrentThread = this.fiberCurrentThread;
         return fiberCurrentThread == null ? this : fiberCurrentThread;
+    }
+
+    /**
+     * Record which fiber is running on this thread. Called by the fiber that just got control.
+     *
+     * @param fiberThread the RubyThread backing that fiber, or this thread for its root fiber
+     */
+    public void setRunningFiberThread(RubyThread fiberThread) {
+        this.runningFiberThread = fiberThread == this ? null : fiberThread;
+    }
+
+    /**
+     * Each fiber runs on a RubyThread of its own, but Thread.current answers with the thread owning it.
+     * Fiber-scoped state asked of that thread belongs to whichever of its fibers is running.
+     * MRI: th->ec
+     */
+    private RubyThread running() {
+        RubyThread runningFiberThread = this.runningFiberThread;
+        return runningFiberThread == null ? this : runningFiberThread;
     }
 
     /**
@@ -1009,7 +1031,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(meta = true)
     public static RubyThread current(IRubyObject recv) {
-        return recv.getRuntime().getCurrentContext().getThread();
+        return recv.getRuntime().getCurrentContext().getFiberCurrentThread();
     }
 
     @JRubyMethod(meta = true)
@@ -1153,7 +1175,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     @JRubyMethod(name = "[]")
     public IRubyObject op_aref(ThreadContext context, IRubyObject key) {
         key = RubySymbol.idSymbolFromObject(context, key);
-        final Map<IRubyObject, IRubyObject> locals = getFiberLocals();
+        final Map<IRubyObject, IRubyObject> locals = running().getFiberLocals();
         synchronized (locals) {
             IRubyObject value;
             return (value = locals.get(key)) == null ? context.nil : value;
@@ -1165,7 +1187,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if (isFrozen()) throw frozenError(context, this, "can't modify frozen thread locals");
 
         key = RubySymbol.idSymbolFromObject(context, key);
-        final Map<IRubyObject, IRubyObject> locals = getFiberLocals();
+        final Map<IRubyObject, IRubyObject> locals = running().getFiberLocals();
         synchronized (locals) {
             locals.put(key, value);
         }
@@ -1175,7 +1197,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     @JRubyMethod(name = "key?")
     public RubyBoolean key_p(ThreadContext context, IRubyObject key) {
         key = RubySymbol.idSymbolFromObject(context, key);
-        final Map<IRubyObject, IRubyObject> locals = getFiberLocals();
+        final Map<IRubyObject, IRubyObject> locals = running().getFiberLocals();
         synchronized (locals) {
             return asBoolean(context, locals.containsKey(key));
         }
@@ -1183,7 +1205,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod
     public RubyArray keys() {
-        final Map<IRubyObject, IRubyObject> locals = getFiberLocals();
+        final Map<IRubyObject, IRubyObject> locals = running().getFiberLocals();
         IRubyObject[] ary;
         synchronized (locals) {
             ary = new IRubyObject[locals.size()];
