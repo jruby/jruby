@@ -345,7 +345,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         var context = ((RubyBasicObject) other).getCurrentContext();
         Encoding enc = isCompatibleWith(other);
         if (enc == null) throw context.runtime.newEncodingCompatibilityError("incompatible character encodings: " +
-                                value.getEncoding() + " and " + other.getEncoding());
+                                RubyEncoding.inspectName(value.getEncoding()) + " and " + RubyEncoding.inspectName(other.getEncoding()));
         return enc;
     }
 
@@ -353,7 +353,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     public final Encoding checkEncoding(CodeRangeable other) {
         Encoding enc = StringSupport.areCompatible(this, other);
         if (enc == null) throw getRuntime().newEncodingCompatibilityError("incompatible character encodings: " +
-                value.getEncoding() + " and " + other.getByteList().getEncoding());
+                RubyEncoding.inspectName(value.getEncoding()) + " and " + RubyEncoding.inspectName(other.getByteList().getEncoding()));
         return enc;
     }
 
@@ -362,7 +362,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         Encoding enc = StringSupport.areCompatible(str1, str2);
         if (enc == null) {
             throw runtime.newEncodingCompatibilityError("incompatible character encodings: " +
-                    str1.getEncoding() + " and " + str2.getEncoding());
+                    RubyEncoding.inspectName(str1.getEncoding()) + " and " + RubyEncoding.inspectName(str2.getEncoding()));
         }
         return enc;
     }
@@ -3337,7 +3337,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (codeRangeScan(strEnc, bytes, p, beg) != CR_7BIT ||
             codeRangeScan(strEnc, bytes, p + end, len - end) != CR_7BIT) {
             throw context.runtime.newEncodingCompatibilityError(
-                    "incompatible character encodings " + strEnc + " and " + repl.value.getEncoding());
+                    "incompatible character encodings: " + RubyEncoding.inspectName(strEnc) + " and " +
+                            RubyEncoding.inspectName(repl.value.getEncoding()));
         }
         return repl.value.getEncoding();
     }
@@ -3904,7 +3905,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         if (beg < 0) {
             if (len > -beg) len = -beg;
-            if (-beg * enc.maxLength() < length >>> 3) {
+            // walking back from the end only finds character heads in a valid string
+            if (scanForCodeRange() == CR_VALID && -beg * enc.maxLength() < length >>> 3) {
                 beg = -beg;
                 int e = end;
                 while (beg-- > len && (e = enc.prevCharHead(bytes, s, e, e)) != -1) {} // nothing
@@ -5277,14 +5279,21 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return context.fals;
     }
 
+    @CRuby(value = "rb_str_start_with", file = "string.c")
     public boolean startsWith(final RubyString str) {
-        checkEncoding(str);
+        Encoding enc = checkEncoding(str);
 
         int otherLength = str.value.getRealSize();
 
         if (otherLength == 0) return true; // other is '', so return true
 
         if (value.getRealSize() < otherLength) return false;
+
+        // a prefix that ends partway through a character does not match
+        int p = value.begin();
+        int s = p + otherLength;
+        int e = p + value.getRealSize();
+        if (s < e && enc.rightAdjustCharHead(value.unsafeBytes(), p, s, e) != s) return false;
 
         return value.startsWith(str.value);
     }
