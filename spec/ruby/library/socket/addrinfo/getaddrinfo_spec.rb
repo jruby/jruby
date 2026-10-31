@@ -84,6 +84,54 @@ describe 'Addrinfo.getaddrinfo' do
 
     array[0].canonname.should.instance_of?(String)
   end
+
+  # the socket types and their order come from the platform's getaddrinfo(3)
+  platform_is :linux, :darwin do
+    platform_is_not :android do
+      it 'returns an Addrinfo for each socket type of an address when no socket type is given' do
+        array = Addrinfo.getaddrinfo('127.0.0.1', 80, Socket::AF_INET)
+
+        array.map { |ai| [ai.socktype, ai.protocol] }.should == [
+          [Socket::SOCK_STREAM, Socket::IPPROTO_TCP],
+          [Socket::SOCK_DGRAM, Socket::IPPROTO_UDP],
+          [Socket::SOCK_RAW, 0]
+        ]
+      end
+
+      it 'returns an Addrinfo for each socket type that can use the given protocol' do
+        array = Addrinfo.getaddrinfo('127.0.0.1', 80, Socket::AF_INET, nil, Socket::IPPROTO_UDP)
+
+        array.map { |ai| [ai.socktype, ai.protocol] }.should == [
+          [Socket::SOCK_DGRAM, Socket::IPPROTO_UDP],
+          [Socket::SOCK_RAW, Socket::IPPROTO_UDP]
+        ]
+      end
+    end
+  end
+
+  platform_is_not :windows do
+    it 'raises SocketError when the socket type does not support the socket protocol' do
+      -> {
+        Addrinfo.getaddrinfo('127.0.0.1', 80, Socket::AF_INET, Socket::SOCK_DGRAM, Socket::IPPROTO_TCP)
+      }.should.raise(SocketError)
+    end
+  end
+
+  it 'raises ArgumentError when the port is missing before the keyword arguments' do
+    -> { Addrinfo.getaddrinfo('127.0.0.1', timeout: 1) }.should.raise(ArgumentError)
+  end
+
+  it 'accepts an empty keyword splat' do
+    Addrinfo.getaddrinfo('127.0.0.1', 80, nil, :STREAM, **{}).size.should == 1
+  end
+
+  it 'raises ArgumentError for an unknown keyword argument' do
+    -> { Addrinfo.getaddrinfo('127.0.0.1', 80, foo: 1) }.should.raise(ArgumentError)
+  end
+
+  it 'does not take a Hash passed as the last positional argument as keyword arguments' do
+    -> { Addrinfo.getaddrinfo('127.0.0.1', 80, nil, nil, nil, {timeout: 1}) }.should.raise(TypeError)
+  end
 end
 
 describe "Addrinfo.getaddrinfo with a Fiber scheduler" do

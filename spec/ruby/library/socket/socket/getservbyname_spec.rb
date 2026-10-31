@@ -29,4 +29,12 @@ describe "Socket#getservbyname" do
   it "raises a SocketError when the service or port is invalid" do
     -> { Socket.getservbyname('invalid') }.should.raise(SocketError)
   end
+
+  it "returns a numeric port with leading whitespace" do
+    Socket.getservbyname(' 80').should == 80
+  end
+
+  it "raises a SocketError for a numeric port with trailing whitespace" do
+    -> { Socket.getservbyname('80 ') }.should.raise(SocketError)
+  end
 end

@@ -11,11 +11,13 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
 import org.jruby.RubyClass;
+import org.jruby.RubyHash;
 import org.jruby.RubyInteger;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Define;
+import org.jruby.ast.util.ArgsUtil;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -35,6 +37,7 @@ import java.net.InetSocketAddress;
 import java.net.NetworkInterface;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 
 import static jnr.constants.platform.AddressFamily.AF_INET;
 import static jnr.constants.platform.AddressFamily.AF_INET6;
@@ -56,6 +59,7 @@ import static org.jruby.api.Define.defineClass;
 import static org.jruby.ext.socket.SocketUtils.IP_V4_MAPPED_ADDRESS_PREFIX;
 import static org.jruby.ext.socket.ResolutionError.newResolutionError;
 import static org.jruby.ext.socket.SocketUtils.sockerr;
+import static org.jruby.runtime.ThreadContext.hasNonemptyKeywords;
 
 public class Addrinfo extends RubyObject {
 
@@ -111,6 +115,11 @@ public class Addrinfo extends RubyObject {
         this.socketType = socketType;
         this.displaysCanonical = displaysCanonical;
         setSockAndProtocol(sock);
+    }
+
+    public Addrinfo(Ruby runtime, RubyClass cls, SocketAddress socketAddress, Sock sock, SocketType socketType, boolean displaysCanonical, int protocol) {
+        this(runtime, cls, socketAddress, sock, socketType, displaysCanonical);
+        this.protocol = Protocol.getProtocolByNumber(protocol);
     }
 
     public Addrinfo(Ruby runtime, RubyClass cls, InetAddress inetAddress, int port) {
@@ -375,8 +384,15 @@ public class Addrinfo extends RubyObject {
         return newString(context, host + portString);
     }
 
-    @JRubyMethod(rest = true, meta = true)
+    @JRubyMethod(required = 2, optional = 4, checkArity = false, meta = true, keywords = true)
     public static IRubyObject getaddrinfo(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        if (hasNonemptyKeywords(ThreadContext.resetCallInfo(context))) {
+            // TODO: honor timeout: (CRuby raises IO::TimeoutError); extracting it rejects any other keyword
+            ArgsUtil.extractKeywordArg(context, (RubyHash) args[args.length - 1], "timeout");
+            args = Arrays.copyOf(args, args.length - 1);
+        }
+        Arity.checkArgumentCount(context, args, 2, 6);
+
         return RubyArray.newArray(context.runtime, SocketUtils.getaddrinfoList(context, args));
     }
 
@@ -872,7 +888,9 @@ public class Addrinfo extends RubyObject {
         } else if (unix) {
             serviceName = getUnixSocketAddress().path();
         } else {
-            serviceName = Service.getServiceByPort(getPort(), protocol.getName()).getName();
+            // like getnameinfo(3), which knows only the port and NI_DGRAM, not our socket type or protocol
+            Service service = Service.getServiceByPort(getPort(), (flags & NameInfo.NI_DGRAM.intValue()) != 0 ? "udp" : "tcp");
+            serviceName = service == null ? Integer.toString(getPort()) : service.getName();
         }
 
         return newArray(context, hostname, newString(context, serviceName));
