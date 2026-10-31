@@ -868,19 +868,21 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
             final int realSize = strPtr[0].getRealSize();
             final int begin = strPtr[0].getBegin();
 
-            if (c == newline) {
-                if (realSize < rslen) continue;
+            // fall through to the limit check below if the separator does not match, so a limit
+            // that ends inside a multibyte character still extends to the next character boundary
+            if (c == newline && realSize >= rslen) {
                 s = begin;
                 e = s + realSize;
                 p = e - rslen;
-                if (!atCharacterBoundary(enc, strBytes, s, p, e)) continue;
-                if (!rspara) rscheck(context, rsptrBytes, rslen, rs);
-                if (ByteList.memcmp(strBytes, p, rsptrBytes, rsptr, rslen) == 0) {
-                    if (chomp) {
-                        if (chompCR && p > s && strBytes[p-1] == '\r') --p;
-                        strPtr[0].length(p - s);
+                if (atCharacterBoundary(enc, strBytes, s, p, e)) {
+                    if (!rspara) rscheck(context, rsptrBytes, rslen, rs);
+                    if (ByteList.memcmp(strBytes, p, rsptrBytes, rsptr, rslen) == 0) {
+                        if (chomp) {
+                            if (chompCR && p > s && strBytes[p-1] == '\r') --p;
+                            strPtr[0].length(p - s);
+                        }
+                        break;
                     }
-                    break;
                 }
             }
             if (limit_p[0] == 0) {

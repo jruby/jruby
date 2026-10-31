@@ -11,5 +11,3 @@ exclude :test_repeated_permutation_with_callcc, "Continuations are not supported
 exclude :test_replace_wb_variable_width_alloc, "no GC.verify_internal_consistency method"
 exclude :test_short_heap_array_sort_bang_memory_leak, "no working assert_no_memory_leak method"
 exclude :test_sort_with_callcc, "Continuations are not supported"
-exclude :test_flatten_modify_during_to_ary, "raises ConcurrencyError when to_ary modifies the array during flatten"
-exclude :test_values_at_ary_modify, "values_at does not handle arguments whose to_int modifies the array"

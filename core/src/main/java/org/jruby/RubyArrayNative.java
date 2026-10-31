@@ -1185,20 +1185,22 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
                 continue;
             }
 
-            final int[] begLen;
-            if (!(arg instanceof RubyRange range)) {
-                // do result.append
-            } else if ((begLen = range.begLenInt(context, length, 1)) == null) {
-                continue;
+            int[] begLen;
+            if (arg instanceof RubyRange range) {
+                if ((begLen = range.begLenInt(context, length, 1)) == null) continue;
+            } else if (!(arg instanceof RubyArithmeticSequence) &&
+                    RubyRange.rangeBeginLength(context, arg, length, begLen = new int[2], 1).isTrue()) {
+                // range-like object responding to begin, end and exclude_end?
             } else {
-                final int beg = begLen[0];
-                final int len = begLen[1];
-                for (int j = 0; j < len; j++) {
-                    result.append(context, entry(j + beg));
-                }
+                result.append(context, entry(toLong(context, arg)));
                 continue;
             }
-            result.append(context, entry(toLong(context, arg)));
+
+            final int beg = begLen[0];
+            final int len = begLen[1];
+            for (int j = 0; j < len; j++) {
+                result.append(context, entry(j + beg));
+            }
         }
 
         return result;
@@ -2833,10 +2835,12 @@ public class RubyArrayNative<T extends IRubyObject> extends RubyArray<T> {
             if (!tmp.isNil()) break;
         }
 
-        safeArrayCopy(context, values, begin, result.values, result.begin, i);
-        result.realLength = i;
+        // to_ary may have shrunk this array, so only copy what is still there
+        int prefix = Math.min(i, realLength);
+        safeArrayCopy(context, values, begin, result.values, result.begin, prefix);
+        result.realLength = prefix;
 
-        if (i == realLength) return false;
+        if (tmp == null || tmp.isNil()) return false;
 
         Stack<Object> stack = new Stack<>();
         stack.push(this);

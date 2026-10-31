@@ -536,11 +536,15 @@ public class OpenFile implements Finalizable {
 
     // Unlock while io_wait parks us, so sibling fibers can still write to or close this IO.
     private boolean schedulerWaitWritable(ThreadContext context, IRubyObject scheduler) {
+        // the scheduler may change errno while waiting, so keep the original error in case no
+        // events are ready and the caller reports it
+        Errno errno = posix.getErrno();
         unlock();
         try {
             return eventsReady(FiberScheduler.ioWaitWritable(context, scheduler, io));
         } finally {
             lock();
+            posix.setErrno(errno);
         }
     }
 
@@ -590,11 +594,15 @@ public class OpenFile implements Finalizable {
     // Release the IO lock while io_wait parks this fiber, as selectForRead does, or a sibling
     // fiber closing or reading this IO would block on the lock and never wake us.
     private boolean schedulerWaitReadable(ThreadContext context, IRubyObject scheduler) {
+        // the scheduler may change errno while waiting, so keep the original error in case no
+        // events are ready and the caller reports it
+        Errno errno = posix.getErrno();
         unlock();
         try {
             return eventsReady(FiberScheduler.ioWaitReadable(context, scheduler, io));
         } finally {
             lock();
+            posix.setErrno(errno);
         }
     }
 

@@ -10,4 +10,3 @@ exclude :test_pack_unpack_atmark, "errors differently in JRuby but does not over
 exclude :test_pack_unpack_bB, "needs investigation"
 exclude :test_pack_unpack_u, "needs investigation"
 exclude :test_short_with_block, "needs investigation"
-exclude :test_unpack_with_block_modifying_string, "unpack with block does not detect string modification"

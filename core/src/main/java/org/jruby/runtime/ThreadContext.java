@@ -78,6 +78,7 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -905,6 +906,17 @@ public final class ThreadContext {
      */
     public void eachCallerLocation(Stream<StackWalker.StackFrame> stackStream, Consumer<RubyThread.Location> consumer) {
         eachPartialTrace(stackStream, (elt) -> consumer.accept(RubyThread.Location.newLocation(runtime, elt)));
+    }
+
+    /**
+     * Pass each caller location to the given function until it returns false.
+     *
+     * @param stackStream the stack to walk
+     * @param consumer receives each location and returns whether to continue
+     */
+    public void eachCallerLocationWhile(Stream<StackWalker.StackFrame> stackStream, Predicate<RubyThread.Location> consumer) {
+        TraceType.Gather.CALLER.getBacktraceData(this, stackStream).yieldPartialBacktrace(runtime,
+                (elt) -> consumer.test(RubyThread.Location.newLocation(runtime, elt)));
     }
 
     private RubyStackTraceElement[] getPartialTrace(int level, int length, Stream<StackWalker.StackFrame> stackStream) {

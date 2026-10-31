@@ -9,6 +9,18 @@ describe "String#unpack" do
     -> { "abc".unpack(1) }.should.raise(TypeError)
   end
 
+  it "yields each value to a block and returns nil" do
+    yielded = []
+    "abc".unpack("C*") { |x| yielded << x }.should == nil
+    yielded.should == [97, 98, 99]
+  end
+
+  it "returns nil with a block when given an offset" do
+    yielded = []
+    ["abc".unpack("C*", offset: 1) { |x| yielded << x }].should == [nil]
+    yielded.should == [98, 99]
+  end
+
   it "starts unpacking from the given offset" do
     "abc".unpack("CC", offset: 1).should == [98, 99]
   end

@@ -1161,6 +1161,13 @@ public class RubyClass extends RubyModule {
         RubyClass originalClazz = (RubyClass) original;
         allocator = originalClazz.allocator;
 
+        // register the copy with its superclass so it shows up in Class#subclasses
+        RubyClass superClazz = superClass;
+        while (superClazz != null && (superClazz.isIncluded() || superClazz.isPrepended())) {
+            superClazz = superClazz.superClass;
+        }
+        if (superClazz != null) superClazz.addSubclass(this);
+
         // copy over reify options
         javaClassConfiguration = originalClazz.javaClassConfiguration == null ? null : originalClazz.javaClassConfiguration.clone();
 
@@ -1467,6 +1474,15 @@ public class RubyClass extends RubyModule {
 
         // if we're not at boot time, don't bother fully clearing caches
         if (!runtime.isBootingCore()) getCachedMethods().clear();
+
+        // After a module is prepended to, each hierarchy that already included it gets its own origin holding
+        // the module's methods, and lookups through the origin are cached there. Nothing else invalidates that
+        // origin when the module's methods change, so do it along with the hierarchy that owns it.
+        RubyModule methodLocation = this.methodLocation;
+        if (methodLocation != null && methodLocation != this && isIncluded()) {
+            methodLocation.methodInvalidator.addIfUsed(invalidators);
+            if (!runtime.isBootingCore()) methodLocation.getCachedMethods().clear();
+        }
 
         getSubclassesForRead().forEachClass(invalidators);
     }
