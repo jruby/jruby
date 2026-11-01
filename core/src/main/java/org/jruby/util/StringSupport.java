@@ -1017,6 +1017,12 @@ public final class StringSupport {
         ASCII_NO_ESCAPE['"'] = ASCII_NO_ESCAPE['#'] = ASCII_NO_ESCAPE['\\'] = false;
     }
 
+    // same as "%0<digits>X", value must fit in digits
+    private static int writeHex(byte[] out, int q, int value, int digits) {
+        for (int i = q + digits - 1; i >= q; i--, value >>>= 4) out[i] = Sprintf.HEX_DIGITS_UPPER_CASE[value & 0xf];
+        return q + digits;
+    }
+
     @CRuby(value = "rb_str_dump", file = "string.c")
     public static ByteList dumpCommon(Ruby runtime, ByteList bytelist) {
         return dumpCommon(runtime, bytelist, false);
@@ -1115,30 +1121,29 @@ public final class StringSupport {
                         q += p - run;
                     } else {
                         out[q++] = '\\';
-                        outBytes.setRealSize(q);
                         if (enc.isUTF8()) {
                             int n = preciseLength(enc, bytes, p - 1, end) - 1;
                             if (MBCLEN_CHARFOUND_LEN(n) > 0) {
                                 int cc = codePoint(runtime, enc, bytes, p - 1, end);
-                                outBytes.setRealSize(q);
                                 p += n;
+                                out[q++] = 'u';
                                 if (cc <= 0xFFFF) {
-                                    Sprintf.sprintf(runtime, outBytes, "u%04X", cc);
+                                    q = writeHex(out, q, cc, 4);
                                 } else {
-                                    Sprintf.sprintf(runtime, outBytes, "u{%X}", cc);
+                                    out[q++] = '{';
+                                    q = writeHex(out, q, cc, cc <= 0xFFFFF ? 5 : 6);
+                                    out[q++] = '}';
                                 }
-                                q = outBytes.getRealSize();
                                 continue;
                             }
                         }
-                        Sprintf.sprintf(runtime, outBytes, "x%02X", c);
-                        q = outBytes.getRealSize();
+                        out[q++] = 'x';
+                        q = writeHex(out, q, c, 2);
                     }
             }
         }
         if (!quoteOnlyIfNeeded || includingsNonprintable) out[q++] = '"';
         outBytes.setRealSize(q);
-        assert out == outBytes.getUnsafeBytes(); // must not reallocate
 
         return outBytes;
     }
