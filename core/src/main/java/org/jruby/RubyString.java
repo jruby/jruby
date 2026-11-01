@@ -7023,6 +7023,14 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 else if (MBCLEN_CHARFOUND_P(ret)) {
                     cr = CR_VALID;
                     p += MBCLEN_CHARFOUND_LEN(ret);
+                    // skip the ASCII run after a valid multibyte char
+                    if (p < e && Encoding.isAscii(pBytes[p] & 0xff)) {
+                        p = StringSupport.searchNonAscii(pBytes, p, e);
+                        if (p == -1) {
+                            p = e;
+                            break;
+                        }
+                    }
                 }
                 else if (MBCLEN_INVALID_P(ret)) {
                     /*
