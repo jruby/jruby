@@ -1010,6 +1010,13 @@ public final class StringSupport {
         }
     }
 
+    // Printable ASCII bytes that String#dump copies as is: everything in 0x20-0x7E but '"', '#' and '\\'.
+    private static final boolean[] ASCII_NO_ESCAPE = new boolean[256];
+    static {
+        for (int c = 0x20; c < 0x7F; c++) ASCII_NO_ESCAPE[c] = true;
+        ASCII_NO_ESCAPE['"'] = ASCII_NO_ESCAPE['#'] = ASCII_NO_ESCAPE['\\'] = false;
+    }
+
     @CRuby(value = "rb_str_dump", file = "string.c")
     public static ByteList dumpCommon(Ruby runtime, ByteList bytelist) {
         return dumpCommon(runtime, bytelist, false);
@@ -1037,7 +1044,9 @@ public final class StringSupport {
                 break;
             default:
                 if (ASCIIEncoding.INSTANCE.isPrint(c)) {
-                    len++;
+                    int run = p;
+                    while (p < end && ASCII_NO_ESCAPE[bytes[p] & 0xff]) p++;
+                    len += 1 + p - run;
                 } else {
                     includingsNonprintable = true;
                     if (enc.isUTF8() && c > 0x7F) {
@@ -1100,6 +1109,10 @@ public final class StringSupport {
                 default:
                     if (ASCIIEncoding.INSTANCE.isPrint(c)) {
                         out[q++] = (byte)c;
+                        int run = p;
+                        while (p < end && ASCII_NO_ESCAPE[bytes[p] & 0xff]) p++;
+                        System.arraycopy(bytes, run, out, q, p - run);
+                        q += p - run;
                     } else {
                         out[q++] = '\\';
                         outBytes.setRealSize(q);
