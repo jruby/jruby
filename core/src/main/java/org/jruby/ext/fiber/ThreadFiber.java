@@ -37,7 +37,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
 import org.jruby.RubyString;
@@ -590,7 +590,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
     }
 
     static RubyThread createThread(ThreadContext context, final FiberData data, final FiberQueue queue, final Block block) {
-        final AtomicReference<RubyThread> fiberThread = new AtomicReference();
+        final CompletableFuture<RubyThread> fiberThread = new CompletableFuture<>();
 
         // retry with GC once
         boolean retried = false;
@@ -602,7 +602,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
                     ctxt.setFiber(data.fiber.get());
                     ctxt.useRecursionGuardsFrom(data.parent.getContext());
                     RubyThread rubyThread = ctxt.getThread();
-                    fiberThread.set(rubyThread);
+                    fiberThread.complete(rubyThread);
                     rubyThread.setFiberCurrentThread(data.parent);
 
                     Thread thread = Thread.currentThread();
@@ -693,9 +693,8 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
             }
         }
         
-        while (fiberThread.get() == null) { Thread.yield(); }
-        
-        return fiberThread.get();
+        // Park while the fiber is adopted instead of competing with it for a carrier.
+        return fiberThread.join();
     }
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
