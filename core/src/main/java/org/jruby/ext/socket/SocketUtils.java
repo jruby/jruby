@@ -39,12 +39,12 @@ import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyInteger;
+import org.jruby.RubyNil;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.CRuby;
 import org.jruby.api.Access;
-import org.jruby.ast.util.ArgsUtil;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Helpers;
 import org.jruby.runtime.ThreadContext;
@@ -77,6 +77,7 @@ import static jnr.constants.platform.NameInfo.NI_NUMERICSERV;
 import static jnr.constants.platform.ProtocolFamily.PF_INET;
 import static jnr.constants.platform.ProtocolFamily.PF_INET6;
 import static jnr.constants.platform.Sock.SOCK_DGRAM;
+import static jnr.constants.platform.Sock.SOCK_RAW;
 import static jnr.constants.platform.Sock.SOCK_STREAM;
 import static org.jruby.api.Access.objectClass;
 import static org.jruby.api.Convert.asFixnum;
@@ -128,7 +129,7 @@ public class SocketUtils {
         } else {
             // MRI behavior: try to convert the name string to port directly
             try {
-                port = Integer.parseInt(name.trim());
+                port = Integer.parseInt(name.stripLeading());
             } catch (NumberFormatException nfe) {
                 throw sockerr(context.runtime, "no such service " + name + "/" + proto);
             }
@@ -160,40 +161,17 @@ public class SocketUtils {
     public static IRubyObject getaddrinfo(final ThreadContext context, IRubyObject[] args) {
         final List<IRubyObject> list = new ArrayList<>();
 
-        buildAddrinfoList(context, args, true, (address, port, sock, reverse, usesCanonical) -> {
+        buildAddrinfoList(context, args, true, (address, port, sock, protocol, reverse, usesCanonical) -> {
             boolean is_ipv6 = address instanceof Inet6Address;
-            boolean sock_stream = true;
-            boolean sock_dgram = true;
 
-            if (sock != null) {
-                if (sock == SOCK_STREAM) {
-                    sock_dgram = false;
-                } else if (sock == SOCK_DGRAM) {
-                    sock_stream = false;
-                }
-            }
-
-            if (sock_dgram) {
-                list.add(RubyArray.newArrayMayCopy(context.runtime,
-                        newString(context, is_ipv6 ? "AF_INET6" : "AF_INET"),
-                        asFixnum(context, port),
-                        newString(context, getHostAddress(context, address, reverse)),
-                        newString(context, address.getHostAddress()),
-                        asFixnum(context, is_ipv6 ? PF_INET6.longValue() : PF_INET.longValue()),
-                        asFixnum(context, SOCK_DGRAM.longValue()),
-                        asFixnum(context, IPPROTO_UDP.longValue())));
-            }
-
-            if (sock_stream) {
-                list.add(RubyArray.newArrayMayCopy(context.runtime,
-                        newString(context, is_ipv6 ? "AF_INET6" : "AF_INET"),
-                        asFixnum(context, port),
-                        newString(context, getHostAddress(context, address, reverse)),
-                        newString(context, address.getHostAddress()),
-                        asFixnum(context, is_ipv6 ? PF_INET6.longValue() : PF_INET.longValue()),
-                        asFixnum(context, SOCK_STREAM.longValue()),
-                        asFixnum(context, IPPROTO_TCP.longValue())));
-            }
+            list.add(RubyArray.newArrayMayCopy(context.runtime,
+                    newString(context, is_ipv6 ? "AF_INET6" : "AF_INET"),
+                    asFixnum(context, port),
+                    newString(context, getHostAddress(context, address, reverse)),
+                    newString(context, address.getHostAddress()),
+                    asFixnum(context, is_ipv6 ? PF_INET6.longValue() : PF_INET.longValue()),
+                    asFixnum(context, sock.longValue()),
+                    asFixnum(context, protocol)));
         });
 
         return newArray(context, list);
@@ -202,35 +180,13 @@ public class SocketUtils {
     public static List<Addrinfo> getaddrinfoList(ThreadContext context, IRubyObject[] args) {
         final List<Addrinfo> l = new ArrayList<Addrinfo>();
 
-        buildAddrinfoList(context, args, false, (address, port, sock, reverse, usesCanonical) -> {
-            boolean sock_stream = true;
-            boolean sock_dgram = true;
-
-            if (sock != null) {
-                if (sock == SOCK_STREAM) {
-                    sock_dgram = false;
-
-                } else if (sock == SOCK_DGRAM) {
-                    sock_stream = false;
-
-                }
-            }
-
-            if (sock_dgram) {
-                l.add(new Addrinfo(context.runtime, Access.getClass(context, "Addrinfo"),
-                        new InetSocketAddress(address, port),
-                        Sock.SOCK_DGRAM,
-                        SocketType.DATAGRAM,
-                        usesCanonical));
-            }
-
-            if (sock_stream) {
-                l.add(new Addrinfo(context.runtime, Access.getClass(context, "Addrinfo"),
-                        new InetSocketAddress(address, port),
-                        Sock.SOCK_STREAM,
-                        SocketType.SOCKET,
-                        usesCanonical));
-            }
+        buildAddrinfoList(context, args, false, (address, port, sock, protocol, reverse, usesCanonical) -> {
+            l.add(new Addrinfo(context.runtime, Access.getClass(context, "Addrinfo"),
+                    new InetSocketAddress(address, port),
+                    sock,
+                    sock == SOCK_DGRAM ? SocketType.DATAGRAM : SocketType.SOCKET,
+                    usesCanonical,
+                    protocol));
         });
 
         return l;
@@ -241,6 +197,7 @@ public class SocketUtils {
                 InetAddress address,
                 int port,
                 Sock sock,
+                int protocol,
                 Boolean reverse,
                 boolean usesCanonical);
     }
@@ -259,15 +216,10 @@ public class SocketUtils {
         IRubyObject reverseArg = args.length > 6 ? args[6] : context.nil;
 
         Boolean reverseLookup = null;
-        IRubyObject timeout = context.nil;
         if (processLastArgAsReverse) {
             // The Ruby Socket.getaddrinfo function supports boolean/nil/Symbol values for the
             // reverse_lookup parameter. We need to massage all valid inputs to true/false/null.
              reverseLookup = RubyIPSocket.doReverseLookup(context, reverseArg);
-        } else {
-            if (reverseArg != context.nil) {
-                timeout = ArgsUtil.extractKeywordArg(context, "timeout", reverseArg);
-            }
         }
 
         AddressFamily addressFamily = family.isNil() ? null : addressFamilyFromArg(context, family);
@@ -280,11 +232,13 @@ public class SocketUtils {
             throw ResolutionError.newNameNotKnown(context);
         }
 
-        Sock sock = socktype.isNil() ? SOCK_STREAM : sockFromArg(context, socktype);
+        boolean serviceName = port instanceof RubyString && !NUMERIC_SERVICE_PATTERN.matcher(port.toString()).matches();
 
         if(port instanceof RubyString) {
             port = getservbyname(context, new IRubyObject[]{port});
         }
+
+        List<SocktypeProtocol> types = socktypeProtocols(context, socktype, protocol, serviceName);
 
         int p = port.isNil() ? 0 : toInt(context, port);
 
@@ -316,12 +270,53 @@ public class SocketUtils {
                 // filter out unrelated address families if specified
                 if (addressFamily == AF_INET6 && !(addrs[i] instanceof Inet6Address)) continue;
                 if (addressFamily == AF_INET && !(addrs[i] instanceof Inet4Address)) continue;
-                callback.addrinfo(addrs[i], p, sock, reverseLookup, displayCanonical);
+                for (SocktypeProtocol type : types) {
+                    callback.addrinfo(addrs[i], p, type.sock(), type.protocol(), reverseLookup, displayCanonical);
+                }
             }
 
         } catch(UnknownHostException e) {
             throw ResolutionError.newNameNotKnown(context);
         }
+    }
+
+    private record SocktypeProtocol(Sock sock, int protocol) {}
+
+    private static final List<SocktypeProtocol> IP_SOCKTYPES = List.of(
+            new SocktypeProtocol(SOCK_STREAM, IPPROTO_TCP.intValue()),
+            new SocktypeProtocol(SOCK_DGRAM, IPPROTO_UDP.intValue()),
+            new SocktypeProtocol(SOCK_RAW, 0));
+
+    private static final Pattern NUMERIC_SERVICE_PATTERN = Pattern.compile("\\s*\\+?[0-9]+");
+
+    private static List<SocktypeProtocol> socktypeProtocols(ThreadContext context, IRubyObject socktype, IRubyObject protocol, boolean serviceName) {
+        int requestedType = switch (socktype) {
+            case RubyNil nil -> 0;
+            case RubyInteger type -> toInt(context, type);
+            default -> sockFromArg(context, socktype).intValue();
+        };
+        int requestedProtocol = protocol.isNil() ? 0 : toInt(context, protocol);
+        List<SocktypeProtocol> types = new ArrayList<>(IP_SOCKTYPES.size());
+
+        for (SocktypeProtocol type : IP_SOCKTYPES) {
+            if (requestedType != 0 && requestedType != type.sock().intValue()) continue;
+
+            if (type.sock() == SOCK_RAW) {
+                // SOCK_RAW takes any protocol but has no services
+                if (!serviceName) types.add(new SocktypeProtocol(SOCK_RAW, requestedProtocol));
+            } else if (requestedProtocol == 0 || requestedProtocol == type.protocol()) {
+                types.add(type);
+            }
+        }
+
+        if (types.isEmpty()) {
+            if (serviceName && (requestedType == 0 || requestedType == SOCK_RAW.intValue())) {
+                throw newResolutionError(context, "getaddrinfo: Servname not supported for ai_socktype", "EAI_SERVICE");
+            }
+            throw newResolutionError(context, "getaddrinfo: ai_socktype not supported", "EAI_SOCKTYPE");
+        }
+
+        return types;
     }
 
     // "<any>", "<broadcast>" and numeric hosts are used as they are; anything else goes to the fiber
