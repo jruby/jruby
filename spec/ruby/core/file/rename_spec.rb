@@ -26,6 +26,34 @@ describe "File.rename" do
     -> { File.rename(@old, @new) }.should.raise(Errno::ENOENT)
   end
 
+  platform_is_not :windows do
+    it "raises an Errno::EISDIR and leaves both paths alone if the destination is an empty directory" do
+      Dir.mkdir(@new)
+      -> { File.rename(@old, @new) }.should.raise(Errno::EISDIR)
+      File.should.file?(@old)
+      File.should.directory?(@new)
+    end
+
+    it "raises an Errno::EISDIR and leaves both paths alone if the destination is a non-empty directory" do
+      Dir.mkdir(@new)
+      touch(File.join(@new, "file"))
+      mode = File.stat(@new).mode
+      -> { File.rename(@old, @new) }.should.raise(Errno::EISDIR)
+      File.should.file?(@old)
+      File.should.file?(File.join(@new, "file"))
+      File.stat(@new).mode.should == mode
+    end
+
+    it "raises an Errno::ENOTDIR and leaves both paths alone if the source is a directory and the destination is a file" do
+      rm_r @old
+      Dir.mkdir(@old)
+      touch(@new)
+      -> { File.rename(@old, @new) }.should.raise(Errno::ENOTDIR)
+      File.should.directory?(@old)
+      File.should.file?(@new)
+    end
+  end
+
   it "raises an ArgumentError if not passed two arguments" do
     -> { File.rename        }.should.raise(ArgumentError)
     -> { File.rename(@file) }.should.raise(ArgumentError)
