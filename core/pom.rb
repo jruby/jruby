@@ -56,7 +56,7 @@ project 'JRuby Base' do
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
-  jar 'org.jruby.joni:joni:2.2.8'
+  jar 'org.jruby.joni:joni:2.2.9'
   jar 'org.jruby.jcodings:jcodings:1.0.64'
   jar 'org.jruby:dirgra:0.5'
 
