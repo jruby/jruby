@@ -1681,14 +1681,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             cause = errorInfo;
         }
 
-        if (!cause.isNil() && cause != exception) {
-            // check for circular causes
-            for (Object cur = cause; cur instanceof RubyException curException && cur != null;) {
-                if (cur == exception) {
-                    throw argumentError(context, "circular causes");
-                }
-                cur = curException.getCause();
-            }
+        boolean setCause = !cause.isNil() && cause != exception;
+        if (setCause) RubyException.checkCircularCause(context, exception, cause);
+
+        // MRI rb_exception_setup: a frozen exception is always raised as a copy
+        if (exception.isFrozen()) exception = (RubyException) exception.dup();
+
+        if (setCause) {
             exception.setCause(context, cause);
         }
 
