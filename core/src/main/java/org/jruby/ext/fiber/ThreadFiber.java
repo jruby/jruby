@@ -589,7 +589,9 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         if (targetData != null) targetData.queue.push(context, request);
     }
 
-    static RubyThread createThread(ThreadContext context, final FiberData data, final FiberQueue queue, final Block block) {
+    static RubyThread createThread(ThreadContext context, final FiberData data, final FiberQueue queue, final Block fiberBlock) {
+        // like a thread's, a fiber's block must not share its frame: $~ and $_ live there and are per fiber
+        final Block block = fiberBlock.cloneBlockAndFrame();
         final AtomicReference<RubyThread> fiberThread = new AtomicReference();
 
         // retry with GC once
