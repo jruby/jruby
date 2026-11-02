@@ -277,7 +277,15 @@ class SimpleHTTPSServer
   def start
     @thread = Thread.new do
       loop do
-        ssl_socket = @ssl_server.accept
+        begin
+          ssl_socket = @ssl_server.accept
+        rescue IOError => error
+          # JRuby: closing the listener interrupts a blocked accept with IOError.
+          # It can also close the stream before the first accept starts.
+          raise unless @shutting_down &&
+            ["stream closed in another thread", "closed stream"].include?(error.message)
+          break
+        end
         handle_request(ssl_socket)
         ssl_socket.close
       end
@@ -287,6 +295,8 @@ class SimpleHTTPSServer
 
   # NOTE: patched by JRuby
   def shutdown
+    # JRuby: mark shutdown before close wakes the thread blocked in accept.
+    @shutting_down = true
     @server.close
   end
 
