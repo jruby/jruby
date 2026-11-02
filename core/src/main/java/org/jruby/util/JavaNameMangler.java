@@ -26,6 +26,7 @@
 
 package org.jruby.util;
 
+import org.jruby.RubyEncoding;
 import org.jruby.ir.IRClassBody;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMetaClassBody;
@@ -296,23 +297,26 @@ public class JavaNameMangler {
     public static String encodeScopeForBacktrace(IRScope scope) {
         String base;
 
+        ByteList byteName = scope.getByteName();
+        String strName = byteName == null ? null : RubyEncoding.decodeUTF8(byteName);
+
         if (scope instanceof IRMethod) {
-            base = RUBY_MARKER + DELIMITER + METHOD_MARKER + DELIMITER + mangleMethodNameInternal(scope.getId());
+            base = RUBY_MARKER + DELIMITER + METHOD_MARKER + DELIMITER + mangleMethodNameInternal(strName);
         } else if (scope instanceof IRClosure) {
             IRScope ancestorScope = scope.getNearestTopLocalVariableScope();
             String name;
             if (ancestorScope instanceof IRScriptBody) {
                 name = Interpreter.ROOT;
             } else {
-                name = ancestorScope.getId();
+                name = strName;
             }
             base = RUBY_MARKER + DELIMITER + BLOCK_MARKER + DELIMITER + mangleMethodNameInternal(name);
         } else if (scope instanceof IRMetaClassBody) {
             base = RUBY_MARKER + DELIMITER + METACLASS_MARKER;
         } else if (scope instanceof IRClassBody) {
-            base = RUBY_MARKER + DELIMITER + CLASS_MARKER + DELIMITER + mangleMethodNameInternal(scope.getId());
+            base = RUBY_MARKER + DELIMITER + CLASS_MARKER + DELIMITER + mangleMethodNameInternal(strName);
         } else if (scope instanceof IRModuleBody) {
-            base = RUBY_MARKER + DELIMITER + MODULE_MARKER + DELIMITER + mangleMethodNameInternal(scope.getId());
+            base = RUBY_MARKER + DELIMITER + MODULE_MARKER + DELIMITER + mangleMethodNameInternal(strName);
         } else if (scope instanceof IRScriptBody) {
             base = SCRIPT_METHOD_NAME;
         } else {

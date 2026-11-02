@@ -1056,17 +1056,39 @@ public class RubySymbol extends RubyObject implements MarshalEncoding, EncodingC
 
         public RubySymbol getSymbol(String name, boolean hard) {
             int hash = javaStringHashCode(name);
-            RubySymbol symbol = null;
+            SymbolEntry symbolEntry = findSymbol(name, hash);
 
+            if (symbolEntry != null && symbolEntry.symbol.get() instanceof RubySymbol symbol) {
+                if (hard) symbolEntry.setHardReference();
+                return symbol;
+            }
+
+            return createSymbol(name, symbolBytesFromString(runtime, name), hash, hard);
+        }
+
+        /**
+         * Find the symbol associated with the given ID name, or null if none
+         * @param name the ID name of the symbol
+         * @return the symbol, or null if none
+         */
+        public RubySymbol findSymbol(String name) {
+            SymbolEntry symbolEntry = findSymbol(name, javaStringHashCode(name));
+
+            if (symbolEntry != null && symbolEntry.symbol.get() instanceof RubySymbol symbol) {
+                return symbol;
+            }
+
+            return null;
+        }
+
+        private SymbolEntry findSymbol(String name, int hash) {
             for (SymbolEntry e = getEntryFromTable(symbolTable, hash); e != null; e = e.next) {
                 if (isSymbolMatch(name, hash, e)) {
-                    if (hard) e.setHardReference();
-                    symbol = e.symbol.get();
-                    break;
+                    return e;
                 }
             }
 
-            return symbol != null ? symbol : createSymbol(name, symbolBytesFromString(runtime, name), hash, hard);
+            return null;
         }
 
         /**
