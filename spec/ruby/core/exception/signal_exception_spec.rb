@@ -121,3 +121,9 @@ describe "SignalException" do
     end
   end
 end
+
+describe "SignalException#dup" do
+  it "copies the signal number" do
+    SignalException.new("INT").dup.signo.should == Signal.list["INT"]
+  end
+end

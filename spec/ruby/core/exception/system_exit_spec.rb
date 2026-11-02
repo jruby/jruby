@@ -57,3 +57,9 @@ describe "SystemExit" do
     $?.exitstatus.should == 8
   end
 end
+
+describe "SystemExit#dup" do
+  it "copies the status" do
+    SystemExit.new(3).dup.status.should == 3
+  end
+end
