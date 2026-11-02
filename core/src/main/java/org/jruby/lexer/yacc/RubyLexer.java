@@ -2019,6 +2019,11 @@ public class RubyLexer extends LexingCommon {
         return warn_balanced(c, spaceSeen, '+', "+", "unary operator");
     }
     
+    // A character literal is a String literal, so it is frozen, chilled or mutable like one
+    private StrNode charLiteral(ByteList value) {
+        return new StrNode(ruby_sourceline, value, StringSupport.codeRangeScan(value.getEncoding(), value), parser.getStringStyle());
+    }
+
     private int questionMark() throws IOException {
         int c;
         
@@ -2066,7 +2071,7 @@ public class RubyLexer extends LexingCommon {
             return '?';
         } else if (!isASCII(c)) {
             if (!tokadd_mbchar(c)) return EOF;
-            yaccValue = new StrNode(ruby_sourceline, createTokenByteList(1));
+            yaccValue = charLiteral(createTokenByteList(1));
             setState(EXPR_END);
             return tCHAR;
         } else if (isIdentifierChar(c) && !peek('\n') && isNext_identchar()) {
@@ -2090,7 +2095,7 @@ public class RubyLexer extends LexingCommon {
                 }
                 
                 setState(EXPR_END);
-                yaccValue = new StrNode(ruby_sourceline, oneCharBL);
+                yaccValue = charLiteral(oneCharBL);
                 
                 return tCHAR;
             } else {
@@ -2102,7 +2107,7 @@ public class RubyLexer extends LexingCommon {
         ByteList oneCharBL = new ByteList(1);
         oneCharBL.setEncoding(getEncoding());
         oneCharBL.append(c);
-        yaccValue = new StrNode(ruby_sourceline, oneCharBL);
+        yaccValue = charLiteral(oneCharBL);
         setState(EXPR_END);
         return tCHAR;
     }

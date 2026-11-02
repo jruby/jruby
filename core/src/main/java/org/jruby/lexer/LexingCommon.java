@@ -205,8 +205,13 @@ public abstract class LexingCommon {
         return new ByteList(lexb.unsafeBytes(), lexb.begin() + tokp, lex_p - tokp, getEncoding(), true);
     }
 
+    /**
+     * @param start how many bytes of the current token to leave off its front, such as the ? of a
+     * character literal
+     * @return the rest of the current token
+     */
     public ByteList createTokenByteList(int start) {
-        return new ByteList(lexb.unsafeBytes(), lexb.begin() + start, lex_p - tokp - start, getEncoding(), false);
+        return new ByteList(lexb.unsafeBytes(), lexb.begin() + tokp + start, lex_p - tokp - start, getEncoding(), false);
     }
 
     public String createTokenString(int start) {

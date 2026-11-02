@@ -44,6 +44,7 @@ import org.jcodings.specific.UTF16BEEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.Hash.HashEntryIterator;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyConstant;
 import org.jruby.anno.JRubyMethod;
@@ -501,7 +502,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     public static Encoding checkEncoding(ThreadContext context, Encoding encoding, CodeRangeable other) {
         Encoding enc = StringSupport.areCompatible(encoding, other);
         if (enc == null) throw context.runtime.newEncodingCompatibilityError("incompatible character encodings: " +
-                encoding + " and " + other.getByteList().getEncoding());
+                inspectName(encoding) + " and " + inspectName(other.getByteList().getEncoding()));
         return enc;
     }
 
@@ -620,6 +621,17 @@ public class RubyEncoding extends RubyObject implements Constantizable {
             return BINARY_ASCII_NAME;
         }
         return name;
+    }
+
+    /**
+     * The name of an encoding as error messages show it, which names ASCII-8BIT as BINARY.
+     *
+     * @param encoding the encoding
+     * @return "BINARY (ASCII-8BIT)" for ASCII-8BIT and the encoding's name otherwise
+     */
+    @CRuby(value = "rb_enc_inspect_name", file = "encoding.c")
+    public static String inspectName(Encoding encoding) {
+        return encoding == ASCIIEncoding.INSTANCE ? "BINARY (ASCII-8BIT)" : encoding.toString();
     }
 
     @SuppressWarnings("unchecked")
