@@ -50,7 +50,7 @@ project 'JRuby Base' do
   jar 'com.github.jnr:jnr-netdb:1.2.0', exclusions: ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-enxio:0.33.6', exclusions: ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-unixsocket:0.39.8', exclusions: ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-posix:3.2.7', exclusions: ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-posix:3.2.8', exclusions: ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-constants:0.11.4', exclusions: ['com.github.jnr:jnr-ffi']
   jar 'com.github.jnr:jnr-ffi:2.3.7'
   jar 'com.github.jnr:jffi:${jffi.version}'
