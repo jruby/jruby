@@ -82,6 +82,18 @@ public class TraceType {
         return format.printBacktrace(exception, console);
     }
 
+    /**
+     * Render the exception and its causes, skipping any cause already in shownCauses.
+     *
+     * @param exception the exception to render
+     * @param console whether the output is going to a console
+     * @param shownCauses causes already shown, which is updated with the causes rendered here
+     * @return the rendered exception
+     */
+    public String printBacktrace(RubyException exception, boolean console, Set<Object> shownCauses) {
+        return format.printBacktrace(exception, console, shownCauses);
+    }
+
     public static void logBacktrace(Ruby runtime, RubyStackTraceElement[] trace) {
         if (trace == null) trace = RubyStackTraceElement.EMPTY_ARRAY;
 
@@ -325,9 +337,9 @@ public class TraceType {
          * Formatting like C Ruby
          */
         MRI {
-            public String printBacktrace(RubyException exception, boolean console) {
+            public String printBacktrace(RubyException exception, boolean console, Set<Object> shownCauses) {
                 RubyHash opts = RubyHash.newKwargs(exception.getRuntime(), "highlight", exception.getRuntime().newBoolean(console));
-                return printBacktraceMRI(exception, opts, console, false).toString();
+                return printBacktraceMRI(exception, opts, console, false, shownCauses).toString();
             }
 
             public void renderBacktrace(RubyStackTraceElement[] elts, StringBuilder buffer, boolean color) {
@@ -339,8 +351,8 @@ public class TraceType {
          * New JRuby formatting
          */
         JRUBY {
-            public String printBacktrace(RubyException exception, boolean console) {
-                return printBacktraceJRuby(exception, console);
+            public String printBacktrace(RubyException exception, boolean console, Set<Object> shownCauses) {
+                return printBacktraceJRuby(exception, console, shownCauses);
             }
 
             public void renderBacktrace(RubyStackTraceElement[] elts, StringBuilder buffer, boolean color) {
@@ -348,7 +360,11 @@ public class TraceType {
             }
         };
 
-        public abstract String printBacktrace(RubyException exception, boolean console);
+        public String printBacktrace(RubyException exception, boolean console) {
+            return printBacktrace(exception, console, new HashSet<>());
+        }
+
+        public abstract String printBacktrace(RubyException exception, boolean console, Set<Object> shownCauses);
         public abstract void renderBacktrace(RubyStackTraceElement[] elts, StringBuilder buffer, boolean color);
     }
 
@@ -419,6 +435,10 @@ public class TraceType {
     }
 
     private static RubyString printBacktraceMRI(IRubyObject exception, IRubyObject opts, boolean highlight, boolean reverse) {
+        return printBacktraceMRI(exception, opts, highlight, reverse, new HashSet<>());
+    }
+
+    private static RubyString printBacktraceMRI(IRubyObject exception, IRubyObject opts, boolean highlight, boolean reverse, Set<Object> shownCauses) {
         RubyString errorStream = newEmptyString(exception.getRuntime().getCurrentContext());
 
         if (reverse) {
@@ -428,7 +448,6 @@ public class TraceType {
             errorStream.catString(" (most recent call last):" + lineSeparator());
         }
 
-        final Set<Object> shownCauses = new HashSet<>();
         printExceptionToStream(exception, errorStream, opts, highlight, reverse, shownCauses);
 
         return errorStream;
@@ -617,6 +636,10 @@ public class TraceType {
     }
 
     protected static String printBacktraceJRuby(RubyException exception, boolean console) {
+        return printBacktraceJRuby(exception, console, new HashSet<>());
+    }
+
+    protected static String printBacktraceJRuby(RubyException exception, boolean console, Set<Object> shownCauses) {
         final Ruby runtime = exception.getRuntime();
         console = console && runtime.getInstanceConfig().getBacktraceColor();
 
@@ -624,7 +647,6 @@ public class TraceType {
         PrintStream errorStream = new PrintStream(baos);
 
         printBacktraceJRubyToStream(exception, errorStream, console);
-        Set<Object> shownCauses = new HashSet<>();
 
         for (
                 Object cause = exception.getCause();

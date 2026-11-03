@@ -1013,11 +1013,7 @@ public class RubyTime extends RubyObject {
             sec(), min(), hour(),
             mday(), month(), year(),
             wday(), yday(), isdst(),
-            getTimezoneShortName(context));
-    }
-
-    private RubyString getTimezoneShortName(ThreadContext context) {
-        return newString(context, dt.getZone().getShortName(dt.getMillis()));
+            zone(context));
     }
 
     @JRubyMethod

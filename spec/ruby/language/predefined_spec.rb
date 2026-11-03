@@ -84,6 +84,22 @@ describe "Predefined global $~" do
     $~.should == match4
   end
 
+  it "is Fiber-local" do
+    match = /foo/.match("foo")
+
+    fiber = Fiber.new do
+      $~.should == nil
+      /bar/ =~ "bar"
+      Fiber.yield
+      $~[0]
+    end
+    fiber.resume
+
+    $~.should.equal?(match)
+    /baz/ =~ "baz"
+    fiber.resume.should == "bar"
+  end
+
   it "raises an error if assigned an object not nil or instanceof MatchData" do
     $~ = nil
     $~.should == nil
@@ -989,6 +1005,22 @@ describe "Predefined global $_" do
     $_.should == nil
 
     thr.join
+  end
+
+  it "is Fiber-local" do
+    $_ = "last line"
+
+    fiber = Fiber.new do
+      $_.should == nil
+      $_ = "fiber line"
+      Fiber.yield
+      $_
+    end
+    fiber.resume
+
+    $_.should == "last line"
+    $_ = "other line"
+    fiber.resume.should == "fiber line"
   end
 
   it "can be assigned any value" do

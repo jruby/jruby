@@ -54,6 +54,7 @@ import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.func.ObjectIntIntFunction;
 import org.jruby.util.io.EncodingUtils;
+import org.jruby.util.io.GrowingPushbackInputStream;
 import org.jruby.util.io.PosixShim;
 
 import java.io.BufferedInputStream;
@@ -140,7 +141,7 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
 
         position = 0;
         line = 0;
-        bufferedStream = new PushbackInputStream(new BufferedInputStream(io), 512);
+        bufferedStream = new GrowingPushbackInputStream(new BufferedInputStream(io), 512);
         mtime = org.jruby.RubyTime.newTime(context.runtime, io.getModifiedTime() * 1000);
 
         return this;

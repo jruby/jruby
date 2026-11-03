@@ -590,6 +590,8 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
     }
 
     static RubyThread createThread(ThreadContext context, final FiberData data, final FiberQueue queue, final Block block) {
+        // like a thread's, a fiber's block must not share its frame: $~ and $_ live there and are per fiber
+        final Block block = fiberBlock.cloneBlockAndFrame();
         final CompletableFuture<RubyThread> fiberThread = new CompletableFuture<>();
 
         // retry with GC once

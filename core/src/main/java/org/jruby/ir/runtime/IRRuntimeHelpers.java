@@ -109,6 +109,7 @@ import static org.jruby.api.Create.*;
 import static org.jruby.api.Error.argumentError;
 import static org.jruby.api.Error.typeError;
 import static org.jruby.api.Warn.warn;
+import static org.jruby.api.Warn.warning;
 import static org.jruby.ir.operands.UndefinedValue.UNDEFINED;
 import static org.jruby.runtime.Block.Type.LAMBDA;
 import static org.jruby.runtime.ThreadContext.*;
@@ -1968,7 +1969,9 @@ public class IRRuntimeHelpers {
             newMethod = new MixedModeIRMethod(method, Visibility.PUBLIC, rubyClass);
         }
 
+        String redefined = rubyClass.methodRedefinitionWarning(context, id);
         rubyClass.addMethod(context, id, newMethod);
+        if (redefined != null) warning(context, redefined);
         if (!rubyClass.isRefinement()) obj.callMethod(context, "singleton_method_added", method.getName());
     }
 
@@ -1983,9 +1986,11 @@ public class IRRuntimeHelpers {
         if (maybeRefined) scope.captureParentRefinements(context);
 
         // FIXME: needs checkID and proper encoding to force hard symbol
+        String redefined = rubyClass.methodRedefinitionWarning(context, id);
         rubyClass.addMethod(context, id,
                 new CompiledIRMethod(handle, null, -1, id, line, scope, Visibility.PUBLIC, rubyClass,
                         encodedArgumentDescriptors, receivesKeywordArgs, needsToFindImplementer));
+        if (redefined != null) warning(context, redefined);
 
         if (!rubyClass.isRefinement()) {
             // FIXME: needs checkID and proper encoding to force hard symbol
@@ -2004,8 +2009,10 @@ public class IRRuntimeHelpers {
 
         if (maybeRefined) scope.captureParentRefinements(context);
 
+        String redefined = rubyClass.methodRedefinitionWarning(context, id);
         rubyClass.addMethod(context, id, new CompiledIRMethod(variable, specific, specificArity, id, line, scope,
                 Visibility.PUBLIC, rubyClass, encodedArgumentDescriptors, receivesKeywordArgs, needsToFindImplementer));
+        if (redefined != null) warning(context, redefined);
 
         if (!rubyClass.isRefinement()) obj.callMethod(context, "singleton_method_added", asSymbol(context, id));
     }
@@ -2033,7 +2040,8 @@ public class IRRuntimeHelpers {
         DynamicMethod newMethod = instanceConfig(context).getCompileMode() == RubyInstanceConfig.CompileMode.OFF ?
             new InterpretedIRMethod(method, newVisibility, rubyClass) : new MixedModeIRMethod(method, newVisibility, rubyClass);
 
-        Helpers.addInstanceMethod(rubyClass, methodName, newMethod, currVisibility, context);
+        String redefined = rubyClass.methodRedefinitionWarning(context, methodName.idString());
+        Helpers.addInstanceMethod(rubyClass, methodName, newMethod, currVisibility, context, redefined);
     }
 
     @JIT
@@ -2054,7 +2062,8 @@ public class IRRuntimeHelpers {
                 newVisibility, clazz, encodedArgumentDescriptors, receivesKeywordArgs, needsToFindImplementer);
 
         // FIXME: needs checkID and proper encoding to force hard symbol
-        Helpers.addInstanceMethod(clazz, methodName, newMethod, currVisibility, context);
+        String redefined = clazz.methodRedefinitionWarning(context, methodName.idString());
+        Helpers.addInstanceMethod(clazz, methodName, newMethod, currVisibility, context, redefined);
     }
 
     @JIT
@@ -2076,7 +2085,8 @@ public class IRRuntimeHelpers {
                 newVisibility, clazz, encodedArgumentDescriptors, receivesKeywordArgs, needsToFindImplementer);
 
         // FIXME: needs checkID and proper encoding to force hard symbol
-        Helpers.addInstanceMethod(clazz, methodName, newMethod, currVisibility, context);
+        String redefined = clazz.methodRedefinitionWarning(context, methodName.idString());
+        Helpers.addInstanceMethod(clazz, methodName, newMethod, currVisibility, context, redefined);
     }
     
     @JIT

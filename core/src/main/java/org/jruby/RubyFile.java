@@ -1055,6 +1055,14 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         JRubyFile oldFile = JRubyFile.create(cwd, oldNameJavaString);
         JRubyFile newFile = JRubyFile.create(cwd, newNameJavaString);
 
+        POSIX posix = context.runtime.getPosix();
+        if (posix.isNative() && !Platform.IS_WINDOWS) {
+            if (posix.rename(oldFile.getAbsolutePath(), newFile.getAbsolutePath()) < 0) {
+                throw context.runtime.newErrnoFromInt(posix.errno(), String.format("(%s, %s)", oldNameJavaString, newNameJavaString));
+            }
+            return asFixnum(context, 0);
+        }
+
         boolean isOldSymlink = RubyFileTest.symlink_p(context, recv, oldNameString).isTrue();
         // Broken symlinks considered by exists() as non-existing,
         // so we need to check for symlinks explicitly.
@@ -1065,10 +1073,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         JRubyFile dest = JRubyFile.create(cwd, newNameJavaString);
         if (oldFile.renameTo(dest)) return asFixnum(context, 0);           // rename is successful
 
-        // rename via Java API call wasn't successful, let's try some tricks, similar to MRI
+        // rename via Java API call wasn't successful, let's try some tricks, similar to MRI on Windows
 
-        if (newFile.exists()) {
-            context.runtime.getPosix().chmod(newNameJavaString, 0666);
+        if (Platform.IS_WINDOWS && newFile.isFile()) {
+            posix.chmod(newFile.getAbsolutePath(), 0666);
             newFile.delete();
         }
 

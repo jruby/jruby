@@ -17,8 +17,10 @@ import org.jruby.runtime.marshal.MarshalLoader;
 import org.jruby.util.io.RubyInputStream;
 import org.jruby.util.io.RubyOutputStream;
 
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.jruby.RubyBasicObject.rbInspect;
@@ -107,12 +109,8 @@ public class RubyData {
 
         RubyHash hash = (RubyHash) args[0];
 
-        if (hash.size() < numMembers) {
-            RubyArray missing = (RubyArray) members.op_diff(context, hash.keys(context));
-            throw keywordError(context, "missing", missing);
-        }
-
         RubyArray[] unknownKeywordsPtr = {null};
+        Set<String> assigned = new HashSet<>();
         RubyClass metaClass = selfObj.getMetaClass();
         VariableTableManager vtm = getVariableManagerFromClass(metaClass);
         Map<String, VariableAccessor> variableAccessors = vtm.getVariableAccessorsForRead();
@@ -122,6 +120,7 @@ public class RubyData {
             VariableAccessor variableAccessor = variableAccessors.get(keyString);
             if (variableAccessor != null) {
                 variableAccessor.set(self, v);
+                assigned.add(keyString);
             } else {
                 RubyArray unknownKeywords = unknownKeywordsPtr[0];
                 if (unknownKeywords == null) {
@@ -131,6 +130,14 @@ public class RubyData {
             }
         });
         selfObj.setFrozen(true);
+        RubyArray<?> missing = null;
+        for (int i = 0; i < numMembers; i++) {
+            RubySymbol member = members.eltOk(i);
+            if (assigned.contains(member.idString())) continue;
+            if (missing == null) missing = newArray(context);
+            missing.append(context, member);
+        }
+        if (missing != null) throw keywordError(context, "missing", missing);
         if (unknownKeywordsPtr[0] != null) {
             throw keywordError(context, "unknown", unknownKeywordsPtr[0]);
         }

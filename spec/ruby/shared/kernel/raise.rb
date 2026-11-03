@@ -210,6 +210,24 @@ describe :kernel_raise_with_cause, shared: true do
         -> { @object.raise("second error") }.should.raise(RuntimeError, "second error", cause:)
       end
     end
+
+    it "raises a copy of a frozen exception with a backtrace and leaves the original unchanged" do
+      frozen = RuntimeError.new("frozen").tap { |e| e.set_backtrace([]) }.freeze
+
+      ["first", "second"].each do |message|
+        begin
+          raise StandardError, message
+        rescue => cause
+          -> { @object.raise(frozen) }.should.raise(RuntimeError, "frozen") do |error|
+            error.should_not.equal?(frozen)
+            error.should_not.frozen?
+            error.cause.should.equal?(cause)
+          end
+        end
+      end
+
+      frozen.cause.should == nil
+    end
   end
 
   context "with cause keyword argument" do
@@ -314,6 +332,17 @@ describe :kernel_raise_with_cause, shared: true do
           @object.raise("second error", cause: nil)
         end
       end.should.raise(RuntimeError, "second error", cause: nil)
+    end
+
+    it "raises an ArgumentError when the cause of a frozen exception would be circular" do
+      frozen = RuntimeError.new("frozen").tap { |e| e.set_backtrace([]) }.freeze
+      cause = RuntimeError.new("cause")
+      begin
+        raise cause, cause: frozen
+      rescue
+      end
+
+      -> { @object.raise(frozen, cause:) }.should.raise(ArgumentError, "circular causes")
     end
   end
 end
@@ -439,6 +468,15 @@ describe :kernel_raise_across_contexts, shared: true do
             end
           end
         }.should.raise(ArgumentError, "only cause is given with no arguments")
+      end
+    end
+
+    it "raises a copy of a frozen exception without a backtrace" do
+      frozen = RuntimeError.new("frozen").freeze
+
+      -> { @object.raise(frozen) }.should.raise(RuntimeError, "frozen") do |error|
+        error.should_not.equal?(frozen)
+        error.should_not.frozen?
       end
     end
   end

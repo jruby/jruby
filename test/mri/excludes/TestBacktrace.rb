@@ -6,7 +6,6 @@ exclude :test_caller_location_inspect_cfunc_iseq_no_pc, "work in progress"
 exclude :test_caller_locations_label, "work in progress"
 exclude :test_caller_to_enum, "work in progress"
 exclude :test_each_backtrace_location, "work in progress"
-exclude :test_each_caller_location_single_cfunc_frame, "Thread.each_caller_location does not accept start and length"
 exclude :test_no_receiver_for_anonymous_class, "line number is off by one in JIT modes"
 exclude :test_notty_backtrace, "work in progress"
 

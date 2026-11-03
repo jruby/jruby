@@ -27,7 +27,10 @@ project 'JRuby Base' do
              "jruby.test.memory": '3G',
              "jruby.compile.memory": '2G',
 
-             "create.sources.jar": false)
+             "create.sources.jar": false,
+
+             "prism.parser.version": '0.0.6',
+ )
 
   IO.foreach(File.join(basedir, '..', 'default.build.properties')) do |line|
     line.chomp!
@@ -45,15 +48,15 @@ project 'JRuby Base' do
 
   # exclude jnr-ffi to avoid problems with shading and relocation of the asm packages
   jar 'com.github.jnr:jnr-netdb:1.2.0', exclusions: ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-enxio:0.33.5', exclusions: ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-unixsocket:0.39.7', exclusions: ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-posix:3.2.6', exclusions: ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-constants:0.11.3', exclusions: ['com.github.jnr:jnr-ffi']
-  jar 'com.github.jnr:jnr-ffi:2.3.6'
+  jar 'com.github.jnr:jnr-enxio:0.33.6', exclusions: ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-unixsocket:0.39.8', exclusions: ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-posix:3.2.7', exclusions: ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-constants:0.11.4', exclusions: ['com.github.jnr:jnr-ffi']
+  jar 'com.github.jnr:jnr-ffi:2.3.7'
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
-  jar 'org.jruby.joni:joni:2.2.8'
+  jar 'org.jruby.joni:joni:2.2.9'
   jar 'org.jruby.jcodings:jcodings:1.0.64'
   jar 'org.jruby:dirgra:0.5'
 
@@ -79,9 +82,10 @@ project 'JRuby Base' do
 
   jar 'org.crac:crac:1.5.0'
 
-  jar 'org.jruby:jruby-prism:2.0.4'
-
   jar 'ch.randelshofer:fastdoubleparser:2.0.1'
+
+  jar 'org.ruby-lang:prism-parser-api:${prism.parser.version}'
+  jar 'org.ruby-lang:prism-parser-wasm:${prism.parser.version}'
 
   plugin 'org.codehaus.mojo:buildnumber-maven-plugin:1.2' do
     execute_goals('create',

@@ -928,6 +928,9 @@ public abstract class RubyInteger extends RubyNumeric {
 
         RubyInteger pow = castAsInteger(context, m, "Integer#pow() 2nd argument not allowed unless all arguments are integers");
 
+        // 0**x is 0 for any x except 0
+        if (isZero(context) && !base.isZero(context)) return asFixnum(context, 0);
+
         if (pow.isNegativeNumber(context)) {
             pow = pow.negate(context);
             negaFlg = true;
@@ -943,8 +946,7 @@ public abstract class RubyInteger extends RubyNumeric {
                 modulo.intPowTmp1(context, base, mm, negaFlg) : modulo.intPowTmp2(context, base, mm, negaFlg);
         }
         if (pow instanceof RubyBignum bigpow) {
-            return ((RubyBignum) m).value == BigInteger.ONE ?
-                    asFixnum(context, 0) : ((RubyInteger) modulo(context, m)).intPowTmp3(context, base, bigpow, negaFlg);
+            return ((RubyInteger) modulo(context, bigpow)).intPowTmp3(context, base, bigpow, negaFlg);
         }
         // not reached
         throw new AssertionError("BUG: unexpected type " + m.getType());
@@ -956,7 +958,7 @@ public abstract class RubyInteger extends RubyNumeric {
         var mn = m.asBigInteger(context);
 
         var zn = xn.modPow(yn, mn);
-        if (negaFlg & zn.signum() == 1) zn = zn.negate();
+        if (negaFlg && zn.signum() == 1) zn = zn.subtract(mn);
 
         return RubyBignum.bignorm(context.runtime, zn);
     }

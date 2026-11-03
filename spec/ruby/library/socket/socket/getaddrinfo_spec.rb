@@ -364,6 +364,30 @@ describe 'Socket.getaddrinfo' do
     end
   end
 
+  # the socket types and their order come from the platform's getaddrinfo(3)
+  platform_is :linux, :darwin do
+    platform_is_not :android do
+      it 'returns an entry for each socket type of an address when no socket type is given' do
+        array = Socket.getaddrinfo('127.0.0.1', 80, :INET)
+
+        array.map { |entry| entry[5..6] }.should == [
+          [Socket::SOCK_STREAM, Socket::IPPROTO_TCP],
+          [Socket::SOCK_DGRAM, Socket::IPPROTO_UDP],
+          [Socket::SOCK_RAW, 0]
+        ]
+      end
+
+      it 'returns an entry for each socket type that can use the given protocol' do
+        array = Socket.getaddrinfo('127.0.0.1', 80, :INET, nil, Socket::IPPROTO_TCP)
+
+        array.map { |entry| entry[5..6] }.should == [
+          [Socket::SOCK_STREAM, Socket::IPPROTO_TCP],
+          [Socket::SOCK_RAW, Socket::IPPROTO_TCP]
+        ]
+      end
+    end
+  end
+
   describe 'with global reverse lookups' do
     before do
       @do_not_reverse_lookup = BasicSocket.do_not_reverse_lookup

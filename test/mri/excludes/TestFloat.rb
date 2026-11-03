@@ -1,4 +1,1 @@
 exclude :test_strtod, "needs investigation"
-exclude :test_ceil_with_precision_min, "Float::MIN.ceil(n) does not return the exact power of ten"
-exclude :test_floor_with_precision_min, "floor with precision near the minimum float returns NaN"
-exclude :test_round_with_precision_min, "round with precision near the minimum float returns NaN"

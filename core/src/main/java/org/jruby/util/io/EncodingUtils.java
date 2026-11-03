@@ -1134,7 +1134,7 @@ public class EncodingUtils {
         byte[] destpBytes = destp.unsafeBytes();
         Ptr frompPos = new Ptr(fromp.getBegin());
         Ptr destpPos = new Ptr(destp.getBegin());
-        transcodeLoop(context, frompBytes, frompPos, destpBytes, destpPos, frompPos.p + slen, destpPos.p + blen, destp, strTranscodingResize, sname, dname, ecflags, ecopts);
+        transcodeLoop(context, frompBytes, frompPos, destpBytes, destpPos, frompPos.p + slen, destpPos.p + blen, destp, strTranscodingResize, sname, dname, ecflags, ecopts, str);
 
         if (frompPos.p != sp.begin() + slen) {
             throw argumentError(context, "not fully converted, " + (slen - frompPos.p) + " bytes left");
@@ -1506,6 +1506,17 @@ public class EncodingUtils {
      * MRI: transcode_loop Ruby-related bits
      */
     public static void transcodeLoop(ThreadContext context, byte[] inBytes, Ptr inPos, byte[] outBytes, Ptr outPos, int inStop, int _outStop, ByteList destination, ResizeFunction resizeFunction, byte[] sname, byte[] dname, int ecflags, IRubyObject ecopts) {
+        transcodeLoop(context, inBytes, inPos, outBytes, outPos, inStop, _outStop, destination, resizeFunction, sname, dname, ecflags, ecopts, null);
+    }
+
+    /**
+     * Perform the inner transcoding loop.
+     *
+     * If source is not null, it is the string whose bytes are being transcoded, and an error is raised if
+     * a fallback modifies it.
+     */
+    @CRuby(value = "transcode_loop", file = "transcode.c", note = "Ruby-related bits")
+    public static void transcodeLoop(ThreadContext context, byte[] inBytes, Ptr inPos, byte[] outBytes, Ptr outPos, int inStop, int _outStop, ByteList destination, ResizeFunction resizeFunction, byte[] sname, byte[] dname, int ecflags, IRubyObject ecopts, RubyString source) {
         EConv ec;
         IRubyObject fallback = context.nil;
         TranscodeFallback fallbackFunc = null;
@@ -1529,6 +1540,24 @@ public class EncodingUtils {
                     fallbackFunc = AREF_FALLBACK;
                 }
             }
+        }
+
+        if (fallbackFunc != null && source != null) {
+            // the fallback runs Ruby code, which may modify the source string
+            final TranscodeFallback checkedFunc = fallbackFunc;
+            final ByteList original = source.getByteList();
+            final byte[] sourceBytes = original.unsafeBytes();
+            final int sourceBegin = original.begin();
+            final int sourceLength = original.realSize();
+            fallbackFunc = (ctx, data, conv) -> {
+                boolean replaced = checkedFunc.call(ctx, data, conv);
+                ByteList current = source.getByteList();
+                if (current.unsafeBytes() != sourceBytes || current.begin() != sourceBegin || current.realSize() != sourceLength) {
+                    conv.close();
+                    throw runtimeError(ctx, "string modified");
+                }
+                return replaced;
+            };
         }
 
         boolean success = transcodeLoop(ec, fallbackFunc, context, fallback, inBytes, inPos, outBytes, outPos, inStop, _outStop, destination, resizeFunction);
@@ -2021,7 +2050,8 @@ public class EncodingUtils {
                 (strEnc != ptrEnc &&
                 str_cr != StringSupport.CR_7BIT &&
                 ptr_cr != StringSupport.CR_7BIT)) {
-            throw runtime.newEncodingCompatibilityError("incompatible encodings: " + strEnc + " and " + ptrEnc);
+            throw runtime.newEncodingCompatibilityError("incompatible character encodings: " +
+                    RubyEncoding.inspectName(strEnc) + " and " + RubyEncoding.inspectName(ptrEnc));
         }
 
         if (str_cr == StringSupport.CR_UNKNOWN) {
@@ -2320,7 +2350,8 @@ public class EncodingUtils {
         else {
             Encoding e = STR_ENC_GET(str);
             if (cr == StringSupport.CR_7BIT ? enc.minLength() != 1 : enc != e) {
-                throw context.runtime.newEncodingCompatibilityError("incompatible character encodings: " + enc + " and " + e);
+                throw context.runtime.newEncodingCompatibilityError("incompatible character encodings: " +
+                        RubyEncoding.inspectName(enc) + " and " + RubyEncoding.inspectName(e));
             }
         }
         return str;

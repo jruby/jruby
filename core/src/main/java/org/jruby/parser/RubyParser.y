@@ -4093,6 +4093,9 @@ string_content  : tSTRING_CONTENT {
                    $$ = p.getBraceNest();
                    p.setBraceNest(0);
                 } {
+                   $$ = p.getLeftParenBegin();
+                   p.setLeftParenBegin(-1);
+                } {
                    $$ = p.getHeredocIndent();
                    p.setHeredocIndent(0);
                 } compstmt string_dend {
@@ -4101,14 +4104,15 @@ string_content  : tSTRING_CONTENT {
                    p.setStrTerm($<StrTerm>2);
                    p.setState($<Integer>3);
                    p.setBraceNest($<Integer>4);
-                   p.setHeredocIndent($<Integer>5);
+                   p.setLeftParenBegin($<Integer>5);
+                   p.setHeredocIndent($<Integer>6);
                    p.setHeredocLineIndent(-1);
 
                    /*%%%*/
-                   if ($6 != null) p.nd_unset_fl_newline($6);
-                   $$ = p.newEvStrNode(@6.start(), $6);
+                   if ($7 != null) p.nd_unset_fl_newline($7);
+                   $$ = p.newEvStrNode(@7.start(), $7);
                    /*% %*/
-                   /*% ripper: string_embexpr!($6) %*/
+                   /*% ripper: string_embexpr!($7) %*/
                 };
 
 string_dend     : tSTRING_DEND

@@ -112,5 +112,12 @@ public class RubySignalException extends RubyException {
         return super.message(context);
     }
 
+    @Override
+    public void copySpecialInstanceVariables(IRubyObject clone) {
+        super.copySpecialInstanceVariables(clone);
+        RubySignalException exception = (RubySignalException)clone;
+        exception.signo = signo;
+    }
+
     private IRubyObject signo;
 }

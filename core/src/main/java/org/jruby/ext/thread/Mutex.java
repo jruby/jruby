@@ -169,27 +169,27 @@ public class Mutex extends RubyObject implements DataType {
 
         // schedulerLock has already acquired the lock when there is a scheduler;
         // otherwise try locking without sleep status to avoid looking like blocking
-        if (!lock.isHeldByCurrentThread() && !thread.tryLock(lock)) {
-            for (;;) {
-                try {
-                    context.getThread().lockInterruptibly(lock);
-                    break;
-                } catch (InterruptedException ex) {
-                    /// ignore, check thread events and try again!
-                    context.pollThreadEvents();
+        try {
+            if (!lock.isHeldByCurrentThread() && !thread.tryLock(lock)) {
+                for (;;) {
+                    try {
+                        thread.lockInterruptibly(lock);
+                        break;
+                    } catch (InterruptedException ex) {
+                        /// ignore, check thread events and try again!
+                        thread.pollThreadEvents();
+                    }
                 }
             }
-        }
 
-        // always check for thread interrupts after acquiring lock
-        try {
+            // always check for thread interrupts after acquiring lock
             thread.pollThreadEvents(context);
         } catch (Throwable t) {
             // Thread poll triggered an exception event, release locked locks before propagating
             if (lock.isHeldByCurrentThread()) {
                 thread.unlock(lock);
             }
-            Helpers.throwException(t);
+            return Helpers.throwExceptionT(t);
         }
 
         // set locking thread and fiber once successfully locked with no interrupts

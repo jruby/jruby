@@ -2112,7 +2112,16 @@ public class Helpers {
     }
 
     public static RubySymbol addInstanceMethod(RubyModule containingClass, RubySymbol symbol, DynamicMethod method, Visibility visibility, ThreadContext context) {
+        return addInstanceMethod(containingClass, symbol, method, visibility, context, (String) null);
+    }
+
+    /**
+     * Add a method, then give the warning that it replaced another, if there is one, before
+     * calling method_added, as CRuby does.
+     */
+    public static RubySymbol addInstanceMethod(RubyModule containingClass, RubySymbol symbol, DynamicMethod method, Visibility visibility, ThreadContext context, String redefinitionWarning) {
         containingClass.addMethod(context, symbol.idString(), method);
+        if (redefinitionWarning != null) org.jruby.api.Warn.warning(context, redefinitionWarning);
 
         if (!containingClass.isRefinement()) callNormalMethodHook(containingClass, context, symbol);
         if (visibility == Visibility.MODULE_FUNCTION) addModuleMethod(containingClass, method, context, symbol);

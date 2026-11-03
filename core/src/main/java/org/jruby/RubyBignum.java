@@ -1205,8 +1205,10 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
     }
 
     public static RubyNumeric unmarshalFrom(ThreadContext context, RubyInputStream in, MarshalLoader input) {
-        boolean positive = input.readUnsignedByte(context, in) == '+';
-        int shortLength = input.unmarshalInt(context, in);
+        int sign = input.readUnsignedByte(context, in);
+        if (sign != '+' && sign != '-') throw argumentError(context, "invalid Bignum sign");
+        boolean positive = sign == '+';
+        int shortLength = MarshalLoader.keepReadable(context, input.unmarshalInt(context, in), 2);
 
         // BigInteger required a sign byte in incoming array
         byte[] digits = new byte[shortLength * 2 + 1];

@@ -1,5 +1,7 @@
 class Proc
   def curry(curried_arity = nil)
+    curried_arity = JRuby::Type.coerce_to_int(curried_arity) unless curried_arity.nil?
+
     if lambda? && curried_arity
       if arity >= 0 && curried_arity != arity
         raise ArgumentError, "wrong number of arguments (given %i, expected %i)" % [

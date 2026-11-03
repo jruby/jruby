@@ -795,6 +795,7 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
             if (floatRoundOverflow(ndigits, binexp)) return num[0];
             if (number > 0.0 && floatRoundUnderflow(ndigits, binexp))
                 return asFloat(context, 0.0);
+            if (!accuratePow10(ndigits)) return floatRoundByRational(context, asFixnum(context, ndigits), RoundingMode.FLOOR);
             double f = Math.pow(10, ndigits);
             double mul = Math.floor(number * f);
             double res = (mul + 1) / f;
@@ -857,6 +858,7 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
             if (floatRoundOverflow(ndigits, binexp)) return this;
             if (number < 0.0 && floatRoundUnderflow(ndigits, binexp))
                 return asFloat(context, 0.0);
+            if (!accuratePow10(ndigits)) return floatRoundByRational(context, asFixnum(context, ndigits), RoundingMode.CEILING);
             double f = Math.pow(10, ndigits);
             f = Math.ceil(number * f) / f;
             return asFloat(context, f);
@@ -907,8 +909,7 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
             frexp(number, binexp);
             if (floatRoundOverflow(ndigits, binexp)) return this;
             if (floatRoundUnderflow(ndigits, binexp)) return asFloat(context, 0);
-            if (ndigits > 14) {
-                /* In this case, pow(10, ndigits) may not be accurate. */
+            if (!accuratePow10(ndigits)) {
                 return floatRoundByRational(context, asFixnum(context, ndigits), mode);
             }
             f = Math.pow(10, ndigits);
@@ -1021,6 +1022,12 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
             x = f - d;
         }
         return us + x;
+    }
+
+    // pow(10, ndigits) may not be exact beyond DBL_DIG
+    @CRuby(value = "ACCURATE_POW10", file = "numeric.c")
+    private static boolean accuratePow10(int ndigits) {
+        return ndigits < DIG;
     }
 
     @CRuby(value = "rb_flo_round_by_rational", file = "rational.c")

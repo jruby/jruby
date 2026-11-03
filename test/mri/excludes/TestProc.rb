@@ -6,4 +6,3 @@ exclude :test_implicit_parameters_for_it_complex, "parser needs to treat `it` as
 exclude :test_lambda_warning_pass_block, "fails in JIT mode on Linux CI on GHA"
 exclude :test_proc_autosplat, "work in progress"
 exclude :test_proc_autosplat_with_multiple_args_with_ruby2_keywords_splat_bug_19759, "needs investigation"
-exclude :test_curry_arity_to_int, "Proc#curry does not convert arity with to_int"

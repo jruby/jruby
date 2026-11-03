@@ -143,6 +143,8 @@ public class RubyObjectSpace {
     public static IRubyObject id2ref(ThreadContext context, IRubyObject recv, IRubyObject id) {
         Warn.warnDeprecated(context, "ObjectSpace._id2ref is deprecated");
 
+        if (id instanceof RubyBignum) throw rangeError(context, id + " is not an id value");
+
         long longId = castAsFixnum(context, id).getValue();
         if (longId == 0) return context.fals;
         if (longId == 20) return context.tru;
@@ -163,13 +165,11 @@ public class RubyObjectSpace {
         } else {
             if (context.runtime.isObjectSpaceEnabled()) {
                 IRubyObject object = context.runtime.getObjectSpace().id2ref(longId);
-                if (object == null) {
-                    return context.nil;
-                }
+                if (object == null) throw rangeError(context, longId + " is not an id value");
                 return object;
             } else {
                 warn(context, "ObjectSpace is disabled; _id2ref only supports immediates, pass -X+O to enable");
-                throw rangeError(context, String.format("0x%016x is not id value", longId));
+                throw rangeError(context, longId + " is not an id value");
             }
         }
     }

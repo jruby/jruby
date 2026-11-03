@@ -114,4 +114,12 @@ public class RubyNoMatchingPatternKeyError extends RubyNoMatchingPatternError {
     public IRubyObject matchee(ThreadContext context) {
         return matchee;
     }
+
+    @Override
+    public void copySpecialInstanceVariables(IRubyObject clone) {
+        super.copySpecialInstanceVariables(clone);
+        RubyNoMatchingPatternKeyError exception = (RubyNoMatchingPatternKeyError)clone;
+        exception.key = key;
+        exception.matchee = matchee;
+    }
 }

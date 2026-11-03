@@ -10,14 +10,50 @@ permissions:
 
 jobs:
 
-  maven-precache:
-    runs-on: ${{ matrix.os }}
+  maven-precache-ubuntu:
+    runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+    name: Precache Maven dependencies (ubuntu-latest)
 
-    name: Precache Maven dependencies (${{ matrix.os }})
+    steps:
+      - name: checkout
+        uses: actions/checkout@v6
+      - name: set up java 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: 'zulu'
+          java-version: 21
+          cache: 'maven'
+          cache-dependency-path: "**/pom.rb"
+      - name: fetch Maven dependencies and plugins
+        # The maven/* artifact modules depend on JRuby snapshots so limit to bootstrap modules.
+        # exclude system scope for jars built by JRuby modules and included in dependencies.
+        run: ./mvnw -ntp -Pbootstrap -DexcludeScope=system dependency:go-offline
+
+  maven-precache-macos:
+    runs-on: macos-latest
+
+    name: Precache Maven dependencies (macos-latest)
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v6
+      - name: set up java 21
+        uses: actions/setup-java@v6
+        with:
+          distribution: 'zulu'
+          java-version: 21
+          cache: 'maven'
+          cache-dependency-path: "**/pom.rb"
+      - name: fetch Maven dependencies and plugins
+        # The maven/* artifact modules depend on JRuby snapshots so limit to bootstrap modules.
+        # exclude system scope for jars built by JRuby modules and included in dependencies.
+        run: ./mvnw -ntp -Pbootstrap -DexcludeScope=system dependency:go-offline
+
+  maven-precache-windows:
+    runs-on: windows-latest
+
+    name: Precache Maven dependencies (windows-latest)
 
     steps:
       - name: checkout
@@ -35,7 +71,7 @@ jobs:
         run: ./mvnw -ntp -Pbootstrap -DexcludeScope=system dependency:go-offline
 
   rake-test:
-    needs: maven-precache
+    needs: maven-precache-ubuntu
     runs-on: ubuntu-latest
 
     strategy:
@@ -84,7 +120,7 @@ jobs:
         working-directory: spec/ruby
 
   error-prone:
-    needs: maven-precache
+    needs: maven-precache-ubuntu
     runs-on: ubuntu-latest
 
     name: error-prone (Java 21)
@@ -103,7 +139,7 @@ jobs:
 
   # This job is a fast-fail all-interp run of test:mri:code to give early indication if the jitted runs will pass.
   rake-test-mri-fast:
-    needs: maven-precache
+    needs: maven-precache-ubuntu
     name: rake test:mri:core:int (Java 27, fast fail)
 
     runs-on: ubuntu-latest
@@ -122,7 +158,7 @@ jobs:
         run: bin/jruby -S rake test:mri:core:int
 
   rake-test-mri-slow:
-    needs: maven-precache
+    needs: maven-precache-ubuntu
     name: rake test:mri:core_slow (Java 27)
 
     runs-on: ubuntu-latest
@@ -144,7 +180,7 @@ jobs:
         run: bin/jruby -S rake test:mri:core_slow
 
   rake-test-multiplatform:
-    needs: maven-precache
+    needs: [maven-precache-ubuntu, maven-precache-macos]
     runs-on: ${{ matrix.platform }}
 
     strategy:
@@ -168,7 +204,7 @@ jobs:
         run: bin/jruby -S rake ${{ matrix.target }}
 
   repeat-specs:
-    needs: maven-precache
+    needs: maven-precache-ubuntu
     runs-on: ubuntu-latest
 
     name: run specs repeatedly to test optimizations
@@ -184,7 +220,7 @@ jobs:
         run: bin/jruby spec/mspec/bin/mspec ci -R 4 -T-Xjit.threshold=0 :language
 
   jruby-tests-dev:
-    needs: maven-precache
+    needs: maven-precache-ubuntu
     runs-on: ubuntu-latest
 
     env:
@@ -201,7 +237,7 @@ jobs:
         run: bin/jruby --dev -S rake test:jruby
 
   rake-test-indy-off:
-    needs: maven-precache
+    needs: maven-precache-ubuntu
     runs-on: ubuntu-latest
 
     strategy:
@@ -226,7 +262,7 @@ jobs:
         run: bin/jruby -S rake ${{ matrix.target }}
 
   mvn-test:
-    needs: maven-precache
+    needs: maven-precache-ubuntu
     runs-on: ubuntu-latest
 
     strategy:
@@ -250,7 +286,7 @@ jobs:
           PHASE: 'package ${{ matrix.package-flags }}'
 
   mvn-test-extended:
-    needs: maven-precache
+    needs: maven-precache-ubuntu
     runs-on: ubuntu-latest
 
     strategy:
@@ -276,7 +312,7 @@ jobs:
           PHASE: 'package ${{ matrix.package-flags }}'
 
   regression-specs-jit:
-    needs: maven-precache
+    needs: maven-precache-ubuntu
     runs-on: ubuntu-latest
 
     env:
@@ -291,7 +327,7 @@ jobs:
         run: bin/jruby -S rake spec:regression
 
   mvn-test-windows:
-    needs: maven-precache
+    needs: maven-precache-windows
     runs-on: windows-latest
 
     name: mvn -Ptest, rake test:jruby (Windows, Java 21)
@@ -315,7 +351,7 @@ jobs:
         run: ./mvnw -ntp package -Ptest
 
   spec-ruby-prism-wasm:
-    needs: maven-precache
+    needs: maven-precache-ubuntu
     runs-on: windows-latest
 
     strategy:
@@ -338,7 +374,7 @@ jobs:
           JRUBY_OPTS: -Xparser.prism -Xparser.prism.wasm
 
   spec-ruby-language-windows:
-    needs: maven-precache
+    needs: maven-precache-windows
     runs-on: windows-latest
 
     name: language specs (Windows, Java 21)
@@ -358,7 +394,7 @@ jobs:
           JRUBY_OPTS: -Xjit.threshold=0
 
   spec-ruby-core-windows:
-    needs: maven-precache
+    needs: maven-precache-windows
     runs-on: windows-latest
 
     name: core specs (Windows, Java 21)
@@ -380,7 +416,7 @@ jobs:
           JRUBY_OPTS: -Xjit.threshold=0
 
   spec-ruby-freebsd:
-    needs: maven-precache
+    needs: maven-precache-ubuntu
     runs-on: ubuntu-latest
 
     strategy:
@@ -408,7 +444,7 @@ jobs:
             bin/jruby spec/mspec/bin/mspec ci :${{ matrix.rubyspec-target }}
 
   spec-ruby-openbsd:
-    needs: maven-precache
+    needs: maven-precache-ubuntu
     runs-on: ubuntu-latest
 
     strategy:
@@ -436,7 +472,7 @@ jobs:
             bin/jruby spec/mspec/bin/mspec ci :${{ matrix.rubyspec-target }}
 
   dependency-check:
-    needs: maven-precache
+    needs: maven-precache-ubuntu
     runs-on: ubuntu-latest
 
     name: Dependency check
@@ -472,7 +508,7 @@ jobs:
           PHASE: 'install -Pmain -Dinvoker.test=GH-6081*'
 
   test-versions:
-    needs: maven-precache
+    needs: maven-precache-ubuntu
     runs-on: ubuntu-latest
 
     name: Verify build artifacts
@@ -495,7 +531,7 @@ jobs:
           COMMAND: 'test/check_versions.sh'
 
   sequel:
-    needs: maven-precache
+    needs: maven-precache-ubuntu
     runs-on: ubuntu-latest
 
     services:
@@ -531,7 +567,7 @@ jobs:
         run: tool/sequel-github-actions.sh
 
   concurrent-ruby:
-    needs: maven-precache
+    needs: maven-precache-ubuntu
     runs-on: ubuntu-latest
 
     steps:
@@ -545,7 +581,7 @@ jobs:
         run: tool/concurrent-ruby-github-actions.sh
 
   maven-test-openj9-21:
-    needs: maven-precache
+    needs: maven-precache-ubuntu
     runs-on: ubuntu-latest
 
     name: mvn -Ptest (OpenJ9 Java 21)
