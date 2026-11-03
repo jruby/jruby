@@ -4,7 +4,11 @@ require 'open3'
 require 'rbconfig'
 
 describe 'Ruby thread scheduling' do
-  [['process waits', 1, 'wait.rb'], ['fiber startup', 2, 'fiber_startup.rb']].each do |behavior, parallelism, file|
+  [
+    ['process waits', 1, 'wait.rb'],
+    ['fiber startup', 2, 'fiber_startup.rb'],
+    ['scheduler shutdown', 1, 'scheduler_close.rb']
+  ].each do |behavior, parallelism, file|
     [false, true].each do |virtual|
       it "supports #{behavior} with thread.vthread=#{virtual}" do
         env = %w[
