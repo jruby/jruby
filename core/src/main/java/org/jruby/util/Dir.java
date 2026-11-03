@@ -37,6 +37,7 @@ import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
+import org.jruby.RubyFile;
 import org.jruby.anno.CRuby;
 import org.jruby.platform.Platform;
 
@@ -778,7 +779,7 @@ public class Dir {
 
     private static int addToResultIfExists(Ruby runtime, String cwd, byte[] bytes, int begin, int end, Encoding enc,
                                            GlobFunc<GlobArgs> func, GlobArgs arg) {
-        final String fileName = new String(bytes, begin, end - begin, enc.getCharset());
+        final String fileName = decodePath(bytes, begin, end - begin, enc);
 
         // FIXME: Ultimately JRubyFile.createResource should do this but all 1.7.x is only selectively honoring raw
         // paths and using system drive make it absolute.  MRI does this on many methods we don't.
@@ -841,7 +842,7 @@ public class Dir {
                     byte[] magic = extract_path(path, ptr, segmentEnd);
                     boolean recursive = false;
 
-                    FileResource resource = JRubyFile.createResource(runtime, cwd, new String(dir, enc.getCharset()));
+                    FileResource resource = JRubyFile.createResource(runtime, cwd, decodePath(dir, 0, dir.length, enc));
                     if (!resource.isDirectory()) break mainLoop;
 
                     if (slashIndex != -1 && Arrays.equals(magic, DOUBLE_STAR)) {
@@ -878,7 +879,7 @@ public class Dir {
                             if (fnmatch(STAR, 0, 1, fileBytes, 0, fileBytes.length, flags) != 0) continue;
 
                             ByteList resBuf = scheme != null ?  prepend(buf, scheme) : buf;
-                            FileResource r = JRubyFile.createResource(runtime, cwd, asJavaString(resBuf));
+                            FileResource r = JRubyFile.createResource(runtime, cwd, decodePath(resBuf));
                             if (!r.isSymLink() && r.isDirectory() && !".".equals(file) && !"..".equals(file)) {
                                 final int len = buf.getRealSize();
                                 buf.append(SLASH);
@@ -889,7 +890,7 @@ public class Dir {
                             }
                         } else if (fnmatch(magic, 0, magic.length, fileBytes, 0, fileBytes.length, flags) == 0) {
                             boolean dirMatch = slashIndex == end - 1 &&
-                                    JRubyFile.createResource(runtime, cwd, asJavaString(buf)).isDirectory();
+                                    JRubyFile.createResource(runtime, cwd, decodePath(buf)).isDirectory();
                             if (slashIndex == -1 || dirMatch) {  // found normal entry OR a dir that ends in '/'
                                 if (scheme != null) buf = prepend(buf, scheme);
                                 if (dirMatch) buf.append(SLASH);
@@ -906,7 +907,7 @@ public class Dir {
                     for (ByteList link: links) {  // process matching directories found in this segment
                         if (status != 0) break;
 
-                        String fullPath = asJavaString(scheme != null ? prepend(link, scheme) : link);
+                        String fullPath = decodePath(scheme != null ? prepend(link, scheme) : link);
                         if (JRubyFile.createResource(runtime, cwd, fullPath).isDirectory()) {
                             int linkSub = link.begin() + link.realSize();
                             link.append(path, slashIndex, end - slashIndex);
@@ -941,6 +942,19 @@ public class Dir {
             buf.append(segment);
         }
         return buf;
+    }
+
+    // A binary path goes to the OS as its raw bytes, as in RubyFile.decodePath; other paths decode as characters.
+    private static String decodePath(byte[] bytes, int begin, int length, Encoding enc) {
+        return enc == ASCIIEncoding.INSTANCE ?
+                RubyFile.decodeBinaryPath(bytes, begin, length) :
+                new String(bytes, begin, length, enc.getCharset());
+    }
+
+    private static String decodePath(ByteList path) {
+        return path.getEncoding() == ASCIIEncoding.INSTANCE ?
+                RubyFile.decodeBinaryPath(path.unsafeBytes(), path.begin(), path.realSize()) :
+                asJavaString(path);
     }
 
     private static byte[] getBytesInUTF8(final String str) {

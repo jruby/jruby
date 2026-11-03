@@ -34,4 +34,19 @@ describe :file_exist, shared: true do
       end
     end
   end
+
+  platform_is_not :windows do
+    it "accepts a binary path containing non-ASCII bytes" do
+      path = tmp("file_predicate_binary_path_\u{3042}.txt")
+
+      begin
+        @object.send(@method, path.b).should == false
+
+        touch(path)
+        @object.send(@method, path.b).should == true
+      ensure
+        rm_r path
+      end
+    end
+  end
 end

@@ -458,7 +458,7 @@ public class RubyDir extends RubyObject implements Closeable {
 
     private static IRubyObject chdirCommon(ThreadContext context, Block block, RubyString path, boolean yieldPath) {
         Ruby runtime = context.runtime;
-        String adjustedPath = RubyFile.adjustRootPathOnWindows(runtime, path.asJavaString(), null);
+        String adjustedPath = RubyFile.adjustRootPathOnWindows(runtime, RubyFile.decodePath(path), null);
         checkDirIsTwoSlashesOnWindows(runtime, adjustedPath);
 
         adjustedPath = getExistingDir(runtime, adjustedPath).canonicalPath();
@@ -548,7 +548,7 @@ public class RubyDir extends RubyObject implements Closeable {
      */
     @JRubyMethod(name = {"rmdir", "unlink", "delete"}, meta = true)
     public static IRubyObject rmdir(ThreadContext context, IRubyObject recv, IRubyObject path) {
-        return rmdirCommon(context, checkEmbeddedNulls(context, RubyFile.get_path(context, path)).asJavaString());
+        return rmdirCommon(context, RubyFile.decodePath(checkEmbeddedNulls(context, RubyFile.get_path(context, path))));
     }
 
     private static RubyFixnum rmdirCommon(ThreadContext context, String path) {
@@ -688,7 +688,7 @@ public class RubyDir extends RubyObject implements Closeable {
     @JRubyMethod(name = "mkdir", required = 1, optional = 1, checkArity = false, meta = true)
     public static IRubyObject mkdir(ThreadContext context, IRubyObject recv, IRubyObject... args) {
         Arity.checkArgumentCount(context, args, 1, 2);
-        return mkdirCommon(context, RubyFile.get_path(context, args[0]).asJavaString(), args);
+        return mkdirCommon(context, RubyFile.decodePath(RubyFile.get_path(context, args[0])), args);
     }
 
     private static IRubyObject mkdirCommon(ThreadContext context, String path, IRubyObject[] args) {
@@ -934,7 +934,7 @@ public class RubyDir extends RubyObject implements Closeable {
 
     @JRubyMethod(name = "empty?", meta = true)
     public static IRubyObject empty_p(ThreadContext context, IRubyObject recv, IRubyObject path) {
-        RubyFileStat fileStat = context.runtime.newFileStat(RubyFile.get_path(context, path).asJavaString(), false);
+        RubyFileStat fileStat = context.runtime.newFileStat(RubyFile.decodePath(RubyFile.get_path(context, path)), false);
         boolean isDirectory = fileStat.directory_p(context).isTrue();
         return asBoolean(context, isDirectory && entries(context, recv, path).getLength() <= 2);
     }
@@ -946,7 +946,7 @@ public class RubyDir extends RubyObject implements Closeable {
         RubyString path = RubyFile.get_path(context, arg);
 
         try {
-            return context.runtime.newFileStat(path.asJavaString(), false).directory_p(context);
+            return context.runtime.newFileStat(RubyFile.decodePath(path), false).directory_p(context);
         } catch (Exception e) {
             context.setErrorInfo(exception); // Restore $!
             return context.fals;

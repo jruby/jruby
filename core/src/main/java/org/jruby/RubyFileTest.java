@@ -145,7 +145,7 @@ public class RubyFileTest {
     }
 
     static boolean exist(ThreadContext context, RubyString path) {
-        final String pathStr = path.decodeString();
+        final String pathStr = RubyFile.decodePath(path);
         if (!Ruby.isSecurityRestricted()) {
             if (JRubyFile.createResource(context.runtime, pathStr).exists()) return true;
         }
@@ -591,7 +591,7 @@ public class RubyFileTest {
         RubyFileStat stat = null;
         if (!(filename instanceof RubyFile)) {
             RubyString path = get_path(context, filename);
-            FileResource file = JRubyFile.createResource(runtime, path.getUnicodeValue());
+            FileResource file = JRubyFile.createResource(runtime, RubyFile.decodePath(path));
             if (file.exists()) {
                 stat = runtime.newFileStat(file.absolutePath(), false);
             }

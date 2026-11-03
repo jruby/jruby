@@ -51,5 +51,16 @@ platform_is_not :windows do
         e.message.should.include?(missing_path)
       }
     end
+
+    it "returns a File::Stat object for a binary path containing non-ASCII bytes" do
+      path = tmp("file_stat_binary_\u{3042}.txt")
+
+      begin
+        touch(path) { |f| f.write "rubinius" }
+        File.stat(path.b).size.should == 8
+      ensure
+        rm_r path
+      end
+    end
   end
 end
