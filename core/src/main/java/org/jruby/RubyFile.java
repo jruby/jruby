@@ -2394,8 +2394,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         RubyString filename = arg1.convertToString(); // TODO: SafeStringValue here
         Ruby runtime = context.runtime;
         RubyInteger newLength = toInteger(context, arg2);
-        File childFile = new File(filename.toString());
-        String filenameString = Helpers.decodeByteList(runtime, filename.getByteList());
+        String filenameString = decodePath(filename);
+        File childFile = new File(filenameString);
 
         File testFile = childFile.isAbsolute() ? childFile : new File(runtime.getCurrentDirectory(), filenameString);
 
