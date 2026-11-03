@@ -638,7 +638,7 @@ public final class StringSupport {
         if (p >= end) return pack(-1, len);
 
         if (enc.isAsciiCompatible()) {
-            int c = bytes[p] & 0xff;
+            int c = Byte.toUnsignedInt(bytes[p]);
             if (!Encoding.isAscii(c)) return pack(-1, len);
             return pack(c, len == 0 ? 0 : 1);
         } else {
@@ -764,7 +764,7 @@ public final class StringSupport {
     public static int caseCmp(byte[]bytes1, int p1, byte[]bytes2, int p2, int len) {
         int i = -1;
         for (; ++i < len && bytes1[p1 + i] == bytes2[p2 + i];) {}
-        if (i < len) return (bytes1[p1 + i] & 0xff) > (bytes2[p2 + i] & 0xff) ? 1 : -1;
+        if (i < len) return Byte.toUnsignedInt(bytes1[p1 + i]) > Byte.toUnsignedInt(bytes2[p2 + i]) ? 1 : -1;
         return 0;
     }
 
@@ -775,7 +775,7 @@ public final class StringSupport {
     public static int scanHex(byte[]bytes, int p, int len, Encoding enc) {
         int v = 0;
         int c;
-        while (len-- > 0 && enc.isXDigit(c = bytes[p++] & 0xff)) {
+        while (len-- > 0 && enc.isXDigit(c = Byte.toUnsignedInt(bytes[p++]))) {
             v = (v << 4) + enc.xdigitVal(c);
         }
         return v;
@@ -787,7 +787,7 @@ public final class StringSupport {
 
     public static int hexLength(byte[]bytes, int p, int len, Encoding enc) {
         int hlen = 0;
-        while (len-- > 0 && enc.isXDigit(bytes[p++] & 0xff)) hlen++;
+        while (len-- > 0 && enc.isXDigit(Byte.toUnsignedInt(bytes[p++]))) hlen++;
         return hlen;
     }
 
@@ -798,7 +798,7 @@ public final class StringSupport {
     public static int scanOct(byte[]bytes, int p, int len, Encoding enc) {
         int v = 0;
         int c;
-        while (len-- > 0 && enc.isDigit(c = bytes[p++] & 0xff) && c < '8') {
+        while (len-- > 0 && enc.isDigit(c = Byte.toUnsignedInt(bytes[p++])) && c < '8') {
             v = (v << 3) + Encoding.digitVal(c);
         }
         return v;
@@ -811,7 +811,7 @@ public final class StringSupport {
     public static int octLength(byte[]bytes, int p, int len, Encoding enc) {
         int olen = 0;
         int c;
-        while (len-- > 0 && enc.isDigit(c = bytes[p++] & 0xff) && c < '8') olen++;
+        while (len-- > 0 && enc.isDigit(c = Byte.toUnsignedInt(bytes[p++])) && c < '8') olen++;
         return olen;
     }
 
@@ -899,7 +899,7 @@ public final class StringSupport {
             charHead -= begin;
 
             // byte at char head
-            byte byteHead = (byte)(bytes[begin + charHead] & 0xFF);
+            byte byteHead = bytes[begin + charHead];
 
             // total bytes we would need to complete character
             int extra = encoding.length(byteHead);
@@ -1038,7 +1038,7 @@ public final class StringSupport {
 
         int len = 2;
         while (p < end) {
-            int c = bytes[p++] & 0xff;
+            int c = Byte.toUnsignedInt(bytes[p++]);
 
             switch (c) {
             case '"':case '\\':case '\n':case '\r':case '\t':case '\f':
@@ -1051,7 +1051,7 @@ public final class StringSupport {
             default:
                 if (ASCIIEncoding.INSTANCE.isPrint(c)) {
                     int run = p;
-                    while (p < end && ASCII_NO_ESCAPE[bytes[p] & 0xff]) p++;
+                    while (p < end && ASCII_NO_ESCAPE[Byte.toUnsignedInt(bytes[p])]) p++;
                     len += 1 + p - run;
                 } else {
                     includingsNonprintable = true;
@@ -1088,7 +1088,7 @@ public final class StringSupport {
 
         if (!quoteOnlyIfNeeded || includingsNonprintable) out[q++] = '"';
         while (p < end) {
-            int c = bytes[p++] & 0xff;
+            int c = Byte.toUnsignedInt(bytes[p++]);
             switch (c) {
                 case '"': case '\\':
                     out[q++] = '\\'; out[q++] = (byte)c; break;
@@ -1116,7 +1116,7 @@ public final class StringSupport {
                     if (ASCIIEncoding.INSTANCE.isPrint(c)) {
                         out[q++] = (byte)c;
                         int run = p;
-                        while (p < end && ASCII_NO_ESCAPE[bytes[p] & 0xff]) p++;
+                        while (p < end && ASCII_NO_ESCAPE[Byte.toUnsignedInt(bytes[p])]) p++;
                         System.arraycopy(bytes, run, out, q, p - run);
                         q += p - run;
                     } else {
@@ -1149,7 +1149,7 @@ public final class StringSupport {
     }
 
     public static boolean isEVStr(byte[] bytes, int p, int end) {
-        return p < end ? isEVStr(bytes[p] & 0xff) : false;
+        return p < end ? isEVStr(Byte.toUnsignedInt(bytes[p])) : false;
     }
 
     public static boolean isEVStr(int c) {
@@ -1166,7 +1166,7 @@ public final class StringSupport {
         int count = 0;
         while (p < end) {
             int c;
-            if (asciiCompat && (c = bytes[p] & 0xff) < 0x80) {
+            if (asciiCompat && (c = Byte.toUnsignedInt(bytes[p])) < 0x80) {
                 if (table[c]) count++;
                 p++;
             } else {
@@ -1539,10 +1539,10 @@ public final class StringSupport {
         while ((s = enc.prevCharHead(bytes, p, s, end)) != -1) {
             if (neighbor == NeighborChar.NOT_CHAR && lastAlnum != -1) {
                 ASCIIEncoding ascii = ASCIIEncoding.INSTANCE;
-                if (ascii.isAlpha(bytes[lastAlnum] & 0xff) ?
-                        ascii.isDigit(bytes[s] & 0xff) :
-                        ascii.isDigit(bytes[lastAlnum] & 0xff) ?
-                                ascii.isAlpha(bytes[s] & 0xff) : false) {
+                if (ascii.isAlpha(Byte.toUnsignedInt(bytes[lastAlnum])) ?
+                        ascii.isDigit(Byte.toUnsignedInt(bytes[s])) :
+                        ascii.isDigit(Byte.toUnsignedInt(bytes[lastAlnum])) ?
+                                ascii.isAlpha(Byte.toUnsignedInt(bytes[s])) : false) {
                     s = lastAlnum;
                     break;
                 }
@@ -1629,7 +1629,7 @@ public final class StringSupport {
             int i = len - 1;
             for (; i >= 0 && bytes[p + i] == (byte)0xff; i--) bytes[p + i] = 0;
             if (i < 0) return NeighborChar.WRAPPED;
-            bytes[p + i] = (byte)((bytes[p + i] & 0xff) + 1);
+            bytes[p + i] = (byte)(Byte.toUnsignedInt(bytes[p + i]) + 1);
             l = preciseLength(enc, bytes, p, p + len);
             if (MBCLEN_CHARFOUND_P(l)) {
                 l = MBCLEN_CHARFOUND_LEN(l);
@@ -1749,7 +1749,7 @@ public final class StringSupport {
             int i = len - 1;
             for (; i >= 0 && bytes[p + i] == 0; i--) bytes[p + i] = (byte)0xff;
             if (i < 0) return NeighborChar.WRAPPED;
-            bytes[p + i] = (byte)((bytes[p + i] & 0xff) - 1);
+            bytes[p + i] = (byte)(Byte.toUnsignedInt(bytes[p + i]) - 1);
             l = preciseLength(enc, bytes, p, p + len);
             if (MBCLEN_CHARFOUND_P(l)) {
                 l = MBCLEN_CHARFOUND_LEN(l);
@@ -1992,7 +1992,7 @@ public final class StringSupport {
         int cr = asciiCompatible ? CR_7BIT : CR_VALID;
         while (s < send) {
             int c;
-            if (asciiCompatible && Encoding.isAscii(c = bytes[s] & 0xff)) {
+            if (asciiCompatible && Encoding.isAscii(c = Byte.toUnsignedInt(bytes[s]))) {
                 if (squeeze[c]) {
                     modify = true;
                 } else {
@@ -2504,7 +2504,7 @@ public final class StringSupport {
             self.getByteList().setRealSize(t);
         } else if (enc.isSingleByte() || (singlebyte && hash == null)) {
             while (s < send) {
-                c = sbytes[s] & 0xff;
+                c = Byte.toUnsignedInt(sbytes[s]);
                 if (trans[c] != -1) {
                     if (!cflag) {
                         c = trans[c];
@@ -2619,8 +2619,8 @@ public final class StringSupport {
         while (p < end && op < oend) {
             final int c, oc;
             if (enc.isAsciiCompatible()) {
-                c = bytes[p] & 0xff;
-                oc = obytes[op] & 0xff;
+                c = Byte.toUnsignedInt(bytes[p]);
+                oc = Byte.toUnsignedInt(obytes[op]);
             } else {
                 c = preciseCodePoint(enc, bytes, p, end);
                 oc = preciseCodePoint(enc, obytes, op, oend);
@@ -2661,7 +2661,7 @@ public final class StringSupport {
         int save = -1;
 
         while (s < send) {
-            int c = bytes[s++] & 0xff;
+            int c = Byte.toUnsignedInt(bytes[s++]);
             if (c != save || !squeeze[c]) bytes[t++] = (byte)(save = c);
         }
 
@@ -2682,7 +2682,7 @@ public final class StringSupport {
         int c;
 
         while (s < send) {
-            if (enc.isAsciiCompatible() && (c = bytes[s] & 0xff) < 0x80) {
+            if (enc.isAsciiCompatible() && (c = Byte.toUnsignedInt(bytes[s])) < 0x80) {
                 if (c != save || (isArg && !squeeze[c])) bytes[t++] = (byte)(save = c);
                 s++;
             } else {
@@ -2766,9 +2766,9 @@ public final class StringSupport {
         /* Preprocessing */
         Arrays.fill(qstable, m + 1);
         for (; x < xe; ++x)
-            qstable[xsBytes[x] & 0xFF] = xe - x;
+            qstable[Byte.toUnsignedInt(xsBytes[x])] = xe - x;
         /* Searching */
-        for (; y + m <= ys + n; y += qstable[ysBytes[y + m] & 0xFF]) {
+        for (; y + m <= ys + n; y += qstable[Byte.toUnsignedInt(ysBytes[y + m])]) {
             if (xsBytes[xs] == ysBytes[y] && ByteList.memcmp(xsBytes, xs, ysBytes, y, m) == 0)
                 return y - ys;
         }
@@ -2779,7 +2779,7 @@ public final class StringSupport {
         final int mix = 8353;
         int h;
         if (x != xBytes.length) {
-            h = xBytes[x] & 0xFF;
+            h = Byte.toUnsignedInt(xBytes[x]);
         }
         else {
             h = '\0'; // (C) ary end - due y+m at rb_memsearch_qs_utf8
@@ -2789,27 +2789,27 @@ public final class StringSupport {
         }
         else if (h < 0xE0) {
             h *= mix;
-            h += xBytes[x + 1] & 0xff;
+            h += Byte.toUnsignedInt(xBytes[x + 1]);
         }
         else if (h < 0xF0) {
             h *= mix;
-            h += xBytes[x + 1] & 0xff;
+            h += Byte.toUnsignedInt(xBytes[x + 1]);
             h *= mix;
-            h += xBytes[x + 2] & 0xff;
+            h += Byte.toUnsignedInt(xBytes[x + 2]);
 
         }
         else if (h < 0xF5) {
             h *= mix;
-            h += xBytes[x + 1] & 0xff;
+            h += Byte.toUnsignedInt(xBytes[x + 1]);
             h *= mix;
-            h += xBytes[x + 2] & 0xff;
+            h += Byte.toUnsignedInt(xBytes[x + 2]);
             h *= mix;
-            h += xBytes[x + 3] & 0xff;
+            h += Byte.toUnsignedInt(xBytes[x + 3]);
         }
         else {
             return h + 256;
         }
-        return ((byte)h) & 0xff;
+        return Byte.toUnsignedInt((byte) h);
     }
 
     private static int rb_memsearch_qs_utf8(byte[] xsBytes, int xs, int m, byte[] ysBytes, int ys, int n) {

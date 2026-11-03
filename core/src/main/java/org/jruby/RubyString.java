@@ -6444,7 +6444,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         final boolean asciiCompat = enc.isAsciiCompatible();
         while (ptr < end) {
-            int c = ptrBytes[ptr] & 0xff;
+            int c = Byte.toUnsignedInt(ptrBytes[ptr]);
             int n = 1;
             // an ASCII byte in an ASCII-compatible encoding is its own codepoint
             if (!asciiCompat || !Encoding.isAscii(c)) {
@@ -7024,7 +7024,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                     cr = CR_VALID;
                     p += MBCLEN_CHARFOUND_LEN(ret);
                     // skip the ASCII run after a valid multibyte char
-                    if (p < e && Encoding.isAscii(pBytes[p] & 0xff)) {
+                    if (p < e && Encoding.isAscii(Byte.toUnsignedInt(pBytes[p]))) {
                         p = StringSupport.searchNonAscii(pBytes, p, e);
                         if (p == -1) {
                             p = e;
