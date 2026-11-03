@@ -67,9 +67,13 @@ import java.io.Reader;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SeekableByteChannel;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.FileTime;
@@ -1580,7 +1584,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     /**
-     * Decode the raw bytes of a binary path for the JDK and native file APIs.
+     * Decode the raw bytes of a binary path for the JDK and native file APIs, using the platform charset
+     * ({@code Charset.defaultCharset()}). Bytes that charset can't decode are kept one character per byte
+     * (ISO-8859-1) instead of becoming U+FFFD, so two different invalid paths never name the same file.
      *
      * @param bytes the path bytes
      * @param begin the first byte
@@ -1588,8 +1594,19 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      * @return the path to hand to file APIs
      */
     public static String decodeBinaryPath(byte[] bytes, int begin, int length) {
+        int end = begin + length;
+        if (searchNonAscii(bytes, begin, end) == -1) return new String(bytes, begin, length, StandardCharsets.ISO_8859_1);
+
         // Best we can do while using JDK file APIs is to hope the path is system default encoding
-        return new String(bytes, begin, length);
+        try {
+            return Charset.defaultCharset().newDecoder()
+                    .onMalformedInput(CodingErrorAction.REPORT)
+                    .onUnmappableCharacter(CodingErrorAction.REPORT)
+                    .decode(ByteBuffer.wrap(bytes, begin, length))
+                    .toString();
+        } catch (CharacterCodingException e) {
+            return new String(bytes, begin, length, StandardCharsets.ISO_8859_1);
+        }
     }
 
     public static JRubyFile file(ThreadContext context, IRubyObject pathOrFile) {

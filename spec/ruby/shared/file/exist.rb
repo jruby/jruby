@@ -48,5 +48,17 @@ describe :file_exist, shared: true do
         rm_r path
       end
     end
+
+    it "does not find a file named U+FFFD for a binary path with bytes that are not valid UTF-8" do
+      dir = tmp("file_predicate_invalid_utf8")
+      Dir.mkdir(dir)
+      touch("#{dir}/\u{FFFD}")
+
+      begin
+        @object.send(@method, "#{dir}/\xFF".b).should == false
+      ensure
+        rm_r dir
+      end
+    end
   end
 end
