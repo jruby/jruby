@@ -233,6 +233,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     /** Whether or not this thread has been disposed of */
     private volatile boolean disposed = false;
+    private boolean disposing; // guarded by this; scheduler close may park outside the monitor
 
     // a fiber joining this thread through a fiber scheduler. MRI: join_list
     private record SchedulerJoiner(IRubyObject scheduler, RubyThread thread, IRubyObject fiber) {}
@@ -476,41 +477,48 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         List<SchedulerJoiner> joiners;
 
         synchronized (this) {
-            if (disposed) return;
+            if (disposed || disposing) return;
 
-            disposed = true;
+            disposing = true;
 
             // remove from parent thread group
             threadGroup.remove(this);
 
             // unlock all locked locks
             unlockAll();
+        }
 
-            // close scheduler, if any
+        // Scheduler close may transfer to fibers. Do not pin this carrier while
+        // waiting for them, and keep scheduler joiners blocked until it finishes.
+        try {
             if (scheduler != null && !scheduler.isNil()) {
                 FiberScheduler.close(getContext(), scheduler);
             }
-
-            // unregister all event hooks
-            getContext().traceEvents.removeAllCallEventHooksFor(getContext());
-
-            // mark thread as DEAD
-            beDead();
-
-            joiners = schedulerJoiners;
-            schedulerJoiners = null;
-        }
-
-        try {
-            // MRI: rb_threadptr_join_list_wakeup
-            if (joiners != null) {
-                for (SchedulerJoiner joiner : joiners) {
-                    FiberScheduler.unblock(getContext(), joiner.scheduler(), joiner.thread(), joiner.fiber());
-                }
-            }
         } finally {
-            // unregister from runtime's ThreadService
-            getRuntime().getThreadService().unregisterThread(this);
+            synchronized (this) {
+                disposed = true;
+
+                // unregister all event hooks
+                getContext().traceEvents.removeAllCallEventHooksFor(getContext());
+
+                // mark thread as DEAD
+                beDead();
+
+                joiners = schedulerJoiners;
+                schedulerJoiners = null;
+            }
+
+            try {
+                // MRI: rb_threadptr_join_list_wakeup
+                if (joiners != null) {
+                    for (SchedulerJoiner joiner : joiners) {
+                        FiberScheduler.unblock(getContext(), joiner.scheduler(), joiner.thread(), joiner.fiber());
+                    }
+                }
+            } finally {
+                // unregister from runtime's ThreadService
+                getRuntime().getThreadService().unregisterThread(this);
+            }
         }
     }
 
