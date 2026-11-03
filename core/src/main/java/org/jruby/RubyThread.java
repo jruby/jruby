@@ -239,6 +239,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     private volatile Selector currentSelector;
 
+    /**
+     * Held while waking currentSelector and while taking it away to return it to the pool, so a wakeup can't land on
+     * a selector that another thread has already borrowed: https://github.com/jruby/jruby/issues/9981
+     */
+    private final Object currentSelectorLock = new Object();
+
     private volatile RubyThread fiberCurrentThread;
 
     private IRubyObject scheduler;
@@ -2282,15 +2288,19 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                         // so that we can ensure one failing does not affect the others
                         // running.
 
-                        // shut down and null out the selector
+                        // Take the selector away before pooling it. A wakeup from interrupt either lands
+                        // before this, and pooling clears it, or finds no selector to wake.
+                        Selector selector;
+                        synchronized (currentSelectorLock) {
+                            selector = currentSelector;
+                            currentSelector = null;
+                        }
                         try {
-                            if (currentSelector != null) {
-                                getRuntime().getSelectorPool().put(currentSelector);
+                            if (selector != null) {
+                                getRuntime().getSelectorPool().put(selector);
                             }
                         } catch (Exception e) {
                             // ignore
-                        } finally {
-                            currentSelector = null;
                         }
 
                         // remove this thread as a blocker against the given IO
@@ -2323,9 +2333,11 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public synchronized void interrupt() {
         setInterrupt();
 
-        Selector activeSelector = currentSelector;
-        if (activeSelector != null) {
-            activeSelector.wakeup();
+        synchronized (currentSelectorLock) {
+            Selector activeSelector = currentSelector;
+            if (activeSelector != null) {
+                activeSelector.wakeup();
+            }
         }
         BlockingIO.Condition iowait = blockingIO;
         if (iowait != null) {
