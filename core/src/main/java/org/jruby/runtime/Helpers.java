@@ -3128,6 +3128,20 @@ public class Helpers {
         return newAry;
     }
 
+    // For an object without respond_to?, like a BasicObject: look the method up, then ask a user's respond_to_missing?
+    @CRuby(value = "basic_obj_respond_to", file = "vm_method.c")
+    @CRuby(value = "basic_obj_respond_to_missing", file = "vm_method.c")
+    public static boolean basicObjRespondsTo(ThreadContext context, RubyClass klass, IRubyObject self, String name) {
+        DynamicMethod method = klass.searchWithCache(name).method;
+        if (method.isNotImplemented()) return false;
+        if (respondsToMethod(method, true)) return true;
+
+        CacheEntry entry = klass.searchWithCache("respond_to_missing?");
+        if (entry.method.isUndefined() || entry.method == context.runtime.getRespondToMissingMethod()) return false;
+
+        return entry.method.call(context, self, entry.sourceModule, "respond_to_missing?", asSymbol(context, name), context.fals).isTrue();
+    }
+
     /**
      *
      * We have respondTo logic in RubyModule and we have a special callsite for respond_to?.

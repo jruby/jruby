@@ -24,6 +24,24 @@ describe "String#==" do
     ('hello' == obj).should == true
   end
 
+  it "returns false for a BasicObject" do
+    ('hello' == BasicObject.new).should == false
+  end
+
+  it "asks respond_to_missing? of an object without respond_to?" do
+    obj = Class.new(BasicObject) do
+      def respond_to_missing?(name, include_private)
+        name == :to_str
+      end
+
+      def ==(other)
+        true
+      end
+    end.new
+
+    ('hello' == obj).should == true
+  end
+
   it "is not fooled by NUL characters" do
     ("abc\0def" == "abc\0xyz").should == false
   end

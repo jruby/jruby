@@ -1450,7 +1450,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     private IRubyObject op_equalCommon(ThreadContext context, IRubyObject other) {
-        if (!sites(context).respond_to_to_str.respondsTo(context, this, other)) return context.fals;
+        if (!sites(context).respond_to_to_str.rbRespondTo(context, this, other)) return context.fals;
         return asBoolean(context, sites(context).equals.call(context, this, other, this).isTrue());
     }
 
