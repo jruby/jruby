@@ -92,4 +92,11 @@ public class RubyLocalJumpError extends RubyStandardError {
     public IRubyObject exit_value() {
         return (IRubyObject)getInternalVariable("exit_value");
     }
+
+    @Override
+    public void copySpecialInstanceVariables(IRubyObject clone) {
+        super.copySpecialInstanceVariables(clone);
+        RubyLocalJumpError exception = (RubyLocalJumpError)clone;
+        exception.reason = reason;
+    }
 }

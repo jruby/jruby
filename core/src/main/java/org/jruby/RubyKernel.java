@@ -1174,6 +1174,17 @@ public class RubyKernel {
     }
 
     private static IRubyObject raiseWithNewExceptionCause(ThreadContext context, RubyException exception, Cause cause) {
+        // MRI setup_exception: raise a frozen exception as a copy, or untouched if it has no backtrace and keeps no cause.
+        // The cause is checked against the original first, as MRI exc_setup_message does.
+        if (exception.isFrozen()) {
+            boolean assigns = assignsCause(exception, cause);
+            if (cause.provided && !cause.value.isNil()) RubyException.checkCauseType(context, cause.value);
+            if (assigns && !cause.value.isNil() && cause.value != exception) {
+                RubyException.checkCircularCause(context, exception, cause.value);
+            }
+            if (assigns && exception.getBacktrace().isNil()) return raiseException(context, exception);
+            exception = (RubyException) exception.dup();
+        }
         setNewExceptionCause(context, exception, cause);
         return raiseException(context, exception);
     }
@@ -1183,7 +1194,7 @@ public class RubyKernel {
         context.setErrorInfo(exception); // set $! early - wiring below forces toThrowable/preRaise
 
         RaiseException throwable = exception.toThrowable();
-        exception.prepareBacktrace(context);
+        if (!exception.isFrozen()) exception.prepareBacktrace(context); // MRI leaves a frozen one without backtrace
         printDebugException(context, exception); // debug output ($DEBUG) after $! is set
         // :raise hook before throwing (MRI: EXEC_EVENT_HOOK(ec, RUBY_EVENT_RAISE, ...))
         IRRuntimeHelpers.traceRaise(context);
@@ -1279,11 +1290,7 @@ public class RubyKernel {
         if (!cause.value.isNil() && cause.value != exception) {
             RubyException.checkCircularCause(context, exception, cause.value);
 
-            if (cause.provided) {
-                exception.setCause(context, cause.value);
-            } else if (exception.getCause() == null) {
-                exception.setCause(context, cause.value);
-            }
+            if (assignsCause(exception, cause)) exception.setCause(context, cause.value);
         }
     }
 
@@ -1299,9 +1306,17 @@ public class RubyKernel {
             if (!cause.provided && exception.getCause() == null) {
                 exception.setCause(context, cause.value);
             }
-        } else if ((cause.provided || exception.getCause() == null) && cause.value != exception) {
+        } else if (assignsCause(exception, cause) && cause.value != exception) {
             exception.setCause(context, cause.value);
         }
+    }
+
+    /**
+     * Whether raise takes the given cause: always with cause:, otherwise ($!) only for an exception without a cause
+     * yet. MRI exc_setup_message leaves the cause undefined in the other case.
+     */
+    private static boolean assignsCause(RubyException exception, Cause cause) {
+        return cause.provided || exception.getCause() == null;
     }
 
     /**
