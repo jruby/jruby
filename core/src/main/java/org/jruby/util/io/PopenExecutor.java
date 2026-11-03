@@ -1494,7 +1494,7 @@ public class PopenExecutor {
                     }
                     RubyString valTmp = RubyFile.get_path(context, val);
                     eargp.chdirGiven = true;
-                    eargp.chdir_dir = valTmp.toString();
+                    eargp.chdir_dir = RubyFile.decodePath(valTmp);
                 }
                 else if (id.equals("umask")) {
                     int cmask = toInt(context, val);
