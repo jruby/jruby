@@ -213,6 +213,12 @@ class TestString < Test::Unit::TestCase
     end
   end
 
+  def test_dedup_survives_gc_while_string_is_alive
+    first = -("dedup " + "survives gc")
+    5.times { java.lang.System.gc }
+    assert_same first, -("dedup " + "survives gc")
+  end
+
 end
 
 class TestStringPrintf < Test::Unit::TestCase
