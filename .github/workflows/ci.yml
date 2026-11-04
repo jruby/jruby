@@ -127,6 +127,9 @@ jobs:
         uses: ./.github/actions/bootstrap
         with:
           java-version: ${{ matrix.java-version }}
+      - name: install Ronn-NG
+        if: contains(matrix.package-flags, '-Pdist')
+        run: bin/jruby -S gem install --no-document ronn-ng -v 0.10.1
       - name: mvn package ${{ matrix.package-flags }}
         run: tool/maven-ci-script.sh
         env:
@@ -347,6 +350,8 @@ jobs:
         run: tool/ci-retry.sh ./mvnw -ntp -Pbootstrap clean package
       - name: bundle install
         run: tool/ci-retry.sh bin/jruby --dev -S bundle install
+      - name: install Ronn-NG
+        run: tool/ci-retry.sh bin/jruby --dev -S gem install --no-document ronn-ng -v 0.10.1
       - name: man page check
         run: bin/jruby --dev -S rake man:generate man:check
       - name: upload generated man page

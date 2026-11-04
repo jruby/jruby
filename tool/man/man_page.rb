@@ -9,9 +9,16 @@ require 'date'
 require 'erb'
 require 'fileutils'
 
+begin
+  require 'ronn'
+rescue LoadError => e
+  abort "man: Ronn-NG is required; install it with `bin/jruby -S gem install ronn-ng -v 0.10.1` (#{e.message})"
+end
+
 module ManPage
-  TEMPLATE = File.join(File.dirname(__FILE__), 'jruby.1.erb')
-  WRAP_COLUMN = 76
+  TEMPLATE = File.join(File.dirname(__FILE__), 'jruby.1.md.erb')
+  MANUAL = 'JRuby Programmer\'s Reference Guide'
+  ORGANIZATION = 'JRuby'
 
   # OutputStrings.CliOption on the Java side.
   CliOption = Struct.new(:flag, :description)
@@ -57,38 +64,8 @@ module ManPage
     Time.now.utc.to_date
   end
 
-  def self.display_date(date)
-    date.strftime('%B %-d, %Y')
-  end
-
-  # Escape text for man output: backslashes, dashes, and leading `.`/`'`.
-  def self.man_escape(text)
-    escaped = text.gsub('\\') { '\\\\' }.gsub('-') { '\\-' }
-    escaped = "\\&#{escaped}" if escaped.start_with?('.', "'")
-    escaped
-  end
-
-  # Greedy word-wrap matching the historical man page layout.
-  def self.man_wrap(text)
-    out = +''
-    length = 0
-    text.split(/\s+/).each do |word|
-      if length > 0 && length + 1 + word.length > WRAP_COLUMN
-        out << "\n"
-        length = 0
-      elsif length > 0
-        out << ' '
-        length += 1
-      end
-      out << word
-      length += word.length
-    end
-    out
-  end
-
   class Renderer
-    def initialize(display_date, options, synopsis)
-      @display_date = display_date
+    def initialize(options, synopsis)
       @options = options
       @synopsis = synopsis
     end
@@ -99,31 +76,22 @@ module ManPage
 
     private
 
-    attr_reader :display_date, :options, :synopsis
-
-    def synopsis_cmd
-      synopsis.split(' ', 2).first
-    end
-
-    def synopsis_rest
-      synopsis.split(' ', 2).last
-    end
-
-    def man_escape(text)
-      ManPage.man_escape(text)
-    end
-
-    def man_wrap(text)
-      ManPage.man_wrap(text)
-    end
+    attr_reader :options, :synopsis
   end
 
-  def self.render(display_date, options, synopsis)
-    Renderer.new(display_date, options, synopsis).render
+  def self.render(date, options, synopsis)
+    markdown = Renderer.new(options, synopsis).render
+    document = Ronn::Document.new(
+      'jruby.1.ronn',
+      date: date,
+      manual: MANUAL,
+      organization: ORGANIZATION
+    ) { markdown }
+    document.convert(:roff)
   end
 
   def self.write(output, date_arg: nil)
-    text = render(display_date(resolve_date(date_arg)), cli_options, cli_synopsis)
+    text = render(resolve_date(date_arg), cli_options, cli_synopsis)
     FileUtils.mkdir_p(File.dirname(output))
     File.write(output, text, encoding: 'UTF-8')
     puts "Wrote man page to #{File.expand_path(output)}"

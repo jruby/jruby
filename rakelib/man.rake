@@ -1,15 +1,16 @@
 # Tasks for the generated jruby.1 man page.
 #
-# The page is rendered by tool/man/man_page.rb from an ERB template, reading
-# the options table live from the built JRuby runtime (the same table that
-# backs `jruby --help`, see core/src/main/java/org/jruby/util/cli/OutputStrings.java).
+# The Markdown page is rendered by tool/man/man_page.rb from an ERB template,
+# reading the options table live from the built JRuby runtime (the same table
+# that backs `jruby --help`, see core/src/main/java/org/jruby/util/cli/OutputStrings.java).
+# Ronn-NG converts the rendered Markdown to roff.
 # Run these tasks with the built JRuby: `bin/jruby -S rake man:generate`.
 
 require 'fileutils'
 require 'tmpdir'
 
 MANPAGE_TOOL = File.join(File.dirname(__FILE__), '..', 'tool', 'man', 'man_page.rb')
-MANPAGE_TEMPLATE = File.join(File.dirname(__FILE__), '..', 'tool', 'man', 'jruby.1.erb')
+MANPAGE_TEMPLATE = File.join(File.dirname(__FILE__), '..', 'tool', 'man', 'jruby.1.md.erb')
 MANPAGE_OUTPUT = File.join('core', 'target', 'generated-man', 'jruby.1')
 MANPAGE_MIN_OPTIONS = 40
 MANPAGE_ENV_ENTRIES = 2
@@ -62,8 +63,8 @@ namespace :man do
       abort 'man:check: generator output is not deterministic' unless FileUtils.compare_file(a, b)
 
       text = File.read(a)
-      abort 'man:check: missing .TH JRUBY header' unless text.include?('.TH JRUBY 1')
-      abort 'man:check: missing OPTIONS section' unless text.include?('.SH OPTIONS')
+      abort 'man:check: missing .TH JRUBY header' unless text.include?('.TH "JRUBY" "1"')
+      abort 'man:check: missing OPTIONS section' unless text.include?('.SH "OPTIONS"')
       options = text.scan(/^\.TP/).size - MANPAGE_ENV_ENTRIES
       abort "man:check: only #{options} options rendered, expected at least #{MANPAGE_MIN_OPTIONS}" if options < MANPAGE_MIN_OPTIONS
 
