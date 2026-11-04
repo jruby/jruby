@@ -1492,9 +1492,8 @@ public class PopenExecutor {
                     if (eargp.chdirGiven) {
                         throw argumentError(context, "chdir option specified twice");
                     }
-                    RubyString valTmp = RubyFile.get_path(context, val);
                     eargp.chdirGiven = true;
-                    eargp.chdir_dir = RubyFile.decodePath(valTmp);
+                    eargp.chdir_dir = RubyFile.decodePath(context, val);
                 }
                 else if (id.equals("umask")) {
                     int cmask = toInt(context, val);
@@ -1766,7 +1765,7 @@ public class PopenExecutor {
         IRubyObject chdir;
         if (!optForChdir.isNil() && (chdir = ((RubyHash) optForChdir).delete(chdirSym)) != null) {
             eargp.chdirGiven = true;
-            eargp.chdir_dir = RubyFile.decodePath(RubyFile.get_path(context, chdir));
+            eargp.chdir_dir = RubyFile.decodePath(context, chdir);
         }
 
         execFillarg(context, prog, argv_p[0], env_opt[0], env_opt[1], eargp);

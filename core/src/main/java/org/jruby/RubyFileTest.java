@@ -590,8 +590,7 @@ public class RubyFileTest {
 
         RubyFileStat stat = null;
         if (!(filename instanceof RubyFile)) {
-            RubyString path = get_path(context, filename);
-            FileResource file = JRubyFile.createResource(runtime, RubyFile.decodePath(path));
+            FileResource file = JRubyFile.createResource(runtime, RubyFile.decodePath(context, filename));
             if (file.exists()) {
                 stat = runtime.newFileStat(file.absolutePath(), false);
             }

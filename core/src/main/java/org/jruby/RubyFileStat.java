@@ -155,7 +155,7 @@ public class RubyFileStat extends RubyObject {
 
     @JRubyMethod(name = "initialize", visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject fname, Block unusedBlock) {
-        setup(RubyFile.decodePath(RubyFile.get_path(context, fname)), false);
+        setup(RubyFile.decodePath(context, fname), false);
         return this;
     }
     

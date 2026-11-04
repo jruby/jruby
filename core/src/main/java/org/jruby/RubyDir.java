@@ -548,7 +548,7 @@ public class RubyDir extends RubyObject implements Closeable {
      */
     @JRubyMethod(name = {"rmdir", "unlink", "delete"}, meta = true)
     public static IRubyObject rmdir(ThreadContext context, IRubyObject recv, IRubyObject path) {
-        return rmdirCommon(context, RubyFile.decodePath(checkEmbeddedNulls(context, RubyFile.get_path(context, path))));
+        return rmdirCommon(context, RubyFile.decodePath(context, path));
     }
 
     private static RubyFixnum rmdirCommon(ThreadContext context, String path) {
@@ -688,7 +688,7 @@ public class RubyDir extends RubyObject implements Closeable {
     @JRubyMethod(name = "mkdir", required = 1, optional = 1, checkArity = false, meta = true)
     public static IRubyObject mkdir(ThreadContext context, IRubyObject recv, IRubyObject... args) {
         Arity.checkArgumentCount(context, args, 1, 2);
-        return mkdirCommon(context, RubyFile.decodePath(RubyFile.get_path(context, args[0])), args);
+        return mkdirCommon(context, RubyFile.decodePath(context, args[0]), args);
     }
 
     private static IRubyObject mkdirCommon(ThreadContext context, String path, IRubyObject[] args) {
@@ -934,7 +934,7 @@ public class RubyDir extends RubyObject implements Closeable {
 
     @JRubyMethod(name = "empty?", meta = true)
     public static IRubyObject empty_p(ThreadContext context, IRubyObject recv, IRubyObject path) {
-        RubyFileStat fileStat = context.runtime.newFileStat(RubyFile.decodePath(RubyFile.get_path(context, path)), false);
+        RubyFileStat fileStat = context.runtime.newFileStat(RubyFile.decodePath(context, path), false);
         boolean isDirectory = fileStat.directory_p(context).isTrue();
         return asBoolean(context, isDirectory && entries(context, recv, path).getLength() <= 2);
     }
@@ -943,10 +943,10 @@ public class RubyDir extends RubyObject implements Closeable {
     public static IRubyObject exist(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         // Capture previous exception if any.
         IRubyObject exception = context.getErrorInfo();
-        RubyString path = RubyFile.get_path(context, arg);
+        String path = RubyFile.decodePath(context, arg);
 
         try {
-            return context.runtime.newFileStat(RubyFile.decodePath(path), false).directory_p(context);
+            return context.runtime.newFileStat(path, false).directory_p(context);
         } catch (Exception e) {
             context.setErrorInfo(exception); // Restore $!
             return context.fals;
