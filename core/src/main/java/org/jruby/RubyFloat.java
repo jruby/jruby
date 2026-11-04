@@ -722,6 +722,10 @@ public class RubyFloat extends RubyNumeric implements Appendable, SimpleHash {
         RubyInteger rf = asInteger(context, ldexp(frexp(value, exp), DBL_MANT_DIG));
         RubyFixnum rn = asFixnum(context, exp[0] - DBL_MANT_DIG);
 
+        if (toInt(context, rn) >= 0) {
+            return RubyRational.newRationalRaw(context.runtime, rf.op_lshift(context, rn));
+        }
+
         return f_mul(context, rf, f_expt(context, asFixnum(context, 2), rn));
     }
 
