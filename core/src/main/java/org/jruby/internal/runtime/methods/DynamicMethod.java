@@ -463,6 +463,14 @@ public abstract class DynamicMethod {
     }
 
     /**
+     * The signature arity reports. Usually {@link #getSignature()}; a method defined from a block reports the
+     * block's arity signature (see {@link org.jruby.runtime.BlockBody#getAritySignature()}).
+     */
+    public Signature getAritySignature() {
+        return getSignature();
+    }
+
+    /**
      * Get the "real" method contained within this method. This simply returns
      * self except in cases where a method is wrapped to give it a new
      * name or new implementation class (AliasMethod, PartialDelegatingMethod, ...).

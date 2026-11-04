@@ -83,8 +83,9 @@ public abstract class AbstractRubyMethod extends RubyObject implements DataType 
      * @return the number of arguments of a method.
      */
     @JRubyMethod(name = "arity")
+    @CRuby(value = "method_arity_m", file = "proc.c")
     public RubyFixnum arity(ThreadContext context) {
-        return asFixnum(context, method.getSignature().arityValue());
+        return asFixnum(context, method.getAritySignature().arityValue());
     }
 
     @Deprecated(since = "10.0.0.0")

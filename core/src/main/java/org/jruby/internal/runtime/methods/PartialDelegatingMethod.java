@@ -133,6 +133,11 @@ public class PartialDelegatingMethod extends DynamicMethod {
     }
 
     @Override
+    public Signature getAritySignature() {
+        return entry.method.getAritySignature();
+    }
+
+    @Override
     public RubyModule getDefinedClass() {
         RubyModule definedClass = this.definedClass;
         if (definedClass != null) return definedClass;

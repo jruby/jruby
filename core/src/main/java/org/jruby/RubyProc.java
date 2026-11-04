@@ -35,6 +35,7 @@
 
 package org.jruby;
 
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 
@@ -408,8 +409,9 @@ public class RubyProc extends RubyObject implements DataType {
     }
 
     @JRubyMethod(name = "arity")
+    @CRuby(value = "proc_arity", file = "proc.c")
     public RubyFixnum arity(ThreadContext context) {
-        Signature signature = block.getSignature();
+        Signature signature = block.getBody().getAritySignature();
 
         int min = signature.min();
         int max = signature.max();
