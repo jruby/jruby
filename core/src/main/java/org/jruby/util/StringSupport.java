@@ -1508,9 +1508,11 @@ public final class StringSupport {
                     }
 
                     throw new IllegalArgumentException("invalid range in string transliteration");
+                } else if (tr.now < c) {
+                    // a range of one character ("a-a") is just that character
+                    tr.gen = true;
+                    tr.max = c;
                 }
-                tr.gen = true;
-                tr.max = c;
             }
         }
         return tr.now;
