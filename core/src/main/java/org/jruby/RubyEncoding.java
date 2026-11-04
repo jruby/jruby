@@ -26,7 +26,6 @@
 
 package org.jruby;
 
-import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
@@ -309,8 +308,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
     /**
      * Decode the range of bytes specified as "raw" binary content, as in ISO-8859-1 or ASCII-8BIT encodings.
      *
-     * This will attempt to use a zero-allocation decoder if the content length is shorter than {@link #CHAR_THRESHOLD}
-     * bytes, and otherwise will used cached decoders to avoid reallocating Charset-related objects.
+     * Each byte becomes the char with the same unsigned value.
      *
      * @param bytes the byte array
      * @param start start of content
@@ -318,10 +316,7 @@ public class RubyEncoding extends RubyObject implements Constantizable {
      * @return a decoded String based on raw bytes
      */
     public static String decodeRaw(byte[] bytes, int start, int length) {
-        if (length > CHAR_THRESHOLD) {
-            return new String(decodeRawLoop(bytes, start, length));
-        }
-        return getRawCoder().decode(bytes, start, length);
+        return new String(bytes, start, length, ISO);
     }
 
     /**
@@ -336,14 +331,6 @@ public class RubyEncoding extends RubyObject implements Constantizable {
         return decodeRaw(byteList.unsafeBytes(), byteList.begin(), byteList.realSize());
     }
 
-    private static char[] decodeRawLoop(byte[] s, int start, int length) {
-        char[] chars = new char[length];
-        for (int i = 0; i < length; i++) {
-            chars[i] = (char) (s[i + start] & 0xFF);
-        }
-        return chars;
-    }
-
     public static String decodeUTF8(byte[] bytes) {
         return decodeUTF8(bytes, 0, bytes.length);
     }
@@ -354,42 +341,6 @@ public class RubyEncoding extends RubyObject implements Constantizable {
 
     public static String decode(byte[] bytes, Charset charset) {
         return charset.decode(ByteBuffer.wrap(bytes)).toString();
-    }
-
-    /** The maximum number of characters we can encode/decode in our cached buffers */
-    private static final int CHAR_THRESHOLD = 1024;
-
-    /**
-     * A cached decoder object to decode bytes as raw binary (ISO-8859-1 or ASCII-8BIT) content.
-     */
-    private static class RawCoder {
-        private final char[] charBuffer = new char[CHAR_THRESHOLD];
-
-        public final String decode(byte[] bytes, int start, int length) {
-            char[] charBuffer = this.charBuffer;
-            for (int i = 0; i < length; i++) {
-                charBuffer[i] = (char) (bytes[i + start] & 0xFF);
-            }
-
-            return new String(charBuffer, 0, length);
-        }
-    }
-
-    /**
-     * Thread-local RawCoder wrapped in a SoftReference to avoid possible ClassLoader leak.
-     * See JRUBY-6522
-     */
-    private static final ThreadLocal<SoftReference<RawCoder>> RAW_CODER = new ThreadLocal<>();
-
-    private static RawCoder getRawCoder() {
-        RawCoder coder;
-        SoftReference<RawCoder> ref = RAW_CODER.get();
-        if (ref == null || (coder = ref.get()) == null) {
-            coder = new RawCoder();
-            RAW_CODER.set(new SoftReference<>(coder));
-        }
-
-        return coder;
     }
 
     /**

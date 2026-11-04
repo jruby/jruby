@@ -234,6 +234,12 @@ describe "Signal.trap" do
       Signal.trap(hup, @saved_trap).should.equal?(@proc)
     end
 
+    it "accepts the Integer value from Signal.list for the platform's signal numbering" do
+      usr1 = Signal.list["USR1"]
+      saved_trap = Signal.trap usr1, @proc
+      Signal.trap(:USR1, saved_trap).should equal(@proc)
+    end
+
     it "does not call #to_int on an object to convert to an Integer" do
       obj = mock("signal")
       obj.should_not_receive(:to_int)
