@@ -57,6 +57,12 @@ public class SelectExecutor {
     }
 
     IRubyObject selectEnd(ThreadContext context) throws IOException {
+        // Stop wakeups before the selectors go back to the pool, or a late one could land on a selector
+        // another thread has borrowed: https://github.com/jruby/jruby/issues/9981
+        synchronized (wakeupLock) {
+            finished = true;
+        }
+
         if (selectors != null) {
             for (int i = 0; i < selectors.size(); i++) {
                 Selector selector = selectors.get(i);
@@ -518,13 +524,20 @@ public class SelectExecutor {
 
         @Override
         public void wakeup(RubyThread thread, SelectExecutor selectExecutor) {
-            // Should be ok to interrupt selectors or pipes used for selection
-            thread.getNativeThread().interrupt();
+            // The thread clears its task and then the task's data, so missing data means the select is over
+            if (selectExecutor == null) return;
 
-            // wake up all selectors too
-            for (int i = 0; i < selectExecutor.selectors.size(); i++) {
-                Selector selector = selectExecutor.selectors.get(i);
-                selector.wakeup();
+            synchronized (selectExecutor.wakeupLock) {
+                if (selectExecutor.finished) return;
+
+                // Should be ok to interrupt selectors or pipes used for selection
+                thread.getNativeThread().interrupt();
+
+                // wake up all selectors too
+                for (int i = 0; i < selectExecutor.selectors.size(); i++) {
+                    Selector selector = selectExecutor.selectors.get(i);
+                    selector.wakeup();
+                }
             }
         }
     };
@@ -567,6 +580,8 @@ public class SelectExecutor {
     Selector mainSelector = null;
     List<Selector> selectors = null;
     List<ENXIOSelector> enxioSelectors = Collections.emptyList();
+    private final Object wakeupLock = new Object();
+    private boolean finished = false;
 
     Long timeout;
     final Ruby runtime;

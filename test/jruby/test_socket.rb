@@ -764,3 +764,44 @@ class ServerTest < Test::Unit::TestCase
     client.close rescue nil
   end if RUBY_VERSION >= '1.9'
 end
+
+# Selectors are pooled, and killing a thread wakes its selector. A wakeup that lands after the selector has gone
+# back to the pool must not cut short the next thread's wait: https://github.com/jruby/jruby/issues/9981
+class StaleSelectorWakeupTest < Test::Unit::TestCase
+  ATTEMPTS = 100
+
+  def setup
+    require 'jruby'
+    server = TCPServer.new("127.0.0.1", 0)
+    @socket = TCPSocket.new("127.0.0.1", server.addr[1])
+    @peer = server.accept
+    server.close
+  end
+
+  def teardown
+    [@socket, @peer].each { |io| io&.close }
+  end
+
+  # Kills a thread that keeps taking a selector from the pool and handing it back, so the kill's wakeup sometimes
+  # lands just as the selector goes back. The pool starts empty, so the wait that follows gets that same selector.
+  def test_killing_a_waiting_thread_does_not_wake_the_next_waiter
+    pool = JRuby.runtime.selector_pool
+    early = ATTEMPTS.times.count do
+      pool.cleanup
+      spinner = Thread.new { loop { @socket.wait_readable(0) } }
+      sleep Random.rand(0.002)
+      spinner.kill
+      spinner.join
+      elapsed { @socket.wait_readable(0.02) } < 0.015
+    end
+    assert_equal 0, early, "#{early} of #{ATTEMPTS} waits returned early"
+  end
+
+  private
+
+  def elapsed
+    started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    yield
+    Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
+  end
+end
