@@ -10,6 +10,19 @@ describe :string_slice, shared: true do
 
     "".send(@method, 0).should == nil
     "".send(@method, -1).should == nil
+
+    "hello".send(@method, fixnum_max).should == nil
+    "hello".send(@method, fixnum_min).should == nil
+  end
+
+  platform_is c_long_size: 64 do
+    it "returns nil if an index converted with to_int is outside of self" do
+      "hello".send(@method, 2.0 ** 40).should == nil
+
+      obj = mock('2**40')
+      obj.should_receive(:to_int).and_return(1 << 40)
+      "hello".send(@method, obj).should == nil
+    end
   end
 
   it "calls to_int on the given index" do
@@ -65,6 +78,9 @@ describe :string_slice_index_length, shared: true do
     "foo".send(@method, 2,1).should == "o"
     "foo".send(@method, 3,0).should == ""
     "foo".send(@method, 3,1).should == ""
+
+    "hello".send(@method, 1, (1 << 31) - 1).should == "ello"
+    "hello".send(@method, 1, fixnum_max).should == "ello"
 
     "".send(@method, 0,0).should == ""
     "".send(@method, 0,1).should == ""
@@ -210,6 +226,9 @@ describe :string_slice_range, shared: true do
 
     "x".send(@method, 1..1).should == ""
     "x".send(@method, 1..-1).should == ""
+
+    "hello".send(@method, 0..fixnum_max).should == "hello"
+    "hello".send(@method, 1...fixnum_max).should == "ello"
   end
 
   it "returns a String in the same encoding as self" do
@@ -222,6 +241,8 @@ describe :string_slice_range, shared: true do
     "hello there".send(@method, 20..1).should == nil
     "hello there".send(@method, -20..1).should == nil
     "hello there".send(@method, -20..-1).should == nil
+    "hello there".send(@method, fixnum_max..).should == nil
+    "hello there".send(@method, fixnum_min..-1).should == nil
 
     "".send(@method, -1..-1).should == nil
     "".send(@method, -1...-1).should == nil

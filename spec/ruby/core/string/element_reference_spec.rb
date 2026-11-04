@@ -10,6 +10,14 @@ describe "String#[] with index, length" do
   it_behaves_like :string_slice_index_length, :[]
 end
 
+describe "String#[] with index, length on a multibyte String" do
+  it "counts characters for an index or length outside of int range" do
+    "héllo"[fixnum_max].should == nil
+    "héllo"[1, fixnum_max].should == "éllo"
+    "héllo"[-1, fixnum_max].should == "o"
+  end
+end
+
 describe "String#[] with Range" do
   it_behaves_like :string_slice_range, :[]
 end
