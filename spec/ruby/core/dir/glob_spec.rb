@@ -378,4 +378,18 @@ describe "Dir.glob" do
     pattern = "file_one.ext".encode(Encoding::EUC_JP)
     Dir.glob(pattern).first.encoding.should == Encoding::EUC_JP
   end
+
+  platform_is_not :windows do
+    it "matches below a directory given as a binary path containing non-ASCII bytes" do
+      dir = tmp("dir_glob_binary_\u{3042}")
+      Dir.mkdir(dir)
+      touch("#{dir}/file.txt")
+
+      begin
+        Dir.glob("#{dir}/*".b).should == ["#{dir}/file.txt".b]
+      ensure
+        rm_r dir
+      end
+    end
+  end
 end

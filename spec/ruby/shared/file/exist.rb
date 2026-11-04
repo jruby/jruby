@@ -34,4 +34,31 @@ describe :file_exist, shared: true do
       end
     end
   end
+
+  platform_is_not :windows do
+    it "accepts a binary path containing non-ASCII bytes" do
+      path = tmp("file_predicate_binary_path_\u{3042}.txt")
+
+      begin
+        @object.send(@method, path.b).should == false
+
+        touch(path)
+        @object.send(@method, path.b).should == true
+      ensure
+        rm_r path
+      end
+    end
+
+    it "does not find a file named U+FFFD for a binary path with bytes that are not valid UTF-8" do
+      dir = tmp("file_predicate_invalid_utf8")
+      Dir.mkdir(dir)
+      touch("#{dir}/\u{FFFD}")
+
+      begin
+        @object.send(@method, "#{dir}/\xFF".b).should == false
+      ensure
+        rm_r dir
+      end
+    end
+  end
 end
