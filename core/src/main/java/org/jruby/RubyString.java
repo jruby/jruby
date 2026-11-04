@@ -99,6 +99,9 @@ import org.jruby.util.TypeConverter;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.RubyInputStream;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
+import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Locale;
@@ -6262,8 +6265,157 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (value.getRealSize() == 0) return context.nil;
         if (replList.getRealSize() == 0) return delete_bang(context, src);
 
+        if (!sflag) {
+            IRubyObject simple = trTransAsciiLiterals(context, srcStr, replStr);
+            if (simple != null) return simple;
+        }
+
         CodeRangeable ret = trTransHelper(context, srcStr, replStr, sflag);
         return ret == null ? context.nil : (IRubyObject) ret;
+    }
+
+    private static final int TR_ASCII_LITERALS_MAX = 8;
+    // with several needles the table lookup wins past this length
+    private static final int TR_MULTI_NEEDLE_MAX_LEN = 64;
+    private static final VarHandle LE_BYTES_AS_LONGS =
+            MethodHandles.byteArrayViewVarHandle(long[].class, ByteOrder.LITTLE_ENDIAN);
+    private static final long LOW_BITS = 0x0101010101010101L;
+    private static final long LOW_SEVEN_BITS = 0x7F7F7F7F7F7F7F7FL;
+
+    /**
+     * SWAR fast path for tr/tr! with up to eight literal ASCII characters, such as tr('-', '_').
+     *
+     * @return this if modified, nil if not, or null if the generic path must handle it
+     */
+    private IRubyObject trTransAsciiLiterals(ThreadContext context, RubyString srcStr, RubyString replStr) {
+        final ByteList srcList = srcStr.value;
+        final ByteList replList = replStr.value;
+        final int count = srcList.getRealSize();
+        final int replLen = replList.getRealSize(); // never 0, the caller deletes instead
+        final int len = value.getRealSize();
+        if (count > TR_ASCII_LITERALS_MAX || replLen > TR_ASCII_LITERALS_MAX ||
+                (count > 1 && len > TR_MULTI_NEEDLE_MAX_LEN)) {
+            return null;
+        }
+
+        // ASCII operands in ASCII-compatible encodings never change this string's encoding
+        final Encoding enc = value.getEncoding();
+        if (!enc.isAsciiCompatible() || !srcList.getEncoding().isAsciiCompatible() ||
+                !replList.getEncoding().isAsciiCompatible()) {
+            return null;
+        }
+
+        final byte[] srcBytes = srcList.getUnsafeBytes();
+        final int srcBegin = srcList.getBegin();
+        final byte[] replBytes = replList.getUnsafeBytes();
+        final int replBegin = replList.getBegin();
+
+        // '^' negates, '\\' escapes and an inner '-' makes a range; leave those to the generic path.
+        if (count > 1 && srcBytes[srcBegin] == '^') return null;
+        if (!isTrAsciiLiterals(srcBytes, srcBegin, count) || !isTrAsciiLiterals(replBytes, replBegin, replLen)) {
+            return null;
+        }
+
+        // repeated or self-mapped chars go to the generic path (tr! must report self-mapping)
+        long needles = 0, repls = 0;
+        for (int i = 0; i < count; i++) {
+            byte c = srcBytes[srcBegin + i];
+            byte r = replBytes[replBegin + Math.min(i, replLen - 1)];
+            if (c == r) return null;
+            for (int k = 0; k < i; k++) {
+                if (srcBytes[srcBegin + k] == c) return null;
+            }
+            needles |= Byte.toUnsignedLong(c) << (i << 3);
+            repls |= Byte.toUnsignedLong(r) << (i << 3);
+        }
+        final long flips = needles ^ repls;
+
+        // ASCII bytes never occur inside a UTF-8 char; other multibyte encodings need a known 7bit string
+        if (enc.maxLength() != 1) {
+            int cr = enc.isUTF8() ? scanForCodeRange() : getCodeRange();
+            if (cr != CR_7BIT && !(cr == CR_VALID && enc.isUTF8())) return null;
+        }
+
+        modifyCheck();
+
+        byte[] bytes = value.getUnsafeBytes();
+        int begin = value.getBegin();
+
+        if (len < 8) {
+            long word = 0;
+            for (int i = 0; i < len; i++) word |= Byte.toUnsignedLong(bytes[begin + i]) << (i << 3);
+            // mask off the zero padding, which would otherwise match a NUL needle
+            long delta = trAsciiDelta(word, needles, flips, count) & ((1L << (len << 3)) - 1);
+            if (delta == 0) return context.nil;
+
+            modifyAndKeepCodeRange();
+            bytes = value.getUnsafeBytes();
+            begin = value.getBegin();
+            word ^= delta;
+            for (int i = 0; i < len; i++) bytes[begin + i] = (byte) (word >>> (i << 3));
+            return this;
+        }
+
+        // separate tail loop: merging it with Math.min was 10-20% slower
+        boolean modified = false;
+        int p = 0;
+        for (; p + 8 <= len; p += 8) {
+            long word = (long) LE_BYTES_AS_LONGS.get(bytes, begin + p);
+            long delta = trAsciiDelta(word, needles, flips, count);
+            if (delta == 0) continue;
+
+            if (!modified) {
+                modifyAndKeepCodeRange();
+                bytes = value.getUnsafeBytes();
+                begin = value.getBegin();
+                modified = true;
+            }
+            LE_BYTES_AS_LONGS.set(bytes, begin + p, word ^ delta);
+        }
+        if (p < len) {
+            // the final word overlaps bytes already translated; mask those off
+            int at = len - 8;
+            long word = (long) LE_BYTES_AS_LONGS.get(bytes, begin + at);
+            long delta = trAsciiDelta(word, needles, flips, count) & (-1L << ((p - at) << 3));
+            if (delta != 0) {
+                if (!modified) {
+                    modifyAndKeepCodeRange();
+                    bytes = value.getUnsafeBytes();
+                    begin = value.getBegin();
+                    modified = true;
+                }
+                LE_BYTES_AS_LONGS.set(bytes, begin + at, word ^ delta);
+            }
+        }
+        return modified ? this : context.nil;
+    }
+
+    private static boolean isTrAsciiLiterals(byte[] bytes, int begin, int len) {
+        for (int i = 0; i < len; i++) {
+            byte b = bytes[begin + i];
+            if (b < 0 || b == '\\' || (b == '-' && i > 0 && i < len - 1)) return false;
+        }
+        return true;
+    }
+
+    /**
+     * XOR mask turning every needle byte in word into its replacement, eight bytes at once.
+     */
+    private static long trAsciiDelta(long word, long needles, long flips, int count) {
+        if (count == 1) {
+            long x = word ^ (needles * LOW_BITS);
+            long hit = ~(((x & LOW_SEVEN_BITS) + LOW_SEVEN_BITS) | x | LOW_SEVEN_BITS);
+            return ((hit >>> 7) * 0xFF) & (flips * LOW_BITS);
+        }
+        long delta = 0;
+        for (int shift = 0; shift < count << 3; shift += 8) {
+            long x = word ^ (Byte.toUnsignedLong((byte) (needles >>> shift)) * LOW_BITS);
+            // exact zero-byte test: high bit set only in bytes of x that are zero, no borrow false positives
+            long hit = ~(((x & LOW_SEVEN_BITS) + LOW_SEVEN_BITS) | x | LOW_SEVEN_BITS);
+            // spread each hit's high bit over its whole byte to select that needle's flip
+            delta |= ((hit >>> 7) * 0xFF) & (Byte.toUnsignedLong((byte) (flips >>> shift)) * LOW_BITS);
+        }
+        return delta;
     }
 
     private CodeRangeable trTransHelper(ThreadContext context, CodeRangeable srcStr, CodeRangeable replStr, boolean sflag) {
