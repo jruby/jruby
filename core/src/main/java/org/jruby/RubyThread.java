@@ -2475,6 +2475,79 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return selectReadyOps(channel, fptr, ops, timeout) != 0;
     }
 
+    // Multiple Ruby threads can select the same channel. Keep it nonblocking
+    // until the last selector is deregistered, without holding its monitor while waiting.
+    private static final Map<SelectableChannel, SelectMode> SELECT_MODES = new WeakHashMap<>();
+
+    private static final class SelectMode {
+        final boolean blocking;
+        int waiters;
+
+        SelectMode(boolean blocking) {
+            this.blocking = blocking;
+        }
+    }
+
+    private static SelectMode enterSelectMode(SelectableChannel channel) throws IOException {
+        synchronized (channel.blockingLock()) {
+            SelectMode mode;
+            synchronized (SELECT_MODES) {
+                mode = SELECT_MODES.get(channel);
+            }
+            if (mode == null) {
+                mode = new SelectMode(channel.isBlocking());
+                channel.configureBlocking(false);
+                synchronized (SELECT_MODES) {
+                    SELECT_MODES.put(channel, mode);
+                }
+            }
+            mode.waiters++;
+            return mode;
+        }
+    }
+
+    private static void leaveSelectMode(SelectableChannel channel, SelectMode mode) {
+        synchronized (channel.blockingLock()) {
+            if (--mode.waiters == 0) {
+                synchronized (SELECT_MODES) {
+                    SELECT_MODES.remove(channel);
+                }
+                try {
+                    channel.configureBlocking(mode.blocking);
+                } catch (Exception e) {
+                    // Preserve cleanup when the channel has been closed concurrently.
+                }
+            }
+        }
+    }
+
+    private static int selectOnCurrentThread(Selector selector, long timeout) throws IOException {
+        if (timeout < 0) return selector.select();
+        if (timeout == 0) return selector.selectNow();
+        return selector.select(timeout);
+    }
+
+    private int select(Selector selector, long timeout) throws IOException {
+        if (!Thread.currentThread().isVirtual() || timeout == 0) {
+            return selectOnCurrentThread(selector, timeout);
+        }
+        // Selector.select can block in native code. Only the Java wait runs on
+        // a platform worker; Ruby status, event polling and cleanup stay here.
+        try {
+            return CompletableFuture.supplyAsync(() -> {
+                try {
+                    return selectOnCurrentThread(selector, timeout);
+                } catch (IOException e) {
+                    throw new CompletionException(e);
+                }
+            }, getRuntime().getExecutor()).join();
+        } catch (CompletionException e) {
+            if (e.getCause() instanceof IOException ioe) throw ioe;
+            Helpers.throwException(e.getCause());
+            return 0; // unreachable
+        }
+    }
+
     /**
      * Like {@link RubyThread#select(Channel, OpenFile, int, long)} but reports which operations
      * became ready rather than just whether any did. A channel that cannot be selected, or a
@@ -2485,92 +2558,52 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public int selectReadyOps(Channel channel, OpenFile fptr, int ops, long timeout) {
         // Use selectables but only if they're not associated with a file (which has odd select semantics)
         ChannelFD fd = fptr == null ? null : fptr.fd();
-        if (channel instanceof SelectableChannel && fd != null) {
-            SelectableChannel selectable = (SelectableChannel)channel;
-
+        if (channel instanceof SelectableChannel selectable && fd != null) {
             // ensure we have fptr locked, but release it to avoid deadlock
-            boolean locked = false;
-            if (fptr != null) {
-                locked = fptr.lock();
-                fptr.unlock();
-            }
+            boolean locked = fptr.lock();
+            fptr.unlock();
+            Selector selector = null;
+            SelectMode mode = null;
             try {
-                synchronized (selectable.blockingLock()) {
-                    boolean oldBlocking = selectable.isBlocking();
+                fptr.addBlockingThread(this);
+                selector = getRuntime().getSelectorPool().get(selectable.provider());
+                currentSelector = selector;
+                mode = enterSelectMode(selectable);
+                SelectionKey key = selectable.register(selector, ops);
 
-                    SelectionKey key;
-                    try {
-                        selectable.configureBlocking(false);
+                beforeBlockingCall(getContext());
+                int result = select(selector, timeout);
 
-                        if (fptr != null) fptr.addBlockingThread(this);
-                        currentSelector = getRuntime().getSelectorPool().get(selectable.provider());
+                // check for thread events, in case we've been woken up to die
+                pollThreadEvents();
 
-                        key = selectable.register(currentSelector, ops);
-
-                        beforeBlockingCall(getContext());
-                        int result;
-
-                        if (timeout < 0) {
-                            result = currentSelector.select();
-                        } else if (timeout == 0) {
-                            result = currentSelector.selectNow();
-                        } else {
-                            result = currentSelector.select(timeout);
-                        }
-
-                        // check for thread events, in case we've been woken up to die
-                        pollThreadEvents();
-
-                        if (result == 1) {
-                            Set<SelectionKey> keySet = currentSelector.selectedKeys();
-
-                            if (keySet.contains(key) && key.isValid()) {
-                                // jnr-enxio's PollSelector reports character devices as selected
-                                // without setting readyOps, so treat that as ready for all of ops
-                                int readyOps = key.readyOps() & ops;
-                                return readyOps != 0 ? readyOps : ops;
-                            }
-                        }
-
-                        return 0;
-                    } catch (IOException ioe) {
-                        throw getRuntime().newIOErrorFromException(ioe);
-                    } finally {
-                        // Note: I don't like ignoring these exceptions, but it's
-                        // unclear how likely they are to happen or what damage we
-                        // might do by ignoring them. Note that the pieces are separate
-                        // so that we can ensure one failing does not affect the others
-                        // running.
-
-                        // shut down and null out the selector
-                        try {
-                            if (currentSelector != null) {
-                                getRuntime().getSelectorPool().put(currentSelector);
-                            }
-                        } catch (Exception e) {
-                            // ignore
-                        } finally {
-                            currentSelector = null;
-                        }
-
-                        // remove this thread as a blocker against the given IO
-                        if (fptr != null) fptr.removeBlockingThread(this);
-
-                        // go back to previous blocking state on the selectable
-                        try {
-                            selectable.configureBlocking(oldBlocking);
-                        } catch (Exception e) {
-                            // ignore
-                        }
-
-                        // clear thread state from blocking call
-                        afterBlockingCall();
+                if (result == 1) {
+                    Set<SelectionKey> keySet = selector.selectedKeys();
+                    if (keySet.contains(key) && key.isValid()) {
+                        // jnr-enxio's PollSelector reports character devices as selected
+                        // without setting readyOps, so treat that as ready for all of ops
+                        int readyOps = key.readyOps() & ops;
+                        return readyOps != 0 ? readyOps : ops;
                     }
                 }
+                return 0;
+            } catch (IOException ioe) {
+                throw getRuntime().newIOErrorFromException(ioe);
             } finally {
-                if (fptr != null) {
-                    fptr.lock();
-                    if (locked) fptr.unlock();
+                try {
+                    if (selector != null) getRuntime().getSelectorPool().put(selector);
+                } catch (Exception e) {
+                    // Preserve the original selector-pool cleanup behavior.
+                } finally {
+                    currentSelector = null;
+                    fptr.removeBlockingThread(this);
+                    if (mode != null) leaveSelectMode(selectable, mode);
+                    try {
+                        afterBlockingCall();
+                    } finally {
+                        fptr.lock();
+                        if (locked) fptr.unlock();
+                    }
                 }
             }
         } else {

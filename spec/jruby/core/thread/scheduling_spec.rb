@@ -7,7 +7,8 @@ describe 'Ruby thread scheduling' do
   [
     ['process waits', 1, 'wait.rb'],
     ['fiber startup', 2, 'fiber_startup.rb'],
-    ['scheduler shutdown', 1, 'scheduler_close.rb']
+    ['scheduler shutdown', 1, 'scheduler_close.rb'],
+    ['concurrent socket accepts', 2, 'socket_accept.rb']
   ].each do |behavior, parallelism, file|
     [false, true].each do |virtual|
       it "supports #{behavior} with thread.vthread=#{virtual}" do
