@@ -42,6 +42,7 @@ import jnr.unixsocket.UnixSocketAddress;
 import jnr.unixsocket.UnixSocketChannel;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyFile;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyIO;
 import org.jruby.RubyNumeric;
@@ -350,9 +351,8 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
     // MRI: unixsock_path_value
     private static RubyString unixsockPathValue(ThreadContext context, IRubyObject path) {
-        return checkEmbeddedNulls(context, path.convertToString());
+        return RubyFile.get_path(context, path);
     }
-
 
     protected void init_sock(Ruby runtime, Channel channel, String path) {
         MakeOpenFile();
