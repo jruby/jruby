@@ -31,6 +31,7 @@ import jnr.constants.platform.SocketOption;
 import jnr.unixsocket.UnixSocketAddress;
 import jnr.unixsocket.UnixSocketChannel;
 import jnr.unixsocket.UnixSocketOptions;
+import org.jruby.util.io.FilenoUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -38,6 +39,7 @@ import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.net.StandardSocketOptions;
 import java.nio.channels.Channel;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.ServerSocketChannel;
@@ -274,11 +276,71 @@ public enum SocketType {
         }
     },
 
+    // A JDK unix domain channel from UnixDomain.pair, so it is unnamed like a socketpair(2) end.
+    UNIX_NIO(Sock.SOCK_STREAM) {
+        private SocketChannel toSocket(Channel channel) {
+            return (SocketChannel)channel;
+        }
+
+        public void shutdownInput(Channel channel) throws IOException {
+            toSocket(channel).shutdownInput();
+        }
+
+        public void shutdownOutput(Channel channel) throws IOException {
+            toSocket(channel).shutdownOutput();
+        }
+
+        public SocketAddress getRemoteSocketAddress(Channel channel) {
+            return new UnixSocketAddress(new File(""));
+        }
+
+        public SocketAddress getLocalSocketAddress(Channel channel) {
+            return new UnixSocketAddress(new File(""));
+        }
+
+        public int getSendBufferSize(Channel channel) throws IOException {
+            return toSocket(channel).getOption(StandardSocketOptions.SO_SNDBUF);
+        }
+
+        public void setSendBufferSize(Channel channel, int size) throws IOException {
+            toSocket(channel).setOption(StandardSocketOptions.SO_SNDBUF, size);
+        }
+
+        public int getReceiveBufferSize(Channel channel) throws IOException {
+            return toSocket(channel).getOption(StandardSocketOptions.SO_RCVBUF);
+        }
+
+        public void setReceiveBufferSize(Channel channel, int size) throws IOException {
+            toSocket(channel).setOption(StandardSocketOptions.SO_RCVBUF, size);
+        }
+
+        public int getSoLinger(Channel channel) throws IOException {
+            return toSocket(channel).getOption(StandardSocketOptions.SO_LINGER);
+        }
+
+        public void setSoLinger(Channel channel, boolean on, int seconds) throws IOException {
+            toSocket(channel).setOption(StandardSocketOptions.SO_LINGER, on ? seconds : -1);
+        }
+
+        // The JDK has no SO_KEEPALIVE for unix sockets, so set it on the fd through a jnr view (never closed).
+        private UnixSocketChannel fdView(Channel channel) {
+            return UnixSocketChannel.fromFD(FilenoUtil.filenoFrom(channel));
+        }
+
+        public boolean getKeepAlive(Channel channel) throws IOException {
+            return fdView(channel).getOption(UnixSocketOptions.SO_KEEPALIVE);
+        }
+
+        public void setKeepAlive(Channel channel, boolean keepAlive) throws IOException {
+            fdView(channel).setOption(UnixSocketOptions.SO_KEEPALIVE, keepAlive);
+        }
+    },
+
     UNKNOWN(Sock.SOCK_STREAM);
 
     public static SocketType forChannel(Channel channel) {
         if (channel instanceof SocketChannel) {
-            return SOCKET;
+            return UnixDomain.isUnixChannel(channel) ? UNIX_NIO : SOCKET;
 
         } else if (channel instanceof ServerSocketChannel) {
             return SERVER;
