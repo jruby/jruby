@@ -175,6 +175,17 @@ class URI::TestGeneric < Test::Unit::TestCase
     # must be empty string to identify as path-abempty, not path-absolute
     assert_equal('', url.host)
     assert_equal('http:////example.com', url.to_s)
+
+    # sec-2957667
+    url = URI.parse('http://user:pass@example.com').merge('//example.net')
+    assert_equal('http://example.net', url.to_s)
+    assert_nil(url.userinfo)
+    url = URI.join('http://user:pass@example.com', '//example.net')
+    assert_equal('http://example.net', url.to_s)
+    assert_nil(url.userinfo)
+    url = URI.parse('http://user:pass@example.com') + '//example.net'
+    assert_equal('http://example.net', url.to_s)
+    assert_nil(url.userinfo)
   end
 
   def test_parse_scheme_with_symbols
@@ -264,6 +275,16 @@ class URI::TestGeneric < Test::Unit::TestCase
     u = URI.parse('http://www.example.com/')
     u0 = u + './'
     u1 = u + './foo/bar/../..'
+    assert_equal(u0, u1)
+  end
+
+  def test_merge_authority
+    u = URI.parse('http://user:pass@example.com:8080')
+    u0 = URI.parse('http://new.example.org/path')
+    u1 = u.merge('//new.example.org/path')
+    assert_equal(u0, u1)
+    u0 = URI.parse('http://other@example.net')
+    u1 = u.merge('//other@example.net')
     assert_equal(u0, u1)
   end
 
@@ -730,17 +751,18 @@ class URI::TestGeneric < Test::Unit::TestCase
   def test_set_component
     uri = URI.parse('http://foo:bar@baz')
     assert_equal('oof', uri.user = 'oof')
-    assert_equal('http://oof:bar@baz', uri.to_s)
+    assert_equal('http://oof@baz', uri.to_s)
     assert_equal('rab', uri.password = 'rab')
     assert_equal('http://oof:rab@baz', uri.to_s)
     assert_equal('foo', uri.userinfo = 'foo')
-    assert_equal('http://foo:rab@baz', uri.to_s)
+    assert_equal('http://foo@baz', uri.to_s)
     assert_equal(['foo', 'bar'], uri.userinfo = ['foo', 'bar'])
     assert_equal('http://foo:bar@baz', uri.to_s)
     assert_equal(['foo'], uri.userinfo = ['foo'])
-    assert_equal('http://foo:bar@baz', uri.to_s)
+    assert_equal('http://foo@baz', uri.to_s)
     assert_equal('zab', uri.host = 'zab')
-    assert_equal('http://foo:bar@zab', uri.to_s)
+    assert_equal('http://zab', uri.to_s)
+    uri.userinfo = ['foo', 'bar']
     uri.port = ""
     assert_nil(uri.port)
     uri.port = "80"
@@ -750,7 +772,8 @@ class URI::TestGeneric < Test::Unit::TestCase
     uri.port = " 080 "
     assert_equal(80, uri.port)
     assert_equal(8080, uri.port = 8080)
-    assert_equal('http://foo:bar@zab:8080', uri.to_s)
+    assert_equal('http://zab:8080', uri.to_s)
+    uri = URI.parse('http://foo:bar@zab:8080')
     assert_equal('/', uri.path = '/')
     assert_equal('http://foo:bar@zab:8080/', uri.to_s)
     assert_equal('a=1', uri.query = 'a=1')
