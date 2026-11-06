@@ -659,10 +659,8 @@ public class RubyBignum extends RubyInteger implements SimpleHash {
         return pow(context, d);
     }
 
-    private RubyNumeric pow(ThreadContext context, final double d) {
-        double pow = Math.pow(big2dbl(this), d);
-        return Double.isInfinite(pow) ?
-                asFloat(context, pow) : asInteger(context, pow);
+    private RubyFloat pow(ThreadContext context, final double d) {
+        return asFloat(context, Math.pow(big2dbl(this), d));
     }
 
     // adjusted for JDK BigInteger limits
