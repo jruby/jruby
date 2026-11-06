@@ -43,7 +43,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
@@ -57,13 +56,13 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
-import org.jruby.RubyThread;
 import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
+import org.jruby.ext.thread.Mutex;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -420,7 +419,10 @@ public class LoadService {
     final RequireLocks requireLocks = new RequireLocks();
 
     final class RequireLocks {
-        final class RequireLock extends ReentrantLock {
+        // A Mutex like MRI's thread shield, so a fiber waiting for another's load goes through the fiber scheduler
+        @CRuby(value = "rb_thread_shield_new", file = "thread.c")
+        final class RequireLock {
+            final Mutex mutex = Mutex.newInternal(runtime);
             volatile boolean destroyed;
         }
         final ConcurrentHashMap<String, RequireLock> pool;
@@ -448,7 +450,6 @@ public class LoadService {
                 RequireState defaultResult,
                 Function<String, RequireState> ifLocked) {
             ThreadContext currentContext = runtime.getCurrentContext();
-            RubyThread thread = currentContext.getThread();
 
             // loop until require fails for us or succeeds for another thread
             while (true) {
@@ -460,7 +461,8 @@ public class LoadService {
 
                     // If lock is new, lock and return LOCKED
                     lock = pool.computeIfAbsent(path, (name) -> {
-                        thread.lock(newLock);
+                        // a fresh mutex, so this always succeeds, and never blocks inside computeIfAbsent
+                        newLock.mutex.tryLock(currentContext);
                         return newLock;
                     });
 
@@ -468,7 +470,7 @@ public class LoadService {
                     if (lock == newLock) {
                         // Lock is ours, run ifLocked and then clean up
                         try {
-                            return state = executeAndClearLock(path, ifLocked, thread, lock);
+                            return state = executeAndClearLock(currentContext, path, ifLocked, lock);
                         } finally {
                             // failed load, remove our lock and let other threads fight it out
                             if (state == null) pool.remove(path);
@@ -476,7 +478,7 @@ public class LoadService {
                     }
                 }
 
-                if (lock.isHeldByCurrentThread()) {
+                if (lock.mutex.isOwned()) {
                     // we hold the lock, which means we're re-locking for the same file; warn about this
                     if (circularRequireWarning && runtime.isVerbose()) {
                         warnCircularRequire(path);
@@ -486,17 +488,10 @@ public class LoadService {
                 }
 
                 // Other thread holds the lock, wait to acquire
-                while (true) {
-                    try {
-                        thread.lockInterruptibly(lock);
-                        break;
-                    } catch (InterruptedException ie) {
-                        currentContext.pollThreadEvents();
-                    }
-                }
+                lock.mutex.lock(currentContext);
 
                 // Lock has been acquired, confirm other thread has completed and return default
-                thread.unlock(lock);
+                lock.mutex.unlock(currentContext);
                 if (lock.destroyed) {
                     return defaultResult;
                 }
@@ -505,7 +500,7 @@ public class LoadService {
             }
         }
 
-        private RequireState executeAndClearLock(String path, Function<String, RequireState> ifLocked, RubyThread thread, RequireLock lock) {
+        private RequireState executeAndClearLock(ThreadContext context, String path, Function<String, RequireState> ifLocked, RequireLock lock) {
             boolean destroyLock = false;
             try {
                 RequireState state = ifLocked.apply(path);
@@ -521,7 +516,7 @@ public class LoadService {
                     lock.destroyed = true;
                     pool.remove(path);
                 }
-                thread.unlock(lock);
+                lock.mutex.unlock(context);
             }
         }
     }
@@ -737,7 +732,7 @@ public class LoadService {
      */
     public boolean isRequiring(String key) {
         RequireLocks.RequireLock lock = requireLocks.pool.get(key);
-        return lock != null && lock.isHeldByCurrentThread();
+        return lock != null && lock.mutex.isOwned();
     }
 
     public boolean featureAlreadyLoaded(String feature) {
