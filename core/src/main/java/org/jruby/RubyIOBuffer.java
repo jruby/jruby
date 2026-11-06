@@ -1,5 +1,6 @@
 package org.jruby;
 
+import com.kenai.jffi.PageManager;
 import jnr.ffi.NativeType;
 import jnr.ffi.Platform;
 import jnr.ffi.Runtime;
@@ -47,10 +48,24 @@ public class RubyIOBuffer extends RubyObject {
         return IOBuffer;
     }
 
+    // The page size to assume where the operating system's can't be read: jffi's native library isn't available,
+    // or native support is turned off. 4096 bytes is the smallest page size of the platforms JRuby runs on.
+    private static final int FALLBACK_PAGE_SIZE = 4096;
+
+    // The default size where RUBY_IO_BUFFER_DEFAULT_SIZE doesn't set one, as in CRuby: 64 KiB, or the page size if
+    // that's larger.
+    private static final int PLATFORM_AGNOSTIC_DEFAULT_SIZE = 64 * 1024;
+
+    /** The operating system page size. Used for efficient page-aligned memory allocations. */
     @JRubyConstant
-    public static final int PAGE_SIZE = 8196;
+    public static final int PAGE_SIZE = pageSize();
+
+    /**
+     * The default buffer size, typically a (small) multiple of the PAGE_SIZE. Can be explicitly specified by setting
+     * the RUBY_IO_BUFFER_DEFAULT_SIZE environment variable.
+     */
     @JRubyConstant
-    public static final int DEFAULT_SIZE = 8196;
+    public static final int DEFAULT_SIZE = defaultSize(System.getenv("RUBY_IO_BUFFER_DEFAULT_SIZE"), PAGE_SIZE);
     @JRubyConstant
     public static final int EXTERNAL = 1;
     @JRubyConstant
@@ -361,6 +376,59 @@ public class RubyIOBuffer extends RubyObject {
         }
 
         return base;
+    }
+
+    /**
+     * The operating system's page size, as jffi reads it: sysconf(_SC_PAGESIZE) on Unix-like systems, and
+     * GetSystemInfo on Windows, as CRuby does. FALLBACK_PAGE_SIZE where it can't be read.
+     */
+    private static int pageSize() {
+        if (!RubyInstanceConfig.NATIVE_ENABLED) return FALLBACK_PAGE_SIZE;
+
+        try {
+            return validPageSize(PageManager.getInstance().pageSize());
+        } catch (Throwable t) {
+            // jffi's native library failed to load
+            return FALLBACK_PAGE_SIZE;
+        }
+    }
+
+    // A page size the operating system reported, if it's one: a power of two that fits in an int.
+    private static int validPageSize(long size) {
+        return size > 0 && size <= Integer.MAX_VALUE && Long.bitCount(size) == 1 ? (int) size : FALLBACK_PAGE_SIZE;
+    }
+
+    /**
+     * The default buffer size: {@code setting} (RUBY_IO_BUFFER_DEFAULT_SIZE's value) where it's a positive number,
+     * read as C's atoi reads it (its leading digits), or else PLATFORM_AGNOSTIC_DEFAULT_SIZE, or {@code pageSize}
+     * where that's larger.
+     */
+    @CRuby(value = "io_buffer_default_size", file = "io_buffer.c")
+    private static int defaultSize(String setting, int pageSize) {
+        if (setting != null) {
+            int value = atoi(setting);
+            if (value > 0) return value;
+        }
+
+        return Math.max(PLATFORM_AGNOSTIC_DEFAULT_SIZE, pageSize);
+    }
+
+    // C's atoi: optional leading whitespace and sign, then digits, up to the first that isn't one. 0 for none, and
+    // (where C's is undefined) 0 for a value that doesn't fit in an int.
+    private static int atoi(String string) {
+        int i = 0, length = string.length();
+        while (i < length && Character.isWhitespace(string.charAt(i))) i++;
+
+        boolean negative = false;
+        if (i < length && (string.charAt(i) == '-' || string.charAt(i) == '+')) negative = string.charAt(i++) == '-';
+
+        long value = 0;
+        for (; i < length && string.charAt(i) >= '0' && string.charAt(i) <= '9'; i++) {
+            value = value * 10 + (string.charAt(i) - '0');
+            if (value > Integer.MAX_VALUE) return 0;
+        }
+
+        return (int) (negative ? -value : value);
     }
 
     @CRuby(value = "io_flags_for_size", file = "io_buffer.c")
