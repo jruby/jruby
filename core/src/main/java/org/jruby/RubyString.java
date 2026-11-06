@@ -95,13 +95,11 @@ import org.jruby.util.RegexpOptions;
 import org.jruby.util.SipHashInline;
 import org.jruby.util.Sprintf;
 import org.jruby.util.StringSupport;
+import org.jruby.util.SWAR;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.EncodingUtils;
 import org.jruby.util.io.RubyInputStream;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
-import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Locale;
@@ -6277,10 +6275,6 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     private static final int TR_ASCII_LITERALS_MAX = 8;
     // with several needles the table lookup wins past this length
     private static final int TR_MULTI_NEEDLE_MAX_LEN = 64;
-    private static final VarHandle LE_BYTES_AS_LONGS =
-            MethodHandles.byteArrayViewVarHandle(long[].class, ByteOrder.LITTLE_ENDIAN);
-    private static final long LOW_BITS = 0x0101010101010101L;
-    private static final long LOW_SEVEN_BITS = 0x7F7F7F7F7F7F7F7FL;
 
     /**
      * SWAR fast path for tr/tr! with up to eight literal ASCII characters, such as tr('-', '_').
@@ -6299,9 +6293,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         }
 
         // ASCII operands in ASCII-compatible encodings never change this string's encoding
-        final Encoding enc = value.getEncoding();
-        if (!enc.isAsciiCompatible() || !srcList.getEncoding().isAsciiCompatible() ||
-                !replList.getEncoding().isAsciiCompatible()) {
+        if (!srcList.getEncoding().isAsciiCompatible() || !replList.getEncoding().isAsciiCompatible()) {
             return null;
         }
 
@@ -6330,11 +6322,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         }
         final long flips = needles ^ repls;
 
-        // ASCII bytes never occur inside a UTF-8 char; other multibyte encodings need a known 7bit string
-        if (enc.maxLength() != 1) {
-            int cr = enc.isUTF8() ? scanForCodeRange() : getCodeRange();
-            if (cr != CR_7BIT && !(cr == CR_VALID && enc.isUTF8())) return null;
-        }
+        if (!asciiBytesAreChars()) return null;
 
         modifyCheck();
 
@@ -6342,8 +6330,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         int begin = value.getBegin();
 
         if (len < 8) {
-            long word = 0;
-            for (int i = 0; i < len; i++) word |= Byte.toUnsignedLong(bytes[begin + i]) << (i << 3);
+            long word = SWAR.loadPartial(bytes, begin, len);
             // mask off the zero padding, which would otherwise match a NUL needle
             long delta = trAsciiDelta(word, needles, flips, count) & ((1L << (len << 3)) - 1);
             if (delta == 0) return context.nil;
@@ -6360,7 +6347,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         boolean modified = false;
         int p = 0;
         for (; p + 8 <= len; p += 8) {
-            long word = (long) LE_BYTES_AS_LONGS.get(bytes, begin + p);
+            long word = (long) SWAR.LE_LONGS.get(bytes, begin + p);
             long delta = trAsciiDelta(word, needles, flips, count);
             if (delta == 0) continue;
 
@@ -6370,12 +6357,12 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 begin = value.getBegin();
                 modified = true;
             }
-            LE_BYTES_AS_LONGS.set(bytes, begin + p, word ^ delta);
+            SWAR.LE_LONGS.set(bytes, begin + p, word ^ delta);
         }
         if (p < len) {
             // the final word overlaps bytes already translated; mask those off
             int at = len - 8;
-            long word = (long) LE_BYTES_AS_LONGS.get(bytes, begin + at);
+            long word = (long) SWAR.LE_LONGS.get(bytes, begin + at);
             long delta = trAsciiDelta(word, needles, flips, count) & (-1L << ((p - at) << 3));
             if (delta != 0) {
                 if (!modified) {
@@ -6384,10 +6371,19 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                     begin = value.getBegin();
                     modified = true;
                 }
-                LE_BYTES_AS_LONGS.set(bytes, begin + at, word ^ delta);
+                SWAR.LE_LONGS.set(bytes, begin + at, word ^ delta);
             }
         }
         return modified ? this : context.nil;
+    }
+
+    // ASCII bytes never occur inside a UTF-8 char; other multibyte encodings need a known 7bit string
+    private boolean asciiBytesAreChars() {
+        final Encoding enc = value.getEncoding();
+        if (!enc.isAsciiCompatible()) return false;
+        if (enc.maxLength() == 1) return true;
+        int cr = enc.isUTF8() ? scanForCodeRange() : getCodeRange();
+        return cr == CR_7BIT || (cr == CR_VALID && enc.isUTF8());
     }
 
     private static boolean isTrAsciiLiterals(byte[] bytes, int begin, int len) {
@@ -6403,17 +6399,13 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      */
     private static long trAsciiDelta(long word, long needles, long flips, int count) {
         if (count == 1) {
-            long x = word ^ (needles * LOW_BITS);
-            long hit = ~(((x & LOW_SEVEN_BITS) + LOW_SEVEN_BITS) | x | LOW_SEVEN_BITS);
-            return ((hit >>> 7) * 0xFF) & (flips * LOW_BITS);
+            return ((SWAR.equal(word, SWAR.broadcast((byte) needles)) >>> 7) * 0xFF) & SWAR.broadcast((byte) flips);
         }
         long delta = 0;
         for (int shift = 0; shift < count << 3; shift += 8) {
-            long x = word ^ (Byte.toUnsignedLong((byte) (needles >>> shift)) * LOW_BITS);
-            // exact zero-byte test: high bit set only in bytes of x that are zero, no borrow false positives
-            long hit = ~(((x & LOW_SEVEN_BITS) + LOW_SEVEN_BITS) | x | LOW_SEVEN_BITS);
+            long hit = SWAR.equal(word, SWAR.broadcast((byte) (needles >>> shift)));
             // spread each hit's high bit over its whole byte to select that needle's flip
-            delta |= ((hit >>> 7) * 0xFF) & (Byte.toUnsignedLong((byte) (flips >>> shift)) * LOW_BITS);
+            delta |= ((hit >>> 7) * 0xFF) & SWAR.broadcast((byte) (flips >>> shift));
         }
         return delta;
     }
