@@ -83,6 +83,25 @@ describe "String#squeeze" do
     "\\\\".squeeze("\\\\").should == "\\"
   end
 
+  it "squeezes runs anywhere in a long string" do
+    "--abcdef--g---hijklmn------opq--".squeeze("-").should == "-abcdef-g-hijklmn-opq-"
+    "a  b__c  d__e  f__g  h__i".squeeze(" _").should == "a b_c d_e f_g h_i"
+    "abcdefg--------h".squeeze("-").should == "abcdefg-h"
+    "ab\0\0\0".squeeze("\0").should == "ab\0"
+  end
+
+  it "squeezes a substring without changing the original" do
+    s = "x--a--b--c--d--e"
+    t = s[1..]
+    t.squeeze!("-").should.equal?(t)
+    t.should == "-a-b-c-d-e"
+    s.should == "x--a--b--c--d--e"
+  end
+
+  it "squeezes ASCII characters between multibyte characters" do
+    "\u{56db}--\u{6708}--\u{56db}".squeeze("-").should == "\u{56db}-\u{6708}-\u{56db}"
+  end
+
   it "squeezes multibyte characters" do
     "\u{56db}\u{56db}\u{6708}\u{6708}".squeeze("\u{6708}").should == "\u{56db}\u{56db}\u{6708}"
     "\u{56db}\u{56db}\u{6708}\u{6708}".squeeze("\u{56db}").should == "\u{56db}\u{6708}\u{6708}"
@@ -124,6 +143,7 @@ describe "String#squeeze!" do
     a.freeze
 
     -> { a.squeeze!("") }.should.raise(FrozenError)
+    -> { a.squeeze!("z") }.should.raise(FrozenError)
     -> { a.squeeze!     }.should.raise(FrozenError)
   end
 end

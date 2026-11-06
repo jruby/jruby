@@ -6119,6 +6119,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         RubyString otherStr = arg.convertToString();
         Encoding enc = checkEncoding(otherStr);
+
+        IRubyObject simple = dropAsciiLiterals(context, otherStr.value, false);
+        if (simple != null) return simple;
+
         final boolean[] squeeze = new boolean[StringSupport.TRANS_SIZE + 1];
         StringSupport.TrTables tables = StringSupport.trSetupTable(context, otherStr.value, squeeze, null, true, enc);
 
@@ -6193,8 +6197,13 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     @JRubyMethod(name = "squeeze!")
     public IRubyObject squeeze_bang(ThreadContext context, IRubyObject arg) {
         RubyString otherStr = arg.convertToString();
+        Encoding enc = checkEncoding(otherStr);
+
+        IRubyObject simple = dropAsciiLiterals(context, otherStr.value, true);
+        if (simple != null) return simple;
+
         final boolean squeeze[] = new boolean[StringSupport.TRANS_SIZE + 1];
-        StringSupport.TrTables tables = StringSupport.trSetupTable(context, otherStr.value, squeeze, null, true, checkEncoding(otherStr));
+        StringSupport.TrTables tables = StringSupport.trSetupTable(context, otherStr.value, squeeze, null, true, enc);
 
         modifyAndKeepCodeRange();
         if (singleByteOptimizable() && otherStr.singleByteOptimizable()) {
@@ -6273,7 +6282,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
     }
 
     private static final int TR_ASCII_LITERALS_MAX = 8;
-    // with several needles the table lookup wins past this length
+    // with several needles the table lookup wins past this length, in tr, delete and squeeze alike
     private static final int TR_MULTI_NEEDLE_MAX_LEN = 64;
 
     /**
@@ -6377,6 +6386,19 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return modified ? this : context.nil;
     }
 
+    /**
+     * Pack up to eight literal ASCII characters (no ^, escapes or ranges) into a long, or return -1.
+     */
+    private static long asciiLiteralSelector(ByteList sel) {
+        final int count = sel.getRealSize();
+        if (count == 0 || count > TR_ASCII_LITERALS_MAX || !sel.getEncoding().isAsciiCompatible()) return -1;
+        final byte[] bytes = sel.getUnsafeBytes();
+        final int begin = sel.getBegin();
+        if (count > 1 && bytes[begin] == '^') return -1;
+        if (!isTrAsciiLiterals(bytes, begin, count)) return -1;
+        return SWAR.loadPartial(bytes, begin, count);
+    }
+
     // ASCII bytes never occur inside a UTF-8 char; other multibyte encodings need a known 7bit string
     private boolean asciiBytesAreChars() {
         final Encoding enc = value.getEncoding();
@@ -6384,6 +6406,78 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         if (enc.maxLength() == 1) return true;
         int cr = enc.isUTF8() ? scanForCodeRange() : getCodeRange();
         return cr == CR_7BIT || (cr == CR_VALID && enc.isUTF8());
+    }
+
+    /**
+     * SWAR fast path for delete/delete! and squeeze/squeeze! with up to eight literal ASCII characters.
+     *
+     * @return this if modified, nil if not, or null if the generic path must handle it
+     */
+    private IRubyObject dropAsciiLiterals(ThreadContext context, ByteList sel, boolean squeeze) {
+        final long needles = asciiLiteralSelector(sel);
+        final int count = sel.getRealSize();
+        final int len = value.getRealSize();
+        if (needles == -1 || (count > 1 && len > TR_MULTI_NEEDLE_MAX_LEN) || !asciiBytesAreChars()) return null;
+
+        modifyCheck();
+
+        byte[] bytes = value.getUnsafeBytes();
+        int begin = value.getBegin();
+
+        // only unshare the bytes once something is dropped
+        int p = 0, prev = -1;
+        long drop = 0;
+        for (; p + 8 <= len; p += 8) {
+            long word = (long) SWAR.LE_LONGS.get(bytes, begin + p);
+            drop = asciiLiteralsDrop(word, prev, needles, count, squeeze);
+            if (drop != 0) break;
+            prev = (int) (word >>> 56);
+        }
+        if (drop == 0) {
+            if (p == len) return context.nil;
+            int n = len - p;
+            long word = SWAR.loadPartial(bytes, begin + p, n);
+            if ((asciiLiteralsDrop(word, prev, needles, count, squeeze) & ~SWAR.padding(n)) == 0) return context.nil;
+        }
+
+        // dropping whole ASCII chars keeps the code range
+        modifyAndKeepCodeRange();
+        bytes = value.getUnsafeBytes();
+        begin = value.getBegin();
+
+        // writes stay behind the read position, so each word is loaded before it is overwritten
+        int t = begin + p;
+        for (; p + 8 <= len; p += 8) {
+            long word = (long) SWAR.LE_LONGS.get(bytes, begin + p);
+            t = SWAR.compact(bytes, t, word, asciiLiteralsDrop(word, prev, needles, count, squeeze));
+            prev = (int) (word >>> 56);
+        }
+        if (p < len) {
+            int n = len - p;
+            long word = SWAR.loadPartial(bytes, begin + p, n);
+            t = SWAR.compactPartial(bytes, t, word, asciiLiteralsDrop(word, prev, needles, count, squeeze) | SWAR.padding(n));
+        }
+        value.setRealSize(t - begin);
+        return this;
+    }
+
+    /**
+     * Mask of the needle bytes in word, or with squeeze only those repeating the byte before them.
+     *
+     * @param prev the byte before word, or -1 at the start of the string
+     */
+    private static long asciiLiteralsDrop(long word, int prev, long needles, int count, boolean squeeze) {
+        long drop = 0;
+        for (int shift = 0; shift < count << 3; shift += 8) {
+            byte needle = (byte) (needles >>> shift);
+            long hits = SWAR.equal(word, SWAR.broadcast(needle));
+            if (squeeze) {
+                // shifting left moves each hit onto the next byte; byte 0 compares with prev
+                hits &= (hits << 8) | (prev == Byte.toUnsignedInt(needle) ? 0x80L : 0);
+            }
+            drop |= hits;
+        }
+        return drop;
     }
 
     private static boolean isTrAsciiLiterals(byte[] bytes, int begin, int len) {
