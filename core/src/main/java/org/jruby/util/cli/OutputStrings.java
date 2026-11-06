@@ -120,6 +120,8 @@ public class OutputStrings {
         String[][] options = {
                 {"gems", "rubygems (default: " + (Options.CLI_RUBYGEMS_ENABLE.defaultValue() ? "enabled" : "disabled") + ")"},
                 {"did_you_mean", "did_you_mean (default: " + (Options.CLI_DID_YOU_MEAN_ENABLE.defaultValue() ? "enabled" : "disabled") + ")"},
+                {"error_highlight", "error_highlight (default: " + (Options.CLI_ERROR_HIGHLIGHT_ENABLE.defaultValue() ? "enabled" : "disabled") + ")"},
+                {"syntax_suggest", "syntax_suggest (default: " + (Options.CLI_SYNTAX_SUGGEST_ENABLE.defaultValue() ? "enabled" : "disabled") + ")"},
                 {"rubyopt", "RUBYOPT environment variable (default: " + (Options.CLI_RUBYOPT_ENABLE.defaultValue() ? "enabled" : "disabled") + ")"},
                 {"frozen-string-literal", "freeze all string literals (default: disabled)"}};
 
