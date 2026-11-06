@@ -451,4 +451,16 @@ class TestThread < Test::Unit::TestCase
     end
   end
 
+  def test_join_with_timeout_returns_close_to_its_timeout
+    thread = Thread.new { sleep }
+    started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    assert_nil thread.join(0.21)
+    elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
+
+    assert_operator elapsed, :>=, 0.21
+    assert_operator elapsed, :<, 0.35
+  ensure
+    thread.kill
+  end
+
 end

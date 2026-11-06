@@ -147,6 +147,16 @@ To run a given test with these excludes enabled, you can use the --excludes flag
 ./bin/jruby test/mri/runner.rb --excludes=test/mri/excludes <test file>
 ```
 
+#### Audit the excludes
+
+Excludes go stale as JRuby improves, and tests get renamed or removed when the MRI tests are updated. To find the ones that can go, run:
+
+```
+./bin/jruby tool/audit_mri_excludes
+```
+
+This loads each test file to check that every excluded class and method still exists, then runs each excluded test by itself, in its own process with a time limit, so a test that hangs or leaves threads behind can't affect the others. It reports the excludes for tests that pass or no longer exist, along with ones that time out, crash or skip themselves. Name exclude classes to audit only those, as in `TestString OpenSSL::TestSSL`. Use `--mode jit` to run the tests in the JIT, `--repeat 3` to rule out tests that pass only some of the time, and `--prune` to remove the excludes for tests that pass or no longer exist. A test can pass by itself and still fail in a full run because of what ran before it, so run the suite before committing what `--prune` removed.
+
 #### Run a single spec using RSpec
 
 Most of the specs under the spec/ directory are written for rspec, and can be run with rspec.

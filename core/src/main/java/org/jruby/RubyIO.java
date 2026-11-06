@@ -1329,7 +1329,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         StringSupport.checkStringSafety(context.runtime, fname);
         fname = ((RubyString)fname).dupFrozen();
-        ChannelFD fd = sysopen(runtime, fname.toString(), oflags, perm);
+        ChannelFD fd = sysopen(runtime, RubyFile.decodePath((RubyString) fname), oflags, perm);
         return asFixnum(context, fd.bestFileno(true));
     }
 

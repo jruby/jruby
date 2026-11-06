@@ -32,6 +32,7 @@
 
 package org.jruby;
 
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.internal.runtime.AbstractIRMethod;
@@ -146,8 +147,9 @@ public class RubyMethod extends AbstractRubyMethod {
      * @return the number of arguments of a method.
      */
     @JRubyMethod
+    @CRuby(value = "method_arity_m", file = "proc.c")
     public RubyFixnum arity(ThreadContext context) {
-        Signature signature = method.getSignature();
+        Signature signature = method.getAritySignature();
         int min = signature.min();
         int max = signature.max();
 

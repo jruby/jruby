@@ -431,6 +431,22 @@ describe "Process.spawn" do
         Process.wait Process.spawn(ruby_cmd("print Dir.pwd"), chdir: "nonexistent")
       end.should.raise(Errno::ENOENT, "No such file or directory - nonexistent")
     end
+
+    platform_is_not :windows do
+      it "changes to a directory given as a binary path containing non-ASCII bytes" do
+        dir = tmp("spawn_chdir_binary_\u{3042}")
+        Dir.mkdir(dir)
+        touch("#{dir}/marker")
+
+        begin
+          -> do
+            Process.wait Process.spawn(ruby_cmd("print File.exist?('marker')"), chdir: dir.b)
+          end.should output_to_fd("true")
+        ensure
+          rm_r dir
+        end
+      end
+    end
   end
 
   # chdir

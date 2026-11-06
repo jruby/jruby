@@ -94,6 +94,7 @@ import org.jruby.runtime.backtrace.FrameType;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.MonotonicClock;
 import org.jruby.util.cli.Options;
 import org.jruby.util.io.BlockingIO;
 import org.jruby.util.io.ChannelFD;
@@ -257,6 +258,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private volatile BlockingTask currentBlockingTask;
 
     private volatile Selector currentSelector;
+
+    /**
+     * Held while waking currentSelector and while taking it away to return it to the pool, so a wakeup can't land on
+     * a selector that another thread has already borrowed: https://github.com/jruby/jruby/issues/9981
+     */
+    private final Object currentSelectorLock = new Object();
 
     private volatile RubyThread fiberCurrentThread;
 
@@ -1301,20 +1308,18 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod
     public IRubyObject join(ThreadContext context) {
-        long timeoutMillis = Long.MAX_VALUE;
-
-        return joinCommon(context, timeoutMillis);
+        return joinCommon(context, Long.MAX_VALUE);
     }
 
     @JRubyMethod
     public IRubyObject join(ThreadContext context, IRubyObject timeout) {
-        long timeoutMillis = Long.MAX_VALUE;
+        long timeoutNanos = Long.MAX_VALUE;
 
         if (!timeout.isNil()) {
             // MRI behavior: value given in seconds; converted to Float; less
             // than or equal to zero returns immediately; returns nil
-            timeoutMillis = (long) (1000 * toDouble(context, timeout));
-            if (timeoutMillis <= 0) {
+            timeoutNanos = (long) (1_000_000_000 * toDouble(context, timeout));
+            if (timeoutNanos <= 0) {
                 // TODO: not sure that we should skip calling join() altogether.
                 // Thread.join() has some implications for Java Memory Model, etc.
                 if (threadImpl.isAlive()) {
@@ -1325,31 +1330,40 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             }
         }
 
-        return joinCommon(context, timeoutMillis);
+        return joinCommon(context, timeoutNanos);
     }
 
-    private IRubyObject joinCommon(ThreadContext context, long timeoutMillis) {
+    // timeoutNanos of Long.MAX_VALUE waits forever
+    private IRubyObject joinCommon(ThreadContext context, long timeoutNanos) {
         if (isCurrent()) throw context.runtime.newThreadError("Target thread must not be current thread");
 
         RubyThread currentThread = context.getThread();
 
         IRubyObject scheduler = FiberScheduler.current(context);
-        if (scheduler != null && !schedulerJoin(context, scheduler, timeoutMillis)) return context.nil;
+        if (scheduler != null && !schedulerJoin(context, scheduler, timeoutNanos)) return context.nil;
 
         try {
             currentThread.enterSleep();
 
-            final long timeToWait = Math.min(timeoutMillis, 200);
+            Ruby runtime = context.runtime;
+            boolean forever = timeoutNanos == Long.MAX_VALUE;
+            long end = forever ? 0 : MonotonicClock.nanoTime(runtime) + timeoutNanos;
 
             // We need this loop in order to be able to "unblock" the
             // join call without actually calling interrupt.
-            long start = System.currentTimeMillis();
             while (true) {
                 currentThread.blockingThreadPoll(context);
-                threadImpl.join(timeToWait);
+
+                // wait at most what is left of the timeout, so we neither overshoot it nor stop short of it
+                long waitMillis = 200;
+                if (!forever) {
+                    long leftNanos = end - MonotonicClock.nanoTime(runtime);
+                    if (leftNanos <= 0) break;
+                    waitMillis = Math.min(ceilMillis(leftNanos), waitMillis);
+                }
+                threadImpl.join(waitMillis);
 
                 if (!threadImpl.isAlive()) break;
-                if (System.currentTimeMillis() - start > timeoutMillis) break;
             }
         } catch (InterruptedException ie) {
             ie.printStackTrace();
@@ -1375,11 +1389,16 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return threadImpl.isAlive() ? context.nil : this;
     }
 
+    private static long ceilMillis(long nanos) {
+        return (nanos + 999_999) / 1_000_000;
+    }
+
     // MRI: thread_join_sleep, which blocks the fiber through the scheduler until the thread is dead,
     // passing what is left of the timeout each time. Returns false if the timeout expired first.
-    private boolean schedulerJoin(ThreadContext context, IRubyObject scheduler, long timeoutMillis) {
+    private boolean schedulerJoin(ThreadContext context, IRubyObject scheduler, long timeoutNanos) {
         SchedulerJoiner joiner = new SchedulerJoiner(scheduler, context.getFiberCurrentThread(), context.getFiber());
-        long end = timeoutMillis == Long.MAX_VALUE ? Long.MAX_VALUE : System.currentTimeMillis() + timeoutMillis;
+        boolean forever = timeoutNanos == Long.MAX_VALUE;
+        long end = forever ? 0 : MonotonicClock.nanoTime(context.runtime) + timeoutNanos;
 
         while (true) {
             IRubyObject timeout = context.nil;
@@ -1387,10 +1406,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             synchronized (this) {
                 if (disposed) return true;
 
-                if (end != Long.MAX_VALUE) {
-                    long left = end - System.currentTimeMillis();
-                    if (left <= 0) return false;
-                    timeout = asFloat(context, left / 1000.0);
+                if (!forever) {
+                    long leftNanos = end - MonotonicClock.nanoTime(context.runtime);
+                    if (leftNanos <= 0) return false;
+                    timeout = asFloat(context, leftNanos / 1_000_000_000.0);
                 }
 
                 if (schedulerJoiners == null) schedulerJoiners = new ArrayList<>(1);
@@ -1978,7 +1997,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         @Override
         public void wakeup(RubyThread thread, Object data) {
             synchronized (data) {
-                data.notify();
+                // The interrupt belongs to this thread, but notify() may select
+                // another waiter sharing the monitor. Wake all so the target
+                // can poll its pending interrupt after leaving Object.wait.
+                data.notifyAll();
             }
         }
     }
@@ -2590,12 +2612,16 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             } catch (IOException ioe) {
                 throw getRuntime().newIOErrorFromException(ioe);
             } finally {
+                // Take the selector away before pooling it. A wakeup from interrupt either lands
+                // before this, and pooling clears it, or finds no selector to wake.
+                synchronized (currentSelectorLock) {
+                    currentSelector = null;
+                }
                 try {
                     if (selector != null) getRuntime().getSelectorPool().put(selector);
                 } catch (Exception e) {
                     // Preserve the original selector-pool cleanup behavior.
                 } finally {
-                    currentSelector = null;
                     fptr.removeBlockingThread(this);
                     if (mode != null) leaveSelectMode(selectable, mode);
                     try {
@@ -2616,9 +2642,11 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public synchronized void interrupt() {
         setInterrupt();
 
-        Selector activeSelector = currentSelector;
-        if (activeSelector != null) {
-            activeSelector.wakeup();
+        synchronized (currentSelectorLock) {
+            Selector activeSelector = currentSelector;
+            if (activeSelector != null) {
+                activeSelector.wakeup();
+            }
         }
         BlockingIO.Condition iowait = blockingIO;
         if (iowait != null) {

@@ -60,6 +60,15 @@ public abstract class BlockBody {
         return signature;
     }
 
+    /**
+     * The signature arity reports. Usually {@link #getSignature()}, which also decides how a yielded array is
+     * spread; a body whose arity differs from its yield behavior overrides this. Internal checks such as yield
+     * spreading and Java overload selection keep using {@link #getSignature()}.
+     */
+    public Signature getAritySignature() {
+        return getSignature();
+    }
+
     public boolean canCallDirect() {
         return false;
     }

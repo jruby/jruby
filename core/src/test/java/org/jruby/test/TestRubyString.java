@@ -33,6 +33,7 @@ import java.nio.CharBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
+import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
 import org.jruby.RubyArray;
 import org.jruby.RubyEncoding;
@@ -185,6 +186,19 @@ public class TestRubyString extends Base {
                 assertEquals(msg + " getUnicodeValue", prefix + expected[i], string.getUnicodeValue());
                 assertEquals(msg + " toString", prefix + expected[i], string.toString());
             }
+        }
+    }
+
+    public void testRawDecoding() {
+        for (int length : new int[] { 0, 1, 256, 1023, 1024, 1025, 2090 }) {
+            byte[] bytes = new byte[length + 4];
+            for (int i = 0; i < bytes.length; i++) bytes[i] = (byte) (i * 37);
+            StringBuilder expected = new StringBuilder(length);
+            for (int i = 0; i < length; i++) expected.append((char) (bytes[i + 2] & 0xFF));
+            String msg = "length=" + length;
+            assertEquals(msg + " decodeRaw", expected.toString(), RubyEncoding.decodeRaw(bytes, 2, length));
+            assertEquals(msg + " decodeRaw ByteList", expected.toString(),
+                    RubyEncoding.decodeRaw(new ByteList(bytes, 2, length, ASCIIEncoding.INSTANCE, false)));
         }
     }
 
