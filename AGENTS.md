@@ -46,7 +46,7 @@ Many JRuby reviewers read English as a second language, and they read a lot of p
 
 These notes fill gaps in [BUILDING.md](BUILDING.md).
 
-* **Rebuild `lib/jruby.jar` after changing Java code** with one reactor build: `./mvnw -q -o -DskipTests -pl core,shaded package`. Building `core` alone does not update `lib/jruby.jar`, so `bin/jruby` would keep running the old code. Drop `-o` if Maven needs to download something.
+* **Rebuild `lib/jruby.jar` after changing Java code** with `./mvnw -q -o -DskipTests -pl core,shaded package`, as BUILDING.md describes. Drop `-o` if Maven needs to download something.
 * **Bootstrap once before running Ruby tests**: `./mvnw -Pbootstrap -DskipTests`. Without it, the stdlib and gems that the tests need are missing. It is slow, so only run it when they are missing.
 * **Run one spec file** with `bin/jruby spec/mspec/bin/mspec-run <path>`, or `bin/jruby spec/mspec/bin/mspec ci <path>` to skip tagged failures.
 * **Run one CRuby test file** with `bin/jruby -Itest/tool/lib -Itest/mri/lib -Itest/mri <path> --excludes-dir=test/mri/excludes`. On a slow or busy machine, add `--timeout-scale=10`, because many tests start a new JRuby and time out otherwise.
