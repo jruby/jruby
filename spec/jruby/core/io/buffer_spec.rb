@@ -29,15 +29,16 @@ describe "IO::Buffer::DEFAULT_SIZE" do
     IO::Buffer::DEFAULT_SIZE.should == [64 * 1024, IO::Buffer::PAGE_SIZE].max
   end
 
-  it "is RUBY_IO_BUFFER_DEFAULT_SIZE, where that's a positive number, read by its leading digits" do
+  it "is RUBY_IO_BUFFER_DEFAULT_SIZE, where that's a positive integer" do
     io_buffer_constant(:DEFAULT_SIZE, env: {"RUBY_IO_BUFFER_DEFAULT_SIZE" => "8192"}).should == 8192
-    io_buffer_constant(:DEFAULT_SIZE, env: {"RUBY_IO_BUFFER_DEFAULT_SIZE" => " 128k"}).should == 128
+    io_buffer_constant(:DEFAULT_SIZE, env: {"RUBY_IO_BUFFER_DEFAULT_SIZE" => " 8192 "}).should == 8192
   end
 
-  it "ignores a RUBY_IO_BUFFER_DEFAULT_SIZE that isn't a positive number" do
+  it "ignores a RUBY_IO_BUFFER_DEFAULT_SIZE that isn't a positive integer" do
     default = [64 * 1024, IO::Buffer::PAGE_SIZE].max
 
     io_buffer_constant(:DEFAULT_SIZE, env: {"RUBY_IO_BUFFER_DEFAULT_SIZE" => "-5"}).should == default
     io_buffer_constant(:DEFAULT_SIZE, env: {"RUBY_IO_BUFFER_DEFAULT_SIZE" => "large"}).should == default
+    io_buffer_constant(:DEFAULT_SIZE, env: {"RUBY_IO_BUFFER_DEFAULT_SIZE" => "128k"}).should == default
   end
 end

@@ -399,36 +399,21 @@ public class RubyIOBuffer extends RubyObject {
     }
 
     /**
-     * The default buffer size: {@code setting} (RUBY_IO_BUFFER_DEFAULT_SIZE's value) where it's a positive number,
-     * read as C's atoi reads it (its leading digits), or else PLATFORM_AGNOSTIC_DEFAULT_SIZE, or {@code pageSize}
-     * where that's larger.
+     * The default buffer size: {@code setting} (RUBY_IO_BUFFER_DEFAULT_SIZE's value) where it's a positive integer,
+     * or else PLATFORM_AGNOSTIC_DEFAULT_SIZE, or {@code pageSize} where that's larger.
      */
     @CRuby(value = "io_buffer_default_size", file = "io_buffer.c")
     private static int defaultSize(String setting, int pageSize) {
         if (setting != null) {
-            int value = atoi(setting);
-            if (value > 0) return value;
+            try {
+                int value = Integer.parseInt(setting.trim());
+                if (value > 0) return value;
+            } catch (NumberFormatException e) {
+                // not an integer, so use the default
+            }
         }
 
         return Math.max(PLATFORM_AGNOSTIC_DEFAULT_SIZE, pageSize);
-    }
-
-    // C's atoi: optional leading whitespace and sign, then digits, up to the first that isn't one. 0 for none, and
-    // (where C's is undefined) 0 for a value that doesn't fit in an int.
-    private static int atoi(String string) {
-        int i = 0, length = string.length();
-        while (i < length && Character.isWhitespace(string.charAt(i))) i++;
-
-        boolean negative = false;
-        if (i < length && (string.charAt(i) == '-' || string.charAt(i) == '+')) negative = string.charAt(i++) == '-';
-
-        long value = 0;
-        for (; i < length && string.charAt(i) >= '0' && string.charAt(i) <= '9'; i++) {
-            value = value * 10 + (string.charAt(i) - '0');
-            if (value > Integer.MAX_VALUE) return 0;
-        }
-
-        return (int) (negative ? -value : value);
     }
 
     @CRuby(value = "io_flags_for_size", file = "io_buffer.c")
