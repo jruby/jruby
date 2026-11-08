@@ -954,6 +954,14 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         return manager.getNil();
     }
 
+    /**
+     * The value to report for a :return/:b_return trace event. A missing or unexecutable value means control never
+     * reaches the trace instruction with a result, so report nil.
+     */
+    private Operand traceValue(Operand value) {
+        return value == null || value == U_NIL ? nil() : value;
+    }
+
     protected RubySymbol symbol(String id) {
         return manager.runtime.newSymbol(id);
     }
@@ -1704,7 +1712,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         Operand closureRetVal = body == null ? nil() : build(body);
 
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            addInstr(new TraceInstr(RubyEvent.B_RETURN, getCurrentModuleVariable(), getName(), getFileName(), endLine + 1));
+            addInstr(new TraceInstr(RubyEvent.B_RETURN, getCurrentModuleVariable(), getName(), getFileName(), endLine + 1, traceValue(closureRetVal)));
         }
 
         // can be U_NIL if the node is an if node with returns in both branches.
@@ -2913,7 +2921,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
             retVal = processEnsureRescueBlocks(retVal);
 
             if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
-                addInstr(new TraceInstr(RubyEvent.RETURN, getCurrentModuleVariable(), getName(), getFileName(), line + 1));
+                addInstr(new TraceInstr(RubyEvent.RETURN, getCurrentModuleVariable(), getName(), getFileName(), line + 1, traceValue(retVal)));
             }
             addInstr(new ReturnInstr(retVal));
         }
@@ -3185,7 +3193,7 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             int endLine = defNode.getEndLine();
             addInstr(new LineNumberInstr(endLine));
-            addInstr(new TraceInstr(RubyEvent.RETURN, getCurrentModuleVariable(), getName(), getFileName(), endLine));
+            addInstr(new TraceInstr(RubyEvent.RETURN, getCurrentModuleVariable(), getName(), getFileName(), endLine, traceValue(rv)));
         }
 
         if (rv != null) addInstr(new ReturnInstr(rv));

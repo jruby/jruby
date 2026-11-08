@@ -30,6 +30,14 @@ public abstract class EventHook {
     public void event(ThreadContext context, RubyEvent event, String file, int line, String name, IRubyObject type){
         eventHandler(context, event.getName(), file, line, name, type);
     }
+
+    /**
+     * Receive an event along with a value associated with it (for example the return value of a :return or
+     * :b_return event, or nil if the event carries no value). By default the value is ignored.
+     */
+    public void event(ThreadContext context, RubyEvent event, String file, int line, String name, IRubyObject type, IRubyObject value) {
+        event(context, event, file, line, name, type);
+    }
     
     public abstract void eventHandler(ThreadContext context, String eventName, String file, int line, String name, IRubyObject type);
     public abstract boolean isInterestedInEvent(RubyEvent event);

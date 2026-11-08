@@ -1,1 +1,0 @@
-fails:TracePoint#return_value returns value from :return event
