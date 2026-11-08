@@ -117,6 +117,11 @@ class MSpecScript
     get(:ci_xtags) << 'jit'
   end
 
+  # Specs tagged 'debug' need --debug (full trace) and are run by spec:ruby:debug
+  unless org.jruby.util.cli.Options::DEBUG_FULLTRACE.load
+    get(:ci_xtags) << 'debug'
+  end
+
   # This set of files is run by mspec ci
   set :ci_files, get(:language) + get(:core) + get(:command_line) + get(:library) + get(:security)
 
