@@ -61,6 +61,7 @@ import static com.headius.backport9.buffer.Buffers.positionBuffer;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asFloat;
 import static org.jruby.api.Convert.toInt;
+import static org.jruby.api.Convert.toInteger;
 import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Create.newArray;
 import static org.jruby.api.Create.newString;
@@ -1132,6 +1133,10 @@ public class Pack {
                 case 'w':
                     value = unpack_w(context, block, result, encode, occurrences, mode);
                     break;
+                case 'R':
+                case 'r':
+                    value = unpack_LEB128(context, block, result, encode, type == 'r', occurrences, mode);
+                    break;
                 default:
                     unknownDirective(context, "unpack", type, formatString);
                     break;
@@ -2066,6 +2071,10 @@ public class Pack {
                 case 'U':
                     pack_U(context, list, result, packInts, occurrences);
                     break;
+                case 'R':
+                case 'r':
+                    pack_LEB128(context, list, result, packInts, type == 'r', occurrences);
+                    break;
                 case 'w':
                     pack_w(context, list, result, packInts, occurrences);
                     break;
@@ -2106,6 +2115,111 @@ public class Pack {
         }
 
         throw argumentError(context, str(context.runtime, "unknown " + mode + " directive '", newString(context, unknown), "' in '", newString(context,formatString), "'"));
+    }
+
+    /**
+     * Pack 'R' (ULEB128) and 'r' (SLEB128): seven bits per byte, least significant group first, with the high bit
+     * set on every byte but the last.
+     *
+     * The byte count follows CRuby rather than the shortest encoding: enough 7-bit groups for the absolute value,
+     * plus one sign byte for 'r' when the absolute value fills its last group exactly. So -64 packs as "\xC0\x7F",
+     * not "\x40". Both decode to -64.
+     */
+    @CRuby(value = "pack_pack", file = "pack.c", note = "'R' and 'r' directives")
+    private static void pack_LEB128(ThreadContext context, RubyArray list, ByteList result, PackInts packInts,
+                                    boolean signed, int occurrences) {
+        while (occurrences-- > 0) {
+            if (packInts.listSize-- <= 0) throw argumentError(context, sTooFew);
+
+            RubyInteger from = toInteger(context, list.eltInternal(packInts.idx++));
+            boolean negative = from.isNegativeNumber(context);
+            if (!signed && negative) {
+                throw argumentError(context, "can't encode negative numbers in ULEB128");
+            }
+
+            int start = result.realSize();
+            if (from instanceof RubyFixnum fixnum && fixnum.getValue() != Long.MIN_VALUE) {
+                long value = fixnum.getValue();
+                int absBits = Long.SIZE - Long.numberOfLeadingZeros(Math.abs(value));
+                int groups = Math.max(1, (absBits + 6) / 7); // at most 9, so shifts stay below 64
+                for (int i = 0; i < groups; i++) result.append((int) (value >> (7 * i)) & 0x7f);
+                if (signed && absBits > 0 && absBits % 7 == 0) {
+                    result.append(negative ? 0x7f : 0x00);
+                }
+            } else {
+                BigInteger value = from instanceof RubyBignum bignum ?
+                        bignum.getValue() : BigInteger.valueOf(((RubyFixnum) from).getValue());
+                int absBits = value.abs().bitLength();
+                int groups = Math.max(1, (absBits + 6) / 7);
+                for (int i = 0; i < groups; i++) {
+                    result.append(value.shiftRight(7 * i).intValue() & 0x7f);
+                }
+                if (signed && absBits % 7 == 0) result.append(negative ? 0x7f : 0x00);
+            }
+
+            byte[] bytes = result.unsafeBytes();
+            int last = result.begin() + result.realSize() - 1;
+            for (int i = result.begin() + start; i < last; i++) bytes[i] |= (byte) 0x80;
+        }
+    }
+
+    /**
+     * Unpack 'R' (ULEB128) and 'r' (SLEB128). With a count, a value cut off by the end of the string and every
+     * value after it unpack as nil; with '*', an incomplete trailing value is skipped.
+     */
+    @CRuby(value = "pack_unpack_internal", file = "pack.c", note = "'R' and 'r' directives")
+    private static IRubyObject unpack_LEB128(ThreadContext context, Block block, RubyArray result, ByteBuffer encode,
+                                             boolean signed, int occurrences, int mode) {
+        boolean star = occurrences == IS_STAR;
+        if (star) occurrences = encode.remaining();
+
+        int start = encode.position();
+        while (occurrences > 0 && encode.hasRemaining()) {
+            if ((encode.get() & 0x80) != 0) continue;
+
+            IRubyObject value = decodeLEB128(context, encode, start, encode.position(), signed);
+            if (mode == UNPACK_1) return value;
+            appendOrYield(context, block, result, value, mode);
+            occurrences--;
+            start = encode.position();
+        }
+
+        if (!star) {
+            // CRuby pushes one nil for a cut-off value and one for each value it never reached, which is the same count
+            for (; occurrences > 0; occurrences--) {
+                if (mode == UNPACK_1) return context.nil;
+                appendOrYield(context, block, result, context.nil, mode);
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Decode the LEB128 value in bytes start to end: seven bits per byte, least significant group first. For 'r',
+     * bit 0x40 of the last byte is the sign, so a set bit sign-extends the value.
+     */
+    @CRuby(value = "rb_integer_unpack", file = "bignum.c", note = "only the LEB128 form used by 'R' and 'r'")
+    private static IRubyObject decodeLEB128(ThreadContext context, ByteBuffer encode, int start, int end,
+                                            boolean signed) {
+        int bits = 7 * (end - start);
+        boolean negative = signed && (encode.get(end - 1) & 0x40) != 0;
+
+        if (bits < Long.SIZE) {
+            long value = 0;
+            for (int i = start; i < end; i++) {
+                value |= (long) (encode.get(i) & 0x7f) << (7 * (i - start));
+            }
+            if (negative) value |= -1L << bits; // sign-extend
+            return asFixnum(context, value);
+        }
+
+        BigInteger value = BigInteger.ZERO;
+        for (int i = end - 1; i >= start; i--) {
+            value = value.shiftLeft(7).or(BigInteger.valueOf(encode.get(i) & 0x7f));
+        }
+        if (negative) value = value.subtract(BigInteger.ONE.shiftLeft(bits));
+        return RubyBignum.bignorm(context.runtime, value);
     }
 
     private static void pack_w(ThreadContext context, RubyArray list, ByteList result, PackInts packInts, int occurrences) {
