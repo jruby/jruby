@@ -72,5 +72,30 @@ describe "String#unpack with format 'x'" do
     it "aligns to a directive's alignment with the '!' modifier" do
       [1, 2].pack("i< i").unpack("C x!i i").should == [1, 2]
     end
+
+    it "aligns from the offset with 'x!'" do
+      "z\x01\x00\x00\x00\x02".unpack("C x!4 C", offset: 1).should == [1, 2]
+    end
+
+    it "raises an ArgumentError if the alignment moves past the end of the String" do
+      -> { "\x01".unpack("C x!4") }.should.raise(ArgumentError, "x outside of string")
+      -> { "\x01".unpack("C @!4") }.should.raise(ArgumentError, "@ outside of string")
+    end
+
+    it "raises an ArgumentError when the '!' modifier has no alignment" do
+      -> { "\x01".unpack("C x!") }.should.raise(ArgumentError, "missing alignment")
+    end
+
+    it "raises a RangeError for an alignment of zero" do
+      -> { "\x01".unpack("C x!0") }.should.raise(RangeError, "invalid alignment")
+    end
+
+    it "raises an ArgumentError for an endian modifier after the alignment directive" do
+      -> { "\x01\x00".unpack("C x!s<") }.should.raise(ArgumentError, "endian modifier is not allowed for alignment")
+    end
+
+    it "raises a RangeError for both '<' and '>' before rejecting the endian modifier" do
+      -> { "\x01\x00".unpack("C x!s<>") }.should.raise(RangeError, "Can't use both '<' and '>'")
+    end
   end
 end
