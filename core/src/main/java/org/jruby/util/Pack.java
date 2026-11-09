@@ -1003,12 +1003,11 @@ public class Pack {
         int len = encodedString.realSize();
         int beg = encodedString.begin();
 
-        if (offset < 0) throw argumentError(context, "offset can't be negative");
-        if (offset > 0) {
-            if (offset > len) throw argumentError(context, "offset outside of string");
-            beg += offset;
-            len -= offset;
+        if (offset < 0 ? (offset += len) < 0 : offset > len) {
+            throw argumentError(context, "offset outside of string");
         }
+        beg += (int) offset;
+        len -= (int) offset;
 
 
         // FIXME: potentially could just use ByteList here?
