@@ -392,90 +392,11 @@ public class Dir {
     public static List<ByteList> push_glob(Ruby runtime, String cwd, ByteList globByteList, int flags, boolean sort) {
         if (!globByteList.isEmpty()) {
             final ArrayList<ByteList> result = new ArrayList<>();
-            push_braces(runtime, cwd, result, new GlobPattern(globByteList, flags), sort);
+            push_braces(runtime, cwd, result, globByteList, flags, sort);
             return result;
         }
 
         return Collections.emptyList();
-    }
-
-    private static class GlobPattern {
-        final byte[] bytes;
-        final int begin;
-        final int end;
-        final Encoding enc;
-
-        private int index;
-
-        private final int flags;
-
-        GlobPattern(ByteList bytes, int flags) {
-            this(bytes.getUnsafeBytes(), bytes.getBegin(),  bytes.getBegin() + bytes.getRealSize(), bytes.getEncoding(), flags);
-        }
-
-        GlobPattern(byte[] bytes, int index, int end, Encoding enc, int flags) {
-            this.bytes = bytes;
-            this.index = index;
-            this.begin = index;
-            this.end = end;
-            this.enc = enc;
-            this.flags = flags;
-        }
-
-        public int findClosingIndexOf(int leftTokenIndex) {
-            if (leftTokenIndex == -1 || leftTokenIndex > end) return -1;
-
-            byte leftToken = bytes[leftTokenIndex];
-            byte rightToken;
-
-            switch (leftToken) {
-            case '{': rightToken = '}'; break;
-            case '[': rightToken = ']'; break;
-            default: return -1;
-            }
-
-            int nest = 1; // leftToken made us start as nest 1
-            index = leftTokenIndex + 1;
-            while (hasNext()) {
-                byte c = next();
-
-                if (c == leftToken) {
-                    nest++;
-                } else if (c == rightToken && --nest == 0) {
-                    return index();
-                }
-            }
-
-            return -1;
-        }
-
-        public boolean hasNext() {
-            return index < end;
-        }
-
-        public void reset() {
-            index = begin;
-        }
-
-        public void setIndex(int value) {
-            index = value;
-        }
-
-        // Get index of last read byte
-        public int index() {
-            return index - 1;
-        }
-
-        public int indexOf(byte c) {
-            while (hasNext()) if (next() == c) return index();
-
-            return -1;
-        }
-
-        public byte next() {
-            return bytes[index++];
-        }
-
     }
 
     private interface GlobFunc<T> {
@@ -505,18 +426,21 @@ public class Dir {
     /*
      * Process {}'s (example: Dir.glob("{jruby,jython}/README*")
      */
-    private static int push_braces(Ruby runtime, String cwd, List<ByteList> result, GlobPattern pattern, boolean sort) {
-        boolean escape = (pattern.flags & FNM_NOESCAPE) == 0;
-        int[] group = findBraceGroup(pattern.bytes, pattern.begin, pattern.end, escape);
+    private static int push_braces(Ruby runtime, String cwd, List<ByteList> result, ByteList pattern, int flags, boolean sort) {
+        byte[] bytes = pattern.unsafeBytes();
+        int begin = pattern.begin();
+        int end = begin + pattern.realSize();
+        boolean escape = (flags & FNM_NOESCAPE) == 0;
+        int[] group = findBraceGroup(bytes, begin, end, escape);
 
         // No, mismatched or escaped braces..Move along..nothing to see here
         if (group == null) {
-            ByteList unescaped = new ByteList(pattern.bytes.length - 1);
-            unescaped.setEncoding(pattern.enc);
-            for (int i = pattern.begin; i < pattern.end; i++) {
-                byte b = pattern.bytes[i];
-                if (b == '\\' && i < pattern.bytes.length - 1) {
-                    byte next_b = pattern.bytes[i + 1];
+            ByteList unescaped = new ByteList(bytes.length - 1);
+            unescaped.setEncoding(pattern.getEncoding());
+            for (int i = begin; i < end; i++) {
+                byte b = bytes[i];
+                if (b == '\\' && i < bytes.length - 1) {
+                    byte next_b = bytes[i + 1];
                     if (next_b != '{' && next_b != '}') {
                         unescaped.append(b);
                     }
@@ -524,11 +448,11 @@ public class Dir {
                     unescaped.append(b);
                 }
             }
-            return push_globs(runtime, cwd, result, unescaped, pattern.flags, sort);
+            return push_globs(runtime, cwd, result, unescaped, flags, sort);
         }
 
-        for (ByteList alternative : braceAlternatives(pattern.bytes, pattern.begin, pattern.end, group, escape, pattern.enc)) {
-            int status = push_braces(runtime, cwd, result, new GlobPattern(alternative, pattern.flags), sort);
+        for (ByteList alternative : braceAlternatives(bytes, begin, end, group, escape, pattern.getEncoding())) {
+            int status = push_braces(runtime, cwd, result, alternative, flags, sort);
             if (status != 0) return status;
         }
 
