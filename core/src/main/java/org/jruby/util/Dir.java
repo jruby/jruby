@@ -506,14 +506,11 @@ public class Dir {
      * Process {}'s (example: Dir.glob("{jruby,jython}/README*")
      */
     private static int push_braces(Ruby runtime, String cwd, List<ByteList> result, GlobPattern pattern, boolean sort) {
-        pattern.reset();
-        int lbrace = pattern.indexOf((byte) '{'); // index of left-most brace
-        int rbrace = pattern.findClosingIndexOf(lbrace);// index of right-most brace
+        boolean escape = (pattern.flags & FNM_NOESCAPE) == 0;
+        int[] group = findBraceGroup(pattern.bytes, pattern.begin, pattern.end, escape);
 
         // No, mismatched or escaped braces..Move along..nothing to see here
-        if (lbrace == -1 || rbrace == -1 ||
-                lbrace > 0 && pattern.bytes[lbrace-1] == '\\' && (lbrace <= 1 || pattern.bytes[lbrace-2] != '\\') ||
-                rbrace > 0 && pattern.bytes[rbrace-1] == '\\' && (rbrace <= 1 || pattern.bytes[rbrace-2] != '\\')) {
+        if (group == null) {
             ByteList unescaped = new ByteList(pattern.bytes.length - 1);
             unescaped.setEncoding(pattern.enc);
             for (int i = pattern.begin; i < pattern.end; i++) {
@@ -530,31 +527,63 @@ public class Dir {
             return push_globs(runtime, cwd, result, unescaped, pattern.flags, sort);
         }
 
-        // Peel onion...make subpatterns out of outer layer of glob and recall with each subpattern
-        // Example: foo{a{c},b}bar -> fooa{c}bar, foobbar
-        final ByteList bytes = new ByteList(20);
-        bytes.setEncoding(pattern.enc);
-        int middleRegionIndex;
-        int i = lbrace;
-        while (pattern.bytes[i] != '}') {
-            middleRegionIndex = i + 1;
-            for (i = middleRegionIndex; i < pattern.end && pattern.bytes[i] != '}'; i++) {
-                if (pattern.bytes[i] == ',') {
-                    if (i > pattern.begin && pattern.bytes[i-1] == '\\') continue;
-                    break;
-                }
-                if (pattern.bytes[i] == '{') i = pattern.findClosingIndexOf(i); // skip inner braces
-            }
-
-            bytes.length(0);
-            bytes.append(pattern.bytes, pattern.begin, lbrace - pattern.begin);
-            bytes.append(pattern.bytes, middleRegionIndex, i - middleRegionIndex);
-            bytes.append(pattern.bytes, rbrace + 1, pattern.end - (rbrace + 1));
-            int status = push_braces(runtime, cwd, result, new GlobPattern(bytes, pattern.flags), sort);
+        for (ByteList alternative : braceAlternatives(pattern.bytes, pattern.begin, pattern.end, group, escape, pattern.enc)) {
+            int status = push_braces(runtime, cwd, result, new GlobPattern(alternative, pattern.flags), sort);
             if (status != 0) return status;
         }
 
         return 0; // All braces pushed..
+    }
+
+    // {lbrace, rbrace} of the first brace group in bytes[from, end), skipping escaped characters.
+    @CRuby(value = "ruby_brace_expand", file = "dir.c")
+    private static int[] findBraceGroup(byte[] bytes, int from, int end, boolean escape) {
+        int lbrace = -1;
+        int nest = 0;
+
+        for (int i = from; i < end; i++) {
+            byte c = bytes[i];
+            if (c == '{' && nest++ == 0) {
+                lbrace = i;
+            } else if (c == '}' && lbrace != -1 && --nest == 0) {
+                return new int[] { lbrace, i };
+            } else if (c == '\\' && escape) {
+                i++;
+            }
+        }
+
+        return null;
+    }
+
+    // bytes[begin, end) with the brace group replaced by each of its alternatives.
+    @CRuby(value = "ruby_brace_expand", file = "dir.c")
+    private static List<ByteList> braceAlternatives(byte[] bytes, int begin, int end, int[] group, boolean escape, Encoding enc) {
+        int lbrace = group[0];
+        int rbrace = group[1];
+        List<ByteList> alternatives = new ArrayList<>();
+        int nest = 0;
+        int start = lbrace + 1;
+
+        for (int i = start; i <= rbrace; i++) {
+            byte c = bytes[i];
+            if (i == rbrace || (c == ',' && nest == 0)) {
+                ByteList alternative = new ByteList(end - begin);
+                alternative.setEncoding(enc);
+                alternative.append(bytes, begin, lbrace - begin);
+                alternative.append(bytes, start, i - start);
+                alternative.append(bytes, rbrace + 1, end - (rbrace + 1));
+                alternatives.add(alternative);
+                start = i + 1;
+            } else if (c == '{') {
+                nest++;
+            } else if (c == '}') {
+                nest--;
+            } else if (c == '\\' && escape && i + 1 < rbrace) {
+                i++;
+            }
+        }
+
+        return alternatives;
     }
 
     private static int push_globs(Ruby runtime, String cwd, List<ByteList> ary, ByteList pattern, int flags, boolean sort) {
