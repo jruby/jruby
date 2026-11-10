@@ -688,6 +688,53 @@ class UNIXSocketTests < Test::Unit::TestCase
         end
       end
 
+      # nio4r registers the channel with a default java.nio Selector (socketry/nio4r#67)
+      def test_socketpair_registers_with_java_selector
+        [Socket.pair(:UNIX, :STREAM), UNIXSocket.pair].each do |sock1, sock2|
+          selector = java.nio.channels.Selector.open
+          channel = sock2.to_channel
+          channel.configureBlocking(false)
+          channel.register(selector, java.nio.channels.SelectionKey::OP_READ)
+
+          sock1.write("hello")
+          assert_equal 1, selector.select(1000)
+        ensure
+          selector&.close
+          sock1&.close
+          sock2&.close
+        end
+      end
+
+      def test_socketpair_linger
+        sock1, sock2 = Socket.pair(:UNIX, :STREAM)
+        assert_equal [false, 0], sock1.getsockopt(:SOCKET, :LINGER).linger
+
+        sock1.setsockopt(Socket::Option.linger(true, 5))
+        assert_equal [true, 5], sock1.getsockopt(:SOCKET, :LINGER).linger
+      ensure
+        sock1&.close
+        sock2&.close
+      end
+
+      # pair ends are JDK channels, which have no java.net.Socket behind them
+      def test_socketpair_close_read_via_plain_io
+        sock1, sock2 = Socket.pair(:UNIX, :STREAM)
+        io = IO.for_fd(sock1.fileno, autoclose: false)
+        assert_nil io.close_read
+        assert_raise(IOError) { io.read(1) }
+      ensure
+        sock1&.close
+        sock2&.close
+      end
+
+      def test_socketpair_bind_raises_einval
+        sock1, sock2 = Socket.pair(:UNIX, :STREAM)
+        assert_raise(Errno::EINVAL) { sock1.bind(Addrinfo.unix("/tmp/jruby-pair-bind-#{$$}.sock")) }
+      ensure
+        sock1&.close
+        sock2&.close
+      end
+
       def test_recv_nonblock
         pending_hangs_on_macos_aarch64
         s1, s2 = UNIXSocket.pair(Socket::SOCK_DGRAM)

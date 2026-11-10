@@ -357,13 +357,13 @@ public class RubySocket extends RubyBasicSocket {
 
         // TODO: type and protocol
 
-        UnixSocketChannel[] sp;
+        SocketChannel[] sp;
         final RubyClass socketClass = Access.getClass(context, "Socket");
         RubySocket sock0 = new RubySocket(runtime, socketClass);
         RubySocket sock1 = new RubySocket(runtime, socketClass);
 
         try {
-            sp = UnixSocketChannel.pair();
+            sp = UnixDomain.pair();
 
             ChannelFD fd0 = newChannelFD(runtime, sp[0]);
             sock0.initFieldsFromDescriptor(runtime, fd0);
@@ -382,18 +382,18 @@ public class RubySocket extends RubyBasicSocket {
     private void initFieldsFromDescriptor(Ruby runtime, ChannelFD fd) {
         Channel mainChannel = fd.ch;
 
-        if (mainChannel instanceof SocketChannel) {
+        if (mainChannel instanceof UnixSocketChannel || UnixDomain.isUnixChannel(mainChannel)) {
+            soDomain = AddressFamily.AF_UNIX;
+            soType = Sock.SOCK_STREAM;
+            soProtocolFamily = ProtocolFamily.PF_UNIX;
+
+        } else if (mainChannel instanceof SocketChannel) {
             // ok, it's a socket...set values accordingly
             // just using AF_INET since we can't tell from SocketChannel...
             soDomain = AddressFamily.AF_INET;
             soType = Sock.SOCK_STREAM;
             soProtocolFamily = ProtocolFamily.PF_INET;
             soProtocol = Protocol.getProtocolByName("tcp");
-
-        } else if (mainChannel instanceof UnixSocketChannel) {
-            soDomain = AddressFamily.AF_UNIX;
-            soType = Sock.SOCK_STREAM;
-            soProtocolFamily = ProtocolFamily.PF_UNIX;
 
         } else if (mainChannel instanceof DatagramChannel) {
             // datagram, set accordingly
@@ -589,7 +589,11 @@ public class RubySocket extends RubyBasicSocket {
         Channel channel = getChannel();
 
         try {
-            if (channel instanceof SocketChannel) {
+            if (UnixDomain.isUnixChannel(channel)) {
+                // a JDK unix pair end has no java.net.Socket to bind
+                throw runtime.newErrnoEINVALError("bind(2)");
+            }
+            else if (channel instanceof SocketChannel) {
                 Socket socket = ((SocketChannel) channel).socket();
                 socket.bind(iaddr);
             }
