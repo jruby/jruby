@@ -29,6 +29,18 @@ describe "The --enable and --disable flags" do
     ruby_exe("p defined?(DidYouMean)", options: "--disable-did_you_mean").chomp.should == "nil"
   end
 
+  it "can be used with error_highlight" do
+    ruby_exe("p defined?(ErrorHighlight)", options: "--disable=error_highlight 2>&1").chomp.should == "nil"
+    ruby_exe("p defined?(ErrorHighlight)", options: "--disable-error_highlight 2>&1").chomp.should == "nil"
+  end
+
+  it "can be used with syntax_suggest" do
+    ruby_exe("p defined?(SyntaxSuggest)", options: "--enable=syntax_suggest 2>&1").chomp.should == "\"constant\""
+    ruby_exe("p defined?(SyntaxSuggest)", options: "--disable=syntax_suggest 2>&1").chomp.should == "nil"
+    ruby_exe("p defined?(SyntaxSuggest)", options: "--enable-syntax_suggest 2>&1").chomp.should == "\"constant\""
+    ruby_exe("p defined?(SyntaxSuggest)", options: "--disable-syntax_suggest 2>&1").chomp.should == "nil"
+  end
+
   it "can be used with rubyopt" do
     ruby_exe("p $VERBOSE", options: "--enable=rubyopt", env: {'RUBYOPT' => '-w'}).chomp.should == "true"
     ruby_exe("p $VERBOSE", options: "#{@rubyopt} --disable=rubyopt", env: {'RUBYOPT' => '-w'}).chomp.should == "false"
