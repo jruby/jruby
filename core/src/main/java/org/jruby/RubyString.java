@@ -3441,15 +3441,21 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         dest.setEncoding(str_enc);
         dest.setCodeRange(str_enc.isAsciiCompatible() ? CR_7BIT : CR_VALID);
 
+        // Same encoding everywhere: expand the replacement straight into dest instead of a new string per match.
+        final RubyString replDest = repl != null && repl.getEncoding() == str_enc ? dest : null;
+
         RubyMatchData match = null;
         do {
-            final RubyString val;
             begz = beg;
             int endz = beg + patternLen;
+            int len = begz - offset;
 
             if (repl != null) {     // string given
-                val = RubyRegexp.regsub(context, repl, this, REPL_MOCK_REGEX, null, begz, endz);
+                if (len != 0) dest.cat(spBytes, cp, len, str_enc);
+                RubyString val = RubyRegexp.regsub(context, replDest, repl, this, REPL_MOCK_REGEX, null, begz, endz);
+                if (val != dest) dest.catWithCodeRange(val);
             } else {
+                final RubyString val;
                 if (hash != null) { // hash given
                     val = objAsString(context, hash.op_aref(context, pattern));
                 } else {            // block given
@@ -3463,11 +3469,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 }
                 modifyCheck(spBytes, spLen, str_enc);
                 if (bang) frozenCheck();
-            }
 
-            int len = begz - offset;
-            if (len != 0) dest.cat(spBytes, cp, len, str_enc);
-            dest.catWithCodeRange(val);
+                if (len != 0) dest.cat(spBytes, cp, len, str_enc);
+                dest.catWithCodeRange(val);
+            }
             offset = endz;
             if (begz == endz) {
                 if (spLen <= endz) break;
@@ -3528,15 +3533,21 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         dest.setEncoding(str_enc);
         dest.setCodeRange(str_enc.isAsciiCompatible() ? CR_7BIT : CR_VALID);
 
+        // Same encoding everywhere: expand the replacement straight into dest instead of a new string per match.
+        final RubyString replDest = repl != null && repl.getEncoding() == str_enc ? dest : null;
+
         RubyMatchData match = null;
         do {
-            final RubyString val;
             int begz = matcher.getBegin();
             int endz = matcher.getEnd();
+            int len = begz - offset;
 
             if (repl != null) {     // string given
-                val = RubyRegexp.regsub(context, repl, this, pattern, matcher);
+                if (len != 0) dest.cat(spBytes, cp, len, str_enc);
+                RubyString val = RubyRegexp.regsub(context, replDest, repl, this, pattern, matcher.getRegion(), begz, endz);
+                if (val != dest) dest.catWithCodeRange(val);
             } else {
+                final RubyString val;
                 final RubyString substr = makeSharedString(context.runtime, begz, endz - begz);
                 if (hash != null) { // hash given
                     val = objAsString(context, hash.op_aref(context, substr));
@@ -3551,11 +3562,10 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
                 }
                 modifyCheck(spBytes, spLen, str_enc);
                 if (bang) frozenCheck();
-            }
 
-            int len = begz - offset;
-            if (len != 0) dest.cat(spBytes, cp, len, str_enc);
-            dest.catWithCodeRange(val);
+                if (len != 0) dest.cat(spBytes, cp, len, str_enc);
+                dest.catWithCodeRange(val);
+            }
             offset = endz;
             if (begz == endz) {
                 if (spLen <= endz) break;
