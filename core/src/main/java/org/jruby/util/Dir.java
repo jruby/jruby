@@ -392,7 +392,7 @@ public class Dir {
     public static List<ByteList> push_glob(Ruby runtime, String cwd, ByteList globByteList, int flags, boolean sort) {
         if (!globByteList.isEmpty()) {
             final ArrayList<ByteList> result = new ArrayList<>();
-            push_braces(runtime, cwd, result, globByteList, flags, sort);
+            push_braces(runtime, cwd, result, globByteList, flags, sort, 0, false);
             return result;
         }
 
@@ -425,34 +425,27 @@ public class Dir {
 
     /*
      * Process {}'s (example: Dir.glob("{jruby,jython}/README*")
+     * Like CRuby, groups after a recursive "**" without '/' are kept and matched per entry by glob_helper.
      */
-    private static int push_braces(Ruby runtime, String cwd, List<ByteList> result, ByteList pattern, int flags, boolean sort) {
+    private static int push_braces(Ruby runtime, String cwd, List<ByteList> result, ByteList pattern, int flags, boolean sort,
+                                   int searchOffset, boolean expandAll) {
         byte[] bytes = pattern.unsafeBytes();
         int begin = pattern.begin();
         int end = begin + pattern.realSize();
         boolean escape = (flags & FNM_NOESCAPE) == 0;
-        int[] group = findBraceGroup(bytes, begin, end, escape);
+        int[] group = findBraceGroup(bytes, begin + searchOffset, end, escape);
 
-        // No, mismatched or escaped braces..Move along..nothing to see here
+        while (!expandAll && group != null && isMatchedPerEntry(bytes, begin, group[0], group[1])) {
+            group = findBraceGroup(bytes, group[1] + 1, end, escape);
+        }
+
+        // No braces left to expand. Kept groups and escapes are handled by glob_helper, which may change the bytes.
         if (group == null) {
-            ByteList unescaped = new ByteList(bytes.length - 1);
-            unescaped.setEncoding(pattern.getEncoding());
-            for (int i = begin; i < end; i++) {
-                byte b = bytes[i];
-                if (b == '\\' && i < bytes.length - 1) {
-                    byte next_b = bytes[i + 1];
-                    if (next_b != '{' && next_b != '}') {
-                        unescaped.append(b);
-                    }
-                } else {
-                    unescaped.append(b);
-                }
-            }
-            return push_globs(runtime, cwd, result, unescaped, flags, sort);
+            return push_globs(runtime, cwd, result, new ByteList(bytes, begin, end - begin, pattern.getEncoding(), true), flags, sort);
         }
 
         for (ByteList alternative : braceAlternatives(bytes, begin, end, group, escape, pattern.getEncoding())) {
-            int status = push_braces(runtime, cwd, result, alternative, flags, sort);
+            int status = push_braces(runtime, cwd, result, alternative, flags, sort, group[0] - begin, true);
             if (status != 0) return status;
         }
 
@@ -508,6 +501,37 @@ public class Dir {
         }
 
         return alternatives;
+    }
+
+    // CRuby keeps a group that follows a recursive "**" segment and has no '/' in it.
+    @CRuby(value = "glob_helper", file = "dir.c")
+    private static boolean isMatchedPerEntry(byte[] bytes, int begin, int lbrace, int rbrace) {
+        for (int i = lbrace + 1; i < rbrace; i++) {
+            if (bytes[i] == '/') return false;
+        }
+
+        for (int segment = begin; segment + 2 < lbrace; segment++) {
+            if ((segment == begin || bytes[segment - 1] == '/') && isDoubleStarAndSlash(bytes, segment)) return true;
+        }
+
+        return false;
+    }
+
+    // Matches if any alternative of the segment's brace groups does.
+    @CRuby(value = "dirent_match_brace", file = "dir.c")
+    private static boolean fnmatchBraces(byte[] pattern, int pbegin, int pend, byte[] string, int sbegin, int send, int flags) {
+        boolean escape = (flags & FNM_NOESCAPE) == 0;
+        int[] group = findBraceGroup(pattern, pbegin, pend, escape);
+        if (group == null) return fnmatch(pattern, pbegin, pend, string, sbegin, send, flags) == 0;
+
+        for (ByteList alternative : braceAlternatives(pattern, pbegin, pend, group, escape, ASCIIEncoding.INSTANCE)) {
+            if (fnmatchBraces(alternative.unsafeBytes(), alternative.begin(), alternative.begin() + alternative.realSize(),
+                    string, sbegin, send, flags)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static int push_globs(Ruby runtime, String cwd, List<ByteList> ary, ByteList pattern, int flags, boolean sort) {
@@ -605,6 +629,7 @@ public class Dir {
     private static GlobMagic has_magic(byte[] bytes, int begin, int end, int flags) {
         boolean escape = (flags & FNM_NOESCAPE) == 0;
         int open = 0;
+        int braceOpen = 0;
         boolean hasalpha = false;
 
         for (int i = begin; i < end; i++) {
@@ -617,6 +642,13 @@ public class Dir {
                 continue;	/* complete, according to Posix.2 */
             case ']':
                 if (open > 0) return GlobMagic.MAGICAL;
+
+                continue;
+            case '{':
+                braceOpen++;
+                continue;
+            case '}':
+                if (braceOpen > 0) return GlobMagic.MAGICAL;
 
                 continue;
             case '\\':
@@ -841,7 +873,7 @@ public class Dir {
                                 status = glob_helper(runtime, cwd, scheme, buf, buf.getBegin() + len, flags, func, arg);
                                 if (status != 0) break;
                             }
-                        } else if (fnmatch(magic, 0, magic.length, fileBytes, 0, fileBytes.length, flags) == 0) {
+                        } else if (fnmatchBraces(magic, 0, magic.length, fileBytes, 0, fileBytes.length, flags)) {
                             boolean dirMatch = slashIndex == end - 1 &&
                                     JRubyFile.createResource(runtime, cwd, decodePath(buf)).isDirectory();
                             if (slashIndex == -1 || dirMatch) {  // found normal entry OR a dir that ends in '/'
