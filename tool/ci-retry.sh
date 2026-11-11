@@ -4,8 +4,10 @@
 # any other failure has to fail the job instead of being retried into a green run.
 set -u
 
-attempts=${CI_RETRY_ATTEMPTS:-3}
-delay=${CI_RETRY_DELAY:-15}
+# Seconds to wait before each retry. A short first wait is enough for a dropped
+# connection or a 502; the longer ones are for outages and rate limits.
+read -ra delays <<< "${CI_RETRY_DELAYS:-15 60 90}"
+attempts=$(( ${#delays[@]} + 1 ))
 
 # One signature per line; grep -E reads the lines as alternatives. Nothing
 # ambiguous belongs here: "Could not resolve dependencies" is also a real miss.
@@ -16,9 +18,14 @@ nodename nor servname|Failed to connect to|Failed to fetch|Unable to fetch some 
 The remote end hung up|RPC failed|Unexpected end of file from server
 Remote host terminated the handshake|SSLException
 502 Bad Gateway|504 Gateway|Service Unavailable
+Too Many Requests|status code: 429
 Errno::ECONNRESET|Errno::ETIMEDOUT
-Could not find artifact
-Failed to read artifact descriptor'
+Could not find artifact|during a previous attempt
+Failed to read artifact descriptor
+No versions available for .* within specified range'
+# The last one is how Maven reports a version range (e.g. jruby-openssl's
+# Bouncy Castle jars) when it could not download maven-metadata.xml.
+rate_limited='Too Many Requests|status code: 429'
 
 output=$(mktemp "${TMPDIR:-/tmp}/ci-retry.XXXXXX")
 trap 'rm -f "$output"' EXIT
@@ -43,8 +50,20 @@ while true; do
     exit "$status"
   fi
 
+  delay=${delays[attempt - 1]}
+  # Give a rate limit time to reset instead of adding to it.
+  if [ "$delay" -lt 30 ] && grep -Eq "$rate_limited" "$output"; then
+    delay=30
+  fi
+
+  # Maven records a failed download in ~/.m2 and does not ask the remote again
+  # until the update interval passes, so a plain retry fails on the cached miss.
+  # -U forces the lookup; Maven 3.9+ reads MAVEN_ARGS, other commands ignore it.
+  if [ "$attempt" -eq 1 ]; then
+    export MAVEN_ARGS="${MAVEN_ARGS:+$MAVEN_ARGS }-U"
+  fi
+
   echo "ci-retry: network failure on attempt ${attempt} of ${attempts} (exit ${status}); retrying in ${delay}s" >&2
   sleep "$delay"
   attempt=$((attempt + 1))
-  delay=$((delay * 2))
 done
