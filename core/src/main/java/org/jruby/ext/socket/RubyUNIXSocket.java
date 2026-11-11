@@ -346,9 +346,8 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
     @CRuby(value = "unixsock_path_value", file = "ext/socket/unixsocket.c")
     private static RubyString unixsockPathValue(ThreadContext context, IRubyObject path) {
-        return checkEmbeddedNulls(context, RubyFile.get_path(context, path));
+        return RubyFile.get_path(context, path);
     }
-
 
     protected void init_sock(Ruby runtime, Channel channel, String path) {
         MakeOpenFile();
