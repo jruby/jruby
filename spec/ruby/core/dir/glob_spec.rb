@@ -318,6 +318,18 @@ describe "Dir.glob" do
   end
 
   platform_is_not(:windows) do
+    it "keeps a '\\' before a brace with option File::FNM_NOESCAPE" do
+      Dir.mkdir 'foo\}bar'
+      Dir.mkdir 'foo}bar'
+
+      begin
+        Dir.glob('foo\}bar', File::FNM_NOESCAPE).should == %w|foo\\}bar|
+      ensure
+        Dir.rmdir 'foo\}bar'
+        Dir.rmdir 'foo}bar'
+      end
+    end
+
     it "matches the literal character '\\' with option File::FNM_NOESCAPE" do
       Dir.mkdir 'foo?bar'
 

@@ -278,6 +278,11 @@ describe :dir_glob, shared: true do
     Dir.send(@method, '{,.}*').sort.should == DirSpecs.expected_glob_paths
   end
 
+  it "returns an entry once when several alternatives of a set after '**' match it" do
+    Dir.send(@method, 'brace/**/*.{erb,html.erb}').sort.should == %w[brace/a.erb brace/a.html.erb]
+    Dir.send(@method, '**/{brace,brace}/a').should == %w[brace/a]
+  end
+
   it "respects the order of {} expressions, expanding left most first" do
     files = Dir.send(@method, "brace/a{.js,.html}{.erb,.rjs}")
     files.should == %w!brace/a.js.rjs brace/a.html.erb!
