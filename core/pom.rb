@@ -56,8 +56,8 @@ project 'JRuby Base' do
   jar 'com.github.jnr:jffi:${jffi.version}'
   jar 'com.github.jnr:jffi:${jffi.version}:native'
 
-  jar 'org.jruby.joni:joni:2.2.9'
-  jar 'org.jruby.jcodings:jcodings:1.0.64'
+  jar 'org.jruby.joni:joni:2.2.10'
+  jar 'org.jruby.jcodings:jcodings:1.0.65'
   jar 'org.jruby:dirgra:0.5'
 
   jar 'com.headius:invokebinder:1.16'
