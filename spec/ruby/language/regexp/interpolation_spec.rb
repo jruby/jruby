@@ -55,4 +55,15 @@ describe "Regexps with interpolation" do
     escape_seq = %r{"\x80"}n
     %r{#{escape_seq}}n.should == /(?-mix:"\x80")/n
   end
+
+  it "uses the source encoding for literal parts" do
+    str = "a"
+    /é#{str}/.encoding.should == Encoding::UTF_8
+    /é#{str}/.should =~ "éa"
+  end
+
+  it "allows property escapes in literal parts" do
+    str = "a"
+    /\p{L}|#{str}/.should =~ "é"
+  end
 end

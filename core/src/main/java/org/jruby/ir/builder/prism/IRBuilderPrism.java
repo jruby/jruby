@@ -1459,9 +1459,9 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         Node[] pieces;
         if (children.length == 1) { // Case of interpolation only being an embedded element
             // We add an empty string here because the internal RubyRegexp.processDRegexp expects there
-            // will be at least one string element which has had its encoding set properly by the options
-            // value of the regexp.  Adding an empty string will pick up the encoding from options (this
-            // empty string is how legacy parsers do this but it naturally falls out of the parser.
+            // will be at least one string element with the regexp's encoding.  The empty string gets the
+            // encoding of an explicit flag, or the source encoding without one (legacy parsers add the
+            // same empty string).
             pieces = new Node[children.length + 1];
             pieces[0] = new StringNode(0, 0, (short) 0, EMPTY.bytes());
             pieces[1] = children[0];
