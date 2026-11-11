@@ -47,6 +47,47 @@ describe "Array#pack with format 'x'" do
     it "aligns to a directive's alignment with the '!' modifier" do
       [1, 2].pack("C x!i i").should == [1, 2].pack("i< i")
     end
+
+    it "aligns from the start of the new output with 'x!' when given a buffer" do
+      buffer = +"z"
+      [1, 2].pack("C x!4 C", buffer: buffer)
+      buffer.should == "z\x01\x00\x00\x00\x02"
+    end
+
+    it "accepts the '_' and '!' modifiers after the alignment directive" do
+      [1, 2].pack("C x!s_ C").should == "\x01\x00\x02"
+      [1, 2].pack("C x!s! C").should == "\x01\x00\x02"
+    end
+
+    it "raises an ArgumentError when the '!' modifier has no alignment" do
+      -> { [1].pack("C x!") }.should.raise(ArgumentError, "missing alignment")
+    end
+
+    it "raises a RangeError for an alignment of zero" do
+      -> { [1].pack("C x!0") }.should.raise(RangeError, "invalid alignment")
+    end
+
+    it "raises a RangeError for an alignment that does not fit in an unsigned long" do
+      -> { [1].pack("C x!99999999999999999999") }.should.raise(RangeError, "invalid alignment")
+    end
+
+    it "raises an ArgumentError for an unknown alignment directive" do
+      -> { [1].pack("C x!k") }.should.raise(ArgumentError, /unknown alignment directive 'k'/)
+    end
+
+    it "raises an ArgumentError for a modifier after a directive that does not take it" do
+      -> { [1].pack("C x!c_") }.should.raise(ArgumentError, /'_' allowed only after types/)
+      -> { [1].pack("C x!c<") }.should.raise(ArgumentError, /'<' allowed only after types/)
+    end
+
+    it "raises an ArgumentError for an endian modifier after the alignment directive" do
+      -> { [1].pack("C x!s<") }.should.raise(ArgumentError, "endian modifier is not allowed for alignment")
+      -> { [1].pack("C @!s>") }.should.raise(ArgumentError, "endian modifier is not allowed for alignment")
+    end
+
+    it "raises a RangeError for both '<' and '>' before rejecting the endian modifier" do
+      -> { [1].pack("C x!s<>") }.should.raise(RangeError, "Can't use both '<' and '>'")
+    end
   end
 end
 
