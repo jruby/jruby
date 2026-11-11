@@ -36,6 +36,12 @@ describe "Hash#merge" do
     r.should == { a: :x, b: :x, d: :x }
   end
 
+  it "yields the key, the old value and the new value to the block as separate values" do
+    yielded = []
+    { a: 1, b: 2 }.merge({ a: 3 }) { |*args| yielded << args; 0 }.should == { a: 0, b: 2 }
+    yielded.should == [[:a, 1, 3]]
+  end
+
   it "tries to convert the passed argument to a hash using #to_hash" do
     obj = mock('{1=>2}')
     obj.should_receive(:to_hash).and_return({ 1 => 2 })
@@ -120,4 +126,12 @@ end
 
 describe "Hash#merge!" do
   it_behaves_like :hash_update, :merge!
+
+  it "yields the key, the old value and the new value to the block as separate values" do
+    yielded = []
+    h = { a: 1, b: 2 }
+    h.merge!({ a: 3 }) { |*args| yielded << args; 0 }.should equal(h)
+    h.should == { a: 0, b: 2 }
+    yielded.should == [[:a, 1, 3]]
+  end
 end
