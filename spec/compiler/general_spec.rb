@@ -731,6 +731,21 @@ modes.each do |mode|
       end
     end
 
+    it "evaluates every statement of a parenthesized when value" do
+      run('
+        n = 0
+        r = case "a"
+            when (n += 1; "b")
+              :b
+            when (n += 10; "a")
+              :a
+            end
+        [r, n]
+      ') do |result|
+        expect(result).to eq [:a, 11]
+      end
+    end
+
     it "properly handles method-root rescue logic with returns (GH\#733)" do
       run("def foo; return 1; rescue; return 2; else; return 3; end; foo") {|result| expect(result).to eq 1 }
       run("def foo; 1; rescue; return 2; else; return 3; end; foo") {|result| expect(result).to eq 3 }

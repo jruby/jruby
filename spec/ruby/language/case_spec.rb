@@ -400,6 +400,17 @@ describe "The 'case'-construct" do
     end.should == :called
   end
 
+  it "evaluates every expression in complex expressions within ()" do
+    n = 0
+    case 'a'
+    when (n += 1; 'b')
+      :wrong_called
+    when (n += 10; 'a')
+      :called
+    end.should == :called
+    n.should == 11
+  end
+
   it "supports declaring variables in the case target expression" do
     def test(v)
       case new_variable_in_expression = v
