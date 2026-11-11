@@ -81,6 +81,10 @@ public class Pack {
      **/
     private static final String NATIVE_CODES = "sSiIlLjJ";
     private static final String MAPPED_CODES = "sSiIqQjJ";
+    /** The types that accept the '_'/'!' and '<'/'>' modifiers in an x!/@! alignment, such as "x!l_". */
+    @CRuby(value = "natstr", file = "pack.c")
+    @CRuby(value = "endstr", file = "pack.c", note = "defined as natstr when the platform has long long")
+    private static final String NATINT_ALIGN_CODES = "sSiIlLqQjJ";
 
     private static final char BE = '>' + 127; // 189, bumped up to avoid collisions with LE
     private static final char LE = '<'; // 60
@@ -1009,6 +1013,7 @@ public class Pack {
             beg += offset;
             len -= offset;
         }
+        final int alignBase = (int) offset;
 
 
         // FIXME: potentially could just use ByteList here?
@@ -1027,6 +1032,19 @@ public class Pack {
                 if (type == 0) break; // exit on EOF
                 next = getDirective(context, "unpack", formatString, format);
                 continue; // continue after newline
+            }
+
+            // x! and @! skip to an alignment boundary; x! counts from the offset: argument, @! from the string start
+            if ((type == 'x' || type == '@') && next == '!') {
+                Alignment alignment = parseAlignment(context, "unpack", formatString, format);
+                next = alignment.next();
+                int position = encode.position() - encodedString.begin();
+                long pad = alignmentPad(context, position, type == '@' ? 0 : alignBase, alignment.size());
+                if (pad > encode.remaining()) {
+                    throw argumentError(context, type == '@' ? "@ outside of string" : "x outside of string");
+                }
+                positionBuffer(encode, encode.position() + (int) pad);
+                continue;
             }
 
             // Next indicates to decode using native encoding format
@@ -1960,6 +1978,7 @@ public class Pack {
         buffer.modify();
         ByteList result = buffer.getByteList();
         PackInts packInts = new PackInts(list.size(), 0);
+        final int alignBase = result.realSize(); // x! aligns relative to what the buffer: argument already held
         int type;
         int next = getDirective(context, "pack", formatString, format);
 
@@ -1983,6 +2002,18 @@ public class Pack {
                     type = next;
                     next = getDirective(context, "pack", formatString, format);
                 }
+            }
+
+            // x! and @! pad with NULs to an alignment boundary; x! counts from the buffer: start, @! from byte 0
+            if ((type == 'x' || type == '@') && next == '!') {
+                Alignment alignment = parseAlignment(context, "pack", formatString, format);
+                next = alignment.next();
+                long pad = alignmentPad(context, result.realSize(), type == '@' ? 0 : alignBase, alignment.size());
+                if (pad > Integer.MAX_VALUE - result.realSize()) {
+                    throw argumentError(context, "string size too big");
+                }
+                grow(result, sNil10, (int) pad);
+                continue;
             }
 
             if (next == '!' || next == '_') {
@@ -2122,6 +2153,99 @@ public class Pack {
         if (mode == UNPACK_1) return value;
         appendOrYield(context, block, result, value, mode);
         return null;
+    }
+
+    /** An alignment parsed after x! or @!, and the format character that follows it. */
+    private record Alignment(long size, int next) {}
+
+    /**
+     * Parse the alignment after x! or @!: either a byte count ("x!4") or a directive whose alignment to use
+     * ("x!i", "x!l_"). The '!' has already been read. Returns the alignment and the next format character.
+     */
+    @CRuby(value = "pack_alignment_size", file = "pack.c")
+    @CRuby(value = "pack_alignment", file = "pack.c")
+    @CRuby(value = "pack_modifiers", file = "pack.c", note = "modifiers after an x!/@! alignment type only")
+    private static Alignment parseAlignment(ThreadContext context, String mode, ByteList formatString,
+                                            ByteBuffer format) {
+        int c = getDirective(context, mode, formatString, format);
+        if (c == 0) throw argumentError(context, "missing alignment");
+
+        if (ASCII.isDigit(c)) {
+            StringBuilder digits = new StringBuilder();
+            do {
+                digits.append((char) c);
+                c = getDirective(context, mode, formatString, format);
+            } while (c != 0 && ASCII.isDigit(c));
+
+            long size;
+            try {
+                // CRuby reads an unsigned long, so this can't use the signed int count loop in unpackInternal and
+                // packCommon: 2^63..2^64-1 must parse here and fail later in alignmentPad with "alignment too big",
+                // while anything larger fails now with "invalid alignment"
+                size = Long.parseUnsignedLong(digits.toString());
+            } catch (NumberFormatException e) {
+                throw rangeError(context, "invalid alignment");
+            }
+            if (size == 0) throw rangeError(context, "invalid alignment");
+            return new Alignment(size, c);
+        }
+
+        int alignType = c;
+        boolean natint = false;
+        boolean explicitEndian = false;
+        c = getDirective(context, mode, formatString, format);
+        while (true) {
+            if (c == '_' || c == '!') {
+                if (NATINT_ALIGN_CODES.indexOf(alignType) == -1) {
+                    throw argumentError(context, "'" + (char) c + "' allowed only after types " + NATINT_ALIGN_CODES);
+                }
+                natint = true;
+            } else if (c == '<' || c == '>') {
+                if (NATINT_ALIGN_CODES.indexOf(alignType) == -1) {
+                    throw argumentError(context, "'" + (char) c + "' allowed only after types " + NATINT_ALIGN_CODES);
+                }
+                if (explicitEndian) throw rangeError(context, "Can't use both '<' and '>'");
+                explicitEndian = true;
+            } else {
+                break;
+            }
+            c = getDirective(context, mode, formatString, format);
+        }
+        // Rejected only after the loop, like CRuby, so a repeated '<'/'>' raises the RangeError above first
+        if (explicitEndian) {
+            throw argumentError(context, "endian modifier is not allowed for alignment");
+        }
+
+        long size = alignmentOf(alignType, natint);
+        if (size == 0) unknownDirective(context, "alignment", alignType, formatString);
+        return new Alignment(size, c);
+    }
+
+    /**
+     * The C alignment of a directive's type on the 64-bit platforms JRuby models: 'l_' is 8 bytes like JRuby's
+     * native long.
+     */
+    @CRuby(value = "pack_alignof", file = "pack.c", note = "fixed 64-bit alignments instead of the platform's")
+    private static long alignmentOf(int type, boolean natint) {
+        return switch (type) {
+            case 'c', 'C' -> 1;
+            case 's', 'S', 'n', 'v' -> 2;
+            case 'i', 'I', 'N', 'V', 'f', 'F', 'e', 'g' -> 4;
+            case 'l', 'L' -> natint ? 8 : 4;
+            case 'q', 'Q', 'j', 'J', 'd', 'D', 'E', 'G', 'p', 'P' -> 8;
+            default -> 0;
+        };
+    }
+
+    /** Bytes needed to move from position up to the next multiple of alignment, counted from base. */
+    @CRuby(value = "pack_align_pad", file = "pack.c")
+    private static long alignmentPad(ThreadContext context, long position, long base, long alignment) {
+        if (alignment < 0) { // above Long.MAX_VALUE as unsigned
+            throw rangeError(context, "alignment too big");
+        }
+        if (alignment <= 1) return 0;
+        long mod = Math.floorMod(position - base, alignment);
+        return mod == 0 ? 0 : alignment - mod;
     }
 
     private static void pack_w(ThreadContext context, RubyArray list, ByteList result, PackInts packInts, int occurrences) {
