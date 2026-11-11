@@ -1959,19 +1959,10 @@ public class EncodingUtils {
         strBufCat(str.getByteList(), ptrBytes, ptr, len);
     }
     public static void strBufCat(ByteList str, byte[] ptrBytes, int ptr, int len) {
-        int total, off = -1;
-
-        // termlen is not relevant since we have no termination sequence
-
-        // missing: if ptr string is inside str, off = ptr start minus str start
-
-//        str.modify();
+        // No MRI termlen or offset fixup: ByteList has no terminator and the old array survives a realloc.
         if (len == 0) return;
 
-        // much logic is missing here, since we don't manually manage the ByteList buffer
-
-        total = str.getRealSize() + len;
-        str.ensure(total);
+        str.ensure(str.getRealSize() + len);
         str.append(ptrBytes, ptr, len);
     }
 

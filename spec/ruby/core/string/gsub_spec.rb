@@ -225,6 +225,16 @@ describe "String#gsub with pattern and replacement" do
     result.should == 'éué'
     result.encoding.should == Encoding::UTF_8
   end
+
+  it "expands backreferences in a replacement in a compatible superset encoding" do
+    result = 'abc'.encode(Encoding::US_ASCII).gsub(/[bc]/, 'é\0')
+    result.should == 'aébéc'
+    result.encoding.should == Encoding::UTF_8
+  end
+
+  it "raises an Encoding::CompatibilityError for a replacement with backreferences in an incompatible encoding" do
+    -> { 'abc'.gsub(/[bc]/, '<\0>'.encode(Encoding::UTF_16LE)) }.should.raise(Encoding::CompatibilityError)
+  end
 end
 
 describe "String#gsub with pattern and Hash" do
