@@ -68,7 +68,6 @@ import static org.jruby.api.Access.stringClass;
 import static org.jruby.api.Convert.asBoolean;
 import static org.jruby.api.Convert.asFixnum;
 import static org.jruby.api.Convert.asSymbol;
-import static org.jruby.api.Convert.toByte;
 import static org.jruby.api.Convert.toInt;
 import static org.jruby.api.Convert.toLong;
 import static org.jruby.api.Create.newArray;
@@ -504,7 +503,7 @@ public class RubyArgsFile extends RubyObject {
         if (!block.isGiven()) return enumeratorize(context.runtime, recv, "each_byte");
 
         IRubyObject bt;
-        while ((bt = getc(context, recv)) != context.nil) {
+        while ((bt = getbyte(context, recv)) != context.nil) {
             block.yield(context, bt);
         }
 
@@ -533,36 +532,9 @@ public class RubyArgsFile extends RubyObject {
     }
 
     public static IRubyObject each_charCommon(ThreadContext context, IRubyObject recv, Block block) {
-        final Ruby runtime = context.runtime;
-
-        ArgsFileData data = ArgsFileData.getArgsFileData(runtime);
-
         IRubyObject ch;
         while ((ch = getc(context, recv)) != context.nil) {
-            boolean cont = true;
-            while (cont) {
-                cont = false;
-                byte c = toByte(context, ch);
-                int n = runtime.getKCode().getEncoding().length(c);
-                IRubyObject file = data.currentFile;
-                RubyString str = runtime.newString();
-                str.cat(c);
-
-                while(--n > 0) {
-                    if ((ch = getc(context, recv)) == context.nil) {
-                        block.yield(context, str);
-                        return recv;
-                    }
-                    if (data.currentFile != file) {
-                        block.yield(context, str);
-                        cont = true;
-                        continue;
-                    }
-                    c = toByte(context, ch);
-                    str.cat(c);
-                }
-                block.yield(context, str);
-            }
+            block.yield(context, ch);
         }
         return recv;
     }
@@ -884,7 +856,7 @@ public class RubyArgsFile extends RubyObject {
 
             IRubyObject bt;
             if (data.currentFile instanceof RubyFile) {
-                bt = ((RubyIO) data.currentFile).getbyte(context);
+                bt = ((RubyIO) data.currentFile).getc(context);
             } else {
                 bt = data.currentFile.callMethod(context,"getc");
             }
