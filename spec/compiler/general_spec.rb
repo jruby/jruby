@@ -1004,6 +1004,12 @@ modes.each do |mode|
       end
     end
 
+    it "assigns a scoped constant with ||= when only a top-level constant has the same name" do
+      run('m = Module.new; m::String ||= :assigned; m::String') do |result|
+        expect(result).to eq :assigned
+      end
+    end
+
     it "re-runs enclosing block when redo is called from ensure" do
       run("def foo; yield; end; x = false; foo { break 5 if x; begin; ensure; x = true; redo; end; break 6}") {|result| expect(result).to eq 5 }
     end
