@@ -43,6 +43,11 @@ describe :string_codepoints, shared: true do
     s.send(@method).to_a.should == [38937]
   end
 
+  it "works for multibyte characters in Emacs-Mule based encodings" do
+    "a\x86\xCDb".dup.force_encoding(Encoding::EMACS_MULE).send(@method).to_a.should == [0x61, 0x86CD, 0x62]
+    "\x94\xCB\xCE".dup.force_encoding(Encoding::STATELESS_ISO_2022_JP_KDDI).send(@method).to_a.should == [0x94CBCE]
+  end
+
   it "yields the codepoints corresponding to the character's position in the String's encoding" do
     "\u{787}".send(@method).to_a.should == [1927]
   end

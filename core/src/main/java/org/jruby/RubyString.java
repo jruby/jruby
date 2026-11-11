@@ -6701,13 +6701,15 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         }
 
         final boolean asciiCompat = enc.isAsciiCompatible();
+        final int[] len_p = {0};
         while (ptr < end) {
             int c = Byte.toUnsignedInt(ptrBytes[ptr]);
             int n = 1;
             // an ASCII byte in an ASCII-compatible encoding is its own codepoint
             if (!asciiCompat || !Encoding.isAscii(c)) {
-                c = codePoint(context, enc, ptrBytes, ptr, end);
-                n = codeLength(enc, c);
+                // advance by the character's byte length, as CRuby does, not by re-encoding the codepoint
+                c = EncodingUtils.encCodepointLength(context, ptrBytes, ptr, end, len_p, enc);
+                n = len_p[0];
             }
             if (wantarray) ary.append(context, asFixnum(context, c));
             else block.yield(context, asFixnum(context, c));
