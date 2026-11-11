@@ -28,6 +28,12 @@ describe "String#unpack1" do
     "a".unpack1("C", offset: 1).should == nil
   end
 
+  it "returns nil if the format unpacks no value" do
+    "".unpack1("C*").should == nil
+    "\x80".b.unpack1("w*").should == nil
+    "abc".unpack1("").should == nil
+  end
+
   it "raises an ArgumentError when the offset is larger than the string bytesize" do
     -> { "a".unpack1("C", offset: 2) }.should raise_error(ArgumentError, "offset outside of string")
   end
