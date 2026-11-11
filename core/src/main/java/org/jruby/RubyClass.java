@@ -63,7 +63,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
@@ -1343,66 +1342,37 @@ public class RubyClass extends RubyModule {
         }
     };
 
+    // These operations also run under the hierarchy monitor. Avoid parking in
+    // ReentrantLock while that monitor pins a virtual-thread carrier on JDK 21.
     static class WeakRubyClassSet extends WeakHashMap<RubyClass, Object> implements RubyClassSet {
-        final ReentrantLock lock = new ReentrantLock();
 
         public WeakRubyClassSet(int size) {
             super(size);
         }
 
         @Override
-        public void addClass(RubyClass klass) {
-            ReentrantLock lock = this.lock;
-            lock.lock();
-            try {
-                super.put(klass, NEVER);
-            } finally {
-                lock.unlock();
-            }
+        public synchronized void addClass(RubyClass klass) {
+            super.put(klass, NEVER);
         }
 
         @Override
-        public void forEachClass(BiConsumerIgnoresSecond<RubyClass> action) {
-            ReentrantLock lock = this.lock;
-            lock.lock();
-            try {
-                super.forEach(action);
-            } finally {
-                lock.unlock();
-            }
+        public synchronized void forEachClass(BiConsumerIgnoresSecond<RubyClass> action) {
+            super.forEach(action);
         }
 
         @Override
-        public void forEachClass(ThreadContext context, BiConsumer<ThreadContext, RubyClass> action) {
-            ReentrantLock lock = this.lock;
-            lock.lock();
-            try {
-                super.forEach((klass,v) -> action.accept(context, klass));
-            } finally {
-                lock.unlock();
-            }
+        public synchronized void forEachClass(ThreadContext context, BiConsumer<ThreadContext, RubyClass> action) {
+            super.forEach((klass,v) -> action.accept(context, klass));
         }
 
         @Override
-        public void removeClass(RubyClass klass) {
-            ReentrantLock lock = this.lock;
-            lock.lock();
-            try {
-                super.remove(klass);
-            } finally {
-                lock.unlock();
-            }
+        public synchronized void removeClass(RubyClass klass) {
+            super.remove(klass);
         }
 
         @Override
-        public boolean isEmptyOfClasses() {
-            ReentrantLock lock = this.lock;
-            lock.lock();
-            try {
-                return super.isEmpty();
-            } finally {
-                lock.unlock();
-            }
+        public synchronized boolean isEmptyOfClasses() {
+            return super.isEmpty();
         }
     }
 
