@@ -1150,6 +1150,9 @@ public class Pack {
                 case 'w':
                     value = unpack_w(context, block, result, encode, occurrences, mode);
                     break;
+                case '^':
+                    value = unpack_offset(context, block, result, encodedString, encode, mode);
+                    break;
                 default:
                     unknownDirective(context, "unpack", type, formatString);
                     break;
@@ -2137,6 +2140,19 @@ public class Pack {
         }
 
         throw argumentError(context, str(context.runtime, "unknown " + mode + " directive '", newString(context, unknown), "' in '", newString(context,formatString), "'"));
+    }
+
+    /**
+     * Unpack '^': the current byte offset from the start of the string (not from the offset: argument). A count
+     * is ignored, so '^3' still unpacks one value.
+     */
+    @CRuby(value = "pack_unpack_internal", file = "pack.c", note = "'^' directive")
+    private static IRubyObject unpack_offset(ThreadContext context, Block block, RubyArray result,
+                                             ByteList encodedString, ByteBuffer encode, int mode) {
+        IRubyObject value = asFixnum(context, encode.position() - encodedString.begin());
+        if (mode == UNPACK_1) return value;
+        appendOrYield(context, block, result, value, mode);
+        return null;
     }
 
     /** An alignment parsed after x! or @!, and the format character that follows it. */
