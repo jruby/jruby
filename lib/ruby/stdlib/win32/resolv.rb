@@ -157,9 +157,9 @@ module Win32
           if add_search = search.nil?
             search = []
             begin
-              nvdom = reg.read_s('NV Domain')
+              nvdom = reg.read_s('Domain')
               unless nvdom.empty?
-                @search = [ nvdom ]
+                search = [ nvdom ]
                 if reg.read_i('UseDomainNameDevolution') != 0
                   if /^\w+\./ =~ nvdom
                     devo = $'
