@@ -3415,6 +3415,29 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      */
     private static final Regex REPL_MOCK_REGEX = new Regex(new String(""));
 
+    // Shared by both gsubCommon below, outside their loops (see RubyRegexp.gsubAppend).
+    private IRubyObject gsubNoMatch(ThreadContext context, final boolean bang, boolean useBackref) {
+        // set backref for user
+        if (useBackref) context.clearBackRef();
+
+        return bang ? context.nil : dupString(context, this); /* bang: true, no match, no substitution */
+    }
+
+    private static RubyString newGsubDest(ThreadContext context, int srcLen, Encoding enc) {
+        RubyString dest = Create.newString(context, new ByteList(srcLen + 30));
+        dest.setEncoding(enc);
+        dest.setCodeRange(enc.isAsciiCompatible() ? CR_7BIT : CR_VALID);
+        return dest;
+    }
+
+    private IRubyObject gsubResult(RubyString dest, final boolean bang) {
+        if (!bang) return dest;
+
+        view(dest.value);
+        setCodeRange(dest.getCodeRange());
+        return this;
+    }
+
     // MRI: str_gsub, roughly
     private IRubyObject gsubCommon(ThreadContext context, Block block, RubyString repl,
                                    RubyHash hash, RubyString pattern, final boolean bang, boolean useBackref) {
@@ -3426,18 +3449,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
         int beg = StringSupport.index(getByteList(), pattern.getByteList(), 0, patternEnc);
         int begz;
-        if (beg < 0) {
-            // set backref for user
-            if (useBackref) context.clearBackRef();
+        if (beg < 0) return gsubNoMatch(context, bang, useBackref);
 
-            return bang ? context.nil : dupString(context, this); /* bang: true, no match, no substitution */
-        }
-
-        int offset = 0; int cp = spBeg; //int n = 0;
-        RubyString dest = Create.newString(context, new ByteList(spLen + 30));
+        int offset = 0; int cp = spBeg;
         final Encoding str_enc = value.getEncoding();
-        dest.setEncoding(str_enc);
-        dest.setCodeRange(str_enc.isAsciiCompatible() ? CR_7BIT : CR_VALID);
+        RubyString dest = newGsubDest(context, spLen, str_enc);
 
         int replEscape = RubyRegexp.ESCAPE_UNKNOWN;
 
@@ -3497,12 +3513,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             }
         }
 
-        if (bang) {
-            view(dest.value);
-            setCodeRange(dest.getCodeRange());
-            return this;
-        }
-        return dest;
+        return gsubResult(dest, bang);
     }
 
     private IRubyObject gsubCommon(ThreadContext context, Block block, RubyString repl,
@@ -3517,18 +3528,11 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         final Matcher matcher = prepared.matcher(spBytes, spBeg, spBeg + spLen);
 
         int beg = RubyRegexp.matcherSearch(context, matcher, spBeg, spBeg + spLen, Option.NONE);
-        if (beg < 0) {
-            // set backref for user
-            if (useBackref) context.clearBackRef();
+        if (beg < 0) return gsubNoMatch(context, bang, useBackref);
 
-            return bang ? context.nil : dupString(context, this); /* bang: true, no match, no substitution */
-        }
-
-        int offset = 0; int cp = spBeg; //int n = 0;
-        RubyString dest = Create.newString(context, new ByteList(spLen + 30));
+        int offset = 0; int cp = spBeg;
         final Encoding str_enc = value.getEncoding();
-        dest.setEncoding(str_enc);
-        dest.setCodeRange(str_enc.isAsciiCompatible() ? CR_7BIT : CR_VALID);
+        RubyString dest = newGsubDest(context, spLen, str_enc);
 
         int replEscape = RubyRegexp.ESCAPE_UNKNOWN;
 
@@ -3589,12 +3593,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             }
         }
 
-        if (bang) {
-            view(dest.value);
-            setCodeRange(dest.getCodeRange());
-            return this;
-        }
-        return dest;
+        return gsubResult(dest, bang);
     }
 
     @CRuby(value = "rb_str_index_m", file = "string.c")
