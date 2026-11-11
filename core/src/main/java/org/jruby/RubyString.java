@@ -3439,8 +3439,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         dest.setEncoding(str_enc);
         dest.setCodeRange(str_enc.isAsciiCompatible() ? CR_7BIT : CR_VALID);
 
-        // Same encoding everywhere: expand the replacement straight into dest instead of a new string per match.
-        final RubyString replDest = repl != null && repl.getEncoding() == str_enc ? dest : null;
+        int replEscape = RubyRegexp.ESCAPE_UNKNOWN;
 
         RubyMatchData match = null;
         do {
@@ -3450,8 +3449,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
             if (repl != null) {     // string given
                 if (len != 0) dest.cat(spBytes, cp, len, str_enc);
-                RubyString val = RubyRegexp.regsub(context, replDest, repl, this, REPL_MOCK_REGEX, null, begz, endz);
-                if (val != dest) dest.catWithCodeRange(val);
+                replEscape = RubyRegexp.gsubAppend(context, dest, str_enc, repl, this,
+                        REPL_MOCK_REGEX, null, begz, endz, replEscape);
             } else {
                 final RubyString val;
                 if (hash != null) { // hash given
@@ -3531,8 +3530,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         dest.setEncoding(str_enc);
         dest.setCodeRange(str_enc.isAsciiCompatible() ? CR_7BIT : CR_VALID);
 
-        // Same encoding everywhere: expand the replacement straight into dest instead of a new string per match.
-        final RubyString replDest = repl != null && repl.getEncoding() == str_enc ? dest : null;
+        int replEscape = RubyRegexp.ESCAPE_UNKNOWN;
 
         RubyMatchData match = null;
         do {
@@ -3542,8 +3540,8 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
             if (repl != null) {     // string given
                 if (len != 0) dest.cat(spBytes, cp, len, str_enc);
-                RubyString val = RubyRegexp.regsub(context, replDest, repl, this, pattern, matcher.getRegion(), begz, endz);
-                if (val != dest) dest.catWithCodeRange(val);
+                replEscape = RubyRegexp.gsubAppend(context, dest, str_enc, repl, this,
+                        pattern, matcher.getRegion(), begz, endz, replEscape);
             } else {
                 final RubyString val;
                 final RubyString substr = makeSharedString(context.runtime, begz, endz - begz);
