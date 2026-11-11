@@ -1379,7 +1379,9 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
     protected Operand buildDRegex(Variable result, U[] children, RegexpOptions options) {
         Operand[] pieces = new Operand[children.length];
-        Encoding encoding = options.getKCode().getEncoding();
+        // Without an encoding flag, string pieces keep their own encoding,
+        // as in parse_regexp_string_part in CRuby's prism_compile.c.
+        Encoding encoding = options.isKcodeDefault() ? null : options.getKCode().getEncoding();
 
         for (int i = 0; i < children.length; i++) {
             dynamicPiece(pieces, i, children[i], encoding); // dregexp does not use estimated size
