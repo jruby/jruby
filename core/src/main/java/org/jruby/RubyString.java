@@ -3415,7 +3415,7 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
      */
     private static final Regex REPL_MOCK_REGEX = new Regex(new String(""));
 
-    // Shared by both gsubCommon below, outside their loops (see RubyRegexp.gsubAppend).
+    // Kept out of gsubCommon's loop below (see RubyRegexp.gsubAppend).
     private IRubyObject gsubNoMatch(ThreadContext context, final boolean bang, boolean useBackref) {
         // set backref for user
         if (useBackref) context.clearBackRef();
@@ -3438,96 +3438,41 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         return this;
     }
 
-    // MRI: str_gsub, roughly
     private IRubyObject gsubCommon(ThreadContext context, Block block, RubyString repl,
                                    RubyHash hash, RubyString pattern, final boolean bang, boolean useBackref) {
-        final byte[] spBytes = value.getUnsafeBytes();
-        final int spBeg = value.getBegin();
-        final int spLen = value.getRealSize();
-        final int patternLen = pattern.size();
-        final Encoding patternEnc = this.checkEncoding(pattern);
-
-        int beg = StringSupport.index(getByteList(), pattern.getByteList(), 0, patternEnc);
-        int begz;
-        if (beg < 0) return gsubNoMatch(context, bang, useBackref);
-
-        int offset = 0; int cp = spBeg;
-        final Encoding str_enc = value.getEncoding();
-        RubyString dest = newGsubDest(context, spLen, str_enc);
-
-        int replEscape = RubyRegexp.ESCAPE_UNKNOWN;
-
-        RubyMatchData match = null;
-        do {
-            begz = beg;
-            int endz = beg + patternLen;
-            int len = begz - offset;
-
-            if (repl != null) {     // string given
-                if (len != 0) dest.cat(spBytes, cp, len, str_enc);
-                replEscape = RubyRegexp.gsubAppend(context, dest, str_enc, repl, this,
-                        REPL_MOCK_REGEX, null, begz, endz, replEscape);
-            } else {
-                final RubyString val;
-                if (hash != null) { // hash given
-                    val = objAsString(context, hash.op_aref(context, pattern));
-                } else {            // block given
-                    match = new RubyMatchData(context.runtime);
-                    match.initMatchData(this, begz, pattern);
-
-                    // set backref for user
-                    if (useBackref) context.setBackRef(match);
-
-                    val = objAsString(context, block.yield(context, dupString(context, pattern)));
-                }
-                modifyCheck(spBytes, spLen, str_enc);
-                if (bang) frozenCheck();
-
-                if (len != 0) dest.cat(spBytes, cp, len, str_enc);
-                dest.catWithCodeRange(val);
-            }
-            offset = endz;
-            if (begz == endz) {
-                if (spLen <= endz) break;
-                len = encFastMBCLen(spBytes, spBeg + endz, spBeg + spLen, str_enc);
-                dest.cat(spBytes, spBeg + endz, len, str_enc);
-                offset = endz + len;
-            }
-            cp = spBeg + offset;
-            if (offset > spLen) break;
-            beg = StringSupport.index(getByteList(), pattern.getByteList(), offset, patternEnc);
-        } while (beg >= 0);
-
-        if (spLen > offset) dest.cat(spBytes, cp, spLen - offset, str_enc);
-
-        if (useBackref) {
-            if (match != null) { // block given
-                // set backref for user
-                context.setBackRef(match);
-            } else {
-                match = new RubyMatchData(context.runtime);
-                match.initMatchData(this, begz, pattern);
-
-                // set backref for user
-                context.setBackRef(match);
-            }
-        }
-
-        return gsubResult(dest, bang);
+        return gsubCommon(context, block, repl, hash, null, pattern, bang, useBackref);
     }
 
     private IRubyObject gsubCommon(ThreadContext context, Block block, RubyString repl,
                                    RubyHash hash, RubyRegexp regexp, final boolean bang, boolean useBackref) {
-        Regex pattern = regexp.getPattern(context);
-        Regex prepared = regexp.preparePattern(context, this);
+        return gsubCommon(context, block, repl, hash, regexp, null, bang, useBackref);
+    }
 
+    // MRI: str_gsub, roughly. Exactly one of regexp and strPattern is given.
+    private IRubyObject gsubCommon(ThreadContext context, Block block, RubyString repl, RubyHash hash,
+                                   RubyRegexp regexp, RubyString strPattern, final boolean bang, boolean useBackref) {
         final byte[] spBytes = value.getUnsafeBytes();
         final int spBeg = value.getBegin();
         final int spLen = value.getRealSize();
 
-        final Matcher matcher = prepared.matcher(spBytes, spBeg, spBeg + spLen);
-
-        int beg = RubyRegexp.matcherSearch(context, matcher, spBeg, spBeg + spLen, Option.NONE);
+        final Regex pattern;
+        final Matcher matcher;
+        final int patternLen;
+        final Encoding patternEnc;
+        int beg;
+        if (regexp != null) {
+            pattern = regexp.getPattern(context);
+            matcher = regexp.preparePattern(context, this).matcher(spBytes, spBeg, spBeg + spLen);
+            patternLen = 0;
+            patternEnc = null;
+            beg = RubyRegexp.matcherSearch(context, matcher, spBeg, spBeg + spLen, Option.NONE);
+        } else {
+            pattern = REPL_MOCK_REGEX;
+            matcher = null;
+            patternLen = strPattern.size();
+            patternEnc = checkEncoding(strPattern);
+            beg = StringSupport.index(getByteList(), strPattern.getByteList(), 0, patternEnc);
+        }
         if (beg < 0) return gsubNoMatch(context, bang, useBackref);
 
         int offset = 0; int cp = spBeg;
@@ -3537,28 +3482,35 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
         int replEscape = RubyRegexp.ESCAPE_UNKNOWN;
 
         RubyMatchData match = null;
+        int begz;
         do {
-            int begz = matcher.getBegin();
-            int endz = matcher.getEnd();
+            final int endz;
+            if (matcher != null) {
+                begz = matcher.getBegin();
+                endz = matcher.getEnd();
+            } else {
+                begz = beg;
+                endz = beg + patternLen;
+            }
             int len = begz - offset;
 
             if (repl != null) {     // string given
                 if (len != 0) dest.cat(spBytes, cp, len, str_enc);
                 replEscape = RubyRegexp.gsubAppend(context, dest, str_enc, repl, this,
-                        pattern, matcher.getRegion(), begz, endz, replEscape);
+                        pattern, matcher == null ? null : matcher.getRegion(), begz, endz, replEscape);
             } else {
                 final RubyString val;
-                final RubyString substr = makeSharedString(context.runtime, begz, endz - begz);
+                final RubyString substr = matcher == null ?
+                        strPattern : makeSharedString(context.runtime, begz, endz - begz);
                 if (hash != null) { // hash given
                     val = objAsString(context, hash.op_aref(context, substr));
                 } else {            // block given
-                    match = RubyRegexp.createMatchData(context, this, matcher, pattern);
-                    match.regexp = regexp;
+                    match = gsubMatchData(context, matcher, pattern, regexp, strPattern, begz);
 
                     // set backref for user
                     if (useBackref) context.setBackRef(match);
 
-                    val = objAsString(context, block.yield(context, substr));
+                    val = objAsString(context, block.yield(context, matcher == null ? dupString(context, substr) : substr));
                 }
                 modifyCheck(spBytes, spLen, str_enc);
                 if (bang) frozenCheck();
@@ -3575,25 +3527,33 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
             }
             cp = spBeg + offset;
             if (offset > spLen) break;
-            beg = RubyRegexp.matcherSearch(context, matcher, cp, spBeg + spLen, Option.NONE);
+            beg = matcher != null ?
+                    RubyRegexp.matcherSearch(context, matcher, cp, spBeg + spLen, Option.NONE) :
+                    StringSupport.index(getByteList(), strPattern.getByteList(), offset, patternEnc);
         } while (beg >= 0);
 
         if (spLen > offset) dest.cat(spBytes, cp, spLen - offset, str_enc);
 
         if (useBackref) {
             // set backref for user
-            if (match != null) { // block given
-                context.setBackRef(match);
-            } else {
-                match = RubyRegexp.createMatchData(context, this, matcher, pattern);
-
-                match.regexp = regexp;
-
-                context.setBackRef(match);
-            }
+            if (match == null) match = gsubMatchData(context, matcher, pattern, regexp, strPattern, begz);
+            context.setBackRef(match);
         }
 
         return gsubResult(dest, bang);
+    }
+
+    private RubyMatchData gsubMatchData(ThreadContext context, Matcher matcher, Regex pattern, RubyRegexp regexp,
+                                        RubyString strPattern, int begz) {
+        final RubyMatchData match;
+        if (matcher == null) {
+            match = new RubyMatchData(context.runtime);
+            match.initMatchData(this, begz, strPattern);
+        } else {
+            match = RubyRegexp.createMatchData(context, this, matcher, pattern);
+            match.regexp = regexp;
+        }
+        return match;
     }
 
     @CRuby(value = "rb_str_index_m", file = "string.c")
