@@ -392,90 +392,11 @@ public class Dir {
     public static List<ByteList> push_glob(Ruby runtime, String cwd, ByteList globByteList, int flags, boolean sort) {
         if (!globByteList.isEmpty()) {
             final ArrayList<ByteList> result = new ArrayList<>();
-            push_braces(runtime, cwd, result, new GlobPattern(globByteList, flags), sort);
+            push_braces(runtime, cwd, result, globByteList, flags, sort, 0, false);
             return result;
         }
 
         return Collections.emptyList();
-    }
-
-    private static class GlobPattern {
-        final byte[] bytes;
-        final int begin;
-        final int end;
-        final Encoding enc;
-
-        private int index;
-
-        private final int flags;
-
-        GlobPattern(ByteList bytes, int flags) {
-            this(bytes.getUnsafeBytes(), bytes.getBegin(),  bytes.getBegin() + bytes.getRealSize(), bytes.getEncoding(), flags);
-        }
-
-        GlobPattern(byte[] bytes, int index, int end, Encoding enc, int flags) {
-            this.bytes = bytes;
-            this.index = index;
-            this.begin = index;
-            this.end = end;
-            this.enc = enc;
-            this.flags = flags;
-        }
-
-        public int findClosingIndexOf(int leftTokenIndex) {
-            if (leftTokenIndex == -1 || leftTokenIndex > end) return -1;
-
-            byte leftToken = bytes[leftTokenIndex];
-            byte rightToken;
-
-            switch (leftToken) {
-            case '{': rightToken = '}'; break;
-            case '[': rightToken = ']'; break;
-            default: return -1;
-            }
-
-            int nest = 1; // leftToken made us start as nest 1
-            index = leftTokenIndex + 1;
-            while (hasNext()) {
-                byte c = next();
-
-                if (c == leftToken) {
-                    nest++;
-                } else if (c == rightToken && --nest == 0) {
-                    return index();
-                }
-            }
-
-            return -1;
-        }
-
-        public boolean hasNext() {
-            return index < end;
-        }
-
-        public void reset() {
-            index = begin;
-        }
-
-        public void setIndex(int value) {
-            index = value;
-        }
-
-        // Get index of last read byte
-        public int index() {
-            return index - 1;
-        }
-
-        public int indexOf(byte c) {
-            while (hasNext()) if (next() == c) return index();
-
-            return -1;
-        }
-
-        public byte next() {
-            return bytes[index++];
-        }
-
     }
 
     private interface GlobFunc<T> {
@@ -504,57 +425,113 @@ public class Dir {
 
     /*
      * Process {}'s (example: Dir.glob("{jruby,jython}/README*")
+     * Like CRuby, groups after a recursive "**" without '/' are kept and matched per entry by glob_helper.
      */
-    private static int push_braces(Ruby runtime, String cwd, List<ByteList> result, GlobPattern pattern, boolean sort) {
-        pattern.reset();
-        int lbrace = pattern.indexOf((byte) '{'); // index of left-most brace
-        int rbrace = pattern.findClosingIndexOf(lbrace);// index of right-most brace
+    private static int push_braces(Ruby runtime, String cwd, List<ByteList> result, ByteList pattern, int flags, boolean sort,
+                                   int searchOffset, boolean expandAll) {
+        byte[] bytes = pattern.unsafeBytes();
+        int begin = pattern.begin();
+        int end = begin + pattern.realSize();
+        boolean escape = (flags & FNM_NOESCAPE) == 0;
+        int[] group = findBraceGroup(bytes, begin + searchOffset, end, escape);
 
-        // No, mismatched or escaped braces..Move along..nothing to see here
-        if (lbrace == -1 || rbrace == -1 ||
-                lbrace > 0 && pattern.bytes[lbrace-1] == '\\' && (lbrace <= 1 || pattern.bytes[lbrace-2] != '\\') ||
-                rbrace > 0 && pattern.bytes[rbrace-1] == '\\' && (rbrace <= 1 || pattern.bytes[rbrace-2] != '\\')) {
-            ByteList unescaped = new ByteList(pattern.bytes.length - 1);
-            unescaped.setEncoding(pattern.enc);
-            for (int i = pattern.begin; i < pattern.end; i++) {
-                byte b = pattern.bytes[i];
-                if (b == '\\' && i < pattern.bytes.length - 1) {
-                    byte next_b = pattern.bytes[i + 1];
-                    if (next_b != '{' && next_b != '}') {
-                        unescaped.append(b);
-                    }
-                } else {
-                    unescaped.append(b);
-                }
-            }
-            return push_globs(runtime, cwd, result, unescaped, pattern.flags, sort);
+        while (!expandAll && group != null && isMatchedPerEntry(bytes, begin, group[0], group[1])) {
+            group = findBraceGroup(bytes, group[1] + 1, end, escape);
         }
 
-        // Peel onion...make subpatterns out of outer layer of glob and recall with each subpattern
-        // Example: foo{a{c},b}bar -> fooa{c}bar, foobbar
-        final ByteList bytes = new ByteList(20);
-        bytes.setEncoding(pattern.enc);
-        int middleRegionIndex;
-        int i = lbrace;
-        while (pattern.bytes[i] != '}') {
-            middleRegionIndex = i + 1;
-            for (i = middleRegionIndex; i < pattern.end && pattern.bytes[i] != '}'; i++) {
-                if (pattern.bytes[i] == ',') {
-                    if (i > pattern.begin && pattern.bytes[i-1] == '\\') continue;
-                    break;
-                }
-                if (pattern.bytes[i] == '{') i = pattern.findClosingIndexOf(i); // skip inner braces
-            }
+        // No braces left to expand. Kept groups and escapes are handled by glob_helper, which may change the bytes.
+        if (group == null) {
+            return push_globs(runtime, cwd, result, new ByteList(bytes, begin, end - begin, pattern.getEncoding(), true), flags, sort);
+        }
 
-            bytes.length(0);
-            bytes.append(pattern.bytes, pattern.begin, lbrace - pattern.begin);
-            bytes.append(pattern.bytes, middleRegionIndex, i - middleRegionIndex);
-            bytes.append(pattern.bytes, rbrace + 1, pattern.end - (rbrace + 1));
-            int status = push_braces(runtime, cwd, result, new GlobPattern(bytes, pattern.flags), sort);
+        for (ByteList alternative : braceAlternatives(bytes, begin, end, group, escape, pattern.getEncoding())) {
+            int status = push_braces(runtime, cwd, result, alternative, flags, sort, group[0] - begin, true);
             if (status != 0) return status;
         }
 
         return 0; // All braces pushed..
+    }
+
+    // {lbrace, rbrace} of the first brace group in bytes[from, end), skipping escaped characters.
+    @CRuby(value = "ruby_brace_expand", file = "dir.c")
+    private static int[] findBraceGroup(byte[] bytes, int from, int end, boolean escape) {
+        int lbrace = -1;
+        int nest = 0;
+
+        for (int i = from; i < end; i++) {
+            byte c = bytes[i];
+            if (c == '{' && nest++ == 0) {
+                lbrace = i;
+            } else if (c == '}' && lbrace != -1 && --nest == 0) {
+                return new int[] { lbrace, i };
+            } else if (c == '\\' && escape) {
+                i++;
+            }
+        }
+
+        return null;
+    }
+
+    // bytes[begin, end) with the brace group replaced by each of its alternatives.
+    @CRuby(value = "ruby_brace_expand", file = "dir.c")
+    private static List<ByteList> braceAlternatives(byte[] bytes, int begin, int end, int[] group, boolean escape, Encoding enc) {
+        int lbrace = group[0];
+        int rbrace = group[1];
+        List<ByteList> alternatives = new ArrayList<>();
+        int nest = 0;
+        int start = lbrace + 1;
+
+        for (int i = start; i <= rbrace; i++) {
+            byte c = bytes[i];
+            if (i == rbrace || (c == ',' && nest == 0)) {
+                ByteList alternative = new ByteList(end - begin);
+                alternative.setEncoding(enc);
+                alternative.append(bytes, begin, lbrace - begin);
+                alternative.append(bytes, start, i - start);
+                alternative.append(bytes, rbrace + 1, end - (rbrace + 1));
+                alternatives.add(alternative);
+                start = i + 1;
+            } else if (c == '{') {
+                nest++;
+            } else if (c == '}') {
+                nest--;
+            } else if (c == '\\' && escape && i + 1 < rbrace) {
+                i++;
+            }
+        }
+
+        return alternatives;
+    }
+
+    // CRuby keeps a group that follows a recursive "**" segment and has no '/' in it.
+    @CRuby(value = "glob_helper", file = "dir.c")
+    private static boolean isMatchedPerEntry(byte[] bytes, int begin, int lbrace, int rbrace) {
+        for (int i = lbrace + 1; i < rbrace; i++) {
+            if (bytes[i] == '/') return false;
+        }
+
+        for (int segment = begin; segment + 2 < lbrace; segment++) {
+            if ((segment == begin || bytes[segment - 1] == '/') && isDoubleStarAndSlash(bytes, segment)) return true;
+        }
+
+        return false;
+    }
+
+    // Matches if any alternative of the segment's brace groups does.
+    @CRuby(value = "dirent_match_brace", file = "dir.c")
+    private static boolean fnmatchBraces(byte[] pattern, int pbegin, int pend, byte[] string, int sbegin, int send, int flags) {
+        boolean escape = (flags & FNM_NOESCAPE) == 0;
+        int[] group = findBraceGroup(pattern, pbegin, pend, escape);
+        if (group == null) return fnmatch(pattern, pbegin, pend, string, sbegin, send, flags) == 0;
+
+        for (ByteList alternative : braceAlternatives(pattern, pbegin, pend, group, escape, ASCIIEncoding.INSTANCE)) {
+            if (fnmatchBraces(alternative.unsafeBytes(), alternative.begin(), alternative.begin() + alternative.realSize(),
+                    string, sbegin, send, flags)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static int push_globs(Ruby runtime, String cwd, List<ByteList> ary, ByteList pattern, int flags, boolean sort) {
@@ -652,6 +629,7 @@ public class Dir {
     private static GlobMagic has_magic(byte[] bytes, int begin, int end, int flags) {
         boolean escape = (flags & FNM_NOESCAPE) == 0;
         int open = 0;
+        int braceOpen = 0;
         boolean hasalpha = false;
 
         for (int i = begin; i < end; i++) {
@@ -664,6 +642,13 @@ public class Dir {
                 continue;	/* complete, according to Posix.2 */
             case ']':
                 if (open > 0) return GlobMagic.MAGICAL;
+
+                continue;
+            case '{':
+                braceOpen++;
+                continue;
+            case '}':
+                if (braceOpen > 0) return GlobMagic.MAGICAL;
 
                 continue;
             case '\\':
@@ -888,7 +873,7 @@ public class Dir {
                                 status = glob_helper(runtime, cwd, scheme, buf, buf.getBegin() + len, flags, func, arg);
                                 if (status != 0) break;
                             }
-                        } else if (fnmatch(magic, 0, magic.length, fileBytes, 0, fileBytes.length, flags) == 0) {
+                        } else if (fnmatchBraces(magic, 0, magic.length, fileBytes, 0, fileBytes.length, flags)) {
                             boolean dirMatch = slashIndex == end - 1 &&
                                     JRubyFile.createResource(runtime, cwd, decodePath(buf)).isDirectory();
                             if (slashIndex == -1 || dirMatch) {  // found normal entry OR a dir that ends in '/'

@@ -100,6 +100,11 @@ public class TracePoint extends RubyObject {
 
         @Override
         public void event(ThreadContext context, RubyEvent event, String file, int line, String name, IRubyObject type) {
+            event(context, event, file, line, name, type, context.nil);
+        }
+
+        @Override
+        public void event(ThreadContext context, RubyEvent event, String file, int line, String name, IRubyObject type, IRubyObject value) {
             if (!enabled || (threadToTrace != null && threadToTrace != context) || context.isWithinTrace()) return;
 
             int savedCallInfo = ThreadContext.resetCallInfo(context);
@@ -119,8 +124,7 @@ public class TracePoint extends RubyObject {
                 context.preTrace();
 
                 final IRubyObject errorInfo = context.getErrorInfo();
-                // FIXME: get return value
-                update(event.getName(), file, line, name, type, errorInfo, context.nil, binding);
+                update(event.getName(), file, line, name, type, errorInfo, value == null ? context.nil : value, binding);
 
                 // MRI clears $! while a hook runs and restores it after (unless the hook raises)
                 context.setErrorInfo(context.nil);
@@ -270,8 +274,13 @@ public class TracePoint extends RubyObject {
     @JRubyMethod
     public IRubyObject return_value(ThreadContext context) {
         checkInside(context);
-        
-        // FIXME: get return value
+
+        // FIXME: :c_return events do not pass the return value through yet, so it is always nil for them
+        switch (eventName) {
+            case "return", "b_return", "c_return" -> {}
+            default -> throw runtimeError(context, "not supported by this event");
+        }
+
         return returnValue;
     }
     
@@ -297,7 +306,6 @@ public class TracePoint extends RubyObject {
     }
     
     private void update(String eventName, String file, int line, String name, IRubyObject type, IRubyObject exception, IRubyObject returnValue, IRubyObject binding) {
-        // TODO: missing exception, self, return value
         this.eventName = eventName;
         this.file = file;
         this.line = line;

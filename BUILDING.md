@@ -99,12 +99,16 @@ one of the gems to a newer version or clean out all installed gems.
 
 ### Incremental compiling
 
-After changing Java code, you can recompile quickly by running one of the
-jar files by
+After changing Java code, you can recompile quickly and update
+`lib/jruby.jar` (the jar `bin/jruby` runs) by building the `core` and
+`shaded` modules together:
 
 ```
-./mvnw -pl core
+./mvnw -DskipTests -pl core,shaded package
 ```
+
+Building `core` on its own does not update `lib/jruby.jar`, so `bin/jruby`
+would keep running the old code.
 
 ### Day to Day Testing
 

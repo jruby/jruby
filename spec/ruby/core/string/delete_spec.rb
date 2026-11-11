@@ -54,6 +54,24 @@ describe "String#delete" do
     '哥哥我倒'.delete('哥').should == "我倒"
   end
 
+  it "deletes characters anywhere in a long string" do
+    "-a-bc-def-ghij-klmno-pqrstu-vwxyz12-".delete("-").should == "abcdefghijklmnopqrstuvwxyz12"
+    "a_b-c d_e-f g_h-i j_k-l m".delete("-_ ").should == "abcdefghijklm"
+    "a\0b\0c\0d\0e\0f\0g\0h\0i".delete("\0").should == "abcdefghi"
+  end
+
+  it "deletes from a substring without changing the original" do
+    s = "x--a-b-c-d-e-f-g-h"
+    t = s[1..]
+    t.delete!("-").should.equal?(t)
+    t.should == "abcdefgh"
+    s.should == "x--a-b-c-d-e-f-g-h"
+  end
+
+  it "keeps multibyte characters when deleting ASCII characters" do
+    "\u{56db}-\u{6708}-\u{56db}-\u{6708}-\u{56db}".delete("-").should == "\u{56db}\u{6708}\u{56db}\u{6708}\u{56db}"
+  end
+
   it "respects backslash for escaping" do
     'Non-Authoritative Information'.delete(' \-\'').should ==
       'NonAuthoritativeInformation'
@@ -112,6 +130,7 @@ describe "String#delete!" do
   it "returns nil if no modifications were made" do
     a = "hello"
     a.delete!("z").should == nil
+    a.delete!("\0").should == nil
     a.should == "hello"
   end
 
@@ -120,6 +139,7 @@ describe "String#delete!" do
     a.freeze
 
     -> { a.delete!("")            }.should.raise(FrozenError)
+    -> { a.delete!("z")           }.should.raise(FrozenError)
     -> { a.delete!("aeiou", "^e") }.should.raise(FrozenError)
   end
 end

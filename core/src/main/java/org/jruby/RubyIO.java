@@ -2505,7 +2505,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         try {
             if (fptr.socketChannel() != null) {
                 try {
-                    fptr.socketChannel().socket().shutdownInput();
+                    fptr.socketChannel().shutdownInput();
                 } catch (IOException ioe) {
                     throw runtime.newErrnoFromErrno(Helpers.errnoFromException(ioe), fptr.getPath());
                 }

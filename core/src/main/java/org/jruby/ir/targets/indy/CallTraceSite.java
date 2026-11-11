@@ -68,4 +68,18 @@ public class CallTraceSite extends MutableCallSite {
 
         IRRuntimeHelpers.callTrace(context, selfBlock.getFrameClass(), event, name, file, line);
     }
+
+    public void traceBootstrap(ThreadContext context, IRubyObject clazz, IRubyObject value) {
+        // bind to dynamic invoker from runtime
+        setTarget(Binder.from(type()).append(arrayOf(RubyEvent.class, String.class, String.class, int.class), event, name, file, line).invoke(context.traceEvents.getReturnValueSite().dynamicInvoker()));
+
+        IRRuntimeHelpers.callTrace(context, clazz, value, event, name, file, line);
+    }
+
+    public void traceBootstrap(ThreadContext context, Block selfBlock, IRubyObject value) {
+        // bind to dynamic invoker from runtime
+        setTarget(Binder.from(type()).append(arrayOf(RubyEvent.class, String.class, String.class, int.class), event, name, file, line).invoke(context.traceEvents.getBReturnValueSite().dynamicInvoker()));
+
+        IRRuntimeHelpers.callTrace(context, selfBlock, value, event, name, file, line);
+    }
 }

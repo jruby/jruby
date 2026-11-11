@@ -2705,8 +2705,35 @@ public class JVMVisitor extends IRVisitor {
         if (name == null) name = "null";
 
         switch (traceInstr.getEvent()) {
-            case CALL:
             case RETURN:
+                jvmMethod().loadFrameClass();
+                visit(traceInstr.getValue());
+
+                jvmAdapter().invokedynamic(
+                        traceInstr.getEvent().getName(),
+                        sig(void.class, ThreadContext.class, IRubyObject.class, IRubyObject.class),
+                        CallTraceSite.BOOTSTRAP,
+                        name,
+                        traceInstr.getFilename(),
+                        traceInstr.getLinenumber());
+
+                break;
+
+            case B_RETURN:
+                jvmMethod().loadSelfBlock();
+                visit(traceInstr.getValue());
+
+                jvmAdapter().invokedynamic(
+                        traceInstr.getEvent().getName(),
+                        sig(void.class, ThreadContext.class, Block.class, IRubyObject.class),
+                        CallTraceSite.BOOTSTRAP,
+                        name,
+                        traceInstr.getFilename(),
+                        traceInstr.getLinenumber());
+
+                break;
+
+            case CALL:
             case CLASS:
             case END:
             case LINE:
@@ -2723,7 +2750,6 @@ public class JVMVisitor extends IRVisitor {
                 break;
 
             case B_CALL:
-            case B_RETURN:
                 jvmMethod().loadSelfBlock();
 
                 jvmAdapter().invokedynamic(

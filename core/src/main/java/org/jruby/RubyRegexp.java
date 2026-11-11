@@ -1673,13 +1673,19 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
     }
 
-    static RubyString regsub(ThreadContext context, RubyString str, RubyString src, Regex pattern, Matcher matcher) {
-        return regsub(context, str, src, pattern, matcher.getRegion(), matcher.getBegin(), matcher.getEnd());
-    }
-
-    @CRuby(value = "rb_reg_regsub", file = "re.c")
     static RubyString regsub(ThreadContext context, RubyString str, RubyString src, Regex pattern, Region regs,
                              final int begin, final int end) {
+        return regsub(context, null, str, src, pattern, regs, begin, end);
+    }
+
+    /**
+     * Expands the replacement {@code str} for one match. With a non-null {@code dest} the expansion is appended
+     * straight into it (gsub's result buffer) instead of a new string per match; {@code str} is returned unchanged
+     * when it holds no escapes, and the caller appends it.
+     */
+    @CRuby(value = "rb_reg_regsub", file = "re.c")
+    static RubyString regsub(ThreadContext context, RubyString dest, RubyString str, RubyString src, Regex pattern,
+                             Region regs, final int begin, final int end) {
         RubyString val = null;
         int no = 0, clen[] = {0};
         Encoding strEnc = EncodingUtils.encGet(context, str);
@@ -1705,7 +1711,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
             if (c != '\\' || s == e) continue;
 
-            if (val == null) val = newString(context, new ByteList(ss - p));
+            if (val == null) val = dest != null ? dest : newString(context, new ByteList(ss - p));
             EncodingUtils.encStrBufCat(context.runtime, val, sBytes, p, ss - p, strEnc);
 
             c = ASCGET(acompat, sBytes, s, e, clen, strEnc);

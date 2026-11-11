@@ -1003,7 +1003,8 @@ public class Pack {
             }
         }
 
-        return unpackInternal(context, encoded, formatString, UNPACK_1, offset, block);
+        IRubyObject value = unpackInternal(context, encoded, formatString, UNPACK_1, offset, block);
+        return value == null ? context.nil : value;
     }
 
     private static IRubyObject unpackInternal(ThreadContext context, RubyString encoded, ByteList formatString, int mode, long offset, Block block) {

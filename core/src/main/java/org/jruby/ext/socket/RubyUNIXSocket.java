@@ -69,6 +69,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.Channel;
+import java.nio.channels.SocketChannel;
 
 import static com.headius.backport9.buffer.Buffers.flipBuffer;
 import static org.jruby.api.Access.fixnumClass;
@@ -247,13 +248,13 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
         // TODO: type and protocol
 
-        UnixSocketChannel[] sp;
+        SocketChannel[] sp;
         final RubyClass UNIXSocket = Access.getClass(context, "UNIXSocket");
         RubyUNIXSocket sock = (RubyUNIXSocket)(Helpers.invoke(context, UNIXSocket, "allocate"));
         RubyUNIXSocket sock2 = (RubyUNIXSocket)(Helpers.invoke(context, UNIXSocket, "allocate"));
 
         try {
-            sp = UnixSocketChannel.pair();
+            sp = UnixDomain.pair();
 
             sock.init_sock(runtime, sp[0], "");
             sock2.init_sock(runtime, sp[1], "");
@@ -345,9 +346,8 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
     @CRuby(value = "unixsock_path_value", file = "ext/socket/unixsocket.c")
     private static RubyString unixsockPathValue(ThreadContext context, IRubyObject path) {
-        return checkEmbeddedNulls(context, RubyFile.get_path(context, path));
+        return RubyFile.get_path(context, path);
     }
-
 
     protected void init_sock(Ruby runtime, Channel channel, String path) {
         MakeOpenFile();

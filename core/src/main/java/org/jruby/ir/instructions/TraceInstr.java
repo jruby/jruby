@@ -6,6 +6,7 @@ import org.jruby.ir.IRFlags;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.Nil;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.persistence.IRReaderDecoder;
 import org.jruby.ir.persistence.IRWriterEncoder;
@@ -25,18 +26,24 @@ import java.util.EnumSet;
 /**
  * Instrumented trace.
  */
-public class TraceInstr extends OneOperandInstr {
+public class TraceInstr extends TwoOperandInstr {
     private final RubyEvent event;
-    private final Operand module;
     private final RubySymbol name;
     private final String filename;
     private final int linenumber;
 
     public TraceInstr(RubyEvent event, Operand module, RubySymbol name, String filename, int linenumber) {
-        super(Operation.TRACE, module);
+        this(event, module, name, filename, linenumber, new Nil());
+    }
+
+    /**
+     * @param value the value reported to hooks as the event's value (e.g. TracePoint#return_value for
+     *              :return and :b_return events); nil for events that carry no value.
+     */
+    public TraceInstr(RubyEvent event, Operand module, RubySymbol name, String filename, int linenumber, Operand value) {
+        super(Operation.TRACE, module, value);
 
         this.event = event;
-        this.module = module;
         this.name = name;
         this.filename = filename;
         this.linenumber = linenumber;
@@ -44,7 +51,15 @@ public class TraceInstr extends OneOperandInstr {
 
     @Override
     public Instr clone(CloneInfo ii) {
-        return new TraceInstr(event, module, name, filename, linenumber);
+        return new TraceInstr(event, getModule().cloneForInlining(ii), name, filename, linenumber, getValue().cloneForInlining(ii));
+    }
+
+    public Operand getModule() {
+        return getOperand1();
+    }
+
+    public Operand getValue() {
+        return getOperand2();
     }
 
     public RubyEvent getEvent() {
@@ -72,25 +87,26 @@ public class TraceInstr extends OneOperandInstr {
     public void encode(IRWriterEncoder e) {
         super.encode(e);
         e.encode(getEvent());
-        e.encode(module);
+        e.encode(getModule());
         e.encode(name);
         e.encode(getFilename());
         e.encode(getLinenumber());
+        e.encode(getValue());
     }
 
     public static TraceInstr decode(IRReaderDecoder d) {
-        return new TraceInstr(d.decodeRubyEvent(), d.decodeOperand(), d.decodeSymbol(), d.decodeString(), d.decodeInt());
+        return new TraceInstr(d.decodeRubyEvent(), d.decodeOperand(), d.decodeSymbol(), d.decodeString(), d.decodeInt(), d.decodeOperand());
     }
 
     @Override
     public Object interpret(ThreadContext context, StaticScope currScope, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
-        Object moduleValue = module.retrieve(context, self, currScope, currDynScope, temp);
-        if (moduleValue instanceof Block) {
-            Block block = (Block) moduleValue;
-            IRRuntimeHelpers.callTrace(context, block, getEvent(), getName(), getFilename(), getLinenumber());
+        Object moduleValue = getModule().retrieve(context, self, currScope, currDynScope, temp);
+        IRubyObject value = (IRubyObject) getValue().retrieve(context, self, currScope, currDynScope, temp);
+        if (moduleValue instanceof Block block) {
+            IRRuntimeHelpers.callTrace(context, block, value, getEvent(), getName(), getFilename(), getLinenumber());
         } else {
             IRubyObject selfClass = (IRubyObject) moduleValue;
-            IRRuntimeHelpers.callTrace(context, selfClass, getEvent(), getName(), getFilename(), getLinenumber());
+            IRRuntimeHelpers.callTrace(context, selfClass, value, getEvent(), getName(), getFilename(), getLinenumber());
         }
 
         return null;
