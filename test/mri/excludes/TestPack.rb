@@ -10,3 +10,5 @@ exclude :test_pack_unpack_atmark, "errors differently in JRuby but does not over
 exclude :test_pack_unpack_bB, "needs investigation"
 exclude :test_pack_unpack_u, "needs investigation"
 exclude :test_short_with_block, "needs investigation"
+exclude :test_unpack1_offset, "expects the pre-4.1 error for a negative offset (Feature #21979); needs a test_pack.rb sync from CRuby"
+exclude :test_unpack_offset, "expects the pre-4.1 error for a negative offset (Feature #21979); needs a test_pack.rb sync from CRuby"
