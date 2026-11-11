@@ -118,6 +118,15 @@ describe :integer_exponent, shared: true do
       (@bignum.send(@method, 1.3)).should be_close(11109528802438156839288832.0, TOLERANCE)
     end
 
+    it "returns Float when power is Float" do
+      bignum_value.send(@method, 0.5).should.eql? 4294967296.0
+      bignum_value.send(@method, 2.0).should.eql? 340282366920938463463374607431768211456.0
+      bignum_value.send(@method, -1.0).should.eql? 5.421010862427522e-20
+      bignum_value.send(@method, 0.0).should.eql? 1.0
+      (-bignum_value).send(@method, 2.0).should.eql? 340282366920938463463374607431768211456.0
+      bignum_value.send(@method, nan_value).should.nan?
+    end
+
     it "raises a TypeError when given a non-Integer" do
       -> { @bignum.send(@method, mock('10')) }.should.raise(TypeError)
       -> { @bignum.send(@method, "10") }.should.raise(TypeError)
