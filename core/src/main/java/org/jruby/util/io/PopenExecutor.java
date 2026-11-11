@@ -75,7 +75,8 @@ public class PopenExecutor {
      * @return true if popen can use native code, false otherwise
      */
     public static boolean nativePopenAvailable(Ruby runtime) {
-        return Options.NATIVE_POPEN.load() && runtime.getPosix().isNative() && !Platform.IS_WINDOWS;
+        return Options.NATIVE_POPEN.load() && runtime.getPosix().isNative() && !Platform.IS_WINDOWS &&
+                FilenoUtil.nativeFilenoAvailable();
     }
 
     // MRI: check_pipe_command
