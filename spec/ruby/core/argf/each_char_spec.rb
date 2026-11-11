@@ -18,6 +18,14 @@ describe "ARGF.each_char" do
     end
   end
 
+  it "yields a multibyte character as one String" do
+    multibyte_name = fixture __FILE__, "multibyte.txt"
+    argf [multibyte_name] do
+      @argf.set_encoding(Encoding::UTF_8)
+      @argf.send(@method).to_a.should == ["é", "t", "é", "€"]
+    end
+  end
+
   it "returns self when passed a block" do
     argf [@file1_name, @file2_name] do
       @argf.each_char {}.should.equal?(@argf)
@@ -55,6 +63,27 @@ describe "ARGF.each_char" do
           end
         end
       end
+    end
+  end
+end
+
+describe "ARGF.each_char when reading $stdin" do
+  before :each do
+    @r, @w = IO.pipe("UTF-8")
+    @w.write "hé"
+    @w.close
+    @stdin = $stdin
+    $stdin = @r
+  end
+
+  after :each do
+    $stdin = @stdin
+    @r.close unless @r.closed?
+  end
+
+  it "yields a multibyte character as one String" do
+    argf ['-'] do
+      @argf.each_char.to_a.should == ["h", "é"]
     end
   end
 end
