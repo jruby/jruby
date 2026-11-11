@@ -7,6 +7,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.Paths;
+import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,11 +27,23 @@ public class ClasspathLauncher {
         return command;
     }
 
-    // This only retrieves the name of JRuby jar used (which seemingly only ever gets hit for
-    // jruby-complete.jar.
-    // Approach from: https://www.baeldung.com/java-full-path-of-jar-from-class
     private static String getJRubyJar() {
-        Class<Main> clazz = Main.class;
+        return getJRubyJar(Main.class);
+    }
+
+    static String getJRubyJar(Class<?> clazz) {
+        // OSGi loaders expose bundle resource URLs, which cannot be used on a child JVM's
+        // classpath. The code source can still point to the underlying local bundle file.
+        try {
+            CodeSource source = clazz.getProtectionDomain().getCodeSource();
+            if (source != null && source.getLocation() != null) {
+                String path = URLUtil.getPlatformPath(source.getLocation());
+                if (path != null) return path;
+            }
+        } catch (SecurityException e) {
+            // Fall back to the class resource when protection domain access is denied.
+        }
+
         URL classResource = clazz.getResource(clazz.getSimpleName() + ".class");
 
         if (classResource == null) return null;
