@@ -266,9 +266,13 @@ public class SizedQueue extends Queue {
     }
 
     private final RubyThread.Task<IRubyObject, IRubyObject> blockingPutTask = new RubyThread.Task<>() {
-        // A masked interrupt wakes us, but the wait goes on.
+        // Thread#raise, #kill and #wakeup interrupt the wait, even when handle_interrupt
+        // masks the interrupt. Run interrupts that are not masked, then wait again.
+        // Written out instead of using retryInterruptedWait: a lambda here would
+        // allocate on every push.
         @Override
-        public IRubyObject run(ThreadContext context, IRubyObject value) throws InterruptedException {
+        // MRI: rb_szqueue_push, untimed wait loop
+        public IRubyObject run(ThreadContext context, IRubyObject value) {
             while (true) {
                 try {
                     putInternal(context, value);
@@ -292,20 +296,15 @@ public class SizedQueue extends Queue {
             this.timeoutNS = timeoutNS;
         }
 
-        // A masked interrupt wakes us, but the wait goes on until the timeout.
         @Override
         // MRI: rb_szqueue_push, timed wait loop
-        public IRubyObject run(ThreadContext context, IRubyObject value) throws InterruptedException {
+        public IRubyObject run(ThreadContext context, IRubyObject value) {
             long start = System.nanoTime();
-            while (true) {
-                try {
-                    long remaining = timeoutNS - (System.nanoTime() - start);
-                    boolean result = offerInternal(context, value, remaining, TimeUnit.NANOSECONDS);
-                    return !result ? context.nil : SizedQueue.this;
-                } catch (InterruptedException ie) {
-                    context.blockingThreadPoll();
-                }
-            }
+            boolean result = retryInterruptedWait(context, () -> {
+                long remaining = timeoutNS - (System.nanoTime() - start);
+                return offerInternal(context, value, remaining, TimeUnit.NANOSECONDS);
+            });
+            return !result ? context.nil : SizedQueue.this;
         }
 
         @Override

@@ -700,7 +700,13 @@ public class Queue extends RubyObject implements DataType {
     }
 
     private static final RubyThread.Task<Queue, IRubyObject> BLOCKING_TAKE_TASK = new RubyThread.Task<Queue, IRubyObject>() {
-        public IRubyObject run(ThreadContext context, Queue queue) throws InterruptedException {
+        // Thread#raise, #kill and #wakeup interrupt the wait, even when handle_interrupt
+        // masks the interrupt. Run interrupts that are not masked, then wait again.
+        // Written out instead of using retryInterruptedWait: a lambda here would
+        // allocate on every pop.
+        @Override
+        // MRI: queue_do_pop, untimed wait loop
+        public IRubyObject run(ThreadContext context, Queue queue) {
             while (true) {
                 try {
                     return queue.takeInternal(context);
@@ -714,6 +720,23 @@ public class Queue extends RubyObject implements DataType {
             thread.getNativeThread().interrupt();
         }
     };
+
+    @FunctionalInterface
+    interface InterruptibleWait<T> {
+        T run() throws InterruptedException;
+    }
+
+    // Thread#raise, #kill and #wakeup interrupt the wait, even when handle_interrupt
+    // masks the interrupt. Run interrupts that are not masked, then wait again.
+    static <T> T retryInterruptedWait(ThreadContext context, InterruptibleWait<T> wait) {
+        while (true) {
+            try {
+                return wait.run();
+            } catch (InterruptedException ie) {
+                context.blockingThreadPoll();
+            }
+        }
+    }
 
     public IRubyObject raiseClosedError(ThreadContext context) {
         throw context.runtime.newRaiseException(context.runtime.getClosedQueueError(), "queue closed");
@@ -730,20 +753,15 @@ public class Queue extends RubyObject implements DataType {
             this.timeoutNS = timeoutNS;
         }
 
-        // A masked interrupt wakes us, but the wait goes on until the timeout.
         @Override
         // MRI: queue_do_pop, timed wait loop
-        public IRubyObject run(ThreadContext context, Queue queue) throws InterruptedException {
+        public IRubyObject run(ThreadContext context, Queue queue) {
             long start = System.nanoTime();
-            while (true) {
-                try {
-                    long remaining = timeoutNS - (System.nanoTime() - start);
-                    IRubyObject result = queue.pollInternal(remaining, TimeUnit.NANOSECONDS);
-                    return Helpers.nullToNil(result, context.nil);
-                } catch (InterruptedException ie) {
-                    context.blockingThreadPoll();
-                }
-            }
+            IRubyObject result = retryInterruptedWait(context, () -> {
+                long remaining = timeoutNS - (System.nanoTime() - start);
+                return queue.pollInternal(remaining, TimeUnit.NANOSECONDS);
+            });
+            return Helpers.nullToNil(result, context.nil);
         }
 
         @Override
