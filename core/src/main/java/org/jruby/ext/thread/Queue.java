@@ -730,15 +730,21 @@ public class Queue extends RubyObject implements DataType {
             this.timeoutNS = timeoutNS;
         }
 
+        // A masked interrupt wakes us, but the wait goes on until the timeout.
         @Override
+        // MRI: queue_do_pop, timed wait loop
         public IRubyObject run(ThreadContext context, Queue queue) throws InterruptedException {
-                IRubyObject result = timeoutNS == 0 ? queue.pollInternal() : queue.pollInternal(timeoutNS, TimeUnit.NANOSECONDS);
-                if (result == null && timeoutNS == 0) {
-                    throw context.runtime.newThreadError("queue empty");
-                } else {
+            long start = System.nanoTime();
+            while (true) {
+                try {
+                    long remaining = timeoutNS - (System.nanoTime() - start);
+                    IRubyObject result = queue.pollInternal(remaining, TimeUnit.NANOSECONDS);
                     return Helpers.nullToNil(result, context.nil);
+                } catch (InterruptedException ie) {
+                    context.blockingThreadPoll();
                 }
             }
+        }
 
         @Override
         public void wakeup(RubyThread thread, Queue queue) {

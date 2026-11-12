@@ -61,6 +61,21 @@ describe :sizedqueue_enq, shared: true do
       t.join
     end
 
+    it "keeps waiting after Thread#wakeup" do
+      q = @object.call(1)
+      q << 1
+
+      t = Thread.new {
+        q.send(@method, 2, timeout: TIME_TOLERANCE)
+      }
+      Thread.pass until t.status == "sleep" && q.num_waiting == 1
+      t.wakeup
+      t.join(0.1).should == nil
+      q.pop
+      t.value.should == q
+      q.pop.should == 2
+    end
+
     it "does nothing if the timeout is nil" do
       q = @object.call(1)
       q << 1

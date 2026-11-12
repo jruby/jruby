@@ -266,10 +266,17 @@ public class SizedQueue extends Queue {
     }
 
     private final RubyThread.Task<IRubyObject, IRubyObject> blockingPutTask = new RubyThread.Task<>() {
+        // A masked interrupt wakes us, but the wait goes on.
         @Override
         public IRubyObject run(ThreadContext context, IRubyObject value) throws InterruptedException {
-            putInternal(context, value);
-            return SizedQueue.this;
+            while (true) {
+                try {
+                    putInternal(context, value);
+                    return SizedQueue.this;
+                } catch (InterruptedException ie) {
+                    context.blockingThreadPoll();
+                }
+            }
         }
 
         @Override
@@ -285,10 +292,20 @@ public class SizedQueue extends Queue {
             this.timeoutNS = timeoutNS;
         }
 
+        // A masked interrupt wakes us, but the wait goes on until the timeout.
         @Override
+        // MRI: rb_szqueue_push, timed wait loop
         public IRubyObject run(ThreadContext context, IRubyObject value) throws InterruptedException {
-            boolean result = offerInternal(context, value, timeoutNS, TimeUnit.NANOSECONDS);
-            return !result ? context.nil : SizedQueue.this;
+            long start = System.nanoTime();
+            while (true) {
+                try {
+                    long remaining = timeoutNS - (System.nanoTime() - start);
+                    boolean result = offerInternal(context, value, remaining, TimeUnit.NANOSECONDS);
+                    return !result ? context.nil : SizedQueue.this;
+                } catch (InterruptedException ie) {
+                    context.blockingThreadPoll();
+                }
+            }
         }
 
         @Override
