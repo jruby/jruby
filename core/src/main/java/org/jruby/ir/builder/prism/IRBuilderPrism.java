@@ -1562,7 +1562,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         markImplicitVariables(staticScope, node.parameters);
         Signature signature = calculateSignature(node.parameters);
         staticScope.setSignature(signature);
-        return buildLambda(node.parameters, node.body, staticScope, signature, getLine(node));
+        return buildLambda(node.parameters, node.body, staticScope, signature, getLine(node), -1, getEndLine(node), -1);
     }
 
     private Operand buildLocalVariableRead(LocalVariableReadNode node) {

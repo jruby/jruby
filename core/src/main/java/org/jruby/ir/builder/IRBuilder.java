@@ -1732,10 +1732,6 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
         if (parserTiming) manager.getRuntime().getParserManager().getParserStats().addIRBuildTime(System.nanoTime() - time);
     }
 
-    public Operand buildLambda(U args, U body, StaticScope staticScope, Signature signature, int line) {
-        return buildLambda(args, body, staticScope, signature, line, -1, -1, -1);
-    }
-
     public Operand buildLambda(U args, U body, StaticScope staticScope, Signature signature, int line, int startColumn,
                                int endLine, int endColumn) {
         IRClosure closure = new IRClosure(getManager(), scope, line, staticScope, signature,
@@ -1757,11 +1753,19 @@ public abstract class IRBuilder<U, V, W, X, Y, Z> {
 
         Variable methodCoverage = receiveMethodCoverage();
 
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            addInstr(new TraceInstr(RubyEvent.B_CALL, getCurrentModuleVariable(), getName(), getFileName(), scope.getLine() + 1));
+        }
+
         receiveBlockArgs(blockArgs);
 
         coverMethod(methodCoverage);
 
         Operand closureRetVal = build(body);
+
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
+            addInstr(new TraceInstr(RubyEvent.B_RETURN, getCurrentModuleVariable(), getName(), getFileName(), scope.getEndLine() + 1, traceValue(closureRetVal)));
+        }
 
         // can be U_NIL if the node is an if node with returns in both branches.
         if (closureRetVal != U_NIL) addInstr(new ReturnInstr(closureRetVal));
