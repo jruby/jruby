@@ -22,7 +22,7 @@ describe "ARGF.each_char" do
     multibyte_name = fixture __FILE__, "multibyte.txt"
     argf [multibyte_name] do
       @argf.set_encoding(Encoding::UTF_8)
-      @argf.send(@method).to_a.should == ["é", "t", "é", "€"]
+      @argf.each_char.to_a.should == ["é", "t", "é", "€"]
     end
   end
 
