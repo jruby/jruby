@@ -266,10 +266,7 @@ public class SizedQueue extends Queue {
     }
 
     private final RubyThread.Task<IRubyObject, IRubyObject> blockingPutTask = new RubyThread.Task<>() {
-        // Thread#raise, #kill and #wakeup interrupt the wait, even when handle_interrupt
-        // masks the interrupt. Run interrupts that are not masked, then wait again.
-        // Written out instead of using retryInterruptedWait: a lambda here would
-        // allocate on every push.
+        // Retries on interrupt like Queue.BLOCKING_TAKE_TASK.
         @Override
         // MRI: rb_szqueue_push, untimed wait loop
         public IRubyObject run(ThreadContext context, IRubyObject value) {
@@ -296,15 +293,20 @@ public class SizedQueue extends Queue {
             this.timeoutNS = timeoutNS;
         }
 
+        // Retries on interrupt like Queue.BLOCKING_TAKE_TASK, until the timeout.
         @Override
         // MRI: rb_szqueue_push, timed wait loop
         public IRubyObject run(ThreadContext context, IRubyObject value) {
             long start = System.nanoTime();
-            boolean result = retryInterruptedWait(context, () -> {
-                long remaining = timeoutNS - (System.nanoTime() - start);
-                return offerInternal(context, value, remaining, TimeUnit.NANOSECONDS);
-            });
-            return !result ? context.nil : SizedQueue.this;
+            while (true) {
+                try {
+                    long remaining = timeoutNS - (System.nanoTime() - start);
+                    boolean result = offerInternal(context, value, remaining, TimeUnit.NANOSECONDS);
+                    return !result ? context.nil : SizedQueue.this;
+                } catch (InterruptedException ie) {
+                    context.blockingThreadPoll();
+                }
+            }
         }
 
         @Override
