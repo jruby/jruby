@@ -660,6 +660,32 @@ describe "Module#autoload" do
     loader.resume while loader&.alive?
   end
 
+  it "blocks through the Fiber scheduler while another Fiber of the same thread is still loading the file" do
+    require_relative '../fiber/fixtures/scheduler'
+    ModuleSpecs::Autoload.autoload :FiberYield, fixture(__FILE__, "autoload_fiber_yield.rb")
+    @remove << :FiberYield
+    Fiber.set_scheduler(FiberSpecs::LoggingScheduler.new)
+
+    loader = Fiber.schedule { ModuleSpecs::Autoload::FiberYield }
+    result = nil
+    waiter = Fiber.schedule { result = ModuleSpecs::Autoload::FiberYield }
+    event = Fiber.scheduler.events.last
+    event[:event].should == :block
+    event[:fiber].should.equal?(waiter)
+
+    loader.resume
+    event = Fiber.scheduler.events.last
+    event[:event].should == :unblock
+    event[:fiber].should.equal?(loader)
+    event[:args].last.should.equal?(waiter)
+
+    waiter.resume
+    result.should.equal?(ModuleSpecs::Autoload::FiberYield)
+  ensure
+    [loader, waiter].each { |fiber| fiber.resume while fiber&.alive? }
+    Fiber.set_scheduler(nil)
+  end
+
   it "removes the constant from Module#constants if the loaded file does not define it" do
     path = fixture(__FILE__, "autoload_o.rb")
     ScratchPad.record []
