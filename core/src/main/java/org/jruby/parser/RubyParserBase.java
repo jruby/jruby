@@ -168,20 +168,23 @@ public abstract class RubyParserBase {
             scopedParserState.warnUnusedVariables(this, currentScope.getFile());
         }
 
+        warnOnUnusedVariables = scopedParserState.getEnclosingWarnOnUnusedVariables();
         currentScope = currentScope.getEnclosingScope();
         scopedParserState = scopedParserState.getEnclosingScope();
     }
     
     public void pushBlockScope() {
-        warnOnUnusedVariables = getWarnings().isVerbose();
         currentScope = getRuntime().getStaticScopeFactory().newBlockScope(currentScope, lexer.getFile());
         scopedParserState = new ScopedParserState(scopedParserState);
+        // blocks inherit unused variable tracking from their enclosing scope (MRI dyna_push).
+        scopedParserState.setEnclosingWarnOnUnusedVariables(warnOnUnusedVariables);
     }
     
     public void pushLocalScope() {
-        warnOnUnusedVariables = getWarnings().isVerbose();
         currentScope = getRuntime().getStaticScopeFactory().newLocalScope(currentScope, lexer.getFile());
         scopedParserState = new ScopedParserState(scopedParserState, lexer.getCmdArgumentState().getStack(), lexer.getConditionState().getStack());
+        scopedParserState.setEnclosingWarnOnUnusedVariables(warnOnUnusedVariables);
+        warnOnUnusedVariables = getWarnings().isVerbose();
         lexer.getCmdArgumentState().push0();
         lexer.getConditionState().push0();
     }
@@ -1890,6 +1893,9 @@ public abstract class RubyParserBase {
     }
 
     public void finalizeDynamicScope() {
+        // the top-level scope is never popped so report its unused variables here.
+        if (warnOnUnusedVariables) scopedParserState.warnUnusedVariables(this, lexer.getFile());
+
         getResult().setScope(finalizeDynamicScope(currentScope));
     }
     /**
