@@ -505,8 +505,13 @@ public class VariableTableManager {
         if ((myVarTable = object.varTable) != null
                 && myVarTable.length > hasObjectID + hasFFI + hasObjectspaceGroup) {
 
+            // skip the slots of the hidden variables (index -1 when not allocated)
+            int objectIdIndex = objectIdVariableAccessorField.getVariableAccessorForRead().getIndex();
+            int ffiIndex = ffiHandleVariableAccessorField.getVariableAccessorForRead().getIndex();
+            int objectGroupIndex = objectGroupVariableAccessorField.getVariableAccessorForRead().getIndex();
+
             for (int i = 0; i < myVarTable.length; i++) {
-                if (i == hasObjectID || i == hasFFI || i == hasObjectspaceGroup) continue;
+                if (i == objectIdIndex || i == ffiIndex || i == objectGroupIndex) continue;
                 if (myVarTable[i] != null) return true;
             }
         }
