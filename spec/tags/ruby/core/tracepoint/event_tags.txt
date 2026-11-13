@@ -1,1 +1,2 @@
 fails:TracePoint#event returns the type of event
+debug:TracePoint#event returns :b_call and :b_return for a lambda
