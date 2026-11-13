@@ -44,6 +44,25 @@ Other documentation in this repository and in the wiki explain in more detail ho
 
 Other `test` and `spec` suites may also be appropriate depending on what functionality you are working on.
 
+### Linking Java code to CRuby
+
+When a method, class or field implements or ports a CRuby C function or macro, annotate it with `@CRuby` (`org.jruby.anno.CRuby`) rather than writing a `// MRI: rb_foo` comment:
+
+```java
+@CRuby(value = "match_begin", file = "re.c")
+@JRubyMethod
+public IRubyObject begin(ThreadContext context, IRubyObject index) {
+```
+
+`file` is optional. Repeat the annotation when one Java method covers several C functions.
+
+Use `note` whenever the Java code is not a whole, one-to-one port of the C function:
+
+* If it ports only part of the function, say which part: `note = "method redefinition check"`.
+* If two Java methods carry the same annotation, give each a note that says which side it is, for example the pack and unpack halves of `pack_unpack_internal`. Without notes, reviewers have to assume two different ports of the same logic exist and check whether they disagree.
+
+Explain what the code does in its Javadoc, not next to the annotation. When a port is long or subtle, explain it well. CRuby's own comments are often sparse, and JRuby's should do better.
+
 ## Testing
 
 See [BUILDING.md](BUILDING.md) for more details.

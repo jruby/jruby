@@ -44,6 +44,7 @@ import org.jruby.RubyMarshal;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyThread;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
@@ -704,7 +705,7 @@ public class Queue extends RubyObject implements DataType {
         // masks the interrupt. Run interrupts that are not masked, then wait again.
         // The other blocking queue tasks retry the same way.
         @Override
-        // MRI: queue_do_pop, untimed wait loop
+        @CRuby(value = "queue_do_pop", file = "thread_sync.c", note = "untimed wait loop")
         public IRubyObject run(ThreadContext context, Queue queue) {
             while (true) {
                 try {
@@ -737,7 +738,7 @@ public class Queue extends RubyObject implements DataType {
 
         // Retries on interrupt like BLOCKING_TAKE_TASK, until the timeout.
         @Override
-        // MRI: queue_do_pop, timed wait loop
+        @CRuby(value = "queue_do_pop", file = "thread_sync.c", note = "timed wait loop")
         public IRubyObject run(ThreadContext context, Queue queue) {
             long start = System.nanoTime();
             while (true) {
