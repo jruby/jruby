@@ -187,7 +187,7 @@ public class RubyData {
             RubySymbol k = members.eltOk(i);
             IRubyObject v = (IRubyObject) accessors[i].get(self);
             if (block.isGiven()) {
-                h.fastASetSmallPair(context, block.yieldSpecific(context, k, v));
+                h.fastASetSmallPair(context, block.yieldValues(context, new IRubyObject[] { k, v }));
             } else {
                 h.fastASetSmall(k, v);
             }
