@@ -263,19 +263,25 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         // the second pop is interrupted, either the fiber has propagated the exception back to us or we are being
         // interrupted again and must abandon the fiber.
 
+        FiberRequest result;
         try {
-            return currentFiberData.queue.pop(context);
+            result = currentFiberData.queue.pop(context);
         } catch (RaiseException re) {
             handleExceptionDuringExchange(context, currentFiberData, targetFiberData, re);
 
             // if we get here, we forwarded exception so try once more
-            return currentFiberData.queue.pop(context);
+            result = currentFiberData.queue.pop(context);
         } finally {
             // MRI: fiber_switch re-reads the current fiber; control can return into a different one
             if (currentFiberData.blocking) context.getFiberCurrentThread().incrementBlocking();
 
             context.trace(RubyEvent.FIBER_SWITCH, "resume", context.runtime.getFiber());
         }
+
+        // MRI: fiber_check_killed, for a kill that arrived while we were switched away
+        if (currentFiberData.killed) throw new FiberKill();
+
+        return result;
     }
 
     /**
@@ -901,6 +907,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         });
     }
 
+    @CRuby(value = "rb_fiber_m_kill", file = "cont.c")
     @JRubyMethod
     public IRubyObject kill(ThreadContext context) {
         if (root) return this;
@@ -923,6 +930,15 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
         // mark before the push, which can block, so a second kill cannot slip in behind it
         fiberData.killed = true;
+
+        // MRI: fiber_raise with no exception, forwarded to the fiber this one is resuming. The killed
+        // fiber's thread is waiting for that fiber, so it must not wake up here; it dies when control comes back.
+        ThreadFiber resuming = fiberData.resumingFiber;
+        if (resuming != null) {
+            resuming.raise(context, runtimeError(context, "").getException());
+            return this;
+        }
+
         fiberData.queue.push(context, new FiberRequest(new FiberKill(), RequestType.RAISE));
 
         return this;
