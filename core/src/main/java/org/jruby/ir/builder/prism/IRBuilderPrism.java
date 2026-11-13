@@ -800,7 +800,21 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
 
         if (hasOnlyRestKwargs(node.elements)) return buildRestKeywordArgs(node, flags);
 
+        if (hasOnlySimpleKeywordArguments(node.elements)) {
+            return buildHash(node.elements, containsVariableAssignment(node.elements), true);
+        }
+
         return buildHash(node.elements, containsVariableAssignment(node.elements));
+    }
+
+    private static boolean hasOnlySimpleKeywordArguments(Node[] elements) {
+        for (Node element : elements) {
+            if (!(element instanceof AssocNode assoc) || !(assoc.key instanceof SymbolNode)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private Operand buildCallOrWrite(CallOrWriteNode node) {
@@ -1330,6 +1344,10 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
     }
 
     private Operand buildHash(Node[] elements, boolean hasAssignments) {
+        return buildHash(elements, hasAssignments, false);
+    }
+
+    private Operand buildHash(Node[] elements, boolean hasAssignments, boolean keywordArguments) {
         List<KeyValuePair<Operand, Operand>> args = new ArrayList<>();
         Set<Object> keysHack = new HashSet<>(); // Remove once prism #2005 is fixed.
         Variable hash = null;
@@ -1380,6 +1398,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         }
 
         if (hash == null) {           // non-**arg ordinary hash
+            if (keywordArguments) return new Hash(args, true);
             hash = copy(new Hash(args));
         } else if (!args.isEmpty()) { // ordinary hash values encountered after a **arg
             addInstr(new RuntimeHelperCall(hash, MERGE_KWARGS, new Operand[] { hash, new Hash(args), duplicateCheck}));
