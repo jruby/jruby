@@ -95,7 +95,7 @@ public class SizedQueue extends Queue {
             fullyUnlock();
         }
 
-        unblockAllSchedulerPutters();
+        unblockAllSchedulerWaiters(schedulerPutters);
 
         return arg;
     }
@@ -118,7 +118,7 @@ public class SizedQueue extends Queue {
                 putLock.lockInterruptibly();
                 try {
                     return asFixnum(context, takeLock.getWaitQueueLength(notEmpty) + putLock.getWaitQueueLength(notFull)
-                            + schedulerTakersWaiting() + schedulerPuttersWaiting());
+                            + schedulerWaiting(schedulerTakers) + schedulerWaiting(schedulerPutters));
                 } finally {
                     putLock.unlock();
                 }
@@ -219,7 +219,7 @@ public class SizedQueue extends Queue {
             // A closed queue never makes room for us, so raise here instead of looping forever.
             if (closed) raiseClosedError(context);
 
-            if (!schedulerBlock(context, scheduler, schedulerPutters(), () -> count.get() < capacity || closed, deadline)) {
+            if (!schedulerBlock(context, scheduler, true, deadline)) {
                 return context.nil;
             }
         }
@@ -246,7 +246,7 @@ public class SizedQueue extends Queue {
             putLock.unlock();
         }
         if (c == 0) signalNotEmpty();
-        unblockSchedulerTaker();
+        unblockOneSchedulerWaiter(schedulerTakers);
         return true;
     }
 
@@ -291,7 +291,7 @@ public class SizedQueue extends Queue {
             putLock.unlock();
         }
         if (c == 0) signalNotEmpty();
-        unblockSchedulerTaker();
+        unblockOneSchedulerWaiter(schedulerTakers);
         return true;
     }
 

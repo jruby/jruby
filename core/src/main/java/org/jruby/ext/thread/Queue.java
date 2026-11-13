@@ -28,10 +28,8 @@
 
 package org.jruby.ext.thread;
 
-import java.util.ArrayDeque;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BooleanSupplier;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.Condition;
@@ -193,64 +191,42 @@ public class Queue extends RubyObject implements DataType {
     /** Wait queue for waiting puts */
     protected final Condition notFull = putLock.newCondition();
 
-    protected static final class SchedulerWaiters extends ArrayDeque<Mutex.FiberWaiter> {}
-
     /** Fibers blocked in {@link #pop} through a fiber scheduler, created by the first one. MRI: queue waitq */
-    private volatile SchedulerWaiters schedulerTakers;
+    volatile Mutex.SchedulerWaiters schedulerTakers;
 
-    private static final AtomicReferenceFieldUpdater<Queue, SchedulerWaiters> SCHEDULER_TAKERS_UPDATER =
-            AtomicReferenceFieldUpdater.newUpdater(Queue.class, SchedulerWaiters.class, "schedulerTakers");
+    private static final AtomicReferenceFieldUpdater<Queue, Mutex.SchedulerWaiters> SCHEDULER_TAKERS_UPDATER =
+            AtomicReferenceFieldUpdater.newUpdater(Queue.class, Mutex.SchedulerWaiters.class, "schedulerTakers");
 
-    private SchedulerWaiters schedulerTakers() {
-        SchedulerWaiters waiters = schedulerTakers;
+    private Mutex.SchedulerWaiters schedulerTakers() {
+        Mutex.SchedulerWaiters waiters = schedulerTakers;
         if (waiters != null) return waiters;
 
-        SCHEDULER_TAKERS_UPDATER.compareAndSet(this, null, new SchedulerWaiters());
+        SCHEDULER_TAKERS_UPDATER.compareAndSet(this, null, new Mutex.SchedulerWaiters());
         return schedulerTakers;
     }
 
     /** Fibers blocked in SizedQueue#push through a fiber scheduler, created by the first one. MRI: szqueue pushq */
-    private volatile SchedulerWaiters schedulerPutters;
+    volatile Mutex.SchedulerWaiters schedulerPutters;
 
-    private static final AtomicReferenceFieldUpdater<Queue, SchedulerWaiters> SCHEDULER_PUTTERS_UPDATER =
-            AtomicReferenceFieldUpdater.newUpdater(Queue.class, SchedulerWaiters.class, "schedulerPutters");
+    private static final AtomicReferenceFieldUpdater<Queue, Mutex.SchedulerWaiters> SCHEDULER_PUTTERS_UPDATER =
+            AtomicReferenceFieldUpdater.newUpdater(Queue.class, Mutex.SchedulerWaiters.class, "schedulerPutters");
 
-    protected SchedulerWaiters schedulerPutters() {
-        SchedulerWaiters waiters = schedulerPutters;
+    private Mutex.SchedulerWaiters schedulerPutters() {
+        Mutex.SchedulerWaiters waiters = schedulerPutters;
         if (waiters != null) return waiters;
 
-        SCHEDULER_PUTTERS_UPDATER.compareAndSet(this, null, new SchedulerWaiters());
+        SCHEDULER_PUTTERS_UPDATER.compareAndSet(this, null, new Mutex.SchedulerWaiters());
         return schedulerPutters;
-    }
-
-    protected void unblockSchedulerTaker() {
-        unblockOneSchedulerWaiter(schedulerTakers);
-    }
-
-    protected void unblockSchedulerPutter() {
-        unblockOneSchedulerWaiter(schedulerPutters);
-    }
-
-    protected void unblockAllSchedulerPutters() {
-        unblockAllSchedulerWaiters(schedulerPutters);
-    }
-
-    protected int schedulerTakersWaiting() {
-        return schedulerWaiting(schedulerTakers);
-    }
-
-    protected int schedulerPuttersWaiting() {
-        return schedulerWaiting(schedulerPutters);
     }
 
     /**
      * Block the current fiber through the scheduler until it is unblocked or the deadline
-     * (System.nanoTime, 0 for none) passes. The caller checks the queue again afterwards.
+     * (System.nanoTime, 0 for none) passes, waiting for room if push, else for an item.
+     * The caller checks the queue again afterwards.
      *
      * @return false if the deadline has passed
      */
-    protected boolean schedulerBlock(ThreadContext context, IRubyObject scheduler, SchedulerWaiters waiters,
-                                     BooleanSupplier ready, long deadline) {
+    protected boolean schedulerBlock(ThreadContext context, IRubyObject scheduler, boolean push, long deadline) {
         IRubyObject timeout = context.nil;
         if (deadline != 0) {
             long remaining = deadline - System.nanoTime();
@@ -259,9 +235,10 @@ public class Queue extends RubyObject implements DataType {
         }
 
         Mutex.FiberWaiter waiter = Mutex.FiberWaiter.cached(context, scheduler);
+        Mutex.SchedulerWaiters waiters = push ? schedulerPutters() : schedulerTakers();
         synchronized (waiters) {
             // a push or pop may have landed since we last looked, and found no one to wake
-            if (ready.getAsBoolean()) return true;
+            if (schedulerReady(push)) return true;
 
             waiters.add(waiter);
         }
@@ -277,8 +254,15 @@ public class Queue extends RubyObject implements DataType {
         return true;
     }
 
+    /** Whether a blocked push would find room, or a blocked pop an item; a closed queue counts as ready for both. */
+    private boolean schedulerReady(boolean push) {
+        if (closed) return true;
+
+        return push ? count.get() < capacity : count.get() > 0;
+    }
+
     // MRI: wakeup_one. The woken fiber checks the queue again, and blocks again if someone else got there first.
-    protected void unblockOneSchedulerWaiter(SchedulerWaiters waiters) {
+    void unblockOneSchedulerWaiter(Mutex.SchedulerWaiters waiters) {
         if (waiters == null) return;
 
         Mutex.FiberWaiter waiter;
@@ -290,7 +274,7 @@ public class Queue extends RubyObject implements DataType {
     }
 
     // MRI: wakeup_all, for when the whole queue changes, such as on close
-    protected void unblockAllSchedulerWaiters(SchedulerWaiters waiters) {
+    void unblockAllSchedulerWaiters(Mutex.SchedulerWaiters waiters) {
         if (waiters == null) return;
 
         Mutex.FiberWaiter[] woken;
@@ -307,7 +291,7 @@ public class Queue extends RubyObject implements DataType {
         }
     }
 
-    protected static int schedulerWaiting(SchedulerWaiters waiters) {
+    static int schedulerWaiting(Mutex.SchedulerWaiters waiters) {
         if (waiters == null) return 0;
 
         synchronized (waiters) {
@@ -329,7 +313,7 @@ public class Queue extends RubyObject implements DataType {
 
             if (closed) return context.nil;
 
-            if (!schedulerBlock(context, scheduler, schedulerTakers(), () -> count.get() > 0 || closed, deadline)) {
+            if (!schedulerBlock(context, scheduler, false, deadline)) {
                 return context.nil;
             }
         }
@@ -454,7 +438,7 @@ public class Queue extends RubyObject implements DataType {
             throw createInterruptedError(context, "clear");
         }
 
-        unblockAllSchedulerPutters();
+        unblockAllSchedulerWaiters(schedulerPutters);
 
         return this;
     }
@@ -508,7 +492,7 @@ public class Queue extends RubyObject implements DataType {
         try {
             takeLock.lockInterruptibly();
             try {
-                return asFixnum(context, takeLock.getWaitQueueLength(notEmpty) + schedulerTakersWaiting());
+                return asFixnum(context, takeLock.getWaitQueueLength(notEmpty) + schedulerWaiting(schedulerTakers));
             } finally {
                 takeLock.unlock();
             }
@@ -684,7 +668,7 @@ public class Queue extends RubyObject implements DataType {
         if (c == 0)
             signalNotEmpty();
 
-        unblockSchedulerTaker();
+        unblockOneSchedulerWaiter(schedulerTakers);
     }
 
     @JRubyMethod
@@ -809,7 +793,7 @@ public class Queue extends RubyObject implements DataType {
         if (notFullSignalNeeded)
             signalNotFull();
 
-        unblockSchedulerPutter();
+        unblockOneSchedulerWaiter(schedulerPutters);
 
         return x;
     }
@@ -834,7 +818,7 @@ public class Queue extends RubyObject implements DataType {
         }
         if (c == capacity)
             signalNotFull();
-        unblockSchedulerPutter();
+        unblockOneSchedulerWaiter(schedulerPutters);
         return x;
     }
 
@@ -864,7 +848,7 @@ public class Queue extends RubyObject implements DataType {
         }
         if (c == capacity)
             signalNotFull();
-        unblockSchedulerPutter();
+        unblockOneSchedulerWaiter(schedulerPutters);
         return x;
     }
 
