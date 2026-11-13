@@ -1457,7 +1457,9 @@ public class RubyString extends RubyObject implements CharSequence, EncodingCapa
 
     @JRubyMethod(name = {"-@", "dedup"}) // -'foo' returns frozen string
     public final IRubyObject minus_at(ThreadContext context) {
-        return context.runtime.freezeAndDedupString(this);
+        // MRI: str_uminus, an unfrozen non-bare string is copied rather than frozen in place
+        RubyString str = !isFrozen() && !isBare(context) ? strDup(context.runtime) : this;
+        return context.runtime.freezeAndDedupString(str);
     }
 
     @Deprecated(since = "10.0.0.0")

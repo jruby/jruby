@@ -24,5 +24,4 @@ exclude :test_strip_bang_with_chars, "selectors are not yet supported (https://g
 exclude :test_strip_with_selectors, "selectors are not yet supported (https://github.com/jruby/jruby/issues/9267)"
 exclude :test_sum_2, "needs investigation"
 exclude :test_uminus_dedup_in_place, "depends on MRI-specific interning behavior"
-exclude :test_uminus_no_freeze_not_bare, "work in progress"
 exclude :test_undump, "unfinished in initial 2.6 work, #6161"
