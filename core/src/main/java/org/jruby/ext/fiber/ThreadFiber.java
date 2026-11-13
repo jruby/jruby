@@ -251,6 +251,11 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
     private static final FiberRequest NEVER = new FiberRequest(RubyBasicObject.NEVER, RequestType.DATA);
 
     private static FiberRequest exchangeWithFiber(ThreadContext context, FiberData currentFiberData, FiberData targetFiberData, FiberRequest request) {
+        return exchangeWithFiber(context, currentFiberData, targetFiberData, request, true);
+    }
+
+    private static FiberRequest exchangeWithFiber(ThreadContext context, FiberData currentFiberData, FiberData targetFiberData,
+                                                  FiberRequest request, boolean checkKilled) {
         // MRI: fiber_switch. Must precede the push, which wakes the target fiber's thread
         if (currentFiberData.blocking) context.getFiberCurrentThread().decrementBlocking();
 
@@ -279,7 +284,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         }
 
         // MRI: fiber_check_killed, for a kill that arrived while we were switched away
-        if (currentFiberData.killed) throw new FiberKill();
+        if (checkKilled && currentFiberData.killed) throw new FiberKill();
 
         return result;
     }
@@ -376,6 +381,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         return processResultData(context, result);
     }
 
+    @CRuby(value = "fiber_raise", file = "cont.c", note = "current and resuming-fiber cases")
     public IRubyObject raise(ThreadContext context, IRubyObject exception) {
         Ruby runtime = context.runtime;
 
@@ -394,6 +400,15 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         ThreadFiber resuming = data.resumingFiber;
         if (resuming != null) return resuming.raise(context, exception);
 
+        // the backtrace is filled in where the target fiber raises it, as in MRI
+        return switchToRaise(context, new FiberRequest(exception, RequestType.RAISE));
+    }
+
+    @CRuby(value = "fiber_raise", file = "cont.c", note = "transfer or resume into the fiber")
+    private IRubyObject switchToRaise(ThreadContext context, FiberRequest val) {
+        Ruby runtime = context.runtime;
+        final FiberData data = this.data;
+
         // MRI: a fiber suspended by transfer (not in Fiber.yield) is raised into by transferring to it
         boolean transfer = !data.yielding;
 
@@ -401,10 +416,8 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
         if (data.parent != context.getFiberCurrentThread()) fiberCalledAcrossThreads(runtime);
 
-        // the backtrace is filled in where the target fiber raises it, as in MRI
-        FiberRequest val = new FiberRequest(exception, RequestType.RAISE);
-
         ThreadFiber currentFiber = context.getFiber();
+        FiberData currentFiberData = currentFiber.data;
         if (transfer) {
             currentFiberData.transferred = true;
         } else {
@@ -569,7 +582,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
 
             ThreadFiber resuming = fiberData.resumingFiber;
             if (resuming == null) {
-                // only hand over if it is parked in a transfer; an async kill can leave nobody waiting
+                // only a fiber parked in a transfer is still waiting
                 return fiberData.transferred ? fiber : null;
             }
 
@@ -927,7 +940,7 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         if (!alive()) return this;
         if (fiberData.started && fiberData.parent != context.getFiberCurrentThread()) fiberCalledAcrossThreads(context.runtime);
 
-        // mark before the push, which can block, so a second kill cannot slip in behind it
+        // mark first, so a kill from the fiber's ensure returns false
         fiberData.killed = true;
 
         // MRI: fiber_raise with no exception, forwarded to the fiber this one is resuming. The killed
@@ -938,7 +951,23 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
             return this;
         }
 
-        fiberData.queue.push(context, new FiberRequest(new FiberKill(), RequestType.RAISE));
+        // MRI marks an unborn fiber dead without running it; here its thread still has to shut down
+        if (!fiberData.started) {
+            ThreadFiber currentFiber = context.getFiber();
+            fiberData.prev = currentFiber;
+            try {
+                // no kill check: MRI does not switch here
+                FiberRequest kill = new FiberRequest(new FiberKill(), RequestType.RAISE);
+                FiberRequest result = exchangeWithFiber(context, currentFiber.data, fiberData, kill, false);
+                if (result.type == RequestType.RAISE) throw raised(context, result);
+            } finally {
+                fiberData.prev = null;
+            }
+            return this;
+        }
+
+        // MRI: fiber_raise
+        switchToRaise(context, new FiberRequest(new FiberKill(), RequestType.RAISE));
 
         return this;
     }
