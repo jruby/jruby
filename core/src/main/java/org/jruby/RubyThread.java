@@ -64,6 +64,7 @@ import java.util.function.BiFunction;
 import com.headius.backport9.stack.StackWalker;
 import org.jcodings.Encoding;
 import org.joni.Matcher;
+import org.jruby.anno.CRuby;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.api.Create;
@@ -1616,6 +1617,24 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
 
+    /**
+     * Sleep for Kernel#sleep. Only the deadline or Thread#wakeup ends the sleep. An interrupt masked by
+     * handle_interrupt wakes the thread, but it goes back to sleep.
+     *
+     * @param context the current context
+     * @param nanoseconds time to sleep. Zero sleeps until woken.
+     */
+    public void sleepUntilWakeup(ThreadContext context, long nanoseconds) throws InterruptedException {
+        sleepTask.nanoseconds = nanoseconds;
+        sleepTask.untilWakeup = true;
+        try {
+            executeTaskBlocking(context, null, sleepTask);
+        } finally {
+            sleepTask.untilWakeup = false;
+            sleepTask.semaphore.drainPermits();
+        }
+    }
+
     public IRubyObject status() { // not used
         return status(getRuntime().getCurrentContext());
     }
@@ -1718,6 +1737,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private static class SleepTask2 implements Task<Object, Long> {
         final Semaphore semaphore = new Semaphore(1);
         long nanoseconds;
+        boolean untilWakeup;
         {semaphore.drainPermits();}
 
         @Override
@@ -1725,7 +1745,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             long start = System.nanoTime();
 
             try {
-                if (nanoseconds == 0) {
+                if (untilWakeup) {
+                    sleepUntilWakeup(context, start);
+                } else if (nanoseconds == 0) {
                     semaphore.tryAcquire(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
                 } else {
                     semaphore.tryAcquire(nanoseconds, TimeUnit.NANOSECONDS);
@@ -1734,6 +1756,28 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                 return System.nanoTime() - start;
             } finally {
                 semaphore.drainPermits();
+            }
+        }
+
+        @CRuby(value = "sleep_hrtime", file = "thread.c")
+        @CRuby(value = "sleep_forever", file = "thread.c")
+        private void sleepUntilWakeup(ThreadContext context, long start) throws InterruptedException {
+            RubyThread thread = context.getThread();
+            while (true) {
+                if (nanoseconds == 0) {
+                    semaphore.acquire();
+                } else {
+                    long remaining = nanoseconds - (System.nanoTime() - start);
+                    if (remaining <= 0) return;
+                    if (!semaphore.tryAcquire(remaining, TimeUnit.NANOSECONDS)) return;
+                }
+                semaphore.drainPermits();
+
+                // Raise interrupts that are not masked. Masked ones leave the thread asleep.
+                context.blockingThreadPoll();
+
+                // Thread#wakeup sets the status to RUN
+                if (thread.getStatus() != Status.SLEEP) return;
             }
         }
 
@@ -1775,6 +1819,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     private <Data, Return> Return executeTask(ThreadContext context, Data data, Status status, Task<Data, Return> task, boolean blocking) throws InterruptedException {
         Status oldStatus = STATUS.get(this);
+        boolean raised = true;
         try {
             this.unblockArg = data;
             this.unblockFunc = task;
@@ -1784,12 +1829,19 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
             STATUS.set(this, status);
 
-            return task.run(context, data);
+            Return result = task.run(context, data);
+            raised = false;
+            return result;
+        } catch (InterruptedException ie) {
+            // Java interrupted the wait. Still check for Ruby interrupts below.
+            raised = false;
+            throw ie;
         } finally {
             STATUS.set(this, oldStatus);
             this.unblockFunc = null;
             this.unblockArg = null;
-            pollThreadEvents(context, blocking);
+            // Don't let the next pending interrupt replace an exception already on its way out
+            if (!raised) pollThreadEvents(context, blocking);
         }
     }
 
