@@ -26,6 +26,19 @@ describe "Time#utc?" do
     Time.now(in: "UTC").utc?.should == true
   end
 
+  it "does treat time with 'UTC' offset as UTC when the local time zone is UTC" do
+    with_timezone("UTC") do
+      Time.now.utc?.should == false
+
+      Time.new(2022, 1, 1, 0, 0, 0, "UTC").utc?.should == true
+      Time.now.localtime("UTC").utc?.should == true
+      Time.at(Time.now, in: 'UTC').utc?.should == true
+
+      Time.new(2022, 1, 1, 0, 0, 0, in: "UTC").utc?.should == true
+      Time.now(in: "UTC").utc?.should == true
+    end
+  end
+
   it "does treat time with Z offset as UTC" do
     Time.new(2022, 1, 1, 0, 0, 0, "Z").utc?.should == true
     Time.now.localtime("Z").utc?.should == true
