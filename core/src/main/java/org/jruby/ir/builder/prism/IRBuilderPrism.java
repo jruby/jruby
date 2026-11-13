@@ -876,7 +876,7 @@ public class IRBuilderPrism extends IRBuilder<Node, DefNode, WhenNode, RescueNod
         }
         // FIXME: ::Foo should be able to eliminate this variable reference
         copy(leftModule, leftValue);
-        addInstr(new SearchModuleForConstInstr(valueResult, leftModule, name, false, constMissing));
+        addInstr(new SearchModuleForConstInstr(valueResult, leftModule, name, true, constMissing));
 
         return leftModule;
     }

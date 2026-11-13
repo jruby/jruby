@@ -2833,7 +2833,7 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         RubySymbol name = ((INameNode) lhs).getName();
         Variable leftModule = copy(lhs instanceof Colon2Node ?
                 build(((Colon2Node) lhs).getLeftNode()) : getManager().getObjectClass());
-        addInstr(new SearchModuleForConstInstr(valueResult, leftModule, name, false, constMissing));
+        addInstr(new SearchModuleForConstInstr(valueResult, leftModule, name, true, constMissing));
 
         return leftModule;
     }
