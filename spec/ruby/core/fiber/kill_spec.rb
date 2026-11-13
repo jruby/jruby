@@ -47,7 +47,7 @@ describe "Fiber#kill" do
     parent.alive?.should == false
   end
 
-  it "raises in the child and kills the parent once the child returns, when the child kills it" do
+  it "raises RuntimeError in a child that kills its resuming parent, and the parent dies when the child returns" do
     ScratchPad.record []
     parent = Fiber.new do
       child = Fiber.new do

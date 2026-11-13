@@ -931,8 +931,8 @@ public class ThreadFiber extends RubyObject implements ExecutionContext {
         // mark before the push, which can block, so a second kill cannot slip in behind it
         fiberData.killed = true;
 
-        // MRI: fiber_raise with no exception, forwarded to the fiber we are resuming. Our own thread is
-        // waiting for that fiber, so it must not wake up here; it dies when control comes back.
+        // MRI: fiber_raise with no exception, forwarded to the fiber this one is resuming. The killed
+        // fiber's thread is waiting for that fiber, so it must not wake up here; it dies when control comes back.
         ThreadFiber resuming = fiberData.resumingFiber;
         if (resuming != null) {
             resuming.raise(context, runtimeError(context, "").getException());
