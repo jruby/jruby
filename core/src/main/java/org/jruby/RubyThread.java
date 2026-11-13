@@ -1775,6 +1775,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     private <Data, Return> Return executeTask(ThreadContext context, Data data, Status status, Task<Data, Return> task, boolean blocking) throws InterruptedException {
         Status oldStatus = STATUS.get(this);
+        boolean raised = true;
         try {
             this.unblockArg = data;
             this.unblockFunc = task;
@@ -1784,12 +1785,19 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
             STATUS.set(this, status);
 
-            return task.run(context, data);
+            Return result = task.run(context, data);
+            raised = false;
+            return result;
+        } catch (InterruptedException ie) {
+            // Java interrupted the wait. Still check for Ruby interrupts below.
+            raised = false;
+            throw ie;
         } finally {
             STATUS.set(this, oldStatus);
             this.unblockFunc = null;
             this.unblockArg = null;
-            pollThreadEvents(context, blocking);
+            // Don't let the next pending interrupt replace an exception already on its way out
+            if (!raised) pollThreadEvents(context, blocking);
         }
     }
 
