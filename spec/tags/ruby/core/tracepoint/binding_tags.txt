@@ -1,1 +1,3 @@
 debug:TracePoint#binding return the generated binding object from event
+debug:TracePoint#binding reads the values of local variables of the method
+debug:TracePoint#binding changes local variables of the method
