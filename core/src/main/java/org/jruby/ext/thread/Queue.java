@@ -700,7 +700,12 @@ public class Queue extends RubyObject implements DataType {
     }
 
     private static final RubyThread.Task<Queue, IRubyObject> BLOCKING_TAKE_TASK = new RubyThread.Task<Queue, IRubyObject>() {
-        public IRubyObject run(ThreadContext context, Queue queue) throws InterruptedException {
+        // Thread#raise, #kill and #wakeup interrupt the wait, even when handle_interrupt
+        // masks the interrupt. Run interrupts that are not masked, then wait again.
+        // The other blocking queue tasks retry the same way.
+        @Override
+        // MRI: queue_do_pop, untimed wait loop
+        public IRubyObject run(ThreadContext context, Queue queue) {
             while (true) {
                 try {
                     return queue.takeInternal(context);
@@ -730,15 +735,21 @@ public class Queue extends RubyObject implements DataType {
             this.timeoutNS = timeoutNS;
         }
 
+        // Retries on interrupt like BLOCKING_TAKE_TASK, until the timeout.
         @Override
-        public IRubyObject run(ThreadContext context, Queue queue) throws InterruptedException {
-                IRubyObject result = timeoutNS == 0 ? queue.pollInternal() : queue.pollInternal(timeoutNS, TimeUnit.NANOSECONDS);
-                if (result == null && timeoutNS == 0) {
-                    throw context.runtime.newThreadError("queue empty");
-                } else {
+        // MRI: queue_do_pop, timed wait loop
+        public IRubyObject run(ThreadContext context, Queue queue) {
+            long start = System.nanoTime();
+            while (true) {
+                try {
+                    long remaining = timeoutNS - (System.nanoTime() - start);
+                    IRubyObject result = queue.pollInternal(remaining, TimeUnit.NANOSECONDS);
                     return Helpers.nullToNil(result, context.nil);
+                } catch (InterruptedException ie) {
+                    context.blockingThreadPoll();
                 }
             }
+        }
 
         @Override
         public void wakeup(RubyThread thread, Queue queue) {
