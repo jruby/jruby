@@ -24,6 +24,8 @@ describe "String#slice! with index" do
     a.should == "hello"
     a.slice!(-20).should == nil
     a.should == "hello"
+    a.slice!(fixnum_max).should == nil
+    a.should == "hello"
   end
 
   it "raises a FrozenError if self is frozen" do
