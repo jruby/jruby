@@ -1257,8 +1257,9 @@ public class IRBuilderAST extends IRBuilder<Node, DefNode, WhenNode, RescueBodyN
         Variable eqqResult = temp();
         Node exprNodes = whenNode.getExpressionNodes();
 
-        if (exprNodes instanceof BlockNode list) {
-            buildWhenValue(eqqResult, testValue, bodyLabel, list.getLast(), seenLiterals, origLocs, false);
+        if (exprNodes instanceof BlockNode) {
+            // when (a; b): evaluate every statement and test only the value of the last one
+            buildWhenValue(eqqResult, testValue, bodyLabel, exprNodes, seenLiterals, origLocs, false);
         } else if (exprNodes instanceof ListNode && !(exprNodes instanceof DNode) && !(exprNodes instanceof ArrayNode) && !(exprNodes instanceof ZArrayNode)) {
             buildWhenValues(eqqResult, ((ListNode) exprNodes).children(), testValue, bodyLabel, seenLiterals, origLocs);
         } else if (exprNodes instanceof ArgsPushNode || exprNodes instanceof SplatNode || exprNodes instanceof ArgsCatNode) {
