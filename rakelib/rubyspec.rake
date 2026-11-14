@@ -67,6 +67,16 @@ namespace :spec do
           :jruby_opts => "--debug"
   end
 
+  desc "Run debug specs with the JIT enabled"
+  task :'ruby:debug:jit' do
+    mspec :compile_mode => "JIT",
+          :jit_threshold => 0,
+          :format => "s",
+          :spec_target => ":debug",
+          :jruby_opts => "--debug",
+          :spec_config => "spec/jruby.mspec"
+  end
+
   desc "Run specs for work-in-progess features"
   task :'ruby:wip' do
     mspec :command => "run",
