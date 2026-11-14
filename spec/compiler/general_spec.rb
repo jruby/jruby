@@ -1928,5 +1928,15 @@ modes.each do |mode|
 
       expect(looped).to eq nonlooped
     end
+
+    it "passes simple keyword arguments through compiled calls" do
+      run(<<~RUBY) { expect(it).to eq [1, 2] }
+        def keyword_target(required:, optional: 2)
+          [required, optional]
+        end
+
+        keyword_target(required: 1)
+      RUBY
+    end
   end
 end

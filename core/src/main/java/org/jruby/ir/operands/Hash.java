@@ -28,6 +28,7 @@ import static org.jruby.api.Create.newSmallHash;
 // that actually build the hash
 public class Hash extends Operand {
     public final KeyValuePair<Operand, Operand>[] pairs;
+    // True when this literal is a call's keyword argument list, not an ordinary Hash value.
     public final boolean keywords;
 
     public Hash(List<KeyValuePair<Operand, Operand>> pairs) {
@@ -77,7 +78,7 @@ public class Hash extends Operand {
                                 pair.getValue().getSimplifiedOperand(valueMap, force)))
                 .toArray(n -> new KeyValuePair[n]);
 
-        return new Hash(newPairs);
+        return new Hash(newPairs, keywords);
     }
 
     /** Append the list of variables used in this operand to the input list */
@@ -97,7 +98,7 @@ public class Hash extends Operand {
                                 ((DepthCloneable) pair.getValue()).cloneForDepth(newDepth)))
                 .toArray(n -> new KeyValuePair[n]);
 
-        return new Hash(newPairs);
+        return new Hash(newPairs, keywords);
     }
 
     @Override
@@ -112,7 +113,7 @@ public class Hash extends Operand {
                                 pair.getValue().cloneForInlining(ii)))
                 .toArray(n -> new KeyValuePair[n]);
 
-        return new Hash(newPairs);
+        return new Hash(newPairs, keywords);
     }
 
     public boolean isKeywordRest() {
@@ -163,6 +164,7 @@ public class Hash extends Operand {
     @Override
     public void encode(IRWriterEncoder e) {
         super.encode(e);
+        e.encode(keywords);
         e.encode(pairs.length);
         for (KeyValuePair<Operand, Operand> pair: pairs) {
             e.encode(pair.getKey());
@@ -171,6 +173,7 @@ public class Hash extends Operand {
     }
 
     public static Hash decode(IRReaderDecoder d) {
+        boolean keywords = d.decodeBoolean();
         int size = d.decodeInt();
         KeyValuePair<Operand, Operand> pairs[] = new KeyValuePair[size];
 
@@ -178,7 +181,7 @@ public class Hash extends Operand {
             pairs[i] = new KeyValuePair(d.decodeOperand(), d.decodeOperand());
         }
 
-        return new Hash(pairs);
+        return new Hash(pairs, keywords);
     }
 
     @Override

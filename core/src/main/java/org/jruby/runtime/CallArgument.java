@@ -5,6 +5,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Arrays;
 
+/** A JVM stack slot in an outgoing Ruby call, in invocation order. */
 public record CallArgument(int index, Type type, Identifier identifier) {
     public enum Type {
         POSITIONAL('p', IRubyObject.class),
