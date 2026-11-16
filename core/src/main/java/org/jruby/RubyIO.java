@@ -4752,16 +4752,20 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
         if (isDash(pOpen.cmd)) throw runtime.newNotImplementedError("popen(\"-\") is unimplemented");
 
+        ShellLauncher.Redirects redirects = ShellLauncher.Redirects.NONE;
+        if (options != null) {
+            redirects = ShellLauncher.Redirects.from(context, options, false);
+            String[] unsupported = redirects.handlesErr() ?
+                    UNSUPPORTED_POPEN_OPTIONS_WITH_ERR : UNSUPPORTED_SPAWN_OPTIONS;
+            checkUnsupportedOptions(context, options, unsupported, "unsupported popen option");
+        }
+
         try {
             ShellLauncher.POpenProcess process;
             if (pOpen.cmdPlusArgs == null) {
-                process = ShellLauncher.popen(runtime, pOpen.cmd, modes);
+                process = ShellLauncher.popen(runtime, pOpen.cmd, modes, redirects);
             } else {
-                process = ShellLauncher.popen(runtime, pOpen.cmdPlusArgs, pOpen.env, modes);
-            }
-
-            if (options != null) {
-                checkUnsupportedOptions(context, options, UNSUPPORTED_SPAWN_OPTIONS, "unsupported popen option");
+                process = ShellLauncher.popen(runtime, pOpen.cmdPlusArgs, pOpen.env, modes, redirects);
             }
 
             io.setupPopen(context, modes, process);
@@ -5426,6 +5430,7 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
 
     static final Set<String> ALL_SPAWN_OPTIONS;
     static final String[] UNSUPPORTED_SPAWN_OPTIONS;
+    private static final String[] UNSUPPORTED_POPEN_OPTIONS_WITH_ERR;
 
     static {
         String[] SPAWN_OPTIONS = new String[] {
@@ -5454,6 +5459,9 @@ public class RubyIO extends RubyObject implements IOEncodable, Closeable, Flusha
         };
 
         ALL_SPAWN_OPTIONS = new HashSet<>(Arrays.asList(SPAWN_OPTIONS));
+        UNSUPPORTED_POPEN_OPTIONS_WITH_ERR = Arrays.stream(UNSUPPORTED_SPAWN_OPTIONS)
+                .filter(option -> !option.equals("err"))
+                .toArray(String[]::new);
     }
 
     @Deprecated(since = "9.2.1.0")
