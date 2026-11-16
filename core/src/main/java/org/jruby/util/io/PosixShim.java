@@ -674,17 +674,32 @@ public class PosixShim {
     }
 
     private int tryLock(ChannelFD fd, boolean exclusive) throws IOException {
-        FileLock fileLock = fd.currentLock.get();
+        FileLock oldLock = fd.currentLock.get();
 
-        if (fileLock != null) fileLock.release();
+        // Windows can't upgrade a shared lock, so CRuby's LockFileEx fails and keeps it.
+        // Do the same, because releasing it first would let another process in.
+        if (exclusive && oldLock != null && oldLock.isShared()) {
+            setErrno(Errno.EWOULDBLOCK);
+            return -1;
+        }
 
-        fileLock = fd.chFile.tryLock(0L, Long.MAX_VALUE, !exclusive);
+        // FileChannel refuses a second lock on the same range, so release the old one first
+        if (oldLock != null) oldLock.release();
 
-        fd.currentLock.set(fileLock);
+        FileLock fileLock = fd.chFile.tryLock(0L, Long.MAX_VALUE, !exclusive);
 
         if (fileLock != null) {
+            fd.currentLock.set(fileLock);
             return 0;
         }
+
+        // CRuby on Windows keeps the old exclusive lock here, so take it back.
+        // This fails only if another process took the lock in between.
+        if (oldLock != null) {
+            fileLock = fd.chFile.tryLock(0L, Long.MAX_VALUE, oldLock.isShared());
+        }
+
+        fd.currentLock.set(fileLock);
 
         // null means another process holds the lock, which flock(2) reports as EWOULDBLOCK
         setErrno(Errno.EWOULDBLOCK);

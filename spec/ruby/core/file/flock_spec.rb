@@ -81,4 +81,21 @@ describe "File#flock" do
       f2.flock(File::LOCK_UN).should == 0
     end
   end
+
+  # Linux releases the shared lock before it tries the exclusive one
+  platform_is_not :linux do
+    it "keeps a shared lock if a non-blocking exclusive lock fails" do
+      @file.flock File::LOCK_SH
+
+      code = "File.open('#{@name}', 'r+') { |f| f.flock(File::LOCK_SH); " \
+        "p f.flock(File::LOCK_EX | File::LOCK_NB); STDOUT.flush; STDIN.gets }"
+
+      IO.popen(ruby_cmd(code), "r+") do |io|
+        io.gets.should == "false\n"
+        @file.flock File::LOCK_UN
+        @file.flock(File::LOCK_EX | File::LOCK_NB).should == false
+        io.puts
+      end
+    end
+  end
 end
