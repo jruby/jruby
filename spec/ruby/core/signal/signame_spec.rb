@@ -5,6 +5,12 @@ describe "Signal.signame" do
     Signal.signame(0).should == "EXIT"
   end
 
+  it "returns a name for each signal number in Signal.list" do
+    Signal.list.each_value do |signo|
+      Signal.list[Signal.signame(signo)].should == signo
+    end
+  end
+
   it "returns nil if the argument is an invalid signal number" do
     Signal.signame(-1).should == nil
   end
