@@ -478,5 +478,96 @@ public class ByteListTest extends TestCase {
             fail("shouldn't have thrown exception");
         }
     }
-}
 
+    public void testEqualSameContent() {
+        for (int size = 0; size <= 40; size++) {
+            byte[] bytes = new byte[size];
+            for (int i = 0; i < size; i++) bytes[i] = (byte) (i * 31 + 7);
+
+            ByteList a = new ByteList(bytes.clone(), false);
+            ByteList b = new ByteList(bytes.clone(), false);
+            assertTrue("size " + size, a.equal(b));
+            assertTrue("size " + size, a.equals(b));
+            assertTrue("size " + size, b.equal(a));
+        }
+    }
+
+    public void testEqualDetectsDifferenceAtEveryPosition() {
+        for (int size = 1; size <= 40; size++) {
+            byte[] bytes = new byte[size];
+            for (int i = 0; i < size; i++) bytes[i] = (byte) (i * 31 + 7);
+            ByteList a = new ByteList(bytes.clone(), false);
+
+            for (int pos = 0; pos < size; pos++) {
+                byte[] other = bytes.clone();
+                other[pos] ^= 0x01;
+                ByteList b = new ByteList(other, false);
+                assertFalse("size " + size + " pos " + pos, a.equal(b));
+                assertFalse("size " + size + " pos " + pos, b.equal(a));
+            }
+        }
+    }
+
+    public void testEqualDetectsDifferenceInHighBit() {
+        byte[] x = new byte[16];
+        byte[] y = new byte[16];
+        y[15] = (byte) 0x80;
+        assertFalse(new ByteList(x, false).equal(new ByteList(y, false)));
+        y[15] = 0;
+        y[0] = (byte) 0x80;
+        assertFalse(new ByteList(x, false).equal(new ByteList(y, false)));
+    }
+
+    public void testEqualDifferentLengths() {
+        for (int size = 0; size <= 20; size++) {
+            ByteList a = new ByteList(new byte[size], false);
+            ByteList b = new ByteList(new byte[size + 1], false);
+            assertFalse("size " + size, a.equal(b));
+            assertFalse("size " + size, b.equal(a));
+        }
+    }
+
+    public void testEqualWithBeginOffsets() {
+        for (int size = 0; size <= 40; size++) {
+            byte[] content = new byte[size];
+            for (int i = 0; i < size; i++) content[i] = (byte) (i * 17 + 3);
+
+            // the two lists start at different (and unaligned) offsets of larger arrays,
+            // surrounded by bytes that differ so a compare outside the range would be noticed
+            for (int begin = 0; begin < 9; begin++) {
+                for (int otherBegin = 0; otherBegin < 9; otherBegin++) {
+                    byte[] buf = new byte[begin + size + 9];
+                    byte[] otherBuf = new byte[otherBegin + size + 9];
+                    Arrays.fill(buf, (byte) 0x55);
+                    Arrays.fill(otherBuf, (byte) 0xAA);
+                    System.arraycopy(content, 0, buf, begin, size);
+                    System.arraycopy(content, 0, otherBuf, otherBegin, size);
+
+                    ByteList a = new ByteList(buf, begin, size, false);
+                    ByteList b = new ByteList(otherBuf, otherBegin, size, false);
+                    String msg = "size " + size + " begin " + begin + " otherBegin " + otherBegin;
+                    assertTrue(msg, a.equal(b));
+                    assertTrue(msg, b.equal(a));
+
+                    for (int pos = 0; pos < size; pos++) {
+                        otherBuf[otherBegin + pos] ^= 0x10;
+                        assertFalse(msg + " pos " + pos, a.equal(b));
+                        assertFalse(msg + " pos " + pos, b.equal(a));
+                        otherBuf[otherBegin + pos] ^= 0x10;
+                    }
+                }
+            }
+        }
+    }
+
+    public void testEqualIgnoresBytesOutsideRange() {
+        byte[] buf = new byte[32];
+        byte[] otherBuf = new byte[32];
+        for (int i = 0; i < 32; i++) buf[i] = (byte) i;
+        for (int i = 0; i < 32; i++) otherBuf[i] = (byte) (i + 1);
+        // bytes 4..19 of buf and 3..18 of otherBuf are equal; everything else differs
+        System.arraycopy(buf, 4, otherBuf, 3, 16);
+
+        assertTrue(new ByteList(buf, 4, 16, false).equal(new ByteList(otherBuf, 3, 16, false)));
+    }
+}
