@@ -53,6 +53,44 @@ describe "Module#deprecate_constant" do
     end
   end
 
+  describe "when reassigning the deprecated constant" do
+    it "warns that it is already initialized but not that it is deprecated" do
+      @module.deprecate_constant :PUBLIC1
+
+      deprecated = Warning[:deprecated]
+      begin
+        Warning[:deprecated] = true
+        -> {
+          @module.const_set :PUBLIC1, :new_value
+        }.should complain(/\A(?!.*is deprecated).*already initialized constant .+::PUBLIC1/m)
+      ensure
+        Warning[:deprecated] = deprecated
+      end
+    end
+
+    it "keeps the constant deprecated" do
+      @module.deprecate_constant :PUBLIC1
+      -> { @module.const_set :PUBLIC1, :new_value }.should complain(/already initialized constant/)
+
+      -> { @module::PUBLIC1 }.should complain(/warning: constant .+::PUBLIC1 is deprecated/)
+    end
+  end
+
+  describe "when changing the visibility of the deprecated constant" do
+    it "keeps the constant deprecated after private_constant" do
+      @module.deprecate_constant :PUBLIC1
+      @module.private_constant :PUBLIC1
+
+      -> { @module.const_get :PUBLIC1 }.should complain(/warning: constant .+::PUBLIC1 is deprecated/)
+    end
+
+    it "keeps the constant deprecated after public_constant" do
+      @module.public_constant :PRIVATE
+
+      -> { @module::PRIVATE }.should complain(/warning: constant .+::PRIVATE is deprecated/)
+    end
+  end
+
   it "accepts multiple symbols and strings as constant names" do
     @module.deprecate_constant "PUBLIC1", :PUBLIC2
 
